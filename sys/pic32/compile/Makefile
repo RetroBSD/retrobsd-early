@@ -17,22 +17,30 @@ D		= ../../drivers
 vpath %.c ${M}:${S}:${D}
 vpath %.S ${M}:${S}:${D}
 
-OPTS		= -DPIC32MX -DUCB_METER
-DEFS		= -DKERNEL ${OPTS} -I. -I${H}
-CFLAGS		= -O ${DEFS}
-ASFLAGS		= ${DEFS}
-CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
+# Kernel options.
+DEFS		+= -I. -I${H} -DKERNEL -DPIC32MX -DUCB_METER
+
+# kl console driver
+DEFS		+= -DNKL=1
+
+# rk disk driver
+DEFS            += -DNRK=2
+
+DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
+CFLAGS		= -O ${DEFS} ${DEPFLAGS}
+ASFLAGS		= ${DEFS} ${DEPFLAGS}
+CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin #-Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 
 # Machine-dependent files:
 # mch_start.o MUST be loaded first, param.o MUST be loaded last.
-KERNOBJ		= mch_start.o clock.o conf.o cons.o machdep.o machdep2.o \
-		  mem.o syscalls.o trap.o
+KERNOBJ		= mch_start.o clock.o conf.o cons.o cpu_sysctl.o \
+		  machdep.o machdep2.o mem.o syscalls.o trap.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_descrip.o kern_exec.o kern_exit.o kern_fork.o \
-		   kern_mman.o kern_pdp.o kern_proc.o kern_prot.o \
+		   kern_mman.o kern_proc.o kern_prot.o \
 		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \
 		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
 		   kern_xxx.o subr_log.o subr_prf.o \
@@ -45,16 +53,19 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o vm_text.o
 
 # Drivers.
-KERNOBJ		+= hk.o ht.o ra.o rk.o rx.o xp.o
+KERNOBJ		+= rk.o
 
 # Configuration-dependent files: param.o MUST be loaded last.
 KERNOBJ		+= ioconf.o vers.o param.o
 
-all:		sys machine unix
+all:		.deps sys machine unix
 
 clean:
-		rm -f unix core mklog *.o assym.h genassym
+		rm -rf unix core mklog *.o assym.h genassym .deps
 		find ../.. -name \*~ | xargs rm -f
+
+.deps:
+		mkdir .deps
 
 sys:
 		ln -s ../../include $@
@@ -72,4 +83,6 @@ vers.o:		FRC
 
 FRC:
 
-###
+ifeq (.deps, $(wildcard .deps))
+-include .deps/*.dep
+endif
