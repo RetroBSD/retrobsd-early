@@ -185,7 +185,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int error, level;
 	u_long longhostid;
 	char bsd[10];
-	extern int Acctthresh;		/* kern_acct.c */
 	extern char version[];
 
 	/* all sysctl names at this level are terminal */
@@ -199,17 +198,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		bsd[0]='2';bsd[1]='.';bsd[2]='1';bsd[3]='1';bsd[4]='B';
 		bsd[5]='S';bsd[6]='D';bsd[7]='\0';
 		return (sysctl_rdstring(oldp, oldlenp, newp, bsd));
-	case KERN_ACCTTHRESH:
-		level = Acctthresh;
-		error = sysctl_int(oldp, oldlenp, newp, newlen, &level);
-		if	(newp && !error)
-			{
- 			if	(level < 0 || level > 128)
-				error = EINVAL;
-			else
-				Acctthresh = level;
-			}
-		return(error);
 	case KERN_OSREV:
 		return (sysctl_rdlong(oldp, oldlenp, newp, (long)BSD));
 	case KERN_VERSION:

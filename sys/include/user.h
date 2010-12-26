@@ -119,7 +119,6 @@ struct user {
 	struct	k_rusage u_cru;		/* sum of stats for reaped children */
 	struct	k_itimerval u_timer[2];	/* profile/virtual timers */
 	long	u_start;
-	char	u_acflag;
 	char	u_dupfd;		/* XXX - see kern_descrip.c/fdopen */
 
 	struct uprof {			/* profile arguments */

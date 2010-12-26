@@ -20,8 +20,6 @@
 #include "wait.h"
 #include "kernel.h"
 
-extern	int	Acctopen;	/* kern_acct.c */
-
 /*
  * exit system call: pass back caller's arg
  */
@@ -70,8 +68,6 @@ exit(rv)
 		iput(u.u_rdir);
 	}
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
-	if	(Acctopen)
-		(void) acct();
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer

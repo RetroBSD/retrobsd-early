@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_fio.c	1.6 (2.11BSD GTE) 1997/11/28
  */
-
 #include "param.h"
 #include "user.h"
 #include "fs.h"
@@ -13,7 +10,6 @@
 #include "mount.h"
 #include "namei.h"
 #include "systm.h"
-#include "acct.h"
 #include "stat.h"
 
 /*
@@ -103,9 +99,7 @@ found:
  */
 suser()
 {
-
 	if (u.u_uid == 0) {
-		u.u_acflag |= ASU;
 		return (1);
 	}
 	u.u_error = EPERM;

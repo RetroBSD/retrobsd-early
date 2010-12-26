@@ -15,7 +15,6 @@
 #include "user.h"
 #include "proc.h"
 #include "inode.h"
-#include "acct.h"
 #include "file.h"
 #include "vm.h"
 #include "text.h"
@@ -73,8 +72,6 @@ fork1(isvfork)
 		u.u_r.r_val2 = 1;  /* child */
 #endif
 		u.u_start = time.tv_sec;
-		/* set forked but preserve suid/gid state */
-		u.u_acflag = AFORK | (u.u_acflag & ASUGID);
 		bzero(&u.u_ru, sizeof(u.u_ru));
 		bzero(&u.u_cru, sizeof(u.u_cru));
 		return;

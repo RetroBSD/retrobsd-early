@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_sig.c	1.13 (2.11BSD) 2000/2/20
  */
-
 #include "param.h"
 #include "machine/seg.h"
 #include "systm.h"
@@ -14,8 +11,8 @@
 #include "proc.h"
 #include "text.h"
 #include "namei.h"
-#include "acct.h"
 #include "signalvar.h"
+
 extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
 
 /*
@@ -595,7 +592,6 @@ postsig(sig)
 		sendsig(action, sig, returnmask);
 		return;
 	}
-	u.u_acflag |= AXSIG;
 	if	(sigprop[sig] & SA_CORE)
 		{
 		u.u_arg[0] = sig;
@@ -624,10 +620,9 @@ core()
 	char	*cp, name[MAXCOMLEN + 6];
 
 	/*
-	 * Don't dump if not root and the process has used set user or
-	 * group privileges.
-	*/
-	if	(u.u_acflag & ASUGID && !suser())
+	 * Don't dump if not root.
+	 */
+	if (! suser())
 		return(0);
 	if (ctob(USIZE+u.u_dsize+u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
@@ -659,7 +654,6 @@ core()
 		goto out;
 	}
 	itrunc(ip, (u_long)0, 0);
-	u.u_acflag |= ACORE;
 	u.u_error = rdwri(UIO_WRITE, ip, &u, ctob(USIZE), (off_t)0,
 			UIO_SYSSPACE, IO_UNIT, (int *)0);
 	if (u.u_error)

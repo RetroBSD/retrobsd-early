@@ -16,7 +16,6 @@
 #include "proc.h"
 #include "buf.h"
 #include "inode.h"
-#include "acct.h"
 #include "namei.h"
 #include "fs.h"
 #include "mount.h"
@@ -407,7 +406,6 @@ badarg:
 	/*
 	 * Remember file name for accounting.
 	 */
-	u.u_acflag &= ~AFORK;
 	if (indir)
 		bcopy((caddr_t)cfname, (caddr_t)u.u_comm, MAXCOMLEN);
 	else
@@ -612,7 +610,6 @@ getxfile(ip, ep, nargc, uid, gid)
 			psignal(u.u_procp, SIGTRAP);
 		u.u_svuid = u.u_uid;
 		u.u_svgid = u.u_groups[0];
-		u.u_acflag &= ~ASUGID;	/* start fresh setuid/gid priv use */
 	}
 	u.u_tsize = ts;
 	u.u_dsize = ds;

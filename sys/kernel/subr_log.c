@@ -16,9 +16,8 @@
  * Remove vax ifdefs - this driver is never going back to vaxland.
  *
  * Add support for multiple log devices.  Minor device 0 is the traditional
- * kernel logger (/dev/klog), minor device 1 is reserved for the future device 
- * error logging daemon.  Minor device 2 is used by the 'accounting' daemon
- * 'acctd'.
+ * kernel logger (/dev/klog), minor device 1 is reserved for the future device
+ * error logging daemon.
  */
 
 #define	NLOG	3
@@ -42,13 +41,6 @@
 #define LOG_ASYNC	0x04
 #define LOG_RDWAIT	0x08
 
-/*
- * This is an efficiency hack.  This global is provided for exit() to
- * test and avoid the overhead of function calls when accounting is
- * turned off.
-*/
-	int	Acctopen;
-
 	struct	msgbuf	msgbuf[NLOG];
 	static	struct logsoftc
 		{
@@ -71,9 +63,9 @@ logopen(dev, mode)
 		return(EBUSY);
 	if	(msgbuf[unit].msg_click == 0)	/* no buffer allocated */
 		return(ENOMEM);
-	logsoftc[unit].sc_state |= LOG_OPEN;
 	if	(unit == logACCT)
-		Acctopen = 1;
+		return(ENODEV);			/* log to accounting not supported */
+	logsoftc[unit].sc_state |= LOG_OPEN;
 	logsoftc[unit].sc_pgid = u.u_procp->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;
 	return(0);
@@ -87,8 +79,6 @@ logclose(dev, flag)
 	register int unit = minor(dev);
 
 	logsoftc[unit].sc_state = 0;
-	if	(unit == logACCT)
-		Acctopen = 0;
 	return(0);
 	}
 
@@ -144,7 +134,7 @@ logread(dev, uio, flag)
 			break;
 /*
  * If the write pointer is behind the reader then only consider as
- * available for now the bytes from the read pointer thru the end of 
+ * available for now the bytes from the read pointer thru the end of
  * the buffer.
 */
 		if	(l < 0)
@@ -217,7 +207,7 @@ logwakeup(unit)
 	if	(lp->sc_state & LOG_ASYNC && (mp->msg_bufx != mp->msg_bufr))
 		{
 		if	(lp->sc_pgid < 0)
-			gsignal(-lp->sc_pgid, SIGIO); 
+			gsignal(-lp->sc_pgid, SIGIO);
 		else if (p = pfind(lp->sc_pgid))
 			psignal(p, SIGIO);
 		}
@@ -277,7 +267,7 @@ logioctl(dev, com, data, flag)
 
 /*
  * This is inefficient for single character writes.  Alas, changing this
- * to be buffered would affect the networking code's use of printf.  
+ * to be buffered would affect the networking code's use of printf.
 */
 
 logwrt(buf,len,log)

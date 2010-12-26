@@ -51,7 +51,7 @@
  * selves were ported over with minimal change.  Retaining the 4.4 function
  * names also makes it easier to follow the logic flow when reading the 4.4
  * sources.  Also, changing the names from vn_* to in_* could have caused
- * confusion with the networking routines since 'in_' and 'ip_' are frequently 
+ * confusion with the networking routines since 'in_' and 'ip_' are frequently
  * used in the networking code.
  *
  * The tab spacing has been altered to be (to me) more readable.
@@ -59,7 +59,7 @@
 
 /*
  * Common code for vnode open operations.
- * Check permissions, and call the VOP_OPEN (openi for 2.11) or VOP_CREATE 
+ * Check permissions, and call the VOP_OPEN (openi for 2.11) or VOP_CREATE
  * (maknode) routine.
  */
 vn_open(ndp, fmode, cmode)
@@ -94,7 +94,7 @@ vn_open(ndp, fmode, cmode)
 				}
 			fmode &= ~O_CREAT;
 			}
-		} 
+		}
 	else
 		{
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
@@ -140,7 +140,7 @@ vn_open(ndp, fmode, cmode)
 		itrunc(ip, (off_t)0, fmode & O_FSYNC ? IO_SYNC : 0);
 /*
  * 4.4 returns the vnode locked from vn_open which means that each caller
- * has to go and unlock it.  
+ * has to go and unlock it.
  *
  * 2.11 returns the inode unlocked (for now).
 */
@@ -174,13 +174,12 @@ retuerr:
 
 /*
  * Inode close call.  Pipes and sockets do NOT enter here.  This routine is
- * used by the kernel to close files it opened for itself (see kern_acct.c
- * for a good example of this).  The kernel does not create sockets or pipes
- * on its own behalf.
+ * used by the kernel to close files it opened for itself.
+ * The kernel does not create sockets or pipes on its own behalf.
  *
  * The difference between this routine and vn_closefile below is that vn_close
  * takes an "inode *" as a first argument and is passed the flags by the caller
- * while vn_closefile (called from the closef routine for DTYPE_INODE inodes) 
+ * while vn_closefile (called from the closef routine for DTYPE_INODE inodes)
  * takes a "file *" and extracts the flags from the file structure.
  */
 vn_close(ip, flags)
@@ -198,7 +197,7 @@ vn_close(ip, flags)
  * File table inode close routine.  This is called from 'closef()' via the
  * "Fops" table (the 'inodeops' entry).
  *
- * NOTE: pipes are a special case of inode and have their own 'pipe_close' 
+ * NOTE: pipes are a special case of inode and have their own 'pipe_close'
  * entry in the 'pipeops' table. See sys_pipe.c for pipe_close().
  *
  * In 4.4BSD this routine called vn_close() but since 2.11 does not do the

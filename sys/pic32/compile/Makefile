@@ -30,7 +30,7 @@ KERNOBJ		= mch_start.o clock.o conf.o cons.o machdep.o machdep2.o \
 		  mem.o syscalls.o trap.o
 
 # Kernel.
-KERNOBJ		+= init_main.o init_sysent.o kern_acct.o kern_clock.o \
+KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_descrip.o kern_exec.o kern_exit.o kern_fork.o \
 		   kern_mman.o kern_pdp.o kern_proc.o kern_prot.o \
 		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \

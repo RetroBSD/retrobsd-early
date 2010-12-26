@@ -40,7 +40,6 @@
 
 #include "param.h"
 #include "user.h"
-#include "acct.h"
 #include "proc.h"
 #include "systm.h"
 
@@ -73,7 +72,6 @@ _setuid(uid)
 	u.u_uid = uid;
 	u.u_ruid = uid;
 	u.u_svuid = uid;
-	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}
 
@@ -98,7 +96,6 @@ _seteuid(euid)
 	 * Everything's okay, do it.
 	 */
 	u.u_uid = euid;
-	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}
 
@@ -122,7 +119,6 @@ _setgid(gid)
 	u.u_groups[0] = gid;		/* effective gid is u_groups[0] */
 	u.u_rgid = gid;
 	u.u_svgid = gid;
-	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}
 
@@ -144,6 +140,5 @@ _setegid(egid)
 	if (egid != u.u_rgid && egid != u.u_svgid && !suser())
 		return (u.u_error);
 	u.u_groups[0] = egid;
-	u.u_acflag |= ASUGID;
 	return (u.u_error = 0);
 	}

@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_bio.c	2.2 (2.11BSD) 1996/9/13
  */
-
 #include "param.h"
 #include "buf.h"
 #include "user.h"
@@ -14,7 +11,6 @@
 #include "dk.h"
 #include "systm.h"
 #include "map.h"
-#include "uba.h"
 #include "trace.h"
 
 /*

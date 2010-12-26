@@ -21,7 +21,6 @@
 #include "fcntl.h"
 #include "vm.h"
 #include "clist.h"
-#include "uba.h"
 #include "reboot.h"
 #include "systm.h"
 #include "kernel.h"
