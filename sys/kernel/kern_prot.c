@@ -14,9 +14,6 @@
 #include "user.h"
 #include "proc.h"
 #include "systm.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 getpid()
 {
@@ -142,7 +139,7 @@ setgroups()
 	uap->gidsetsize * sizeof (u.u_groups[0]));
 	if (u.u_error)
 		return;
-	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)		
+	for (gp = &u.u_groups[uap->gidsetsize]; gp < &u.u_groups[NGROUPS]; gp++)
 		*gp = NOGROUP;
 }
 

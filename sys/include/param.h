@@ -8,7 +8,6 @@
 
 #define	BSD	211		/* 2.11 * 100, as cpp doesn't do floats */
 
-#include <sys/localopts.h>
 #include <sys/stddef.h>		/* for 'offsetof' */
 
 /*

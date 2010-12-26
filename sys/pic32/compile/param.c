@@ -107,33 +107,6 @@ struct map	swapmap[1] = {
 	"swapmap",
 };
 
-#ifdef QUOTA
-#include "quota.h"
-struct BigQ {
-	struct	quota xquota[NQUOTA];		/* the quotas themselves */
-	struct	dquot *ixdquot[NINODE];		/* 2.11 equiv of i_dquot */
-	struct	dquot xdquot[NDQUOT];		/* the dquots themselves */
-	struct	qhash xqhash[NQHASH];
-	struct	dqhead xdqhash[NDQHASH];
-};
-
-QUOini()
-{
-	extern struct qhash *qhash;
-	extern struct dqhead *dqhead;
-
-	quota = ((struct BigQ *)SEG5)->xquota;
-	dquot = ((struct BigQ *)SEG5)->xdquot;
-	qhash = ((struct BigQ *)SEG5)->xqhash;
-	dqhead = ((struct BigQ *)SEG5)->xdqhash;
-	ndquot = NDQUOT;
-	nquota = NQUOTA;
-	ix_dquot = ((struct BigQ *)SEG5)->ixdquot;
-	dquotNDQUOT = &dquot[ndquot];
-	quotaNQUOTA = &quota[nquota];
-}
-#endif
-
 /*
  * Declarations of structures loaded last and allowed to reside in the
  * 0120000-140000 range (where buffers and clists are mapped).  These

@@ -28,9 +28,6 @@
 #include "namei.h"
 #include "disklabel.h"
 #include "stat.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 int	netoff = 1;
 int	cmask = CMASK;
@@ -166,12 +163,6 @@ main()
 	bhinit();
 	binit();
 	ubinit();
-#ifdef QUOTA
-	QUOTAMAP();
-	qtinit();
-	u.u_quota = getquota(0, 0, Q_NDQ);
-	QUOTAUNMAP();
-#endif
 	nchinit();
 	clkstart();
 

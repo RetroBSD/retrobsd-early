@@ -25,9 +25,6 @@
 #include "kernel.h"
 #include "systm.h"
 #include "syslog.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 extern	int	vn_closefile();
 int	ino_rw(), ino_ioctl(), ino_select();
@@ -191,26 +188,6 @@ rwip(ip, uio, ioflag)
 		psignal(u.u_procp, SIGXFSZ);
 		return (EFBIG);
 	}
-#ifdef	QUOTA
-	/*
-	 * we do bytes, see the comment on 'blocks' in ino_stat().
-	 *
-	 * the simplfying assumption is made that the entire write will
-	 * succeed, otherwise we have to check the quota on each block.
-	 * can you say slow?  i knew you could.  SMS
-	*/
-	if ((type == IFREG || type == IFDIR || type == IFLNK) &&
-	    uio->uio_rw == UIO_WRITE && !(ip->i_flag & IPIPE)) {
-		if (uio->uio_offset + uio->uio_resid > ip->i_size) {
-			QUOTAMAP();
-			error = chkdq(ip,
-				uio->uio_offset+uio->uio_resid - ip->i_size,0);
-			QUOTAUNMAP();
-			if (error)
-				return (error);
-		}
-	}
-#endif
 	if (type != IFBLK)
 		dev = ip->i_dev;
 	resid = uio->uio_resid;
@@ -388,16 +365,11 @@ ino_stat(ip, sb)
 {
 	register struct icommon2 *ic2;
 
-#ifdef	EXTERNALITIMES
-	mapseg5(xitimes, xitdesc);
-	ic2 = &((struct icommon2 *)SEG5)[ip - inode];
-#else
 	ic2 = &ip->i_ic2;
-#endif
 
-/*
- * inlined ITIMES which takes advantage of the common times pointer.
-*/
+	/*
+	 * inlined ITIMES which takes advantage of the common times pointer.
+	 */
 	if (ip->i_flag & (IUPD|IACC|ICHG)) {
 		ip->i_flag |= IMOD;
 		if (ip->i_flag & IACC)
@@ -431,9 +403,6 @@ ino_stat(ip, sb)
 	sb->st_spare4[0] = 0;
 	sb->st_spare4[1] = 0;
 	sb->st_spare4[2] = 0;
-#ifdef	EXTERNALITIMES
-	normalseg5();
-#endif
 	return (0);
 }
 

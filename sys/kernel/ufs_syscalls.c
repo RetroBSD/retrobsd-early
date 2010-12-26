@@ -15,9 +15,6 @@
 #include "file.h"
 #include "stat.h"
 #include "kernel.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 static	int	copen();
 
@@ -155,7 +152,7 @@ copen(mode, arg, fname)
 	if	(error = vn_open(ndp, flags, cmode))
 		{
 		fp->f_count = 0;
-		if	((error == ENODEV || error == ENXIO) && 
+		if	((error == ENODEV || error == ENXIO) &&
 			  u.u_dupfd >= 0 &&
 			  (error = dupfdopen(indx,u.u_dupfd,flags,error) == 0))
 			{
@@ -658,10 +655,7 @@ chown1(ip, uid, gid)
 	register int uid, gid;
 {
 	int ouid, ogid;
-#ifdef QUOTA
-	struct	dquot	**xdq;
-	long change;
-#endif
+
 	if (uid == -1)
 		uid = ip->i_uid;
 	if (gid == -1)
@@ -676,25 +670,8 @@ chown1(ip, uid, gid)
 		return (u.u_error);
 	ouid = ip->i_uid;
 	ogid = ip->i_gid;
-#ifdef QUOTA
-	QUOTAMAP();
-	if (ip->i_uid == uid)
-		change = 0;
-	else
-		change = ip->i_size;
-	(void) chkdq(ip, -change, 1);
-	(void) chkiq(ip->i_dev, ip, ip->i_uid, 1);
-	xdq = &ix_dquot[ip - inode];
-	dqrele(*xdq);
-#endif
 	ip->i_uid = uid;
 	ip->i_gid = gid;
-#ifdef QUOTA
-	*xdq = inoquota(ip);
-	(void) chkdq(ip, change, 1);
-	(void) chkiq(ip->i_dev, (struct inode *)NULL, (uid_t)uid, 1);
-	QUOTAUNMAP();
-#endif
 	if (ouid != uid || ogid != gid)
 		ip->i_flag |= ICHG;
 	if (ouid != uid && u.u_uid != 0)
@@ -880,7 +857,7 @@ rename()
 	 * directory heirarchy above the target, as this would
 	 * orphan everything below the source directory. Also
 	 * the user must have write permission in the source so
-	 * as to be able to change "..". We must repeat the call 
+	 * as to be able to change "..". We must repeat the call
 	 * to namei, as the parent directory is unlocked by the
 	 * call to checkpath().
 	 */
@@ -905,7 +882,7 @@ rename()
 	}
 	/*
 	 * 2) If target doesn't exist, link the target
-	 *    to the source and unlink the source. 
+	 *    to the source and unlink the source.
 	 *    Otherwise, rewrite the target directory
 	 *    entry to reference the source inode and
 	 *    expunge the original entry's existence.
@@ -1029,7 +1006,7 @@ rename()
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;
 			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
-					sizeof(struct dirtemplate), (off_t)0, 
+					sizeof(struct dirtemplate), (off_t)0,
 					UIO_SYSSPACE, IO_UNIT, (int *)0);
 
 			if (error == 0) {
@@ -1088,21 +1065,12 @@ register struct nameidata *ndp;
 {
 	register struct inode *ip;
 	register struct inode *pdir = ndp->ni_pdir;
-#ifdef	QUOTA
-	struct	dquot	**xdq;
-#endif
 
 	ip = ialloc(pdir);
 	if (ip == NULL) {
 		iput(pdir);
 		return (NULL);
 	}
-#ifdef QUOTA
-	QUOTAMAP();
-	xdq = &ix_dquot[ip - inode];
-	if (*xdq != NODQUOT)
-		panic("maknode");
-#endif
 	ip->i_flag |= IACC|IUPD|ICHG;
 	if ((mode & IFMT) == 0)
 		mode |= IFREG;
@@ -1112,11 +1080,6 @@ register struct nameidata *ndp;
 	ip->i_gid = pdir->i_gid;
 	if (ip->i_mode & ISGID && !groupmember(ip->i_gid))
 		ip->i_mode &= ~ISGID;
-#ifdef QUOTA
-	*xdq = inoquota(ip);
-	QUOTAUNMAP();
-#endif
-
 	/*
 	 * Make sure inode goes to disk before directory entry.
 	 */
@@ -1157,9 +1120,6 @@ mkdir()
 	struct dirtemplate dirtemplate;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
-#ifdef	QUOTA
-	struct	dquot **xdq;
-#endif
 
 	NDINIT(ndp, CREATE, NOFOLLOW, UIO_USERSPACE, uap->name);
 	ip = namei(ndp);
@@ -1185,21 +1145,11 @@ mkdir()
 		iput(dp);
 		return;
 	}
-#ifdef QUOTA
-	QUOTAMAP();
-	xdq = &ix_dquot[ip - inode];
-	if (*xdq != NODQUOT)
-		panic("mkdir");
-#endif
 	ip->i_flag |= IACC|IUPD|ICHG;
 	ip->i_mode = uap->dmode & ~u.u_cmask;
 	ip->i_nlink = 2;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = dp->i_gid;
-#ifdef QUOTA
-	*xdq = inoquota(ip);
-	QUOTAUNMAP();
-#endif
 	iupdat(ip, &time, &time, 1);
 
 	/*
@@ -1219,7 +1169,7 @@ mkdir()
 	dirtemplate = mastertemplate;
 	dirtemplate.dot_ino = ip->i_number;
 	dirtemplate.dotdot_ino = dp->i_number;
-	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate, 
+	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate,
 		sizeof (dirtemplate), (off_t)0, UIO_SYSSPACE, IO_UNIT|IO_SYNC,
 		(int *)0);
 	if (u.u_error) {

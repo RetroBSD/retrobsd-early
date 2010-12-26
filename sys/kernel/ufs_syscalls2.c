@@ -125,30 +125,24 @@ getfsstat()
 
 ufs_sync(mp)
 	register struct mount *mp;
-	{
+{
 	register struct fs *fs;
 	struct	buf *bp;
 	int	error = 0;
 
 	fs = &mp->m_filsys;
-	if	(fs->fs_fmod && (mp->m_flags & MNT_RDONLY))
-		{
+	if (fs->fs_fmod && (mp->m_flags & MNT_RDONLY)) {
 		printf("fs = %s\n", fs->fs_fsmnt);
 		panic("sync: rofs");
-		}
+	}
 	syncinodes(fs);		/* sync the inodes for this filesystem */
 	bflush(mp->m_dev);	/* flush dirty data blocks */
-#ifdef	QUOTA
-	qsync(mp->m_dev);	/* sync the quotas */
-#endif
-
-/*
- * And lastly the superblock, if the filesystem was modified.
- * Write back modified superblocks. Consistency check that the superblock
- * of each file system is still in the buffer cache.
-*/
-	if	(fs->fs_fmod)
-		{
+	/*
+	 * And lastly the superblock, if the filesystem was modified.
+	 * Write back modified superblocks. Consistency check that the superblock
+	 * of each file system is still in the buffer cache.
+	 */
+	if (fs->fs_fmod) {
 		bp =  getblk(mp->m_dev, SUPERB);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
@@ -156,9 +150,9 @@ ufs_sync(mp)
 		mapout(bp);
 		bwrite(bp);
 		error = geterror(bp);
-		}
-	return(error);
 	}
+	return(error);
+}
 
 /*
  * This is somewhat inefficient in that the inode table is scanned for each

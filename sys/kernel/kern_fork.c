@@ -20,9 +20,6 @@
 #include "vm.h"
 #include "text.h"
 #include "kernel.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 /*
  * fork --
@@ -156,11 +153,6 @@ again:
 	 * Make a proc table entry for the new process.
 	 */
 	rip = u.u_procp;
-#ifdef QUOTA
-	QUOTAMAP();
-	u.u_quota->q_cnt++;
-	QUOTAUNMAP();
-#endif
 	rpp->p_stat = SIDL;
 	rpp->p_realtimer.it_value = 0;
 	rpp->p_flag = SLOAD;

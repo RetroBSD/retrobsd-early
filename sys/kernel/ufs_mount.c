@@ -21,9 +21,6 @@
 #include "stat.h"
 #include "disklabel.h"
 #include "ioctl.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 smount()
 {
@@ -285,25 +282,10 @@ found:
 	mp->m_flags &= ~MNT_ASYNC;	/* Don't want async when unmounting */
 	ufs_sync(mp);
 
-#ifdef QUOTA
-	if (iflush(dev, mp->m_qinod) < 0)
-#else
-	if (iflush(dev) < 0)
-#endif
-		{
+	if (iflush(dev) < 0) {
 		mp->m_flags |= aflag;
 		return (EBUSY);
-		}
-#ifdef QUOTA
-	QUOTAMAP();
-	closedq(mp);
-	QUOTAUNMAP();
-	/*
-	 * Here we have to iflush again to get rid of the quota inode.
-	 * A drag, but it would be ugly to cheat, & this doesn't happen often
-	 */
-	(void)iflush(dev, (struct inode *)NULL);
-#endif
+	}
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
 	irele(ip);

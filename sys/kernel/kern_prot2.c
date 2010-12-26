@@ -43,9 +43,6 @@
 #include "acct.h"
 #include "proc.h"
 #include "systm.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 int
 setuid()
@@ -58,7 +55,7 @@ setuid()
 	}
 
 /*
- * This is a helper function used by setuid() above and the 4.3BSD 
+ * This is a helper function used by setuid() above and the 4.3BSD
  * compatibility code.  When the latter goes away this can be joined
  * back into the above code and save a function call.
 */
@@ -71,18 +68,7 @@ _setuid(uid)
 		return(u.u_error);
 	/*
 	 * Everything's okay, do it.
-	 * Since the real user id is changing the quota references need
-	 * to be updated.
 	 */
-#ifdef QUOTA
-        QUOTAMAP();
-	if (u.u_quota->q_uid != uid) {
-		qclean();
-		qstart(getquota((uid_t)uid, 0, 0));
-	}
-	QUOTAUNMAP();
-#endif
-
 	u.u_procp->p_uid = uid;
 	u.u_uid = uid;
 	u.u_ruid = uid;
@@ -122,11 +108,11 @@ setgid()
 	struct a {
 		gid_t gid;
 		} *uap = (struct a *)u.u_ap;
-	
+
 	return(_setgid(uap->gid));
 	}
 
-int 
+int
 _setgid(gid)
 	register gid_t gid;
 	{

@@ -27,17 +27,7 @@
 #include "disklabel.h"
 #include "mount.h"
 
-#ifdef QUOTA
-#include "quota.h"
-#endif
-
 size_t	physmem;	/* total amount of physical memory (for savecore) */
-
-#ifdef	SOFUB_MAP
-extern	size_t	sofub_addr, sofub_off;
-extern	memaddr	sofub_base;
-extern	u_int	sofub_size;
-#endif
 
 segm	seg5;		/* filled in by initialization */
 
@@ -139,60 +129,8 @@ startup()
 	clstaddr = (ubadr_t)cfree;
 #endif
 
-/*
- * IMPORTANT.  The software Unibus/Qbus map is allocated now if support for
- * 18 bit controllers in a 22 bit system has been selected.  This buffer must
- * reside _entirely_ within the low 256kb of memory.  A 10kb buffer is
- * allocated, this is sufficient to handle 'dump', 'restor' and the default
- * blocking factor of 'tar' (20 sectors).
- *
- * NOTE:  There is only 1 software map.  Multiple 18 bit controllers will
- * have their access to the 'bounce buffer' single threaded by the soft
- * map allocation routine sofub_alloc() in machdep.c.
- *
- * For more details see machdep.c.
-*/
-
-#ifdef	SOFUB_MAP
-#define	B	(10240+64)
-
-	sofub_size = (unsigned) B;
-
-	if	((sofub_base = malloc(coremap, btoc(B))) == 0)
-		panic("sofmap");			/* Paranoia */
-	else if	(((sofub_base + btoc(B)) >> 10) > 3)	/* > 256kb! */
-		{
-		printf("sofmap > 256kb\n");
-		mfree(coremap, btoc(B), sofub_base);	/* give it back */
-		sofub_base = 0;
-		}
-	else
-		{
-		sofub_addr = sofub_base;
-		sofub_off = (sofub_base>>10)&3;
-		}
-#undef	B
-#endif /* SOFUB_MAP */
-
-#ifdef EXTERNALITIMES
-#define C (btoc(ninode * sizeof (struct icommon2)))
-	if ((xitimes = malloc(coremap, C)) == 0)
-		panic("xitimes");
-	xitdesc = ((C - 1) << 8) | RW;
-#undef C
-#endif
-
-#ifdef QUOTA
-#define	C	(btoc(8192))
-	if ((quotreg = malloc(coremap, C)) == 0)
-		panic("quotamem");
-	quotdesc = ((C - 1) << 8) | RW;
-	QUOini();
-#undef C
-#endif
-
 	{
-register int B;
+	register int B;
 
 	nchsize = 8192 / sizeof(struct namecache);
 	if (nchsize > (ninode * 11 / 10))

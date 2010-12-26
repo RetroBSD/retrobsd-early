@@ -19,9 +19,6 @@
 #include "file.h"
 #include "wait.h"
 #include "kernel.h"
-#ifdef QUOTA
-#include "quota.h"
-#endif
 
 extern	int	Acctopen;	/* kern_acct.c */
 
@@ -75,11 +72,6 @@ exit(rv)
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	if	(Acctopen)
 		(void) acct();
-#ifdef QUOTA
-	QUOTAMAP();
-	qclean();
-	QUOTAUNMAP();
-#endif
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer

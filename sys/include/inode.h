@@ -84,9 +84,7 @@ struct inode {
  * stat.h for more information.
 */
 	u_short	i_flags;		/* user changeable flags */
-#ifndef EXTERNALITIMES
 	struct icommon2 i_ic2;
-#endif
 };
 
 /*
@@ -113,11 +111,9 @@ struct dinode {
 #define	i_wsel		i_un1.I_wsel
 #define	i_db		i_un2.i_f.I_db
 #define	i_ib		i_un2.i_f.I_ib
-#ifndef EXTERNALITIMES
 #define	i_atime		i_ic2.ic_atime
 #define	i_mtime		i_ic2.ic_mtime
 #define	i_ctime		i_ic2.ic_ctime
-#endif
 #define	i_rdev		i_un2.i_d.I_rdev
 #define	i_addr		i_un2.I_addr
 #define	i_dummy		i_un2.i_d.I_dummy
@@ -157,10 +153,6 @@ struct dinode {
 
 u_short	nextinodeid;		/* unique id generator */
 
-#ifdef EXTERNALITIMES
-memaddr	xitimes;
-u_int	xitdesc;
-#endif
 extern struct inode inode[];	/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* the number of slots in the table */
@@ -284,23 +276,6 @@ struct	inode *namei();
 		iupdat(ip, t1, t2, waitfor); \
 }
 
-#ifdef EXTERNALITIMES
-#define	ITIMES(ip, t1, t2) { \
-	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
-		struct icommon2 *ic2= &((struct icommon2 *)SEG5)[ip-inode]; \
-		mapseg5(xitimes, xitdesc); \
-		(ip)->i_flag |= IMOD; \
-		if ((ip)->i_flag&IACC) \
-			ic2->ic_atime = (t1)->tv_sec; \
-		if ((ip)->i_flag&IUPD) \
-			ic2->ic_mtime = (t2)->tv_sec; \
-		if ((ip)->i_flag&ICHG) \
-			ic2->ic_ctime = time.tv_sec; \
-		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
-		normalseg5(); \
-	} \
-}
-#else
 #define	ITIMES(ip, t1, t2) { \
 	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
 		(ip)->i_flag |= IMOD; \
@@ -313,5 +288,4 @@ struct	inode *namei();
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
-#endif
 #endif
