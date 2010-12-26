@@ -17,7 +17,7 @@ D		= ../../drivers
 vpath %.c ${M}:${S}:${D}
 vpath %.S ${M}:${S}:${D}
 
-OPTS		= -DGENERIC -DPIC32MX
+OPTS		= -DPIC32MX -DUCB_METER
 DEFS		= -DKERNEL ${OPTS} -I. -I${H}
 CFLAGS		= -O ${DEFS}
 ASFLAGS		= ${DEFS}
