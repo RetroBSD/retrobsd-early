@@ -14,6 +14,15 @@
 #include "clist.h"
 #include "tty.h"
 
+dev_t	rootdev = makedev(6,0),
+	swapdev = makedev(6,1),
+	pipedev = makedev(6,0);
+
+dev_t	dumpdev = NODEV;
+daddr_t	dumplo = (daddr_t)512;
+int	nulldev();
+int	(*dump)() = nulldev;
+
 int	nulldev();
 int	nodev();
 int	rawrw();

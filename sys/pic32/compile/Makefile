@@ -56,12 +56,12 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 KERNOBJ		+= rk.o
 
 # Configuration-dependent files: param.o MUST be loaded last.
-KERNOBJ		+= ioconf.o vers.o param.o
+KERNOBJ		+= vers.o param.o
 
 all:		.deps sys machine unix
 
 clean:
-		rm -rf unix core mklog *.o assym.h genassym .deps
+		rm -rf unix core mklog *.o assym.h vers.c genassym .deps
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:
@@ -77,11 +77,9 @@ unix:		${KERNOBJ}
 		$(CC) -nostdlib -T using-bootloader.ld ${KERNOBJ} -r -o unix
 		$(SIZE) unix
 
-vers.o:		FRC
+vers.o:		${H}/*.h ${M}/*.[ch] ${S}/*.c ${D}/*.[ch]
 		sh newvers.sh
 		${CC} -c vers.c
-
-FRC:
 
 ifeq (.deps, $(wildcard .deps))
 -include .deps/*.dep
