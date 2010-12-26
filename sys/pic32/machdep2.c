@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)machdep2.c	2.9 (2.11BSD) 1999/2/19
  */
-
 #include "param.h"
 #include "machine/seg.h"
 #include "machine/iopage.h"
@@ -24,29 +21,17 @@
 #include "callout.h"
 #include "reboot.h"
 #include "systm.h"
-#include "ram.h"
 #include "msgbuf.h"
 #include "namei.h"
 #include "ra.h"
-#include "tms.h"
-#include "ingres.h"
 #include "disklabel.h"
 #include "mount.h"
-
-#if	NINGRES > 0
-#include <sys/ingreslock.h>
-#endif
 
 #ifdef QUOTA
 #include "quota.h"
 #endif
 
 size_t	physmem;	/* total amount of physical memory (for savecore) */
-#if	NRAC > 0 || NTMSCP > 0
-memaddr	_iostart, _iobase;
-ubadr_t	_ioumr;
-u_short	_iosize = ((NTMSCP * (ctob(btoc(1864)))) + (NRAC * (ctob(btoc(1096)))));
-#endif
 
 #ifdef	SOFUB_MAP
 extern	size_t	sofub_addr, sofub_off;
@@ -78,9 +63,6 @@ startup()
 	extern ubadr_t	clstaddr;
 	extern int end;
 	register memaddr i, freebase, maxclick;
-#if NRAM > 0
-	size_t ramsize;
-#endif
 
 	printf("\n%s\n", version);
 
@@ -222,11 +204,6 @@ register int B;
 	namecache = (struct namecache *)SEG5;
 	}
 
-#if	NRAC > 0 || NTMSCP > 0
-	if ((_iobase = malloc(coremap, btoc(_iosize))) == 0)
-		panic("_iobase");
-#endif
-
 #define B	(size_t)(((long)nbuf * (MAXBSIZE)) / ctob(1))
 	if ((bpaddr = malloc(coremap, B)) == 0)
 		panic("buffers");
@@ -242,22 +219,10 @@ register int B;
 		mount[i].m_extern = (memaddr)malloc(coremap, C);
 #undef	C
 
-#if NINGRES > 0
-#define	C	(btoc(LOCKTABSIZE))
-
-	if (Locktabseg.se_addr = malloc(coremap, C))
-		Locktabseg.se_desc = ((C - 1) << 8) | RW;
-#undef  C
-#endif
-
 /*
  * Allocate the initial disklabels.
 */
 	(void) initdisklabels();
-
-#if NRAM > 0
-	ramsize = raminit();
-#endif
 
 	/*
 	 * Initialize callouts
@@ -350,37 +315,7 @@ ubinit()
 		setubregno(i, paddr);
 		paddr += (long)UBPAGE;
 	}
-	/*
-	 * The 3Com ethernet board is hardwired to use UNIBUS registers 28, 29
-	 * and 30 (counting from 0) and UNIBUS register 31 isn't usable.
-	 */
-#include "ec.h"
-#if NEC > 0
-	mfree(ub_map, 28 - ub_nreg - 1, 1 + ub_nreg);	/* 3Com board */
-#else
 	mfree(ub_map, 31 - ub_nreg - 1, 1 + ub_nreg);
-#endif
-
-/*
- * this early in the system's life there had better be a UMR or two
- * available!!  N.B. This was moved from where the [T]MSCP memory was
- * allocated because at that point the UMR map was not initialized.
-*/
-
-#if	NRAC > 0 || NTMSCP > 0
-	_iostart = _iobase;
-	i = (int)btoub(_iosize);
-	ub_nreg = malloc(ub_map, i);
-	_ioumr = (ubadr_t)ub_nreg << 13;
-	ubp = &UBMAP[ub_nreg];
-	paddr = ctob((ubadr_t)_iostart);
-	while (i--) {
-		ubp->ub_lo = loint(paddr);
-		ubp->ub_hi = hiint(paddr);
-		ubp++;
-		paddr += (ubadr_t)UBPAGE;
-	}
-#endif
 }
 
 int waittime = -1;
@@ -476,35 +411,9 @@ dumpsys()
 	}
 }
 
-#if	NRAC > 0 || NTMSCP > 0
-memaddr
-_ioget(size)
-	u_int size;
-	{
-	register memaddr base;
-	register u_int csize;
-
-	csize = btoc(size);
-	size = ctob(csize);
-	if (size > _iosize)
-		return(0);
-	_iosize -= size;
-	base = _iobase;
-	_iobase += csize;
-	return(base);
-	}
-
-ubadr_t
-_iomap(addr)
-	register memaddr addr;
-	{
-	return(((ubadr_t)(addr - _iostart) << 6) + _ioumr);
-	}
-#endif
-
 memaddr
 disklabelalloc()
-	{
+{
 	register memaddr base;
 
 	if	(--_dlabelnum)
@@ -515,4 +424,4 @@ disklabelalloc()
 		}
 	base = malloc(coremap, btoc (sizeof (struct disklabel)));
 	return(base);
-	}
+}

@@ -22,7 +22,6 @@
 #ifdef QUOTA
 #include "quota.h"
 #endif
-#include "ingres.h"
 
 extern	int	Acctopen;	/* kern_acct.c */
 
@@ -104,10 +103,6 @@ exit(rv)
 	p->p_prev = &zombproc;
 	zombproc = p;
 	p->p_stat = SZOMB;
-
-#if	NINGRES > 0
-	ingres_rma(p->p_pid);		/* Remove any ingres locks */
-#endif
 
 	noproc = 1;
 	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)

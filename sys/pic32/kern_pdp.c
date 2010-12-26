@@ -193,11 +193,7 @@ bad:
  * This is ugly but it's either this or always include [T]MSCP code even
  * for systems without that type of device.
 */
-#include "tms.h"
 #include "ra.h"
-#if NTMSCP > 0
-	extern	int tmscpprintf, tmscpcache;		/* see pdpuba/tmscp.c */
-#endif
 #if	NRAC > 0
 	extern	int mscpprintf;
 #endif

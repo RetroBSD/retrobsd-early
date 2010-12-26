@@ -2,11 +2,8 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)file.h	1.3 (2.11BSD GTE) 1/19/95
  */
-
-#include <fcntl.h>
+#include <sys/fcntl.h>
 
 #ifndef	_SYS_FILE_H_
 #define	_SYS_FILE_H_

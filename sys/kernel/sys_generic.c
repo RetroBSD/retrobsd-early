@@ -17,7 +17,6 @@
 #include "ioctl.h"
 #include "conf.h"
 #include "uio.h"
-#include "pty.h"
 #include "kernel.h"
 #include "systm.h"
 

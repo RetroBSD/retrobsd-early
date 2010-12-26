@@ -16,7 +16,6 @@
 #include "map.h"
 #include "uba.h"
 #include "trace.h"
-#include "ram.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.
@@ -91,7 +90,7 @@ breada(dev, blkno, rablkno)
 				u.u_ru.ru_inblock++;	/* pay in advance */
 			}
 		} else
-			trace(TR_BREADHITRA);	
+			trace(TR_BREADHITRA);
 	}
 
 	/*
