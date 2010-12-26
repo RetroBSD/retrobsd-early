@@ -1,0 +1,22 @@
+This is the RetroBSD source directory.
+
+
+Source Roadmap:
+---------------
+bin		System/user commands.
+
+etc		Template files for /etc.
+
+include		System include files.
+
+lib		System libraries.
+
+sbin		System commands.
+
+share		Shared resources.
+
+sys		Kernel sources.
+
+usr.bin		User commands.
+
+usr.sbin	System administration commands.
