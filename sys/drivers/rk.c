@@ -2,16 +2,11 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)rk.c	1.5 (2.11BSD GTE) 1997/1/18
  */
 
 /*
  * RK05 device drive
  */
-
-#include "rk.h"
-
 #if NRK > 0
 #include "param.h"
 #include "systm.h"

@@ -17,7 +17,6 @@
 #include "tty.h"
 #include "systm.h"
 #include "cons.h"
-#include "cn.h"
 
 /*
  * Normal addressing:

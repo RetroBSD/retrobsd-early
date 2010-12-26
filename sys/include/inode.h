@@ -212,7 +212,7 @@ struct	inode *namei();
 #define	IO_UNIT		0x01		/* do I/O as atomic unit */
 #define	IO_APPEND	0x02		/* append write to end */
 #define	IO_SYNC		0x04		/* do I/O synchronously */
-/* #define	IO_NODELOCKED	0x08		/* not implemented */
+/*#define IO_NODELOCKED	0x08		   not implemented */
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
 
 /*

@@ -23,7 +23,6 @@
 #include "systm.h"
 #include "msgbuf.h"
 #include "namei.h"
-#include "ra.h"
 #include "disklabel.h"
 #include "mount.h"
 

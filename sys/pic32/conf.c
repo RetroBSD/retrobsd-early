@@ -18,7 +18,6 @@ int	nulldev();
 int	nodev();
 int	rawrw();
 
-#include "rk.h"
 #if NRK > 0
 int	rkopen(), rkstrategy();
 daddr_t	rksize();
@@ -30,82 +29,10 @@ daddr_t	rksize();
 #define	rksize		NULL
 #endif
 
-#include "hk.h"
-#if NHK > 0
-int	hkopen(), hkstrategy(), hkroot(), hkclose();
-daddr_t	hksize();
-#else
-#define	hkopen		nodev
-#define	hkclose		nodev
-#define	hkroot		nulldev
-#define	hkstrategy	nodev
-#define	hksize		NULL
-#endif
-
-#include "xp.h"
-#if NXPD > 0
-int	xpopen(), xpstrategy(), xproot(), xpclose(), xpioctl();
-daddr_t	xpsize();
-#else
-#define	xpopen		nodev
-#define	xpclose		nodev
-#define	xpioctl		nodev
-#define	xproot		nulldev
-#define	xpstrategy	nodev
-#define	xpsize		NULL
-#endif
-
-#include "ht.h"
-#if NHT > 0
-int	htopen(), htclose(), htstrategy(), htioctl();
-#else
-#define	htopen		nodev
-#define	htclose		nodev
-#define	htioctl		nodev
-#define	htstrategy	nodev
-#endif
-
-#include "rl.h"
-#if NRL > 0
-int	rlopen(), rlstrategy(), rlroot(), rlclose(), rlioctl();
-daddr_t	rlsize();
-#else
-#define	rlroot		nulldev
-#define	rlopen		nodev
-#define	rlclose		nodev
-#define	rlioctl		nodev
-#define	rlstrategy	nodev
-#define	rlsize		NULL
-#endif
-
-#include "ra.h"
-#if NRAC > 0
-int	rastrategy(), raroot(), raopen(), raclose(), raioctl();
-daddr_t	rasize();
-#else
-#define	raopen		nodev
-#define	raclose		nodev
-#define	raioctl		nodev
-#define	raroot		nulldev
-#define	rastrategy	nodev
-#define	rasize		nodev
-#endif
-
-#include "rx.h"
-#if NRX > 0
-int	rxopen(), rxstrategy(), rxioctl();
-#define	rxclose		nulldev
-#else
-#define	rxopen		nodev
-#define	rxclose		nodev
-#define	rxstrategy	nodev
-#define	rxioctl		nodev
-#endif
-
 struct bdevsw	bdevsw[] = {
 /* ht = 0 */
-	htopen,		htclose,	htstrategy,	nulldev,	NULL,
-	B_TAPE,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
+	0,
 /* tm = 1 */
 	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
@@ -116,25 +43,25 @@ struct bdevsw	bdevsw[] = {
 	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* hk = 4 */
-	hkopen,		hkclose,	hkstrategy,	hkroot,		hksize,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* ra = 5 */
-	raopen,		raclose,	rastrategy,	raroot,		rasize,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* rk = 6 */
 	rkopen,		rkclose,	rkstrategy,	nulldev,	rksize,
 	0,
 /* rl = 7 */
-	rlopen,		rlclose,	rlstrategy,	rlroot,		rlsize,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* rx = 8 */
-	rxopen,		rxclose,	rxstrategy,	nulldev,	NULL,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* si = 9 */
 	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* xp = 10 */
-	xpopen,		xpclose,	xpstrategy,	xproot,		xpsize,
+	nodev,		nodev,		nodev,		nulldev,	NULL,
 	0,
 /* br = 11 */
 	nodev,		nodev,		nodev,		nulldev,	NULL,
@@ -183,9 +110,9 @@ struct cdevsw	cdevsw[] = {
 	nodev,		nulldev,	0,		nodev,
 	nodev,
 /* ht = 6 */
-	htopen,		htclose,	rawrw,		rawrw,
-	htioctl,	nulldev,	0,		seltrue,
-	htstrategy,
+	nodev,		nodev,		nodev,		nodev,
+	nodev,		nulldev,	0,		nodev,
+	nodev,
 /* tm = 7 */
 	nodev,		nodev,		nodev,		nodev,
 	nodev,		nulldev,	0,		nodev,
@@ -211,33 +138,33 @@ struct cdevsw	cdevsw[] = {
 	nodev,		nulldev,	0,		nodev,
 	nodev,
 /* hk = 13 */
-	hkopen,		hkclose,	rawrw,		rawrw,
-	nodev,		nulldev,	0,		seltrue,
-	hkstrategy,
+	nodev,		nodev,		nodev,		nodev,
+	nodev,		nulldev,	0,		nodev,
+	nodev,
 /* ra = 14 */
-	raopen,		raclose,	rawrw,		rawrw,
-	raioctl,	nulldev,	0,		seltrue,
-	rastrategy,
+	nodev,		nodev,		nodev,		nodev,
+	nodev,		nulldev,	0,		nodev,
+	nodev,
 /* rk = 15 */
 	rkopen,		rkclose,	rawrw,		rawrw,
 	nodev,		nulldev,	0,		seltrue,
 	rkstrategy,
 /* rl = 16 */
-	rlopen,		rlclose,	rawrw,		rawrw,
-	rlioctl,	nulldev,	0,		seltrue,
-	rlstrategy,
+	nodev,		nodev,		rawrw,		rawrw,
+	nodev,		nulldev,	0,		seltrue,
+	nodev,
 /* rx = 17 */
-	rxopen,		rxclose,	rawrw,		rawrw,
-	rxioctl,	nulldev,	0,		seltrue,
-	rxstrategy,
+	nodev,		nodev,		rawrw,		rawrw,
+	nodev,		nulldev,	0,		seltrue,
+	nodev,
 /* si = 18 */
 	nodev,		nodev,		rawrw,		rawrw,
 	nodev,		nulldev,	0,		seltrue,
 	nodev,
 /* xp = 19 */
-	xpopen,		xpclose,	rawrw,		rawrw,
-	xpioctl,	nulldev,	0,		seltrue,
-	xpstrategy,
+	nodev,		nodev,		rawrw,		rawrw,
+	nodev,		nulldev,	0,		seltrue,
+	nodev,
 /* br = 20 */
 	nodev,		nodev,		rawrw,		rawrw,
 	nodev,		nulldev,	0,		seltrue,
@@ -295,21 +222,11 @@ isdisk(dev, type)
 {
 
 	switch (major(dev)) {
-	case 4:			/* hk */
-	case 5:			/* ra */
 	case 6:			/* rk */
-	case 7:			/* rl */
-	case 8:			/* rx */
-	case 10:		/* xp */
 		if (type == IFBLK)
 			return (1);
 		return (0);
-	case 13:		/* rhk */
-	case 14:		/* rra */
 	case 15:		/* rrk */
-	case 16:		/* rrl */
-	case 17:		/* rrx */
-	case 19:		/* rxp */
 		if (type == IFCHR)
 			return (1);
 		/* fall through */
@@ -328,24 +245,24 @@ static char chrtoblktbl[MAXDEV] =  {
 	/* 3 */		NODEV,
 	/* 4 */		NODEV,
 	/* 5 */		NODEV,
-	/* 6 */		0,		/* ht */
-	/* 7 */		NODEV,		/* tm */
-	/* 8 */		NODEV,		/* ts */
+	/* 6 */		NODEV,
+	/* 7 */		NODEV,
+	/* 8 */		NODEV,
 	/* 9 */		NODEV,
 	/* 10 */	NODEV,
 	/* 11 */	NODEV,
 	/* 12 */	NODEV,
-	/* 13 */	4,		/* hk */
-	/* 14 */	5,		/* ra */
+	/* 13 */	NODEV,
+	/* 14 */	NODEV,
 	/* 15 */	6,		/* rk */
-	/* 16 */	7,		/* rl */
-	/* 17 */	8,		/* rx */
+	/* 16 */	NODEV,
+	/* 17 */	NODEV,
 	/* 18 */	NODEV,
-	/* 19 */	10,		/* xp */
+	/* 19 */	NODEV,
 	/* 20 */	NODEV,
 	/* 21 */	NODEV,
 	/* 22 */	NODEV,
-	/* 23 */	NODEV,		/* tmscp */
+	/* 23 */	NODEV,
 	/* 24 */	NODEV,
 	/* 25 */	NODEV,
 	/* 26 */	NODEV
