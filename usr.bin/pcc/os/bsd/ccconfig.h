@@ -48,6 +48,8 @@
 
 #if defined(mach_pdp11)
 #define	CPPMDADD { "-D__pdp11__", "-Dpdp11", NULL, }
+#elif defined(mach_mips)
+#define	CPPMDADD { "-D__mips__", "-DMIPS", NULL, }
 #else
 #error defines for arch missing
 #endif
