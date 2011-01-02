@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_exec.c	1.8 (2.11BSD) 1999/9/6
  */
-
 #include "param.h"
 #include "machine/reg.h"
 #include "machine/seg.h"
@@ -180,7 +177,7 @@ execve()
  * have to be done.
  *		u.u_uid = uid;
  *		u.u_gid = u_groups[0];
-*/
+ */
 		cp = &exdata.ex_shell[2];		/* skip "#!" */
 		while (cp < &exdata.ex_shell[SHSIZE]) {
 			if (*cp == '\t')
@@ -228,7 +225,7 @@ execve()
 	ne = 0;
 	nc = 0;
 	cc = 0;
-	bno = malloc(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)));
+	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
 		swkill(u.u_procp, "exec");
 		goto bad;
@@ -268,7 +265,7 @@ execve()
 			if (cc <= 0) {
 				/*
 				 * We depend on NCARGS being a multiple of
-				 * CLSIZE*NBPG.  This way we need only check
+				 * DEV_BSIZE.  This way we need only check
 				 * overflow before each buffer allocation.
 				 */
 				if (nc >= NCARGS-1) {
@@ -276,12 +273,11 @@ execve()
 					break;
 				}
 				if (bp) {
-					mapout(bp);
 					bdwrite(bp);
 				}
-				cc = CLSIZE*NBPG;
-				bp = getblk(swapdev, dbtofsb(clrnd(bno)) + lblkno(nc));
-				cp = mapin(bp);
+				cc = DEV_BSIZE;
+				bp = getblk(swapdev, dbtofsb(bno) + lblkno(nc));
+				cp = bp->b_un.b_addr;
 			}
 			if (sharg) {
 				error = copystr(sharg, cp, (unsigned)cc, &len);
@@ -298,7 +294,6 @@ execve()
 		if (error) {
 			u.u_error = error;
 			if (bp) {
-				mapout(bp);
 				bp->b_flags |= B_AGE;
 				bp->b_flags &= ~B_DELWRI;
 				brelse(bp);
@@ -308,7 +303,6 @@ execve()
 		}
 	}
 	if (bp) {
-		mapout(bp);
 		bdwrite(bp);
 	}
 	bp = 0;
@@ -316,10 +310,10 @@ execve()
 	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
-		for (cc = 0;cc < nc; cc += CLSIZE * NBPG) {
+		for (cc = 0;cc < nc; cc += DEV_BSIZE) {
 			daddr_t blkno;
 
-			blkno = dbtofsb(clrnd(bno)) + lblkno(cc);
+			blkno = dbtofsb(bno) + lblkno(cc);
 			if (incore(swapdev,blkno)) {
 				bp = bread(swapdev,blkno);
 				bp->b_flags |= B_AGE;		/* throw away */
@@ -354,14 +348,13 @@ badarg:
 		do {
 			if (cc <= 0) {
 				if (bp) {
-					mapout(bp);
 					brelse(bp);
 				}
-				cc = CLSIZE*NBPG;
-				bp = bread(swapdev, dbtofsb(clrnd(bno)) + lblkno(nc));
+				cc = DEV_BSIZE;
+				bp = bread(swapdev, dbtofsb(bno) + lblkno(nc));
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
-				cp = mapin(bp);
+				cp = bp->b_un.b_addr;
 			}
 			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
 			    &len);
@@ -376,7 +369,6 @@ badarg:
 	(void) suword((caddr_t)ap, 0);
 	(void) suword((caddr_t)(-NBPW), 0);
 	if (bp) {
-		mapout(bp);
 		bp->b_flags |= B_AGE;
 		brelse(bp);
 		bp = NULL;
@@ -395,13 +387,9 @@ badarg:
 		u.u_lastfile--;
 
 	/*
-	 * inline expansion of setregs(), found
-	 * in ../pdp/machdep.c
-	 *
-	 * setregs(exdata.ex_exec.a_entry);
+	 * Clear registers.
 	 */
 	u.u_ar0[PC] = exdata.ex_exec.a_entry & ~01;
-	u.u_fps.u_fpsr = 0;
 
 	/*
 	 * Remember file name for accounting.
@@ -412,12 +400,11 @@ badarg:
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm, MAXCOMLEN);
 bad:
 	if (bp) {
-		mapout(bp);
 		bp->b_flags |= B_AGE;
 		brelse(bp);
 	}
 	if (bno)
-		mfree(swapmap, ctod((int)btoc(NCARGS + MAXBSIZE)), bno);
+		mfree(swapmap, btod (NCARGS + MAXBSIZE), bno);
 	if (ip)
 		iput(ip);
 }
@@ -431,14 +418,11 @@ getxfile(ip, ep, nargc, uid, gid)
 	register struct exec *ep;
 	int nargc, uid, gid;
 {
-	struct u_ovd sovdata;
 	long lsize;
-	off_t	offset;
+	off_t offset;
 	u_int ds, ts, ss;
-	u_int ovhead[NOVL + 1];
-	int sep, overlay, ovflag, ovmax, resid;
+	int resid;
 
-	overlay = sep = ovflag = 0;
 	switch(ep->a_magic) {
 		case A_MAGIC1:
 			lsize = (long)ep->a_data + ep->a_text;
@@ -448,19 +432,6 @@ getxfile(ip, ep, nargc, uid, gid)
 				return;
 			}
 			ep->a_text = 0;
-			break;
-		case A_MAGIC3:
-			sep++;
-			break;
-		case A_MAGIC4:
-			overlay++;
-			break;
-		case A_MAGIC5:
-			ovflag++;
-			break;
-		case A_MAGIC6:
-			sep++;
-			ovflag++;
 			break;
 	}
 
@@ -487,133 +458,65 @@ getxfile(ip, ep, nargc, uid, gid)
 	 * find text and data sizes try; them out for possible
 	 * overflow of max sizes
 	 */
-	ts = btoc(ep->a_text);
+	ts = ep->a_text;
 	lsize = (long)ep->a_data + ep->a_bss;
 	if (lsize != (u_int)lsize) {
 		u.u_error = ENOMEM;
 		return;
 	}
-	ds = btoc(lsize);
-	ss = SSIZE + btoc(nargc);
+	ds = lsize;
+	ss = SSIZE + nargc;
+
+	if (estabur(ts, ds, ss, RO)) {
+		return;
+	}
 
 	/*
-	 * if auto overlay get second header
+	 * allocate and clear core at this point, committed
+	 * to the new image
 	 */
-	sovdata = u.u_ovdata;
-	u.u_ovdata.uo_ovbase = 0;
-	u.u_ovdata.uo_curov = 0;
-	if (ovflag) {
-		u.u_error = rdwri(UIO_READ, ip, ovhead, sizeof(ovhead),
-			(off_t)sizeof(struct exec), UIO_SYSSPACE, IO_UNIT, &resid);
-		if (resid != 0)
-			u.u_error = ENOEXEC;
-		if (u.u_error) {
-			u.u_ovdata = sovdata;
-			return;
-		}
-		/* set beginning of overlay segment */
-		u.u_ovdata.uo_ovbase = ctos(ts);
-
-		/* 0th entry is max size of the overlays */
-		ovmax = btoc(ovhead[0]);
-
-		/* set max number of segm. registers to be used */
-		u.u_ovdata.uo_nseg = ctos(ovmax);
-
-		/* set base of data space */
-		u.u_ovdata.uo_dbase = stoc(u.u_ovdata.uo_ovbase +
-		    u.u_ovdata.uo_nseg);
-
-		/*
-		 * Set up a table of offsets to each of the overlay
-		 * segements. The ith overlay runs from ov_offst[i-1]
-		 * to ov_offst[i].
-		 */
-		u.u_ovdata.uo_ov_offst[0] = ts;
-		{
-			register int t, i;
-
-			/* check if any overlay is larger than ovmax */
-			for (i = 1; i <= NOVL; i++) {
-				if ((t = btoc(ovhead[i])) > ovmax) {
-					u.u_error = ENOEXEC;
-					u.u_ovdata = sovdata;
-					return;
-				}
-				u.u_ovdata.uo_ov_offst[i] =
-					t + u.u_ovdata.uo_ov_offst[i - 1];
-			}
-		}
-	}
-	if (overlay) {
-		if (u.u_sep == 0 && ctos(ts) != ctos(u.u_tsize) || nargc) {
-			u.u_error = ENOMEM;
-			return;
-		}
-		ds = u.u_dsize;
-		ss = u.u_ssize;
-		sep = u.u_sep;
+	u.u_prof.pr_scale = 0;
+	if (u.u_procp->p_flag & SVFORK)
+		endvfork();
+	else
 		xfree();
-		xalloc(ip,ep);
-		u.u_ar0[PC] = ep->a_entry & ~01;
-	} else {
-		if (estabur(ts, ds, ss, sep, RO)) {
-			u.u_ovdata = sovdata;
-			return;
-		}
+	expand(ds, S_DATA);
+	{
+		register u_int numc, startc;
 
-		/*
-		 * allocate and clear core at this point, committed
-		 * to the new image
-		 */
-		u.u_prof.pr_scale = 0;
-		if (u.u_procp->p_flag & SVFORK)
-			endvfork();
-		else
-			xfree();
-		expand(ds, S_DATA);
-		{
-			register u_int numc, startc;
-
-			startc = btoc(ep->a_data);	/* clear BSS only */
-			if (startc != 0)
-				startc--;
-			numc = ds - startc;
-			clear(u.u_procp->p_daddr + startc, numc);
-		}
-		expand(ss, S_STACK);
-		clear(u.u_procp->p_saddr, ss);
-		xalloc(ip, ep);
-
-		/*
-		 * read in data segment
-		 */
-		estabur((u_int)0, ds, (u_int)0, 0, RO);
-		offset = sizeof(struct exec);
-		if (ovflag) {
-			offset += sizeof(ovhead);
-			offset += (((long)u.u_ovdata.uo_ov_offst[NOVL]) << 6);
-		}
-		else
-			offset += ep->a_text;
-		rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
-			UIO_USERSPACE, IO_UNIT, (int *)0);
-
-		/*
-		 * set SUID/SGID protections, if no tracing
-		 */
-		if ((u.u_procp->p_flag & P_TRACED)==0) {
-			u.u_uid = uid;
-			u.u_procp->p_uid = uid;
-			u.u_groups[0] = gid;
-		} else
-			psignal(u.u_procp, SIGTRAP);
-		u.u_svuid = u.u_uid;
-		u.u_svgid = u.u_groups[0];
+		startc = ep->a_data;		/* clear BSS only */
+		if (startc != 0)
+			startc--;
+		numc = ds - startc;
+		clear (u.u_procp->p_daddr + startc, numc);
 	}
+	expand(ss, S_STACK);
+	clear(u.u_procp->p_saddr, ss);
+	xalloc(ip, ep);
+
+	/*
+	 * read in data segment
+	 */
+	estabur(0, ds, 0, RO);
+	offset = sizeof(struct exec);
+	offset += ep->a_text;
+	rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
+		UIO_USERSPACE, IO_UNIT, (int *)0);
+
+	/*
+	 * set SUID/SGID protections, if no tracing
+	 */
+	if ((u.u_procp->p_flag & P_TRACED)==0) {
+		u.u_uid = uid;
+		u.u_procp->p_uid = uid;
+		u.u_groups[0] = gid;
+	} else
+		psignal(u.u_procp, SIGTRAP);
+	u.u_svuid = u.u_uid;
+	u.u_svgid = u.u_groups[0];
+
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
-	u.u_sep = sep;
-	estabur(ts, ds, ss, sep, RO);
+	estabur(ts, ds, ss, RO);
 }

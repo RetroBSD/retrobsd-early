@@ -32,8 +32,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)kern_sysctl.c	8.4.11 (2.11BSD) 1999/8/11
  */
 
 /*
@@ -174,6 +172,7 @@ __sysctl()
 /*
  * kernel related system variables.
  */
+int
 kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
@@ -281,6 +280,7 @@ cpu2str(buf, len)
 /*
  * hardware related system variables.
  */
+int
 hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
@@ -307,11 +307,11 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case HW_BYTEORDER:
 		return (sysctl_rdint(oldp, oldlenp, newp, ENDIAN));
 	case HW_PHYSMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp,ctob((long)physmem)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, physmem));
 	case HW_USERMEM:
-		return (sysctl_rdlong(oldp, oldlenp, newp,ctob((long)freemem)));
+		return (sysctl_rdlong(oldp, oldlenp, newp, freemem));
 	case HW_PAGESIZE:
-		return (sysctl_rdint(oldp, oldlenp, newp, NBPG*CLSIZE));
+		return (sysctl_rdint(oldp, oldlenp, newp, DEV_BSIZE));
 	default:
 		return (EOPNOTSUPP);
 	}
@@ -332,6 +332,7 @@ static struct ctldebug *debugvars[CTL_DEBUG_MAXID] = {
 	&debug10, &debug11, &debug12, &debug13, &debug14,
 	&debug15, &debug16, &debug17, &debug18, &debug19,
 };
+
 int
 debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -372,8 +373,7 @@ debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
  * on the 5 second update.
  *
  * The coremap and swapmap cases are 2.11BSD extensions.
-*/
-
+ */
 int
 vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -429,6 +429,7 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
  * Validate parameters and get old / set new parameters
  * for an integer-valued sysctl function.
  */
+int
 sysctl_int(oldp, oldlenp, newp, newlen, valp)
 	void *oldp;
 	size_t *oldlenp;
@@ -453,6 +454,7 @@ sysctl_int(oldp, oldlenp, newp, newlen, valp)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdint(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
@@ -475,6 +477,7 @@ sysctl_rdint(oldp, oldlenp, newp, val)
  * Validate parameters and get old / set new parameters
  * for an long-valued sysctl function.
  */
+int
 sysctl_long(oldp, oldlenp, newp, newlen, valp)
 	void *oldp;
 	size_t *oldlenp;
@@ -499,6 +502,7 @@ sysctl_long(oldp, oldlenp, newp, newlen, valp)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdlong(oldp, oldlenp, newp, val)
 	void *oldp;
 	size_t *oldlenp;
@@ -521,6 +525,7 @@ sysctl_rdlong(oldp, oldlenp, newp, val)
  * Validate parameters and get old / set new parameters
  * for a string-valued sysctl function.
  */
+int
 sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 	void *oldp;
 	size_t *oldlenp;
@@ -550,6 +555,7 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 /*
  * As above, but read-only.
  */
+int
 sysctl_rdstring(oldp, oldlenp, newp, str)
 	void *oldp;
 	size_t *oldlenp;
@@ -573,6 +579,7 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
  * Validate parameters and get old / set new parameters
  * for a structure oriented sysctl function.
  */
+int
 sysctl_struct(oldp, oldlenp, newp, newlen, sp, len)
 	void *oldp;
 	size_t *oldlenp;
@@ -600,6 +607,7 @@ sysctl_struct(oldp, oldlenp, newp, newlen, sp, len)
  * Validate parameters and get old parameters
  * for a structure oriented sysctl function.
  */
+int
 sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 	void *oldp;
 	size_t *oldlenp;
@@ -621,6 +629,7 @@ sysctl_rdstruct(oldp, oldlenp, newp, sp, len)
 /*
  * Get file structures.
  */
+int
 sysctl_file(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -670,8 +679,7 @@ sysctl_file(where, sizep)
 /*
  * This one is in kern_clock.c in 4.4 but placed here for the reasons
  * given earlier (back around line 367).
-*/
-
+ */
 int
 sysctl_clockrate(where, sizep)
 	char *where;
@@ -694,6 +702,7 @@ sysctl_clockrate(where, sizep)
  * Copyout address of inode followed by inode.
  */
 /* ARGSUSED */
+int
 sysctl_inode(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -737,6 +746,7 @@ sysctl_inode(where, sizep)
  * Get text structures.  This is a 2.11BSD extension.  sysctl() is supposed
  * to be extensible...
  */
+int
 sysctl_text(where, sizep)
 	char *where;
 	size_t *sizep;
@@ -788,6 +798,7 @@ sysctl_text(where, sizep)
  */
 #define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
 
+int
 sysctl_doproc(name, namelen, where, sizep)
 	int *name;
 	u_int namelen;
@@ -919,36 +930,30 @@ fill_eproc(p, ep)
  * XXX - will break (and badly).  At the present time (97/9/2) the u area
  * XXX - is 856 bytes long.
 */
-
+void
 fill_from_u(p, rup, ttp, tdp)
 	struct	proc	*p;
 	uid_t	*rup;
 	struct	tty	**ttp;
 	dev_t	*tdp;
-	{
+{
 	register struct	buf	*bp;
 	dev_t	ttyd;
 	uid_t	ruid;
 	struct	tty	*ttyp;
 	struct	user	*up;
 
-	if	(p->p_stat == SZOMB)
-		{
+	if (p->p_stat == SZOMB) {
 		ruid = (uid_t)-2;
 		ttyp = NULL;
 		ttyd = NODEV;
 		goto out;
-		}
-	if	(p->p_flag & SLOAD)
-		{
-		mapseg5(p->p_addr, (((USIZE - 1) << 8) | RO));
-		ttyd = ((struct user *)SEG5)->u_ttyd;
-		ttyp = ((struct user *)SEG5)->u_ttyp;
-		ruid = ((struct user *)SEG5)->u_ruid;
-		normalseg5();
-		}
-	else
-		{
+	}
+	if (p->p_flag & SLOAD) {
+		ttyd = ((struct user *)p->p_addr)->u_ttyd;
+		ttyp = ((struct user *)p->p_addr)->u_ttyp;
+		ruid = ((struct user *)p->p_addr)->u_ruid;
+	} else {
 		bp = geteblk();
 		bp->b_dev = swapdev;
 		bp->b_blkno = (daddr_t)p->p_addr;
@@ -958,29 +963,25 @@ fill_from_u(p, rup, ttp, tdp)
 		(*bdevsw[major(swapdev)].d_strategy)(bp);
 		biowait(bp);
 
-		if	(u.u_error)
-			{
+		if (u.u_error) {
 			ttyd = NODEV;
 			ttyp = NULL;
 			ruid = (uid_t)-2;
-			}
-		else
-			{
-			up = (struct user *)mapin(bp);
+		} else {
+			up = (struct user*) bp->b_un.b_addr;
 			ruid = up->u_ruid;	/* u_ruid = offset 164 */
 			ttyd = up->u_ttyd;	/* u_ttyd = offset 654 */
 			ttyp = up->u_ttyp;	/* u_ttyp = offset 652 */
-			mapout(bp);
-			}
+		}
 		bp->b_flags |= B_AGE;
 		brelse(bp);
 		u.u_error = 0;		/* XXX */
-		}
-out:
-	if	(rup)
-		*rup = ruid;
-	if	(ttp)
-		*ttp = ttyp;
-	if	(tdp)
-		*tdp = ttyd;
 	}
+out:
+	if (rup)
+		*rup = ruid;
+	if (ttp)
+		*ttp = ttyp;
+	if (tdp)
+		*tdp = ttyd;
+}

@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)systm.h	1.3 (2.11BSD GTE) 1996/5/9
  */
 
 #ifndef SUPERVISOR
@@ -20,7 +18,7 @@
  *	raw disks of mounted filesystems, /dev/mem, and /dev/kmem are
  *	read-only.
  *    2	highly secure mode - same as (1) plus raw disks are always
- *	read-only whether mounted or not. This level precludes tampering 
+ *	read-only whether mounted or not. This level precludes tampering
  *	with filesystems by unmounting them, but also inhibits running
  *	newfs while the system is secured.
  *
@@ -73,8 +71,6 @@ extern	int szicode;		/* its size */
 
 daddr_t	bmap();
 
-ubadr_t	clstaddr;		/* UNIBUS virtual address of clists */
-
 extern int	cputype;	/* type of cpu = 40, 44, 45, 60, or 70 */
 
 /*
@@ -91,10 +87,10 @@ char	*panicstr;
 int	boothowto;		/* reboot flags, from boot */
 int	selwait;
 
-/* casts to keep lint happy */
-#ifdef lint
-#define	insque(q,p)	_insque((caddr_t)q,(caddr_t)p)
-#define	remque(q)	_remque((caddr_t)q)
+#ifdef KERNEL
+void panic (char *msg);
+void printf (char *fmt, ...);
+int loginit (void);
 #endif
 
 extern	bool_t	sep_id;		/* separate I/D */

@@ -2,8 +2,6 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)mount.h	7.2.5 (2.11BSD GTE) 1997/6/29
  */
 
 /*
@@ -58,15 +56,11 @@ struct	mount
 	memaddr	m_extern;	/* click address of mount table extension */
 };
 
-struct	xmount
-	{
+struct xmount {
 	char	xm_mntfrom[MNAMELEN];	/* /dev/xxxx mounted from */
 	char	xm_mnton[MNAMELEN];	/* directory mounted on - this is the
-					 * full(er) version of fs_fsmnt.
-					*/
-	};
-
-#define	XMOUNTDESC	(((btoc(sizeof (struct xmount)) - 1) << 8) | RW)
+					 * full(er) version of fs_fsmnt. */
+};
 
 /*
  * Mount flags.
@@ -93,7 +87,7 @@ struct	xmount
 
 /*
  * Flags for various system call interfaces.
- * 
+ *
  * These aren't used for anything in the system and are present only
  * for source code compatibility reasons.
 */

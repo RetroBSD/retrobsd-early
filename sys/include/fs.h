@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)fs.h	1.3 (2.11BSD GTE) 1995/12/24
  */
 
 #ifndef	_SYS_FS_H_
@@ -33,7 +31,7 @@
 
 /*
  * The path name on which the file system is mounted is maintained
- * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in 
+ * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in
  * the super block for this name.
  */
 #define MAXMNTLEN 12
@@ -45,11 +43,11 @@
  */
 struct	fs
 {
-	u_short	fs_isize;		/* first block after i-list */
+	u_int	fs_isize;		/* first block after i-list */
 	daddr_t	fs_fsize;		/* size in blocks of entire volume */
-	short	fs_nfree;		/* number of addresses in fs_free */
+	int	fs_nfree;		/* number of addresses in fs_free */
 	daddr_t	fs_free[NICFREE];	/* free block list */
-	short	fs_ninode;		/* number of inodes in fs_inode */
+	int	fs_ninode;		/* number of inodes in fs_inode */
 	ino_t	fs_inode[NICINOD];	/* free inode list */
 	char	fs_flock;		/* lock during free list manipulation */
 	char	fs_fmod;		/* super block modified flag */
@@ -58,17 +56,17 @@ struct	fs
 	time_t	fs_time;		/* last super block update */
 	daddr_t	fs_tfree;		/* total free blocks */
 	ino_t	fs_tinode;		/* total free inodes */
-	short	fs_step;		/* optimal step in free list pattern */
-	short	fs_cyl;			/* number of blocks per pattern */
+	int	fs_step;		/* optimal step in free list pattern */
+	int	fs_cyl;			/* number of blocks per pattern */
 	char	fs_fsmnt[MAXMNTLEN];	/* ordinary file mounted on */
 	ino_t	fs_lasti;		/* start place for circular search */
 	ino_t	fs_nbehind;		/* est # free inodes before s_lasti */
-	u_short	fs_flags;		/* mount time flags */
+	u_int	fs_flags;		/* mount time flags */
 /* actually longer */
 };
 
 struct	fblk {
-	short	df_nfree;		/* number of addresses in df_free */
+	int	df_nfree;		/* number of addresses in df_free */
 	daddr_t	df_free[NICFREE];	/* free block list */
 };
 
@@ -76,8 +74,8 @@ struct	fblk {
  * Turn file system block numbers into disk block addresses.
  * This maps file system blocks to device size blocks.
  */
-#define	fsbtodb(b)	((daddr_t)((daddr_t)(b)<<1))
-#define	dbtofsb(b)	((daddr_t)((daddr_t)(b)>>1))
+#define	fsbtodb(b)	((daddr_t) (b))
+#define	dbtofsb(b)	((daddr_t) (b))
 
 /*
  * Macros for handling inode numbers:

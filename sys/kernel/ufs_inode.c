@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_inode.c	1.7 (2.11BSD GTE) 1997/2/7
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -204,13 +201,12 @@ loop:
 		iput(ip);
 		return(NULL);
 	}
-	dp = (struct dinode *)mapin(bp);
+	dp = (struct dinode*) bp->b_un.b_addr;
 	dp += itoo(ino);
 	ip->i_ic1 = dp->di_ic1;
 	ip->i_flags = dp->di_flags;
 	ip->i_ic2 = dp->di_ic2;
 	bcopy(dp->di_addr, ip->i_addr, NADDR * sizeof (daddr_t));
-	mapout(bp);
 	brelse(bp);
 	return (ip);
 }
@@ -341,12 +337,11 @@ iupdat(ip, ta, tm, waitfor)
 	if (tip->i_flag&ICHG)
 		tip->i_ctime = time.tv_sec;
 	tip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
-	dp = (struct dinode *)mapin(bp) + itoo(tip->i_number);
+	dp = (struct dinode*) bp->b_un.b_addr + itoo (tip->i_number);
 	dp->di_ic1 = tip->i_ic1;
 	dp->di_flags = tip->i_flags;
 	dp->di_ic2 = tip->i_ic2;
 	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (daddr_t));
-	mapout(bp);
 	if (waitfor && ((ip->i_fs->fs_flags & MNT_ASYNC) == 0))
 		bwrite(bp);
 	else
@@ -435,8 +430,7 @@ itrunc(oip,length, ioflags)
 			brelse(bp);
 			return;
 		}
-		bzero(mapin(bp) + offset, (u_int)(DEV_BSIZE - offset));
-		mapout(bp);
+		bzero (bp->b_un.b_addr + offset, (u_int) (DEV_BSIZE - offset));
 		bdwrite(bp);
 	}
 	/*
@@ -506,17 +500,16 @@ updret:
 }
 
 static
-trsingle(ip, bp,last, aflags)
+trsingle(ip, bp, last, aflags)
 	register struct inode *ip;
-	caddr_t bp;
+	struct buf *bp;
 	daddr_t last;
 	int aflags;
 {
 	register daddr_t *bstart, *bstop;
 	daddr_t blarray[NINDIR];
 
-	bcopy(mapin(bp),blarray,NINDIR * sizeof(daddr_t));
-	mapout(bp);
+	bcopy (bp->b_un.b_addr, blarray, NINDIR * sizeof(daddr_t));
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
 	for (;bstart > bstop;--bstart)
@@ -578,11 +571,10 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 			return;
 		}
 		cpy = geteblk();
-		copy(bftopaddr(bp), bftopaddr(cpy), btoc(DEV_BSIZE));
-		bap = (daddr_t *)mapin(bp);
+		copy (bftopaddr(bp), bftopaddr(cpy), DEV_BSIZE);
+		bap = (daddr_t*) bp->b_un.b_addr;
 		bzero((caddr_t)&bap[last + 1],
 		    (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
-		mapout(bp);
 		if (aflags & B_SYNC)
 			bwrite(bp);
 		else
@@ -603,7 +595,7 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 	else {
 		register daddr_t *bstart, *bstop;
 
-		bstart = (daddr_t *)mapin(bp);
+		bstart = (daddr_t*) bp->b_un.b_addr;
 		bstop = &bstart[last];
 		bstart += NINDIR - 1;
 		/*
@@ -612,22 +604,16 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 		for (;bstart > bstop;--bstart) {
 			nb = *bstart;
 			if (nb) {
-				mapout(bp);
 				indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
 				free(ip, nb);
-				mapin(bp);
 			}
 		}
-		mapout(bp);
 
 		/*
 		 * Recursively free last partial block.
 		 */
 		if (lastbn >= 0) {
-
-			mapin(bp);
 			nb = *bstop;
-			mapout(bp);
 			last = lastbn % factor;
 			if (nb != 0)
 				indirtrunc(ip, nb, last, level - 1, aflags);

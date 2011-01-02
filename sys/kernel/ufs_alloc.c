@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_alloc.c	1.3 (2.11BSD GTE) 1996/9/19
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -59,9 +56,8 @@ balloc(ip, flags)
 		if (((bp->b_flags&B_ERROR) == 0) && (bp->b_resid==0)) {
 			register struct fblk *fbp;
 
-			fbp = (FBLKP) mapin(bp);
+			fbp = (FBLKP) bp->b_un.b_addr;
 			*((FBLKP)&fs->fs_nfree) = *fbp;
-			mapout(bp);
 		}
 		brelse(bp);
 		/*
@@ -77,10 +73,9 @@ balloc(ip, flags)
 		{
 			register struct fs *fps;
 
-			fps = (struct fs *)mapin(bp);
+			fps = (struct fs*) bp->b_un.b_addr;
 			*fps = *fs;
 		}
-		mapout(bp);
 		if (!async)
 			bwrite(bp);
 		else
@@ -191,7 +186,7 @@ fromtop:
 			ino += INOPB;
 			continue;
 		}
-		dp = (struct dinode *)mapin(bp);
+		dp = (struct dinode*) bp->b_un.b_addr;
 		for (i = 0;i < INOPB;i++) {
 			if (dp->di_mode != 0)
 				goto cont;
@@ -204,7 +199,6 @@ fromtop:
 			ino++;
 			dp++;
 		}
-		mapout(bp);
 		brelse(bp);
 		if (fs->fs_ninode >= NICINOD)
 			break;
@@ -250,9 +244,8 @@ free(ip, bno)
 	if (fs->fs_nfree >= NICFREE) {
 		fs->fs_flock++;
 		bp = getblk(ip->i_dev, bno);
-		fbp = (FBLKP)mapin(bp);
+		fbp = (FBLKP) bp->b_un.b_addr;
 		*fbp = *((FBLKP)&fs->fs_nfree);
-		mapout(bp);
 		fs->fs_nfree = 0;
 		if (fs->fs_flags & MNT_ASYNC)
 			bdwrite(bp);

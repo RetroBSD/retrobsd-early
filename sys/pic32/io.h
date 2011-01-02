@@ -22,7 +22,7 @@
  * this software.
  */
 #ifdef PIC32MX
-#   include "mch_pic32mx.h"
+#   include "machine/pic32mx.h"
 #endif
 
 /*
@@ -62,30 +62,6 @@
 #define CONTEXT_PC	31
 
 #define CONTEXT_WORDS	32
-
-/*
- * Exception handlers, written in C, require some space in stack
- * for local storage. Minimum requirement is 16 bytes.
- * To compute needed space, you should get disassembled code of
- * _arch_interrupt_() and look at the function entry instructions.
- * For example:
- *	addiu   sp,sp,-64
- * 	sw      ra,60(sp)
- *	...
- *	sw      s0,24(sp)
- * Number in the last instruction is the frame space, needed for
- * local storage. When it is greater than 16, you must put it
- * in a macro definition here.
- */
-#ifdef ELVEES_NVCOM01
-#   define MIPS_FSPACE		24	/* for Elvees NVCom-01 */
-#endif
-#ifdef ELVEES_NVCOM02
-#   define MIPS_FSPACE		24	/* TODO: for Elvees NVCom-02 */
-#endif
-#ifndef MIPS_FSPACE
-#   define MIPS_FSPACE		16	/* default minimum */
-#endif
 
 #ifndef __ASSEMBLER__
 
@@ -136,65 +112,15 @@ do {								\
 } while (0)
 
 /*
- * Read FPU (C1 coprocessor) register.
- */
-#define mips_read_fpu_register(reg)				\
-({ int __value;							\
-	asm volatile (						\
-	"mfc1	%0, $%1"					\
-	: "=r" (__value) : "K" (reg));				\
-	__value;						\
-})
-
-/*
- * Write FPU (C1 coprocessor) register.
- */
-#define mips_write_fpu_register(reg, value)			\
-do {								\
-	asm volatile (						\
-	"mtc1	%z0, $%1"					\
-	: : "r" (value), "K" (reg));				\
-} while (0)
-
-/*
- * Read FPU control register.
- */
-#define mips_read_fpu_control(reg)				\
-({ int __value;							\
-	asm volatile (						\
-	"cfc1	%0, $%1"					\
-	: "=r" (__value) : "K" (reg));				\
-	__value;						\
-})
-
-/*
- * Write FPU control register.
- */
-#define mips_write_fpu_control(reg, value)			\
-do {								\
-	asm volatile (						\
-	"ctc1	%z0, $%1"					\
-	: : "r" ((unsigned int) (value)), "K" (reg));		\
-} while (0)
-
-/*
  * Disable the hardware interrupts,
  * saving the interrupt state into the supplied variable.
  */
-static void inline __attribute__ ((always_inline))
-mips_intr_disable (int *x)
+static int inline __attribute__ ((always_inline))
+mips_intr_disable ()
 {
-#if defined (ELVEES_MC24) || defined (ELVEES_NVCOM01) || defined (ELVEES_NVCOM02)
-	/* This must be atomic operation.
-	 * On MIPS1 this could be done only using system call exception. */
-	asm volatile (
-	"syscall \n"
-"	move	%0, $a0"
-	: "=r" (*x) : "K" (C0_STATUS) : "a0");
-#else
-	*x = mips_read_c0_register (C0_STATUS);
+	int status = mips_read_c0_register (C0_STATUS);
 	asm volatile ("di");
-#endif
+	return status;
 }
 
 /*
@@ -203,30 +129,18 @@ mips_intr_disable (int *x)
 static void inline __attribute__ ((always_inline))
 mips_intr_restore (int x)
 {
-#if defined (ELVEES_MC24) || defined (ELVEES_NVCOM01) || defined (ELVEES_NVCOM02)
-	int status;
-
-	status = mips_read_c0_register (C0_STATUS);
-	mips_write_c0_register (C0_STATUS, status | (x & ST_IE));
-#else
 	mips_write_c0_register (C0_STATUS, x);
-#endif
 }
 
 /*
  * Enable hardware interrupts.
  */
-static void inline __attribute__ ((always_inline))
+static int inline __attribute__ ((always_inline))
 mips_intr_enable ()
 {
-#if defined (ELVEES_MC24) || defined (ELVEES_NVCOM01) || defined (ELVEES_NVCOM02)
-	int status;
-
-	status = mips_read_c0_register (C0_STATUS);
-	mips_write_c0_register (C0_STATUS, status | ST_IE);
-#else
+	int status = mips_read_c0_register (C0_STATUS);
 	asm volatile ("ei");
-#endif
+	return status;
 }
 
 /*

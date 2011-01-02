@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)sys_inode.c	1.11 (2.11BSD) 1999/9/10
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -250,8 +247,7 @@ rwip(ip, uio, ioflag)
 			brelse(bp);
 			break;
 		}
-		u.u_error = uiomove(mapin(bp)+on, n, uio);
-		mapout(bp);
+		u.u_error = uiomove (bp->b_un.b_addr + on, n, uio);
 		if (uio->uio_rw == UIO_READ) {
 			if (n + on == DEV_BSIZE || uio->uio_offset == ip->i_size) {
 				bp->b_flags |= B_AGE;
@@ -398,7 +394,7 @@ ino_stat(ip, sb)
 	/*
 	 * blocks are too tough to do; it's not worth the effort.
 	 */
-	sb->st_blocks = btodb(ip->i_size + MAXBSIZE - 1);
+	sb->st_blocks = btod (ip->i_size);
 	sb->st_flags = ip->i_flags;
 	sb->st_spare4[0] = 0;
 	sb->st_spare4[1] = 0;

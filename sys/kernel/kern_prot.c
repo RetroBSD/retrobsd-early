@@ -1,33 +1,29 @@
 /*
+ * System calls related to processes and protection.
+ *
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_prot.c	1.4 (2.11BSD GTE) 1997/11/28
  */
-
-/*
- * System calls related to processes and protection
- */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
 #include "systm.h"
 
+void
 getpid()
 {
-
 	u.u_r.r_val1 = u.u_procp->p_pid;
 	u.u_r.r_val2 = u.u_procp->p_ppid;	/* XXX - compatibility */
 }
 
+void
 getppid()
 {
-
 	u.u_r.r_val1 = u.u_procp->p_ppid;
 }
 
+void
 getpgrp()
 {
 	register struct a {
@@ -45,29 +41,29 @@ getpgrp()
 	u.u_r.r_val1 = p->p_pgrp;
 }
 
+void
 getuid()
 {
-
 	u.u_r.r_val1 = u.u_ruid;
 	u.u_r.r_val2 = u.u_uid;		/* XXX */
 }
 
+void
 geteuid()
 {
-
 	u.u_r.r_val1 = u.u_uid;
 }
 
+void
 getgid()
 {
-
 	u.u_r.r_val1 = u.u_rgid;
 	u.u_r.r_val2 = u.u_groups[0];		/* XXX */
 }
 
+void
 getegid()
 {
-
 	u.u_r.r_val1 = u.u_groups[0];
 }
 
@@ -75,6 +71,7 @@ getegid()
  * getgroups and setgroups differ from 4.X because the VAX stores group
  * entries in the user structure as shorts and has to convert them to ints.
  */
+void
 getgroups()
 {
 	register struct	a {
@@ -98,6 +95,7 @@ getgroups()
 	u.u_r.r_val1 = uap->gidsetsize;
 }
 
+void
 setpgrp()
 {
 	register struct proc *p;
@@ -113,7 +111,7 @@ setpgrp()
 		u.u_error = ESRCH;
 		return;
 	}
-/* need better control mechanisms for process groups */
+	/* need better control mechanisms for process groups */
 	if (p->p_uid != u.u_uid && u.u_uid && !inferior(p)) {
 		u.u_error = EPERM;
 		return;
@@ -121,6 +119,7 @@ setpgrp()
 	p->p_pgrp = uap->pgrp;
 }
 
+void
 setgroups()
 {
 	register struct	a {
@@ -146,6 +145,7 @@ setgroups()
 /*
  * Check if gid is a member of the group set.
  */
+int
 groupmember(gid)
 	gid_t gid;
 {
@@ -156,55 +156,3 @@ groupmember(gid)
 			return (1);
 	return (0);
 }
-
-/*
- * Get login name, if available.
-*/
-int
-getlogin()
-	{
-	register struct a
-		{
-		char *namebuf;
-		u_int namelen;
-		} *uap = (struct a *)u.u_ap;
-	register int error;
-
-	if	(uap->namelen > sizeof (u.u_login))
-		uap->namelen = sizeof (u.u_login);
-	error = copyout(u.u_login, uap->namebuf, uap->namelen);
-	return(u.u_error = error);
-	}
-
-/*
- * Set login name.
- * It is not clear whether this should be allowed if the process
- * is not the "session leader" (the 'login' process).  But since 2.11
- * doesn't have sessions and it's almost impossible to know if a process
- * is "login" or not we simply restrict this call to the super user.
-*/
-
-int
-setlogin()
-	{
-	register struct a
-		{
-		char *namebuf;
-		} *uap = (struct a *)u.u_ap;
-	register int error;
-	char	newname[MAXLOGNAME + 1];
-
-	if	(!suser())
-		return(u.u_error);	/* XXX - suser should be changed! */
-/*
- * copinstr() wants to copy a string including a nul but u_login is not
- * necessarily nul-terminated.  Copy into a temp that is one character
- * longer then copy into place if that fit.
-*/
-
-	bzero(newname, sizeof (newname));
-	error = copyinstr(uap->namebuf, newname, sizeof(newname), NULL);
-	if	(error == 0)
-		bcopy(newname, u.u_login, sizeof (u.u_login));
-	return(u.u_error = error);
-	}

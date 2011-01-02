@@ -2,10 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)tty.h	7.1.2 (2.11BSD GTE) 1997/4/10
  */
-
 #ifdef KERNEL
 #include "ttychars.h"
 #include "ttydev.h"
@@ -17,7 +14,7 @@
 /*
  * A clist structure is the head of a linked list queue
  * of characters.  The characters are stored in blocks
- * containing a link and CBSIZE (param.h) characters. 
+ * containing a link and CBSIZE (param.h) characters.
  * The routines in tty_subr.c manipulate these structures.
  */
 struct clist {
@@ -53,20 +50,20 @@ struct tty {
 #define	t_rec	t_nu.t_n.T_rec		/* have a complete record */
 	} t_nu;
 	struct	clist t_outq;		/* device */
-	int	(*t_oproc)();		/* device */
+	void	(*t_oproc) (struct tty*);
 	struct	proc *t_rsel;		/* tty */
 	struct	proc *t_wsel;
-				caddr_t	T_LINEP;	/* ### */
+	caddr_t	T_LINEP;		/* ### */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */
 	long	t_flags;		/* some of both */
 	long	t_state;		/* some of both */
-	short	t_pgrp;			/* tty */
-	char	t_delct;		/* tty */
-	char	t_line;			/* glue */
-	char	t_col;			/* tty */
-	char	t_ispeed, t_ospeed;	/* device */
-	char	t_rocount, t_rocol;	/* tty */
+	int	t_pgrp;			/* tty */
+	int	t_delct;		/* tty */
+	int	t_line;			/* glue */
+	int	t_col;			/* tty */
+	int	t_ispeed, t_ospeed;	/* device */
+	int	t_rocount, t_rocol;	/* tty */
 	struct	ttychars t_chars;	/* tty */
 	struct	winsize t_winsize;	/* window size */
 /* be careful of tchars & co. */
@@ -99,6 +96,12 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
 extern	struct ttychars ttydefaults;
+
+void ttychars (struct tty *tp);
+void ttyclose (struct tty *tp);
+int ttioctl (struct tty *tp, u_int com, caddr_t data, int flag);
+void ttyowake (struct tty *tp);
+int getc (struct clist *p);
 #endif
 
 /* internal state bits */

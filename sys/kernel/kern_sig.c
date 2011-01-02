@@ -185,16 +185,13 @@ gsignal(pgrp, sig)
 	register int pgrp;
 {
 	register struct proc *p;
-	mapinfo	map;
 
 	if (pgrp == 0)
 		return;
-	savemap(map);
 
 	for (p = allproc; p != NULL; p = p->p_nxt)
 		if (p->p_pgrp == pgrp)
 			psignal(p, sig);
-	restormap(map);
 }
 
 /*
@@ -549,18 +546,12 @@ stop(p)
  * Take the action for the specified signal
  * from the current set of pending signals.
  */
-
 postsig(sig)
 	int sig;
 {
 	register struct proc *p = u.u_procp;
 	long mask = sigmask(sig), returnmask;
 	register int (*action)();
-
-	if (u.u_fpsaved == 0) {
-		savfp(&u.u_fps);
-		u.u_fpsaved = 1;
-	}
 
 	p->p_sig &= ~mask;
 	action = u.u_signal[sig];
@@ -611,6 +602,7 @@ postsig(sig)
  * user.h area followed by the entire
  * data+stack segments.
  */
+int
 core()
 {
 	register struct inode *ip;
@@ -624,8 +616,7 @@ core()
 	 */
 	if (! suser())
 		return(0);
-	if (ctob(USIZE+u.u_dsize+u.u_ssize) >=
-	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
+	if (USIZE + u.u_dsize + u.u_ssize >= u.u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (0);
 	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
 		return (0);
@@ -654,20 +645,20 @@ core()
 		goto out;
 	}
 	itrunc(ip, (u_long)0, 0);
-	u.u_error = rdwri(UIO_WRITE, ip, &u, ctob(USIZE), (off_t)0,
-			UIO_SYSSPACE, IO_UNIT, (int *)0);
+	u.u_error = rdwri (UIO_WRITE, ip, &u, USIZE, (off_t) 0,
+		UIO_SYSSPACE, IO_UNIT, (int*) 0);
 	if (u.u_error)
 		goto out;
 
-	estabur((u_int)0, u.u_dsize, u.u_ssize, 0, RO);
-	u.u_error = rdwri(UIO_WRITE, ip, 0, ctob(u.u_dsize), (off_t)ctob(USIZE),
-			UIO_USERSPACE, IO_UNIT, (int *)0);
+	estabur(0, u.u_dsize, u.u_ssize, RO);
+	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
+		UIO_USERSPACE, IO_UNIT, (int*) 0);
 	if (u.u_error)
 		goto out;
 
-	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)(-(ctob(u.u_ssize))), ctob(u.u_ssize),
-			(off_t)ctob(USIZE) + (off_t)ctob(u.u_dsize),
-			 UIO_USERSPACE, IO_UNIT, (int *)0);
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) -u.u_ssize, u.u_ssize,
+		(off_t) USIZE + (off_t) u.u_dsize,
+		UIO_USERSPACE, IO_UNIT, (int*) 0);
 out:
 	iput(ip);
 	return (u.u_error == 0);

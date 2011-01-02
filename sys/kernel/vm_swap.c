@@ -60,14 +60,14 @@ swapin(p)
 	}
 	if (p->p_dsize) {
 		swap(p->p_daddr, a[0], p->p_dsize, B_READ);
-		mfree(swapmap, ctod(p->p_dsize), p->p_daddr);
+		mfree(swapmap, btod(p->p_dsize), p->p_daddr);
 	}
 	if (p->p_ssize) {
 		swap(p->p_saddr, a[1], p->p_ssize, B_READ);
-		mfree(swapmap, ctod(p->p_ssize), p->p_saddr);
+		mfree(swapmap, btod(p->p_ssize), p->p_saddr);
 	}
 	swap(p->p_addr, a[2], USIZE, B_READ);
-	mfree(swapmap, ctod(USIZE), p->p_addr);
+	mfree(swapmap, btod(USIZE), p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];
@@ -102,8 +102,8 @@ swapout(p, freecore, odata, ostack)
 		odata = p->p_dsize;
 	if (ostack == (u_int)X_OLDSIZE)
 		ostack = p->p_ssize;
-	if (malloc3(swapmap, ctod(p->p_dsize), ctod(p->p_ssize),
-	    ctod(USIZE), a) == NULL)
+	if (malloc3(swapmap, btod(p->p_dsize), btod(p->p_ssize),
+	    btod(USIZE), a) == NULL)
 		panic("out of swap space");
 	p->p_flag |= SLOCK;
 	if (p->p_textp)
@@ -129,14 +129,10 @@ swapout(p, freecore, odata, ostack)
 	 * this, anyway?
 	 */
 	{
-		static u_short savekdsa6;
 		int s;
 
 		s = splclock();
-		savekdsa6 = *KDSA6;
-		*KDSA6 = p->p_addr;
 		u.u_ru.ru_nswap++;
-		*KDSA6 = savekdsa6;
 		splx(s);
 	}
 	swap(a[2], p->p_addr, USIZE, B_WRITE);

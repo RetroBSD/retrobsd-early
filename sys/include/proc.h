@@ -100,6 +100,44 @@ extern struct	proc proc[], *procNPROC;	/* the proc table itself */
 struct	proc *freeproc, *zombproc, *allproc, *qs;
 			/* lists of procs in various states */
 int	nproc;
+
+/*
+ * Change the size of the data+stack regions of the process.
+ */
+void expand (int newsize, int segment);
+
+/* Test if the current user is the super user. */
+int suser (void);
+
+/* Set up segmentation registers to implement the pseudo text, data, stack segment sizes. */
+int estabur (u_int nt, u_int nd, u_int ns, int xrw);
+
+/* Load the user hardware segmentation registers from the software prototype. */
+void sureg (void);
+
+/*
+ * Grow the stack to include the SP.
+ */
+int grow (unsigned sp);
+
+/*
+ * Kill current process with the specified signal in an uncatchable manner.
+ */
+void fatalsig (int signum);
+
+/*
+ * Copy data from kernel space fromaddr to user space address toaddr.
+ * Fromaddr and toaddr must be word aligned.  Returns zero on success,
+ * EFAULT on failure.
+ */
+int copyout (caddr_t from, caddr_t to, u_int nbytes);
+
+/*
+ * Copy data from user space fromaddr to kernel space address toaddr.
+ * Fromaddr and toaddr must be word aligned.  Returns zero on success,
+ * EFAULT on failure.
+ */
+int copyin (caddr_t from, caddr_t to, u_int nbytes);
 #endif
 
 /* stat codes */

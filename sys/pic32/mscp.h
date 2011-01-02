@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)mscp.h	1.2 (2.11BSD) 1998/1/28
  */
 
 /*

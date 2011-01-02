@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_bmap.c	1.2 (2.11BSD) 1996/9/19
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -123,7 +120,7 @@ bmap(ip, bn, rwflg, flags)
 			brelse(bp);
 			return((daddr_t)0);
 		}
-		bap = (daddr_t *) mapin(bp);
+		bap = (daddr_t*) bp->b_un.b_addr;
 		sh -= NSHIFT;
 		i = (bn>>sh) & NMASK;
 		nb = bap[i];
@@ -132,7 +129,6 @@ bmap(ip, bn, rwflg, flags)
 		 */
 		if (i < NINDIR-1)
 			ra = bap[i+1];
-		mapout(bp);
 		if (nb == 0) {
 			if (rwflg == B_READ || (nbp = balloc(ip, flags | B_CLRBUF)) == NULL) {
 				brelse(bp);
@@ -149,9 +145,8 @@ bmap(ip, bn, rwflg, flags)
 				bwrite(nbp);
 			else
 				bdwrite(nbp);
-			bap = (daddr_t *) mapin(bp);
+			bap = (daddr_t*) bp->b_un.b_addr;
 			bap[i] = nb;
-			mapout(bp);
 			bdwrite(bp);
 		} else
 			brelse(bp);

@@ -61,7 +61,7 @@
  *
  *	1) D space is precious in the 2.11 kernel.  Many of the fields do
  *	   not need to be a 'long' (or even a 'short'), a 'short' (or 'char')
- *	   is more than adequate.  If anyone ever ports the FFS to a PDP11 
+ *	   is more than adequate.  If anyone ever ports the FFS to a PDP11
  *	   changing the label format will be the least of the problems.
  *
  *	2) There is no need to support a bootblock more than 512 bytes long.
@@ -82,7 +82,7 @@ struct disklabel {
 	u_char	d_type;			/* drive type */
 	u_char	d_subtype;		/* controller/d_type specific */
 	char	d_typename[16];		/* type name, e.g. "eagle" */
-	/* 
+	/*
 	 * d_packname contains the pack identifier and is returned when
 	 * the disklabel is read off the disk or in-core copy.
 	 * d_boot0 is the (optional) name of the primary (block 0) bootstrap
@@ -90,12 +90,12 @@ struct disklabel {
 	 * getdiskbyname(3) to retrieve the values from /etc/disktab.
 	 */
 #if defined(KERNEL) || defined(STANDALONE)
-	char	d_packname[16];			/* pack identifier */ 
+	char	d_packname[16];			/* pack identifier */
 #else
 	union {
-		char	un_d_packname[16];	/* pack identifier */ 
+		char	un_d_packname[16];	/* pack identifier */
 		char	*un_d_boot0;		/* primary bootstrap name */
-	} d_un; 
+	} d_un;
 #define d_packname	d_un.un_d_packname
 #define d_boot0		d_un.un_d_boot0
 #endif	/* ! KERNEL or STANDALONE */
@@ -288,7 +288,6 @@ struct disklabel *getdiskbyname();
 
 #if	defined(KERNEL) && !defined(SUPERVISOR)
 memaddr	disklabelalloc();
-#define	LABELDESC	(((btoc(sizeof (struct disklabel)) - 1) << 8) | RW)
 #endif
 
 #endif	/* !_SYS_DISKLABEL_H_ */

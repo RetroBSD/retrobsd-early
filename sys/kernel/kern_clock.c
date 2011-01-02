@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_clock.c	1.4 (2.11BSD GTE) 1997/2/14
  */
-
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/seg.h"
@@ -29,6 +26,7 @@
  *	profile
  */
 /*ARGSUSED*/
+void
 hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	dev_t dev;
 	caddr_t sp, pc;
@@ -37,9 +35,6 @@ hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 	register struct callout *p1;
 	register struct proc *p;
 	register int needsoft = 0;
-	mapinfo map;
-
-	savemap(map);		/* ensure normal mapping of kernel data */
 
 	/*
 	 * Update real-time timeout queue.
@@ -143,11 +138,11 @@ hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
 		(void) _splsoftclock();
 		softclock(pc,ps);
 	}
-	restormap(map);
 }
 
 #ifdef UCB_METER
 int	dk_ndrive = DK_NDRIVE;
+
 /*
  * Gather statistics on resource utilization.
  *
@@ -157,6 +152,7 @@ int	dk_ndrive = DK_NDRIVE;
  * update statistics accordingly.
  */
 /*ARGSUSED*/
+void
 gatherstats(pc, ps)
 	caddr_t pc;
 	int ps;
@@ -206,6 +202,7 @@ gatherstats(pc, ps)
  * Software priority level clock interrupt.
  * Run periodic events from timeout queue.
  */
+void
 softclock(pc, ps)
 	caddr_t pc;
 	int ps;
@@ -254,6 +251,7 @@ softclock(pc, ps)
 /*
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
+void
 timeout(fun, arg, t)
 	int (*fun)();
 	caddr_t arg;
@@ -285,6 +283,7 @@ timeout(fun, arg, t)
  * untimeout is called to remove a function timeout call
  * from the callout structure.
  */
+void
 untimeout(fun, arg)
 	int (*fun)();
 	caddr_t arg;
@@ -306,6 +305,7 @@ untimeout(fun, arg)
 	splx(s);
 }
 
+void
 profil()
 {
 	register struct a {
@@ -327,6 +327,7 @@ profil()
  * Used to compute third argument to timeout() from an
  * absolute time.
  */
+int
 hzto(tv)
 	register struct timeval *tv;
 {

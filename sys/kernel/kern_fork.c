@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_fork.c	1.6 (2.11BSD) 1999/8/11
  */
-
 #include "param.h"
 #include "machine/reg.h"
 #include "machine/seg.h"
@@ -298,7 +295,7 @@ again:
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u.u_tsize,u.u_dsize,u.u_ssize,u.u_sep,RO);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RO);
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

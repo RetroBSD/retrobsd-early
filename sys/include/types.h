@@ -31,7 +31,7 @@ typedef	unsigned short	ushort;		/* sys III compat */
 #ifdef pdp11
 typedef	struct	_physadr { short r[1]; } *physadr;
 typedef	struct	label_t	{
-	int	val[8];			/* regs 2-7, __ovno and super SP */
+	int	val[7];			/* regs 2-7 and super SP */
 } label_t;
 #endif
 #ifdef PIC32MX

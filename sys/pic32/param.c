@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)param.c	2.2 (2.11BSD GTE) 1997/2/14
  */
-
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
@@ -21,6 +18,7 @@
 #include "callout.h"
 #include "map.h"
 #include "clist.h"
+#include "namei.h"
 #include "machine/seg.h"
 
 /*
@@ -29,11 +27,9 @@
  * This file is copied into each directory where we compile
  * the kernel; it should be modified there to suit local taste
  * if necessary.
- *
  */
-
-#define	MAXUSERS 4
-#define	NBUF 32
+#define	MAXUSERS	4
+#define	NBUF		32
 
 int	hz = 60;
 u_short	mshz = (1000000L + 60 - 1) / 60;
@@ -41,20 +37,29 @@ struct	timezone tz = { 480, 1 };
 
 #define	NPROC (10 + 7 * MAXUSERS)
 int	nproc = NPROC;
+
 #define NTEXT (26 + MAXUSERS)
 int	ntext = NTEXT;
+
 #define NINODE ((NPROC + 16 + MAXUSERS) + 22)
 int	ninode = NINODE;
+
+#define NNAMECACHE (NINODE * 11/10)
+int	nchsize = NNAMECACHE;
+struct	namecache namecache [NNAMECACHE];
+
 #define NFILE ((8 * NINODE / 10) + 20)
 int	nfile = NFILE;
+
 #define NCALL (16 + MAXUSERS)
 int	ncallout = NCALL;
 int	nbuf = NBUF;
 
 #define NCLIST (20 + 8 * MAXUSERS)
+
 #if NCLIST > (8192 / 32)		/* 8K / sizeof(struct cblock) */
-#undef NCLIST
-#define NCLIST (8192 / 32)
+#   undef NCLIST
+#   define NCLIST (8192 / 32)
 #endif
 int	nclist = NCLIST;
 
@@ -65,12 +70,12 @@ int	nclist = NCLIST;
  */
 struct	proc *procNPROC;
 struct	text *textNTEXT;
-struct	inode inode[NINODE], *inodeNINODE;
+struct	inode inode [NINODE], *inodeNINODE;
 struct	file *fileNFILE;
-struct	callout callout[NCALL];
-struct	mount mount[NMOUNT];
-struct	buf buf[NBUF], bfreelist[BQUEUES];
-struct	bufhd bufhash[BUFHSZ];
+struct	callout callout [NCALL];
+struct	mount mount [NMOUNT];
+struct	buf buf [NBUF], bfreelist [BQUEUES];
+struct	bufhd bufhash [BUFHSZ];
 
 /*
  * Remove the ifdef/endif to run the kernel in unsecure mode even when in
@@ -82,13 +87,8 @@ struct	bufhd bufhash[BUFHSZ];
 int	securelevel = -1;
 #endif
 
-#ifdef UCB_CLIST
-	u_int clstdesc = ((((btoc(NCLIST*sizeof(struct cblock)))-1) << 8) | RW);
-	int ucb_clist = 1;
-#else
-	struct cblock	cfree[NCLIST];
-	int ucb_clist = 0;
-#endif
+struct cblock	cfree[NCLIST];
+int ucb_clist = 0;
 
 #define CMAPSIZ	NPROC			/* size of core allocation map */
 #define SMAPSIZ	((9 * NPROC) / 10)	/* size of swap allocation map */

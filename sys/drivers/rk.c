@@ -17,7 +17,6 @@
 #include "rkreg.h"
 #include "syslog.h"
 #include "map.h"
-#include "uba.h"
 
 #define	NRKBLK	4872	/* Number of blocks per drive */
 
@@ -73,7 +72,6 @@ bad:		bp->b_flags |= B_ERROR;
 		iodone(bp);
 		return;
 	}
-	mapalloc(bp);
 	bp->av_forw = (struct buf *)NULL;
 	s = splbio();
 	if(rktab.b_actf == NULL)
@@ -104,7 +102,7 @@ rkstart()
 	rkaddr->rkda = (dn << 13) | (cn << 4) | sn;
 	rkaddr->rkba = bp->b_un.b_addr;
 	rkaddr->rkwc = -(bp->b_bcount >> 1);
-	com = ((bp->b_xmem & 3) << 4) | RKCS_IDE | RKCS_GO;
+	com = RKCS_IDE | RKCS_GO;
 	if(bp->b_flags & B_READ)
 		com |= RKCS_RCOM;
 	else

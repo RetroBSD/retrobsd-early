@@ -25,14 +25,15 @@
  *    where n is the number of additional KL11's
  * minor n on address from DLBASE (0176500)
  */
-
-struct dldevice *cnaddr = (struct dldevice *)0177560;
+struct dldevice *cnaddr = (struct dldevice*) 0177560;
 
 int	nkl11 = NKL;			/* for pstat */
-struct	tty cons[NKL];
-int	cnstart();
+struct	tty cons [NKL];
 extern char	partab[];
 
+void cnstart (struct tty *tp);
+
+int
 cnattach(addr, unit)
 	struct dldevice *addr;
 {
@@ -44,6 +45,7 @@ cnattach(addr, unit)
 }
 
 /*ARGSUSED*/
+int
 cnopen(dev, flag)
 	dev_t dev;
 {
@@ -58,7 +60,7 @@ cnopen(dev, flag)
 	if (d >= NKL || !(addr = (struct dldevice *)tp->t_addr))
 		return (ENXIO);
 	tp->t_oproc = cnstart;
-	if ((tp->t_state&TS_ISOPEN) == 0) {
+	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 		tp->t_state = TS_ISOPEN|TS_CARR_ON;
 		tp->t_flags = EVENP|ECHO|XTABS|CRMOD;
@@ -71,6 +73,7 @@ cnopen(dev, flag)
 }
 
 /*ARGSUSED*/
+int
 cnclose(dev, flag)
 	dev_t dev;
 {
@@ -82,6 +85,7 @@ cnclose(dev, flag)
 }
 
 /*ARGSUSED*/
+int
 cnread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -93,6 +97,7 @@ cnread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
+int
 cnwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
@@ -104,6 +109,7 @@ cnwrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
+void
 cnrint(dev)
 	dev_t dev;
 {
@@ -118,6 +124,7 @@ cnrint(dev)
 }
 
 /*ARGSUSED*/
+int
 cnioctl(dev, cmd, addr, flag)
 	dev_t dev;
 	register u_int cmd;
@@ -135,6 +142,7 @@ cnioctl(dev, cmd, addr, flag)
 	return (error);
 }
 
+void
 cnxint(dev)
 	dev_t dev;
 {
@@ -144,6 +152,7 @@ cnxint(dev)
 	(*linesw[tp->t_line].l_start)(tp);
 }
 
+void
 cnstart(tp)
 	register struct tty *tp;
 {
@@ -151,25 +160,26 @@ cnstart(tp)
 	register int c, s;
 
 	s = spltty();
-	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
+	if (tp->t_state & (TS_TIMEOUT | TS_BUSY | TS_TTSTOP))
 		goto out;
 	ttyowake(tp);
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	addr = (struct dldevice *)tp->t_addr;
+	addr = (struct dldevice*) tp->t_addr;
 	if ((addr->dlxcsr & DLXCSR_TRDY) == 0)
 		goto out;
-	c = getc(&tp->t_outq);
-	if (tp->t_flags & (RAW|LITOUT))
-		addr->dlxbuf = c&0xff;
+	c = getc (&tp->t_outq);
+	if (tp->t_flags & (RAW | LITOUT))
+		addr->dlxbuf = c & 0xff;
 	else
 		addr->dlxbuf = c | (partab[c] & 0200);
 	tp->t_state |= TS_BUSY;
 out:
-	splx(s);
+	splx (s);
 }
 
 /* copied, for supervisory networking, to sys_sup.c */
+void
 cnputc(c)
 	char c;
 {

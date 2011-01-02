@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)sys_process.c	1.2 (2.11BSD) 1999/9/5
  */
-
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
@@ -97,12 +94,6 @@ procxmt()
 
 	/* read user I */
 	case PT_READ_I:
-#ifndef NONSEPARATE
-		if (fuibyte((caddr_t)ipc.ip_addr) == -1)
-			goto error;
-		ipc.ip_data = fuiword((caddr_t)ipc.ip_addr);
-		break;
-#endif /* !NONSEPARATE */
 
 	/* read user D */
 	case PT_READ_D:
@@ -113,8 +104,8 @@ procxmt()
 
 	/* read u */
 	case PT_READ_U:
-		i = (int)ipc.ip_addr;
-		if (i<0 || i >= ctob(USIZE))
+		i = (int) ipc.ip_addr;
+		if (i < 0 || i >= USIZE)
 			goto error;
 		ipc.ip_data = ((unsigned*)&u) [i/sizeof(int)];
 		break;
@@ -130,10 +121,10 @@ procxmt()
 				goto error;
 			xp->x_flag |= XTRC;
 		}
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RW);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RW);
 		i = suiword((caddr_t)ipc.ip_addr, 0);
 		suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, u.u_sep, RO);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RO);
 		if (i<0)
 			goto error;
 		if (xp)
@@ -151,8 +142,6 @@ procxmt()
 	case PT_WRITE_U:
 		i = (int)ipc.ip_addr;
 		p = (int*)&u + i/sizeof(int);
-		if (p >= (int *)&u.u_fps && p < (int *)&u.u_fps.u_fpregs[6])
-			goto ok;
 		for (i=0; i<8; i++)
 			if (p == &u.u_ar0[regloc[i]])
 				goto ok;
@@ -160,12 +149,6 @@ procxmt()
 			ipc.ip_data |= PSL_USERSET;	/* user space */
 			ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
 			goto ok;
-		}
-		if ((p == (int *)&u.u_ovdata.uo_curov) && ((ipc.ip_data >= 0) &&
-		    (ipc.ip_data <= NOVL) && u.u_ovdata.uo_ovbase)) {
-			u.u_ovdata.uo_curov = ipc.ip_data;
-			choverlay(RW);
-			break;
 		}
 		goto error;
 

@@ -2,8 +2,6 @@
  * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_namei.c	1.5 (2.11BSD GTE) 1997/1/30
  */
 #include "param.h"
 #include "machine/seg.h"
@@ -143,7 +141,6 @@ register int i;
 	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
 	off_t enduseful;		/* pointer past last used dir slot */
 	char	path[MAXPATHLEN];	/* current path */
-	segm	seg5;			/* save area for kernel seg5 */
 
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
@@ -245,8 +242,6 @@ dirloop2:
 	 * holding long names (which would either waste space, or
 	 * add greatly to the complexity).
 	 */
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		makeentry = 0;
@@ -299,15 +294,11 @@ dirloop2:
 				if (pdp == dp)
 					dp->i_count++;
 				else if (isdotdot) {
-					restorseg5(seg5);
 					IUNLOCK(pdp);
 					igrab(dp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 				} else {
-					restorseg5(seg5);
 					igrab(dp);
 					IUNLOCK(pdp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 				}
 
 				/*
@@ -316,17 +307,14 @@ dirloop2:
 				 * for it to be locked.
 				 */
 				if (ncp->nc_id != ncp->nc_ip->i_id) {
-					restorseg5(seg5);
 					iput(dp);
 					ILOCK(pdp);
-					mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 					dp = pdp;
 					nchstats.ncs_falsehits++;
 				} else {
 					ndp->ni_dent.d_ino = dp->i_number;
 					/* ni_dent.d_reclen is garbage ... */
 					nchstats.ncs_goodhits++;
-					restorseg5(seg5);
 					goto haveino;
 				}
 			}
@@ -354,7 +342,6 @@ dirloop2:
 			ncp = NULL;
 		}
 	}
-	restorseg5(seg5);
 
 	/*
 	 * Suppress search for slots unless creating
@@ -407,7 +394,6 @@ searchloop:
 		 */
 		if (blkoff(ndp->ni_offset) == 0) {
 			if (bp != NULL) {
-				mapout(bp);
 				brelse(bp);
 			}
 			bp = blkatoff(dp, ndp->ni_offset, (char **)0);
@@ -431,8 +417,7 @@ searchloop:
 		 * directory. Complete checks can be run by patching
 		 * "dirchk" to be true.
 		 */
-		mapout(bp);	/* XXX - avoid double mapin */
-		ep = (struct direct *)((caddr_t)mapin(bp)+ entryoffsetinblock);
+		ep = (struct direct*) ((caddr_t) bp->b_un.b_addr + entryoffsetinblock);
 		if (ep->d_reclen == 0 ||
 		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
 			dirbad(dp, ndp->ni_offset, "mangled entry");
@@ -530,7 +515,6 @@ searchloop:
 		ndp->ni_endoff = roundup(enduseful, DIRBLKSIZ);
 		dp->i_flag |= IUPD|ICHG;
 		if (bp) {
-			mapout(bp);
 			brelse(bp);
 		}
 		/*
@@ -575,7 +559,6 @@ found:
 	 */
 	ndp->ni_dent.d_ino = ep->d_ino;
 	ndp->ni_dent.d_reclen = ep->d_reclen;
-	mapout(bp);
 	brelse(bp);
 	bp = NULL;
 
@@ -730,8 +713,6 @@ found:
 		 * Free the cache slot at head of lru chain.
 		 */
 		if (ncp = nchhead) {
-			saveseg5(seg5);
-			mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 			/* remove from lru chain */
 			*ncp->nc_prev = ncp->nc_nxt;
 			if (ncp->nc_nxt)
@@ -756,7 +737,6 @@ found:
 			nchtail = &ncp->nc_nxt;
 			/* and insert on hash chain */
 			insque(ncp, nhp);
-			restorseg5(seg5);
 		}
 	}
 
@@ -790,8 +770,7 @@ haveino:
 		 * copy link path into the first part of the buffer.
 		 */
 		bcopy(cp, path + (u_int)dp->i_size, pathlen);
-		bcopy(mapin(bp), path, (u_int)dp->i_size);
-		mapout(bp);
+		bcopy(bp->b_un.b_addr, path, (u_int)dp->i_size);
 		brelse(bp);
 		bp = NULL;
 		cp = path;
@@ -834,7 +813,6 @@ bad2:
 	irele(pdp);
 bad:
 	if (bp) {
-		mapout(bp);
 		brelse(bp);
 	}
 	if (dp)
@@ -844,12 +822,12 @@ retNULL:
 	return (NULL);
 }
 
+void
 dirbad(ip, offset, how)
 	struct inode *ip;
 	off_t offset;
 	char *how;
 {
-
 	printf("%s: bad dir I=%u off %ld: %s\n",
 	    ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
 }
@@ -862,6 +840,7 @@ dirbad(ip, offset, how)
  *	name is not longer than MAXNAMLEN
  *	name must be as long as advertised, and null terminated
  */
+int
 dirbadentry(ep, entryoffsetinblock)
 	register struct direct *ep;
 	int entryoffsetinblock;
@@ -886,6 +865,7 @@ dirbadentry(ep, entryoffsetinblock)
  * namei.  Remaining parameters (ndp->ni_offset, ndp->ni_count) indicate
  * how the space for the new entry is to be gotten.
  */
+int
 direnter(ip, ndp)
 	struct inode *ip;
 	register struct nameidata *ndp;
@@ -985,7 +965,6 @@ direnter(ip, ndp)
 		ep = (struct direct *)((char *)ep + dsize);
 	}
 	bcopy((caddr_t)&ndp->ni_dent, (caddr_t)ep, (u_int)newentrysize);
-	mapout(bp);
 	bwrite(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (ndp->ni_endoff && ndp->ni_endoff < dp->i_size)
@@ -1006,6 +985,7 @@ direnter(ip, ndp)
  * the space of the now empty record by adding the record size
  * to the size of the previous entry.
  */
+int
 dirremove(ndp)
 	register struct nameidata *ndp;
 {
@@ -1029,7 +1009,6 @@ dirremove(ndp)
 		if (bp == 0)
 			return (0);
 		ep->d_reclen += ndp->ni_dent.d_reclen;
-		mapout(bp);
 		bwrite(bp);
 		dp->i_flag |= IUPD|ICHG;
 	}
@@ -1041,6 +1020,7 @@ dirremove(ndp)
  * supplied.  The parameters describing the directory entry are
  * set up by a call to namei.
  */
+void
 dirrewrite(dp, ip, ndp)
 	register struct inode *dp;
 	struct inode *ip;
@@ -1059,9 +1039,6 @@ dirrewrite(dp, ip, ndp)
  * from the beginning of directory "ip".  If "res"
  * is non-zero, fill it in with a pointer to the
  * remaining space in the directory.
- *
- * A mapin() of the buffer is done even if "res" is zero so that the
- * mapout() done later will have something to work with.
  */
 struct buf *
 blkatoff(ip, offset, res)
@@ -1087,7 +1064,7 @@ blkatoff(ip, offset, res)
 		brelse(bp);
 		return (0);
 	}
-	junk = (caddr_t)mapin(bp);
+	junk = (caddr_t) bp->b_un.b_addr;
 	if (res)
 		*res = junk + (u_int)blkoff(offset);
 	return (bp);
@@ -1102,6 +1079,7 @@ blkatoff(ip, offset, res)
  *
  * NB: does not handle corrupted directories.
  */
+int
 dirempty(ip, parentino)
 	register struct inode *ip;
 	ino_t parentino;
@@ -1151,6 +1129,7 @@ dirempty(ip, parentino)
  * Target is supplied locked, source is unlocked.
  * The target is always iput() before returning.
  */
+int
 checkpath(source, target)
 	struct inode *source, *target;
 {
@@ -1207,14 +1186,12 @@ out:
 /*
  * Name cache initialization, from main() when we are booting
  */
+void
 nchinit()
 {
 	register union nchash *nchp;
 	register struct namecache *ncp;
-	segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 	nchhead = 0;
 	nchtail = &nchhead;
 	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
@@ -1230,7 +1207,6 @@ nchinit()
 		nchp->nch_head[0] = nchp;
 		nchp->nch_head[1] = nchp;
 	}
-	restorseg5(seg5);
 }
 
 /*
@@ -1241,14 +1217,12 @@ nchinit()
  * if the cache lru chain is modified while we are dumping the
  * inode.  This makes the algorithm O(n^2), but do you think I care?
  */
+void
 nchinval(dev)
 	register dev_t dev;
 {
 	register struct namecache *ncp, *nxtcp;
-	segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr,nmidesc.se_desc);
 	for (ncp = nchhead; ncp; ncp = nxtcp) {
 		nxtcp = ncp->nc_nxt;
 		if (ncp->nc_ip == NULL ||
@@ -1277,20 +1251,16 @@ nchinval(dev)
 		nxtcp->nc_prev = &ncp->nc_nxt;
 		nchhead = ncp;
 	}
-	restorseg5(seg5);
 }
 
 /*
  * Name cache invalidation of all entries.
  */
+void
 cacheinvalall()
 {
 	register struct namecache *ncp, *encp = &namecache[nchsize];
-	segm	seg5;
 
-	saveseg5(seg5);
-	mapseg5(nmidesc.se_addr, nmidesc.se_desc);
 	for (ncp = namecache; ncp < encp; ncp++)
 		ncp->nc_id = 0;
-	restorseg5(seg5);
 }

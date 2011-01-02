@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_subr.c	1.2 (2.11BSD GTE) 11/26/94
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -15,6 +12,7 @@
 #include "uio.h"
 
 /* copied, for supervisory networking, to sys_net.c */
+int
 uiomove(cp, n, uio)
 	caddr_t cp;
 	u_int n;
@@ -37,7 +35,8 @@ uiomove(cp, n, uio)
 		switch (uio->uio_segflg) {
 
 		case UIO_USERSPACE:
-			if (cnt > 100 && cp + cnt < SEG6)
+		case UIO_USERISPACE:
+			if (cnt > 100 /*&& cp + cnt < SEG6*/)
 				error = uiofmove(cp, cnt, uio, iov);
 			else if ((cnt | (int)cp | (int)iov->iov_base) & 1)
 				if (uio->uio_rw == UIO_READ)
@@ -50,17 +49,6 @@ uiomove(cp, n, uio)
 				else
 					error = copyin(iov->iov_base, cp, cnt);
 			}
-			if (error)
-				return (error);
-			break;
-
-		case UIO_USERISPACE:
-			if (cnt > 100 && cp + cnt < SEG6)
-				error = uiofmove(cp, cnt, uio, iov);
-			else if (uio->uio_rw == UIO_READ)
-				error = copyiout(cp, iov->iov_base, cnt);
-			else
-				error = copyiin(iov->iov_base, cp, cnt);
 			if (error)
 				return (error);
 			break;

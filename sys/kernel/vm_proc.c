@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm_proc.c	1.2 (2.11BSD GTE) 12/24/92
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
@@ -26,7 +23,8 @@
  * other.  The second argument to expand specifies which to change.  The
  * stack segment will not have to be copied again after expansion.
  */
-expand(newsize,segment)
+void
+expand(newsize, segment)
 	int newsize, segment;
 {
 	register struct proc *p;
@@ -80,10 +78,6 @@ expand(newsize,segment)
 		}
 		sureg();
 		return;
-	}
-	if (u.u_fpsaved == 0) {
-		savfp(&u.u_fps);
-		u.u_fpsaved = 1;
 	}
 	a2 = malloc(coremap, newsize);
 	if (a2 == NULL) {

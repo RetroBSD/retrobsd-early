@@ -1,14 +1,12 @@
 /*
+ * Resource Allocation Maps.
+ *
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)map.h	1.1 (2.10BSD Berkeley) 12/1/86
  */
 
 /*
- * Resource Allocation Maps.
- *
  * Associated routines manage allocation of an address space using
  * an array of segment descriptors.
  *
@@ -22,7 +20,6 @@
  * N.B.: The address 0 in the resource address space is not available
  * as it is used internally by the resource map routines.
  */
-
 struct map {
 	struct mapent	*m_map;		/* start of the map */
 	struct mapent	*m_limit;	/* address of last slot in map */
@@ -39,4 +36,16 @@ struct mapent {
 extern struct	map	coremap[1];	/* space for core allocation */
 extern struct	map	swapmap[1];	/* space for swap allocation */
 extern struct	map	ub_map[1];	/* space for UNIBUS allocation */
+
+extern memaddr bpaddr;
+
+/*
+ * Allocate units from the given map.
+ */
+memaddr malloc (struct map *mp, size_t nbytes);
+
+/*
+ * Free the previously allocated units at addr into the specified map.
+ */
+void mfree (struct map *mp, size_t nbytes, memaddr addr);
 #endif

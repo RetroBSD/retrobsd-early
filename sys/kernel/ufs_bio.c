@@ -325,15 +325,12 @@ loop:
 	}
 	if(bp->b_flags & (B_RAMREMAP|B_PHYS)) {
 		register memaddr paddr;	/* click address of real buffer */
-		extern memaddr bpaddr;
-
 #ifdef DIAGNOSTIC
 		if ((bp < &buf[0]) || (bp >= &buf[nbuf]))
 			panic("getnewbuf: RAMREMAP bp addr");
 #endif
-		paddr = bpaddr + btoc(DEV_BSIZE) * (bp - buf);
-		bp->b_un.b_addr = (caddr_t)(paddr << 6);
-		bp->b_xmem = (paddr >> 10) & 077;
+		paddr = bpaddr + DEV_BSIZE * (bp - buf);
+		bp->b_un.b_addr = (caddr_t) (paddr << 6);
 	}
 	trace(TR_BRELSE);
 	bp->b_flags = B_BUSY;
@@ -368,10 +365,8 @@ biodone(bp)
 
 	if (bp->b_flags & B_DONE)
 		panic("dup biodone");
-	if (bp->b_flags & (B_MAP|B_UBAREMAP))
-		mapfree(bp);
 	bp->b_flags |= B_DONE;
-	if (bp->b_flags&B_ASYNC)
+	if (bp->b_flags & B_ASYNC)
 		brelse(bp);
 	else {
 		bp->b_flags &= ~B_WANTED;

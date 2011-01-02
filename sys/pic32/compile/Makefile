@@ -29,13 +29,14 @@ DEFS            += -DNRK=2
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O ${DEFS} ${DEPFLAGS}
 ASFLAGS		= ${DEFS} ${DEPFLAGS}
-CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin #-Wall
+CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
+#CC		+= -Wall -Werror
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 
 # Machine-dependent files:
-# mch_start.o MUST be loaded first, param.o MUST be loaded last.
-KERNOBJ		= mch_start.o clock.o conf.o cons.o cpu_sysctl.o \
-		  machdep.o machdep2.o mem.o syscalls.o trap.o
+# startuo.o MUST be loaded first, param.o MUST be loaded last.
+KERNOBJ		= startup.o clock.o conf.o cons.o sysctl.o \
+		  machdep.o machdep2.o mem.o trap.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -43,8 +44,8 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_mman.o kern_proc.o kern_prot.o \
 		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \
 		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
-		   kern_xxx.o subr_log.o subr_prf.o \
-		   subr_rmap.o subr_xxx.o sys_generic.o sys_inode.o \
+		   kern_xxx.o subr_log.o subr_prf.o subr_rmap.o \
+		   subr_xxx.o syscalls.o sys_generic.o sys_inode.o \
 		   sys_pipe.o sys_process.o tty.o tty_conf.o \
 		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \
 		   ufs_bmap.o ufs_disksubr.o ufs_dsort.o ufs_fio.o \

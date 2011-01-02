@@ -1,6 +1,4 @@
 /*
- *	1.3	(2.11BSD) 1999/2/25
- *
  * Definitions common to both MSCP and TMSCP were moved here from tmscp.h.
  * Eventually the MSCP driver and include file will be modified to use these
  * instead of their private versions.
@@ -44,7 +42,7 @@ struct mscp_header {
 #define	M_OP_ACPTH	0x42	/* Access path attention message */
 #define	M_OP_RWATN	0x43	/* Rewind attention message */
 #define	M_OP_END	0x80	/* End message flag */
- 
+
 /*
  * Generic command modifiers
  */
@@ -61,14 +59,14 @@ struct mscp_header {
 #define	M_MD_WBKVL	0x0020		/* Write back volatile mem */
 #define	M_MD_UNLOD	0x0010		/* Unload */
 #define	M_MD_REVRS	0x0008		/* reverse */
- 
+
 /*
  * Repositioning command modifiers
  */
 #define	M_MD_DLEOT	0x0080		/* delete LEOT */
 #define	M_MD_OBJCT	0x0004		/* object count */
 #define	M_MD_REWND	0x0002		/* rewind */
- 
+
 /*
  * Available command modifiers
 */
@@ -100,7 +98,7 @@ struct mscp_header {
 #define	M_EF_EOT	0x0008	/* End of tape encountered */
 #define	M_EF_PLS	0x0004	/* Position lost */
 #define	M_EF_DLS	0x0002	/* Cache data lost */
- 
+
 /*
  * Controller flags
  */
@@ -108,8 +106,8 @@ struct mscp_header {
 #define	M_CF_MISC	0x0040	/* Enable miscellaneous error log messages */
 #define	M_CF_OTHER	0x0020	/* Enable other host's error log messages */
 #define	M_CF_THIS	0x0010	/* Enable this host's error log messages */
- 
- 
+
+
 /*
  * Unit flags
  */
@@ -127,7 +125,7 @@ struct mscp_header {
 #define	M_UF_CACFL	0x0004		/* Cache has been flushed */
 #define	M_UF_CMPWR	0x0002		/* Compare writes */
 #define	M_UF_CMPRD	0x0001		/* Compare reads */
- 
+
 /*
  * Status codes
  */
@@ -320,7 +318,7 @@ struct mscp_header {
 #define	M_FM_LDRERR	0xa	/* Media loader errors */
 #define	M_FM_IBMSENSE	0xb	/* Sense data error log (T) */
 #endif
- 
+
 /*
  * Error Log message flags
  */
@@ -332,7 +330,7 @@ struct mscp_header {
 #define	M_LF_INFO	0x02	/* Informational */
 #endif
 #define	M_LF_SQNRS	0x01	/* Sequence number reset */
- 
+
 /*
  * Tape Format Flag Values
  */

@@ -36,7 +36,6 @@ struct	rusage {
 	long	ru_isrss;		/* integral unshared stack " */
 	long	ru_minflt;		/* page reclaims */
 	long	ru_majflt;		/* page faults */
-	long	ru_ovly;		/* overlay changes */
 	long	ru_nswap;		/* swaps */
 	long	ru_inblock;		/* block input operations */
 	long	ru_oublock;		/* block output operations */
@@ -52,7 +51,6 @@ struct	k_rusage {			/* KERNEL RUSAGE STRUCTURE */
 #define	k_ru_first	ru_utime
 	long	ru_utime;		/* user time used ('hz' ticks) */
 	long	ru_stime;		/* system time used ('hz' ticks) */
-	long	ru_ovly;		/* overlay changes */
 	long	ru_nswap;		/* swaps */
 	long	ru_inblock;		/* block input operations */
 	long	ru_oublock;		/* block output operations */

@@ -261,7 +261,6 @@ rucvt(rup, krup)
 	rup->ru_utime.tv_usec  = (krup->ru_utime % hz) * mshz;
 	rup->ru_stime.tv_sec   = krup->ru_stime / hz;
 	rup->ru_stime.tv_usec  = (krup->ru_stime % hz) * mshz;
-	rup->ru_ovly = krup->ru_ovly;
 	rup->ru_nswap = krup->ru_nswap;
 	rup->ru_inblock = krup->ru_inblock;
 	rup->ru_oublock = krup->ru_oublock;

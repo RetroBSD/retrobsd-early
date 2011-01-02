@@ -12,6 +12,10 @@
 #include "proc.h"
 #include "kernel.h"
 #include "systm.h"
+#include "file.h"
+#include "inode.h"
+#include "text.h"
+#include "sysctl.h"
 #include "cpu.h"
 #include "tty.h"
 
@@ -26,6 +30,7 @@ int	conf_int = CONF_MAGIC;
  * Autoconfig uses it to call the probe and attach routines of the
  * various device drivers.
  */
+void
 ucall()
 {
 	register struct a {
@@ -38,30 +43,15 @@ ucall()
 
 	if (!suser())
 		return;
-	switch(uap->priority) {
-		case 0:
-			s = spl0();
-			break;
-		case 1:
-			s = spl1();
-			break;
-		case 2:
-		case 3:
-		case 4:
-			s = spl4();
-			break;
-		case 5:
-			s = spl5();
-			break;
-		case 6:
-			s = spl6();
-			break;
-		case 7:
-		default:
-			s = spl7();
-			break;
+	switch (uap->priority) {
+	case 0:
+		s = spl0();
+		break;
+	default:
+		s = splhigh();
+		break;
 	}
-	u.u_r.r_val1 = (*uap->routine)(uap->arg1,uap->arg2);
+	u.u_r.r_val1 = (*uap->routine) (uap->arg1, uap->arg2);
 	splx(s);
 }
 
@@ -69,6 +59,7 @@ ucall()
  * Lock user into core as much as possible.  Swapping may still
  * occur if core grows.
  */
+void
 lock()
 {
 	struct a {
@@ -84,21 +75,14 @@ lock()
 }
 
 /*
- * fetch the word at iaddr from user I-space.  This system call is
- * required on machines with separate I/D space because the mfpi
- * instruction reads from D-space if the current and previous modes
- * in the program status word are both user.
+ * fetch the word at iaddr from flash memory.  This system call is
+ * required on PIC32 because in user mode the access to flash memory
+ * region is not allowed.
  */
+void
 fetchi()
 {
-	struct a {
-		caddr_t iaddr;
-	};
-#ifdef NONSEPARATE
-	u.u_error = EINVAL;
-#else
-	u.u_error = copyiin((struct a *)u.u_ap, u.u_r.r_val1, NBPW);
-#endif
+	u.u_r.r_val1 = *(unsigned*) u.u_ap;
 }
 
 /*
@@ -107,83 +91,10 @@ fetchi()
  * Required because the error registers may have been changed so the
  * system saves them at the time of the exception.
  */
+void
 fperr()
 {
-	u.u_r.r_val1 = (int)u.u_fperr.f_fec;
-	u.u_r.r_val2 = (int)u.u_fperr.f_fea;
-}
-
-/*
- * set up the process to have no stack segment.  The process is
- * responsible for the management of its own stack, and can thus
- * use the full 64K byte address space.
- */
-nostk()
-{
-	if (estabur(u.u_tsize, u.u_dsize, 0, u.u_sep, RO))
-		return;
-	expand(0,S_STACK);
-	u.u_ssize = 0;
-}
-
-/*
- * set up a physical address
- * into users virtual address space.
- */
-phys()
-{
-	register struct a {
-		int segno;
-		int size;
-		int phys;
-	} *uap = (struct a *)u.u_ap;
-	register int i, s;
-	int d;
-
-	if (!suser())
-		return;
-
-	i = uap->segno;
-	if (i < 0 || i >= 8)
-		goto bad;
-	s = uap->size;
-	if (s < 0 || s > 128)
-		goto bad;
-#ifdef NONSEPARATE
-	d = u.u_uisd[i];
-#else
-	d = u.u_uisd[i + 8];
-#endif
-	if (d != 0 && (d & ABS) == 0)
-		goto bad;
-#ifdef NONSEPARATE
-	u.u_uisd[i] = 0;
-	u.u_uisa[i] = 0;
-#else
-	u.u_uisd[i + 8] = 0;
-	u.u_uisa[i + 8] = 0;
-	if (!u.u_sep) {
-		u.u_uisd[i] = 0;
-		u.u_uisa[i] = 0;
-	}
-#endif
-	if (s) {
-#ifdef NONSEPARATE
-		u.u_uisd[i] = ((s - 1) << 8) | RW | ABS;
-		u.u_uisa[i] = uap->phys;
-#else
-		u.u_uisd[i + 8] = ((s - 1) << 8) | RW | ABS;
-		u.u_uisa[i + 8] = uap->phys;
-		if (!u.u_sep) {
-			u.u_uisa[i] = u.u_uisa[i + 8];
-			u.u_uisd[i] = u.u_uisd[i + 8];
-		}
-#endif
-	}
-	sureg();
-	return;
-bad:
-	u.u_error = EINVAL;
+	/* TODO */
 }
 
 extern	struct tty cons[];

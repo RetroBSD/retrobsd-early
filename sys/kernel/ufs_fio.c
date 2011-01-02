@@ -97,6 +97,7 @@ found:
  * Test if the current user is the
  * super user.
  */
+int
 suser()
 {
 	if (u.u_uid == 0) {

@@ -126,7 +126,6 @@ struct	sigcontext {
 	int	sc_r0;			/* r0 to restore */
 	int	sc_pc;			/* pc to restore */
 	int	sc_ps;			/* psl to restore */
-	int	sc_ovno;		/* overlay to restore */
 };
 
 /*

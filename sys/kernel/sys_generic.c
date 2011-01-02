@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)sys_generic.c	1.8 (2.11BSD) 2000/2/28
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -495,9 +492,6 @@ selwakeup(p, coll)
 	register struct proc *p;
 	long coll;
 {
-	mapinfo map;
-
-	savemap(map);
 	if (coll) {
 		nselcoll++;
 		wakeup((caddr_t)&selwait);
@@ -513,7 +507,6 @@ selwakeup(p, coll)
 			p->p_flag &= ~P_SELECT;
 		splx(s);
 	}
-	restormap(map);
 }
 
 sorw(fp, uio)

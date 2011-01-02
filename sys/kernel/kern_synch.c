@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_synch.c	1.5 (2.11BSD) 1999/9/13
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -28,6 +25,7 @@ struct	proc *slpque[SQSIZE];
 /*
  * Recompute process priorities, once a second
  */
+void
 schedcpu()
 {
 	register struct proc *p;
@@ -75,6 +73,7 @@ schedcpu()
 /*
  * Recalculate the priority of a process after it has slept for a while.
  */
+void
 updatepri(p)
 	register struct proc *p;
 {
@@ -103,14 +102,13 @@ updatepri(p)
  * done, EWOULDBLOCK if the timeout expired, ERESTART if the current system
  * call should be restarted, and EINTR if the system call should be
  * interrupted and EINTR returned to the user process.
-*/
-
+ */
 int
 tsleep(ident, priority, timo)
 	caddr_t	ident;
 	int	priority;
 	u_short	timo;
-	{
+{
 	register struct proc *p = u.u_procp;
 	register struct proc **qp;
 	int	s;
@@ -118,22 +116,21 @@ tsleep(ident, priority, timo)
 	void	endtsleep();
 
 	s = splhigh();
-	if	(panicstr)
-		{
-/*
- * After a panic just give interrupts a chance then just return.  Don't
- * run any other procs (or panic again below) in case this is the idle
- * process and already asleep.  The splnet should be spl0 if the network
- * was being used but for now avoid network interrupts that might cause
- * another panic.
-*/
+	if (panicstr) {
+		/*
+		 * After a panic just give interrupts a chance then just return.  Don't
+		 * run any other procs (or panic again below) in case this is the idle
+		 * process and already asleep.  The splnet should be spl0 if the network
+		 * was being used but for now avoid network interrupts that might cause
+		 * another panic.
+		 */
 		(void)_splnet();
 		noop();
 		splx(s);
 		return;
-		}
+	}
 #ifdef	DIAGNOSTIC
-	if	(ident == NULL || p->p_stat != SRUN)
+	if (ident == NULL || p->p_stat != SRUN)
 		panic("tsleep");
 #endif
 	p->p_wchan = ident;
@@ -142,33 +139,29 @@ tsleep(ident, priority, timo)
 	qp = &slpque[HASH(ident)];
 	p->p_link = *qp;
 	*qp =p;
-	if	(timo)
+	if (timo)
 		timeout(endtsleep, (caddr_t)p, timo);
-/*
- * We put outselves on the sleep queue and start the timeout before calling
- * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
- * occur while we were stopped.  A SIGCONT would cause us to be marked SSLEEP
- * without resuming us thus we must be ready for sleep when CURSIG is called.
- * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
- * return from CURSIG.
-*/
-	if	(catch)
-		{
+	/*
+	 * We put outselves on the sleep queue and start the timeout before calling
+	 * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
+	 * occur while we were stopped.  A SIGCONT would cause us to be marked SSLEEP
+	 * without resuming us thus we must be ready for sleep when CURSIG is called.
+	 * If the wakeup happens while we're stopped p->p_wchan will be 0 upon
+	 * return from CURSIG.
+	 */
+	if (catch) {
 		p->p_flag |= P_SINTR;
-		if	(sig = CURSIG(p))
-			{
-			if	(p->p_wchan)
+		if (sig = CURSIG(p)) {
+			if (p->p_wchan)
 				unsleep(p);
 			p->p_stat = SRUN;
 			goto resume;
-			}
-		if	(p->p_wchan == 0)
-			{
+		}
+		if (p->p_wchan == 0) {
 			catch = 0;
 			goto resume;
-			}
 		}
-	else
+	} else
 		sig = 0;
 	p->p_stat = SSLEEP;
 	u.u_ru.ru_nvcsw++;
@@ -176,46 +169,41 @@ tsleep(ident, priority, timo)
 resume:
 	splx(s);
 	p->p_flag &= ~P_SINTR;
-	if	(p->p_flag & P_TIMEOUT)
-		{
+	if (p->p_flag & P_TIMEOUT) {
 		p->p_flag &= ~P_TIMEOUT;
-		if	(sig == 0)
+		if (sig == 0)
 			return(EWOULDBLOCK);
-		}
-	else if (timo)
+	} else if (timo)
 		untimeout(endtsleep, (caddr_t)p);
-	if	(catch && (sig != 0 || (sig = CURSIG(p))))
-		{
-		if	(u.u_sigintr & sigmask(sig))
+	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
+		if (u.u_sigintr & sigmask(sig))
 			return(EINTR);
 		return(ERESTART);
-		}
-	return(0);
 	}
+	return(0);
+}
 
 /*
  * Implement timeout for tsleep above.  If process hasn't been awakened
  * (p_wchan non zero) then set timeout flag and undo the sleep.  If proc
  * is stopped just unsleep so it will remain stopped.
-*/
-
+ */
 void
 endtsleep(p)
 	register struct proc *p;
-	{
+{
 	register int	s;
 
 	s = splhigh();
-	if	(p->p_wchan)
-		{
-		if	(p->p_stat == SSLEEP)
+	if (p->p_wchan) {
+		if (p->p_stat == SSLEEP)
 			setrun(p);
 		else
 			unsleep(p);
 		p->p_flag |= P_TIMEOUT;
-		}
-	splx(s);
 	}
+	splx(s);
+}
 
 /*
  * Give up the processor till a wakeup occurs on chan, at which time the
@@ -232,36 +220,37 @@ endtsleep(p)
 sleep(chan, pri)
 	caddr_t chan;
 	int pri;
-	{
+{
 	register int priority = pri;
 
-	if	(pri > PZERO)
+	if (pri > PZERO)
 		priority |= PCATCH;
 
 	u.u_error = tsleep(chan, priority, 0);
-/*
- * sleep does not return anything.  If it was a non-interruptible sleep _or_
- * a successful/normal sleep (one for which a wakeup was done) then return.
-*/
-	if	((priority & PCATCH) == 0 || (u.u_error == 0))
+	/*
+	 * sleep does not return anything.  If it was a non-interruptible sleep _or_
+	 * a successful/normal sleep (one for which a wakeup was done) then return.
+	 */
+	if ((priority & PCATCH) == 0 || (u.u_error == 0))
 		return;
-/*
- * XXX - compatibility uglyness.
- *
- * The tsleep() above will leave one of the following in u_error:
- *
- * 0 - a wakeup was done, this is handled above
- * EWOULDBLOCK - since no timeout was passed to tsleep we will not see this
- * EINTR - put into u_error for trap.c to find (interrupted syscall)
- * ERESTART - system call to be restared
-*/
+	/*
+	 * XXX - compatibility uglyness.
+	 *
+	 * The tsleep() above will leave one of the following in u_error:
+	 *
+	 * 0 - a wakeup was done, this is handled above
+	 * EWOULDBLOCK - since no timeout was passed to tsleep we will not see this
+	 * EINTR - put into u_error for trap.c to find (interrupted syscall)
+	 * ERESTART - system call to be restared
+	 */
 	longjmp(u.u_procp->p_addr, &u.u_qsave);
 	/*NOTREACHED*/
-	}
+}
 
 /*
  * Remove a process from its wait queue
  */
+void
 unsleep(p)
 	register struct proc *p;
 {
@@ -282,19 +271,18 @@ unsleep(p)
 /*
  * Wake up all processes sleeping on chan.
  */
+void
 wakeup(chan)
 	register caddr_t chan;
 {
 	register struct proc *p, **q;
 	struct proc **qp;
 	int s;
-	mapinfo map;
 
 	/*
 	 * Since we are called at interrupt time, must insure normal
 	 * kernel mapping to access proc.
 	 */
-	savemap(map);
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
@@ -331,13 +319,13 @@ restart:
 			q = &p->p_link;
 	}
 	splx(s);
-	restormap(map);
 }
 
 /*
  * Set the process running;
  * arrange for it to be swapped in if necessary.
  */
+void
 setrun(p)
 	register struct proc *p;
 {
@@ -345,7 +333,6 @@ setrun(p)
 
 	s = splhigh();
 	switch (p->p_stat) {
-
 	case 0:
 	case SWAIT:
 	case SRUN:
@@ -383,6 +370,7 @@ setrun(p)
  * is set if the priority is better
  * than the currently running process.
  */
+int
 setpri(pp)
 	register struct proc *pp;
 {
@@ -406,6 +394,7 @@ setpri(pp)
  * called and will return in at most 1hz time, e.g. it's not worth putting an
  * spl() in.
  */
+void
 swtch()
 {
 	register struct proc *p, *q;
@@ -426,10 +415,6 @@ swtch()
 		if (setjmp(&u.u_rsave)) {
 			sureg();
 			return;
-		}
-		if (u.u_fpsaved == 0) {
-			savfp(&u.u_fps);
-			u.u_fpsaved = 1;
 		}
 		longjmp(proc[0].p_addr, &u.u_qsave);
 	}
@@ -492,6 +477,7 @@ loop:
 	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
 }
 
+void
 setrq(p)
 	register struct proc *p;
 {
@@ -517,6 +503,7 @@ setrq(p)
  * is swapped out so that it won't be selected in swtch().  It will be
  * reinserted in the qs with setrq when it is swapped back in.
  */
+void
 remrq(p)
 	register struct proc *p;
 {

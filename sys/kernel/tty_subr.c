@@ -12,34 +12,19 @@
 #include "ioctl.h"
 #include "tty.h"
 
-#ifdef UCB_CLIST
-/*
- *  Modification to move clists out of kernel data space.
- *  Clist space is allocated by startup.
- */
-memaddr	clststrt;		/* physical click address of clist */
-struct	cblock *cfree = (struct cblock *)SEG5;
-#endif
-
 char	cwaiting;
 
 /*
  * Character list get/put
  */
+int
 getc(p)
 	register struct clist *p;
 {
 	register struct cblock *bp;
 	register int c, s;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	if (p->c_cc <= 0) {
 		c = -1;
 		p->c_cc = 0;
@@ -71,9 +56,6 @@ getc(p)
 			}
 		}
 	}
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	splx(s);
 	return (c);
 }
@@ -90,23 +72,13 @@ q_to_b(q, cp, cc)
 	register nc;
 	int s;
 	char *acp;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	if (cc <= 0)
 		return (0);
 	s = spltty();
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	if (q->c_cc <= 0) {
 		q->c_cc = 0;
 		q->c_cf = q->c_cl = NULL;
-#ifdef UCB_CLIST
-		restorseg5(sav5);
-#endif
 		splx(s);
 		return (0);
 	}
@@ -147,9 +119,6 @@ q_to_b(q, cp, cc)
 			}
 		}
 	}
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	splx(s);
 	return (cp-acp);
 }
@@ -164,9 +133,6 @@ ndqb(q, flag)
 {
 	int cc;
 	int s;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
 	if (q->c_cc <= 0) {
@@ -180,10 +146,6 @@ ndqb(q, flag)
 	if (flag) {
 		register char *p, *end;
 
-#ifdef UCB_CLIST
-		saveseg5(sav5);
-		mapseg5(clststrt, clstdesc);
-#endif
 		p = q->c_cf;
 		end = p;
 		end += cc;
@@ -195,9 +157,6 @@ ndqb(q, flag)
 			}
 			p++;
 		}
-#ifdef UCB_CLIST
-		restorseg5(sav5);
-#endif
 	}
 out:
 	splx(s);
@@ -214,17 +173,10 @@ ndflush(q, cc)
 	register struct cblock *bp;
 	char *end;
 	int rem, s;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
 	if (q->c_cc <= 0)
 		goto out;
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	while (cc>0 && q->c_cc) {
 		bp = (struct cblock *)((int)q->c_cf & ~CROUND);
 		if ((int)bp == (((int)q->c_cl-1) & ~CROUND)) {
@@ -259,9 +211,6 @@ ndflush(q, cc)
 			break;
 		}
 	}
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	if (q->c_cc <= 0) {
 		q->c_cf = q->c_cl = NULL;
 		q->c_cc = 0;
@@ -276,21 +225,11 @@ putc(c, p)
 	register struct cblock *bp;
 	register char *cp;
 	register s;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
 		if ((bp = cfreelist) == NULL) {
 			splx(s);
-#ifdef UCB_CLIST
-			restorseg5(sav5);
-#endif
 			return (-1);
 		}
 		cfreelist = bp->c_next;
@@ -301,9 +240,6 @@ putc(c, p)
 		bp = (struct cblock *)cp - 1;
 		if ((bp->c_next = cfreelist) == NULL) {
 			splx(s);
-#ifdef UCB_CLIST
-			restorseg5(sav5);
-#endif
 			return (-1);
 		}
 		bp = bp->c_next;
@@ -315,9 +251,6 @@ putc(c, p)
 	*cp++ = c;
 	p->c_cc++;
 	p->c_cl = cp;
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	splx(s);
 	return (0);
 }
@@ -335,18 +268,11 @@ b_to_q(cp, cc, q)
 	register struct cblock *bp;
 	register s, nc;
 	int acc;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	if (cc <= 0)
 		return (0);
 	acc = cc;
 	s = spltty();
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
 		if ((bp = cfreelist) == NULL)
 			goto out;
@@ -376,9 +302,6 @@ b_to_q(cp, cc, q)
 out:
 	q->c_cl = cq;
 	q->c_cc += acc - cc;
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	splx(s);
 	return (cc);
 }
@@ -392,57 +315,21 @@ out:
  * pointer becomes invalid.  Note that interrupts are NOT masked.
  */
 char *
-#ifdef UCB_CLIST
-nextc(p, cp, store)
-	register struct clist *p;
-	register char *cp;
-	char *store;
-{
-	register char *rcp;
-	segm sav5;
-
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#else
 nextc(p, cp)
 	register struct clist *p;
 	register char *cp;
 {
 	register char *rcp;
-#endif
 
 	if (p->c_cc && ++cp != p->c_cl) {
 		if (((int)cp & CROUND) == 0)
 			rcp = ((struct cblock *)cp)[-1].c_next->c_info;
 		else
 			rcp = cp;
-#ifdef UCB_CLIST
-		*store = *rcp;
-#endif
-	}
-	else
+	} else
 		rcp = (char *)NULL;
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	return (rcp);
 }
-
-#ifdef UCB_CLIST
-char
-lookc(cp)
-	char *cp;
-{
-	register char rc;
-	segm sav5;
-
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-	rc = *cp;
-	restorseg5(sav5);
-	return(rc);
-}
-#endif
 
 /*
  * Remove the last character in the list and return it.
@@ -453,15 +340,8 @@ unputc(p)
 	register struct cblock *bp;
 	register int c, s;
 	struct cblock *obp;
-#ifdef UCB_CLIST
-	segm sav5;
-#endif
 
 	s = spltty();
-#ifdef UCB_CLIST
-	saveseg5(sav5);
-	mapseg5(clststrt, clstdesc);
-#endif
 	if (p->c_cc <= 0)
 		c = -1;
 	else {
@@ -488,9 +368,6 @@ unputc(p)
 			obp->c_next = NULL;
 		}
 	}
-#ifdef UCB_CLIST
-	restorseg5(sav5);
-#endif
 	splx(s);
 	return (c);
 }

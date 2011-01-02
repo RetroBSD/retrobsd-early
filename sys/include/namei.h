@@ -68,11 +68,10 @@ struct	namecache {
 #define	NCHNAMLEN	15	/* maximum name segment length we bother with */
 	char	nc_name[NCHNAMLEN];	/* segment name */
 };
-#if	defined(KERNEL) && !defined(SUPERVISOR)
-struct	namecache *namecache;
-int	nchsize;
-#include <machine/seg.h>
-segm	nmidesc;
+
+#if defined(KERNEL) && !defined(SUPERVISOR)
+extern struct	namecache namecache [];
+extern int	nchsize;
 #endif
 
 /*

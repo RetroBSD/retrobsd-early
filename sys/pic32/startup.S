@@ -22,7 +22,7 @@
 # arising out of or in connection with the use or performance of
 # this software.
 #
-#include "mch_io.h"
+#include "machine/io.h"
 
 		.set	noreorder
 		.set	mips32
@@ -45,6 +45,7 @@ _reset_vector_:	.globl	_reset_vector_
 		.section .exception
 		.org	0
 _restore_regs_: .globl _restore_regs_
+#define MIPS_FSPACE 16
 		addi	$sp, MIPS_FSPACE		# Remove an arg frame
 
 		lw	$a0, (CONTEXT_LO * 4) ($sp)	# Load HI, LO registers

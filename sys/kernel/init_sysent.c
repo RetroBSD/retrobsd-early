@@ -1,15 +1,10 @@
 /*
+ * System call switch table.
+ *
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)init_sysent.c	1.16 (2.11BSD) 2000/2/20
  */
-
-/*
- * System call switch table.
- */
-
 #include "param.h"
 #include "systm.h"
 
@@ -19,14 +14,14 @@ int	nosys();
 int	getpid();
 int	getppid(), fork(),rexit(),execv(),execve();
 int	wait4(), getuid(),getgid(),getgroups(),setgroups();
-int	geteuid(), getegid(), getlogin();
-int	getpgrp(),setpgrp(), setlogin();
+int	geteuid(), getegid();
+int	getpgrp(), setpgrp();
 int	setgid(), setegid(), setuid(), seteuid();
 int	ucall();					/* 2BSD calls */
 
 /* 1.2 memory management */
 int	sbrk();
-int	lock(),phys(),fetchi(),nostk(),fperr();		/* 2BSD calls */
+int	lock(), fetchi();				/* 2BSD calls */
 
 /* 1.3 signals */
 int	sigstack(),sigreturn();
@@ -145,11 +140,11 @@ struct sysent sysent[] = {
 	0, sync,			/*  36 = sync */
 	2, kill,			/*  37 = kill */
 	2, stat,			/*  38 = stat */
-	2, getlogin,			/*  39 = getlogin */
+	2, nosys,			/*  39 = getlogin */
 	2, lstat,			/*  40 = lstat */
 	1, dup,				/*  41 = dup */
 	0, pipe,			/*  42 = pipe */
-	1, setlogin,			/*  43 = setlogin */
+	1, nosys,			/*  43 = setlogin */
 	4, profil,			/*  44 = profil */
 	1, setuid,			/*  45 = setuid */
 	1, seteuid,			/*  46 = seteuid */
@@ -158,7 +153,7 @@ struct sysent sysent[] = {
 	1, setgid,			/*  49 = setgid */
 	1, setegid,			/*  50 = setegid */
 	0, nosys,			/*  51 = unused */
-	3, phys,			/*  52 = (2.9) set phys addr */
+	3, nosys,			/*  52 = (2.9) set phys addr */
 	1, lock,			/*  53 = (2.9) lock in core */
 	4, ioctl,			/*  54 = ioctl */
 	1, reboot,			/*  55 = reboot */
@@ -267,10 +262,10 @@ struct sysent sysent[] = {
 	 * 2BSD special calls
 	 */
 	0, nosys,			/* 151 = unused */
-	0, nostk,			/* 152 = nostk */
+	0, nosys,			/* 152 = nostk */
 	1, fetchi,			/* 153 = fetchi */
 	4, ucall,			/* 154 = ucall */
-	0, fperr,			/* 155 = fperr */
+	0, nosys,			/* 155 = fperr */
 };
 
 int	nsysent = sizeof (sysent) / sizeof (sysent[0]);

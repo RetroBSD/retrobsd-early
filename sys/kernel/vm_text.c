@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm_text.c	1.2 (2.11BSD GTE) 11/26/94
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -196,12 +193,10 @@ xalloc(ip, ep)
 		xuntext(xp);
 	}
 	xp->x_flag = XLOAD|XLOCK;
-	ts = btoc(ep->a_text);
-	if (u.u_ovdata.uo_ovbase)
-		xp->x_size = u.u_ovdata.uo_ov_offst[NOVL];
-	else
-		xp->x_size = ts;
-	if ((xp->x_daddr = malloc(swapmap, (size_t)ctod(xp->x_size))) == NULL) {
+	ts = ep->a_text;
+	xp->x_size = ts;
+	xp->x_daddr = malloc (swapmap, btod (xp->x_size));
+	if (xp->x_daddr == NULL) {
 		swkill(u.u_procp, "xalloc");
 		return;
 	}
@@ -213,32 +208,11 @@ xalloc(ip, ep)
 	ip->i_count++;
 	u.u_procp->p_textp = xp;
 	xexpand(xp);
-	estabur(ts, (u_int)0, (u_int)0, 0, RW);
+	estabur(ts, 0, 0, RW);
 	offset = sizeof(struct exec);
-	if (u.u_ovdata.uo_ovbase)
-		offset += (NOVL + 1) * sizeof(u_int);
 	u.u_procp->p_flag |= SLOCK;
 	u.u_error = rdwri(UIO_READ, ip, (caddr_t)0, ep->a_text & ~1,
 			offset, UIO_USERISPACE, IO_UNIT, (int *)0);
-
-	if (u.u_ovdata.uo_ovbase) {	/* read in overlays if necessary */
-		register int i;
-
-		offset += (off_t)(ep->a_text & ~1);
-		for (i = 1; i <= NOVL; i++) {
-			u.u_ovdata.uo_curov = i;
-			count = ctob(u.u_ovdata.uo_ov_offst[i] - u.u_ovdata.uo_ov_offst[i-1]);
-			if (count) {
-				choverlay(RW);
-				u.u_error = rdwri(UIO_READ, ip,
-				    (caddr_t)(ctob(stoc(u.u_ovdata.uo_ovbase))),
-					count, offset, UIO_USERISPACE,
-					IO_UNIT, (int *)0);
-				offset += (off_t) count;
-			}
-		}
-	}
-	u.u_ovdata.uo_curov = 0;
 	u.u_procp->p_flag &= ~SLOCK;
 	xp->x_flag |= XWRIT;
 	xp->x_flag &= ~XLOAD;
@@ -350,7 +324,7 @@ xuntext(xp)
 	if (xp->x_count == 0) {
 		ip = xp->x_iptr;
 		xp->x_iptr = NULL;
-		mfree(swapmap, ctod(xp->x_size), xp->x_daddr);
+		mfree(swapmap, btod(xp->x_size), xp->x_daddr);
 		if (xp->x_caddr)
 			mfree(coremap, xp->x_size, xp->x_caddr);
 		ip->i_flag &= ~ITEXT;

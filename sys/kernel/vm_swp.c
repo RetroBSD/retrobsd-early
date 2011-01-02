@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)vm_swp.c	2.3 (2.11BSD) 11/30/94
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -48,10 +45,9 @@ swap(blkno, coreaddr, count, rdflg)
 		tcount = count;
 		if (tcount >= 01700)	/* prevent byte-count wrap */
 			tcount = 01700;
-		bp->b_bcount = ctob(tcount);
+		bp->b_bcount = tcount;
 		bp->b_blkno = blkno;
-		bp->b_un.b_addr = (caddr_t)(coreaddr<<6);
-		bp->b_xmem = (coreaddr>>10) & 077;
+		bp->b_un.b_addr = (caddr_t) (coreaddr<<6);
 		trace(TR_SWAPIO);
 		(*bdevsw[major(swapdev)].d_strategy)(bp);
 		s = splbio();
@@ -62,7 +58,7 @@ swap(blkno, coreaddr, count, rdflg)
 			panic("hard err: swap");
 		count -= tcount;
 		coreaddr += tcount;
-		blkno += ctod(tcount);
+		blkno += btod(tcount);
 	}
 	brelse(bp);
 }
@@ -141,10 +137,7 @@ physio(strat, bp, dev, rw, uio)
 			error = EFAULT;
 			break;
 		}
-		if (u.u_sep)
-			ts = 0;
-		else
-			ts = (u.u_tsize + 127) & ~0177;
+		ts = (u.u_tsize + 127) & ~0177;
 		nb = ((int)iov->iov_base >> 6) & 01777;
 		/*
 		 * Check overlap with text. (ts and nb now
@@ -178,10 +171,9 @@ physio(strat, bp, dev, rw, uio)
 			bp->b_flags = B_BUSY|B_PHYS|B_INVAL|rw;
 			bp->b_dev = dev;
 			nb = ((int)iov->iov_base >> 6) & 01777;
-			ts = (u.u_sep ? UDSA : UISA)[nb >> 7] + (nb & 0177);
-			bp->b_un.b_addr = (caddr_t)((ts << 6) + ((int)iov->iov_base & 077));
-			bp->b_xmem = (ts >> 10) & 077;
-			bp->b_blkno = uio->uio_offset >> PGSHIFT;
+			ts = nb;
+			bp->b_un.b_addr = (caddr_t) ((ts << 6) + ((int)iov->iov_base & 077));
+			bp->b_blkno = uio->uio_offset >> DEV_BSHIFT;
 			bp->b_bcount = iov->iov_len;
 			c = bp->b_bcount;
 			(*strat)(bp);

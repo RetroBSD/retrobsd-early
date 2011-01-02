@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)init_main.c	2.5 (2.11BSD GTE) 1997/9/26
  */
-
 #include "param.h"
 #include "machine/seg.h"
 
@@ -68,8 +65,7 @@ binit()
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
-		bp->b_un.b_addr = (caddr_t)loint(paddr);
-		bp->b_xmem = hiint(paddr);
+		bp->b_un.b_addr = (caddr_t) paddr;
 		binshash(bp, &bfreelist[BQ_AGE]);
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
@@ -87,19 +83,12 @@ cinit()
 	register struct cblock *cp;
 
 	ccp = (int)cfree;
-#ifdef UCB_CLIST
-	mapseg5(clststrt, clstdesc);	/* don't save, we know it's normal */
-#else
 	ccp = (ccp + CROUND) & ~CROUND;
-#endif
 	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
 		cp->c_next = cfreelist;
 		cfreelist = cp;
 		cfreecount += CBSIZE;
 	}
-#ifdef UCB_CLIST
-	normalseg5();
-#endif
 }
 
 /*
@@ -133,7 +122,7 @@ main()
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
-	p->p_addr = *ka6;
+	p->p_addr = 0; /*TODO*/
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD|SSYS;
 	p->p_nice = NZERO;
@@ -147,7 +136,6 @@ main()
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max =
 		    RLIM_INFINITY;
-	bcopy("root", u.u_login, sizeof ("root"));
 
 	/* Initialize signal state for process 0 */
 	siginit(p);
@@ -161,7 +149,6 @@ main()
 	ihinit();
 	bhinit();
 	binit();
-	ubinit();
 	nchinit();
 	clkstart();
 
@@ -266,16 +253,6 @@ main()
 	iunlock(u.u_cdir);
 	u.u_rdir = NULL;
 
-#ifdef INET
-	if (netoff = netinit())
-		printf("netinit failed\n");
-	else
-		{
-		NETSETHZ();
-		NETSTART();
-		}
-#endif
-
 /*
  * This came from pdp/machdep2.c because the memory available statements
  * were being made _before_ memory for the networking code was allocated.
@@ -284,12 +261,12 @@ main()
  * safe) assumption is made that no 'free' calls are made so that the
  * size in the first entry of the core map is correct.
 */
-	printf("\nphys mem  = %D\n", ctob((long)physmem));
-	printf("avail mem = %D\n", ctob((long)_coremap[0].m_size));
+	printf("\nphys mem  = %u\n", physmem);
+	printf("avail mem = %u\n", _coremap[0].m_size);
 	maxmem = MAXMEM;
-	printf("user mem  = %D\n", ctob((long)MAXMEM));
+	printf("user mem  = %u\n", MAXMEM);
 #if NRAM > 0
-	printf("ram disk  = %D\n", ctob((long)ramsize));
+	printf("ram disk  = %u\n", ramsize);
 #endif
 	printf("\n");
 
@@ -297,10 +274,10 @@ main()
 	 * make init process
 	 */
 	if (newproc(0)) {
-		expand((int)btoc(szicode), S_DATA);
-		expand((int)1, S_STACK);	/* one click of stack */
-		estabur((u_int)0, (u_int)btoc(szicode), (u_int)1, 0, RO);
-		copyout((caddr_t)icode, (caddr_t)0, szicode);
+		expand (szicode, S_DATA);
+		expand (1, S_STACK);		/* one click of stack */
+		estabur (0, szicode, 1, RO);
+		copyout ((caddr_t)icode, (caddr_t)0, szicode);
 		/*
 		 * return goes to location 0 of user init code
 		 * just copied out.
@@ -310,118 +287,3 @@ main()
 	else
 		sched();
 }
-
-#ifdef INET
-memaddr netdata;		/* click address of start of net data */
-
-/*
- * We are called here after all the other init routines (clist, inode,
- * unibusmap, etc...) have been called.  Open the
- * file NETNIX and read the a.out header, based on that go allocate
- * memory and read the text+data into the memory.  Set up supervisor page
- * registers, SDSA6 and SDSA7 have already been set up in mch_start.s.
- */
-
-static char NETNIX[] = "/netnix";
-
-static
-netinit()
-{
-	register u_short *ap, *dp;
-	register int i;
-	struct exec ex;
-	struct inode *ip;
-	memaddr nettext;
-	long lsize;
-	off_t	off;
-	int initdata, netdsize, nettsize, ret, err, resid;
-	char oneclick[ctob(1)];
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-
-	ret = 1;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_SYSSPACE, NETNIX);
-	if (!(ip = namei(ndp))) {
-		printf("%s not found\n", NETNIX);
-		goto leave;
-	}
-	if ((ip->i_mode & IFMT) != IFREG || !ip->i_size) {
-		printf("%s bad inode\n", NETNIX);
-		goto leave;
-	}
-	err = rdwri(UIO_READ, ip, &ex, sizeof (ex), (off_t)0, UIO_SYSSPACE,
-			IO_UNIT, &resid);
-	if (err || resid) {
-		printf("%s header %d\n", NETNIX, ret);
-		goto leave;
-	}
-	if (ex.a_magic != A_MAGIC3) {
-		printf("%s bad magic %o\n", NETNIX, ex.a_magic);
-		goto leave;
-	}
-	lsize = (long)ex.a_data + (long)ex.a_bss;
-	if (lsize > 48L * 1024L) {
-		printf("%s 2big %ld\n", NETNIX, lsize);
-		goto leave;
-	}
-	nettsize = btoc(ex.a_text);
-	nettext = (memaddr)malloc(coremap, nettsize);
-	netdsize = btoc(ex.a_data + ex.a_bss);
-	netdata = (memaddr)malloc(coremap, netdsize);
-	initdata = ex.a_data >> 6;
-	off = sizeof (ex);
-	for (i = 0; i < nettsize; i++) {
-		err = rdwri(UIO_READ, ip, oneclick, ctob(1), off, UIO_SYSSPACE,
-				IO_UNIT, &resid);
-		if (err || resid)
-			goto release;
-		mapseg5(nettext + i, 077406);
-		bcopy(oneclick, SEG5, ctob(1));
-		off += ctob(1);
-		normalseg5();
-	}
-	for (i = 0; i < initdata; i++) {
-		err = rdwri(UIO_READ, ip, oneclick, ctob(1), off, UIO_SYSSPACE,
-				IO_UNIT, &resid);
-		if (err || resid)
-			goto release;
-		mapseg5(netdata + i, 077406);
-		bcopy(oneclick, SEG5, ctob(1));
-		normalseg5();
-		off += ctob(1);
-	}
-	if (ex.a_data & 077) {
-		err = rdwri(UIO_READ, ip, oneclick, ex.a_data & 077, off,
-				UIO_SYSSPACE, IO_UNIT, &resid);
-		if (err || resid) {
-release:		printf("%s err %d\n", NETNIX, err);
-			mfree(coremap, nettsize, nettext);
-			mfree(coremap, netdsize, netdata);
-			nettsize = netdsize = 0;
-			netdata = nettext = 0;
-			goto leave;
-		}
-		mapseg5(netdata + i, 077406);	/* i is set from above loop */
-		bcopy(oneclick, SEG5, ex.a_data & 077);
-		normalseg5();
-	}
-	for (i = 0, ap = SISA0, dp = SISD0; i < nettsize; i += stoc(1)) {
-		*ap++ = nettext + i;
-		*dp++ = ((stoc(1) - 1) << 8) | RO;
-	}
-	/* might have over run the length on the last one, patch it now */
-	if (i > nettsize)
-		*--dp -= ((i - nettsize) << 8);
-	for (i = 0, ap = SDSA0, dp = SDSD0; i < netdsize; i += stoc(1)) {
-		*ap++ = netdata + i;
-		*dp++ = ((stoc(1) - 1) << 8) | RW;
-	}
-	if (i > netdsize)
-		*--dp -= ((i - netdsize) << 8);
-	ret = 0;
-leave:	if (ip)
-		iput(ip);
-	u.u_error = 0;
-	return(ret);
-}
-#endif

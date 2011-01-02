@@ -2,11 +2,8 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)param.h	1.6 (2.11BSD) 1999/9/5
  */
-
-#define	BSD	211		/* 2.11 * 100, as cpp doesn't do floats */
+#define	BSD		211	/* 2.11 * 100, as cpp doesn't do floats */
 
 #include <sys/stddef.h>		/* for 'offsetof' */
 
@@ -18,63 +15,54 @@
 /*
  * Machine-independent constants
  */
-#define	NMOUNT	6		/* number of mountable file systems */
-#define	MAXUPRC	20		/* max processes per user */
-#define	NOFILE	30		/* max open files per process */
-#define	CANBSIZ	256		/* max size of typewriter line */
-#define	NCARGS	5120		/* # characters in exec arglist */
-#define	NGROUPS	16		/* max number groups */
+#define NMOUNT		6	/* number of mountable file systems */
+#define	MAXUPRC		20	/* max processes per user */
+#define	NOFILE		30	/* max open files per process */
+#define	CANBSIZ		256	/* max size of typewriter line */
+#define	NCARGS		5120	/* # characters in exec arglist */
+#define	NGROUPS		16	/* max number groups */
 
-#define	NOGROUP	65535		/* marker for empty group set member */
+#define	NOGROUP		65535	/* marker for empty group set member */
 
 /*
  * Priorities
  */
-#define	PSWP	0
-#define	PINOD	10
-#define	PRIBIO	20
-#define	PRIUBA	24
-#define	PZERO	25
-#define	PPIPE	26
-#define	PSOCK	26
-#define	PWAIT	30
-#define	PLOCK	35
-#define	PPAUSE	40
-#define	PUSER	50
+#define	PSWP		0
+#define	PINOD		10
+#define	PRIBIO		20
+#define	PRIUBA		24
+#define	PZERO		25
+#define	PPIPE		26
+#define	PSOCK		26
+#define	PWAIT		30
+#define	PLOCK		35
+#define	PPAUSE		40
+#define	PUSER		50
 
-#define	NZERO	0
+#define	NZERO		0
 
-#define	PRIMASK	0xff
-#define	PCATCH	0x100
+#define	PRIMASK		0xff
+#define	PCATCH		0x100
 
 /*
  * Signals
  */
 #include <signal.h>
 
-#define	NBPW	sizeof(int)	/* number of bytes in an integer */
+#define	NBPW		sizeof(int)	/* number of bytes in an integer */
 
 #ifndef	NULL
-#define	NULL	0
+#define	NULL		0
 #endif
-#define	CMASK	026		/* default mask for file creation */
-#define	NODEV	(dev_t)(-1)
-
-#define	CLBYTES		(CLSIZE*NBPG)
-#define	CLOFSET		(CLBYTES-1)
-#define	claligned(x)	((((int)(x))&CLOFSET)==0)
-#define	CLOFF		CLOFSET
-#define	CLSHIFT		(PGSHIFT + CLSIZELOG2)
-
-/* round a number of clicks up to a whole cluster */
-#define	clrnd(i)	(((i) + (CLSIZE-1)) &~ ((long)(CLSIZE-1)))
+#define	CMASK		026		/* default mask for file creation */
+#define	NODEV		(dev_t)(-1)
 
 /* CBLOCK is the size of a clist block, must be power of 2 */
-#define	CBLOCK	32
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
-#define	CROUND	(CBLOCK - 1)				/* clist rounding */
+#define	CBLOCK		32
+#define	CBSIZE		(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
+#define	CROUND		(CBLOCK - 1)				/* clist rounding */
 
-#include	<sys/types.h>
+#include <sys/types.h>
 
 /*
  * File system parameters and macros.
@@ -100,16 +88,16 @@
 /*
  * Macros for fast min/max.
  */
-#define	MIN(a,b) (((a)<(b))?(a):(b))
-#define	MAX(a,b) (((a)>(b))?(a):(b))
+#define	MIN(a,b)	(((a)<(b))?(a):(b))
+#define	MAX(a,b)	(((a)>(b))?(a):(b))
 
 /*
  * Macros for counting and rounding.
  */
 #ifndef howmany
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#   define howmany(x,y)	(((x)+((y)-1))/(y))
 #endif
-#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+#define	roundup(x,y)	((((x)+((y)-1))/(y))*(y))
 
 /*
  * Maximum size of hostname recognized and stored in the kernel.
@@ -124,8 +112,3 @@
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
 #define	MAXMEM		(300*16)
-
-/*
- * MAXLOGNAME should be >= UT_NAMESIZE (see <utmp.h>)
- */
-#define	MAXLOGNAME	16		/* max login name length */

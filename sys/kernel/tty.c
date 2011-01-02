@@ -108,10 +108,10 @@ extern	char	*nextc();
 extern	int	nldisp;
 extern	int	wakeup();
 
+void
 ttychars(tp)
 	struct tty *tp;
 {
-
 	tp->t_chars = ttydefaults;
 }
 
@@ -119,26 +119,24 @@ ttychars(tp)
  * Wakeup processes waiting on output flow control (TS_ASLEEP).  Normally
  * called from driver start routine (dhvstart, etc) after a transmit done
  * interrupt.  If t_outq.c_cc <= t_lowat then do the wakeup.
-*/
+ */
+void
 ttyowake(tp)
 	register struct tty *tp;
-	{
+{
 
-	if	(tp->t_outq.c_cc <= TTLOWAT(tp))
-		{
-		if	(ISSET(tp->t_state,TS_ASLEEP))
-			{
+	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+		if (ISSET(tp->t_state,TS_ASLEEP)) {
 			CLR(tp->t_state,TS_ASLEEP);
 			wakeup((caddr_t)&tp->t_outq);
-			}
-		if	(tp->t_wsel)
-			{
+		}
+		if (tp->t_wsel) {
 			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
 			tp->t_wsel = 0;
 			CLR(tp->t_state,TS_WCOLL);
-			}
 		}
 	}
+}
 
 /*
  * Wait for output to drain, then flush input waiting.
@@ -222,7 +220,7 @@ ttyblock(tp)
 	 * Block further input iff:
 	 * Current input > threshold AND input is available to user program
 	 */
-	if	(total >= TTYBLOCK && 
+	if	(total >= TTYBLOCK &&
 		 ((tp->t_flags & (RAW|CBREAK)) || (tp->t_canq.c_cc > 0)) &&
 		 (tp->t_state&TS_TBLOCK) == 0)
 		{
@@ -231,8 +229,8 @@ ttyblock(tp)
  * get called for either software or hardware flow control we need to check
  * the IXOFF bit.
 */
-		if	(ISSET(tp->t_flags,TANDEM) && 
-			 tp->t_stopc != _POSIX_VDISABLE && 
+		if	(ISSET(tp->t_flags,TANDEM) &&
+			 tp->t_stopc != _POSIX_VDISABLE &&
 			 putc(tp->t_stopc, &tp->t_outq) == 0)
 			{
 			SET(tp->t_state, TS_TBLOCK);
@@ -255,13 +253,13 @@ ttyunblock(tp)
 	register int s = spltty();
 
 	if	(ISSET(tp->t_flags,TANDEM) &&
-		 tp->t_startc != _POSIX_VDISABLE && 
+		 tp->t_startc != _POSIX_VDISABLE &&
 		 putc(tp->t_startc, &tp->t_outq) == 0)
 		{
 		CLR(tp->t_state,TS_TBLOCK);
 		ttstart(tp);
 		}
-	if	(ISSET(tp->t_flags, RTSCTS) && 
+	if	(ISSET(tp->t_flags, RTSCTS) &&
 		 (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev,TIOCMBIS,&rts,0) == 0)
 		{
 		CLR(tp->t_state, TS_TBLOCK);
@@ -301,6 +299,7 @@ ttstart(tp)
  * Common code for tty ioctls.
  */
 /*ARGSUSED*/
+int
 ttioctl(tp, com, data, flag)
 	register struct tty *tp;
 	u_int com;
@@ -587,7 +586,7 @@ ttnread(tp)
 }
 
 /*
- * XXX - this cleans up the minor device number by stripping off the 
+ * XXX - this cleans up the minor device number by stripping off the
  * softcarrier bit.  Drives which use more bits of the minor device
  * MUST call their own select routine.  See dhv.c for an example.
  *
@@ -692,6 +691,7 @@ ttylclose(tp, flag)
 /*
  * clean tp on last close
  */
+void
 ttyclose(tp)
 	register struct tty *tp;
 {
@@ -753,7 +753,7 @@ nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
 {
-	
+
 	if (flag)
 		tp->t_state |= TS_CARR_ON;
 	else
@@ -816,7 +816,7 @@ ttyinput(c, tp)
 		 * Raw mode, just put character
 		 * in input q w/o interpretation.
 		 */
-		if (tp->t_rawq.c_cc > TTYHOG) 
+		if (tp->t_rawq.c_cc > TTYHOG)
 			ttyflush(tp, FREAD|FWRITE);
 		else {
 			if (putc(c, &tp->t_rawq) == 0)
@@ -1528,19 +1528,8 @@ ttyrub(c, tp)
 			tp->t_flags |= FLUSHO;
 			tp->t_col = tp->t_rocol;
 			cp = tp->t_rawq.c_cf;
-#ifdef UCB_CLIST
-			{
-			char store;
-
-			if (cp)
-				store = lookc(cp);
-			for (; cp; cp = nextc(&tp->t_rawq, cp, &store))
-				ttyecho(store, tp);
-			}
-#else
 			for (; cp; cp = nextc(&tp->t_rawq, cp))
 				ttyecho(*cp, tp);
-#endif
 			tp->t_flags &= ~FLUSHO;
 			tp->t_state &= ~TS_CNTTB;
 			splx(s);
@@ -1597,25 +1586,10 @@ ttyretype(tp)
 		ttyecho(tp->t_rprntc, tp);
 	(void) ttyoutput('\n', tp);
 	s = spltty();
-#ifdef UCB_CLIST
-	{
-	char store;
-
-	if (cp = tp->t_canq.c_cf)
-		store = lookc(cp);
-	for (; cp; cp = nextc(&tp->t_canq, cp, &store))
-		ttyecho(store, tp);
-	if (cp = tp->t_rawq.c_cf)
-		store = lookc(cp);
-	for (; cp; cp = nextc(&tp->t_rawq, cp, &store))
-		ttyecho(store, tp);
-	}
-#else
 	for (cp = tp->t_canq.c_cf; cp; cp = nextc(&tp->t_canq, cp))
 		ttyecho(*cp, tp);
 	for (cp = tp->t_rawq.c_cf; cp; cp = nextc(&tp->t_rawq, cp))
 		ttyecho(*cp, tp);
-#endif
 	tp->t_state &= ~TS_ERASE;
 	splx(s);
 	tp->t_rocount = tp->t_rawq.c_cc;
@@ -1690,6 +1664,6 @@ ttwakeup(tp)
 		tp->t_rsel = 0;
 	}
 	if (tp->t_state & TS_ASYNC)
-		gsignal(tp->t_pgrp, SIGIO); 
+		gsignal(tp->t_pgrp, SIGIO);
 	wakeup((caddr_t)&tp->t_rawq);
 }
