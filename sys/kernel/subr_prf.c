@@ -5,7 +5,6 @@
  */
 #include "param.h"
 #include "user.h"
-#include "machine/seg.h"
 #include "buf.h"
 #include "msgbuf.h"
 #include "conf.h"

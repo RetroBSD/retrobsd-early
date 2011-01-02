@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "systm.h"
 #include "dir.h"
 #include "inode.h"
@@ -417,7 +415,7 @@ searchloop:
 		 * directory. Complete checks can be run by patching
 		 * "dirchk" to be true.
 		 */
-		ep = (struct direct*) ((caddr_t) bp->b_un.b_addr + entryoffsetinblock);
+		ep = (struct direct*) ((caddr_t) bp->b_addr + entryoffsetinblock);
 		if (ep->d_reclen == 0 ||
 		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
 			dirbad(dp, ndp->ni_offset, "mangled entry");
@@ -770,7 +768,7 @@ haveino:
 		 * copy link path into the first part of the buffer.
 		 */
 		bcopy(cp, path + (u_int)dp->i_size, pathlen);
-		bcopy(bp->b_un.b_addr, path, (u_int)dp->i_size);
+		bcopy(bp->b_addr, path, (u_int)dp->i_size);
 		brelse(bp);
 		bp = NULL;
 		cp = path;
@@ -1064,7 +1062,7 @@ blkatoff(ip, offset, res)
 		brelse(bp);
 		return (0);
 	}
-	junk = (caddr_t) bp->b_un.b_addr;
+	junk = (caddr_t) bp->b_addr;
 	if (res)
 		*res = junk + (u_int)blkoff(offset);
 	return (bp);

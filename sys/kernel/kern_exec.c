@@ -5,8 +5,6 @@
  */
 #include "param.h"
 #include "machine/reg.h"
-#include "machine/seg.h"
-
 #include "systm.h"
 #include "map.h"
 #include "user.h"
@@ -277,7 +275,7 @@ execve()
 				}
 				cc = DEV_BSIZE;
 				bp = getblk(swapdev, dbtofsb(bno) + lblkno(nc));
-				cp = bp->b_un.b_addr;
+				cp = bp->b_addr;
 			}
 			if (sharg) {
 				error = copystr(sharg, cp, (unsigned)cc, &len);
@@ -354,7 +352,7 @@ badarg:
 				bp = bread(swapdev, dbtofsb(bno) + lblkno(nc));
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
-				cp = bp->b_un.b_addr;
+				cp = bp->b_addr;
 			}
 			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
 			    &len);
@@ -467,7 +465,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	ds = lsize;
 	ss = SSIZE + nargc;
 
-	if (estabur(ts, ds, ss, RO)) {
+	if (estabur(ts, ds, ss, 0)) {
 		return;
 	}
 
@@ -497,7 +495,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	/*
 	 * read in data segment
 	 */
-	estabur(0, ds, 0, RO);
+	estabur(0, ds, 0, 0);
 	offset = sizeof(struct exec);
 	offset += ep->a_text;
 	rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
@@ -518,5 +516,5 @@ getxfile(ip, ep, nargc, uid, gid)
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
-	estabur(ts, ds, ss, RO);
+	estabur(ts, ds, ss, 0);
 }

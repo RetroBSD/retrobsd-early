@@ -330,7 +330,7 @@ loop:
 			panic("getnewbuf: RAMREMAP bp addr");
 #endif
 		paddr = bpaddr + DEV_BSIZE * (bp - buf);
-		bp->b_un.b_addr = (caddr_t) (paddr << 6);
+		bp->b_addr = (caddr_t) (paddr << 6);
 	}
 	trace(TR_BRELSE);
 	bp->b_flags = B_BUSY;

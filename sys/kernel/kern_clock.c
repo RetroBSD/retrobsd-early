@@ -5,7 +5,6 @@
  */
 #include "param.h"
 #include "machine/psl.h"
-#include "machine/seg.h"
 
 #include "user.h"
 #include "proc.h"

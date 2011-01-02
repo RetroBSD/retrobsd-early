@@ -4,9 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/autoconfig.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "ioctl.h"
 #include "proc.h"
@@ -18,12 +15,6 @@
 #include "sysctl.h"
 #include "cpu.h"
 #include "tty.h"
-
-/*
- * used to pass result from int service to probe();
- * do not declare static!!
- */
-int	conf_int = CONF_MAGIC;
 
 /*
  * ucall allows user level code to call various kernel functions.

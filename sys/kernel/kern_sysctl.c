@@ -1,4 +1,6 @@
-/*-
+/*
+ * sysctl system call.
+ *
  * Copyright (c) 1982, 1986, 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -33,11 +35,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-/*
- * sysctl system call.
- */
-
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/systm.h>
@@ -51,7 +48,6 @@
 #include <sys/tty.h>
 #include <sys/vm.h>
 #include <sys/map.h>
-#include <machine/seg.h>
 #include <sys/sysctl.h>
 #include <machine/cpu.h>
 #include <conf.h>
@@ -968,7 +964,7 @@ fill_from_u(p, rup, ttp, tdp)
 			ttyp = NULL;
 			ruid = (uid_t)-2;
 		} else {
-			up = (struct user*) bp->b_un.b_addr;
+			up = (struct user*) bp->b_addr;
 			ruid = up->u_ruid;	/* u_ruid = offset 164 */
 			ttyd = up->u_ttyd;	/* u_ttyd = offset 654 */
 			ttyp = up->u_ttyp;	/* u_ttyp = offset 652 */

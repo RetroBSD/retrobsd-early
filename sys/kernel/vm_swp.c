@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "proc.h"
 #include "buf.h"
@@ -47,7 +45,7 @@ swap(blkno, coreaddr, count, rdflg)
 			tcount = 01700;
 		bp->b_bcount = tcount;
 		bp->b_blkno = blkno;
-		bp->b_un.b_addr = (caddr_t) (coreaddr<<6);
+		bp->b_addr = (caddr_t) (coreaddr<<6);
 		trace(TR_SWAPIO);
 		(*bdevsw[major(swapdev)].d_strategy)(bp);
 		s = splbio();
@@ -172,7 +170,7 @@ physio(strat, bp, dev, rw, uio)
 			bp->b_dev = dev;
 			nb = ((int)iov->iov_base >> 6) & 01777;
 			ts = nb;
-			bp->b_un.b_addr = (caddr_t) ((ts << 6) + ((int)iov->iov_base & 077));
+			bp->b_addr = (caddr_t) ((ts << 6) + ((int)iov->iov_base & 077));
 			bp->b_blkno = uio->uio_offset >> DEV_BSHIFT;
 			bp->b_bcount = iov->iov_len;
 			c = bp->b_bcount;

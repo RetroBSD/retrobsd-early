@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "file.h"
 #include "ioctl.h"
 #include "tty.h"

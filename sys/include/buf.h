@@ -44,9 +44,7 @@ struct buf
 #define	b_active b_bcount		/* driver queue head: drive active */
 	int	b_error;		/* returned after I/O */
 	dev_t	b_dev;			/* major+minor device name */
-	union {
-		caddr_t b_addr;		/* low order core address */
-	} b_un;
+	caddr_t b_addr;			/* core address */
 	daddr_t	b_blkno;		/* block # on device */
 	u_int	b_resid;		/* words not transferred after error */
 #define	b_cylin b_resid			/* disksort */
@@ -71,7 +69,7 @@ struct buf
 
 #define	bawrite(bp)	{(bp)->b_flags |= B_ASYNC; bwrite(bp);}
 #define	bfree(bp)	(bp)->b_bcount = 0
-#define	bftopaddr(bp)	((u_int)(bp)->b_un.b_addr >> 6)
+#define	bftopaddr(bp)	((u_int)(bp)->b_addr >> 6)
 
 #if defined(KERNEL) && !defined(SUPERVISOR)
 #define	BUFHSZ	16	/* must be power of 2 */

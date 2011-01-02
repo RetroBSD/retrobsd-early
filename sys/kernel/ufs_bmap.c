@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "systm.h"
 #include "conf.h"
 #include "dir.h"
@@ -120,7 +118,7 @@ bmap(ip, bn, rwflg, flags)
 			brelse(bp);
 			return((daddr_t)0);
 		}
-		bap = (daddr_t*) bp->b_un.b_addr;
+		bap = (daddr_t*) bp->b_addr;
 		sh -= NSHIFT;
 		i = (bn>>sh) & NMASK;
 		nb = bap[i];
@@ -145,7 +143,7 @@ bmap(ip, bn, rwflg, flags)
 				bwrite(nbp);
 			else
 				bdwrite(nbp);
-			bap = (daddr_t*) bp->b_un.b_addr;
+			bap = (daddr_t*) bp->b_addr;
 			bap[i] = nb;
 			bdwrite(bp);
 		} else

@@ -100,7 +100,7 @@ rkstart()
 	cn = bn / 12;
 	sn = bn % 12;
 	rkaddr->rkda = (dn << 13) | (cn << 4) | sn;
-	rkaddr->rkba = bp->b_un.b_addr;
+	rkaddr->rkba = bp->b_addr;
 	rkaddr->rkwc = -(bp->b_bcount >> 1);
 	com = RKCS_IDE | RKCS_GO;
 	if(bp->b_flags & B_READ)

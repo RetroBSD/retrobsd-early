@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "proc.h"
 #include "vm.h"
@@ -25,7 +23,7 @@ sbrk()
 	n -= u.u_tsize;
 	if (n < 0)
 		n = 0;
-	if (estabur (u.u_tsize, n, u.u_ssize, RO))
+	if (estabur (u.u_tsize, n, u.u_ssize, 0))
 		return;
 	expand (n, S_DATA);
 	/* set d to (new - old) */
@@ -53,7 +51,7 @@ grow(sp)
 	 */
 	if (si <= 0)
 		return (0);
-	if (estabur(u.u_tsize, u.u_dsize, u.u_ssize + si, RO))
+	if (estabur(u.u_tsize, u.u_dsize, u.u_ssize + si, 0))
 		return (0);
 	/*
 	 *  expand will put the stack in the right place;
@@ -72,9 +70,9 @@ grow(sp)
  * read-write or read-only.
  */
 int
-estabur(nt, nd, ns, xrw)
+estabur(nt, nd, ns, wflag)
 	u_int nt, nd, ns;
-	int xrw;
+	int wflag;
 {
 	if (nt + nd + ns + USIZE > maxmem) {
 		u.u_error = ENOMEM;

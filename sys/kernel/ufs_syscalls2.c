@@ -3,7 +3,6 @@
  * relocated to this file.
  */
 #include "param.h"
-#include "machine/seg.h"
 #include "sys/file.h"
 #include "user.h"
 #include "inode.h"
@@ -140,7 +139,7 @@ ufs_sync(mp)
 		bp = getblk(mp->m_dev, SUPERB);
 		fs->fs_fmod = 0;
 		fs->fs_time = time.tv_sec;
-		bcopy(fs, bp->b_un.b_addr, sizeof (struct fs));
+		bcopy(fs, bp->b_addr, sizeof (struct fs));
 		bwrite(bp);
 		error = geterror(bp);
 	}

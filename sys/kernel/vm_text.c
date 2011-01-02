@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "map.h"
 #include "user.h"
 #include "proc.h"
@@ -208,7 +206,7 @@ xalloc(ip, ep)
 	ip->i_count++;
 	u.u_procp->p_textp = xp;
 	xexpand(xp);
-	estabur(ts, 0, 0, RW);
+	estabur(ts, 0, 0, 1);
 	offset = sizeof(struct exec);
 	u.u_procp->p_flag |= SLOCK;
 	u.u_error = rdwri(UIO_READ, ip, (caddr_t)0, ep->a_text & ~1,

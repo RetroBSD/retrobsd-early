@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "proc.h"
 #include "signalvar.h"
@@ -247,7 +245,7 @@ rwip(ip, uio, ioflag)
 			brelse(bp);
 			break;
 		}
-		u.u_error = uiomove (bp->b_un.b_addr + on, n, uio);
+		u.u_error = uiomove (bp->b_addr + on, n, uio);
 		if (uio->uio_rw == UIO_READ) {
 			if (n + on == DEV_BSIZE || uio->uio_offset == ip->i_size) {
 				bp->b_flags |= B_AGE;

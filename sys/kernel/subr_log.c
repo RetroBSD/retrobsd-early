@@ -28,7 +28,6 @@ int	nlog = NLOG;
 #include "inode.h"
 #include "errno.h"
 #include "uio.h"
-#include "machine/seg.h"
 #include "map.h"
 
 #define LOG_RDPRI	(PZERO + 1)

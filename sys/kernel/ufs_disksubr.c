@@ -40,7 +40,6 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/systm.h>
-#include <machine/seg.h>
 #include <sys/buf.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
@@ -99,7 +98,7 @@ readdisklabel(dev, strat, lp)
 	if (u.u_error)
 		msg = "I/O error";
 	else {
-		dlp = (struct disklabel*) bp->b_un.b_addr;
+		dlp = (struct disklabel*) bp->b_addr;
 		if (dlp->d_magic != DISKMAGIC ||
 		    dlp->d_magic2 != DISKMAGIC) {
 			if (msg == NULL)
@@ -186,7 +185,7 @@ writedisklabel(dev, strat, lp)
 	biowait(bp);
 	if (u.u_error)
 		goto done;
-	dlp = (struct disklabel*) bp->b_un.b_addr;
+	dlp = (struct disklabel*) bp->b_addr;
 	if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
 	    dkcksum(dlp) == 0) {
 		bcopy(lp, dlp, sizeof (struct disklabel));

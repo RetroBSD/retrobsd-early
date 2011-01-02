@@ -5,7 +5,6 @@
  */
 #include "param.h"
 #include "machine/reg.h"
-#include "machine/seg.h"
 
 #include "systm.h"
 #include "map.h"
@@ -295,7 +294,7 @@ again:
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RO);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 0);
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

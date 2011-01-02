@@ -4,13 +4,11 @@
  * specifies the terms and conditions for redistribution.
  */
 #ifdef KERNEL
-#include "machine/fperr.h"
 #include "dir.h"
 #include "exec.h"
 #include "time.h"
 #include "resource.h"
 #else
-#include <machine/fperr.h>
 #include <sys/dir.h>
 #include <sys/exec.h>
 #include <sys/time.h>

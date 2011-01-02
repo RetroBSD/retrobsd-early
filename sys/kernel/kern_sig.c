@@ -4,7 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
 #include "systm.h"
 #include "user.h"
 #include "inode.h"
@@ -650,7 +649,7 @@ core()
 	if (u.u_error)
 		goto out;
 
-	estabur(0, u.u_dsize, u.u_ssize, RO);
+	estabur(0, u.u_dsize, u.u_ssize, 0);
 	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
 		UIO_USERSPACE, IO_UNIT, (int*) 0);
 	if (u.u_error)

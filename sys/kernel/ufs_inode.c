@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "proc.h"
 #include "inode.h"
@@ -201,7 +199,7 @@ loop:
 		iput(ip);
 		return(NULL);
 	}
-	dp = (struct dinode*) bp->b_un.b_addr;
+	dp = (struct dinode*) bp->b_addr;
 	dp += itoo(ino);
 	ip->i_ic1 = dp->di_ic1;
 	ip->i_flags = dp->di_flags;
@@ -337,7 +335,7 @@ iupdat(ip, ta, tm, waitfor)
 	if (tip->i_flag&ICHG)
 		tip->i_ctime = time.tv_sec;
 	tip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
-	dp = (struct dinode*) bp->b_un.b_addr + itoo (tip->i_number);
+	dp = (struct dinode*) bp->b_addr + itoo (tip->i_number);
 	dp->di_ic1 = tip->i_ic1;
 	dp->di_flags = tip->i_flags;
 	dp->di_ic2 = tip->i_ic2;
@@ -430,7 +428,7 @@ itrunc(oip,length, ioflags)
 			brelse(bp);
 			return;
 		}
-		bzero (bp->b_un.b_addr + offset, (u_int) (DEV_BSIZE - offset));
+		bzero (bp->b_addr + offset, (u_int) (DEV_BSIZE - offset));
 		bdwrite(bp);
 	}
 	/*
@@ -509,7 +507,7 @@ trsingle(ip, bp, last, aflags)
 	register daddr_t *bstart, *bstop;
 	daddr_t blarray[NINDIR];
 
-	bcopy (bp->b_un.b_addr, blarray, NINDIR * sizeof(daddr_t));
+	bcopy (bp->b_addr, blarray, NINDIR * sizeof(daddr_t));
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
 	for (;bstart > bstop;--bstart)
@@ -572,7 +570,7 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 		}
 		cpy = geteblk();
 		copy (bftopaddr(bp), bftopaddr(cpy), DEV_BSIZE);
-		bap = (daddr_t*) bp->b_un.b_addr;
+		bap = (daddr_t*) bp->b_addr;
 		bzero((caddr_t)&bap[last + 1],
 		    (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
 		if (aflags & B_SYNC)
@@ -595,7 +593,7 @@ indirtrunc(ip, bn, lastbn, level, aflags)
 	else {
 		register daddr_t *bstart, *bstop;
 
-		bstart = (daddr_t*) bp->b_un.b_addr;
+		bstart = (daddr_t*) bp->b_addr;
 		bstop = &bstart[last];
 		bstart += NINDIR - 1;
 		/*

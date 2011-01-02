@@ -4,9 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-#include "machine/iopage.h"
-
 #include "dir.h"
 #include "inode.h"
 #include "user.h"

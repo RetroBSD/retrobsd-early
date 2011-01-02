@@ -6,8 +6,6 @@
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
-#include "machine/seg.h"
-
 #include "systm.h"
 #include "user.h"
 #include "proc.h"
@@ -121,10 +119,10 @@ procxmt()
 				goto error;
 			xp->x_flag |= XTRC;
 		}
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RW);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 1);
 		i = suiword((caddr_t)ipc.ip_addr, 0);
 		suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, RO);
+		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 0);
 		if (i<0)
 			goto error;
 		if (xp)

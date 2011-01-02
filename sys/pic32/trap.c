@@ -6,10 +6,7 @@
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
-#include "machine/seg.h"
 #include "machine/trap.h"
-#include "machine/iopage.h"
-
 #include "signalvar.h"
 #include "systm.h"
 #include "user.h"
@@ -95,8 +92,6 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 #endif
 		i = splhigh();
 		printf("aps %o\npc %o ps %o\nov %d\n", &ps, pc, ps, ov);
-		if ((cputype == 70) || (cputype == 44))
-			printf("cpuerr %o\n", *CPUERR);
 		printf("trap type %o\n", dev);
 		splx(i);
 		panic("trap");
@@ -188,17 +183,6 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 	 */
 	case T_PARITYFLT:
 	case T_PARITYFLT + USER:
-		printf("parity\n");
-		if ((cputype == 70) || (cputype == 44)) {
-			for(i = 0; i < 4; i++)
-				printf("%o ", MEMERRLO[i]);
-			printf("\n");
-			MEMERRLO[2] = MEMERRLO[2];
-			if (dev & USER) {
-				i = SIGBUS;
-				break;
-			}
-		}
 		panic("parity");
 		/*NOTREACHED*/
 

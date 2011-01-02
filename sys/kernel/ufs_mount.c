@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "systm.h"
 #include "user.h"
 #include "inode.h"
@@ -200,7 +198,7 @@ found:
 	mp->m_inodp = ip;	/* reserve slot */
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
-	bcopy (tp->b_un.b_addr, (caddr_t)fs, sizeof(struct fs));
+	bcopy (tp->b_addr, (caddr_t)fs, sizeof(struct fs));
 	brelse(tp);
 	tp = 0;
 	fs->fs_ronly = (ronly != 0);

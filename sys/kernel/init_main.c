@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "user.h"
 #include "fs.h"
 #include "mount.h"
@@ -65,7 +63,7 @@ binit()
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
-		bp->b_un.b_addr = (caddr_t) paddr;
+		bp->b_addr = (caddr_t) paddr;
 		binshash(bp, &bfreelist[BQ_AGE]);
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
@@ -276,7 +274,7 @@ main()
 	if (newproc(0)) {
 		expand (szicode, S_DATA);
 		expand (1, S_STACK);		/* one click of stack */
-		estabur (0, szicode, 1, RO);
+		estabur (0, szicode, 1, 0);
 		copyout ((caddr_t)icode, (caddr_t)0, szicode);
 		/*
 		 * return goes to location 0 of user init code

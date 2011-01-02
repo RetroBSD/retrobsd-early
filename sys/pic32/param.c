@@ -19,7 +19,6 @@
 #include "map.h"
 #include "clist.h"
 #include "namei.h"
-#include "machine/seg.h"
 
 /*
  * System parameter formulae.

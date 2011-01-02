@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/seg.h"
-
 #include "fs.h"
 #include "dir.h"
 #include "inode.h"
@@ -56,7 +54,7 @@ balloc(ip, flags)
 		if (((bp->b_flags&B_ERROR) == 0) && (bp->b_resid==0)) {
 			register struct fblk *fbp;
 
-			fbp = (FBLKP) bp->b_un.b_addr;
+			fbp = (FBLKP) bp->b_addr;
 			*((FBLKP)&fs->fs_nfree) = *fbp;
 		}
 		brelse(bp);
@@ -73,7 +71,7 @@ balloc(ip, flags)
 		{
 			register struct fs *fps;
 
-			fps = (struct fs*) bp->b_un.b_addr;
+			fps = (struct fs*) bp->b_addr;
 			*fps = *fs;
 		}
 		if (!async)
@@ -186,7 +184,7 @@ fromtop:
 			ino += INOPB;
 			continue;
 		}
-		dp = (struct dinode*) bp->b_un.b_addr;
+		dp = (struct dinode*) bp->b_addr;
 		for (i = 0;i < INOPB;i++) {
 			if (dp->di_mode != 0)
 				goto cont;
@@ -244,7 +242,7 @@ free(ip, bno)
 	if (fs->fs_nfree >= NICFREE) {
 		fs->fs_flock++;
 		bp = getblk(ip->i_dev, bno);
-		fbp = (FBLKP) bp->b_un.b_addr;
+		fbp = (FBLKP) bp->b_addr;
 		*fbp = *((FBLKP)&fs->fs_nfree);
 		fs->fs_nfree = 0;
 		if (fs->fs_flags & MNT_ASYNC)
