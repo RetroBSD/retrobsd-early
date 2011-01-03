@@ -175,6 +175,8 @@ cmnout:
 }
 
 /*
+ * Mount a filesystem on the given directory inode.
+ *
  * this routine has races if running twice
  */
 struct fs *
@@ -192,8 +194,8 @@ mountfs (dev, flags, ip)
 	int chrdev, (*ioctl)();
 	struct	partinfo dpart;
 
-	error =
-	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE, S_IFBLK);
+	error = (*bdevsw[major(dev)].d_open) (dev,
+		ronly ? FREAD : (FREAD | FWRITE), S_IFBLK);
 	if (error)
 		goto out;
 	/*

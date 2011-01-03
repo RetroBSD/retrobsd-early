@@ -113,7 +113,7 @@ void
 sigaction()
 {
 	register struct a {
-		int	(*sigtramp)();
+		u_int	sigtramp;
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
@@ -124,19 +124,17 @@ sigaction()
 	u_long bit;
 	int error = 0;
 
-	u.u_pcb.pcb_sigc = uap->sigtramp;	/* save trampoline address */
+	u.u_sigtramp = uap->sigtramp;	/* save trampoline address */
 
 	signum = uap->signum;
-	if (signum <= 0 || signum >= NSIG)
-		{
+	if (signum <= 0 || signum >= NSIG) {
 		error = EINVAL;
 		goto out;
-		}
-	if (uap->nsa && (signum == SIGKILL || signum == SIGSTOP))
-		{
+	}
+	if (uap->nsa && (signum == SIGKILL || signum == SIGSTOP)) {
 		error = EINVAL;
 		goto out;
-		}
+	}
 	sa = &vec;
 	if (uap->osa) {
 		sa->sa_handler = u.u_signal[signum];

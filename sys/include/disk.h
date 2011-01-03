@@ -38,12 +38,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)disk.h	8.1.2 (2.11BSD GTE) 1995/05/21
- *
- * from: $Header: disk.h,v 1.5 92/11/19 04:33:03 torek Exp $ (LBL)
  */
-
 #ifndef	_SYS_DISK_H_
 #define	_SYS_DISK_H_
 #include <sys/disklabel.h>
@@ -55,7 +50,7 @@
  * may be somewhat different.
  *
  * Note:  the 2.11BSD version is very different.  The 4.4 version served
- *        as the inspiration. I needed something similar but for slightly 
+ *        as the inspiration. I needed something similar but for slightly
  *	  different purposes.
  */
 
@@ -63,7 +58,7 @@
  * Disk device structures.  Rather than replicate driver specific variations
  * of the following in each driver it was made common here.
  *
- * Some of the flags are specific to various drivers. For example ALIVE and 
+ * Some of the flags are specific to various drivers. For example ALIVE and
  * ONLINE apply to MSCP devices more than to SMD devices while the SEEK flag
  * applies to the SMD (xp) driver but not to the MSCP driver.  The rest
  * of the flags as well as the open partition bitmaps are usable by any disk
@@ -111,8 +106,8 @@ struct dkdevice {
 #define dkminor(unit, part)	(((unit) << 3) | (part))
 
 #ifdef KERNEL
-char	*readdisklabel();
-int	setdisklabel();
-int	writedisklabel();
+//char	*readdisklabel();
+//int	setdisklabel();
+//int	writedisklabel();
 #endif
 #endif /* _SYS_DISK_H_ */

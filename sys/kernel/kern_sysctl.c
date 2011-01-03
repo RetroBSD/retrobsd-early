@@ -153,8 +153,8 @@ __sysctl()
 		memlock.sl_lock = 1;
 		savelen = oldlen;
 	}
-	error = (*fn)(name + 1, uap->namelen - 1, uap->old, &oldlen,
-	    uap->new, uap->newlen);
+	error = (*fn) (name + 1, uap->namelen - 1, uap->old, &oldlen,
+		uap->new, uap->newlen);
 	if (uap->old != NULL) {
 		memlock.sl_lock = 0;
 		if (memlock.sl_want) {
@@ -870,6 +870,27 @@ out:
 }
 
 /*
+ * Fill in an eproc structure for the specified process.  Slightly
+ * inefficient because we have to access the u area again for the
+ * information not kept in the proc structure itself.  Can't afford
+ * to expand the proc struct so we take a slight speed hit here.
+ */
+static void
+fill_eproc(p, ep)
+	register struct proc *p;
+	register struct eproc *ep;
+{
+	struct	tty	*ttyp;
+
+	ep->e_paddr = p;
+	fill_from_u(p, &ep->e_ruid, &ttyp, &ep->e_tdev);
+	if	(ttyp)
+		ep->e_tpgid = ttyp->t_pgrp;
+	else
+		ep->e_tpgid = 0;
+}
+
+/*
  * try over estimating by 5 procs
  */
 #define KERN_PROCSLOP	(5 * sizeof (struct kinfo_proc))
@@ -970,25 +991,4 @@ again:
 		*sizep = needed;
 	}
 	return (0);
-}
-
-/*
- * Fill in an eproc structure for the specified process.  Slightly
- * inefficient because we have to access the u area again for the
- * information not kept in the proc structure itself.  Can't afford
- * to expand the proc struct so we take a slight speed hit here.
- */
-void
-fill_eproc(p, ep)
-	register struct proc *p;
-	register struct eproc *ep;
-{
-	struct	tty	*ttyp;
-
-	ep->e_paddr = p;
-	fill_from_u(p, &ep->e_ruid, &ttyp, &ep->e_tdev);
-	if	(ttyp)
-		ep->e_tpgid = ttyp->t_pgrp;
-	else
-		ep->e_tpgid = 0;
 }

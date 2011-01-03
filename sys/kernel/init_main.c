@@ -150,29 +150,28 @@ main()
 	nchinit();
 	clkstart();
 
-/*
- * If the kernel is configured for the boot/load device AND the use of the
- * compiled in 'bootdev' has not been overridden (by turning on RB_DFLTROOT,
- * see conf/boot.c for details) THEN switch 'rootdev', 'swapdev' and 'pipedev'
- * over to the boot/load device.  Set 'pipedev' to be 'rootdev'.
- *
- * The &077 removes the controller number (bits 6 and 7) - those bits are
- * passed thru from /boot but would only greatly confuse the rest of the kernel.
-*/
+	/*
+	 * If the kernel is configured for the boot/load device AND the use of the
+	 * compiled in 'bootdev' has not been overridden (by turning on RB_DFLTROOT,
+	 * see conf/boot.c for details) THEN switch 'rootdev', 'swapdev' and 'pipedev'
+	 * over to the boot/load device.  Set 'pipedev' to be 'rootdev'.
+	 *
+	 * The &077 removes the controller number (bits 6 and 7) - those bits are
+	 * passed thru from /boot but would only greatly confuse the rest of the kernel.
+	 */
 	i = major(bootdev);
-	if	((bdevsw[i].d_strategy != nodev) && !(boothowto & RB_DFLTROOT))
-		{
-		rootdev = makedev(i, minor(bootdev) & 077);
+	if ((bdevsw[i].d_strategy != nostrategy) && ! (boothowto & RB_DFLTROOT)) {
+		rootdev = makedev (i, minor(bootdev) & 077);
 		swapdev = rootdev | 1;	/* partition 'b' */
 		pipedev = rootdev;
-/*
- * We check that the dump device is the same as the boot device.  If it is
- * different then it is likely that crashdumps go to a tape device rather than
- * the swap area.  In that case do not switch the dump device.
-*/
-		if	((dumpdev != NODEV) && major(dumpdev) == i)
+		/*
+		 * We check that the dump device is the same as the boot device.  If it is
+		 * different then it is likely that crashdumps go to a tape device rather than
+		 * the swap area.  In that case do not switch the dump device.
+		 */
+		if ((dumpdev != NODEV) && major(dumpdev) == i)
 			dumpdev = swapdev;
-		}
+	}
 
 /*
  * Need to attach the root device.  The CSR is passed thru because this
@@ -207,9 +206,9 @@ main()
  * 'swplo' was a hack which has _finally_ gone away!  It was never anything
  * but 0 and caused a number of double word adds in the kernel.
 */
-	(*bdevsw[major(swapdev)].d_open)(swapdev, FREAD|FWRITE, S_IFBLK);
-	swsize = (*bdevsw[major(swapdev)].d_psize)(swapdev);
-	if	(swsize <= 0)
+	(*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK);
+	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
+	if (swsize <= 0)
 		panic("swsiz");		/* don't want to panic, but what ? */
 
 /*
@@ -220,12 +219,11 @@ main()
  * a swap partition (so that we do not swap on top of a filesystem by mistake).
 */
 	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
-	if	(ioctl && !(*ioctl)(swapdev, DIOCGPART, (caddr_t)&dpart, FREAD))
-		{
-		if	(dpart.part->p_fstype != FS_SWAP)
+	if (ioctl && !(*ioctl)(swapdev, DIOCGPART, (caddr_t)&dpart, FREAD)) {
+		if (dpart.part->p_fstype != FS_SWAP)
 			panic("swtyp");
-		}
-	if	(swsize > (daddr_t)65535)
+	}
+	if (swsize > (daddr_t)65535)
 		swsize = 65535;
 	nswap = swsize;
 	mfree(swapmap, --nswap, 1);
@@ -237,7 +235,7 @@ main()
 	mount[0].m_inodp = (struct inode *)1;	/* XXX */
 	mount_updname(fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
-	if	(toytime = toyclk())
+	if (toytime = toyclk())
 		time.tv_sec = toytime;
 	boottime = time;
 

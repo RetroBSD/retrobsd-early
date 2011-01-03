@@ -8,13 +8,13 @@
 #include "ioctl.h"
 #include "proc.h"
 #include "kernel.h"
-#include "systm.h"
 #include "file.h"
 #include "inode.h"
 #include "text.h"
 #include "sysctl.h"
 #include "cpu.h"
 #include "tty.h"
+#include "systm.h"
 
 /*
  * ucall allows user level code to call various kernel functions.

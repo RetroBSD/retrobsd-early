@@ -182,7 +182,8 @@ ttyunblock(tp)
 		ttstart(tp);
 	}
 	if (ISSET(tp->t_flags, RTSCTS) &&
-	    (*cdevsw[major(tp->t_dev)].d_ioctl) (tp->t_dev, TIOCMBIS, &rts, 0) == 0) {
+	    (*cdevsw[major(tp->t_dev)].d_ioctl) (tp->t_dev, TIOCMBIS,
+	    (caddr_t) &rts, 0) == 0) {
 		CLR(tp->t_state, TS_TBLOCK);
 	}
 }
@@ -253,7 +254,8 @@ ttyblock(tp)
 		 * If queue is full, drop RTS to tell modem to stop sending us stuff
 		 */
 		if (ISSET(tp->t_flags, RTSCTS) &&
-		    (*cdevsw[major(tp->t_dev)].d_ioctl)(tp->t_dev,TIOCMBIC, &rts, 0) == 0) {
+		    (*cdevsw[major(tp->t_dev)].d_ioctl) (tp->t_dev, TIOCMBIC,
+		    (caddr_t) &rts, 0) == 0) {
 			SET(tp->t_state, TS_TBLOCK);
 		}
 	}
@@ -602,23 +604,6 @@ ttnread(tp)
 	if (tp->t_flags & (RAW|CBREAK))
 		nread += tp->t_rawq.c_cc;
 	return (nread);
-}
-
-/*
- * XXX - this cleans up the minor device number by stripping off the
- * softcarrier bit.  Drives which use more bits of the minor device
- * MUST call their own select routine.  See dhv.c for an example.
- *
- * This routine will go away when all the drivers have been updated/converted
-*/
-int
-ttselect(dev, rw)
-	register dev_t dev;
-	int rw;
-{
-	struct tty *tp = &cdevsw[major(dev)].d_ttys[minor(dev)&0177];
-
-	return(ttyselect(tp,rw));
 }
 
 int

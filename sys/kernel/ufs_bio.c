@@ -220,6 +220,49 @@ incore(dev, blkno)
 }
 
 /*
+ * Find a buffer which is available for use.
+ * Select something from a free list.
+ * Preference is to AGE list, then LRU list.
+ */
+static struct buf *
+getnewbuf()
+{
+	register struct buf *bp, *dp;
+	int s;
+
+loop:
+	s = splbio();
+	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
+		if (dp->av_forw != dp)
+			break;
+	if (dp == bfreelist) {		/* no free blocks */
+		dp->b_flags |= B_WANTED;
+		sleep((caddr_t)dp, PRIBIO+1);
+		splx(s);
+		goto loop;
+	}
+	splx(s);
+	bp = dp->av_forw;
+	notavail(bp);
+	if (bp->b_flags & B_DELWRI) {
+		bawrite(bp);
+		goto loop;
+	}
+	if(bp->b_flags & (B_RAMREMAP|B_PHYS)) {
+		register memaddr paddr;	/* click address of real buffer */
+#ifdef DIAGNOSTIC
+		if ((bp < &buf[0]) || (bp >= &buf[nbuf]))
+			panic("getnewbuf: RAMREMAP bp addr");
+#endif
+		paddr = bpaddr + DEV_BSIZE * (bp - buf);
+		bp->b_addr = (caddr_t) (paddr << 6);
+	}
+	trace(TR_BRELSE);
+	bp->b_flags = B_BUSY;
+	return (bp);
+}
+
+/*
  * Assign a buffer for the given block.  If the appropriate
  * block is already associated, return it; otherwise search
  * for the oldest non-busy buffer and reassign it.
@@ -293,50 +336,6 @@ geteblk()
 	bp->b_error = 0;
 	return (bp);
 }
-
-/*
- * Find a buffer which is available for use.
- * Select something from a free list.
- * Preference is to AGE list, then LRU list.
- */
-struct buf *
-getnewbuf()
-{
-	register struct buf *bp, *dp;
-	int s;
-
-loop:
-	s = splbio();
-	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
-		if (dp->av_forw != dp)
-			break;
-	if (dp == bfreelist) {		/* no free blocks */
-		dp->b_flags |= B_WANTED;
-		sleep((caddr_t)dp, PRIBIO+1);
-		splx(s);
-		goto loop;
-	}
-	splx(s);
-	bp = dp->av_forw;
-	notavail(bp);
-	if (bp->b_flags & B_DELWRI) {
-		bawrite(bp);
-		goto loop;
-	}
-	if(bp->b_flags & (B_RAMREMAP|B_PHYS)) {
-		register memaddr paddr;	/* click address of real buffer */
-#ifdef DIAGNOSTIC
-		if ((bp < &buf[0]) || (bp >= &buf[nbuf]))
-			panic("getnewbuf: RAMREMAP bp addr");
-#endif
-		paddr = bpaddr + DEV_BSIZE * (bp - buf);
-		bp->b_addr = (caddr_t) (paddr << 6);
-	}
-	trace(TR_BRELSE);
-	bp->b_flags = B_BUSY;
-	return (bp);
-}
-
 
 /*
  * Wait for I/O completion on the buffer; return errors

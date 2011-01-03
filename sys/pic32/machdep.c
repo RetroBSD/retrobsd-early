@@ -17,7 +17,7 @@
 /*
  * Send an interrupt to process.
  *
- * Stack is set up to allow trampoline code stored at u.u_pcb.pcb_sigc (as
+ * Stack is set up to allow trampoline code stored at u.u_sigtramp (as
  * specified by the user process) to call the user's real signal catch
  * routine, followed by sys sigreturn to the sigreturn routine below (see
  * /usr/src/lib/libc/pdp/sys/sigvec.s).  After sigreturn resets the signal
@@ -25,8 +25,9 @@
  * pc, ps.
  */
 void
-sendsig(p, sig, mask)
-	int (*p)(), sig;
+sendsig (p, sig, mask)
+	sighandler_t p;
+	int sig;
 	long mask;
 {
 	struct sigframe {
@@ -96,7 +97,7 @@ sendsig(p, sig, mask)
 	copyout((caddr_t)sfp, n, sizeof(*sfp));
 	regs[R0] = (int)p;
 	regs[R6] = (int)n;
-	regs[R7] = (int)u.u_pcb.pcb_sigc;
+	regs[R7] = (int)u.u_sigtramp;
 	regs[RPS] &= ~PSL_T;
 }
 

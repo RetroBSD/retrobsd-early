@@ -10,7 +10,7 @@ struct cblock {
 	char	c_info[CBSIZE];
 };
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct cblock cfree[];
 int	nclist;
 struct	cblock *cfreelist;

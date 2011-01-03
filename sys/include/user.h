@@ -23,12 +23,7 @@
  */
 #define	MAXCOMLEN	MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
 
-struct	pcb {			/* fake pcb structure */
-	int	(*pcb_sigc)();	/* pointer to trampoline code in user space */
-};
-
 struct user {
-	struct	pcb u_pcb;
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_ar0;			/* address of users saved R0 */
 	char	u_comm[MAXCOMLEN + 1];
@@ -66,7 +61,7 @@ struct user {
 	label_t	u_rsave;		/* save info when exchanging stacks */
 
 /* 1.3 - signal management */
-	int	(*u_signal[NSIG])();	/* disposition of signals */
+	sighandler_t u_signal[NSIG];	/* disposition of signals */
 	long	u_sigmask[NSIG];	/* signals to be blocked */
 	long	u_sigonstack;		/* signals to take on sigstack */
 	long	u_sigintr;		/* signals that interrupt syscalls */
@@ -74,6 +69,7 @@ struct user {
 	int	u_code;			/* ``code'' to trap */
 	int	u_psflags;		/* Process Signal flags */
 	struct	sigaltstack u_sigstk;	/* signal stack info */
+	u_int	u_sigtramp;		/* pointer to trampoline code in user space */
 
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */

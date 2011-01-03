@@ -2,8 +2,6 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)trace.h	7.1 (Berkeley) 6/4/86
  */
 
 /*
@@ -79,7 +77,7 @@
 					/* in specified number of hz */
 #define	VTR_STAMP	4		/* user specified stamp */
 
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#if defined(KERNEL) && defined(UCB_METER)
 u_long tracebuf[TR_NUM_210];
 #define	trace(a)	tracebuf[a]++;
 #else

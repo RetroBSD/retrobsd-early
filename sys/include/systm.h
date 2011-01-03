@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef SUPERVISOR
-
 /*
  * The `securelevel' variable controls the security level of the system.
  * It can only be decreased by process 1 (/sbin/init).
@@ -64,7 +62,6 @@ dev_t	dumpdev;		/* device to take dumps on */
 long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	pipedev;		/* pipe device */
-int	nodev (void);		/* no device function used in bdevsw/cdevsw */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
@@ -98,7 +95,6 @@ int loginit (void);
  * Syscalls.
  */
 void	nosys (void);
-void	nonet (void);
 
 /* 1.1 processes and protection */
 void	getpid (void);
@@ -161,4 +157,41 @@ void	profil (void);		/* 'cuz sys calls are interruptible */
 void	vhangup (void);		/* should just do in exit (void) */
 void	vfork (void);		/* awaiting fork w/ copy on write */
 
-#endif /* ! SUPERVISOR */
+/*
+ * Drivers.
+ */
+struct buf;
+struct uio;
+
+int rkopen (dev_t dev, int flag, int mode);
+void rkstrategy (struct buf *bp);
+daddr_t rksize (dev_t dev);
+
+int cnopen (dev_t dev, int flag, int mode);
+int cnclose (dev_t dev, int flag, int mode);
+int cnread (dev_t dev, struct uio *uio, int flag);
+int cnwrite (dev_t dev, struct uio *uio, int flag);
+int cnioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
+int cnselect (dev_t dev, int rw);
+#ifdef TS_ISOPEN
+extern struct tty cnttys[];
+#endif
+
+int mmrw (dev_t dev, struct uio *uio, int flag);
+int seltrue (dev_t dev, int rw);
+void nostrategy (struct buf *bp);
+void nonet (void);
+
+int syopen (dev_t dev, int flag, int mode);
+int syread (dev_t dev, struct uio *uio, int flag);
+int sywrite (dev_t dev, struct uio *uio, int flag);
+int syioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
+int syselect (dev_t dev, int rw);
+
+int logopen (dev_t dev, int flag, int mode);
+int logclose (dev_t dev, int flag, int mode);
+int logread (dev_t dev, struct uio *uio, int flag);
+int logioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
+int logselect (dev_t dev, int rw);
+
+int fdopen (dev_t dev, int flag, int mode);

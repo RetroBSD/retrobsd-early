@@ -94,6 +94,6 @@ struct xmount {
 #define	MNT_WAIT	1
 #define	MNT_NOWAIT	2
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct	mount mount[NMOUNT];
 #endif

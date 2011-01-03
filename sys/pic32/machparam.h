@@ -79,4 +79,9 @@
 
 #define	noop()		asm volatile ("nop")
 
+#ifdef KERNEL
+//int rawrw (dev_t dev, struct uio *uio, int flag);
+//int (*dump) (dev_t dev);
+#endif
+
 #endif /* ENDIAN */

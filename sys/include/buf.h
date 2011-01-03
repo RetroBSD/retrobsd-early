@@ -71,7 +71,9 @@ struct buf
 #define	bfree(bp)	(bp)->b_bcount = 0
 #define	bftopaddr(bp)	((u_int)(bp)->b_addr >> 6)
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
+struct inode;
+
 #define	BUFHSZ	16	/* must be power of 2 */
 #define	BUFHASH(dev,blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
 extern struct	buf buf[];		/* the buffer pool itself */
@@ -79,12 +81,32 @@ extern int	nbuf;			/* number of buffer headers */
 extern struct	bufhd bufhash[];	/* heads of hash lists */
 extern struct	buf bfreelist[];	/* heads of available lists */
 
-struct	buf *balloc();
-struct	buf *getblk();
-struct	buf *geteblk();
-struct	buf *getnewbuf();
-struct	buf *bread();
-struct	buf *breada();
+/*
+ * Assign a buffer for the given block.  If the appropriate
+ */
+struct buf *getblk (dev_t dev, daddr_t blkno);
+
+/*
+ * Allocate a block in the file system.
+ */
+struct buf *balloc (struct inode *ip, int flags);
+
+/*
+ * Get an empty block.
+ */
+struct buf *geteblk (void);
+
+/*
+ * Read in (if necessary) the block and return a buffer pointer.
+ */
+struct buf *bread (dev_t dev, daddr_t blkno);
+
+/*
+ * Read in the block, like bread, but also start I/O on the
+ * read-ahead block.
+ */
+struct buf *breada (dev_t dev, daddr_t blkno, daddr_t rablkno);
+
 #endif
 
 /*

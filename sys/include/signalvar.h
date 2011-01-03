@@ -29,10 +29,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)signalvar.h	8.6.2 (2.11BSD) 1999/9/6
  */
-
 #ifndef	_SYS_SIGNALVAR_H_		/* tmp for user.h */
 #define	_SYS_SIGNALVAR_H_
 
@@ -48,8 +45,8 @@
 #define	SAS_ALTSTACK	0x02		/* have alternate signal stack */
 
 /* additional signal action values, used only temporarily/internally */
-#define	SIG_CATCH	(int (*)())2
-#define	SIG_HOLD	(int (*)())3
+#define	SIG_CATCH	(sighandler_t) 2
+#define	SIG_HOLD	(sighandler_t) 3
 
 /*
  * Determine signal that should be delivered to process p, the current

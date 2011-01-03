@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)proc.h	1.5 (2.11BSD) 1999/9/5
  */
-
 #ifndef	_SYS_PROC_H_
 #define	_SYS_PROC_H_
 
@@ -93,13 +90,17 @@ struct	proc {
 #define	PIDHSZ		16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct	proc *pidhash[PIDHSZ];
-struct	proc *pfind();
 extern struct	proc proc[], *procNPROC;	/* the proc table itself */
 struct	proc *freeproc, *zombproc, *allproc, *qs;
 			/* lists of procs in various states */
 int	nproc;
+
+/*
+ * Find a process by pid.
+ */
+struct proc *pfind (int pid);
 
 /*
  * Send the specified signal to the specified process.

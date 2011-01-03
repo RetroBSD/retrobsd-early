@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)cons.c	1.3 (2.11BSD GTE) 1997/4/25
  */
 
 /*
@@ -28,7 +26,7 @@
 struct dldevice *cnaddr = (struct dldevice*) 0177560;
 
 int	nkl11 = NKL;			/* for pstat */
-struct	tty cons [NKL];
+struct	tty cnttys [NKL];
 extern char	partab[];
 
 void cnstart (struct tty *tp);
@@ -38,7 +36,7 @@ cnattach(addr, unit)
 	struct dldevice *addr;
 {
 	if ((u_int)unit <= NKL) {
-		cons[unit].t_addr = (caddr_t)addr;
+		cnttys[unit].t_addr = (caddr_t)addr;
 		return (1);
 	}
 	return (0);
@@ -46,7 +44,7 @@ cnattach(addr, unit)
 
 /*ARGSUSED*/
 int
-cnopen(dev, flag)
+cnopen(dev, flag, mode)
 	dev_t dev;
 {
 	register struct dldevice *addr;
@@ -54,7 +52,7 @@ cnopen(dev, flag)
 	register int d;
 
 	d = minor(dev);
-	tp = &cons[d];
+	tp = &cnttys[d];
 	if (!d && !tp->t_addr)
 		tp->t_addr = (caddr_t)cnaddr;
 	if (d >= NKL || !(addr = (struct dldevice *)tp->t_addr))
@@ -76,10 +74,10 @@ cnopen(dev, flag)
 
 /*ARGSUSED*/
 int
-cnclose(dev, flag)
+cnclose(dev, flag, mode)
 	dev_t dev;
 {
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 
 	if (linesw[tp->t_line].l_close)
 		(*linesw[tp->t_line].l_close)(tp, flag);
@@ -94,7 +92,7 @@ cnread(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 
 	if (! linesw[tp->t_line].l_read)
 		return (ENODEV);
@@ -108,11 +106,21 @@ cnwrite(dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 
 	if (! linesw[tp->t_line].l_write)
 		return (ENODEV);
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+}
+
+int
+cnselect(dev, rw)
+	register dev_t dev;
+	int rw;
+{
+	register struct tty *tp = &cnttys[minor(dev)];
+
+	return (ttyselect (tp, rw));
 }
 
 /*ARGSUSED*/
@@ -122,7 +130,7 @@ cnrint(dev)
 {
 	register int c;
 	register struct dldevice *addr;
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 
 	addr = (struct dldevice *)tp->t_addr;
 	c = addr->dlrbuf;
@@ -138,7 +146,7 @@ cnioctl(dev, cmd, addr, flag)
 	register u_int cmd;
 	caddr_t addr;
 {
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 	register int error;
 
 	if (linesw[tp->t_line].l_ioctl) {
@@ -156,7 +164,7 @@ void
 cnxint(dev)
 	dev_t dev;
 {
-	register struct tty *tp = &cons[minor(dev)];
+	register struct tty *tp = &cnttys[minor(dev)];
 
 	tp->t_state &= ~TS_BUSY;
 	if (linesw[tp->t_line].l_start)

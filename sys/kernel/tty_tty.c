@@ -18,13 +18,14 @@
 #include "conf.h"
 
 /*ARGSUSED*/
+int
 syopen(dev, flag)
 	dev_t dev;
 	int flag;
 {
 	if (u.u_ttyp == NULL)
 		return (ENXIO);
-	return((*cdevsw[major(u.u_ttyd)].d_open)(u.u_ttyd, flag));
+	return((*cdevsw[major(u.u_ttyd)].d_open)(u.u_ttyd, flag, 0));
 }
 
 /*ARGSUSED*/

@@ -29,10 +29,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)disklabel.h	8.1.1 (2.11BSD) 1995/04/13
  */
-
 #ifndef	_SYS_DISKLABEL_H_
 #define	_SYS_DISKLABEL_H_
 
@@ -282,12 +279,8 @@ struct partinfo {
 
 #define DIOCSBAD	_IOW(d, 110, struct dkbad)	/* set kernel dkbad */
 
-#ifndef	KERNEL
-struct disklabel *getdiskbyname();
-#endif
-
-#if	defined(KERNEL) && !defined(SUPERVISOR)
-memaddr	disklabelalloc();
+#ifndef KERNEL
+struct disklabel *getdiskbyname (char *name);
 #endif
 
 #endif	/* !_SYS_DISKLABEL_H_ */

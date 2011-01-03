@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_proc.c	2.1 (2.11BSD) 1999/8/11
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
@@ -14,6 +11,7 @@
 /*
  * Is p an inferior of the current process?
  */
+int
 inferior(p)
 	register struct proc *p;
 {
@@ -24,11 +22,14 @@ inferior(p)
 	return (1);
 }
 
+/*
+ * Find a process by pid.
+ */
 struct proc *
-pfind(pid)
+pfind (pid)
 	register int pid;
 {
-	register struct proc *p = pidhash[PIDHASH(pid)];
+	register struct proc *p = pidhash [PIDHASH(pid)];
 
 	for (; p; p = p->p_hash)
 		if (p->p_pid == pid)
@@ -39,6 +40,7 @@ pfind(pid)
 /*
  * init the process queues
  */
+void
 pqinit()
 {
 	register struct proc *p;

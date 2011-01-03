@@ -428,7 +428,7 @@ badarg:
 
 			blkno = dbtofsb(bno) + lblkno(cc);
 			if (incore(swapdev,blkno)) {
-				bp = bread(swapdev,blkno);
+				bp = bread (swapdev, blkno);
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				brelse(bp);

@@ -26,7 +26,7 @@ struct text
 	char	dummy;		/* room for one more */
 };
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct	text text[], *textNTEXT;
 int	ntext;
 

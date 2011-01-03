@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)inode.h	1.4 (2.11BSD GTE) 1995/12/24
  */
 
 /*
@@ -135,7 +133,7 @@ struct dinode {
 #define	di_mtime	di_ic2.ic_mtime
 #define	di_ctime	di_ic2.ic_ctime
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 /*
  * Invalidate an inode. Used by the namei cache to detect stale
  * information. In order to save space and also reduce somewhat the
@@ -230,7 +228,7 @@ int chown1 (struct inode *ip, int uid, int gid);
 #define	IWRITE		0200
 #define	IEXEC		0100
 
-#if	defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 /*
  * Flags for va_cflags.
  */
@@ -264,27 +262,24 @@ int chown1 (struct inode *ip, int uid, int gid);
  * NOTE: For reasons of speed the function 'vattr_null()' was written in
  * very compact assembly code and placed in pdp/mch_xxx.s.  If you change
  * the 'vattr' structure be sure and change vattr_null in pdp/mch_xxx.s!
-*/
-
-	struct	vattr
-		{
-		mode_t	va_mode;
-		uid_t	va_uid;
-		gid_t	va_gid;
-		off_t	va_size;
-		time_t	va_atime;
-		time_t	va_mtime;
-		u_short	va_flags;
-		u_short	va_vaflags;
-		};
+ */
+struct vattr {
+	mode_t	va_mode;
+	uid_t	va_uid;
+	gid_t	va_gid;
+	off_t	va_size;
+	time_t	va_atime;
+	time_t	va_mtime;
+	u_short	va_flags;
+	u_short	va_vaflags;
+};
 
 /*
  * N.B:  If the above structure changes be sure to modify the function
  * vattr_null in pdp/mch_xxx.s!
-*/
+ */
 #endif
 
-#ifndef SUPERVISOR
 #define	ILOCK(ip) { \
 	while ((ip)->i_flag & ILOCKED) { \
 		(ip)->i_flag |= IWANT; \
@@ -318,4 +313,3 @@ int chown1 (struct inode *ip, int uid, int gid);
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
-#endif

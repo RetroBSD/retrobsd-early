@@ -3,7 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
 #ifndef	_SYS_FS_H_
 #define	_SYS_FS_H_
 
@@ -126,8 +125,19 @@ struct	fblk {
  */
 #define	MAXPIPSIZ	(NDADDR * MAXBSIZE)
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
-struct	fs *getfs();
-struct	fs *mountfs();
-#endif
+#ifdef KERNEL
+struct inode;
+
+/*
+ * Map a device number into a pointer to the incore super block.
+ */
+struct fs *getfs (dev_t dev);
+
+/*
+ * Mount a filesystem on the given directory inode.
+ */
+struct fs *mountfs (dev_t dev, int flags, struct inode *ip);
+
+#endif /* KERNEL */
+
 #endif /* _SYS_FS_H_ */

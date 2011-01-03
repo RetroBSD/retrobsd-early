@@ -13,75 +13,85 @@
 #include "proc.h"
 #include "clist.h"
 #include "tty.h"
+#include "systm.h"
 
-dev_t	rootdev = makedev(0,0),
-	swapdev = makedev(0,1),
-	pipedev = makedev(0,0);
+/*
+ * Null routine; placed in insignificant entries
+ * in the bdevsw and cdevsw tables.
+ */
+static int
+nulldev ()
+{
+	return (0);
+}
 
-dev_t	dumpdev = NODEV;
-daddr_t	dumplo = (daddr_t)512;
-int	nulldev();
-int	(*dump)() = nulldev;
+static int
+norw (dev, uio, flag)
+	dev_t dev;
+	struct uio *uio;
+	int flag;
+{
+	return (0);
+}
 
-int	nulldev();
-int	nodev();
-int	rawrw();
+static int
+noioctl (dev, cmd, data, flag)
+	dev_t dev;
+	u_int cmd;
+	caddr_t data;
+	int flag;
+{
+	return (0);
+}
+
+/*
+ * root attach routine
+ */
+static void
+noroot (csr)
+	caddr_t csr;
+{
+	/* Empty. */
+}
 
 #if NRK > 0
-int	rkopen(), rkstrategy();
-daddr_t	rksize();
-#define	rkclose		nulldev
 #else
-#define	rkopen		nodev
-#define	rkclose		nodev
-#define	rkstrategy	nodev
+#define	rkopen		noopen
+#define	rkstrategy	nostrategy
 #define	rksize		NULL
 #endif
 
 struct bdevsw	bdevsw[] = {
-{ /* rk = 0 */
-	rkopen,		rkclose,	rkstrategy,	nulldev,	rksize,
-	0,		},
+	{ rkopen,	nulldev,	rkstrategy,	/* rk = 0 */
+	  noroot,	rksize,		0 },
 };
 int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
-
-int	cnopen(), cnclose(), cnread(), cnwrite(), cnioctl();
-extern struct tty cons[];
-
-int	logopen(), logclose(), logread(), logioctl(), logselect();
-int	syopen(), syread(), sywrite(), syioctl(), syselect();
-
-int	mmrw();
-#define	mmselect	seltrue
-
-int	fdopen();
-int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] = {
 { /* cn = 0 */
 	cnopen,		cnclose,	cnread,		cnwrite,
-	cnioctl,	nulldev,	cons,		ttselect,
-	nulldev,	},
+	cnioctl,	nulldev,	cnttys,		cnselect,
+	nostrategy,	},
 { /* mem = 1 */
 	nulldev,	nulldev,	mmrw,		mmrw,
-	nodev,		nulldev,	0,		mmselect,
-	nulldev,	},
+	noioctl,	nulldev,	0,		seltrue,
+	nostrategy,	},
 { /* tty = 3 */
 	syopen,		nulldev,	syread,		sywrite,
 	syioctl,	nulldev,	0,		syselect,
-	nulldev,	},
+	nostrategy,	},
 { /* rk = 4 */
-	rkopen,		rkclose,	rawrw,		rawrw,
-	nodev,		nulldev,	0,		seltrue,
+	rkopen,		nulldev,	rawrw,		rawrw,
+	noioctl,	nulldev,	0,		seltrue,
 	rkstrategy,	},
 { /* log = 5 */
-	logopen,	logclose,	logread,	nodev,
+	logopen,	logclose,	logread,	norw,
 	logioctl,	nulldev,	0,		logselect,
-	nulldev,	},
+	nostrategy,	},
 { /* fd = 6 */
-	fdopen,		nodev,		nodev,		nodev,
-	nodev,		nodev,		0,		nodev,
-	nodev,	},
+	fdopen,		nulldev,	norw,		norw,
+	noioctl,	nulldev,	0,		seltrue,
+	nostrategy,	},
 };
 
 int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);

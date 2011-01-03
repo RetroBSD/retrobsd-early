@@ -2,8 +2,6 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)vmmeter.h	7.1 (Berkeley) 6/4/86
  */
 
 /*
@@ -28,6 +26,7 @@ struct vmrate
 	u_short	v_swpin;	/* swapins */
 	u_short	v_swpout;	/* swapouts */
 };
+
 struct vmsum
 {
 	long	v_swtch;	/* context switches */
@@ -45,7 +44,7 @@ struct vmsum
 	long	v_swpin;	/* swapins */
 	long	v_swpout;	/* swapouts */
 };
-#if defined(KERNEL) && defined(UCB_METER) && !defined(SUPERVISOR)
+#if defined(KERNEL) && defined(UCB_METER)
 struct vmrate	cnt, rate;
 struct vmsum	sum;
 #endif
@@ -67,6 +66,6 @@ struct vmtotal
 	size_t	t_armtxt;	/* active real memory used by text, clicks */
 	size_t	t_free;		/* free memory, kb */
 };
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 struct	vmtotal total;
 #endif

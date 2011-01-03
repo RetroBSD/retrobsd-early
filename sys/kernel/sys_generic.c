@@ -15,19 +15,6 @@
 #include "kernel.h"
 #include "systm.h"
 
-/*
- * this is consolidated here rather than being scattered all over the
- * place.  the socketops table has to be in kernel space, but since
- * networking might not be defined an appropriate error has to be set
- */
-int	sorw(), soctl(), sosel(), socls();
-
-struct fileops	socketops = { sorw, soctl, sosel, socls };
-
-extern struct fileops	inodeops, pipeops;
-
-struct fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
-
 static void
 rwuio(uio)
 	register struct uio *uio;
@@ -557,3 +544,35 @@ socls(fp)
 #endif
 	return(error);
 }
+
+/*
+ * this is consolidated here rather than being scattered all over the
+ * place.  the socketops table has to be in kernel space, but since
+ * networking might not be defined an appropriate error has to be set
+ */
+struct fileops	socketops = { sorw, soctl, sosel, socls };
+
+extern struct fileops	inodeops, pipeops;
+
+struct fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
+
+/*
+ * Routine placed in illegal entries in the bdevsw and cdevsw tables.
+ */
+void
+nostrategy (bp)
+	struct buf *bp;
+{
+	/* Empty. */
+}
+
+#ifndef INET
+/*
+ * socket(2) and socketpair(2) if networking not available.
+ */
+void
+nonet()
+{
+	u.u_error = EPROTONOSUPPORT;
+}
+#endif

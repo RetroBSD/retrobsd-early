@@ -32,10 +32,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)sysctl.h	8.1.3 (2.11BSD) 1999/4/29
  */
-
 #ifndef _SYS_SYSCTL_H_
 #define	_SYS_SYSCTL_H_
 
@@ -66,7 +63,7 @@
 
 /*
  * Each subsystem defined by sysctl defines a list of variables
- * for that subsystem. Each name is either a node with further 
+ * for that subsystem. Each name is either a node with further
  * levels defined below it, or it is a leaf of some particular
  * type given below. Each sysctl level defines a set of name/type
  * pairs to be used by sysctl(1) in manipulating the subsystem.
@@ -168,7 +165,7 @@ struct ctlname {
 }
 #endif
 
-/* 
+/*
  * KERN_PROC subtypes
  */
 #define KERN_PROC_ALL		0	/* everything */
@@ -179,7 +176,7 @@ struct ctlname {
 #define	KERN_PROC_UID		5	/* by effective uid */
 #define	KERN_PROC_RUID		6	/* by real uid */
 
-/* 
+/*
  * KERN_PROC subtype ops return arrays of augmented proc structures:
  */
 struct kinfo_proc {
@@ -199,7 +196,7 @@ struct	kinfo_text {
 	struct	text *kp_textp;			/* address of text */
 	struct	text kp_text;			/* text structure */
 };
- 
+
 /*
  * KERN_INODE returns an array of augmented inode structures:
 */
@@ -307,6 +304,7 @@ struct	kinfo_file {
 #define	CTL_DEBUG_MAXID		20
 
 #ifdef	KERNEL
+
 #ifdef	DEBUG
 /*
  * CTL_DEBUG variables.
@@ -339,17 +337,18 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
  * interpreted.  The namelen parameter is the number of integers in
  * the name.
  */
-typedef int (sysctlfn)();
+typedef int (sysctlfn) (int *name, u_int namelen,
+	void *oldp, size_t *oldlenp, void *newp, size_t newlen);
 
-int sysctl_int();
-int sysctl_rdint();
-int sysctl_string();
-int sysctl_rdstring();
-int sysctl_rdstruct();
-void fill_eproc();
+//int sysctl_int();
+//int sysctl_rdint();
+//int sysctl_string();
+//int sysctl_rdstring();
+//int sysctl_rdstruct();
 
 #else	/* !KERNEL */
 
 int	sysctl();
+
 #endif	/* KERNEL */
 #endif	/* !_SYS_SYSCTL_H_ */

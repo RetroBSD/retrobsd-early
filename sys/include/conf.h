@@ -4,6 +4,8 @@
  * specifies the terms and conditions for redistribution.
  */
 struct uio;
+struct buf;
+struct tty;
 
 /*
  * Declaration of block device
@@ -16,37 +18,29 @@ struct uio;
  */
 struct bdevsw
 {
-	int	(*d_open)();
-	int	(*d_close)();
-	int	(*d_strategy)();
-	int	(*d_root)();		/* XXX root attach routine */
-	daddr_t	(*d_psize)();
-	int	d_flags;
+	int	(*d_open) (dev_t, int, int);
+	int	(*d_close) (dev_t, int, int);
+	void	(*d_strategy) (struct buf*);
+	void	(*d_root) (caddr_t);		/* root attach routine */
+	daddr_t	(*d_psize) (dev_t);		/* query partition size */
+	int	d_flags;			/* tape flag */
 };
-
-#if defined(KERNEL) && !defined(SUPERVISOR)
-extern struct	bdevsw bdevsw[];
-#endif
 
 /*
  * Character device switch.
  */
 struct cdevsw
 {
-	int	(*d_open)();
-	int	(*d_close)();
-	int	(*d_read)();
-	int	(*d_write)();
-	int	(*d_ioctl)();
-	int	(*d_stop)();
+	int	(*d_open) (dev_t, int, int);
+	int	(*d_close) (dev_t, int, int);
+	int	(*d_read) (dev_t, struct uio*, int);
+	int	(*d_write) (dev_t, struct uio*, int);
+	int	(*d_ioctl) (dev_t, u_int, caddr_t, int);
+	int	(*d_stop) (struct tty*, int);
 	struct tty *d_ttys;
-	int	(*d_select)();
-	int	(*d_strategy)();
+	int	(*d_select) (dev_t, int);
+	void	(*d_strategy) (struct buf*);
 };
-
-#if defined(KERNEL) && !defined(SUPERVISOR)
-extern struct	cdevsw cdevsw[];
-#endif
 
 /*
  * tty line control switch.
@@ -63,6 +57,10 @@ struct linesw
 	int	(*l_modem) (struct tty*, int);
 };
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
+extern struct	bdevsw bdevsw[];
+extern struct	cdevsw cdevsw[];
 extern struct	linesw linesw[];
+
+int rawrw (dev_t dev, struct uio *uio, int flag);
 #endif

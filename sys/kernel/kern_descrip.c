@@ -207,8 +207,6 @@ fsetown(fp, value)
 	return (fioctl(fp, (u_int)TIOCSPGRP, (caddr_t)&value));
 }
 
-extern	struct	fileops	*Fops[];
-
 int
 fioctl(fp, cmd, value)
 	register struct file *fp;

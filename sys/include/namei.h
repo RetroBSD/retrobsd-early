@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)namei.h	1.3 (2.11BSD) 1997/1/18
  */
-
 #ifndef _NAMEI_
 #define	_NAMEI_
 
@@ -69,7 +66,7 @@ struct	namecache {
 	char	nc_name[NCHNAMLEN];	/* segment name */
 };
 
-#if defined(KERNEL) && !defined(SUPERVISOR)
+#ifdef KERNEL
 extern struct	namecache namecache [];
 extern int	nchsize;
 #endif

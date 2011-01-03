@@ -16,7 +16,8 @@
 /*
  * swap I/O
  */
-swap(blkno, coreaddr, count, rdflg)
+void
+swap (blkno, coreaddr, count, rdflg)
 	memaddr blkno, coreaddr;
 	register int count;
 	int rdflg;
@@ -64,11 +65,11 @@ swap(blkno, coreaddr, count, rdflg)
 /*
  * rout is the name of the routine where we ran out of swap space.
  */
-swkill(p, rout)
+void
+swkill (p, rout)
 	register struct proc *p;
 	char *rout;
 {
-
 	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n",
 		p->p_pid, rout);
 	/*
@@ -114,8 +115,9 @@ swkill(p, rout)
  * raw read&write routines , systems had been running fine for several
  * months with it ifdef'd out.  9/91-sms
  */
+int
 physio(strat, bp, dev, rw, uio)
-	int (*strat)();
+	void (*strat) (struct buf*);
 	register struct buf *bp;
 	dev_t dev;
 	int rw;
@@ -202,11 +204,12 @@ physio(strat, bp, dev, rw, uio)
 	return(error);
 }
 
-rawrw(dev, uio, flag)
+int
+rawrw (dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
 	int flag;
-	{
-	return(physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev,
+{
+	return (physio(cdevsw[major(dev)].d_strategy, (struct buf *)NULL, dev,
 		uio->uio_rw == UIO_READ ? B_READ : B_WRITE, uio));
-	}
+}

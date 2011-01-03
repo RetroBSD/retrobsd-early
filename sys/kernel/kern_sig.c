@@ -179,6 +179,20 @@ out:
 }
 
 /*
+ * Put the argument process into the stopped
+ * state and notify the parent via wakeup.
+ * Signals are handled elsewhere.
+ */
+void
+stop(p)
+	register struct proc *p;
+{
+	p->p_stat = SSTOP;
+	p->p_flag &= ~P_WAITED;
+	wakeup((caddr_t)p->p_pptr);
+}
+
+/*
  * Send the specified signal to
  * all processes with 'pgrp' as
  * process group.
@@ -207,7 +221,7 @@ psignal(p, sig)
 	register int sig;
 {
 	register int s;
-	int (*action)();
+	sighandler_t action;
 	int prop;
 	long mask;
 
@@ -533,20 +547,6 @@ issignal(p)
 }
 
 /*
- * Put the argument process into the stopped
- * state and notify the parent via wakeup.
- * Signals are handled elsewhere.
- */
-stop(p)
-	register struct proc *p;
-{
-
-	p->p_stat = SSTOP;
-	p->p_flag &= ~P_WAITED;
-	wakeup((caddr_t)p->p_pptr);
-}
-
-/*
  * Take the action for the specified signal
  * from the current set of pending signals.
  */
@@ -556,7 +556,7 @@ postsig(sig)
 {
 	register struct proc *p = u.u_procp;
 	long mask = sigmask(sig), returnmask;
-	register int (*action)();
+	register sighandler_t action;
 
 	p->p_sig &= ~mask;
 	action = u.u_signal[sig];

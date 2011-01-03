@@ -16,26 +16,30 @@
 #include "clist.h"
 #include "callout.h"
 #include "reboot.h"
-#include "systm.h"
 #include "msgbuf.h"
 #include "namei.h"
 #include "disklabel.h"
 #include "mount.h"
+#include "systm.h"
 
 size_t	physmem;	/* total amount of physical memory (for savecore) */
 
-#define	NLABELS	6
-
-memaddr	_dlabelbase;
-int	_dlabelnum = NLABELS;
-
 int waittime = -1;
 
-static void
-initdisklabels()
+static int
+nodump()
 {
-	_dlabelbase = malloc (coremap, NLABELS * sizeof (struct disklabel));
+	return (0);
 }
+
+int (*dump) (dev_t) = nodump;
+
+dev_t	rootdev = makedev(0,0),
+	swapdev = makedev(0,1),
+	pipedev = makedev(0,0);
+
+dev_t	dumpdev = NODEV;
+daddr_t	dumplo = (daddr_t) 1024;
 
 /*
  * Machine dependent startup code
@@ -68,11 +72,6 @@ startup()
 		mount[i].m_extern = (memaddr) malloc (coremap, sizeof(struct xmount));
 
 	/*
-	 * Allocate the initial disklabels.
-	 */
-	(void) initdisklabels();
-
-	/*
 	 * Initialize callouts
 	 */
 	callfree = callout;
@@ -88,12 +87,11 @@ startup()
 void
 dumpsys()
 {
-	extern int (*dump)();
 	register int error;
 
 	if (dumpdev != NODEV) {
 		printf("\ndumping to dev %o off %D\ndump ",dumpdev,dumplo);
-		error = (*dump)(dumpdev);
+		error = (*dump) (dumpdev);
 		switch(error) {
 
 		case EFAULT:
@@ -171,18 +169,4 @@ boot(dev, howto)
 		doboot(dev, howto);
 		/*NOTREACHED*/
 	}
-}
-
-memaddr
-disklabelalloc()
-{
-	register memaddr base;
-
-	if (--_dlabelnum) {
-		base = _dlabelbase;
-		_dlabelbase += sizeof (struct disklabel);
-		return(base);
-	}
-	base = malloc (coremap, sizeof (struct disklabel));
-	return(base);
 }

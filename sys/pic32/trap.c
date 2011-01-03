@@ -113,7 +113,7 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 		if(fuiword((caddr_t)(pc-2)) == SETD && u.u_signal[SIGILL] == 0)
 			goto out;
 		i = SIGILL;
-		u.u_code = ILL_RESAD_FAULT;	/* it's simplest to lie */
+		u.u_code = 0;	/* TODO */
 		break;
 
 	case T_BPTTRAP + USER:

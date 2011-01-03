@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)dir.h	1.2 (2.11BSD GTE) 11/4/94
  */
-
 #ifndef	_DIR_
 #define	_DIR_
 
@@ -80,11 +77,12 @@ extern	DIR *opendir();
 extern	struct direct *readdir();
 extern	long telldir();
 extern	void seekdir();
-#define rewinddir(dirp)	seekdir((dirp), (long)0)
-#define dirfd(dirp) ((dirp)->dd_fd)
 extern	void closedir();
 
-#endif /* KERNEL */
+#define rewinddir(dirp)	seekdir ((dirp), (long)0)
+#define dirfd(dirp)	((dirp)->dd_fd)
+
+#endif /* !KERNEL */
 
 /*
  * Template for manipulating directories.

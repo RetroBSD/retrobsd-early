@@ -83,7 +83,7 @@ softclock(pc, ps)
 	for (;;) {
 		register struct callout *p1;
 		register caddr_t arg;
-		register int (*func)();
+		register void (*func) (caddr_t, int);
 		register int a, s;
 
 		s = splhigh();
@@ -252,7 +252,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
  */
 void
 timeout(fun, arg, t)
-	int (*fun)();
+	void (*fun) (caddr_t, int);
 	caddr_t arg;
 	register int t;
 {
@@ -284,7 +284,7 @@ timeout(fun, arg, t)
  */
 void
 untimeout(fun, arg)
-	int (*fun)();
+	void (*fun) (caddr_t, int);
 	caddr_t arg;
 {
 	register struct callout *p1, *p2;

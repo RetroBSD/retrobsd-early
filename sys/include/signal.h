@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)signal.h	1.2 (2.11BSD) 1997/8/28
  */
-
 #ifndef	NSIG
 #define NSIG	32
 
@@ -13,8 +10,6 @@
 #define	SIGINT	2	/* interrupt */
 #define	SIGQUIT	3	/* quit */
 #define	SIGILL	4	/* illegal instruction (not reset when caught) */
-#define	    ILL_RESAD_FAULT	0x0	/* reserved addressing fault */
-/* CHME, CHMS, CHMU are not yet given back to users reasonably */
 #define	SIGTRAP	5	/* trace trap (not reset when caught) */
 #define	SIGIOT	6	/* IOT instruction */
 #define	SIGABRT	SIGIOT	/* compatibility */
@@ -44,12 +39,14 @@
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
-#define	SIG_ERR		(int (*)())-1
-#define	SIG_DFL		(int (*)())0
-#define	SIG_IGN		(int (*)())1
+typedef	void (*sighandler_t) (int);	/* type of signal function */
+
+#define	SIG_ERR		(sighandler_t) -1
+#define	SIG_DFL		(sighandler_t) 0
+#define	SIG_IGN		(sighandler_t) 1
 
 #ifndef KERNEL
-int	(*signal())();
+//int	(*signal())();
 #endif
 
 typedef unsigned long sigset_t;
@@ -58,7 +55,7 @@ typedef unsigned long sigset_t;
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	int	(*sa_handler)();	/* signal handler */
+	sighandler_t sa_handler;	/* signal handler */
 	sigset_t sa_mask;		/* signal mask to apply */
 	int	sa_flags;		/* see signal options below */
 };
@@ -74,8 +71,6 @@ struct	sigaction {
 #define	SIG_BLOCK	1	/* block specified signal set */
 #define	SIG_UNBLOCK	2	/* unblock specified signal set */
 #define	SIG_SETMASK	3	/* set specified signal set */
-
-typedef	int (*sig_t)();		/* type of signal function */
 
 /*
  * Structure used in sigaltstack call.
@@ -93,7 +88,7 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	int	(*sv_handler)();	/* signal handler */
+	sighandler_t sv_handler;	/* signal handler */
 	long	sv_mask;		/* signal mask to apply */
 	int	sv_flags;		/* see signal options below */
 };
@@ -140,7 +135,7 @@ struct	sigcontext {
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 
 #ifndef KERNEL
-extern long	sigblock(), sigsetmask();
+//extern long	sigblock(), sigsetmask();
 #define	BADSIG	SIG_ERR
 #endif
 

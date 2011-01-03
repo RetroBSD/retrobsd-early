@@ -30,60 +30,7 @@ struct	buf	rktab;
 static	int		rk_dkn = -1;	/* number for iostat */
 #endif
 
-rkattach(addr, unit)
-struct rkdevice *addr;
-{
-#ifdef UCB_METER
-	if (rk_dkn < 0)
-		dk_alloc(&rk_dkn, 1, "rk", 25L * 12L * 256L);
-#endif
-
-	if	(unit != 0)
-		return(0);
-	RKADDR = addr;
-	return(1);
-}
-
-rkopen(dev, flag)
-	dev_t dev;
-	int flag;
-{
-	register int unit = rkunit(dev);
-
-	if (unit >= NRK || !RKADDR)
-		return (ENXIO);
-	return (0);
-}
-
-rkstrategy(bp)
-register struct buf *bp;
-{
-	register int s;
-	register int unit;
-
-	unit = rkunit(bp->b_dev);
-	if (unit >= NRK || !RKADDR) {
-		bp->b_error = ENXIO;
-		goto bad;
-	}
-	if (bp->b_blkno >= NRKBLK) {
-		bp->b_error = EINVAL;
-bad:		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		return;
-	}
-	bp->av_forw = (struct buf *)NULL;
-	s = splbio();
-	if(rktab.b_actf == NULL)
-		rktab.b_actf = bp;
-	else
-		rktab.b_actl->av_forw = bp;
-	rktab.b_actl = bp;
-	if(rktab.b_active == NULL)
-		rkstart();
-	splx(s);
-}
-
+static void
 rkstart()
 {
 	register struct	rkdevice *rkaddr = RKADDR;
@@ -118,6 +65,64 @@ rkstart()
 #endif
 }
 
+int
+rkattach (addr, unit)
+	struct rkdevice *addr;
+{
+#ifdef UCB_METER
+	if (rk_dkn < 0)
+		dk_alloc(&rk_dkn, 1, "rk", 25L * 12L * 256L);
+#endif
+
+	if	(unit != 0)
+		return(0);
+	RKADDR = addr;
+	return(1);
+}
+
+int
+rkopen(dev, flag, mode)
+	dev_t dev;
+	int flag, mode;
+{
+	register int unit = rkunit(dev);
+
+	if (unit >= NRK || !RKADDR)
+		return (ENXIO);
+	return (0);
+}
+
+void
+rkstrategy(bp)
+	register struct buf *bp;
+{
+	register int s;
+	register int unit;
+
+	unit = rkunit(bp->b_dev);
+	if (unit >= NRK || !RKADDR) {
+		bp->b_error = ENXIO;
+		goto bad;
+	}
+	if (bp->b_blkno >= NRKBLK) {
+		bp->b_error = EINVAL;
+bad:		bp->b_flags |= B_ERROR;
+		iodone(bp);
+		return;
+	}
+	bp->av_forw = (struct buf *)NULL;
+	s = splbio();
+	if (rktab.b_actf == NULL)
+		rktab.b_actf = bp;
+	else
+		rktab.b_actl->av_forw = bp;
+	rktab.b_actl = bp;
+	if (rktab.b_active == NULL)
+		rkstart();
+	splx(s);
+}
+
+void
 rkintr()
 {
 	register struct rkdevice *rkaddr = RKADDR;
@@ -168,7 +173,7 @@ rkintr()
 daddr_t
 rksize(dev)
 	dev_t	dev;
-	{
+{
 	return(NRKBLK);
-	}
+}
 #endif /* NRK */
