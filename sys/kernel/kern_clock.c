@@ -13,132 +13,6 @@
 #include "kernel.h"
 #include "systm.h"
 
-/*
- * The hz hardware interval timer.
- * We update the events relating to real time.
- * Also gather statistics.
- *
- *	reprime clock
- *	implement callouts
- *	maintain user/system times
- *	maintain date
- *	profile
- */
-/*ARGSUSED*/
-void
-hardclock(dev,sp,r1,ov,nps,r0,pc,ps)
-	dev_t dev;
-	caddr_t sp, pc;
-	int r1, ov, nps, r0, ps;
-{
-	register struct callout *p1;
-	register struct proc *p;
-	register int needsoft = 0;
-
-	/*
-	 * Update real-time timeout queue.
-	 * At front of queue are some number of events which are ``due''.
-	 * The time to these is <= 0 and if negative represents the
-	 * number of ticks which have passed since it was supposed to happen.
-	 * The rest of the q elements (times > 0) are events yet to happen,
-	 * where the time for each is given as a delta from the previous.
-	 * Decrementing just the first of these serves to decrement the time
-	 * to all events.
-	 */
-	p1 = calltodo.c_next;
-	while (p1) {
-		if (--p1->c_time > 0)
-			break;
-		needsoft = 1;
-		if (p1->c_time == 0)
-			break;
-		p1 = p1->c_next;
-	}
-
-	/*
-	 * Charge the time out based on the mode the cpu is in.
-	 * Here again we fudge for the lack of proper interval timers
-	 * assuming that the current state has been around at least
-	 * one tick.
-	 */
-	if (USERMODE(ps)) {
-		if (u.u_prof.pr_scale)
-			needsoft = 1;
-		/*
-		 * CPU was in user state.  Increment
-		 * user time counter, and process process-virtual time
-		 * interval timer.
-		 */
-		u.u_ru.ru_utime++;
-		if (u.u_timer[ITIMER_VIRTUAL - 1].it_value &&
-		    !--u.u_timer[ITIMER_VIRTUAL - 1].it_value) {
-			psignal(u.u_procp, SIGVTALRM);
-			u.u_timer[ITIMER_VIRTUAL - 1].it_value =
-			    u.u_timer[ITIMER_VIRTUAL - 1].it_interval;
-		}
-	} else {
-		/*
-		 * CPU was in system state.
-		 */
-		if (!noproc)
-			u.u_ru.ru_stime++;
-	}
-
-	/*
-	 * If the cpu is currently scheduled to a process, then
-	 * charge it with resource utilization for a tick, updating
-	 * statistics which run in (user+system) virtual time,
-	 * such as the cpu time limit and profiling timers.
-	 * This assumes that the current process has been running
-	 * the entire last tick.
-	 */
-	if (noproc == 0) {
-		p = u.u_procp;
-		if (++p->p_cpu == 0)
-			p->p_cpu--;
-		if ((u.u_ru.ru_utime+u.u_ru.ru_stime+1) >
-		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
-			psignal(p, SIGXCPU);
-			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
-			    u.u_rlimit[RLIMIT_CPU].rlim_max)
-				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
-		}
-		if (u.u_timer[ITIMER_PROF - 1].it_value &&
-		    !--u.u_timer[ITIMER_PROF - 1].it_value) {
-			psignal(p, SIGPROF);
-			u.u_timer[ITIMER_PROF - 1].it_value =
-			    u.u_timer[ITIMER_PROF - 1].it_interval;
-		}
-	}
-
-#ifdef UCB_METER
-	gatherstats(pc,ps);
-#endif
-
-	/*
-	 * Increment the time-of-day, process callouts at a very
-	 * low cpu priority, so we don't keep the relatively  high
-	 * clock interrupt priority any longer than necessary.
-	 */
-	if (adjdelta)
-		if (adjdelta > 0) {
-			++lbolt;
-			--adjdelta;
-		} else {
-			--lbolt;
-			++adjdelta;
-		}
-	if (++lbolt >= hz) {
-		lbolt -= hz;
-		++time.tv_sec;
-	}
-
-	if (needsoft && BASEPRI(ps)) {	/* if ps is high, just return */
-		(void) _splsoftclock();
-		softclock(pc,ps);
-	}
-}
-
 #ifdef UCB_METER
 int	dk_ndrive = DK_NDRIVE;
 
@@ -248,6 +122,132 @@ softclock(pc, ps)
 }
 
 /*
+ * The hz hardware interval timer.
+ * We update the events relating to real time.
+ * Also gather statistics.
+ *
+ *	reprime clock
+ *	implement callouts
+ *	maintain user/system times
+ *	maintain date
+ *	profile
+ */
+/*ARGSUSED*/
+void
+hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
+	dev_t dev;
+	caddr_t sp, pc;
+	int r1, ov, nps, r0, ps;
+{
+	register struct callout *p1;
+	register struct proc *p;
+	register int needsoft = 0;
+
+	/*
+	 * Update real-time timeout queue.
+	 * At front of queue are some number of events which are ``due''.
+	 * The time to these is <= 0 and if negative represents the
+	 * number of ticks which have passed since it was supposed to happen.
+	 * The rest of the q elements (times > 0) are events yet to happen,
+	 * where the time for each is given as a delta from the previous.
+	 * Decrementing just the first of these serves to decrement the time
+	 * to all events.
+	 */
+	p1 = calltodo.c_next;
+	while (p1) {
+		if (--p1->c_time > 0)
+			break;
+		needsoft = 1;
+		if (p1->c_time == 0)
+			break;
+		p1 = p1->c_next;
+	}
+
+	/*
+	 * Charge the time out based on the mode the cpu is in.
+	 * Here again we fudge for the lack of proper interval timers
+	 * assuming that the current state has been around at least
+	 * one tick.
+	 */
+	if (USERMODE(ps)) {
+		if (u.u_prof.pr_scale)
+			needsoft = 1;
+		/*
+		 * CPU was in user state.  Increment
+		 * user time counter, and process process-virtual time
+		 * interval timer.
+		 */
+		u.u_ru.ru_utime++;
+		if (u.u_timer[ITIMER_VIRTUAL - 1].it_value &&
+		    !--u.u_timer[ITIMER_VIRTUAL - 1].it_value) {
+			psignal(u.u_procp, SIGVTALRM);
+			u.u_timer[ITIMER_VIRTUAL - 1].it_value =
+			    u.u_timer[ITIMER_VIRTUAL - 1].it_interval;
+		}
+	} else {
+		/*
+		 * CPU was in system state.
+		 */
+		if (!noproc)
+			u.u_ru.ru_stime++;
+	}
+
+	/*
+	 * If the cpu is currently scheduled to a process, then
+	 * charge it with resource utilization for a tick, updating
+	 * statistics which run in (user+system) virtual time,
+	 * such as the cpu time limit and profiling timers.
+	 * This assumes that the current process has been running
+	 * the entire last tick.
+	 */
+	if (noproc == 0) {
+		p = u.u_procp;
+		if (++p->p_cpu == 0)
+			p->p_cpu--;
+		if ((u.u_ru.ru_utime+u.u_ru.ru_stime+1) >
+		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
+			psignal(p, SIGXCPU);
+			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
+			    u.u_rlimit[RLIMIT_CPU].rlim_max)
+				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5 * hz;
+		}
+		if (u.u_timer[ITIMER_PROF - 1].it_value &&
+		    !--u.u_timer[ITIMER_PROF - 1].it_value) {
+			psignal(p, SIGPROF);
+			u.u_timer[ITIMER_PROF - 1].it_value =
+			    u.u_timer[ITIMER_PROF - 1].it_interval;
+		}
+	}
+
+#ifdef UCB_METER
+	gatherstats (pc, ps);
+#endif
+
+	/*
+	 * Increment the time-of-day, process callouts at a very
+	 * low cpu priority, so we don't keep the relatively  high
+	 * clock interrupt priority any longer than necessary.
+	 */
+	if (adjdelta)
+		if (adjdelta > 0) {
+			++lbolt;
+			--adjdelta;
+		} else {
+			--lbolt;
+			++adjdelta;
+		}
+	if (++lbolt >= hz) {
+		lbolt -= hz;
+		++time.tv_sec;
+	}
+
+	if (needsoft && BASEPRI(ps)) {	/* if ps is high, just return */
+		(void) splsoftclock();
+		softclock (pc, ps);
+	}
+}
+
+/*
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
 void
@@ -308,11 +308,11 @@ void
 profil()
 {
 	register struct a {
-		short	*bufbase;
+		unsigned *bufbase;
 		unsigned bufsize;
 		unsigned pcoffset;
 		unsigned pcscale;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a*) u.u_ap;
 	register struct uprof *upp = &u.u_prof;
 
 	upp->pr_base = uap->bufbase;

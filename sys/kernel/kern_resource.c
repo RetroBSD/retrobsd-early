@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_resource.c	1.4 (2.11BSD GTE) 1997/2/14
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
@@ -16,7 +13,7 @@
 /*
  * Resource controls and accounting.
  */
-
+void
 getpriority()
 {
 	register struct a {
@@ -27,7 +24,6 @@ getpriority()
 	register int low = PRIO_MAX + 1;
 
 	switch (uap->which) {
-
 	case PRIO_PROCESS:
 		if (uap->who == 0)
 			p = u.u_procp;
@@ -37,7 +33,6 @@ getpriority()
 			break;
 		low = p->p_nice;
 		break;
-
 	case PRIO_PGRP:
 		if (uap->who == 0)
 			uap->who = u.u_procp->p_pgrp;
@@ -47,7 +42,6 @@ getpriority()
 				low = p->p_nice;
 		}
 		break;
-
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = u.u_uid;
@@ -57,7 +51,6 @@ getpriority()
 				low = p->p_nice;
 		}
 		break;
-
 	default:
 		u.u_error = EINVAL;
 		return;
@@ -69,62 +62,11 @@ getpriority()
 	u.u_r.r_val1 = low;
 }
 
-setpriority()
-{
-	register struct a {
-		int	which;
-		int	who;
-		int	prio;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p;
-	register int found = 0;
-
-	switch (uap->which) {
-
-	case PRIO_PROCESS:
-		if (uap->who == 0)
-			p = u.u_procp;
-		else
-			p = pfind(uap->who);
-		if (p == 0)
-			break;
-		donice(p, uap->prio);
-		found++;
-		break;
-
-	case PRIO_PGRP:
-		if (uap->who == 0)
-			uap->who = u.u_procp->p_pgrp;
-		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_pgrp == uap->who) {
-				donice(p, uap->prio);
-				found++;
-			}
-		break;
-
-	case PRIO_USER:
-		if (uap->who == 0)
-			uap->who = u.u_uid;
-		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_uid == uap->who) {
-				donice(p, uap->prio);
-				found++;
-			}
-		break;
-
-	default:
-		u.u_error = EINVAL;
-		return;
-	}
-	if (found == 0)
-		u.u_error = ESRCH;
-}
-
+static void
 donice(p, n)
 	register struct proc *p;
 	register int n;
 {
-
 	if (u.u_uid && u.u_ruid &&
 	    u.u_uid != p->p_uid && u.u_ruid != p->p_uid) {
 		u.u_error = EPERM;
@@ -141,6 +83,55 @@ donice(p, n)
 	p->p_nice = n;
 }
 
+void
+setpriority()
+{
+	register struct a {
+		int	which;
+		int	who;
+		int	prio;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p;
+	register int found = 0;
+
+	switch (uap->which) {
+	case PRIO_PROCESS:
+		if (uap->who == 0)
+			p = u.u_procp;
+		else
+			p = pfind(uap->who);
+		if (p == 0)
+			break;
+		donice(p, uap->prio);
+		found++;
+		break;
+	case PRIO_PGRP:
+		if (uap->who == 0)
+			uap->who = u.u_procp->p_pgrp;
+		for (p = allproc; p != NULL; p = p->p_nxt)
+			if (p->p_pgrp == uap->who) {
+				donice(p, uap->prio);
+				found++;
+			}
+		break;
+	case PRIO_USER:
+		if (uap->who == 0)
+			uap->who = u.u_uid;
+		for (p = allproc; p != NULL; p = p->p_nxt)
+			if (p->p_uid == uap->who) {
+				donice(p, uap->prio);
+				found++;
+			}
+		break;
+	default:
+		u.u_error = EINVAL;
+		return;
+	}
+	if (found == 0)
+		u.u_error = ESRCH;
+}
+
+void
 setrlimit()
 {
 	register struct a {
@@ -180,6 +171,7 @@ setrlimit()
 	*alimp = alim;
 }
 
+void
 getrlimit()
 {
 	register struct a {
@@ -206,6 +198,7 @@ getrlimit()
 	    (caddr_t)uap->rlp,sizeof (struct rlimit));
 }
 
+void
 getrusage()
 {
 	register struct a {
@@ -234,6 +227,7 @@ getrusage()
 		sizeof (struct rusage));
 }
 
+void
 ruadd(ru, ru2)
 	struct k_rusage *ru, *ru2;
 {
@@ -252,6 +246,7 @@ ruadd(ru, ru2)
 /*
  * Convert an internal kernel rusage structure into a `real' rusage structure.
  */
+void
 rucvt(rup, krup)
 	register struct rusage		*rup;
 	register struct k_rusage	*krup;

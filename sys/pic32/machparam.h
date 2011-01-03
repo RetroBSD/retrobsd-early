@@ -72,7 +72,11 @@
 #define	spltty()	mips_intr_disable ()
 #define	splclock()	mips_intr_disable ()
 #define	splhigh()	mips_intr_disable ()
+#define	splnet()	mips_intr_enable ()
+#define	splsoftclock()	mips_intr_enable ()
 #define	spl0()		mips_intr_enable ()
-#define	splx(ops)	mips_intr_restore (ops)
+#define	splx(s)		mips_intr_restore (s)
+
+#define	noop()		asm volatile ("nop")
 
 #endif /* ENDIAN */

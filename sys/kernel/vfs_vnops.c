@@ -34,10 +34,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)vfs_vnops.c	8.14.4 (2.11BSD) 1999/9/13
  */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/user.h>
@@ -185,13 +182,13 @@ retuerr:
 vn_close(ip, flags)
 	register struct inode *ip;
 	int flags;
-	{
+{
 	register int error;
 
 	error = closei(ip, flags);
 	irele(ip);			/* assumes inode is unlocked */
 	return(error);
-	}
+}
 
 /*
  * File table inode close routine.  This is called from 'closef()' via the
@@ -204,17 +201,18 @@ vn_close(ip, flags)
  * writecheck counting we can skip the overhead of nesting another level down
  * and call closei() and irele() ourself.
  */
+int
 vn_closefile(fp)
 	register struct file *fp;
-	{
+{
 	register struct inode *ip = (struct inode *)fp->f_data;
 
-/*
- * Need to clear the inode pointer in the file structure so that the
- * inode is not seen during the scan for aliases of character or block
- * devices in closei().
-*/
+	/*
+	 * Need to clear the inode pointer in the file structure so that the
+	 * inode is not seen during the scan for aliases of character or block
+	 * devices in closei().
+	 */
 	fp->f_data = (caddr_t)0;	/* XXX */
 	irele(ip);
-	return(closei(ip, fp->f_flag));
-	}
+	return (closei(ip, fp->f_flag));
+}

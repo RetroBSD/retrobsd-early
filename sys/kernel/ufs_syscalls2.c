@@ -111,6 +111,37 @@ getfsstat()
 }
 
 /*
+ * This is somewhat inefficient in that the inode table is scanned for each
+ * filesystem but it didn't seem worth a page or two of code on something
+ * which only happens every 30 seconds.
+ */
+static void
+syncinodes(fs)
+	struct	fs *fs;
+{
+	register struct inode *ip;
+
+	/*
+	 * Write back each (modified) inode.
+	 */
+	for (ip = inode; ip < inodeNINODE; ip++) {
+		/*
+		 * Attempt to reduce the overhead by short circuiting the scan if the
+		 * inode is not for the filesystem being processed.
+		 */
+		if (ip->i_fs != fs)
+			continue;
+		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0 ||
+			   (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
+			continue;
+		ip->i_flag |= ILOCKED;
+		ip->i_count++;
+		iupdat(ip, &time, &time, 0);
+		iput(ip);
+	}
+}
+
+/*
  * 'ufs_sync' is the routine which syncs a single filesystem.  This was
  * created to replace 'update' which 'unmount' called.  It seemed silly to
  * sync _every_ filesystem when unmounting just one filesystem.
@@ -144,37 +175,6 @@ ufs_sync(mp)
 		error = geterror(bp);
 	}
 	return(error);
-}
-
-/*
- * This is somewhat inefficient in that the inode table is scanned for each
- * filesystem but it didn't seem worth a page or two of code on something
- * which only happens every 30 seconds.
- */
-void
-syncinodes(fs)
-	struct	fs *fs;
-{
-	register struct inode *ip;
-
-	/*
-	 * Write back each (modified) inode.
-	 */
-	for (ip = inode; ip < inodeNINODE; ip++) {
-		/*
-		 * Attempt to reduce the overhead by short circuiting the scan if the
-		 * inode is not for the filesystem being processed.
-		 */
-		if (ip->i_fs != fs)
-			continue;
-		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0 ||
-			   (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
-			continue;
-		ip->i_flag |= ILOCKED;
-		ip->i_count++;
-		iupdat(ip, &time, &time, 0);
-		iput(ip);
-	}
 }
 
 /*

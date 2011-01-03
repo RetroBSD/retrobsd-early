@@ -245,9 +245,9 @@ main()
 	schedcpu();
 
 /* set up the root file system */
-	rootdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
+	rootdir = iget (rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
 	iunlock(rootdir);
-	u.u_cdir = iget(rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
+	u.u_cdir = iget (rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
 	iunlock(u.u_cdir);
 	u.u_rdir = NULL;
 

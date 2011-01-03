@@ -17,6 +17,60 @@
 #include "disklabel.h"
 #include "ioctl.h"
 
+/*
+ * Common code for mount and umount.
+ * Check that the user's argument is a reasonable
+ * thing on which to mount, otherwise return error.
+ */
+static int
+getmdev (pdev, fname)
+	caddr_t fname;
+	dev_t *pdev;
+{
+	register dev_t dev;
+	register struct inode *ip;
+	struct	nameidata nd;
+	register struct	nameidata *ndp = &nd;
+
+	if (!suser())
+		return (u.u_error);
+	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, fname);
+	ip = namei(ndp);
+	if (ip == NULL) {
+		if (u.u_error == ENOENT)
+			return (ENODEV); /* needs translation */
+		return (u.u_error);
+	}
+	if ((ip->i_mode&IFMT) != IFBLK) {
+		iput(ip);
+		return (ENOTBLK);
+	}
+	dev = (dev_t)ip->i_rdev;
+	iput(ip);
+	if (major(dev) >= nblkdev)
+		return (ENXIO);
+	*pdev = dev;
+	return (0);
+}
+
+static void
+mount_updname (fs, on, from, lenon, lenfrom)
+	struct	fs	*fs;
+	char	*on, *from;
+	int	lenon, lenfrom;
+{
+	struct	mount	*mp;
+	register struct	xmount	*xmp;
+
+	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
+	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
+	mp = (struct mount *)((int)fs - offsetof(struct mount, m_filsys));
+	xmp = (struct xmount *) mp->m_extern;
+	bzero(xmp, sizeof (struct xmount));
+	bcopy(on, xmp->xm_mnton, lenon);
+	bcopy(from, xmp->xm_mntfrom, lenfrom);
+}
+
 void
 smount()
 {
@@ -120,26 +174,11 @@ cmnout:
 	u.u_error = error;
 }
 
-mount_updname(fs, on, from, lenon, lenfrom)
-	struct	fs	*fs;
-	char	*on, *from;
-	int	lenon, lenfrom;
-{
-	struct	mount	*mp;
-	register struct	xmount	*xmp;
-
-	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
-	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
-	mp = (struct mount *)((int)fs - offsetof(struct mount, m_filsys));
-	xmp = (struct xmount *) mp->m_extern;
-	bzero(xmp, sizeof (struct xmount));
-	bcopy(on, xmp->xm_mnton, lenon);
-	bcopy(from, xmp->xm_mntfrom, lenfrom);
-}
-
-/* this routine has races if running twice */
+/*
+ * this routine has races if running twice
+ */
 struct fs *
-mountfs(dev, flags, ip)
+mountfs (dev, flags, ip)
 	dev_t dev;
 	int flags;
 	struct inode *ip;
@@ -157,15 +196,15 @@ mountfs(dev, flags, ip)
 	    (*bdevsw[major(dev)].d_open)(dev, ronly ? FREAD : FREAD|FWRITE, S_IFBLK);
 	if (error)
 		goto out;
-/*
- * Now make a check that the partition is really a filesystem if the
- * underlying driver supports disklabels (there is an ioctl entry point
- * and calling it does not return an error).
- *
- * XXX - Check for NODEV because BLK only devices (i.e. the 'ram' driver) do not
- * XXX - have a CHR counterpart.  Such drivers can not support labels due to
- * XXX - the lack of an ioctl entry point.
-*/
+	/*
+	 * Now make a check that the partition is really a filesystem if the
+	 * underlying driver supports disklabels (there is an ioctl entry point
+	 * and calling it does not return an error).
+	 *
+	 * XXX - Check for NODEV because BLK only devices (i.e. the 'ram' driver) do not
+	 * XXX - have a CHR counterpart.  Such drivers can not support labels due to
+	 * XXX - the lack of an ioctl entry point.
+	 */
 	chrdev = blktochr(dev);
 	if (chrdev == NODEV)
 		ioctl = NULL;
@@ -233,16 +272,8 @@ out:
 	return (0);
 }
 
-umount()
-{
-	struct a {
-		char	*fspec;
-	} *uap = (struct a *)u.u_ap;
-
-	u.u_error = unmount1(uap->fspec);
-}
-
-unmount1(fname)
+static int
+unmount1 (fname)
 	caddr_t fname;
 {
 	dev_t dev;
@@ -279,37 +310,12 @@ found:
 	return (0);
 }
 
-/*
- * Common code for mount and umount.
- * Check that the user's argument is a reasonable
- * thing on which to mount, otherwise return error.
- */
-getmdev(pdev, fname)
-	caddr_t fname;
-	dev_t *pdev;
+void
+umount()
 {
-	register dev_t dev;
-	register struct inode *ip;
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
+	struct a {
+		char	*fspec;
+	} *uap = (struct a *)u.u_ap;
 
-	if (!suser())
-		return (u.u_error);
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, fname);
-	ip = namei(ndp);
-	if (ip == NULL) {
-		if (u.u_error == ENOENT)
-			return (ENODEV); /* needs translation */
-		return (u.u_error);
-	}
-	if ((ip->i_mode&IFMT) != IFBLK) {
-		iput(ip);
-		return (ENOTBLK);
-	}
-	dev = (dev_t)ip->i_rdev;
-	iput(ip);
-	if (major(dev) >= nblkdev)
-		return (ENXIO);
-	*pdev = dev;
-	return (0);
+	u.u_error = unmount1 (uap->fspec);
 }

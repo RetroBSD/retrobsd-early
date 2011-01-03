@@ -2,14 +2,10 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_exit.c	2.6 (2.11BSD) 2000/2/20
  */
-
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
-
 #include "systm.h"
 #include "map.h"
 #include "user.h"
@@ -21,16 +17,28 @@
 #include "kernel.h"
 
 /*
- * exit system call: pass back caller's arg
+ * Notify parent that vfork child is finished with parent's data.  Called
+ * during exit/exec(getxfile); must be called before xfree().  The child
+ * must be locked in core so it will be in core when the parent runs.
  */
-rexit()
+void
+endvfork()
 {
-	register struct a {
-		int	rval;
-	} *uap = (struct a *)u.u_ap;
+	register struct proc *rip, *rpp;
 
-	exit(W_EXITCODE(uap->rval, 0));
-	/* NOTREACHED */
+	rpp = u.u_procp;
+	rip = rpp->p_pptr;
+	rpp->p_flag &= ~SVFORK;
+	rpp->p_flag |= SLOCK;
+	wakeup ((caddr_t) rpp);
+	while (! (rpp->p_flag & SVFDONE))
+		sleep ((caddr_t) rip, PZERO-1);
+	/*
+	 * The parent has taken back our data+stack, set our sizes to 0.
+	 */
+	u.u_dsize = rpp->p_dsize = 0;
+	u.u_ssize = rpp->p_ssize = 0;
+	rpp->p_flag &= ~(SVFDONE | SLOCK);
 }
 
 /*
@@ -39,7 +47,9 @@ rexit()
  * list.  Save exit status and rusage for wait4().
  * Check for child processes and orphan them.
  */
-exit(rv)
+void
+exit (rv)
+	int rv;
 {
 	register int i;
 	register struct proc *p;
@@ -138,23 +148,37 @@ again:
 	/* NOTREACHED */
 }
 
-	struct	args
-		{
-		int pid;
-		int *status;
-		int options;
-		struct rusage *rusage;
-		int compat;
-		};
+/*
+ * exit system call: pass back caller's arg
+ */
+void
+rexit()
+{
+	register struct a {
+		int	rval;
+	} *uap = (struct a*) u.u_ap;
 
+	exit (W_EXITCODE (uap->rval, 0));
+	/* NOTREACHED */
+}
+
+struct args {
+	int pid;
+	int *status;
+	int options;
+	struct rusage *rusage;
+	int compat;
+};
+
+void
 wait4()
 {
 	int retval[2];
 	register struct	args *uap = (struct args *)u.u_ap;
 
 	uap->compat = 0;
-	u.u_error = wait1(u.u_procp, uap, retval);
-	if (!u.u_error)
+	u.u_error = wait1 (u.u_procp, uap, retval);
+	if (! u.u_error)
 		u.u_r.r_val1 = retval[0];
 }
 
@@ -164,7 +188,8 @@ wait4()
  * Pass back status and make available for reuse the exited
  * child's proc structure.
  */
-wait1(q, uap, retval)
+int
+wait1 (q, uap, retval)
 	struct proc *q;
 	register struct args *uap;
 	int retval[];
@@ -194,12 +219,13 @@ loop:
 			continue;
 		retval[0] = p->p_pid;
 		retval[1] = p->p_xstat;
-		if (uap->status && (error = copyout(&p->p_xstat, uap->status,
-						sizeof (uap->status))))
+		if (uap->status && (error = copyout ((caddr_t) &p->p_xstat,
+		    (caddr_t) uap->status, sizeof (uap->status))))
 			return(error);
 		if (uap->rusage) {
 			rucvt(&ru, &p->p_ru);
-			if (error = copyout(&ru, uap->rusage, sizeof (ru)))
+			error = copyout ((caddr_t) &ru, (caddr_t) uap->rusage, sizeof (ru));
+			if (error)
 				return(error);
 		}
 		ruadd(&u.u_cru, &p->p_ru);
@@ -237,8 +263,8 @@ loop:
 				retval[1] = W_STOPCODE(p->p_ptracesig);
 			else if (uap->status) {
 				status = W_STOPCODE(p->p_ptracesig);
-				error = copyout(&status, uap->status,
-						sizeof (status));
+				error = copyout ((caddr_t) &status,
+					(caddr_t) uap->status, sizeof (status));
 			}
 			return (error);
 		}
@@ -253,28 +279,4 @@ loop:
 	if	(error == 0)
 		goto loop;
 	return(error);
-}
-
-/*
- * Notify parent that vfork child is finished with parent's data.  Called
- * during exit/exec(getxfile); must be called before xfree().  The child
- * must be locked in core so it will be in core when the parent runs.
- */
-endvfork()
-{
-	register struct proc *rip, *rpp;
-
-	rpp = u.u_procp;
-	rip = rpp->p_pptr;
-	rpp->p_flag &= ~SVFORK;
-	rpp->p_flag |= SLOCK;
-	wakeup((caddr_t)rpp);
-	while(!(rpp->p_flag&SVFDONE))
-		sleep((caddr_t)rip,PZERO-1);
-	/*
-	 * The parent has taken back our data+stack, set our sizes to 0.
-	 */
-	u.u_dsize = rpp->p_dsize = 0;
-	u.u_ssize = rpp->p_ssize = 0;
-	rpp->p_flag &= ~(SVFDONE | SLOCK);
 }

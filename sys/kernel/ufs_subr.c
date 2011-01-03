@@ -18,29 +18,29 @@
  * For each "dirty" filesystem call 'ufs_sync' to flush changed inodes, data
  * blocks and the superblock to disc.
  */
+void
 sync()
 {
 	register struct mount *mp;
 	register struct fs *fs;
 	int async;
 
-	if	(updlock)
+	if (updlock)
 		return;
 	updlock++;
-	for	(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		{
-		if	(mp->m_inodp == NULL || mp->m_dev == NODEV)
+	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_inodp == NULL || mp->m_dev == NODEV)
 			continue;
 		fs = &mp->m_filsys;
-		if	(fs->fs_fmod == 0 || fs->fs_ilock || fs->fs_flock)
+		if (fs->fs_fmod == 0 || fs->fs_ilock || fs->fs_flock)
 			continue;
 		async = mp->m_flags & MNT_ASYNC;
 		mp->m_flags &= ~MNT_ASYNC;
 		ufs_sync(mp);
 		mp->m_flags |= async;
-		}
-	updlock = 0;
 	}
+	updlock = 0;
+}
 
 /*
  * Flush all the blocks associated with an inode.
@@ -57,6 +57,7 @@ sync()
  *	overlap the inode. This brings the inode up to
  *	date with recent mods to the cooked device.
  */
+void
 syncip(ip)
 	struct inode *ip;
 {
@@ -98,7 +99,8 @@ syncip(ip)
 /*
  * Check that a specified block number is in range.
  */
-badblock(fp, bn)
+int
+badblock (fp, bn)
 	register struct fs *fp;
 	daddr_t bn;
 {

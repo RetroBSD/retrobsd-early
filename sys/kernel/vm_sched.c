@@ -37,122 +37,117 @@ sched()
 	struct proc *p;
 	int inage, maxsize, outpri;
 
-    /* Find user to swap in; of users ready, select one out longest. */
-    for (;;) {
-	(void)_splhigh();
-	{
-	register int l_outpri, rppri;
+	/* Find user to swap in; of users ready, select one out longest. */
+	for (;;) {
+		register int l_outpri, rppri;
+		register int l_maxsize;
 
-	l_outpri = -20000;
-	for (rp = allproc; rp; rp = rp->p_nxt) {
-		if (rp->p_stat != SRUN || rp->p_flag & SLOAD)
+		(void) splhigh();
+
+		l_outpri = -20000;
+		for (rp = allproc; rp; rp = rp->p_nxt) {
+			if (rp->p_stat != SRUN || rp->p_flag & SLOAD)
+				continue;
+			rppri = rp->p_time - rp->p_nice * 8;
+
+			/*
+			 * Always bring in parents ending a vfork,
+			 * to avoid deadlock
+			 */
+			if (rppri > l_outpri || rp->p_flag & SVFPRNT) {
+				p = rp;
+				l_outpri = rppri;
+				if (rp->p_flag & SVFPRNT)
+					break;
+			}
+		}
+
+		/* If there is no one there, wait. */
+		if (l_outpri == -20000) {
+			++runout;
+			sleep((caddr_t)&runout, PSWP);
 			continue;
-		rppri = rp->p_time - rp->p_nice * 8;
+		}
+		outpri = l_outpri;
+
+		(void) spl0();
+
+		/* See if there is core for that process, if so, swap it in. */
+		if (swapin (p))
+			continue;
 
 		/*
-		 * Always bring in parents ending a vfork,
-		 * to avoid deadlock
+		 * None found.  Look around for core: 1) kick out dead wood
+		 * (processes asleep longer than maxslp+10); or 2) select out
+		 * of the processes sleeping interruptibly the process with
+		 * maximum f(size, slptime); or 3) if none, select the oldest.
+		 * If we can find someone to swap out we try to swap someone
+		 * else (hopefully) in, possibly causing someone else to get
+		 * swapped out.
+		 *
+		 * f(size, slptime) = size + (slptime - maxslp) * 16
+		 *
+		 * This weighting is designed to penalize linearly for size
+		 * and excessive slptime, but to reward processes which are
+		 * executing or have executed recently.
 		 */
-		if (rppri > l_outpri || rp->p_flag & SVFPRNT) {
-			p = rp;
-			l_outpri = rppri;
-			if (rp->p_flag & SVFPRNT)
-				break;
-		}
-	}
+		(void) splhigh();
+		l_maxsize = MINFINITY;
+		inage = -1;
+		for (rp = allproc; rp != NULL; rp = rp->p_nxt) {
+			if (rp->p_stat == SZOMB ||
+			    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
+				continue;
+			if (rp->p_textp && rp->p_textp->x_flag & XLOCK)
+				continue;
+			if (rp->p_stat == SSLEEP &&
+			    (rp->p_flag & P_SINTR) || rp->p_stat == SSTOP) {
+				register int size;
 
-	/* If there is no one there, wait. */
-	if (l_outpri == -20000) {
-		++runout;
-		sleep((caddr_t)&runout, PSWP);
-		continue;
-	}
-	outpri = l_outpri;
-	}
-
-	(void)_spl0();
-
-	/* See if there is core for that process, if so, swap it in. */
-	if (swapin(p))
-		continue;
-
-	/*
-	 * None found.  Look around for core: 1) kick out dead wood
-	 * (processes asleep longer than maxslp+10); or 2) select out
-	 * of the processes sleeping interruptibly the process with
-	 * maximum f(size, slptime); or 3) if none, select the oldest.
-	 * If we can find someone to swap out we try to swap someone
-	 * else (hopefully) in, possibly causing someone else to get
-	 * swapped out.
-	 *
-	 * f(size, slptime) = size + (slptime - maxslp) * 16
-	 *
-	 * This weighting is designed to penalize linearly for size
-	 * and excessive slptime, but to reward processes which are
-	 * executing or have executed recently.
-	 */
-	{
-	register int l_maxsize;
-
-	(void)_splhigh();
-	l_maxsize = MINFINITY;
-	inage = -1;
-	for (rp = allproc; rp != NULL; rp = rp->p_nxt) {
-		if (rp->p_stat == SZOMB ||
-		    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
-			continue;
-		if (rp->p_textp && rp->p_textp->x_flag & XLOCK)
-			continue;
-		if (rp->p_stat == SSLEEP &&
-		    (rp->p_flag & P_SINTR) || rp->p_stat == SSTOP) {
-			register int size;
-
-			if (rp->p_slptime > maxslp+10) {
-				p = rp;
-				l_maxsize = 1;
-				break;
+				if (rp->p_slptime > maxslp+10) {
+					p = rp;
+					l_maxsize = 1;
+					break;
+				}
+				size = rp->p_dsize + rp->p_ssize
+				    + (rp->p_slptime - maxslp << 4);
+				if (l_maxsize < size) {
+					p = rp;
+					l_maxsize = size;
+				}
 			}
-			size = rp->p_dsize + rp->p_ssize
-			    + (rp->p_slptime - maxslp << 4);
-			if (l_maxsize < size) {
-				p = rp;
-				l_maxsize = size;
+			else if (l_maxsize == MINFINITY &&
+			    (rp->p_stat == SRUN || rp->p_stat == SSLEEP)) {
+				register int rppri;
+
+				rppri = rp->p_time + rp->p_nice;
+				if (rppri > inage) {
+					p = rp;
+					inage = rppri;
+				}
 			}
 		}
-		else if (l_maxsize == MINFINITY &&
-		    (rp->p_stat == SRUN || rp->p_stat == SSLEEP)) {
-			register int rppri;
+		maxsize = l_maxsize;
 
-			rppri = rp->p_time + rp->p_nice;
-			if (rppri > inage) {
-				p = rp;
-				inage = rppri;
-			}
+		(void) spl0();
+		noop();
+		(void) splhigh();
+		/*
+		 * Swap found user out if sleeping interruptibly, or if he has spent at
+		 * least 1 second in core and the swapped-out process has spent at
+		 * least 2 seconds out.  Otherwise wait a bit and try again.
+		 */
+		if (maxsize != MINFINITY || outpri >= 2 && inage >= 1) {
+			p->p_flag &= ~SLOAD;
+			if (p->p_stat == SRUN)
+				remrq(p);
+			(void) spl0();
+			swapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+		} else {
+			++runin;
+			sleep((caddr_t)&runin, PSWP);
 		}
 	}
-	maxsize = l_maxsize;
-	}
-
-	(void)_spl0();
-	noop();
-	(void)_splhigh();
-	/*
-	 * Swap found user out if sleeping interruptibly, or if he has spent at
-	 * least 1 second in core and the swapped-out process has spent at
-	 * least 2 seconds out.  Otherwise wait a bit and try again.
-	 */
-	if (maxsize != MINFINITY || outpri >= 2 && inage >= 1) {
-		p->p_flag &= ~SLOAD;
-		if (p->p_stat == SRUN)
-			remrq(p);
-		(void)_spl0();
-		swapout(p, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
-	}
-	else {
-		++runin;
-		sleep((caddr_t)&runin, PSWP);
-	}
-    }
 }
 
 /*
@@ -321,7 +316,7 @@ active:
  * 	0.9834714538216174,	/* exp(-1/60) * /
  * 	0.9944598480048967,	/* exp(-1/180) * /
  * };
- * 
+ *
  * /*
  *  * Compute a tenex style load average of a quantity on
  *  * 1, 5 and 15 minute intervals.
@@ -331,7 +326,7 @@ active:
  * 	int n;
  * {
  * 	register int i;
- * 
+ *
  * 	for (i = 0; i < 3; i++)
  * 		avg[i] = cexp[i] * avg[i] + n * (1.0 - cexp[i]);
  * }

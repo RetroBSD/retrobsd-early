@@ -37,6 +37,16 @@ union nchash {
 struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
 struct	nchstats nchstats;		/* cache effectiveness statistics */
 
+static void
+dirbad (ip, offset, how)
+	struct inode *ip;
+	off_t offset;
+	char *how;
+{
+	printf ("%s: bad dir I=%u off %ld: %s\n",
+		ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
+}
+
 /*
  * Convert a pathname into a pointer to a locked inode.
  * This is a very central and rather complicated routine.
@@ -818,16 +828,6 @@ bad:
 retNULL:
 	ndp->ni_ip = NULL;
 	return (NULL);
-}
-
-void
-dirbad(ip, offset, how)
-	struct inode *ip;
-	off_t offset;
-	char *how;
-{
-	printf("%s: bad dir I=%u off %ld: %s\n",
-	    ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
 }
 
 /*

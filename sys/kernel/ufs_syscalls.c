@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ufs_syscalls.c	1.14 (2.11BSD) 2000/2/20
  */
-
 #include "param.h"
 #include "systm.h"
 #include "user.h"
@@ -16,56 +13,10 @@
 #include "stat.h"
 #include "kernel.h"
 
-static	int	copen();
-
-/*
- * Change current working directory (``.'').
- */
-chdir()
-{
-
-	chdirec(&u.u_cdir);
-}
-
-fchdir()
-{
-	register struct	a {
-		int	fd;
-		} *uap = (struct a *)u.u_ap;
-	register struct	inode *ip;
-
-	if ((ip = getinode(uap->fd)) == NULL)
-		return;
-	ilock(ip);
-	if ((ip->i_mode & IFMT) != IFDIR) {
-		u.u_error = ENOTDIR;
-		goto bad;
-	}
-	if (access(ip, IEXEC))
-		goto bad;
-	iunlock(ip);
-	ip->i_count++;
-	irele(u.u_cdir);
-	u.u_cdir = ip;
-	return;
-bad:
-	iunlock(ip);
-	return;
-}
-
-/*
- * Change notion of root (``/'') directory.
- */
-chroot()
-{
-
-	if (suser())
-		chdirec(&u.u_rdir);
-}
-
 /*
  * Common routine for chroot and chdir.
  */
+static void
 chdirec(ipp)
 	register struct inode **ipp;
 {
@@ -97,17 +48,50 @@ bad:
 }
 
 /*
- * Open system call.
+ * Change current working directory (``.'').
  */
-open()
+void
+chdir()
 {
-	register struct a {
-		char	*fname;
-		int	mode;
-		int	crtmode;
-	} *uap = (struct a *) u.u_ap;
+	chdirec (&u.u_cdir);
+}
 
-	u.u_error = copen(uap->mode, uap->crtmode, uap->fname);
+void
+fchdir()
+{
+	register struct	a {
+		int	fd;
+	} *uap = (struct a *)u.u_ap;
+	register struct	inode *ip;
+
+	ip = getinode (uap->fd);
+	if (ip == NULL)
+		return;
+	ilock(ip);
+	if ((ip->i_mode & IFMT) != IFDIR) {
+		u.u_error = ENOTDIR;
+		goto bad;
+	}
+	if (access (ip, IEXEC))
+		goto bad;
+	iunlock(ip);
+	ip->i_count++;
+	irele(u.u_cdir);
+	u.u_cdir = ip;
+	return;
+bad:
+	iunlock(ip);
+	return;
+}
+
+/*
+ * Change notion of root (``/'') directory.
+ */
+void
+chroot()
+{
+	if (suser())
+		chdirec (&u.u_rdir);
 }
 
 /*
@@ -115,11 +99,11 @@ open()
  * and call the device open routine if any.
  */
 static int
-copen(mode, arg, fname)
+copen (mode, arg, fname)
 	int mode;
 	int arg;
 	caddr_t fname;
-	{
+{
 	register struct inode *ip;
 	register struct file *fp;
 	struct	nameidata nd;
@@ -127,7 +111,7 @@ copen(mode, arg, fname)
 	int indx, type, flags, cmode, error;
 
 	fp = falloc();
-	if	(fp == NULL)
+	if (fp == NULL)
 		return(u.u_error);	/* XXX */
 	flags = FFLAGS(mode);	/* convert from open to kernel flags */
 	fp->f_flag = flags & FMASK;
@@ -137,57 +121,70 @@ copen(mode, arg, fname)
 	u.u_dupfd = -indx - 1;
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, fname);
 
-/*
- * ENODEV is returned by the 'fdopen()' routine - see the comments in that
- * routine for details about the hack being used.
- *
- * ENXIO only comes out of the 'portal fs' code (which 2.11BSD does not have).
- * It probably should have been removed during the port of the 'file descriptor
- * driver' since it's a "can not happen" event.
- *
- * u.u_dupfd is used because there the space in the proc structure is at a
- * premium in 2.11 while space in the u structure is relatively free.  Also
- * there were more unused (pad) fields available in 'u' as compared to 'proc'.
-*/
-	if	(error = vn_open(ndp, flags, cmode))
-		{
+	/*
+	 * ENODEV is returned by the 'fdopen()' routine - see the comments in that
+	 * routine for details about the hack being used.
+	 *
+	 * ENXIO only comes out of the 'portal fs' code (which 2.11BSD does not have).
+	 * It probably should have been removed during the port of the 'file descriptor
+	 * driver' since it's a "can not happen" event.
+	 *
+	 * u.u_dupfd is used because there the space in the proc structure is at a
+	 * premium in 2.11 while space in the u structure is relatively free.  Also
+	 * there were more unused (pad) fields available in 'u' as compared to 'proc'.
+	 */
+	error = vn_open(ndp, flags, cmode);
+	if (error) {
 		fp->f_count = 0;
-		if	((error == ENODEV || error == ENXIO) &&
-			  u.u_dupfd >= 0 &&
-			  (error = dupfdopen(indx,u.u_dupfd,flags,error) == 0))
-			{
+		if ((error == ENODEV || error == ENXIO) &&
+		    u.u_dupfd >= 0 &&
+		    (error = dupfdopen(indx,u.u_dupfd,flags,error) == 0)) {
 			u.u_r.r_val1 = indx;
 			return(0);
-			}
+		}
 		u.u_ofile[indx] = NULL;
 		return(error);
-		}
+	}
 	ip = ndp->ni_ip;
 	u.u_dupfd = 0;
 
 	fp->f_data = (caddr_t)ip;
 
-	if	(flags & (O_EXLOCK | O_SHLOCK))
-		{
-		if	(flags & O_EXLOCK)
+	if (flags & (O_EXLOCK | O_SHLOCK)) {
+		if (flags & O_EXLOCK)
 			type = LOCK_EX;
 		else
 			type = LOCK_SH;
-		if	(flags & FNONBLOCK)
+		if (flags & FNONBLOCK)
 			type |= LOCK_NB;
 		error = ino_lock(fp, type);
-		if	(error)
-			{
+		if (error) {
 			closef(fp);
 			u.u_ofile[indx] = NULL;
-			}
 		}
-	return(error);
 	}
+	return(error);
+}
+
+/*
+ * Open system call.
+ */
+void
+open()
+{
+	register struct a {
+		char	*fname;
+		int	mode;
+		int	crtmode;
+	} *uap = (struct a *) u.u_ap;
+
+	u.u_error = copen (uap->mode, uap->crtmode, uap->fname);
+}
 
 /*
  * Mknod system call
  */
+void
 mknod()
 {
 	register struct inode *ip;
@@ -199,7 +196,7 @@ mknod()
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	if (!suser())
+	if (! suser())
 		return;
 	NDINIT(ndp, CREATE, NOFOLLOW, UIO_USERSPACE, uap->fname);
 	ip = namei(ndp);
@@ -209,7 +206,7 @@ mknod()
 	}
 	if (u.u_error)
 		return;
-	ip = maknode(uap->fmode, ndp);
+	ip = maknode (uap->fmode, ndp);
 	if (ip == NULL)
 		return;
 	switch (ip->i_mode & IFMT) {
@@ -234,6 +231,7 @@ out:
 /*
  * link system call
  */
+void
 link()
 {
 	register struct inode *ip, *xp;
@@ -288,6 +286,7 @@ out:
 /*
  * symlink -- make a symbolic link
  */
+void
 symlink()
 {
 	register struct a {
@@ -319,7 +318,7 @@ symlink()
 	}
 	if (u.u_error)
 		return;
-	ip = maknode(IFLNK | 0777, ndp);
+	ip = maknode (IFLNK | 0777, ndp);
 	if (ip == NULL)
 		return;
 	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, (off_t)0,
@@ -333,6 +332,7 @@ symlink()
  * Hard to avoid races here, especially
  * in unlinking directories.
  */
+void
 unlink()
 {
 	register struct a {
@@ -377,6 +377,7 @@ out:
 /*
  * Access system call
  */
+void
 saccess()
 {
 	uid_t t_uid;
@@ -409,25 +410,8 @@ done:
 	u.u_groups[0] = t_gid;
 }
 
-/*
- * Stat system call.  This version follows links.
- */
-stat()
-{
-
-	stat1(FOLLOW);
-}
-
-/*
- * Lstat system call.  This version does not follow links.
- */
-lstat()
-{
-
-	stat1(NOFOLLOW);
-}
-
-stat1(follow)
+static void
+stat1 (follow)
 	int follow;
 {
 	register struct inode *ip;
@@ -449,8 +433,27 @@ stat1(follow)
 }
 
 /*
+ * Stat system call.  This version follows links.
+ */
+void
+stat()
+{
+	stat1 (FOLLOW);
+}
+
+/*
+ * Lstat system call.  This version does not follow links.
+ */
+void
+lstat()
+{
+	stat1 (NOFOLLOW);
+}
+
+/*
  * Return target name of a symbolic link
  */
+void
 readlink()
 {
 	register struct inode *ip;
@@ -478,11 +481,24 @@ out:
 	u.u_r.r_val1 = uap->count - resid;
 }
 
+static int
+chflags1 (ip, flags)
+	register struct inode *ip;
+	u_short flags;
+{
+	struct	vattr	vattr;
+
+	VATTR_NULL(&vattr);
+	vattr.va_flags = flags;
+	return(ufs_setattr(ip, &vattr));
+}
+
 /*
  * change flags of a file given pathname.
-*/
+ */
+void
 chflags()
-	{
+{
 	register struct inode *ip;
 	register struct a {
 		char	*fname;
@@ -492,44 +508,36 @@ chflags()
 	register struct nameidata *ndp = &nd;
 
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
-	if	((ip = namei(ndp)) == NULL)
+	if ((ip = namei(ndp)) == NULL)
 		return;
-	u.u_error = chflags1(ip, uap->flags);
+	u.u_error = chflags1 (ip, uap->flags);
 	iput(ip);
-	}
+}
 
 /*
  * change flags of a file given file descriptor.
-*/
+ */
+void
 fchflags()
-	{
+{
 	register struct a {
 		int	fd;
 		u_short	flags;
 	} *uap = (struct a *)u.u_ap;
 	register struct inode *ip;
 
-	if	((ip = getinode(uap->fd)) == NULL)
+	ip = getinode (uap->fd);
+	if (ip == NULL)
 		return;
 	ilock(ip);
-	u.u_error = chflags1(ip, uap->flags);
+	u.u_error = chflags1 (ip, uap->flags);
 	iunlock(ip);
-	}
-
-chflags1(ip, flags)
-	register struct inode *ip;
-	u_short flags;
-	{
-	struct	vattr	vattr;
-
-	VATTR_NULL(&vattr);
-	vattr.va_flags = flags;
-	return(ufs_setattr(ip, &vattr));
-	}
+}
 
 /*
  * Change mode of a file given path name.
  */
+void
 chmod()
 {
 	register struct inode *ip;
@@ -554,6 +562,7 @@ chmod()
 /*
  * Change mode of a file given a file descriptor.
  */
+void
 fchmod()
 {
 	register struct a {
@@ -576,6 +585,7 @@ fchmod()
  * Change the mode on a file.  This routine is called from ufs_setattr.
  * Inode must be locked before calling.
  */
+int
 chmod1(ip, mode)
 	register struct inode *ip;
 	register int mode;
@@ -600,6 +610,7 @@ chmod1(ip, mode)
 /*
  * Set ownership given a path name.
  */
+void
 chown()
 {
 	register struct inode *ip;
@@ -626,6 +637,7 @@ chown()
 /*
  * Set ownership given a file descriptor.
  */
+void
 fchown()
 {
 	register struct a {
@@ -650,7 +662,8 @@ fchown()
  * Perform chown operation on inode ip.  This routine called from ufs_setattr.
  * inode must be locked prior to call.
  */
-chown1(ip, uid, gid)
+int
+chown1 (ip, uid, gid)
 	register struct inode *ip;
 	register int uid, gid;
 {
@@ -684,6 +697,7 @@ chown1(ip, uid, gid)
 /*
  * Truncate a file given its path name.
  */
+void
 truncate()
 {
 	register struct a {
@@ -711,6 +725,7 @@ bad:
 /*
  * Truncate a file given a file descriptor.
  */
+void
 ftruncate()
 {
 	register struct a {
@@ -762,6 +777,7 @@ ftruncate()
  * Source and destination must either both be directories, or both
  * not be directories.  If target is a directory, it must be empty.
  */
+void
 rename()
 {
 	struct a {
@@ -780,10 +796,10 @@ rename()
 	if (ip == NULL)
 		return;
 	dp = ndp->ni_pdir;
-/*
- * 'from' file can not be renamed if it is immutable/appendonly or if its
- * parent directory is append only.
-*/
+	/*
+	 * 'from' file can not be renamed if it is immutable/appendonly or if its
+	 * parent directory is append only.
+	 */
 	if ((ip->i_flags & (IMMUTABLE|APPEND)) || (dp->i_flags & APPEND)) {
 		iput(dp);
 		if (dp == ip)
@@ -841,11 +857,11 @@ rename()
 		goto out;
 	}
 	dp = ndp->ni_pdir;
-/*
- * rename can not be done if 'to' file exists and is immutable/appendonly
- * or if the directory is append only (this is because an existing 'to'
- * has to be deleted first and that is illegal in an appendonly directory).
-*/
+	/*
+	 * rename can not be done if 'to' file exists and is immutable/appendonly
+	 * or if the directory is append only (this is because an existing 'to'
+	 * has to be deleted first and that is illegal in an appendonly directory).
+	 */
 	if (xp && ((xp->i_flags & (IMMUTABLE|APPEND)) || (dp->i_flags & APPEND))) {
 		error = EPERM;
 		goto bad;
@@ -1059,9 +1075,9 @@ out:
  * Make a new file.
  */
 struct inode *
-maknode(mode, ndp)
+maknode (mode, ndp)
 	int mode;
-register struct nameidata *ndp;
+	register struct nameidata *ndp;
 {
 	register struct inode *ip;
 	register struct inode *pdir = ndp->ni_pdir;
@@ -1110,6 +1126,7 @@ struct dirtemplate mastertemplate = {
 /*
  * Mkdir system call
  */
+void
 mkdir()
 {
 	register struct a {
@@ -1211,6 +1228,7 @@ bad:
 /*
  * Rmdir system call.
  */
+void
 rmdir()
 {
 	struct a {
@@ -1292,6 +1310,9 @@ out:
 	iput(ip);
 }
 
+/*
+ * Get an inode pointer of a file descriptor.
+ */
 struct inode *
 getinode(fdes)
 	int fdes;

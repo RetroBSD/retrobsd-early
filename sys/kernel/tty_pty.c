@@ -1,14 +1,10 @@
 /*
+ * Pseudo-teletype Driver
+ * (Actually two drivers, requiring two entries in 'cdevsw')
+ *
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)tty_pty.c	1.3 (2.11BSD GTE) 1997/5/2
- */
-
-/*
- * Pseudo-teletype Driver
- * (Actually two drivers, requiring two entries in 'cdevsw')
  */
 #include "pty.h"
 
@@ -80,8 +76,11 @@ ptsopen(dev, flag)
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
-	error = (*linesw[tp->t_line].l_open)(dev, tp);
-	ptcwakeup(tp, FREAD|FWRITE);
+	if (linesw[tp->t_line].l_open)
+		error = (*linesw[tp->t_line].l_open)(dev, tp);
+	else
+		error = ENODEV;
+	ptcwakeup (tp, FREAD | FWRITE);
 	return (error);
 }
 
@@ -92,7 +91,8 @@ ptsclose(dev, flag)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	(*linesw[tp->t_line].l_close)(tp, flag);
+	if (linesw[tp->t_line].l_close)
+		(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
 }
@@ -132,7 +132,7 @@ again:
 		if (tp->t_canq.c_cc)
 			return (error);
 	} else
-		if (tp->t_oproc)
+		if (tp->t_oproc && linesw[tp->t_line].l_read)
 			error = (*linesw[tp->t_line].l_read)(tp, uio, flag);
 	ptcwakeup(tp, FWRITE);
 	return (error);
@@ -153,7 +153,9 @@ ptswrite(dev, uio, flag)
 	tp = &pt_tty[minor(dev)];
 	if (tp->t_oproc == 0)
 		return (EIO);
-	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+	if (! linesw[tp->t_line].l_write)
+		return (ENODEV);
+	return ((*linesw[tp->t_line].l_write) (tp, uio, flag));
 }
 
 /*
@@ -211,7 +213,8 @@ ptcopen(dev, flag)
 	if (tp->t_oproc)
 		return (EIO);
 	tp->t_oproc = ptsstart;
-	(void)(*linesw[tp->t_line].l_modem)(tp, 1);
+	if (linesw[tp->t_line].l_modem)
+		(void)(*linesw[tp->t_line].l_modem) (tp, 1);
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
@@ -226,7 +229,8 @@ ptcclose(dev, flag)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	(void)(*linesw[tp->t_line].l_modem)(tp, 0);
+	if (linesw[tp->t_line].l_modem)
+		(void)(*linesw[tp->t_line].l_modem) (tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
 }
@@ -436,7 +440,8 @@ again:
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
-			(*linesw[tp->t_line].l_rint)(*cp++, tp);
+			if (linesw[tp->t_line].l_rint)
+				(*linesw[tp->t_line].l_rint) (*cp++, tp);
 			cnt++;
 			cc--;
 		}
@@ -471,7 +476,6 @@ ptyioctl(dev, cmd, data, flag)
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	int stop, error;
-	extern ttyinput();
 
 	/*
 	 * IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG.
@@ -516,21 +520,22 @@ ptyioctl(dev, cmd, data, flag)
 /*
  * Unsure if the comment below still applies or not.  For now put the
  * new code in ifdef'd out.
-*/
-
+ */
 #ifdef	four_four_bsd
-	error = (*linesw[t->t_line].l_ioctl(tp, cmd, data, flag);
-	if (error < 0)
-		error = ttioctl(tp, cmd, data, flag);
+	if (linesw[t->t_line].l_ioctl)
+		error = (*linesw[t->t_line].l_ioctl) (tp, cmd, data, flag);
+	else
+		error = ttioctl (tp, cmd, data, flag);
 #else
-	error = ttioctl(tp, cmd, data, flag);
+	error = ttioctl (tp, cmd, data, flag);
 	/*
 	 * Since we use the tty queues internally,
 	 * pty's can't be switched to disciplines which overwrite
 	 * the queues.  We can't tell anything about the discipline
 	 * from here...
 	 */
-	if (linesw[tp->t_line].l_rint != ttyinput) {
+	if (linesw[tp->t_line].l_rint &&
+	    linesw[tp->t_line].l_rint != ttyinput) {
 		(*linesw[tp->t_line].l_close)(tp, flag);
 		tp->t_line = 0;
 		(void)(*linesw[tp->t_line].l_open)(dev, tp);

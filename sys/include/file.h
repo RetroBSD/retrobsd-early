@@ -40,9 +40,29 @@ extern struct	file file[], *fileNFILE;
 int	nfile;
 #endif
 
-struct	file *getf();
-struct	file *falloc();
-#endif
+/*
+ * Convert a user supplied file descriptor into a pointer to a file structure.
+ */
+struct file *getf (int f);
+
+/*
+ * Allocate a user file descriptor and a file structure.
+ */
+struct file *falloc (void);
+
+/*
+ * File table inode close routine.
+ */
+int vn_closefile (struct file *fp);
+
+/*
+ * Unlock a file.
+ */
+void ino_unlock (struct file *fp, int kind);
+
+int ino_ioctl (struct file *fp, u_int com, caddr_t data);
+
+#endif /* KERNEL */
 
 /*
  * Access call.

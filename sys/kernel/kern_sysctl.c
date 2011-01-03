@@ -82,24 +82,29 @@ struct sysctl_args {
 	size_t	newlen;
 };
 
-int
+void
 __sysctl()
 {
-	register struct sysctl_args *uap = (struct sysctl_args *)u.u_ap;
+	register struct sysctl_args *uap = (struct sysctl_args*) u.u_ap;
 	int error;
 	u_int savelen, oldlen = 0;
 	sysctlfn *fn;
-	int name[CTL_MAXNAME];
+	int name [CTL_MAXNAME];
 
-	if (uap->new != NULL && !suser())
-		return (u.u_error);	/* XXX */
+	if (uap->new != NULL && ! suser())
+		return;
 	/*
 	 * all top-level sysctl names are non-terminal
 	 */
-	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2)
-		return (u.u_error = EINVAL);
-	if (error = copyin(uap->name, &name, uap->namelen * sizeof(int)))
-		return (u.u_error = error);
+	if (uap->namelen > CTL_MAXNAME || uap->namelen < 2) {
+		u.u_error = EINVAL;
+		return;
+	}
+	error = copyin ((caddr_t) uap->name, (caddr_t) &name, uap->namelen * sizeof(int));
+	if (error) {
+		u.u_error = error;
+		return;
+	}
 
 	switch (name[0]) {
 	case CTL_KERN:
@@ -130,12 +135,15 @@ __sysctl()
 		break;
 #endif
 	default:
-		return (u.u_error = EOPNOTSUPP);
+		u.u_error = EOPNOTSUPP;
+		return;
 	}
 
-	if (uap->oldlenp &&
-	    (error = copyin(uap->oldlenp, &oldlen, sizeof(oldlen))))
-		return (u.u_error = error);
+	if (uap->oldlenp && (error = copyin ((caddr_t) uap->oldlenp,
+	    (caddr_t) &oldlen, sizeof(oldlen)))) {
+		u.u_error = error;
+		return;
+	}
 	if (uap->old != NULL) {
 		while (memlock.sl_lock) {
 			memlock.sl_want = 1;
@@ -154,15 +162,18 @@ __sysctl()
 			wakeup((caddr_t)&memlock);
 		}
 	}
-	if (error)
-		return (u.u_error = error);
+	if (error) {
+		u.u_error = error;
+		return;
+	}
 	if (uap->oldlenp) {
-		error = copyout(&oldlen, uap->oldlenp, sizeof(oldlen));
-		if (error)
-			return(u.u_error = error);
+		error = copyout ((caddr_t) &oldlen, (caddr_t) uap->oldlenp, sizeof(oldlen));
+		if (error) {
+			u.u_error = error;
+			return;
+		}
 	}
 	u.u_r.r_val1 = oldlen;
-	return (0);
 }
 
 /*
@@ -441,9 +452,9 @@ sysctl_int(oldp, oldlenp, newp, newlen, valp)
 		return (EINVAL);
 	*oldlenp = sizeof(int);
 	if (oldp)
-		error = copyout(valp, oldp, sizeof(int));
+		error = copyout ((caddr_t) valp, (caddr_t) oldp, sizeof(int));
 	if (error == 0 && newp)
-		error = copyin(newp, valp, sizeof(int));
+		error = copyin ((caddr_t) newp, (caddr_t) valp, sizeof(int));
 	return (error);
 }
 
@@ -489,9 +500,9 @@ sysctl_long(oldp, oldlenp, newp, newlen, valp)
 		return (EINVAL);
 	*oldlenp = sizeof(long);
 	if (oldp)
-		error = copyout(valp, oldp, sizeof(long));
+		error = copyout ((caddr_t) valp, (caddr_t) oldp, sizeof(long));
 	if (error == 0 && newp)
-		error = copyin(newp, valp, sizeof(long));
+		error = copyin ((caddr_t) newp, (caddr_t) valp, sizeof(long));
 	return (error);
 }
 
@@ -662,8 +673,8 @@ sysctl_file(where, sizep)
 			return (ENOMEM);
 		}
 		fpp = fp;
-		if ((error = copyout(&fpp, where, FPTRSZ)) ||
-			(error = copyout(fp, where + FPTRSZ, FILESZ)))
+		if ((error = copyout ((caddr_t) &fpp, (caddr_t) where, FPTRSZ)) ||
+		    (error = copyout ((caddr_t) fp, (caddr_t) (where + FPTRSZ), FILESZ)))
 			return (error);
 		buflen -= (FPTRSZ + FILESZ);
 		where += (FPTRSZ + FILESZ);
@@ -728,8 +739,8 @@ sysctl_inode(where, sizep)
 			return (ENOMEM);
 		}
 		ipp = ip;
-		if ((error = copyout((caddr_t)&ipp, bp, IPTRSZ)) ||
-			  (error = copyout((caddr_t)ip, bp + IPTRSZ, INODESZ)))
+		if ((error = copyout ((caddr_t)&ipp, bp, IPTRSZ)) ||
+		    (error = copyout ((caddr_t)ip, bp + IPTRSZ, INODESZ)))
 			return (error);
 		bp += IPTRSZ + INODESZ;
 	}
@@ -779,14 +790,83 @@ sysctl_text(where, sizep)
 			return (ENOMEM);
 		}
 		xpp = xp;
-		if ((error = copyout(&xpp, where, TPTRSZ)) ||
-			(error = copyout(xp, where + TPTRSZ, TEXTSZ)))
+		if ((error = copyout ((caddr_t) &xpp, (caddr_t) where, TPTRSZ)) ||
+		    (error = copyout ((caddr_t) xp, (caddr_t) (where + TPTRSZ), TEXTSZ)))
 			return (error);
 		buflen -= (TPTRSZ + TEXTSZ);
 		where += (TPTRSZ + TEXTSZ);
 	}
 	*sizep = where - start;
 	return (0);
+}
+
+/*
+ * Three pieces of information we need about a process are not kept in
+ * the proc table: real uid, controlling terminal device, and controlling
+ * terminal tty struct pointer.  For these we must look in either the u
+ * area or the swap area.  If the process is still in memory this is
+ * easy but if the process has been swapped out we have to read in the
+ * u area.
+ *
+ * XXX - We rely on the fact that u_ttyp, u_ttyd, and u_ruid are all within
+ * XXX - the first 1kb of the u area.  If this ever changes the logic below
+ * XXX - will break (and badly).  At the present time (97/9/2) the u area
+ * XXX - is 856 bytes long.
+*/
+static void
+fill_from_u(p, rup, ttp, tdp)
+	struct	proc	*p;
+	uid_t	*rup;
+	struct	tty	**ttp;
+	dev_t	*tdp;
+{
+	register struct	buf	*bp;
+	dev_t	ttyd;
+	uid_t	ruid;
+	struct	tty	*ttyp;
+	struct	user	*up;
+
+	if (p->p_stat == SZOMB) {
+		ruid = (uid_t)-2;
+		ttyp = NULL;
+		ttyd = NODEV;
+		goto out;
+	}
+	if (p->p_flag & SLOAD) {
+		ttyd = ((struct user *)p->p_addr)->u_ttyd;
+		ttyp = ((struct user *)p->p_addr)->u_ttyp;
+		ruid = ((struct user *)p->p_addr)->u_ruid;
+	} else {
+		bp = geteblk();
+		bp->b_dev = swapdev;
+		bp->b_blkno = (daddr_t)p->p_addr;
+		bp->b_bcount = DEV_BSIZE;	/* XXX */
+		bp->b_flags = B_READ;
+
+		(*bdevsw[major(swapdev)].d_strategy)(bp);
+		biowait(bp);
+
+		if (u.u_error) {
+			ttyd = NODEV;
+			ttyp = NULL;
+			ruid = (uid_t)-2;
+		} else {
+			up = (struct user*) bp->b_addr;
+			ruid = up->u_ruid;	/* u_ruid = offset 164 */
+			ttyd = up->u_ttyd;	/* u_ttyd = offset 654 */
+			ttyp = up->u_ttyp;	/* u_ttyp = offset 652 */
+		}
+		bp->b_flags |= B_AGE;
+		brelse(bp);
+		u.u_error = 0;		/* XXX */
+	}
+out:
+	if (rup)
+		*rup = ruid;
+	if (ttp)
+		*ttp = ttyp;
+	if (tdp)
+		*tdp = ttyd;
 }
 
 /*
@@ -865,10 +945,10 @@ again:
 		}
 		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
-			if (error = copyout((caddr_t)p, &dp->kp_proc,
+			if (error = copyout ((caddr_t) p, (caddr_t) &dp->kp_proc,
 			    sizeof(struct proc)))
 				return (error);
-			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc,
+			if (error = copyout ((caddr_t)&eproc, (caddr_t) &dp->kp_eproc,
 			    sizeof(eproc)))
 				return (error);
 			dp++;
@@ -911,73 +991,4 @@ fill_eproc(p, ep)
 		ep->e_tpgid = ttyp->t_pgrp;
 	else
 		ep->e_tpgid = 0;
-}
-
-/*
- * Three pieces of information we need about a process are not kept in
- * the proc table: real uid, controlling terminal device, and controlling
- * terminal tty struct pointer.  For these we must look in either the u
- * area or the swap area.  If the process is still in memory this is
- * easy but if the process has been swapped out we have to read in the
- * u area.
- *
- * XXX - We rely on the fact that u_ttyp, u_ttyd, and u_ruid are all within
- * XXX - the first 1kb of the u area.  If this ever changes the logic below
- * XXX - will break (and badly).  At the present time (97/9/2) the u area
- * XXX - is 856 bytes long.
-*/
-void
-fill_from_u(p, rup, ttp, tdp)
-	struct	proc	*p;
-	uid_t	*rup;
-	struct	tty	**ttp;
-	dev_t	*tdp;
-{
-	register struct	buf	*bp;
-	dev_t	ttyd;
-	uid_t	ruid;
-	struct	tty	*ttyp;
-	struct	user	*up;
-
-	if (p->p_stat == SZOMB) {
-		ruid = (uid_t)-2;
-		ttyp = NULL;
-		ttyd = NODEV;
-		goto out;
-	}
-	if (p->p_flag & SLOAD) {
-		ttyd = ((struct user *)p->p_addr)->u_ttyd;
-		ttyp = ((struct user *)p->p_addr)->u_ttyp;
-		ruid = ((struct user *)p->p_addr)->u_ruid;
-	} else {
-		bp = geteblk();
-		bp->b_dev = swapdev;
-		bp->b_blkno = (daddr_t)p->p_addr;
-		bp->b_bcount = DEV_BSIZE;	/* XXX */
-		bp->b_flags = B_READ;
-
-		(*bdevsw[major(swapdev)].d_strategy)(bp);
-		biowait(bp);
-
-		if (u.u_error) {
-			ttyd = NODEV;
-			ttyp = NULL;
-			ruid = (uid_t)-2;
-		} else {
-			up = (struct user*) bp->b_addr;
-			ruid = up->u_ruid;	/* u_ruid = offset 164 */
-			ttyd = up->u_ttyd;	/* u_ttyd = offset 654 */
-			ttyp = up->u_ttyp;	/* u_ttyp = offset 652 */
-		}
-		bp->b_flags |= B_AGE;
-		brelse(bp);
-		u.u_error = 0;		/* XXX */
-	}
-out:
-	if (rup)
-		*rup = ruid;
-	if (ttp)
-		*ttp = ttyp;
-	if (tdp)
-		*tdp = ttyd;
 }

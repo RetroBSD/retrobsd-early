@@ -8,81 +8,13 @@
 #include "param.h"
 #include "systm.h"
 
-int	nosys();
-
-/* 1.1 processes and protection */
-int	getpid();
-int	getppid(), fork(),rexit(),execv(),execve();
-int	wait4(), getuid(),getgid(),getgroups(),setgroups();
-int	geteuid(), getegid();
-int	getpgrp(), setpgrp();
-int	setgid(), setegid(), setuid(), seteuid();
-int	ucall();					/* 2BSD calls */
-
-/* 1.2 memory management */
-int	sbrk();
-int	lock(), fetchi();				/* 2BSD calls */
-
-/* 1.3 signals */
-int	sigstack(),sigreturn();
-int	sigaction(), sigprocmask(), sigpending(), sigaltstack(), sigsuspend();
-int	sigwait(), kill(), killpg();
-
-/* 1.4 timing and statistics */
-int	gettimeofday(),settimeofday();
-int	getitimer(),setitimer();
-int	adjtime();
-
-/* 1.5 descriptors */
-int	getdtablesize(),dup(),dup2(),close();
-int	pselect(),select(),fcntl(),flock();
-
-/* 1.6 resource controls */
-int	getpriority(),setpriority(),getrusage(),getrlimit(),setrlimit();
-
-/* 1.7 system operation support */
-int	umount(),smount();
-int	sync(),reboot(),__sysctl();
-
-/* 2.1 generic operations */
-int	read(),write(),readv(),writev(),ioctl();
-
-/* 2.2 file system */
-int	chdir(), fchdir(), chroot();
-int	mkdir(),rmdir(), chflags(), fchflags();
-int	open(),mknod(),unlink(),stat(),fstat(),lstat();
-int	chown(),fchown(),chmod(),fchmod(),utimes();
-int	link(),symlink(),readlink(),rename();
-int	lseek(),truncate(),ftruncate(),saccess(),fsync();
-int	statfs(), fstatfs(), getfsstat();
-
-/* 2.3 communications */
-int	socket(),bind(),listen(),accept(),connect();
-int	socketpair(),sendto(),send(),recvfrom(),recv();
-int	sendmsg(),recvmsg(),shutdown(),setsockopt(),getsockopt();
-int	getsockname(),getpeername(),pipe();
-
-int	umask();		/* XXX */
-
-/* 2.4 processes */
-int	ptrace();
-
-/* 2.5 terminals */
-
 #ifdef INET
-#define ifnet(narg, name)	narg, name
-#define errnet(narg, name)	narg, name
+#   define ifnet(narg, name)	narg, name
+#   define errnet(narg, name)	narg, name
 #else
-int	nonet();
-#define ifnet(narg, name)	0, nosys
-#define errnet(narg, name)	0, nonet
+#   define ifnet(narg, name)	0, nosys
+#   define errnet(narg, name)	0, nonet
 #endif
-
-/* BEGIN JUNK */
-int	profil();		/* 'cuz sys calls are interruptible */
-int	vhangup();		/* should just do in exit() */
-int	vfork();		/* awaiting fork w/ copy on write */
-/* END JUNK */
 
 /*
  * Reserved/unimplemented system calls in the range 0-150 inclusive
@@ -100,7 +32,7 @@ int	vfork();		/* awaiting fork w/ copy on write */
  * The maximum number of direct system calls is 255 since system call numbers
  * are encoded in the lower byte of the trap instruction -- see trap.c.
  */
-struct sysent sysent[] = {
+const struct sysent sysent[] = {
 	1, nosys,			/*   0 = indir or out-of-range */
 	1, rexit,			/*   1 = exit */
 	0, fork,			/*   2 = fork */

@@ -95,14 +95,77 @@ struct tty {
 short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
-extern	struct ttychars ttydefaults;
 
+extern struct ttychars ttydefaults;
+
+extern int nldisp;		/* number of line disciplines */
+
+/*
+ * Set t_chars to default values.
+ */
 void ttychars (struct tty *tp);
+
+/*
+ * Clean terminal on last close.
+ */
 void ttyclose (struct tty *tp);
-int ttioctl (struct tty *tp, u_int com, caddr_t data, int flag);
+
+/*
+ * Wakeup processes waiting on output flow control.
+ */
 void ttyowake (struct tty *tp);
+
+/*
+ * Get a symbol from a character list.
+ */
 int getc (struct clist *p);
-#endif
+
+/*
+ * Get the pointer to the next character in the list.
+ */
+char *nextc (struct clist *p, char *cp);
+
+/*
+ * Common code for tty ioctls.
+ */
+int ttioctl (struct tty *tp, u_int com, caddr_t data, int flag);
+
+/*
+ * Start output on the typewriter.
+ */
+void ttstart (struct tty *tp);
+
+void ttwakeup (struct tty *tp);
+
+/*
+ * Place a character on raw TTY input queue,
+ */
+void ttyinput (int c, struct tty *tp);
+
+/*
+ * Initial open of tty, or (re)entry to line discipline.
+ */
+int ttyopen (dev_t dev, struct tty *tp);
+
+/*
+ * Close a line discipline.
+ */
+int ttylclose (struct tty *tp, int flag);
+
+/*
+ * Called from device's read routine after it has
+ * calculated the tty-structure given as argument.
+ */
+struct uio;
+int ttread (struct tty *tp, struct uio *uio, int flag);
+int ttwrite (struct tty *tp, struct uio *uio, int flag);
+
+/*
+ * Handle modem control transition on a tty.
+ */
+int ttymodem (struct tty *tp, int flag);
+
+#endif /* KERNEL */
 
 /* internal state bits */
 #define	TS_TIMEOUT	0x000001L	/* delay timeout in progress */

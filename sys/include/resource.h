@@ -86,4 +86,9 @@ struct loadavg {
 	short ldavg[3];
 	int fscale;
 };
+
+#ifdef KERNEL
+void rucvt (struct rusage *rup, struct k_rusage *krup);
+#endif
+
 #endif	/* !_SYS_RESOURCE_H_ */

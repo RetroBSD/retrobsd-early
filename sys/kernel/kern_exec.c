@@ -17,6 +17,7 @@
 #include "file.h"
 #include "text.h"
 #include "signalvar.h"
+
 extern	char	sigprop[];	/* XXX */
 
 /*
@@ -66,12 +67,127 @@ execsigs(p)
 	u.u_psflags = 0;
 }
 
+/*
+ * Read in and set up memory for executed file.
+ * u.u_error set on error
+ */
+static void
+getxfile(ip, ep, nargc, uid, gid)
+	struct inode *ip;
+	register struct exec *ep;
+	int nargc, uid, gid;
+{
+	long lsize;
+	off_t offset;
+	u_int ds, ts, ss;
+	int resid;
+
+	switch(ep->a_magic) {
+		case A_MAGIC1:
+			lsize = (long)ep->a_data + ep->a_text;
+			ep->a_data = (u_int)lsize;
+			if (lsize != ep->a_data) {	/* check overflow */
+				u.u_error = ENOMEM;
+				return;
+			}
+			ep->a_text = 0;
+			break;
+	}
+
+	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
+		u.u_error = ETXTBSY;
+		return;
+	}
+	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
+	    ip->i_count != 1) {
+		register struct file *fp;
+
+		for (fp = file; fp < fileNFILE; fp++) {
+			if (fp->f_type == DTYPE_INODE &&
+			    fp->f_count > 0 &&
+			    (struct inode *)fp->f_data == ip &&
+			    (fp->f_flag&FWRITE)) {
+				u.u_error = ETXTBSY;
+				return;
+			}
+		}
+	}
+
+	/*
+	 * find text and data sizes try; them out for possible
+	 * overflow of max sizes
+	 */
+	ts = ep->a_text;
+	lsize = (long)ep->a_data + ep->a_bss;
+	if (lsize != (u_int)lsize) {
+		u.u_error = ENOMEM;
+		return;
+	}
+	ds = lsize;
+	ss = SSIZE + nargc;
+
+	if (estabur(ts, ds, ss, 0)) {
+		return;
+	}
+
+	/*
+	 * allocate and clear core at this point, committed
+	 * to the new image
+	 */
+	u.u_prof.pr_scale = 0;
+	if (u.u_procp->p_flag & SVFORK)
+		endvfork();
+	else
+		xfree();
+	expand(ds, S_DATA);
+	{
+		register u_int numc, startc;
+
+		startc = ep->a_data;		/* clear BSS only */
+		if (startc != 0)
+			startc--;
+		numc = ds - startc;
+		clear (u.u_procp->p_daddr + startc, numc);
+	}
+	expand(ss, S_STACK);
+	clear(u.u_procp->p_saddr, ss);
+	xalloc(ip, ep);
+
+	/*
+	 * read in data segment
+	 */
+	estabur(0, ds, 0, 0);
+	offset = sizeof(struct exec);
+	offset += ep->a_text;
+	rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
+		UIO_USERSPACE, IO_UNIT, (int *)0);
+
+	/*
+	 * set SUID/SGID protections, if no tracing
+	 */
+	if ((u.u_procp->p_flag & P_TRACED)==0) {
+		u.u_uid = uid;
+		u.u_procp->p_uid = uid;
+		u.u_groups[0] = gid;
+	} else
+		psignal(u.u_procp, SIGTRAP);
+	u.u_svuid = u.u_uid;
+	u.u_svgid = u.u_groups[0];
+
+	u.u_tsize = ts;
+	u.u_dsize = ds;
+	u.u_ssize = ss;
+	estabur(ts, ds, ss, 0);
+}
+
+void
 execv()
 {
 	((struct execa *)u.u_ap)->envp = NULL;
 	execve();
 }
 
+void
 execve()
 {
 	int nc;
@@ -97,7 +213,8 @@ execve()
 	int resid, error;
 
 	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
-	if ((ip = namei(ndp)) == NULL)
+	ip = namei(ndp);
+	if (ip == NULL)
 		return;
 	bno = 0;
 	bp = 0;
@@ -153,8 +270,7 @@ execve()
 		goto bad;
 	}
 
-	switch((int)exdata.ex_exec.a_magic) {
-
+	switch ((int)exdata.ex_exec.a_magic) {
 	case A_MAGIC1:
 	case A_MAGIC2:
 	case A_MAGIC3:
@@ -162,7 +278,6 @@ execve()
 	case A_MAGIC5:
 	case A_MAGIC6:
 		break;
-
 	default:
 		if (exdata.ex_shell[0] != '#' ||
 		    exdata.ex_shell[1] != '!' ||
@@ -305,7 +420,7 @@ execve()
 	}
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
+	getxfile (ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
 		for (cc = 0;cc < nc; cc += DEV_BSIZE) {
@@ -405,116 +520,4 @@ bad:
 		mfree(swapmap, btod (NCARGS + MAXBSIZE), bno);
 	if (ip)
 		iput(ip);
-}
-
-/*
- * Read in and set up memory for executed file.
- * u.u_error set on error
- */
-getxfile(ip, ep, nargc, uid, gid)
-	struct inode *ip;
-	register struct exec *ep;
-	int nargc, uid, gid;
-{
-	long lsize;
-	off_t offset;
-	u_int ds, ts, ss;
-	int resid;
-
-	switch(ep->a_magic) {
-		case A_MAGIC1:
-			lsize = (long)ep->a_data + ep->a_text;
-			ep->a_data = (u_int)lsize;
-			if (lsize != ep->a_data) {	/* check overflow */
-				u.u_error = ENOMEM;
-				return;
-			}
-			ep->a_text = 0;
-			break;
-	}
-
-	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
-		u.u_error = ETXTBSY;
-		return;
-	}
-	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
-	    ip->i_count != 1) {
-		register struct file *fp;
-
-		for (fp = file; fp < fileNFILE; fp++) {
-			if (fp->f_type == DTYPE_INODE &&
-			    fp->f_count > 0 &&
-			    (struct inode *)fp->f_data == ip &&
-			    (fp->f_flag&FWRITE)) {
-				u.u_error = ETXTBSY;
-				return;
-			}
-		}
-	}
-
-	/*
-	 * find text and data sizes try; them out for possible
-	 * overflow of max sizes
-	 */
-	ts = ep->a_text;
-	lsize = (long)ep->a_data + ep->a_bss;
-	if (lsize != (u_int)lsize) {
-		u.u_error = ENOMEM;
-		return;
-	}
-	ds = lsize;
-	ss = SSIZE + nargc;
-
-	if (estabur(ts, ds, ss, 0)) {
-		return;
-	}
-
-	/*
-	 * allocate and clear core at this point, committed
-	 * to the new image
-	 */
-	u.u_prof.pr_scale = 0;
-	if (u.u_procp->p_flag & SVFORK)
-		endvfork();
-	else
-		xfree();
-	expand(ds, S_DATA);
-	{
-		register u_int numc, startc;
-
-		startc = ep->a_data;		/* clear BSS only */
-		if (startc != 0)
-			startc--;
-		numc = ds - startc;
-		clear (u.u_procp->p_daddr + startc, numc);
-	}
-	expand(ss, S_STACK);
-	clear(u.u_procp->p_saddr, ss);
-	xalloc(ip, ep);
-
-	/*
-	 * read in data segment
-	 */
-	estabur(0, ds, 0, 0);
-	offset = sizeof(struct exec);
-	offset += ep->a_text;
-	rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
-		UIO_USERSPACE, IO_UNIT, (int *)0);
-
-	/*
-	 * set SUID/SGID protections, if no tracing
-	 */
-	if ((u.u_procp->p_flag & P_TRACED)==0) {
-		u.u_uid = uid;
-		u.u_procp->p_uid = uid;
-		u.u_groups[0] = gid;
-	} else
-		psignal(u.u_procp, SIGTRAP);
-	u.u_svuid = u.u_uid;
-	u.u_svgid = u.u_groups[0];
-
-	u.u_tsize = ts;
-	u.u_dsize = ds;
-	u.u_ssize = ss;
-	estabur(ts, ds, ss, 0);
 }

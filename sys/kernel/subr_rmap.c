@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)subr_rmap.c	1.2 (2.11BSD GTE) 12/24/92
  */
-
 #include "param.h"
 #include "systm.h"
 #include "map.h"
@@ -45,7 +42,7 @@
  * Algorithm is first-fit.
  */
 memaddr
-malloc(mp, size)
+malloc (mp, size)
 	struct map *mp;
 	register size_t size;
 {
@@ -101,7 +98,8 @@ again:
  * Free the previously allocated size units at addr into the specified
  * map.  Sort addr into map and combine on one or both ends if possible.
  */
-mfree(mp, size, addr)
+void
+mfree (mp, size, addr)
 	struct map *mp;
 	size_t size;
 	register memaddr addr;
@@ -197,7 +195,7 @@ mfree(mp, size, addr)
  * best.  Returns NULL on failure, address of u. on success.
  */
 memaddr
-malloc3(mp, d_size, s_size, u_size, a)
+malloc3 (mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
 	memaddr a[3];

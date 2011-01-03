@@ -17,77 +17,11 @@
 #include "kernel.h"
 
 /*
- * fork --
- *	fork system call
+ * Create a new process -- the internal version of system call fork.
+ * It returns 1 in the new process, 0 in the old.
  */
-fork()
-{
-	fork1(0);
-}
-
-/*
- * vfork --
- *	vfork system call, fast version of fork
- */
-vfork()
-{
-	fork1(1);
-}
-
-fork1(isvfork)
-{
-	register int a;
-	register struct proc *p1, *p2;
-
-	a = 0;
-	if (u.u_uid != 0) {
-		for (p1 = allproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
-				a++;
-		for (p1 = zombproc; p1; p1 = p1->p_nxt)
-			if (p1->p_uid == u.u_uid)
-				a++;
-	}
-	/*
-	 * Disallow if
-	 *  No processes at all;
-	 *  not su and too many procs owned; or
-	 *  not su and would take last slot.
-	 */
-	p2 = freeproc;
-	if (p2==NULL)
-		tablefull("proc");
-	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
-		u.u_error = EAGAIN;
-		goto out;
-	}
-	p1 = u.u_procp;
-	if (newproc(isvfork)) {
-		u.u_r.r_val1 = p1->p_pid;
-#ifndef pdp11
-		u.u_r.r_val2 = 1;  /* child */
-#endif
-		u.u_start = time.tv_sec;
-		bzero(&u.u_ru, sizeof(u.u_ru));
-		bzero(&u.u_cru, sizeof(u.u_cru));
-		return;
-	}
-	u.u_r.r_val1 = p2->p_pid;
-
-out:
-#ifdef pdp11			/* see libc/pdp/sys/fork.s */
-	u.u_ar0[R7] += NBPW;
-#else
-	u.u_r.r_val2 = 0;
-#endif
-}
-
-/*
- * newproc --
- *	Create a new process -- the internal version of system call fork.
- *	It returns 1 in the new process, 0 in the old.
- */
-newproc(isvfork)
+static int
+newproc (isvfork)
 	int isvfork;
 {
 	register struct proc *rpp, *rip;
@@ -298,4 +232,72 @@ again:
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);
+}
+
+static void
+fork1 (isvfork)
+	int isvfork;
+{
+	register int a;
+	register struct proc *p1, *p2;
+
+	a = 0;
+	if (u.u_uid != 0) {
+		for (p1 = allproc; p1; p1 = p1->p_nxt)
+			if (p1->p_uid == u.u_uid)
+				a++;
+		for (p1 = zombproc; p1; p1 = p1->p_nxt)
+			if (p1->p_uid == u.u_uid)
+				a++;
+	}
+	/*
+	 * Disallow if
+	 *  No processes at all;
+	 *  not su and too many procs owned; or
+	 *  not su and would take last slot.
+	 */
+	p2 = freeproc;
+	if (p2==NULL)
+		tablefull("proc");
+	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
+		u.u_error = EAGAIN;
+		goto out;
+	}
+	p1 = u.u_procp;
+	if (newproc (isvfork)) {
+		u.u_r.r_val1 = p1->p_pid;
+#ifndef pdp11
+		u.u_r.r_val2 = 1;  /* child */
+#endif
+		u.u_start = time.tv_sec;
+		bzero(&u.u_ru, sizeof(u.u_ru));
+		bzero(&u.u_cru, sizeof(u.u_cru));
+		return;
+	}
+	u.u_r.r_val1 = p2->p_pid;
+
+out:
+#ifdef pdp11			/* see libc/pdp/sys/fork.s */
+	u.u_ar0[R7] += NBPW;
+#else
+	u.u_r.r_val2 = 0;
+#endif
+}
+
+/*
+ * fork system call
+ */
+void
+fork()
+{
+	fork1 (0);
+}
+
+/*
+ * vfork system call, fast version of fork
+ */
+void
+vfork()
+{
+	fork1 (1);
 }

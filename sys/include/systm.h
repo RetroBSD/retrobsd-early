@@ -64,22 +64,23 @@ dev_t	dumpdev;		/* device to take dumps on */
 long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	pipedev;		/* pipe device */
-int	nodev();		/* no device function used in bdevsw/cdevsw */
+int	nodev (void);		/* no device function used in bdevsw/cdevsw */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
 
-daddr_t	bmap();
+struct inode;
+daddr_t bmap (struct inode *ip, daddr_t bn, int rwflg, int flags);
 
 extern int	cputype;	/* type of cpu = 40, 44, 45, 60, or 70 */
 
 /*
  * Structure of the system-entry table
  */
-extern struct sysent
+extern const struct sysent
 {
-	char	sy_narg;		/* total number of arguments */
-	int	(*sy_call)();		/* handler */
+	int	sy_narg;		/* total number of arguments */
+	void	(*sy_call) (void);	/* handler */
 } sysent[];
 
 int	noproc;			/* no one is running just now */
@@ -87,12 +88,77 @@ char	*panicstr;
 int	boothowto;		/* reboot flags, from boot */
 int	selwait;
 
-#ifdef KERNEL
+extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
+
 void panic (char *msg);
 void printf (char *fmt, ...);
 int loginit (void);
-#endif
 
-extern	bool_t	sep_id;		/* separate I/D */
-extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
-#endif
+/*
+ * Syscalls.
+ */
+void	nosys (void);
+void	nonet (void);
+
+/* 1.1 processes and protection */
+void	getpid (void);
+void	getppid (void), fork (void), rexit (void), execv (void), execve (void);
+void	wait4 (void), getuid (void), getgid (void), getgroups (void), setgroups (void);
+void	geteuid (void), getegid (void);
+void	getpgrp (void), setpgrp (void);
+void	setgid (void), setegid (void), setuid (void), seteuid (void);
+void	ucall (void);					/* 2BSD calls */
+
+/* 1.2 memory management */
+void	sbrk (void);
+void	lock (void), fetchi (void);				/* 2BSD calls */
+
+/* 1.3 signals */
+void	sigstack (void), sigreturn (void);
+void	sigaction (void), sigprocmask (void), sigpending (void), sigaltstack (void), sigsuspend (void);
+void	sigwait (void), kill (void), killpg (void);
+
+/* 1.4 timing and statistics */
+void	gettimeofday (void), settimeofday (void);
+void	getitimer (void), setitimer (void);
+void	adjtime (void);
+
+/* 1.5 descriptors */
+void	getdtablesize (void), dup (void), dup2 (void), close (void);
+void	pselect (void), select (void), fcntl (void), flock (void);
+
+/* 1.6 resource controls */
+void	getpriority (void), setpriority (void), getrusage (void), getrlimit (void), setrlimit (void);
+
+/* 1.7 system operation support */
+void	umount (void), smount (void);
+void	sync (void), reboot (void), __sysctl (void);
+
+/* 2.1 generic operations */
+void	read (void), write (void), readv (void), writev (void), ioctl (void);
+
+/* 2.2 file system */
+void	chdir (void), fchdir (void), chroot (void);
+void	mkdir (void), rmdir (void), chflags (void), fchflags (void);
+void	open (void), mknod (void), unlink (void), stat (void), fstat (void), lstat (void);
+void	chown (void), fchown (void), chmod (void), fchmod (void), utimes (void);
+void	link (void), symlink (void), readlink (void), rename (void);
+void	lseek (void), truncate (void), ftruncate (void), saccess (void), fsync (void);
+void	statfs (void), fstatfs (void), getfsstat (void);
+
+/* 2.3 communications */
+void	socket (void), bind (void), listen (void), accept (void), connect (void);
+void	socketpair (void), sendto (void), send (void), recvfrom (void), recv (void);
+void	sendmsg (void), recvmsg (void), shutdown (void), setsockopt (void), getsockopt (void);
+void	getsockname (void), getpeername (void), pipe (void);
+
+void	umask (void);		/* XXX */
+
+/* 2.4 processes */
+void	ptrace (void);
+
+void	profil (void);		/* 'cuz sys calls are interruptible */
+void	vhangup (void);		/* should just do in exit (void) */
+void	vfork (void);		/* awaiting fork w/ copy on write */
+
+#endif /* ! SUPERVISOR */

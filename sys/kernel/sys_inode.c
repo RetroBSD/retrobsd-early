@@ -21,15 +21,10 @@
 #include "systm.h"
 #include "syslog.h"
 
-extern	int	vn_closefile();
-int	ino_rw(), ino_ioctl(), ino_select();
-
-struct 	fileops inodeops =
-	{ ino_rw, ino_ioctl, ino_select, vn_closefile };
-
+int
 ino_rw(fp, uio)
 	struct file *fp;
-register struct uio *uio;
+	register struct uio *uio;
 {
 	register struct inode *ip = (struct inode *)fp->f_data;
 	u_int count, error;
@@ -39,33 +34,95 @@ register struct uio *uio;
 		ILOCK(ip);
 	uio->uio_offset = fp->f_offset;
 	count = uio->uio_resid;
-	if	(uio->uio_rw == UIO_READ)
-		{
+	if (uio->uio_rw == UIO_READ) {
 		error = rwip(ip, uio, fp->f_flag & FNONBLOCK ? IO_NDELAY : 0);
 		fp->f_offset += (count - uio->uio_resid);
-		}
-	else
-		{
+	} else {
 		ioflag = 0;
-		if	((ip->i_mode&IFMT) == IFREG && (fp->f_flag & FAPPEND))
+		if ((ip->i_mode&IFMT) == IFREG && (fp->f_flag & FAPPEND))
 			ioflag |= IO_APPEND;
-		if	(fp->f_flag & FNONBLOCK)
+		if (fp->f_flag & FNONBLOCK)
 			ioflag |= IO_NDELAY;
-		if	(fp->f_flag & FFSYNC ||
-			 (ip->i_fs->fs_flags & MNT_SYNCHRONOUS))
+		if (fp->f_flag & FFSYNC ||
+		    (ip->i_fs->fs_flags & MNT_SYNCHRONOUS))
 			ioflag |= IO_SYNC;
 		error = rwip(ip, uio, ioflag);
-		if	(ioflag & IO_APPEND)
+		if (ioflag & IO_APPEND)
 			fp->f_offset = uio->uio_offset;
 		else
 			fp->f_offset += (count - uio->uio_resid);
-		}
+	}
 	if ((ip->i_mode&IFMT) != IFCHR)
 		IUNLOCK(ip);
 	return (error);
 }
 
-rdwri(rw, ip, base, len, offset, segflg, ioflg, aresid)
+int
+ino_ioctl(fp, com, data)
+	register struct file *fp;
+	register u_int com;
+	caddr_t data;
+{
+	register struct inode *ip = ((struct inode *)fp->f_data);
+	dev_t dev;
+
+	switch (ip->i_mode & IFMT) {
+
+	case IFREG:
+	case IFDIR:
+		if (com == FIONREAD) {
+			if (fp->f_type==DTYPE_PIPE && !(fp->f_flag&FREAD))
+				*(off_t *)data = 0;
+			else
+				*(off_t *)data = ip->i_size - fp->f_offset;
+			return (0);
+		}
+		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
+			return (0);			/* XXX */
+		/* fall into ... */
+
+	default:
+		return (ENOTTY);
+
+	case IFCHR:
+		dev = ip->i_rdev;
+		u.u_r.r_val1 = 0;
+		if (setjmp(&u.u_qsave)) {
+			/*
+			 * The ONLY way we can get here is via the longjump in sleep.  Signals have
+			 * been checked for and u_error set accordingly.  All that remains to do
+			 * is 'return'.
+			 */
+			return(u.u_error);
+		}
+		return((*cdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
+	}
+}
+
+int
+ino_select(fp, which)
+	struct file *fp;
+	int which;
+{
+	register struct inode *ip = (struct inode *)fp->f_data;
+	register dev_t dev;
+
+	switch (ip->i_mode & IFMT) {
+
+	default:
+		return (1);		/* XXX */
+
+	case IFCHR:
+		dev = ip->i_rdev;
+		return (*cdevsw[major(dev)].d_select)(dev, which);
+	}
+}
+
+struct 	fileops inodeops =
+	{ ino_rw, ino_ioctl, ino_select, vn_closefile };
+
+int
+rdwri (rw, ip, base, len, offset, segflg, ioflg, aresid)
 	enum uio_rw rw;
 	struct inode *ip;
 	caddr_t base;
@@ -73,7 +130,7 @@ rdwri(rw, ip, base, len, offset, segflg, ioflg, aresid)
 	off_t offset;
 	enum uio_seg segflg;
 	int ioflg;
-register int *aresid;
+	register int *aresid;
 {
 	struct uio auio;
 	struct iovec aiov;
@@ -96,7 +153,8 @@ register int error;
 	return (error);
 }
 
-rwip(ip, uio, ioflag)
+int
+rwip (ip, uio, ioflag)
 	register struct inode *ip;
 	register struct uio *uio;
 	int ioflag;
@@ -109,7 +167,7 @@ rwip(ip, uio, ioflag)
 	int error = 0;
 	int flags;
 
-	if	(uio->uio_offset < 0)
+	if (uio->uio_offset < 0)
 		return (EINVAL);
 	type = ip->i_mode&IFMT;
 /*
@@ -117,33 +175,29 @@ rwip(ip, uio, ioflag)
  * and that i/o to append only files takes place at the end of file.
  * We do not panic on non-sync directory i/o - the sync bit is forced on.
 */
-	if (uio->uio_rw == UIO_READ)
-		{
-		if	(!(ip->i_fs->fs_flags & MNT_NOATIME))
+	if (uio->uio_rw == UIO_READ) {
+		if (! (ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= IACC;
-		}
-	else
-	   {
-	   switch (type)
-		{
+	} else {
+		switch (type) {
 		case IFREG:
-		    if	(ioflag & IO_APPEND)
-			uio->uio_offset = ip->i_size;
-		    if	(ip->i_flags & APPEND && uio->uio_offset != ip->i_size)
-			return(EPERM);
-		    break;
+			if (ioflag & IO_APPEND)
+				uio->uio_offset = ip->i_size;
+			if (ip->i_flags & APPEND && uio->uio_offset != ip->i_size)
+				return(EPERM);
+			break;
 		case IFDIR:
-		    if  ((ioflag & IO_SYNC) == 0)
-			ioflag |= IO_SYNC;
-		    break;
+			if  ((ioflag & IO_SYNC) == 0)
+				ioflag |= IO_SYNC;
+			break;
 		case IFLNK:
 		case IFBLK:
 		case IFCHR:
-		    break;
+			break;
 		default:
-		    return(EFTYPE);
+			return (EFTYPE);
 		}
-	   }
+	}
 
 /*
  * The IO_SYNC flag is turned off here if the 'async' mount flag is on.
@@ -160,21 +214,17 @@ rwip(ip, uio, ioflag)
 	if (type == IFREG  || type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC))
 		ioflag &= ~IO_SYNC;
 
-	if (type == IFCHR)
-		{
-		if  (uio->uio_rw == UIO_READ)
-		    {
-		    if	(!(ip->i_fs->fs_flags & MNT_NOATIME))
-			ip->i_flag |= IACC;
-		    error = (*cdevsw[major(dev)].d_read)(dev, uio, ioflag);
-		    }
-		else
-		    {
-		    ip->i_flag |= IUPD|ICHG;
-		    error = (*cdevsw[major(dev)].d_write)(dev, uio, ioflag);
-		    }
-		return (error);
+	if (type == IFCHR) {
+		if (uio->uio_rw == UIO_READ) {
+			if (! (ip->i_fs->fs_flags & MNT_NOATIME))
+				ip->i_flag |= IACC;
+			error = (*cdevsw[major(dev)].d_read)(dev, uio, ioflag);
+		} else {
+			ip->i_flag |= IUPD|ICHG;
+			error = (*cdevsw[major(dev)].d_write)(dev, uio, ioflag);
 		}
+		return (error);
+	}
 	if (uio->uio_resid == 0)
 		return (0);
 	if (uio->uio_rw == UIO_WRITE && type == IFREG &&
@@ -201,9 +251,8 @@ rwip(ip, uio, ioflag)
 					return (0);
 				if (diff < n)
 					n = diff;
-			bn = bmap(ip, lbn, B_READ, flags);
-			}
-			else
+				bn = bmap(ip, lbn, B_READ, flags);
+			} else
 				bn = bmap(ip,lbn,B_WRITE,
 				       n == DEV_BSIZE ? flags : flags|B_CLRBUF);
 			if (u.u_error || uio->uio_rw == UIO_WRITE && (long)bn<0)
@@ -288,71 +337,13 @@ rwip(ip, uio, ioflag)
 */
 	}
 #ifdef whybother
-	if (!error && (ioflag & IO_SYNC))
+	if (! error && (ioflag & IO_SYNC))
 		IUPDAT(ip, &time, &time, 1);
 #endif
 	return (error);
 }
 
-
-ino_ioctl(fp, com, data)
-	register struct file *fp;
-	register u_int com;
-	caddr_t data;
-{
-	register struct inode *ip = ((struct inode *)fp->f_data);
-	dev_t dev;
-
-	switch (ip->i_mode & IFMT) {
-
-	case IFREG:
-	case IFDIR:
-		if (com == FIONREAD) {
-			if (fp->f_type==DTYPE_PIPE && !(fp->f_flag&FREAD))
-				*(off_t *)data = 0;
-			else
-				*(off_t *)data = ip->i_size - fp->f_offset;
-			return (0);
-		}
-		if (com == FIONBIO || com == FIOASYNC)	/* XXX */
-			return (0);			/* XXX */
-		/* fall into ... */
-
-	default:
-		return (ENOTTY);
-
-	case IFCHR:
-		dev = ip->i_rdev;
-		u.u_r.r_val1 = 0;
-		if	(setjmp(&u.u_qsave))
-/*
- * The ONLY way we can get here is via the longjump in sleep.  Signals have
- * been checked for and u_error set accordingly.  All that remains to do
- * is 'return'.
-*/
-			return(u.u_error);
-		return((*cdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
-	}
-}
-
-ino_select(fp, which)
-	struct file *fp;
-	int which;
-{
-	register struct inode *ip = (struct inode *)fp->f_data;
-	register dev_t dev;
-
-	switch (ip->i_mode & IFMT) {
-
-	default:
-		return (1);		/* XXX */
-
-	case IFCHR:
-		dev = ip->i_rdev;
-		return (*cdevsw[major(dev)].d_select)(dev, which);
-	}
-}
-
+int
 ino_stat(ip, sb)
 	register struct inode *ip;
 	register struct stat *sb;
@@ -406,11 +397,11 @@ ino_stat(ip, sb)
  * case in the switch statement).  Pipes and sockets do NOT come here because
  * they have their own close routines.
 */
-
-closei(ip, flag)
+int
+closei (ip, flag)
 	register struct inode *ip;
 	int	flag;
-	{
+{
 	register struct mount *mp;
 	register struct file *fp;
 	int	mode, error;
@@ -420,39 +411,36 @@ closei(ip, flag)
 	mode = ip->i_mode & IFMT;
 	dev = ip->i_rdev;
 
-	switch	(mode)
-		{
-		case	IFCHR:
-			cfunc = cdevsw[major(dev)].d_close;
-			break;
-		case	IFBLK:
+	switch (mode) {
+	case IFCHR:
+		cfunc = cdevsw[major(dev)].d_close;
+		break;
+	case IFBLK:
 		/*
 		 * We don't want to really close the device if it is mounted
 		 */
-/* MOUNT TABLE SHOULD HOLD INODE */
-			for (mp = mount; mp < &mount[NMOUNT]; mp++)
-				if (mp->m_inodp != NULL && mp->m_dev == dev)
-					return;
-			cfunc = bdevsw[major(dev)].d_close;
-			break;
-		default:
-			return(0);
-		}
+		/* MOUNT TABLE SHOULD HOLD INODE */
+		for (mp = mount; mp < &mount[NMOUNT]; mp++)
+			if (mp->m_inodp != NULL && mp->m_dev == dev)
+				return;
+		cfunc = bdevsw[major(dev)].d_close;
+		break;
+	default:
+		return(0);
+	}
 	/*
 	 * Check that another inode for the same device isn't active.
 	 * This is because the same device can be referenced by two
 	 * different inodes.
 	 */
-	for	(fp = file; fp < fileNFILE; fp++)
-		{
+	for (fp = file; fp < fileNFILE; fp++) {
 		if (fp->f_type != DTYPE_INODE)
 			continue;
 		if (fp->f_count && (ip = (struct inode *)fp->f_data) &&
 		    ip->i_rdev == dev && (ip->i_mode&IFMT) == mode)
 			return(0);
-		}
-	if	(mode == IFBLK)
-		{
+	}
+	if (mode == IFBLK) {
 		/*
 		 * On last close of a block device (that isn't mounted)
 		 * we must invalidate any in core blocks, so that
@@ -460,33 +448,32 @@ closei(ip, flag)
 		 */
 		bflush(dev);
 		binval(dev);
-		}
-/*
- * NOTE:  none of the device drivers appear to either set u_error OR return
- *	  anything meaningful from their close routines.  It's a good thing
- *	  programs don't bother checking the error status on close() calls.
- *	  Apparently the only time "errno" is meaningful after a "close" is
- *	  when the process is interrupted.
-*/
-	if	(setjmp(&u.u_qsave))
-		{
+	}
+	/*
+	 * NOTE:  none of the device drivers appear to either set u_error OR return
+	 *	  anything meaningful from their close routines.  It's a good thing
+	 *	  programs don't bother checking the error status on close() calls.
+	 *	  Apparently the only time "errno" is meaningful after a "close" is
+	 *	  when the process is interrupted.
+	 */
+	if (setjmp (&u.u_qsave)) {
 		/*
 		 * If device close routine is interrupted,
 		 * must return so closef can clean up.
 		 */
-		if	((error = u.u_error) == 0)
+		if ((error = u.u_error) == 0)
 			error = EINTR;
-		}
-	else
+	} else
 		error = (*cfunc)(dev, flag, mode);
-	return(error);
-	}
+	return (error);
+}
 
 /*
  * Place an advisory lock on an inode.
  * NOTE: callers of this routine must be prepared to deal with the pseudo
  *       error return ERESTART.
  */
+int
 ino_lock(fp, cmd)
 	register struct file *fp;
 	int cmd;
@@ -522,7 +509,7 @@ again:
 			return (EWOULDBLOCK);
 		ip->i_flag |= ILWAIT;
 		error = tsleep((caddr_t)&ip->i_shlockc, priority | PCATCH, 0);
-		if	(error)
+		if (error)
 			return(error);
 	}
 	if ((cmd & LOCK_EX) && (ip->i_flag & ISHLOCK)) {
@@ -562,6 +549,7 @@ again:
 /*
  * Unlock a file.
  */
+void
 ino_unlock(fp, kind)
 	register struct file *fp;
 	int kind;
@@ -595,6 +583,7 @@ ino_unlock(fp, kind)
  * Openi called to allow handler of special files to initialize and
  * validate before actual IO.
  */
+int
 openi(ip, mode)
 	register struct inode *ip;
 {
@@ -661,23 +650,7 @@ openi(ip, mode)
 	return (0);
 }
 
-/*
- * Revoke access the current tty by all processes.
- * Used only by the super-user in init
- * to give ``clean'' terminals at login.
- */
-vhangup()
-{
-
-	if (!suser())
-		return;
-	if (u.u_ttyp == NULL)
-		return;
-	forceclose(u.u_ttyd);
-	if ((u.u_ttyp->t_state) & TS_ISOPEN)
-		gsignal(u.u_ttyp->t_pgrp, SIGHUP);
-}
-
+static void
 forceclose(dev)
 	register dev_t dev;
 {
@@ -696,6 +669,23 @@ forceclose(dev)
 			continue;
 		if (ip->i_rdev != dev)
 			continue;
-		fp->f_flag &= ~(FREAD|FWRITE);
+		fp->f_flag &= ~(FREAD | FWRITE);
 	}
+}
+
+/*
+ * Revoke access the current tty by all processes.
+ * Used only by the super-user in init
+ * to give ``clean'' terminals at login.
+ */
+void
+vhangup()
+{
+	if (! suser())
+		return;
+	if (u.u_ttyp == NULL)
+		return;
+	forceclose(u.u_ttyd);
+	if ((u.u_ttyp->t_state) & TS_ISOPEN)
+		gsignal(u.u_ttyp->t_pgrp, SIGHUP);
 }

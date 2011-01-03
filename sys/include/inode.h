@@ -159,13 +159,43 @@ int	ninode;			/* the number of slots in the table */
 
 struct	inode *rootdir;			/* pointer to inode of root directory */
 
-struct	inode *getinode();
-struct	inode *ialloc();
-struct	inode *iget();
-struct	inode *owner();
-struct	inode *maknode();
-struct	inode *namei();
-#endif
+/*
+ * Get an inode pointer of a file descriptor.
+ */
+struct inode *getinode (int fdes);
+
+/*
+ * Allocate an inode in the file system.
+ */
+struct inode *ialloc (struct inode *pip);
+
+/*
+ * Look up an inode by device, inumber.
+ */
+struct inode *iget (dev_t dev, struct fs *fs, ino_t ino);
+
+/*
+ * Make a new file.
+ */
+struct nameidata;
+struct inode *maknode (int mode, struct nameidata *ndp);
+
+/*
+ * Convert a pathname into a pointer to a locked inode.
+ */
+struct inode *namei (struct nameidata *ndp);
+
+/*
+ * Change the mode on a file.
+ */
+int chmod1 (struct inode *ip, int mode);
+
+/*
+ * Change an owner of a file.
+ */
+int chown1 (struct inode *ip, int uid, int gid);
+
+#endif /* KERNEL */
 
 /* i_flag */
 #define	ILOCKED		0x1		/* inode is locked */

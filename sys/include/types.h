@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)types.h	1.4.1 (2.11BSD) 2000/2/28
  */
 
 #ifndef _TYPES_
@@ -63,8 +61,7 @@ typedef	u_int	mode_t;
 
 #include <sys/select.h>
 
-typedef char	bool_t;		/* boolean */
+typedef int	bool_t;		/* boolean */
 typedef u_int	memaddr;	/* core or swap address */
-typedef long	ubadr_t;	/* unibus address */
 
 #endif

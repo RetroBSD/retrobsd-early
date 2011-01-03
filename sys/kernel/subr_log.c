@@ -57,7 +57,7 @@ logopen(dev, mode)
 		return(ENODEV);
 	if (logisopen(unit))
 		return(EBUSY);
-	if (msgbuf[unit].msg_click == 0)	/* no buffer allocated */
+	if (msgbuf[unit].msg_bufc == 0)		/* no buffer allocated */
 		return(ENOMEM);
 	if (unit == logACCT)
 		return(ENODEV);			/* log to accounting not supported */
@@ -324,11 +324,10 @@ loginit()
 	register struct msgbuf *mp;
 
 	for (mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
-		mp->msg_click = malloc (coremap, MSG_BSIZE);
-		if (! mp->msg_click)
+		mp->msg_bufc = (char*) malloc (coremap, MSG_BSIZE);
+		if (! mp->msg_bufc)
 			return(-1);
 		mp->msg_magic = MSG_MAGIC;
-		mp->msg_bufc = mp->msg_click;
 		mp->msg_bufx = mp->msg_bufr = 0;
 	}
 	return(0);

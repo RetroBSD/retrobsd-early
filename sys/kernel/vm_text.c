@@ -65,6 +65,7 @@ struct	xstats xstats;			/* cache statistics */
 /*
  * initialize text table
  */
+void
 xinit()
 {
 	register struct text *xp;
@@ -75,10 +76,35 @@ xinit()
 }
 
 /*
+ * Remove text image from the text table.
+ * the use count must be zero.
+ */
+void
+xuntext(xp)
+	register struct text *xp;
+{
+	register struct inode *ip;
+
+	X_LOCK(xp);
+	if (xp->x_count == 0) {
+		ip = xp->x_iptr;
+		xp->x_iptr = NULL;
+		mfree(swapmap, btod(xp->x_size), xp->x_daddr);
+		if (xp->x_caddr)
+			mfree(coremap, xp->x_size, xp->x_caddr);
+		ip->i_flag &= ~ITEXT;
+		ip->i_text = NULL;
+		irele(ip);
+	}
+	XUNLOCK(xp);
+}
+
+/*
  * Decrement loaded reference count of text object.  If not sticky and
  * count of zero, attach to LRU cache, at the head if traced or the
  * inode has a hard link count of zero, otherwise at the tail.
  */
+void
 xfree()
 {
 	register struct text *xp;
@@ -125,12 +151,52 @@ xfree()
 }
 
 /*
+ * Assure core for text segment.  If there isn't enough room to get process
+ * in core, swap self out.  x_ccount must be 0.  Text must be locked to keep
+ * someone else from freeing it in the meantime.   Don't change the locking,
+ * it's correct.
+ */
+static void
+xexpand(xp)
+	register struct text *xp;
+{
+	if ((xp->x_caddr = malloc(coremap, xp->x_size)) != NULL) {
+		if ((xp->x_flag & XLOAD) == 0)
+			swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_READ);
+		xp->x_ccount++;
+		XUNLOCK(xp);
+		return;
+	}
+	if (setjmp(&u.u_ssave)) {
+		sureg();
+		return;
+	}
+	swapout(u.u_procp, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+	XUNLOCK(xp);
+	u.u_procp->p_flag |= SSWAP;
+	swtch();
+	/* NOTREACHED */
+}
+
+/*
+ * Wait for xp to be unlocked if it is currently locked.
+ */
+static void
+xwait(xp)
+	register struct text *xp;
+{
+	X_LOCK(xp);
+	XUNLOCK(xp);
+}
+
+/*
  * Attach to a shared text segment.  If there is no shared text, just
  * return.  If there is, hook up to it.  If it is not available from
  * core or swap, it has to be read in from the inode (ip); the written
  * bit is set to force it to be written out as appropriate.  If it is
  * not available from core, a swap has to be done to get it back.
  */
+void
 xalloc(ip, ep)
 	struct exec *ep;
 	register struct inode *ip;
@@ -217,57 +283,19 @@ xalloc(ip, ep)
 }
 
 /*
- * Assure core for text segment.  If there isn't enough room to get process
- * in core, swap self out.  x_ccount must be 0.  Text must be locked to keep
- * someone else from freeing it in the meantime.   Don't change the locking,
- * it's correct.
- */
-xexpand(xp)
-	register struct text *xp;
-{
-	if ((xp->x_caddr = malloc(coremap, xp->x_size)) != NULL) {
-		if ((xp->x_flag & XLOAD) == 0)
-			swap(xp->x_daddr, xp->x_caddr, xp->x_size, B_READ);
-		xp->x_ccount++;
-		XUNLOCK(xp);
-		return;
-	}
-	if (setjmp(&u.u_ssave)) {
-		sureg();
-		return;
-	}
-	swapout(u.u_procp, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
-	XUNLOCK(xp);
-	u.u_procp->p_flag |= SSWAP;
-	swtch();
-	/* NOTREACHED */
-}
-
-/*
  * Lock and unlock a text segment from swapping
  */
+void
 xlock(xp)
 	register struct text *xp;
 {
-
 	X_LOCK(xp);
 }
 
-/*
- * Wait for xp to be unlocked if it is currently locked.
- */
-xwait(xp)
-register struct text *xp;
-{
-
-	X_LOCK(xp);
-	XUNLOCK(xp);
-}
-
+void
 xunlock(xp)
-register struct text *xp;
+	register struct text *xp;
 {
-
 	XUNLOCK(xp);
 }
 
@@ -298,6 +326,7 @@ xccdec(xp)
  * device dev (used by umount system call).  If dev is NODEV, do all devices
  * (used when rebooting or malloc of swapmap failed).
  */
+void
 xumount(dev)
 	register dev_t dev;
 {
@@ -310,39 +339,17 @@ xumount(dev)
 }
 
 /*
- * Remove text image from the text table.
- * the use count must be zero.
- */
-xuntext(xp)
-	register struct text *xp;
-{
-	register struct inode *ip;
-
-	X_LOCK(xp);
-	if (xp->x_count == 0) {
-		ip = xp->x_iptr;
-		xp->x_iptr = NULL;
-		mfree(swapmap, btod(xp->x_size), xp->x_daddr);
-		if (xp->x_caddr)
-			mfree(coremap, xp->x_size, xp->x_caddr);
-		ip->i_flag &= ~ITEXT;
-		ip->i_text = NULL;
-		irele(ip);
-	}
-	XUNLOCK(xp);
-}
-
-/*
  * Free up "size" core; if swap copy of text has not yet been written,
  * do so.
  */
+void
 xuncore(size)
 	register size_t size;
 {
 	register struct text *xp;
 
 	for (xp = xhead; xp; xp = xp->x_forw) {
-		if (!xp->x_iptr)
+		if (! xp->x_iptr)
 			continue;
 		X_LOCK(xp);
 		if (!xp->x_ccount && xp->x_caddr) {

@@ -120,7 +120,7 @@ nospace:
  * is instituted to pick up NICINOD more.
  */
 struct inode *
-ialloc(pip)
+ialloc (pip)
 	struct inode *pip;
 {
 	register struct fs *fs;

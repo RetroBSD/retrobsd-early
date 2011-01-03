@@ -14,7 +14,7 @@ void
 sbrk()
 {
 	struct a {
-		char	*nsiz;
+		int nsiz;
 	};
 	register int n, d;
 

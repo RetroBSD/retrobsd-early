@@ -133,7 +133,7 @@ boot(dev, howto)
 	if ((howto & RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
 		printf("syncing disks... ");
-		(void) _splnet();
+		(void) splnet();
 		/*
 		 * Release inodes held by texts before update.
 		 */
@@ -155,7 +155,7 @@ boot(dev, howto)
 		}
 		printf("done\n");
 	}
-	(void) _splhigh();
+	(void) splhigh();
 	if (howto & RB_HALT) {
 		printf("halting\n");
 		halt();

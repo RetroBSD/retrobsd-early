@@ -29,55 +29,87 @@ extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
  * The 'c'urrent process is allowed to send a signal to a 't'arget process if
  * 1) either the real or effective user ids match OR 2) if the signal is
  * SIGCONT and the target process is a descendant of the current process
-*/
-cansignal(q, signum)
+ */
+static int
+cansignal (q, signum)
 	register struct proc *q;
 	int	signum;
-	{
+{
 	register struct proc *curp = u.u_procp;
 	uid_t	ruid;
 
 	fill_from_u(q, &ruid, NULL, NULL);	/* XXX */
-	if	(curp->p_uid == 0 ||		/* c effective root */
-		 u.u_ruid == ruid ||		/* c real = t real */
-		 curp->p_uid == ruid ||		/* c effective = t real */
-		 u.u_ruid == q->p_uid ||	/* c real = t effective */
-		 curp->p_uid == q->p_uid ||	/* c effective = t effective */
-		 (signum == SIGCONT && inferior(q)))
+	if (curp->p_uid == 0 ||		/* c effective root */
+	    u.u_ruid == ruid ||		/* c real = t real */
+	    curp->p_uid == ruid ||		/* c effective = t real */
+	    u.u_ruid == q->p_uid ||	/* c real = t effective */
+	    curp->p_uid == q->p_uid ||	/* c effective = t effective */
+	    (signum == SIGCONT && inferior(q)))
 		return(1);
 	return(0);
-	}
+}
 
 /*
  * 4.3 Compatibility
-*/
+ */
+void
 sigstack()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		struct	sigstack *nss;
 		struct	sigstack *oss;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a*) u.u_ap;
 	struct sigstack ss;
 	register int error = 0;
 
 	ss.ss_sp = u.u_sigstk.ss_base;
 	ss.ss_onstack = u.u_sigstk.ss_flags & SA_ONSTACK;
-	if	(uap->oss && (error = copyout((caddr_t)&ss,
-					(caddr_t)uap->oss, sizeof (ss))))
+	if(uap->oss && (error = copyout ((caddr_t) &ss,
+	    (caddr_t) uap->oss, sizeof (ss))))
 		goto out;
-	if	(uap->nss && (error = copyin((caddr_t)uap->nss, (caddr_t)&ss,
-					sizeof (ss))) == 0)
-		{
+	if (uap->nss && (error = copyin ((caddr_t) uap->nss,
+	    (caddr_t) &ss, sizeof (ss))) == 0) {
 		u.u_sigstk.ss_base = ss.ss_sp;
 		u.u_sigstk.ss_size = 0;
 		u.u_sigstk.ss_flags |= (ss.ss_onstack & SA_ONSTACK);
 		u.u_psflags |= SAS_ALTSTACK;
-		}
-out:
-	return(u.u_error = error);
 	}
+out:
+	u.u_error = error;
+}
 
+static int
+killpg1 (signo, pgrp, all)
+	int signo, pgrp, all;
+{
+	register struct proc *p;
+	int f, error = 0;
+
+	if (! all && pgrp == 0) {
+		/*
+		 * Zero process id means send to my process group.
+		 */
+		pgrp = u.u_procp->p_pgrp;
+		if (pgrp == 0)
+			return (ESRCH);
+	}
+	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
+		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
+		    (p->p_flag&SSYS) || (all && p == u.u_procp))
+			continue;
+		if (! cansignal (p, signo)) {
+			if (!all)
+				error = EPERM;
+			continue;
+		}
+		f++;
+		if (signo)
+			psignal(p, signo);
+	}
+	return (error ? error : (f == 0 ? ESRCH : 0));
+}
+
+void
 kill()
 {
 	register struct a {
@@ -107,27 +139,28 @@ kill()
 			error = ESRCH;
 			goto out;
 		}
-		if (!cansignal(p, uap->signo))
+		if (! cansignal (p, uap->signo))
 			error = EPERM;
 		else if (uap->signo)
-			psignal(p, uap->signo);
+			psignal (p, uap->signo);
 		goto out;
 	}
 	switch (uap->pid) {
 	case -1:		/* broadcast signal */
-		error = killpg1(uap->signo, 0, 1);
+		error = killpg1 (uap->signo, 0, 1);
 		break;
 	case 0:			/* signal own process group */
-		error = killpg1(uap->signo, 0, 0);
+		error = killpg1 (uap->signo, 0, 0);
 		break;
 	default:		/* negative explicit process group */
-		error = killpg1(uap->signo, -uap->pid, 0);
+		error = killpg1 (uap->signo, -uap->pid, 0);
 		break;
 	}
 out:
-	return(u.u_error = error);
+	u.u_error = error;
 }
 
+void
 killpg()
 {
 	register struct a {
@@ -140,39 +173,9 @@ killpg()
 		error = EINVAL;
 		goto out;
 	}
-	error = killpg1(uap->signo, uap->pgrp, 0);
+	error = killpg1 (uap->signo, uap->pgrp, 0);
 out:
-	return(u.u_error = error);
-}
-
-killpg1(signo, pgrp, all)
-	int signo, pgrp, all;
-{
-	register struct proc *p;
-	int f, error = 0;
-
-	if (!all && pgrp == 0) {
-		/*
-		 * Zero process id means send to my process group.
-		 */
-		pgrp = u.u_procp->p_pgrp;
-		if (pgrp == 0)
-			return (ESRCH);
-	}
-	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
-		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
-		    (p->p_flag&SSYS) || (all && p == u.u_procp))
-			continue;
-		if (!cansignal(p, signo)) {
-			if (!all)
-				error = EPERM;
-			continue;
-		}
-		f++;
-		if (signo)
-			psignal(p, signo);
-	}
-	return (error ? error : (f == 0 ? ESRCH : 0));
+	u.u_error = error;
 }
 
 /*
@@ -180,7 +183,8 @@ killpg1(signo, pgrp, all)
  * all processes with 'pgrp' as
  * process group.
  */
-gsignal(pgrp, sig)
+void
+gsignal (pgrp, sig)
 	register int pgrp;
 {
 	register struct proc *p;
@@ -197,6 +201,7 @@ gsignal(pgrp, sig)
  * Send the specified signal to
  * the specified process.
  */
+void
 psignal(p, sig)
 	register struct proc *p;
 	register int sig;
@@ -264,14 +269,14 @@ psignal(p, sig)
 		 * interrupt the sleep... the signal will be noticed
 		 * when the process returns through trap() or syscall().
 		 */
-		if	((p->p_flag & P_SINTR) == 0)
+		if ((p->p_flag & P_SINTR) == 0)
 			goto out;
 		/*
 		 * Process is sleeping and traced... make it runnable
 		 * so it can discover the signal in issignal() and stop
 		 * for the parent.
 		 */
-		if	(p->p_flag& P_TRACED)
+		if (p->p_flag& P_TRACED)
 			goto run;
 
 		/*
@@ -545,6 +550,7 @@ stop(p)
  * Take the action for the specified signal
  * from the current set of pending signals.
  */
+void
 postsig(sig)
 	int sig;
 {
@@ -570,24 +576,23 @@ postsig(sig)
 		 * mask from before the sigsuspend is what we want restored
 		 * after the signal processing is completed.
 		 */
-		(void) _splhigh();
+		(void) splhigh();
 		if (u.u_psflags & SAS_OLDMASK) {
 			returnmask = u.u_oldmask;
 			u.u_psflags &= ~SAS_OLDMASK;
 		} else
 			returnmask = p->p_sigmask;
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
-		(void) _spl0();
+		(void) spl0();
 		u.u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask);
 		return;
 	}
-	if	(sigprop[sig] & SA_CORE)
-		{
+	if (sigprop[sig] & SA_CORE) {
 		u.u_arg[0] = sig;
-		if	(core())
+		if (core())
 			sig |= 0200;
-		}
+	}
 	exit(sig);
 }
 
@@ -633,7 +638,7 @@ core()
 	if (ip == NULL) {
 		if (u.u_error)
 			return (0);
-		ip = maknode(0644, ndp);
+		ip = maknode (0644, ndp);
 		if (ip==NULL)
 			return (0);
 	}

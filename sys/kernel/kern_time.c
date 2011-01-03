@@ -2,23 +2,58 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_time.c	1.5 (2.11BSD) 2000/4/9
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
 #include "kernel.h"
 #include "systm.h"
 
-/* 
+static void
+setthetime (tv)
+	register struct timeval *tv;
+{
+	int	s;
+
+	if (! suser())
+		return;
+#ifdef	NOTNOW
+/*
+ * If the system is secure, we do not allow the time to be set to an
+ * earlier value.  The time may be slowed (using adjtime) but not set back.
+ *
+ * NOTE:  Can not do this until ntpd is updated to deal with the coarse (50, 60
+ *	  hz) clocks.  Ntpd wants to adjust time system clock a few microseconds
+ *	  at a time (which gets rounded to 0 in adjtime below). If that fails
+ *	  ntpd uses settimeofday to step the time backwards which obviously
+ *	  will fail if the next 'if' is enabled - all that does is fill up the
+ *	  logfiles with "can't set time" messages and the time keeps drifting.
+*/
+	if (securelevel > 0 && timercmp(tv, &time, <)) {
+		u.u_error = EPERM;	/* XXX */
+		return;
+	}
+#endif
+/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
+	boottime.tv_sec += tv->tv_sec - time.tv_sec;
+	s = splhigh();
+	time = *tv; lbolt = time.tv_usec / mshz;
+	splx(s);
+#ifdef	notyet
+	/*
+	 * if you have a time of day board, use it here
+	 */
+	resettodr();
+#endif
+}
+
+/*
  * Time of day and interval timer support.
  *
  * These routines provide the kernel entry points to get and set
  * the time-of-day.
  */
-
+void
 gettimeofday()
 {
 	register struct a {
@@ -46,6 +81,7 @@ gettimeofday()
  			sizeof (tz));
 }
 
+void
 settimeofday()
 {
 	register struct a {
@@ -61,7 +97,7 @@ settimeofday()
 		if (u.u_error)
 			return;
 		setthetime(&atv);
-		if	(u.u_error)
+		if (u.u_error)
 			return;
 	}
 	if (uap->tzp && suser()) {
@@ -72,44 +108,7 @@ settimeofday()
 	}
 }
 
-setthetime(tv)
-	register struct timeval *tv;
-	{
-	int	s;
-
-	if	(!suser())
-		return;
-#ifdef	NOTNOW
-/*
- * If the system is secure, we do not allow the time to be set to an
- * earlier value.  The time may be slowed (using adjtime) but not set back.
- *
- * NOTE:  Can not do this until ntpd is updated to deal with the coarse (50, 60
- *	  hz) clocks.  Ntpd wants to adjust time system clock a few microseconds
- *	  at a time (which gets rounded to 0 in adjtime below). If that fails 
- *	  ntpd uses settimeofday to step the time backwards which obviously 
- *	  will fail if the next 'if' is enabled - all that does is fill up the
- *	  logfiles with "can't set time" messages and the time keeps drifting.
-*/
-	if	(securelevel > 0 && timercmp(tv, &time, <))
-		{
-		u.u_error = EPERM;	/* XXX */
-		return;
-		}
-#endif
-/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
-	boottime.tv_sec += tv->tv_sec - time.tv_sec;
-	s = splhigh();
-	time = *tv; lbolt = time.tv_usec / mshz;
-	splx(s);
-#ifdef	notyet
-	/*
-	 * if you have a time of day board, use it here
-	 */
-	resettodr();
-#endif
-	}
-
+void
 adjtime()
 {
 	register struct a {
@@ -120,7 +119,7 @@ adjtime()
 	register int s;
 	long adjust;
 
-	if (!suser()) 
+	if (!suser())
 		return;
 	u.u_error = copyin((caddr_t)uap->delta, (caddr_t)&atv,
 		sizeof (struct timeval));
@@ -137,7 +136,7 @@ adjtime()
 			++time.tv_sec;
 		}
 		splx(s);
-		if (!uap->olddelta) 
+		if (!uap->olddelta)
 			return;
 		atv.tv_sec = atv.tv_usec = 0;
 	} else {
@@ -149,10 +148,11 @@ adjtime()
 		atv.tv_usec = (adjdelta % hz) * mshz;
 		adjdelta = adjust;
 	}
-	(void) copyout((caddr_t)&atv, (caddr_t)uap->olddelta,
-	    sizeof (struct timeval));
+	u.u_error = copyout ((caddr_t) &atv, (caddr_t) uap->olddelta,
+		sizeof (struct timeval));
 }
 
+void
 getitimer()
 {
 	register struct a {
@@ -174,18 +174,18 @@ getitimer()
 
 		aitv.it_interval.tv_sec = p->p_realtimer.it_interval;
 		aitv.it_value.tv_sec = p->p_realtimer.it_value;
-	}
-	else {
+	} else {
 		register struct k_itimerval *t = &u.u_timer[uap->which - 1];
 
 		aitv.it_interval.tv_sec = t->it_interval / hz;
 		aitv.it_value.tv_sec = t->it_value / hz;
 	}
 	splx(s);
-	u.u_error = copyout((caddr_t)&aitv, (caddr_t)uap->itv,
-	    sizeof (struct itimerval));
+	u.u_error = copyout ((caddr_t)&aitv, (caddr_t)uap->itv,
+		sizeof (struct itimerval));
 }
 
+void
 setitimer()
 {
 	register struct a {
@@ -221,8 +221,7 @@ setitimer()
 		p->p_realtimer.it_interval = aitv.it_interval.tv_sec;
 		if (aitv.it_interval.tv_usec)
 			++p->p_realtimer.it_interval;
-	}
-	else {
+	} else {
 		register struct k_itimerval *t = &u.u_timer[uap->which - 1];
 
 		t->it_value = aitv.it_value.tv_sec * hz;
@@ -241,10 +240,10 @@ setitimer()
  * fix it to have at least minimal value (i.e. if it is less
  * than the resolution of the clock, round it up.)
  */
+int
 itimerfix(tv)
 	struct timeval *tv;
 {
-
 	if (tv->tv_sec < 0 || tv->tv_sec > 100000000L ||
 	    tv->tv_usec < 0 || tv->tv_usec >= 1000000L)
 		return (EINVAL);
@@ -297,39 +296,10 @@ expire:
 }
 #endif /* NOT_CURRENTLY_IN_USE */
 
-#define	timevalfix	tvfix
-
-/*
- * Add and subtract routines for timevals.
- * N.B.: subtract routine doesn't deal with
- * results which are before the beginning,
- * it just gets very confused in this case.
- * Caveat emptor.
- */
-timevaladd(t1, t2)
-	struct timeval *t1, *t2;
-{
-
-	t1->tv_sec += t2->tv_sec;
-	t1->tv_usec += t2->tv_usec;
-	timevalfix(t1);
-}
-
-#ifdef NOT_CURRENTLY_IN_USE
-timevalsub(t1, t2)
-	struct timeval *t1, *t2;
-{
-
-	t1->tv_sec -= t2->tv_sec;
-	t1->tv_usec -= t2->tv_usec;
-	timevalfix(t1);
-}
-#endif
-
-timevalfix(t1)
+static void
+tvfix(t1)
 	struct timeval *t1;
 {
-
 	if (t1->tv_usec < 0) {
 		t1->tv_sec--;
 		t1->tv_usec += 1000000L;
@@ -339,3 +309,30 @@ timevalfix(t1)
 		t1->tv_usec -= 1000000L;
 	}
 }
+
+/*
+ * Add and subtract routines for timevals.
+ * N.B.: subtract routine doesn't deal with
+ * results which are before the beginning,
+ * it just gets very confused in this case.
+ * Caveat emptor.
+ */
+void
+timevaladd(t1, t2)
+	struct timeval *t1, *t2;
+{
+	t1->tv_sec += t2->tv_sec;
+	t1->tv_usec += t2->tv_usec;
+	tvfix(t1);
+}
+
+#ifdef NOT_CURRENTLY_IN_USE
+void
+timevalsub(t1, t2)
+	struct timeval *t1, *t2;
+{
+	t1->tv_sec -= t2->tv_sec;
+	t1->tv_usec -= t2->tv_usec;
+	tvfix(t1);
+}
+#endif

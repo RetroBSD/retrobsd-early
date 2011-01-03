@@ -69,6 +69,8 @@ cnopen(dev, flag)
 		return (EBUSY);
 	addr->dlrcsr |= DL_RIE|DL_DTR|DL_RE;
 	addr->dlxcsr |= DLXCSR_TIE;
+	if (! linesw[tp->t_line].l_open)
+		return (ENODEV);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
 }
 
@@ -79,7 +81,8 @@ cnclose(dev, flag)
 {
 	register struct tty *tp = &cons[minor(dev)];
 
-	(*linesw[tp->t_line].l_close)(tp, flag);
+	if (linesw[tp->t_line].l_close)
+		(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	return(0);
 }
@@ -93,6 +96,8 @@ cnread(dev, uio, flag)
 {
 	register struct tty *tp = &cons[minor(dev)];
 
+	if (! linesw[tp->t_line].l_read)
+		return (ENODEV);
 	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
 
@@ -105,6 +110,8 @@ cnwrite(dev, uio, flag)
 {
 	register struct tty *tp = &cons[minor(dev)];
 
+	if (! linesw[tp->t_line].l_write)
+		return (ENODEV);
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
 
@@ -120,7 +127,8 @@ cnrint(dev)
 	addr = (struct dldevice *)tp->t_addr;
 	c = addr->dlrbuf;
 	addr->dlrcsr |= DL_RE;
-	(*linesw[tp->t_line].l_rint)(c, tp);
+	if (linesw[tp->t_line].l_rint)
+		(*linesw[tp->t_line].l_rint) (c, tp);
 }
 
 /*ARGSUSED*/
@@ -133,9 +141,11 @@ cnioctl(dev, cmd, addr, flag)
 	register struct tty *tp = &cons[minor(dev)];
 	register int error;
 
-	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr, flag);
-	if (error >= 0)
-		return (error);
+	if (linesw[tp->t_line].l_ioctl) {
+		error = (*linesw[tp->t_line].l_ioctl) (tp, cmd, addr, flag);
+		if (error >= 0)
+			return (error);
+	}
 	error = ttioctl(tp, cmd, addr, flag);
 	if (error < 0)
 		error = ENOTTY;
@@ -149,7 +159,8 @@ cnxint(dev)
 	register struct tty *tp = &cons[minor(dev)];
 
 	tp->t_state &= ~TS_BUSY;
-	(*linesw[tp->t_line].l_start)(tp);
+	if (linesw[tp->t_line].l_start)
+		(*linesw[tp->t_line].l_start) (tp);
 }
 
 void

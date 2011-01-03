@@ -22,8 +22,7 @@
  * shared and is locked
  * per user.
  */
-struct
-{
+struct {
 	int	ip_lock;
 	int	ip_req;
 	int	*ip_addr;
@@ -33,6 +32,7 @@ struct
 /*
  * sys-trace system call.
  */
+void
 ptrace()
 {
 	register struct proc *p;
@@ -76,6 +76,7 @@ ptrace()
  * executes to implement the command
  * of the parent process in tracing.
  */
+int
 procxmt()
 {
 	register int i;

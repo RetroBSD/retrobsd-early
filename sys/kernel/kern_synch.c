@@ -122,7 +122,7 @@ tsleep(ident, priority, timo)
 		 * was being used but for now avoid network interrupts that might cause
 		 * another panic.
 		 */
-		(void)_splnet();
+		(void) splnet();
 		noop();
 		splx(s);
 		return;
@@ -215,7 +215,8 @@ endtsleep(p)
  * Callers of this routine must be prepared for premature return, and check
  * that the reason for sleeping has gone away.
  */
-sleep(chan, pri)
+void
+sleep (chan, pri)
 	caddr_t chan;
 	int pri;
 {
@@ -249,7 +250,7 @@ sleep(chan, pri)
  * Remove a process from its wait queue
  */
 void
-unsleep(p)
+unsleep (p)
 	register struct proc *p;
 {
 	register struct proc **hp;
@@ -475,8 +476,11 @@ loop:
 	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
 }
 
+/*
+ * Put the process into the run queue.
+ */
 void
-setrq(p)
+setrq (p)
 	register struct proc *p;
 {
 	register int s;

@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)kern_descrip.c	1.6 (2.11BSD) 1999/9/13
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
@@ -28,12 +25,26 @@
 /*
  * System calls on descriptors.
  */
+void
 getdtablesize()
 {
-
 	u.u_r.r_val1 = NOFILE;
 }
 
+static void
+dupit(fd, fp, flags)
+	register int fd;
+	register struct file *fp;
+	int flags;
+{
+	u.u_ofile[fd] = fp;
+	u.u_pofile[fd] = flags;
+	fp->f_count++;
+	if (fd > u.u_lastfile)
+		u.u_lastfile = fd;
+}
+
+void
 dup()
 {
 	register struct a {
@@ -51,6 +62,7 @@ dup()
 	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
+void
 dup2()
 {
 	register struct a {
@@ -74,22 +86,10 @@ dup2()
 	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
-dupit(fd, fp, flags)
-	register int fd;
-	register struct file *fp;
-	int flags;
-{
-
-	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = flags;
-	fp->f_count++;
-	if (fd > u.u_lastfile)
-		u.u_lastfile = fd;
-}
-
 /*
  * The file control system call.
  */
+void
 fcntl()
 {
 	register struct file *fp;
@@ -102,7 +102,8 @@ fcntl()
 	register char *pop;
 
 	uap = (struct a *)u.u_ap;
-	if ((fp = getf(uap->fdes)) == NULL)
+	fp = getf(uap->fdes);
+	if (fp == NULL)
 		return;
 	pop = &u.u_pofile[uap->fdes];
 	switch(uap->cmd) {
@@ -153,11 +154,11 @@ fcntl()
 	}
 }
 
+int
 fset(fp, bit, value)
-register struct file *fp;
+	register struct file *fp;
 	int bit, value;
 {
-
 	if (value)
 		fp->f_flag |= bit;
 	else
@@ -166,6 +167,7 @@ register struct file *fp;
 			(caddr_t)&value));
 }
 
+int
 fgetown(fp, valuep)
 	register struct file *fp;
 	register int *valuep;
@@ -183,6 +185,7 @@ fgetown(fp, valuep)
 	return (error);
 }
 
+int
 fsetown(fp, value)
 	register struct file *fp;
 	int value;
@@ -206,15 +209,16 @@ fsetown(fp, value)
 
 extern	struct	fileops	*Fops[];
 
+int
 fioctl(fp, cmd, value)
-register struct file *fp;
+	register struct file *fp;
 	u_int cmd;
 	caddr_t value;
 {
-
 	return ((*Fops[fp->f_type]->fo_ioctl)(fp, cmd, value));
 }
 
+void
 close()
 {
 	register struct a {
@@ -230,6 +234,7 @@ close()
 	/* WHAT IF u.u_error ? */
 }
 
+void
 fstat()
 {
 	register struct file *fp;
@@ -240,7 +245,8 @@ fstat()
 	struct stat ub;
 
 	uap = (struct a *)u.u_ap;
-	if ((fp = getf(uap->fdes)) == NULL)
+	fp = getf(uap->fdes);
+	if (fp == NULL)
 		return;
 	switch (fp->f_type) {
 
@@ -269,10 +275,10 @@ fstat()
 /*
  * Allocate a user file descriptor.
  */
+int
 ufalloc(i)
 	register int i;
 {
-
 	for (; i < NOFILE; i++)
 		if (u.u_ofile[i] == NULL) {
 			u.u_r.r_val1 = i;
@@ -286,6 +292,7 @@ ufalloc(i)
 }
 
 struct	file *lastf;
+
 /*
  * Allocate a user file descriptor
  * and a file structure.
@@ -344,6 +351,7 @@ getf(f)
  * Internal form of close.
  * Decrement reference count on file structure.
  */
+int
 closef(fp)
 	register struct file *fp;
 {
@@ -367,6 +375,7 @@ closef(fp)
 /*
  * Apply an advisory lock on a file descriptor.
  */
+void
 flock()
 {
 	register struct a {
@@ -395,7 +404,7 @@ flock()
 	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
 	error = ino_lock(fp, uap->how);
-	return(u.u_error = error);
+	u.u_error = error;
 }
 
 /*
@@ -407,11 +416,11 @@ flock()
  * references to this file will be direct to the other driver.
  */
 /* ARGSUSED */
+int
 fdopen(dev, mode, type)
 	dev_t dev;
 	int mode, type;
 {
-
 	/*
 	 * XXX Kludge: set u.u_dupfd to contain the value of the
 	 * the file descriptor being sought for duplication. The error
@@ -427,6 +436,7 @@ fdopen(dev, mode, type)
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */
+int
 dupfdopen(indx, dfd, mode, error)
 	register int indx, dfd;
 	int mode;

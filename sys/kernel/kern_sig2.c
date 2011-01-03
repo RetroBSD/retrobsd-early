@@ -34,8 +34,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)kern_sig.c	8.14.2 (2.11BSD) 1999/9/9
  */
 
 /*
@@ -44,8 +42,7 @@
  * was done because large modules are very hard to fit into the kernel's
  * overlay structure.  A smaller kern_sig2.c fits more easily into an overlaid
  * kernel.
-*/
-
+ */
 #define	SIGPROP		/* include signal properties table */
 #include <sys/param.h>
 #include <sys/signal.h>
@@ -112,7 +109,7 @@ setsigvec(signum, sa)
 	(void) spl0();
 }
 
-int
+void
 sigaction()
 {
 	register struct a {
@@ -120,7 +117,7 @@ sigaction()
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_ap;
 	struct sigaction vec;
 	register struct sigaction *sa;
 	register int signum;
@@ -152,16 +149,18 @@ sigaction()
 			sa->sa_flags |= SA_RESTART;
 		if (u.u_procp->p_flag & P_NOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
-		if ((error = copyout(sa, uap->osa, sizeof(vec))) != 0)
+		error = copyout ((caddr_t) sa, (caddr_t) uap->osa, sizeof(vec));
+		if (error != 0)
 			goto out;
 	}
 	if (uap->nsa) {
-		if ((error = copyin(uap->nsa, sa, sizeof(vec))) != 0)
+		error = copyin ((caddr_t) uap->nsa, (caddr_t) sa, sizeof(vec));
+		if (error != 0)
 			goto out;
 		setsigvec(signum, sa);
 	}
 out:
-	return(u.u_error = error);
+	u.u_error = error;
 }
 
 /*
@@ -207,22 +206,23 @@ siginit(p)
  * _AND_ the new mask (which is 32 bits).  Can't do both at the same time with
  * the 2BSD syscall return mechanism.
  */
-int
+void
 sigprocmask()
 {
 	register struct a {
 		int how;
 		sigset_t *set;
 		sigset_t *oset;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_ap;
 	int error = 0;
 	sigset_t oldmask, newmask;
 	register struct proc *p = u.u_procp;
 
 	oldmask = p->p_sigmask;
-	if	(!uap->set)	/* No new mask, go possibly return old mask */
+	if (! uap->set)	/* No new mask, go possibly return old mask */
 		goto out;
-	if	(error = copyin(uap->set, &newmask, sizeof (newmask)))
+	error = copyin ((caddr_t) uap->set, (caddr_t) &newmask, sizeof (newmask));
+	if (error)
 		goto out;
 	(void) splhigh();
 
@@ -242,67 +242,63 @@ sigprocmask()
 	}
 	(void) spl0();
 out:
-	if	(error == 0 && uap->oset)
-		error = copyout(&oldmask, uap->oset, sizeof (oldmask));
-	return (u.u_error = error);
+	if (error == 0 && uap->oset)
+		error = copyout ((caddr_t) &oldmask, (caddr_t) uap->oset, sizeof (oldmask));
+	u.u_error = error;
 }
 
 /*
  * sigpending and sigsuspend use the standard calling sequence unlike 4.4 which
  * used a nonstandard (mask instead of pointer) calling convention.
-*/
-
-int
+ */
+void
 sigpending()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		struct sigset_t *set;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_ap;
 	register int error = 0;
 	struct	proc *p = u.u_procp;
 
-	if	(uap->set)
+	if (uap->set)
 		error = copyout((caddr_t)&p->p_sig, (caddr_t)uap->set,
 				sizeof (p->p_sig));
 	else
 		error = EINVAL;
-	return(u.u_error = error);
-	}
+	u.u_error = error;
+}
 
 /*
  * sigsuspend is supposed to always return EINTR so we ignore errors on the
  * copyin by assuming a mask of 0.
-*/
-
-int
+ */
+void
 sigsuspend()
-	{
-	register struct a
-		{
+{
+	register struct a {
 		struct sigset_t *set;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_ap;
 	sigset_t nmask;
 	struct proc *p = u.u_procp;
 	int error;
 
-	if	(uap->set && (error = copyin(uap->set, &nmask, sizeof (nmask))))
+	if (uap->set && (error = copyin ((caddr_t) uap->set, (caddr_t) &nmask, sizeof (nmask))))
 		nmask = 0;
-/*
- * When returning from sigsuspend, we want the old mask to be restored
- * after the signal handler has finished.  Thus, we save it here and set
- * a flag to indicate this.
-*/
+	/*
+	 * When returning from sigsuspend, we want the old mask to be restored
+	 * after the signal handler has finished.  Thus, we save it here and set
+	 * a flag to indicate this.
+	 */
 	u.u_oldmask = p->p_sigmask;
 	u.u_psflags |= SAS_OLDMASK;
 	p->p_sigmask = nmask &~ sigcantmask;
-	while	(tsleep((caddr_t)&u, PPAUSE|PCATCH, 0) == 0)
+	while (tsleep((caddr_t)&u, PPAUSE|PCATCH, 0) == 0)
 		;
 	/* always return EINTR rather than ERESTART */
-	return(u.u_error = EINTR);
-	}
+	u.u_error = EINTR;
+}
 
-int
+void
 sigaltstack()
 {
 	register struct a {
@@ -319,7 +315,8 @@ sigaltstack()
 		goto out;
 	if (uap->nss == 0)
 		goto out;
-	if ((error = copyin(uap->nss, &ss, sizeof(ss))) != 0)
+	error = copyin ((caddr_t) uap->nss, (caddr_t) &ss, sizeof(ss));
+	if (error != 0)
 		goto out;
 	if (ss.ss_flags & SA_DISABLE) {
 		if (u.u_sigstk.ss_flags & SA_ONSTACK)
@@ -339,41 +336,40 @@ sigaltstack()
 	u.u_psflags |= SAS_ALTSTACK;
 	u.u_sigstk = ss;
 out:
-	return(u.u_error = error);
+	u.u_error = error;
 }
 
-int
+void
 sigwait()
-	{
+{
 	register struct a {
 		sigset_t *set;
 		int *sig;
-		} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_ap;
 	sigset_t wanted, sigsavail;
 	register struct proc *p = u.u_procp;
 	int	signo, error;
 
-	if	(uap->set == 0 || uap->sig == 0)
-		{
+	if (uap->set == 0 || uap->sig == 0) {
 		error = EINVAL;
 		goto out;
-		}
-	if	(error = copyin(uap->set, &wanted, sizeof (sigset_t)))
+	}
+	error = copyin ((caddr_t) uap->set, (caddr_t) &wanted, sizeof (sigset_t));
+	if (error)
 		goto out;
 
 	wanted |= sigcantmask;
-	while	((sigsavail = (wanted & p->p_sig)) == 0)
+	while ((sigsavail = (wanted & p->p_sig)) == 0)
 		tsleep(&u.u_signal[0], PPAUSE | PCATCH, 0);
 
-	if	(sigsavail & sigcantmask)
-		{
+	if (sigsavail & sigcantmask) {
 		error = EINTR;
 		goto out;
-		}
+	}
 
 	signo = ffs(sigsavail);
 	p->p_sig &= ~sigmask(signo);
-	error = copyout(&signo, uap->sig, sizeof (int));
+	error = copyout ((caddr_t) &signo, (caddr_t) uap->sig, sizeof (int));
 out:
-	return(u.u_error = error);
-	}
+	u.u_error = error;
+}

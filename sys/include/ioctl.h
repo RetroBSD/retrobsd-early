@@ -219,10 +219,7 @@ struct ttysize {
 #define		UIOCCMD(n)	_IO(u, n)		/* usr cntl op "n" */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
-#define	NETLDISC	1		/* line discip for berk net */
-#define	NTTYDISC	2		/* new tty discipline */
-#define	TABLDISC	3		/* tablet discipline */
-#define	SLIPDISC	4		/* serial IP discipline */
+#define	NTTYDISC	0		/* new tty discipline */
 
 #define	FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */
 #define	FIONCLEX	_IO(f, 2)		/* remove exclusive use */

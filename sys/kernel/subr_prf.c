@@ -26,114 +26,70 @@
 char	*panicstr;
 
 /*
- * Scaled down version of C Library printf.
- * Used to print diagnostic information directly on console tty.
- * Since it is not interrupt driven, all system activities are
- * suspended.  Printf should not be used for chit-chat.
- *
- * One additional format: %b is supported to decode error registers.
- * Usage is:
- *	printf("reg=%b\n", regval, "<base><arg>*");
- * Where <base> is the output base expressed as a control character,
- * e.g. \10 gives octal; \20 gives hex.  Each arg is a sequence of
- * characters, the first of which gives the bit number to be inspected
- * (origin 1), and the next characters (up to a control character, i.e.
- * a character <= 32), give the name of the register.  Thus
- *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
- * would produce output:
- *	reg=3<BITTWO,BITONE>
+ * Print a character on console or users terminal.
+ * If destination is console then the last MSGBUFS characters
+ * are saved in msgbuf for inspection later.
  */
-
-/*VARARGS1*/
-void
-printf(char *fmt, ...)
-{
-	prf(fmt, &fmt + 1, TOCONS | TOLOG, (struct tty *)0);
-}
-
-/*
- * Uprintf prints to the current user's terminal,
- * guarantees not to sleep (so could be called by interrupt routines;
- * but prints on the tty of the current process)
- * and does no watermark checking - (so no verbose messages).
- * NOTE: with current kernel mapping scheme, the user structure is
- * not guaranteed to be accessible at interrupt level (see seg.h);
- * a savemap/restormap would be needed here or in putchar if uprintf
- * was to be used at interrupt time.
- */
-/*VARARGS1*/
-void
-uprintf(fmt, x1)
-	char	*fmt;
-	unsigned x1;
-{
+static void
+putchar (c, flags, tp)
+	int c, flags;
 	register struct tty *tp;
+{
 
-	if ((tp = u.u_ttyp) == NULL)
-		return;
+	if (flags & TOTTY) {
+		register int s = spltty();
 
-	if (ttycheckoutq(tp, 1))
-		prf(fmt, &x1, TOTTY, tp);
+		if (tp && (tp->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
+			(TS_CARR_ON | TS_ISOPEN)) {
+			if (c == '\n')
+				(void) ttyoutput('\r', tp);
+			(void) ttyoutput(c, tp);
+			ttstart(tp);
+		}
+		splx(s);
+	}
+	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177)
+		logwrt(&c, 1, logMSG);
+	if ((flags & TOCONS) && c != '\0')
+		cnputc(c);
 }
 
 /*
- * tprintf prints on the specified terminal (console if none)
- * and logs the message.  It is designed for error messages from
- * single-open devices, and may be called from interrupt level
- * (does not sleep).
+ * Printn prints a number n in base b.
+ * We don't use recursion to avoid deep kernels stacks.
  */
-/*VARARGS2*/
-void
-tprintf(tp, fmt, x1)
-	register struct tty *tp;
-	char *fmt;
-	unsigned x1;
+static void
+printn (n, b, flags, ttyp)
+	long n;
+	u_int b;
+	struct tty *ttyp;
 {
-	int flags = TOTTY | TOLOG;
-	extern struct tty cons;
+	char prbuf[12];
+	register char *cp = prbuf;
+	register int offset = 0;
 
-	logpri(LOG_INFO);
-	if (tp == (struct tty *)NULL)
-		tp = &cons;
-	if (ttycheckoutq(tp, 0) == 0)
-		flags = TOLOG;
-	prf(fmt, &x1, flags, tp);
-	logwakeup(logMSG);
+	if (n<0)
+		switch(b) {
+		case 8:		/* unchecked, but should be like hex case */
+		case 16:
+			offset = b-1;
+			n++;
+			break;
+		case 10:
+			putchar('-', flags, ttyp);
+			n = -n;
+			break;
+		}
+	do {
+		*cp++ = "0123456789ABCDEF"[offset + n%b];
+	} while (n = n/b);	/* Avoid  n /= b, since that requires alrem */
+	do {
+		putchar(*--cp, flags, ttyp);
+	} while (cp > prbuf);
 }
 
-/*
- * Log writes to the log buffer,
- * and guarantees not to sleep (so can be called by interrupt routines).
- * If there is no process reading the log yet, it writes to the console also.
- */
-/*VARARGS2*/
-void
-log(level, fmt, x1)
-	char *fmt;
-	unsigned x1;
-{
-	register s = splhigh();
-
-	logpri(level);
-	prf(fmt, &x1, TOLOG, (struct tty *)0);
-	splx(s);
-	if (!logisopen(logMSG))
-		prf(fmt, &x1, TOCONS, (struct tty *)0);
-	logwakeup(logMSG);
-}
-
-void
-logpri(level)
-	int level;
-{
-
-	putchar('<', TOLOG, (struct tty *)0);
-	printn((u_long)level, 10, TOLOG, (struct tty *)0);
-	putchar('>', TOLOG, (struct tty *)0);
-}
-
-void
-prf(fmt, adx, flags, ttyp)
+static void
+prf (fmt, adx, flags, ttyp)
 	register char *fmt;
 	register u_int *adx;
 	int flags;
@@ -232,38 +188,111 @@ number:		printn((long)*adx, b, flags, ttyp);
 	goto loop;
 }
 
-/*
- * Printn prints a number n in base b.
- * We don't use recursion to avoid deep kernels stacks.
- */
-void
-printn(n, b, flags, ttyp)
-	long n;
-	u_int b;
-	struct tty *ttyp;
+static void
+logpri (level)
+	int level;
 {
-	char prbuf[12];
-	register char *cp = prbuf;
-	register int offset = 0;
 
-	if (n<0)
-		switch(b) {
-		case 8:		/* unchecked, but should be like hex case */
-		case 16:
-			offset = b-1;
-			n++;
-			break;
-		case 10:
-			putchar('-', flags, ttyp);
-			n = -n;
-			break;
-		}
-	do {
-		*cp++ = "0123456789ABCDEF"[offset + n%b];
-	} while (n = n/b);	/* Avoid  n /= b, since that requires alrem */
-	do {
-		putchar(*--cp, flags, ttyp);
-	} while (cp > prbuf);
+	putchar('<', TOLOG, (struct tty *)0);
+	printn((u_long)level, 10, TOLOG, (struct tty *)0);
+	putchar('>', TOLOG, (struct tty *)0);
+}
+
+/*
+ * Scaled down version of C Library printf.
+ * Used to print diagnostic information directly on console tty.
+ * Since it is not interrupt driven, all system activities are
+ * suspended.  Printf should not be used for chit-chat.
+ *
+ * One additional format: %b is supported to decode error registers.
+ * Usage is:
+ *	printf("reg=%b\n", regval, "<base><arg>*");
+ * Where <base> is the output base expressed as a control character,
+ * e.g. \10 gives octal; \20 gives hex.  Each arg is a sequence of
+ * characters, the first of which gives the bit number to be inspected
+ * (origin 1), and the next characters (up to a control character, i.e.
+ * a character <= 32), give the name of the register.  Thus
+ *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ * would produce output:
+ *	reg=3<BITTWO,BITONE>
+ */
+
+/*VARARGS1*/
+void
+printf(char *fmt, ...)
+{
+	prf(fmt, &fmt + 1, TOCONS | TOLOG, (struct tty *)0);
+}
+
+/*
+ * Uprintf prints to the current user's terminal,
+ * guarantees not to sleep (so could be called by interrupt routines;
+ * but prints on the tty of the current process)
+ * and does no watermark checking - (so no verbose messages).
+ * NOTE: with current kernel mapping scheme, the user structure is
+ * not guaranteed to be accessible at interrupt level (see seg.h);
+ * a savemap/restormap would be needed here or in putchar if uprintf
+ * was to be used at interrupt time.
+ */
+/*VARARGS1*/
+void
+uprintf(fmt, x1)
+	char	*fmt;
+	unsigned x1;
+{
+	register struct tty *tp;
+
+	if ((tp = u.u_ttyp) == NULL)
+		return;
+
+	if (ttycheckoutq(tp, 1))
+		prf(fmt, &x1, TOTTY, tp);
+}
+
+/*
+ * tprintf prints on the specified terminal (console if none)
+ * and logs the message.  It is designed for error messages from
+ * single-open devices, and may be called from interrupt level
+ * (does not sleep).
+ */
+/*VARARGS2*/
+void
+tprintf(tp, fmt, x1)
+	register struct tty *tp;
+	char *fmt;
+	unsigned x1;
+{
+	int flags = TOTTY | TOLOG;
+	extern struct tty cons;
+
+	logpri(LOG_INFO);
+	if (tp == (struct tty *)NULL)
+		tp = &cons;
+	if (ttycheckoutq(tp, 0) == 0)
+		flags = TOLOG;
+	prf(fmt, &x1, flags, tp);
+	logwakeup(logMSG);
+}
+
+/*
+ * Log writes to the log buffer,
+ * and guarantees not to sleep (so can be called by interrupt routines).
+ * If there is no process reading the log yet, it writes to the console also.
+ */
+/*VARARGS2*/
+void
+log(level, fmt, x1)
+	char *fmt;
+	unsigned x1;
+{
+	register s = splhigh();
+
+	logpri(level);
+	prf(fmt, &x1, TOLOG, (struct tty *)0);
+	splx(s);
+	if (!logisopen(logMSG))
+		prf(fmt, &x1, TOCONS, (struct tty *)0);
+	logwakeup(logMSG);
 }
 
 /*
@@ -276,7 +305,7 @@ void
 panic(s)
 	char *s;
 {
-	int bootopt = RB_AUTOBOOT|RB_DUMP;
+	int bootopt = RB_AUTOBOOT | RB_DUMP;
 
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
@@ -307,34 +336,5 @@ harderr(bp, cp)
 	char *cp;
 {
 	printf("%s%d%c: hard error sn%D ", cp,
-	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev) & 07), bp->b_blkno);
-}
-
-/*
- * Print a character on console or users terminal.
- * If destination is console then the last MSGBUFS characters
- * are saved in msgbuf for inspection later.
- */
-void
-putchar(c, flags, tp)
-	int c, flags;
-	register struct tty *tp;
-{
-
-	if (flags & TOTTY) {
-		register int s = spltty();
-
-		if (tp && (tp->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
-			(TS_CARR_ON | TS_ISOPEN)) {
-			if (c == '\n')
-				(void) ttyoutput('\r', tp);
-			(void) ttyoutput(c, tp);
-			ttstart(tp);
-		}
-		splx(s);
-	}
-	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177)
-		logwrt(&c, 1, logMSG);
-	if ((flags & TOCONS) && c != '\0')
-		cnputc(c);
+		minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev) & 07), bp->b_blkno);
 }

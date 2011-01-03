@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)sys_pipe.c	1.5 (2.11BSD GTE) 1997/2/7
  */
-
 #include "param.h"
 #include "systm.h"
 #include "user.h"
@@ -16,88 +13,8 @@
 #include "mount.h"
 #include "uio.h"
 
-extern	int	ino_ioctl();
-	int	pipe_rw(), pipe_select(), pipe_close();
-	struct	fileops	pipeops =
-		{ pipe_rw, ino_ioctl, pipe_select, pipe_close };
-
-/*
- * The sys-pipe entry.
- * Allocate an inode on the root device.  Allocate 2
- * file structures.  Put it all together with flags.
- */
-pipe()
-{
-	register struct inode *ip;
-	register struct file *rf, *wf;
-	static struct mount *mp;
-	struct inode itmp;
-	int r;
-
-	/*
-	 * if pipedev not yet found, or not available, get it; if can't
-	 * find it, use rootdev.  It would be cleaner to wander around
-	 * and fix it so that this and getfs() only check m_dev OR
-	 * m_inodp, but hopefully the mount table isn't scanned enough
-	 * to make it a problem.  Besides, 4.3's is just as bad.  Basic
-	 * fantasy is that if m_inodp is set, m_dev *will* be okay.
-	 */
-	if (!mp || !mp->m_inodp || mp->m_dev != pipedev) {
-		for (mp = &mount[0];;++mp) {
-			if (mp == &mount[NMOUNT]) {
-				mp = &mount[0];		/* use root */
-				break;
-			}
-			if (mp->m_inodp == NULL || mp->m_dev != pipedev)
-				continue;
-			break;
-		}
-		if (mp->m_filsys.fs_ronly) {
-			u.u_error = EROFS;
-			return;
-		}
-	}
-	itmp.i_fs = &mp->m_filsys;
-	itmp.i_dev = mp->m_dev;
-	ip = ialloc(&itmp);
-	if (ip == NULL)
-		return;
-	rf = falloc();
-	if (rf == NULL) {
-		iput(ip);
-		return;
-	}
-	r = u.u_r.r_val1;
-	wf = falloc();
-	if (wf == NULL) {
-		rf->f_count = 0;
-		u.u_ofile[r] = NULL;
-		iput(ip);
-		return;
-	}
-	u.u_r.r_val2 = u.u_r.r_val1;
-	u.u_r.r_val1 = r;
-	wf->f_flag = FWRITE;
-	rf->f_flag = FREAD;
-	rf->f_type = wf->f_type = DTYPE_PIPE;
-	rf->f_data = wf->f_data = (caddr_t)ip;
-	ip->i_count = 2;
-	ip->i_mode = IFREG;
-	ip->i_flag = IACC|IUPD|ICHG|IPIPE;
-}
-
-pipe_rw(fp, uio, flag)
-	register struct file *fp;
-	register struct uio *uio;
-	int flag;
-{
-
-	if (uio->uio_rw == UIO_READ)
-		return (readp(fp, uio, flag));
-	return (writep(fp, uio, flag));
-}
-
-readp(fp, uio, flag)
+int
+readp (fp, uio, flag)
 	register struct file *fp;
 	register struct	uio *uio;
 	int flag;
@@ -151,7 +68,8 @@ loop:
 	return (error);
 }
 
-writep(fp, uio, flag)
+int
+writep (fp, uio, flag)
 	struct file *fp;
 	register struct	uio *uio;
 	int flag;
@@ -219,7 +137,19 @@ done:		IUNLOCK(ip);
 	goto loop;
 }
 
-pipe_select(fp, which)
+int
+pipe_rw (fp, uio, flag)
+	register struct file *fp;
+	register struct uio *uio;
+	int flag;
+{
+	if (uio->uio_rw == UIO_READ)
+		return (readp(fp, uio, flag));
+	return (writep(fp, uio, flag));
+}
+
+int
+pipe_select (fp, which)
 	struct file *fp;
 	int which;
 {
@@ -268,37 +198,105 @@ pipe_select(fp, which)
  * This routine frees the inode by calling 'iput'.  The inode must be
  * unlocked prior to calling this routine because an 'ilock' is done prior
  * to the select wakeup processing.
-*/
-
+ */
+int
 pipe_close(fp)
 	struct	file *fp;
-	{
+{
 	register struct inode *ip = (struct inode *)fp->f_data;
 
 	ilock(ip);
 #ifdef	DIAGNOSTIC
-	if	((ip->i_flag & IPIPE) == 0)
+	if ((ip->i_flag & IPIPE) == 0)
 		panic("pipe_close !IPIPE");
 #endif
-	if	(ip->i_rsel)
-		{
+	if (ip->i_rsel) {
 		selwakeup(ip->i_rsel, (long)(ip->i_flag & IRCOLL));
 		ip->i_rsel = 0;
 		ip->i_flag &= ~IRCOLL;
-		}
-	if	(ip->i_wsel)
-		{
+	}
+	if (ip->i_wsel) {
 		selwakeup(ip->i_wsel, (long)(ip->i_flag & IWCOLL));
 		ip->i_wsel = 0;
 		ip->i_flag &= ~IWCOLL;
-		}
+	}
 	ip->i_mode &= ~(IREAD|IWRITE);
 	wakeup((caddr_t)ip+2);
 	wakeup((caddr_t)ip+4);
 
-/*
- * And finally decrement the reference count and (likely) release the inode.
- */
+	/*
+	 * And finally decrement the reference count and (likely) release the inode.
+	 */
 	iput(ip);
 	return(0);
+}
+
+struct fileops	pipeops = {
+	pipe_rw, ino_ioctl, pipe_select, pipe_close
+};
+
+/*
+ * The sys-pipe entry.
+ * Allocate an inode on the root device.  Allocate 2
+ * file structures.  Put it all together with flags.
+ */
+void
+pipe()
+{
+	register struct inode *ip;
+	register struct file *rf, *wf;
+	static struct mount *mp;
+	struct inode itmp;
+	int r;
+
+	/*
+	 * if pipedev not yet found, or not available, get it; if can't
+	 * find it, use rootdev.  It would be cleaner to wander around
+	 * and fix it so that this and getfs() only check m_dev OR
+	 * m_inodp, but hopefully the mount table isn't scanned enough
+	 * to make it a problem.  Besides, 4.3's is just as bad.  Basic
+	 * fantasy is that if m_inodp is set, m_dev *will* be okay.
+	 */
+	if (!mp || !mp->m_inodp || mp->m_dev != pipedev) {
+		for (mp = &mount[0];;++mp) {
+			if (mp == &mount[NMOUNT]) {
+				mp = &mount[0];		/* use root */
+				break;
+			}
+			if (mp->m_inodp == NULL || mp->m_dev != pipedev)
+				continue;
+			break;
+		}
+		if (mp->m_filsys.fs_ronly) {
+			u.u_error = EROFS;
+			return;
+		}
 	}
+	itmp.i_fs = &mp->m_filsys;
+	itmp.i_dev = mp->m_dev;
+	ip = ialloc(&itmp);
+	if (ip == NULL)
+		return;
+	rf = falloc();
+	if (rf == NULL) {
+		iput(ip);
+		return;
+	}
+	r = u.u_r.r_val1;
+	wf = falloc();
+	if (wf == NULL) {
+		rf->f_count = 0;
+		u.u_ofile[r] = NULL;
+		iput(ip);
+		return;
+	}
+	u.u_r.r_val2 = u.u_r.r_val1;
+	u.u_r.r_val1 = r;
+	wf->f_flag = FWRITE;
+	rf->f_flag = FREAD;
+	rf->f_type = wf->f_type = DTYPE_PIPE;
+	rf->f_data = wf->f_data = (caddr_t)ip;
+	ip->i_count = 2;
+	ip->i_mode = IFREG;
+	ip->i_flag = IACC|IUPD|ICHG|IPIPE;
+}

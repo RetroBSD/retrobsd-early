@@ -14,12 +14,13 @@
 #include "systm.h"
 #include "fs.h"
 
+void
 reboot()
 {
 	struct a {
 		int	opt;
 	};
 
-	if (suser())
-		boot(rootdev, ((struct a *)u.u_ap)->opt);
+	if (suser ())
+		boot (rootdev, ((struct a*)u.u_ap)->opt);
 }

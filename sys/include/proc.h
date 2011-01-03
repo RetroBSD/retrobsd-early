@@ -102,6 +102,37 @@ struct	proc *freeproc, *zombproc, *allproc, *qs;
 int	nproc;
 
 /*
+ * Send the specified signal to the specified process.
+ */
+void psignal (struct proc *p, int sig);
+
+/*
+ * Remove a process from its wait queue
+ */
+void unsleep (struct proc *p);
+
+/*
+ * Set the process running;
+ * arrange for it to be swapped in if necessary.
+ */
+void setrun (struct proc *p);
+
+/*
+ * Reschedule the CPU.
+ */
+void swtch (void);
+
+/*
+ * Put the process into the run queue.
+ */
+void setrq (struct proc *p);
+
+/*
+ * Wake up all processes sleeping on chan.
+ */
+void wakeup (caddr_t chan);
+
+/*
  * Change the size of the data+stack regions of the process.
  */
 void expand (int newsize, int segment);

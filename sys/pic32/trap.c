@@ -58,8 +58,9 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 	 * futher traps will be handled by looping in place.
 	 */
 	if (once_thru) {
-		(void) _splhigh();
-		for(;;);
+		(void) splhigh();
+		for (;;)
+			continue;
 	}
 
 	if (USERMODE(ps))
@@ -237,7 +238,7 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 {
 	extern int nsysent;
 	register int code;
-	register struct sysent *callp;
+	register const struct sysent *callp;
 	time_t syst;
 	register caddr_t opc;	/* original pc for restarting syscalls */
 	int	i;
@@ -245,7 +246,6 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 #ifdef UCB_METER
 	cnt.v_syscall++;
 #endif
-
 	syst = u.u_ru.ru_stime;
 	u.u_ar0 = &r0;
 	u.u_error = 0;
@@ -259,32 +259,30 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 		copyin(sp+2, (caddr_t)u.u_arg, callp->sy_narg*NBPW);
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = r1;
-	if	(setjmp(&u.u_qsave) == 0)
-		{
+	if (setjmp(&u.u_qsave) == 0) {
 		(*callp->sy_call)();
 #ifdef	DIAGNOSTIC
-		if	(hasmap)
+		if (hasmap)
 			panic("hasmap");
 #endif
-		}
-	switch	(u.u_error)
-		{
-		case	0:
-			ps &= ~PSL_C;
-			r0 = u.u_r.r_val1;
-			r1 = u.u_r.r_val2;
-			break;
-		case	ERESTART:
-			pc = opc;
-			break;
-		case	EJUSTRETURN:
-			break;
-		default:
-			ps |= PSL_C;
-			r0 = u.u_error;
-			break;
-		}
-	while	(i = CURSIG(u.u_procp))
+	}
+	switch (u.u_error) {
+	case 0:
+		ps &= ~PSL_C;
+		r0 = u.u_r.r_val1;
+		r1 = u.u_r.r_val2;
+		break;
+	case ERESTART:
+		pc = opc;
+		break;
+	case EJUSTRETURN:
+		break;
+	default:
+		ps |= PSL_C;
+		r0 = u.u_error;
+		break;
+	}
+	while (i = CURSIG(u.u_procp))
 		postsig(i);
 	curpri = setpri(u.u_procp);
 	if (runrun) {

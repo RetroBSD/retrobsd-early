@@ -2,9 +2,8 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)conf.h	1.3 (2.11BSD Berkeley) 12/23/92
  */
+struct uio;
 
 /*
  * Declaration of block device
@@ -44,6 +43,7 @@ struct cdevsw
 	int	(*d_select)();
 	int	(*d_strategy)();
 };
+
 #if defined(KERNEL) && !defined(SUPERVISOR)
 extern struct	cdevsw cdevsw[];
 #endif
@@ -53,17 +53,16 @@ extern struct	cdevsw cdevsw[];
  */
 struct linesw
 {
-	int	(*l_open)();
-	int	(*l_close)();
-	int	(*l_read)();
-	int	(*l_write)();
-	int	(*l_ioctl)();
-	int	(*l_rint)();
-	int	(*l_rend)();
-	int	(*l_meta)();
-	int	(*l_start)();
-	int	(*l_modem)();
+	int	(*l_open) (dev_t, struct tty*);
+	int	(*l_close) (struct tty*, int);
+	int	(*l_read) (struct tty*, struct uio*, int);
+	int	(*l_write) (struct tty*, struct uio*, int);
+	int	(*l_ioctl) (struct tty*, u_int, caddr_t, int);
+	void	(*l_rint) (int, struct tty*);
+	void	(*l_start) (struct tty*);
+	int	(*l_modem) (struct tty*, int);
 };
+
 #if defined(KERNEL) && !defined(SUPERVISOR)
 extern struct	linesw linesw[];
 #endif

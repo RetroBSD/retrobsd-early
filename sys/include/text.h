@@ -2,10 +2,7 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)text.h	1.2 (2.11BSD GTE) 1/19/95
  */
-
 #ifndef	_SYS_TEXT_H_
 #define	_SYS_TEXT_H_
 
@@ -32,6 +29,8 @@ struct text
 #if defined(KERNEL) && !defined(SUPERVISOR)
 extern struct	text text[], *textNTEXT;
 int	ntext;
+
+void xumount (dev_t dev);
 #endif
 
 #define	XTRC	0x01		/* Text may be written, exclusive use */
