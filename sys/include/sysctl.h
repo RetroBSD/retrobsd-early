@@ -352,6 +352,17 @@ int sysctl_int (void *oldp, size_t *oldlenp,
 int sysctl_rdint (void *oldp, size_t *oldlenp, void *newp, int val);
 
 /*
+ * Get old / set new parameters for an long value.
+ */
+int sysctl_long (void *oldp, size_t *oldlenp,
+	void *newp, size_t newlen, long *valp);
+
+/*
+ * As above, but read-only.
+ */
+int sysctl_rdlong (void *oldp, size_t *oldlenp, void *newp, long val);
+
+/*
  * Get old / set new parameters	for a string value.
  */
 int sysctl_string (void *oldp, size_t *oldlenp,

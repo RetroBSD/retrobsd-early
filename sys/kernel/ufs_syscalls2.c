@@ -24,7 +24,7 @@ statfs()
 	register struct nameidata *ndp = &nd;
 	struct	mount	*mp;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->path);
 	ip = namei(ndp);
 	if (! ip)
 		return(u.u_error);
@@ -265,7 +265,7 @@ utimes()
 		vattr.va_vaflags |= VA_UTIMES_NULL;
 	} else if (u.u_error = copyin((caddr_t)uap->tptr,(caddr_t)tv,sizeof(tv)))
 		return;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	if ((ip = namei(ndp)) == NULL)
 		return;
 	vattr.va_atime = tv[0].tv_sec;

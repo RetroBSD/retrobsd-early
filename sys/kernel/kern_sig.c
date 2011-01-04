@@ -12,8 +12,6 @@
 #include "namei.h"
 #include "signalvar.h"
 
-extern	char	sigprop[];	/* XXX - defined in kern_sig2.c */
-
 /*
  * Can the current process send the signal `signum' to process `q'?
  * This is complicated by the need to access the `real uid' of `q'.
@@ -548,6 +546,78 @@ issignal (p)
 }
 
 /*
+ * Create a core image on the file "core"
+ * If you are looking for protection glitches,
+ * there are probably a wealth of them here
+ * when this occurs to a suid command.
+ *
+ * It writes UPAGES (USIZE for pdp11) block of the
+ * user.h area followed by the entire
+ * data+stack segments.
+ */
+static int
+core()
+{
+	register struct inode *ip;
+	struct	nameidata nd;
+	register struct	nameidata *ndp = &nd;
+	register char *np;
+	char	*cp, name[MAXCOMLEN + 6];
+
+	/*
+	 * Don't dump if not root.
+	 */
+	if (! suser())
+		return(0);
+	if (USIZE + u.u_dsize + u.u_ssize >= u.u_rlimit[RLIMIT_CORE].rlim_cur)
+		return (0);
+	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
+		return (0);
+	cp = u.u_comm;
+	np = name;
+	while ((*np++ = *cp++))
+		;
+	cp = ".core";
+	np--;
+	while ((*np++ = *cp++))
+		;
+	u.u_error = 0;
+	NDINIT (ndp, CREATE, FOLLOW, name);
+	ip = namei(ndp);
+	if (ip == NULL) {
+		if (u.u_error)
+			return (0);
+		ip = maknode (0644, ndp);
+		if (ip==NULL)
+			return (0);
+	}
+	if (access(ip, IWRITE) ||
+	   (ip->i_mode&IFMT) != IFREG ||
+	   ip->i_nlink != 1) {
+		u.u_error = EFAULT;
+		goto out;
+	}
+	itrunc(ip, (u_long)0, 0);
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) &u, USIZE, (off_t) 0,
+		IO_UNIT, (int*) 0);
+	if (u.u_error)
+		goto out;
+
+	estabur(0, u.u_dsize, u.u_ssize, 0);
+	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
+		IO_UNIT, (int*) 0);
+	if (u.u_error)
+		goto out;
+
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) -u.u_ssize, u.u_ssize,
+		(off_t) USIZE + (off_t) u.u_dsize,
+		IO_UNIT, (int*) 0);
+out:
+	iput(ip);
+	return (u.u_error == 0);
+}
+
+/*
  * Take the action for the specified signal
  * from the current set of pending signals.
  */
@@ -595,76 +665,4 @@ postsig(sig)
 			sig |= 0200;
 	}
 	exit(sig);
-}
-
-/*
- * Create a core image on the file "core"
- * If you are looking for protection glitches,
- * there are probably a wealth of them here
- * when this occurs to a suid command.
- *
- * It writes UPAGES (USIZE for pdp11) block of the
- * user.h area followed by the entire
- * data+stack segments.
- */
-int
-core()
-{
-	register struct inode *ip;
-	struct	nameidata nd;
-	register struct	nameidata *ndp = &nd;
-	register char *np;
-	char	*cp, name[MAXCOMLEN + 6];
-
-	/*
-	 * Don't dump if not root.
-	 */
-	if (! suser())
-		return(0);
-	if (USIZE + u.u_dsize + u.u_ssize >= u.u_rlimit[RLIMIT_CORE].rlim_cur)
-		return (0);
-	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
-		return (0);
-	cp = u.u_comm;
-	np = name;
-	while	(*np++ = *cp++)
-		;
-	cp = ".core";
-	np--;
-	while	(*np++ = *cp++)
-		;
-	u.u_error = 0;
-	NDINIT(ndp, CREATE, FOLLOW, UIO_SYSSPACE, name);
-	ip = namei(ndp);
-	if (ip == NULL) {
-		if (u.u_error)
-			return (0);
-		ip = maknode (0644, ndp);
-		if (ip==NULL)
-			return (0);
-	}
-	if (access(ip, IWRITE) ||
-	   (ip->i_mode&IFMT) != IFREG ||
-	   ip->i_nlink != 1) {
-		u.u_error = EFAULT;
-		goto out;
-	}
-	itrunc(ip, (u_long)0, 0);
-	u.u_error = rdwri (UIO_WRITE, ip, &u, USIZE, (off_t) 0,
-		UIO_SYSSPACE, IO_UNIT, (int*) 0);
-	if (u.u_error)
-		goto out;
-
-	estabur(0, u.u_dsize, u.u_ssize, 0);
-	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
-		UIO_USERSPACE, IO_UNIT, (int*) 0);
-	if (u.u_error)
-		goto out;
-
-	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) -u.u_ssize, u.u_ssize,
-		(off_t) USIZE + (off_t) u.u_dsize,
-		UIO_USERSPACE, IO_UNIT, (int*) 0);
-out:
-	iput(ip);
-	return (u.u_error == 0);
 }

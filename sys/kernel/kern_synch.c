@@ -24,7 +24,7 @@ struct	proc *slpque[SQSIZE];
  * Recompute process priorities, once a second
  */
 void
-schedcpu()
+schedcpu (caddr_t arg, int t)
 {
 	register struct proc *p;
 	register int a;
@@ -60,12 +60,12 @@ schedcpu()
 			setpri(p);
 	}
 	vmmeter();
-	if (runin!=0) {
+	if (runin != 0) {
 		runin = 0;
 		wakeup((caddr_t)&runin);
 	}
 	++runrun;			/* swtch at least once a second */
-	timeout(schedcpu, (caddr_t)0, hz);
+	timeout (schedcpu, (caddr_t) 0, hz);
 }
 
 /*
@@ -89,6 +89,28 @@ updatepri(p)
 }
 
 /*
+ * Implement timeout for tsleep above.  If process hasn't been awakened
+ * (p_wchan non zero) then set timeout flag and undo the sleep.  If proc
+ * is stopped just unsleep so it will remain stopped.
+ */
+static void
+endtsleep(p)
+	register struct proc *p;
+{
+	register int	s;
+
+	s = splhigh();
+	if (p->p_wchan) {
+		if (p->p_stat == SSLEEP)
+			setrun(p);
+		else
+			unsleep(p);
+		p->p_flag |= P_TIMEOUT;
+	}
+	splx(s);
+}
+
+/*
  * General sleep call "borrowed" from 4.4BSD - the 'wmesg' parameter was
  * removed due to data space concerns.  Sleeps at most timo/hz seconds
  * 0 means no timeout). NOTE: timeouts in 2.11BSD use a signed int and
@@ -102,16 +124,15 @@ updatepri(p)
  * interrupted and EINTR returned to the user process.
  */
 int
-tsleep(ident, priority, timo)
+tsleep (ident, priority, timo)
 	caddr_t	ident;
 	int	priority;
-	u_short	timo;
+	u_int	timo;
 {
 	register struct proc *p = u.u_procp;
 	register struct proc **qp;
 	int	s;
 	int	sig, catch = priority & PCATCH;
-	void	endtsleep();
 
 	s = splhigh();
 	if (panicstr) {
@@ -125,7 +146,7 @@ tsleep(ident, priority, timo)
 		(void) splnet();
 		noop();
 		splx(s);
-		return;
+		return(0);
 	}
 #ifdef	DIAGNOSTIC
 	if (ident == NULL || p->p_stat != SRUN)
@@ -136,9 +157,9 @@ tsleep(ident, priority, timo)
 	p->p_pri = priority & PRIMASK;
 	qp = &slpque[HASH(ident)];
 	p->p_link = *qp;
-	*qp =p;
+	*qp = p;
 	if (timo)
-		timeout(endtsleep, (caddr_t)p, timo);
+		timeout (endtsleep, (caddr_t)p, timo);
 	/*
 	 * We put outselves on the sleep queue and start the timeout before calling
 	 * CURSIG as we could stop there and a wakeup or a SIGCONT (or both) could
@@ -149,7 +170,8 @@ tsleep(ident, priority, timo)
 	 */
 	if (catch) {
 		p->p_flag |= P_SINTR;
-		if (sig = CURSIG(p)) {
+		sig = CURSIG(p);
+		if (sig) {
 			if (p->p_wchan)
 				unsleep(p);
 			p->p_stat = SRUN;
@@ -182,28 +204,6 @@ resume:
 }
 
 /*
- * Implement timeout for tsleep above.  If process hasn't been awakened
- * (p_wchan non zero) then set timeout flag and undo the sleep.  If proc
- * is stopped just unsleep so it will remain stopped.
- */
-void
-endtsleep(p)
-	register struct proc *p;
-{
-	register int	s;
-
-	s = splhigh();
-	if (p->p_wchan) {
-		if (p->p_stat == SSLEEP)
-			setrun(p);
-		else
-			unsleep(p);
-		p->p_flag |= P_TIMEOUT;
-	}
-	splx(s);
-}
-
-/*
  * Give up the processor till a wakeup occurs on chan, at which time the
  * process enters the scheduling queue at priority pri.
  *
@@ -225,7 +225,7 @@ sleep (chan, pri)
 	if (pri > PZERO)
 		priority |= PCATCH;
 
-	u.u_error = tsleep(chan, priority, 0);
+	u.u_error = tsleep (chan, priority, 0);
 	/*
 	 * sleep does not return anything.  If it was a non-interruptible sleep _or_
 	 * a successful/normal sleep (one for which a wakeup was done) then return.
@@ -285,7 +285,7 @@ wakeup(chan)
 	s = splclock();
 	qp = &slpque[HASH(chan)];
 restart:
-	for (q = qp; p = *q; ) {
+	for (q = qp; (p = *q); ) {
 		if (p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
 		if (p->p_wchan==chan) {
@@ -445,6 +445,7 @@ loop:
 	/*
 	 * search for highest-priority runnable process
 	 */
+	pq = 0;
 	for (p = qs; p; p = p->p_link) {
 		if (p->p_flag & SLOAD && p->p_pri < n) {
 			pp = p;

@@ -27,7 +27,7 @@ chdirec(ipp)
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -119,7 +119,7 @@ copen (mode, arg, fname)
 	cmode = (arg & 077777) & ~ISVTX;
 	indx = u.u_r.r_val1;
 	u.u_dupfd = -indx - 1;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, fname);
 
 	/*
 	 * ENODEV is returned by the 'fdopen()' routine - see the comments in that
@@ -198,7 +198,7 @@ mknod()
 
 	if (! suser())
 		return;
-	NDINIT(ndp, CREATE, NOFOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, CREATE, NOFOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip != NULL) {
 		u.u_error = EEXIST;
@@ -242,7 +242,7 @@ link()
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->target);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->target);
 	ip = namei(ndp);	/* well, this routine is doomed anyhow */
 	if (ip == NULL)
 		return;
@@ -309,7 +309,7 @@ symlink()
 		tp++;
 		nc++;
 	}
-	NDINIT(ndp, CREATE, NOFOLLOW, UIO_USERSPACE, uap->linkname);
+	NDINIT (ndp, CREATE, NOFOLLOW, uap->linkname);
 	ip = namei(ndp);
 	if (ip) {
 		iput(ip);
@@ -321,8 +321,8 @@ symlink()
 	ip = maknode (IFLNK | 0777, ndp);
 	if (ip == NULL)
 		return;
-	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, (off_t)0,
-				UIO_USERSPACE, IO_UNIT, (int *)0);
+	u.u_error = rdwri (UIO_WRITE, ip, uap->target, nc, (off_t) 0,
+				IO_UNIT, (int*) 0);
 	/* handle u.u_error != 0 */
 	iput(ip);
 }
@@ -342,7 +342,7 @@ unlink()
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	NDINIT(ndp, DELETE, LOCKPARENT, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, DELETE, LOCKPARENT, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -394,7 +394,7 @@ saccess()
 	t_gid = u.u_groups[0];
 	u.u_uid = u.u_ruid;
 	u.u_groups[0] = u.u_rgid;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip != NULL) {
 		if ((uap->fmode&R_OK) && access(ip, IREAD))
@@ -423,7 +423,7 @@ stat1 (follow)
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	NDINIT(ndp, LOOKUP, follow, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, follow, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -466,7 +466,7 @@ readlink()
 	register struct	nameidata *ndp = &nd;
 	int resid;
 
-	NDINIT(ndp, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->name);
+	NDINIT (ndp, LOOKUP, NOFOLLOW, uap->name);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -474,8 +474,8 @@ readlink()
 		u.u_error = EINVAL;
 		goto out;
 	}
-	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, (off_t)0,
-				UIO_USERSPACE, IO_UNIT, &resid);
+	u.u_error = rdwri (UIO_READ, ip, uap->buf, uap->count, (off_t) 0,
+				IO_UNIT, &resid);
 out:
 	iput(ip);
 	u.u_r.r_val1 = uap->count - resid;
@@ -507,7 +507,7 @@ chflags()
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	if ((ip = namei(ndp)) == NULL)
 		return;
 	u.u_error = chflags1 (ip, uap->flags);
@@ -549,7 +549,7 @@ chmod()
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (!ip)
 		return;
@@ -623,7 +623,7 @@ chown()
 	register struct	nameidata *ndp = &nd;
 	struct	vattr	vattr;
 
-	NDINIT(ndp, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, NOFOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -709,7 +709,7 @@ truncate()
 	register struct	nameidata *ndp = &nd;
 	struct	vattr	vattr;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -791,7 +791,7 @@ rename()
 	register struct nameidata *ndp = &nd;
 	int error = 0;
 
-	NDINIT(ndp, DELETE, LOCKPARENT, UIO_USERSPACE, uap->from);
+	NDINIT (ndp, DELETE, LOCKPARENT, uap->from);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -992,7 +992,7 @@ rename()
 	/*
 	 * 3) Unlink the source.
 	 */
-	NDINIT(ndp, DELETE, LOCKPARENT, UIO_USERSPACE, uap->from);
+	NDINIT (ndp, DELETE, LOCKPARENT, uap->from);
 	xp = namei(ndp);
 	if (xp != NULL)
 		dp = ndp->ni_pdir;
@@ -1021,9 +1021,9 @@ rename()
 		if (doingdirectory && newparent) {
 			dp->i_nlink--;
 			dp->i_flag |= ICHG;
-			error = rdwri(UIO_READ, xp, (caddr_t)&dirbuf,
-					sizeof(struct dirtemplate), (off_t)0,
-					UIO_SYSSPACE, IO_UNIT, (int *)0);
+			error = rdwri (UIO_READ, xp, (caddr_t) &dirbuf,
+					sizeof(struct dirtemplate), (off_t) 0,
+					IO_UNIT, (int*) 0);
 
 			if (error == 0) {
 				if (dirbuf.dotdot_namlen != 2 ||
@@ -1032,11 +1032,11 @@ rename()
 					printf("rename: mangled dir\n");
 				} else {
 					dirbuf.dotdot_ino = newparent;
-					(void) rdwri(UIO_WRITE, xp,
-						(caddr_t)&dirbuf,
+					(void) rdwri (UIO_WRITE, xp,
+						(caddr_t) &dirbuf,
 						sizeof(struct dirtemplate),
-						(off_t)0, UIO_SYSSPACE,
-						IO_UNIT|IO_SYNC, (int *)0);
+						(off_t) 0,
+						IO_UNIT | IO_SYNC, (int*) 0);
 					cacheinval(dp);
 				}
 			}
@@ -1138,7 +1138,7 @@ mkdir()
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
 
-	NDINIT(ndp, CREATE, NOFOLLOW, UIO_USERSPACE, uap->name);
+	NDINIT (ndp, CREATE, NOFOLLOW, uap->name);
 	ip = namei(ndp);
 	if (u.u_error)
 		return;
@@ -1186,9 +1186,8 @@ mkdir()
 	dirtemplate = mastertemplate;
 	dirtemplate.dot_ino = ip->i_number;
 	dirtemplate.dotdot_ino = dp->i_number;
-	u.u_error = rdwri(UIO_WRITE, ip, (caddr_t)&dirtemplate,
-		sizeof (dirtemplate), (off_t)0, UIO_SYSSPACE, IO_UNIT|IO_SYNC,
-		(int *)0);
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) &dirtemplate,
+		sizeof (dirtemplate), (off_t) 0, IO_UNIT | IO_SYNC, (int*) 0);
 	if (u.u_error) {
 		dp->i_nlink--;
 		dp->i_flag |= ICHG;
@@ -1203,7 +1202,7 @@ mkdir()
 	u.u_error = direnter(ip, ndp);
 	dp = NULL;
 	if (u.u_error) {
-		NDINIT(ndp, LOOKUP, NOCACHE, UIO_USERSPACE, uap->name);
+		NDINIT (ndp, LOOKUP, NOCACHE, uap->name);
 		dp = namei(ndp);
 		if (dp) {
 			dp->i_nlink--;
@@ -1238,7 +1237,7 @@ rmdir()
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-	NDINIT(ndp, DELETE, LOCKPARENT, UIO_USERSPACE, uap->name);
+	NDINIT (ndp, DELETE, LOCKPARENT, uap->name);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;

@@ -29,7 +29,7 @@ sbrk()
 	/* set d to (new - old) */
 	d = n - u.u_dsize;
 	if (d > 0)
-		clear (u.u_procp->p_daddr + u.u_dsize, d);
+		bzero ((void*) (u.u_procp->p_daddr + u.u_dsize), d);
 	u.u_dsize = n;
 }
 
@@ -57,9 +57,9 @@ grow(sp)
 	 *  expand will put the stack in the right place;
 	 *  no copy required here.
 	 */
-	expand(u.u_ssize + si, S_STACK);
+	expand (u.u_ssize + si, S_STACK);
 	u.u_ssize += si;
-	clear(u.u_procp->p_saddr, si);
+	bzero ((void*) u.u_procp->p_saddr, si);
 	return (1);
 }
 

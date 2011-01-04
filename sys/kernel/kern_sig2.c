@@ -56,8 +56,6 @@
 #include <sys/kernel.h>
 #include <sys/user.h>		/* for coredump */
 
-static void	stop();
-
 static void
 setsigvec(signum, sa)
 	int signum;
@@ -358,7 +356,7 @@ sigwait()
 
 	wanted |= sigcantmask;
 	while ((sigsavail = (wanted & p->p_sig)) == 0)
-		tsleep(&u.u_signal[0], PPAUSE | PCATCH, 0);
+		tsleep ((caddr_t) &u.u_signal[0], PPAUSE | PCATCH, 0);
 
 	if (sigsavail & sigcantmask) {
 		error = EINTR;

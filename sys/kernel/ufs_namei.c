@@ -158,12 +158,7 @@ register int i;
 	/*
 	 * Copy the name into the buffer.
 	 */
-	if (ndp->ni_segflg == UIO_SYSSPACE)
-		error = copystr(ndp->ni_dirp, path, MAXPATHLEN,
-		    (u_int *)0);
-	else
-		error = copyinstr(ndp->ni_dirp, path, MAXPATHLEN,
-		    (u_int *)0);
+	error = copystr (ndp->ni_dirp, path, MAXPATHLEN, (u_int*) 0);
 	if (error) {
 		u.u_error = error;
 		goto retNULL;
@@ -888,8 +883,8 @@ direnter(ip, ndp)
 		if (ndp->ni_offset&(DIRBLKSIZ-1))
 			panic("wdir: newblk");
 		ndp->ni_dent.d_reclen = DIRBLKSIZ;
-		error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-		    		newentrysize, ndp->ni_offset, UIO_SYSSPACE,
+		error = rdwri (UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
+		    		newentrysize, ndp->ni_offset,
 				IO_UNIT|IO_SYNC, (int *)0);
 		dp->i_size = roundup(dp->i_size, DIRBLKSIZ);
 		iput(dp);
@@ -984,7 +979,7 @@ direnter(ip, ndp)
  * to the size of the previous entry.
  */
 int
-dirremove(ndp)
+dirremove (ndp)
 	register struct nameidata *ndp;
 {
 	register struct inode *dp = ndp->ni_pdir;
@@ -996,9 +991,9 @@ dirremove(ndp)
 		 * First entry in block: set d_ino to zero.
 		 */
 		ndp->ni_dent.d_ino = 0;
-		(void) rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-		    		(int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset,
-				UIO_SYSSPACE, IO_UNIT|IO_SYNC, (int *)0);
+		(void) rdwri (UIO_WRITE, dp, (caddr_t) &ndp->ni_dent,
+		    		(int) DIRSIZ(&ndp->ni_dent), ndp->ni_offset,
+				IO_UNIT | IO_SYNC, (int*) 0);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
@@ -1026,9 +1021,9 @@ dirrewrite(dp, ip, ndp)
 {
 
 	ndp->ni_dent.d_ino = ip->i_number;
-	u.u_error = rdwri(UIO_WRITE, dp, (caddr_t)&ndp->ni_dent,
-			(int)DIRSIZ(&ndp->ni_dent), ndp->ni_offset,
-			UIO_SYSSPACE, IO_UNIT|IO_SYNC, (int *)0);
+	u.u_error = rdwri (UIO_WRITE, dp, (caddr_t) &ndp->ni_dent,
+			(int) DIRSIZ(&ndp->ni_dent), ndp->ni_offset,
+			IO_UNIT | IO_SYNC, (int*) 0);
 	iput(dp);
 }
 
@@ -1089,8 +1084,8 @@ dirempty(ip, parentino)
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		error = rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ,
-		    off, UIO_SYSSPACE, IO_UNIT, &count);
+		error = rdwri (UIO_READ, ip, (caddr_t) dp, MINDIRSIZ,
+			off, IO_UNIT, &count);
 		/*
 		 * Since we read MINDIRSIZ, residual must
 		 * be 0 unless we're at end of file.
@@ -1148,9 +1143,9 @@ checkpath(source, target)
 			error = ENOTDIR;
 			break;
 		}
-		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
-				sizeof(struct dirtemplate), (off_t)0,
-				UIO_SYSSPACE, IO_UNIT, (int *)0);
+		error = rdwri (UIO_READ, ip, (caddr_t) &dirbuf,
+				sizeof(struct dirtemplate), (off_t) 0,
+				IO_UNIT, (int*) 0);
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||

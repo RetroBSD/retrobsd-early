@@ -240,7 +240,7 @@ main()
 	boottime = time;
 
 /* kick off timeout driven events by calling first time */
-	schedcpu();
+	schedcpu (0, 0);
 
 /* set up the root file system */
 	rootdir = iget (rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);

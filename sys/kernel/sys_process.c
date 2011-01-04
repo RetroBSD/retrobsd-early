@@ -88,7 +88,7 @@ procxmt()
 	u.u_procp->p_slptime = 0;
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
-	wakeup((caddr_t)&ipc);
+	wakeup ((caddr_t)&ipc);
 	switch (i) {
 
 	/* read user I */
@@ -96,9 +96,9 @@ procxmt()
 
 	/* read user D */
 	case PT_READ_D:
-		if (fubyte((caddr_t)ipc.ip_addr) == -1)
+		if (baduaddr ((unsigned) ipc.ip_addr))
 			goto error;
-		ipc.ip_data = fuword((caddr_t)ipc.ip_addr);
+		ipc.ip_data = *(int*) ipc.ip_addr;
 		break;
 
 	/* read u */
@@ -132,9 +132,9 @@ procxmt()
 
 	/* write user D */
 	case PT_WRITE_D:
-		if (suword((caddr_t)ipc.ip_addr, 0) < 0)
+		if (baduaddr ((unsigned) ipc.ip_addr))
 			goto error;
-		suword((caddr_t)ipc.ip_addr, ipc.ip_data);
+		*(int*) ipc.ip_addr = ipc.ip_data;
 		break;
 
 	/* write u */
@@ -174,7 +174,7 @@ procxmt()
 		/*NOTREACHED*/
 
 	default:
-	error:
+error:
 		ipc.ip_req = -1;
 	}
 	return(0);

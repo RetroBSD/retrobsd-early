@@ -3,7 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
 #include "param.h"
 #include "user.h"
 #include "proc.h"
@@ -152,6 +151,7 @@ sched()
 /*
  * Count up various things once a second
  */
+void
 vmmeter()
 {
 #ifdef UCB_METER
@@ -193,7 +193,7 @@ vmtotal()
 	total.t_avmtxt = 0;
 	total.t_rmtxt = 0;
 	total.t_armtxt = 0;
-{
+	{
 	register struct text *xp;
 
 	for (xp = text; xp < textNTEXT; xp++)
@@ -202,7 +202,7 @@ vmtotal()
 			if (xp->x_ccount)
 				total.t_rmtxt += xp->x_size;
 		}
-}
+	}
 	total.t_vm = 0;
 	total.t_avm = 0;
 	total.t_rm = 0;

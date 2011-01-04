@@ -197,7 +197,7 @@ xwait(xp)
  * not available from core, a swap has to be done to get it back.
  */
 void
-xalloc(ip, ep)
+xalloc (ip, ep)
 	struct exec *ep;
 	register struct inode *ip;
 {
@@ -275,8 +275,9 @@ xalloc(ip, ep)
 	estabur(ts, 0, 0, 1);
 	offset = sizeof(struct exec);
 	u.u_procp->p_flag |= SLOCK;
-	u.u_error = rdwri(UIO_READ, ip, (caddr_t)0, ep->a_text & ~1,
-			offset, UIO_USERISPACE, IO_UNIT, (int *)0);
+	u.u_error = rdwri (UIO_READ, ip, (caddr_t) 0,
+		ep->a_text & ~(sizeof(int) - 1), offset,
+		IO_UNIT, (int*) 0);
 	u.u_procp->p_flag &= ~SLOCK;
 	xp->x_flag |= XWRIT;
 	xp->x_flag &= ~XLOAD;

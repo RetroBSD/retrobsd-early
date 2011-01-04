@@ -68,4 +68,10 @@ struct vmtotal
 };
 #ifdef KERNEL
 struct	vmtotal total;
+
+/*
+ * Count up various things once a second
+ */
+void vmmeter (void);
+
 #endif

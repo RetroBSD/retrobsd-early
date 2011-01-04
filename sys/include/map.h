@@ -49,4 +49,10 @@ memaddr malloc (struct map *mp, size_t nbytes);
  * Free the previously allocated units at addr into the specified map.
  */
 void mfree (struct map *mp, size_t nbytes, memaddr addr);
+
+/*
+ * Allocate resources for the three segments of a process.
+ */
+memaddr malloc3 (struct map *mp, size_t d_size, size_t s_size, size_t u_size, memaddr a[3]);
+
 #endif

@@ -82,6 +82,12 @@ struct sysctl_args {
 	size_t	newlen;
 };
 
+static int sysctl_clockrate (char *where, size_t *sizep);
+static int sysctl_inode (char *where, size_t *sizep);
+static int sysctl_file (char *where, size_t *sizep);
+static int sysctl_text (char *where, size_t *sizep);
+static int sysctl_doproc (int *name, u_int namelen, char *where, size_t *sizep);
+
 void
 __sysctl()
 {
@@ -235,7 +241,7 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (error);
 	case KERN_HOSTID:
 		longhostid = hostid;
-		error =  sysctl_long(oldp, oldlenp, newp, newlen, &longhostid);
+		error =  sysctl_long(oldp, oldlenp, newp, newlen, (long*) &longhostid);
 		hostid = longhostid;
 		return (error);
 	case KERN_CLOCKRATE:
@@ -550,10 +556,18 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 		return (EINVAL);
 	if (oldp) {
 		*oldlenp = len;
-		error = vcopyout(str, oldp, len);
+		if (baduaddr ((unsigned) oldp) ||
+		    baduaddr ((unsigned) (oldp + len - 1)))
+			error = EFAULT;
+		else
+			bcopy (str, oldp, len);
 	}
 	if (error == 0 && newp) {
-		error = vcopyin(newp, str, newlen);
+		if (baduaddr ((unsigned) newp) ||
+		    baduaddr ((unsigned) (newp + newlen - 1)))
+			error = EFAULT;
+		else
+			bcopy (newp, str, newlen);
 		str[newlen] = 0;
 	}
 	return (error);
@@ -577,8 +591,13 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 	if (newp)
 		return (EPERM);
 	*oldlenp = len;
-	if (oldp)
-		error = vcopyout(str, oldp, len);
+	if (oldp) {
+		if (baduaddr ((unsigned) oldp) ||
+		    baduaddr ((unsigned) (oldp + len - 1)))
+			error = EFAULT;
+		else
+			bcopy (str, oldp, len);
+	}
 	return (error);
 }
 
@@ -688,7 +707,7 @@ sysctl_file(where, sizep)
  * given earlier (back around line 367).
  */
 int
-sysctl_clockrate(where, sizep)
+sysctl_clockrate (where, sizep)
 	char *where;
 	size_t *sizep;
 {
@@ -710,7 +729,7 @@ sysctl_clockrate(where, sizep)
  */
 /* ARGSUSED */
 int
-sysctl_inode(where, sizep)
+sysctl_inode (where, sizep)
 	char *where;
 	size_t *sizep;
 {
@@ -812,9 +831,9 @@ sysctl_text(where, sizep)
  * XXX - the first 1kb of the u area.  If this ever changes the logic below
  * XXX - will break (and badly).  At the present time (97/9/2) the u area
  * XXX - is 856 bytes long.
-*/
-static void
-fill_from_u(p, rup, ttp, tdp)
+ */
+void
+fill_from_u (p, rup, ttp, tdp)
 	struct	proc	*p;
 	uid_t	*rup;
 	struct	tty	**ttp;
@@ -966,11 +985,13 @@ again:
 		}
 		if (buflen >= sizeof(struct kinfo_proc)) {
 			fill_eproc(p, &eproc);
-			if (error = copyout ((caddr_t) p, (caddr_t) &dp->kp_proc,
-			    sizeof(struct proc)))
+			error = copyout ((caddr_t) p, (caddr_t) &dp->kp_proc,
+				sizeof(struct proc));
+			if (error)
 				return (error);
-			if (error = copyout ((caddr_t)&eproc, (caddr_t) &dp->kp_eproc,
-			    sizeof(eproc)))
+			error = copyout ((caddr_t)&eproc, (caddr_t) &dp->kp_eproc,
+				sizeof(eproc));
+			if (error)
 				return (error);
 			dp++;
 			buflen -= sizeof(struct kinfo_proc);

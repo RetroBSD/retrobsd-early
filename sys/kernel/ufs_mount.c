@@ -34,7 +34,7 @@ getmdev (pdev, fname)
 
 	if (!suser())
 		return (u.u_error);
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, fname);
 	ip = namei(ndp);
 	if (ip == NULL) {
 		if (u.u_error == ENOENT)
@@ -91,7 +91,7 @@ smount()
 
 	if (u.u_error = getmdev(&dev, uap->fspec))
 		return;
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->freg);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->freg);
 	if ((ip = namei(ndp)) == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFDIR) {

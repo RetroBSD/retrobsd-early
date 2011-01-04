@@ -152,7 +152,7 @@ void swtch (void);
 /*
  * Recompute process priorities, once a second.
  */
-void schedcpu (void);
+void schedcpu (caddr_t arg, int t);
 
 /*
  * The main loop of the scheduling process. No return.
@@ -165,9 +165,36 @@ void sched (void);
 int newproc (int isvfork);
 
 /*
+ * Notify parent that vfork child is finished with parent's data.
+ */
+void endvfork (void);
+
+/*
  * Put the process into the run queue.
  */
 void setrq (struct proc *p);
+
+/*
+ * Exit the process.
+ */
+void exit (int rv);
+
+/*
+ * Kill a process when ran out of swap space.
+ */
+void swkill (struct proc *p, char *name);
+
+/*
+ * Give up the processor till a wakeup occurs on chan, at which time the
+ * process enters the scheduling queue at priority pri.
+ */
+void sleep (caddr_t chan, int pri);
+
+/*
+ * Give up the processor till a wakeup occurs on ident or a timeout expires.
+ * Then the process enters the scheduling queue at given priority.
+ */
+int tsleep (caddr_t ident, int priority, u_int timo);
 
 /*
  * Wake up all processes sleeping on chan.
@@ -175,17 +202,55 @@ void setrq (struct proc *p);
 void wakeup (caddr_t chan);
 
 /*
+ * Arrange that given function is called in t/hz seconds.
+ */
+void timeout (void (*fun) (caddr_t, int), caddr_t arg, int t);
+
+/*
+ * Remove a function timeout call from the callout structure.
+ */
+void untimeout (void (*fun) (caddr_t, int), caddr_t arg);
+
+/*
  * Change the size of the data+stack regions of the process.
  */
 void expand (int newsize, int segment);
 
-/* Test if the current user is the super user. */
+/*
+ * Swap out a process.
+ */
+int swapout (struct proc *p, int freecore, u_int odata, u_int ostack);
+
+/*
+ * Swap a process in.
+ */
+int swapin (struct proc *p);
+
+/*
+ * Is p an inferior of the current process?
+ */
+int inferior (struct proc *p);
+
+/*
+ * Test if the current user is the super user.
+ */
 int suser (void);
 
-/* Set up segmentation registers to implement the pseudo text, data, stack segment sizes. */
+/*
+ * Set up segmentation registers to implement the pseudo text, data, stack segment sizes.
+ */
 int estabur (u_int nt, u_int nd, u_int ns, int xrw);
 
-/* Load the user hardware segmentation registers from the software prototype. */
+/*
+ * Load from user area (probably swapped out): real uid,
+ * controlling terminal device, and controlling terminal pointer.
+ */
+struct tty;
+void fill_from_u (struct proc *p, uid_t *rup, struct tty **ttp, dev_t *tdp);
+
+/*
+ * Load the user hardware segmentation registers from the software prototype.
+ */
 void sureg (void);
 
 /*
@@ -211,7 +276,13 @@ int copyout (caddr_t from, caddr_t to, u_int nbytes);
  * EFAULT on failure.
  */
 int copyin (caddr_t from, caddr_t to, u_int nbytes);
-#endif
+
+/*
+ * Parent controlled tracing.
+ */
+int procxmt (void);
+
+#endif /* KERMEL */
 
 /* stat codes */
 #define	SSLEEP	1		/* awaiting an event */

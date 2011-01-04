@@ -186,3 +186,76 @@ void longjmp (memaddr u, label_t *env)
 {
 	/* TODO */
 }
+
+/*
+ * Find the index of the least significant set bit in the 32-bit word.
+ * If LSB bit is set - return 1.
+ * If only MSB bit is set - return 32.
+ * Return 0 when no bit is set.
+ */
+int
+ffs (i)
+	u_long i;
+{
+	if (i != 0)
+		i = 32 - mips_count_leading_zeroes (i & -i);
+	return i;
+}
+
+/*
+ * Copy a null terminated string from one point to another.
+ * Returns zero on success, ENOENT if maxlength exceeded.
+ * If lencopied is non-zero, *lencopied gets the length of the copy
+ * (including the null terminating byte).
+ */
+int
+copystr (src, dest, maxlength, lencopied)
+	register caddr_t src, dest;
+	register u_int maxlength, *lencopied;
+{
+	caddr_t dest0 = dest;
+	int error = ENOENT;
+
+	if (maxlength != 0) {
+		while ((*dest++ = *src++) != '\0') {
+			if (--maxlength == 0) {
+				/* Failed. */
+				goto done;
+			}
+		}
+		/* Succeeded. */
+		error = 0;
+	}
+done:	if (lencopied != 0)
+		*lencopied = dest - dest0;
+	return error;
+}
+
+/*
+ * Calculate the length of a string.
+ */
+size_t
+strlen (s)
+	register const char *s;
+{
+	const char *s0 = s;
+
+	while (*s++ != '\0')
+		;
+	return s - s0 - 1;
+}
+
+/*
+ * Return 0 if a user address is valid.
+ * There are two memory regions, allowed for user: flash and RAM.
+ */
+int
+baduaddr (addr)
+	register unsigned addr;
+{
+	if (addr >= USER_FLASH_START && addr < USER_FLASH_END)
+		return 0;
+	if (addr >= USER_DATA_START && addr < USER_DATA_END)
+		return 0;
+	return 1;
+}

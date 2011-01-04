@@ -75,7 +75,7 @@
 #define	SA_CONT		0x20		/* continue if suspended */
 
 #ifdef	SIGPROP
-char sigprop[NSIG + 1] = {
+const char sigprop [NSIG + 1] = {
 	0,			/* unused */
 	SA_KILL,		/* SIGHUP */
 	SA_KILL,		/* SIGINT */

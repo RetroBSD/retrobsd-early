@@ -32,6 +32,7 @@ ASFLAGS		= ${DEFS} ${DEPFLAGS}
 CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
 CC		+= -Werror -Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
+OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
 
 # Machine-dependent files:
 # startuo.o MUST be loaded first, param.o MUST be loaded last.
@@ -81,6 +82,11 @@ unix:		${KERNOBJ}
 vers.o:		${H}/*.h ${M}/*.[ch] ${S}/*.c ${D}/*.[ch]
 		sh newvers.sh
 		${CC} -c vers.c
+
+.SUFFIXES:	.i .srec .hex .dis .cpp .cxx .bin .elf
+
+.o.dis:
+		$(OBJDUMP) -d -z -S $< > $@
 
 ifeq (.deps, $(wildcard .deps))
 -include .deps/*.dep

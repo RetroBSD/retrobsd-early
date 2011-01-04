@@ -46,7 +46,7 @@ typedef	void (*sighandler_t) (int);	/* type of signal function */
 #define	SIG_IGN		(sighandler_t) 1
 
 #ifndef KERNEL
-//int	(*signal())();
+int	(*signal())();
 #endif
 
 typedef unsigned long sigset_t;
@@ -134,9 +134,22 @@ struct	sigcontext {
 #define sigfillset(set)         (*(set) = ~(sigset_t)0, (int)0)
 #define sigismember(set, signo) ((*(set) & (1L << ((signo) - 1))) != 0)
 
-#ifndef KERNEL
-//extern long	sigblock(), sigsetmask();
+#ifdef KERNEL
+
+/* Table of signal properties. */
+extern const char sigprop [NSIG + 1];
+
+/*
+ * Send an interrupt to process.
+ */
+void sendsig (sighandler_t p, int sig, long mask);
+
+#else /* KERNEL */
+
+extern long sigblock(), sigsetmask();
+
 #define	BADSIG	SIG_ERR
-#endif
+
+#endif /* KERNEL */
 
 #endif /* NSIG */

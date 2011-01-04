@@ -18,8 +18,6 @@
 #include "text.h"
 #include "signalvar.h"
 
-extern	char	sigprop[];	/* XXX */
-
 /*
  * exec system call, with and without environments.
  */
@@ -80,7 +78,6 @@ getxfile(ip, ep, nargc, uid, gid)
 	long lsize;
 	off_t offset;
 	u_int ds, ts, ss;
-	int resid;
 
 	switch(ep->a_magic) {
 		case A_MAGIC1:
@@ -147,11 +144,11 @@ getxfile(ip, ep, nargc, uid, gid)
 		if (startc != 0)
 			startc--;
 		numc = ds - startc;
-		clear (u.u_procp->p_daddr + startc, numc);
+		bzero ((void*) (u.u_procp->p_daddr + startc), numc);
 	}
-	expand(ss, S_STACK);
-	clear(u.u_procp->p_saddr, ss);
-	xalloc(ip, ep);
+	expand (ss, S_STACK);
+	bzero ((void*) u.u_procp->p_saddr, ss);
+	xalloc (ip, ep);
 
 	/*
 	 * read in data segment
@@ -159,8 +156,8 @@ getxfile(ip, ep, nargc, uid, gid)
 	estabur(0, ds, 0, 0);
 	offset = sizeof(struct exec);
 	offset += ep->a_text;
-	rdwri(UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
-		UIO_USERSPACE, IO_UNIT, (int *)0);
+	rdwri (UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
+		IO_UNIT, (int*) 0);
 
 	/*
 	 * set SUID/SGID protections, if no tracing
@@ -212,7 +209,7 @@ execve()
 	register struct	nameidata *ndp = &nd;
 	int resid, error;
 
-	NDINIT(ndp, LOOKUP, FOLLOW, UIO_USERSPACE, uap->fname);
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei(ndp);
 	if (ip == NULL)
 		return;
@@ -260,8 +257,8 @@ execve()
 	 * THE ASCII LINE.
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u.u_error = rdwri(UIO_READ, ip, &exdata, sizeof(exdata), (off_t)0,
-				UIO_SYSSPACE, IO_UNIT, &resid);
+	u.u_error = rdwri (UIO_READ, ip, (caddr_t) &exdata, sizeof(exdata),
+				(off_t) 0, IO_UNIT, &resid);
 	if (u.u_error)
 		goto bad;
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
@@ -322,7 +319,6 @@ execve()
 		indir = 1;
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ndp->ni_segflg = UIO_SYSSPACE;
 		ip = namei(ndp);
 		if (ip == NULL)
 			return;
@@ -338,6 +334,7 @@ execve()
 	ne = 0;
 	nc = 0;
 	cc = 0;
+	cp = 0;
 	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
 		swkill(u.u_procp, "exec");
@@ -351,20 +348,21 @@ execve()
 		sharg = NULL;
 		if (indir && na == 0) {
 			sharg = cfname;
-			ap = (int)sharg;
+			ap = (int) sharg;
 			uap->argp++;		/* ignore argv[0] */
 		} else if (indir && (na == 1 && cfarg[0])) {
 			sharg = cfarg;
 			ap = (int)sharg;
-		} else if (indir && (na == 1 || na == 2 && cfarg[0]))
+		} else if (indir && (na == 1 || (na == 2 && cfarg[0])))
 			ap = (int)uap->fname;
 		else if (uap->argp) {
-			ap = fuword((caddr_t)uap->argp);
+			ap = *(int*) uap->argp;
 			uap->argp++;
 		}
 		if (ap == NULL && uap->envp) {
 			uap->argp = NULL;
-			if ((ap = fuword((caddr_t)uap->envp)) != NULL)
+			ap = *(int*) uap->envp;
+			if (ap != NULL)
 				uap->envp++, ne++;
 		}
 		if (ap == NULL)
@@ -393,11 +391,10 @@ execve()
 				cp = bp->b_addr;
 			}
 			if (sharg) {
-				error = copystr(sharg, cp, (unsigned)cc, &len);
+				error = copystr (sharg, cp, (unsigned) cc, &len);
 				sharg += len;
 			} else {
-				error = copyinstr((caddr_t)ap, cp, (unsigned)cc,
-				    &len);
+				error = copystr ((caddr_t) ap, cp, (unsigned) cc, &len);
 				ap += len;
 			}
 			cp += len;
@@ -446,18 +443,18 @@ badarg:
 	ucp = -nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
 	u.u_ar0[R6] = ap;
-	(void) suword((caddr_t)ap, na-ne);
+	*(int*) ap = na - ne;
 	nc = 0;
 	cc = 0;
 	for (;;) {
 		ap += NBPW;
 		if (na == ne) {
-			(void) suword((caddr_t)ap, 0);
+			*(int*) ap = 0;
 			ap += NBPW;
 		}
 		if (--na < 0)
 			break;
-		(void) suword((caddr_t)ap, ucp);
+		*(int*) ap = ucp;
 		do {
 			if (cc <= 0) {
 				if (bp) {
@@ -469,8 +466,8 @@ badarg:
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_addr;
 			}
-			error = copyoutstr(cp, (caddr_t)ucp, (unsigned)cc,
-			    &len);
+			error = copystr (cp, (caddr_t) ucp, (unsigned) cc,
+				&len);
 			ucp += len;
 			cp += len;
 			nc += len;
@@ -479,8 +476,8 @@ badarg:
 		if (error == EFAULT)
 			panic("exec: EFAULT");
 	}
-	(void) suword((caddr_t)ap, 0);
-	(void) suword((caddr_t)(-NBPW), 0);
+	*(int*) ap = 0;
+	*(int*) (-NBPW) = 0;
 	if (bp) {
 		bp->b_flags |= B_AGE;
 		brelse(bp);

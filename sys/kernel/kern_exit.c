@@ -15,6 +15,7 @@
 #include "file.h"
 #include "wait.h"
 #include "kernel.h"
+#include "text.h"
 
 /*
  * Notify parent that vfork child is finished with parent's data.  Called
@@ -94,9 +95,9 @@ exit (rv)
 
 	if (p->p_pid == 1)
 		panic("init died");
-	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
+	if ((*p->p_prev = p->p_nxt) != NULL)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
-	if (p->p_nxt = zombproc)		/* onto zombproc */
+	if ((p->p_nxt = zombproc) != NULL)		/* onto zombproc */
 		p->p_nxt->p_prev = &p->p_nxt;
 	p->p_prev = &zombproc;
 	zombproc = p;
@@ -170,25 +171,13 @@ struct args {
 	int compat;
 };
 
-void
-wait4()
-{
-	int retval[2];
-	register struct	args *uap = (struct args *)u.u_ap;
-
-	uap->compat = 0;
-	u.u_error = wait1 (u.u_procp, uap, retval);
-	if (! u.u_error)
-		u.u_r.r_val1 = retval[0];
-}
-
 /*
  * Wait: check child processes to see if any have exited,
  * stopped under trace or (optionally) stopped by a signal.
  * Pass back status and make available for reuse the exited
  * child's proc structure.
  */
-int
+static int
 wait1 (q, uap, retval)
 	struct proc *q;
 	register struct args *uap;
@@ -233,9 +222,9 @@ loop:
 		p->p_stat = NULL;
 		p->p_pid = 0;
 		p->p_ppid = 0;
-		if (*p->p_prev = p->p_nxt)	/* off zombproc */
+		if ((*p->p_prev = p->p_nxt) != NULL)	/* off zombproc */
 			p->p_nxt->p_prev = p->p_prev;
-		p->p_nxt = freeproc;		/* onto freeproc */
+		p->p_nxt = freeproc;			/* onto freeproc */
 		freeproc = p;
 		p->p_pptr = 0;
 		p->p_sig = 0;
@@ -275,8 +264,20 @@ loop:
 		retval[0] = 0;
 		return (0);
 	}
-	error = tsleep(q, PWAIT|PCATCH, 0);
-	if	(error == 0)
+	error = tsleep ((caddr_t) q, PWAIT|PCATCH, 0);
+	if (error == 0)
 		goto loop;
 	return(error);
+}
+
+void
+wait4()
+{
+	int retval[2];
+	register struct	args *uap = (struct args *)u.u_ap;
+
+	uap->compat = 0;
+	u.u_error = wait1 (u.u_procp, uap, retval);
+	if (! u.u_error)
+		u.u_r.r_val1 = retval[0];
 }

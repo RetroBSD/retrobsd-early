@@ -25,7 +25,8 @@
  * The super user is granted all
  * permissions.
  */
-access(ip, mode)
+int
+access (ip, mode)
 	register struct inode *ip;
 	int mode;
 {

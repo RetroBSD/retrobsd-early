@@ -122,19 +122,18 @@ struct 	fileops inodeops =
 	{ ino_rw, ino_ioctl, ino_select, vn_closefile };
 
 int
-rdwri (rw, ip, base, len, offset, segflg, ioflg, aresid)
+rdwri (rw, ip, base, len, offset, ioflg, aresid)
 	enum uio_rw rw;
 	struct inode *ip;
 	caddr_t base;
 	int len;
 	off_t offset;
-	enum uio_seg segflg;
 	int ioflg;
 	register int *aresid;
 {
 	struct uio auio;
 	struct iovec aiov;
-register int error;
+	register int error;
 
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
@@ -143,7 +142,6 @@ register int error;
 	auio.uio_rw = rw;
 	auio.uio_resid = len;
 	auio.uio_offset = offset;
-	auio.uio_segflg = segflg;
 	error = rwip(ip, &auio, ioflg);
 	if (aresid)
 		*aresid = auio.uio_resid;
@@ -170,11 +168,11 @@ rwip (ip, uio, ioflag)
 	if (uio->uio_offset < 0)
 		return (EINVAL);
 	type = ip->i_mode&IFMT;
-/*
- * The write case below checks that i/o is done synchronously to directories
- * and that i/o to append only files takes place at the end of file.
- * We do not panic on non-sync directory i/o - the sync bit is forced on.
-*/
+	/*
+	 * The write case below checks that i/o is done synchronously to directories
+	 * and that i/o to append only files takes place at the end of file.
+	 * We do not panic on non-sync directory i/o - the sync bit is forced on.
+	 */
 	if (uio->uio_rw == UIO_READ) {
 		if (! (ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= IACC;
@@ -199,18 +197,18 @@ rwip (ip, uio, ioflag)
 		}
 	}
 
-/*
- * The IO_SYNC flag is turned off here if the 'async' mount flag is on.
- * Otherwise directory I/O (which is done by the kernel) would still
- * synchronous (because the kernel carefully passes IO_SYNC for all directory
- * I/O) even if the fs was mounted with "-o async".
- *
- * A side effect of this is that if the system administrator mounts a filesystem
- * 'async' then the O_FSYNC flag to open() is ignored.
- *
- * This behaviour should probably be selectable via "sysctl fs.async.dirs" and
- * "fs.async.ofsync".  A project for a rainy day.
-*/
+	/*
+	 * The IO_SYNC flag is turned off here if the 'async' mount flag is on.
+	 * Otherwise directory I/O (which is done by the kernel) would still
+	 * synchronous (because the kernel carefully passes IO_SYNC for all directory
+	 * I/O) even if the fs was mounted with "-o async".
+	 *
+	 * A side effect of this is that if the system administrator mounts a filesystem
+	 * 'async' then the O_FSYNC flag to open() is ignored.
+	 *
+	 * This behaviour should probably be selectable via "sysctl fs.async.dirs" and
+	 * "fs.async.ofsync".  A project for a rainy day.
+	 */
 	if (type == IFREG  || type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC))
 		ioflag &= ~IO_SYNC;
 
@@ -278,11 +276,11 @@ rwip (ip, uio, ioflag)
 				bp = getblk(dev, bn);
 			else
 				bp = bread(dev, bn);
-/*
- * 4.3 didn't do this, but 2.10 did.  not sure why.
- * something about tape drivers don't clear buffers on end-of-tape
- * any longer (clrbuf can't be called from interrupt).
-*/
+			/*
+			 * 4.3 didn't do this, but 2.10 did.  not sure why.
+			 * something about tape drivers don't clear buffers on end-of-tape
+			 * any longer (clrbuf can't be called from interrupt).
+			 */
 			if (bp->b_resid == DEV_BSIZE) {
 				bp->b_resid = 0;
 				clrbuf(bp);
@@ -305,13 +303,13 @@ rwip (ip, uio, ioflag)
 		} else {
 			if (ioflag & IO_SYNC)
 				bwrite(bp);
-/*
- * The check below interacts _very_ badly with virtual memory tmp files
- * such as those used by 'ld'.   These files tend to be small and repeatedly
- * rewritten in 1kb chunks.  The check below causes the device driver to be
- * called (and I/O initiated)  constantly.  Not sure what to do about this yet
- * but this comment is being placed here as a reminder.
-*/
+			/*
+			 * The check below interacts _very_ badly with virtual memory tmp files
+			 * such as those used by 'ld'.   These files tend to be small and repeatedly
+			 * rewritten in 1kb chunks.  The check below causes the device driver to be
+			 * called (and I/O initiated)  constantly.  Not sure what to do about this yet
+			 * but this comment is being placed here as a reminder.
+			 */
 			else if (n + on == DEV_BSIZE && !(ip->i_flag & IPIPE)) {
 				bp->b_flags |= B_AGE;
 				bawrite(bp);
@@ -329,12 +327,12 @@ rwip (ip, uio, ioflag)
 		itrunc(ip, osize, ioflag & IO_SYNC);
 		uio->uio_offset -= (resid - uio->uio_resid);
 		uio->uio_resid = resid;
-/*
- * Should back out the change to the quota here but that would be a lot
- * of work for little benefit.  Besides we've already made the assumption
- * that the entire write would succeed and users can't turn on the IO_UNIT
- * bit for their writes anyways.
-*/
+		/*
+		 * Should back out the change to the quota here but that would be a lot
+		 * of work for little benefit.  Besides we've already made the assumption
+		 * that the entire write would succeed and users can't turn on the IO_UNIT
+		 * bit for their writes anyways.
+		 */
 	}
 #ifdef whybother
 	if (! error && (ioflag & IO_SYNC))

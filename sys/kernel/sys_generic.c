@@ -34,7 +34,6 @@ rwuio(uio)
 	}
 	total =(off_t)0;
 	uio->uio_resid = 0;
-	uio->uio_segflg = UIO_USERSPACE;
 	for (iov = uio->uio_iov, i = 0; i < uio->uio_iovcnt; i++, iov++)
 		total += iov->iov_len;
 

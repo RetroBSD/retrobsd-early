@@ -5,7 +5,6 @@
  */
 #include "param.h"
 #include "machine/psl.h"
-
 #include "user.h"
 #include "proc.h"
 #include "callout.h"
@@ -284,7 +283,7 @@ timeout(fun, arg, t)
  * from the callout structure.
  */
 void
-untimeout(fun, arg)
+untimeout (fun, arg)
 	void (*fun) (caddr_t, int);
 	caddr_t arg;
 {

@@ -140,7 +140,6 @@ setrlimit()
 	} *uap = (struct a *)u.u_ap;
 	struct rlimit alim;
 	register struct rlimit *alimp;
-	extern unsigned maxdmap;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u.u_error = EINVAL;
@@ -227,6 +226,9 @@ getrusage()
 		sizeof (struct rusage));
 }
 
+/*
+ * Add resource usage data.
+ */
 void
 ruadd(ru, ru2)
 	struct k_rusage *ru, *ru2;
@@ -238,7 +240,8 @@ ruadd(ru, ru2)
 	 * since the kernel timeval structures are single longs,
 	 * fold them into the loop.
 	 */
-	ip = &ru->k_ru_first; ip2 = &ru2->k_ru_first;
+	ip = &ru->k_ru_first;
+	ip2 = &ru2->k_ru_first;
 	for (i = &ru->k_ru_last - &ru->k_ru_first; i >= 0; i--)
 		*ip++ += *ip2++;
 }
@@ -247,7 +250,7 @@ ruadd(ru, ru2)
  * Convert an internal kernel rusage structure into a `real' rusage structure.
  */
 void
-rucvt(rup, krup)
+rucvt (rup, krup)
 	register struct rusage		*rup;
 	register struct k_rusage	*krup;
 {

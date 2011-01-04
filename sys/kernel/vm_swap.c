@@ -18,7 +18,8 @@
  * to do largest first.  Text, data, stack and u. are allocated in
  * that order, as that is likely to be in order of size.
  */
-swapin(p)
+int
+swapin (p)
 	register struct proc *p;
 {
 	register struct text *xp;
@@ -86,7 +87,8 @@ swapin(p)
  *
  * panic: out of swap space
  */
-swapout(p, freecore, odata, ostack)
+int
+swapout (p, freecore, odata, ostack)
 	register struct proc *p;
 	int freecore;
 	register u_int odata, ostack;

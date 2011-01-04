@@ -40,6 +40,16 @@ void xinit (void);
  */
 void xumount (dev_t dev);
 
+/*
+ * Attach to a shared text segment.
+ */
+void xalloc (struct inode *ip, struct exec *ep);
+
+/*
+ * Decrement loaded reference count of text object.
+ */
+void xfree (void);
+
 #endif /* KERNEL */
 
 #define	XTRC	0x01		/* Text may be written, exclusive use */

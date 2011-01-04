@@ -180,6 +180,12 @@ struct inode *ialloc (struct inode *pip);
 struct inode *iget (dev_t dev, struct fs *fs, ino_t ino);
 
 /*
+ * Dereference an inode structure. On the last reference,
+ * write the inode out and deallocate the file.
+ */
+void iput (struct inode *ip);
+
+/*
  * Make a new file.
  */
 struct nameidata;
@@ -189,6 +195,15 @@ struct inode *maknode (int mode, struct nameidata *ndp);
  * Convert a pathname into a pointer to a locked inode.
  */
 struct inode *namei (struct nameidata *ndp);
+
+enum uio_rw;
+int rdwri (enum uio_rw rw, struct inode *ip, caddr_t base, int len,
+	off_t offset, int ioflg, int *aresid);
+
+/*
+ * Check mode permission on inode pointer.
+ */
+int access (struct inode *ip, int mode);
 
 /*
  * Change the mode on a file.
@@ -210,6 +225,11 @@ void iunlock (struct inode *ip);
  * Get inode statistics.
  */
 int ino_stat (struct inode *ip, struct stat *sb);
+
+/*
+ * Truncate the inode ip to at most length size.
+ */
+void itrunc (struct inode *oip, u_long length, int ioflags);
 
 #endif /* KERNEL */
 

@@ -151,10 +151,8 @@ mips_count_leading_zeroes (unsigned x)
 {
 	int n;
 
-	asm volatile (
-	"	.set	mips32 \n"
-	"	clz	%0, %1"
-	: "=r" (n) : "r" (x));
+	asm volatile ("clz	%0, %1"
+		: "=r" (n) : "r" (x));
 	return n;
 }
 

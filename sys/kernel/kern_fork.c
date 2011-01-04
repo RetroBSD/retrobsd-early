@@ -182,13 +182,15 @@ again:
 		 * There is core, so just copy.
 		 */
 		rpp->p_addr = a[2];
-		copy(a1, rpp->p_addr, USIZE);
+		bcopy ((const void*) a1, (void*) rpp->p_addr, USIZE);
 		u.u_procp = rip;
 		if (isvfork == 0) {
 			rpp->p_daddr = a[0];
-			copy(rip->p_daddr, rpp->p_daddr, rpp->p_dsize);
+			bcopy ((const void*) rip->p_daddr,
+				(void*) rpp->p_daddr, rpp->p_dsize);
 			rpp->p_saddr = a[1];
-			copy(rip->p_saddr, rpp->p_saddr, rpp->p_ssize);
+			bcopy ((const void*) rip->p_saddr,
+				(void*) rpp->p_saddr, rpp->p_ssize);
 		}
 		s = splhigh();
 		rpp->p_stat = SRUN;

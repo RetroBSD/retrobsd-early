@@ -108,9 +108,24 @@ struct buf *bread (dev_t dev, daddr_t blkno);
 struct buf *breada (dev_t dev, daddr_t blkno, daddr_t rablkno);
 
 /*
+ * Release the buffer, with delayed write.
+ */
+void bdwrite (struct buf *bp);
+
+/*
  * Release the buffer, with no I/O implied.
  */
 void brelse (struct buf *bp);
+
+/*
+ * Wait for I/O completion on the buffer.
+ */
+void biowait (struct buf *bp);
+
+/*
+ * See if the block is associated with some buffer.
+ */
+int incore (dev_t dev, daddr_t blkno);
 
 #endif /* KERNEL */
 

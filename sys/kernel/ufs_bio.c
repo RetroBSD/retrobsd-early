@@ -17,7 +17,7 @@
  * Read in (if necessary) the block and return a buffer pointer.
  */
 struct buf *
-bread(dev, blkno)
+bread (dev, blkno)
 	dev_t dev;
 	daddr_t blkno;
 {
@@ -55,7 +55,7 @@ breada(dev, blkno, rablkno)
 	 * a buffer and initiate i/o (getblk checks
 	 * for a cache hit).
 	 */
-	if (!incore(dev, blkno)) {
+	if (! incore (dev, blkno)) {
 		bp = getblk(dev, blkno);
 		if ((bp->b_flags&(B_DONE|B_DELWRI)) == 0) {
 			bp->b_flags |= B_READ;
@@ -73,7 +73,7 @@ breada(dev, blkno, rablkno)
 	 * on it also (as above).
 	 */
 	if (rablkno) {
-		if (!incore(dev, rablkno)) {
+		if (! incore (dev, rablkno)) {
 			rabp = getblk(dev, rablkno);
 			if (rabp->b_flags & (B_DONE|B_DELWRI)) {
 				brelse(rabp);
@@ -137,7 +137,8 @@ bwrite(bp)
  * This can't be done for magtape, since writes must be done
  * in the same order as requested.
  */
-bdwrite(bp)
+void
+bdwrite (bp)
 	register struct buf *bp;
 {
 
@@ -204,7 +205,8 @@ brelse (bp)
  * See if the block is associated with some buffer
  * (mainly to avoid getting hung up on a wait in breada)
  */
-incore(dev, blkno)
+int
+incore (dev, blkno)
 	register dev_t dev;
 	daddr_t blkno;
 {
@@ -342,6 +344,7 @@ geteblk()
  * Wait for I/O completion on the buffer; return errors
  * to the user.
  */
+void
 biowait(bp)
 	register struct buf *bp;
 {

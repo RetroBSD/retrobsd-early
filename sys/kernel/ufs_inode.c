@@ -247,10 +247,10 @@ igrab(ip)
  * write the inode out and if necessary,
  * truncate and deallocate the file.
  */
-iput(ip)
+void
+iput (ip)
 	register struct inode *ip;
 {
-
 #ifdef notnow
 	/*
 	 * This code requires a lot of workarounds, you have to change
@@ -270,7 +270,7 @@ irele(ip)
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCKED;
 		if (ip->i_nlink <= 0 && ip->i_fs->fs_ronly == 0) {
-			itrunc(ip, (u_long)0, 0);
+			itrunc (ip, (u_long) 0, 0);
 			ip->i_mode = 0;
 			ip->i_rdev = 0;
 			ip->i_flag |= IUPD|ICHG;
@@ -350,6 +350,7 @@ iupdat(ip, ta, tm, waitfor)
 #define	SINGLE	0	/* index of single indirect block */
 #define	DOUBLE	1	/* index of double indirect block */
 #define	TRIPLE	2	/* index of triple indirect block */
+
 /*
  * Truncate the inode ip to at most
  * length size.  Free affected disk
@@ -358,10 +359,11 @@ iupdat(ip, ta, tm, waitfor)
  *
  * NB: triple indirect blocks are untested.
  */
-itrunc(oip,length, ioflags)
+void
+itrunc (oip, length, ioflags)
 	register struct inode *oip;
 	u_long length;
-	int	ioflags;
+	int ioflags;
 {
 	daddr_t lastblock;
 	register int i;

@@ -88,7 +88,16 @@ struct loadavg {
 };
 
 #ifdef KERNEL
+/*
+ * Convert an internal kernel rusage structure into a `real' rusage structure.
+ */
 void rucvt (struct rusage *rup, struct k_rusage *krup);
+
+/*
+ * Add resource usage data.
+ */
+void ruadd (struct k_rusage *ru, struct k_rusage *ru2);
+
 #endif
 
 #endif	/* !_SYS_RESOURCE_H_ */
