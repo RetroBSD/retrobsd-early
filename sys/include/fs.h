@@ -138,6 +138,9 @@ struct fs *getfs (dev_t dev);
  */
 struct fs *mountfs (dev_t dev, int flags, struct inode *ip);
 
+void mount_updname (struct fs *fs, char *on, char *from,
+	int lenon, int lenfrom);
+
 #endif /* KERNEL */
 
 #endif /* _SYS_FS_H_ */

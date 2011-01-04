@@ -69,7 +69,13 @@ struct	namecache {
 #ifdef KERNEL
 extern struct	namecache namecache [];
 extern int	nchsize;
-#endif
+
+/*
+ * Name cache initialization.
+ */
+void nchinit (void);
+
+#endif /* KERNEL */
 
 /*
  * Stats on usefulness of namei caches.

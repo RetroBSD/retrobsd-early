@@ -5,7 +5,6 @@
  */
 #include "param.h"
 #include "machine/reg.h"
-
 #include "systm.h"
 #include "map.h"
 #include "user.h"
@@ -20,7 +19,7 @@
  * Create a new process -- the internal version of system call fork.
  * It returns 1 in the new process, 0 in the old.
  */
-static int
+int
 newproc (isvfork)
 	int isvfork;
 {

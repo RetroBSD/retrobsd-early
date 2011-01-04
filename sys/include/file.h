@@ -14,9 +14,9 @@
  */
 struct	file {
 	int	f_flag;		/* see below */
-	char	f_type;		/* descriptor type */
-	u_char	f_count;	/* reference count */
-	short	f_msgcount;	/* references from message queue */
+	int	f_type;		/* descriptor type */
+	u_int	f_count;	/* reference count */
+	int	f_msgcount;	/* references from message queue */
 	union {
 		caddr_t	f_Data;
 		struct socket *f_Socket;
@@ -53,9 +53,30 @@ struct file *getf (int f);
 struct file *falloc (void);
 
 /*
+ * Internal form of close.
+ */
+int closef (struct file *fp);
+
+/*
+ * Set/clear file flags: nonblock and async.
+ */
+int fset (struct file *fp, int bit, int value);
+
+/*
+ * Get/set process group id for a file.
+ */
+int fgetown (struct file *fp, int *valuep);
+int fsetown (struct file *fp, int value);
+
+/*
  * File table inode close routine.
  */
 int vn_closefile (struct file *fp);
+
+/*
+ * Place an advisory lock on an inode.
+ */
+int ino_lock (struct file *fp, int cmd);
 
 /*
  * Unlock a file.

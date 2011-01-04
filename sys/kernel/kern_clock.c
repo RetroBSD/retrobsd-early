@@ -228,7 +228,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 	 * low cpu priority, so we don't keep the relatively  high
 	 * clock interrupt priority any longer than necessary.
 	 */
-	if (adjdelta)
+	if (adjdelta) {
 		if (adjdelta > 0) {
 			++lbolt;
 			--adjdelta;
@@ -236,6 +236,7 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
 			--lbolt;
 			++adjdelta;
 		}
+	}
 	if (++lbolt >= hz) {
 		lbolt -= hz;
 		++time.tv_sec;

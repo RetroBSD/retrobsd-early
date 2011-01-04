@@ -9,9 +9,11 @@
 #include "buf.h"
 #include "uio.h"
 
-/* copied, for supervisory networking, to sys_net.c */
+/*
+ * Move data to/from user space.
+ */
 int
-uiomove(cp, n, uio)
+uiomove (cp, n, uio)
 	caddr_t cp;
 	u_int n;
 	register struct uio *uio;

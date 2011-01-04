@@ -374,20 +374,14 @@ ino_stat(ip, sb)
 	sb->st_rdev = (dev_t)ip->i_rdev;
 	sb->st_size = ip->i_size;
 	sb->st_atime = ic2->ic_atime;
-	sb->st_spare1 = 0;
 	sb->st_mtime = ic2->ic_mtime;
-	sb->st_spare2 = 0;
 	sb->st_ctime = ic2->ic_ctime;
-	sb->st_spare3 = 0;
 	sb->st_blksize = MAXBSIZE;
 	/*
 	 * blocks are too tough to do; it's not worth the effort.
 	 */
 	sb->st_blocks = btod (ip->i_size);
 	sb->st_flags = ip->i_flags;
-	sb->st_spare4[0] = 0;
-	sb->st_spare4[1] = 0;
-	sb->st_spare4[2] = 0;
 	return (0);
 }
 

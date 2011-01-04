@@ -103,15 +103,6 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 		break;
 
 	case T_INSTRAP + USER:
-		/*
-		 * If illegal instructions are not being caught and the
-		 * offending instruction is a SETD, the trap is ignored.
-		 * This is because C produces a SETD at the beginning of
-		 * every program which will trap on CPUs without an FP-11.
-		 */
-#define	SETD	0170011		/* SETD instruction */
-		if(fuiword((caddr_t)(pc-2)) == SETD && u.u_signal[SIGILL] == 0)
-			goto out;
 		i = SIGILL;
 		u.u_code = 0;	/* TODO */
 		break;
@@ -145,37 +136,13 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 
 	/*
 	 * If the user SP is below the stack segment, grow the stack
-	 * automatically.  This relies on the ability of the hardware
-	 * to restart a half executed instruction.  On the 11/40 this
-	 * is not the case and the routine backup/mch.s may fail.
-	 * The classic example is on the instruction
-	 *	cmp	-(sp),-(sp)
-	 *
-	 * The KDJ-11 (11/53,73,83,84,93,94) handles the trap when doing
-	 * a double word store differently than the other pdp-11s.  When
-	 * doing:
-	 *	setl
-	 *	movfi fr0,-(sp)
-	 * and the stack segment becomes invalid part way thru then the
-	 * trap is generated (as expected) BUT 'sp' IS NOT LEFT DECREMENTED!
-	 * The 'grow' routine sees that SP is still within the (valid) stack
-	 * segment and does not extend the stack, resulting in a 'segmentation
-	 * violation' rather than a successfull floating to long store.
-	 * The "fix" is to pretend that SP is 4 bytes lower than it really
-	 * is (for KDJ-11 systems only) when calling 'grow'.
+	 * automatically.
 	 */
 	case T_SEGFLT + USER:
-		{
-		caddr_t osp;
-
-		osp = sp;
-		if (backup(u.u_ar0) == 0)
-			if (!(u.u_sigstk.ss_flags & SA_ONSTACK) &&
-					grow((u_int)osp))
-				goto out;
+		if (! (u.u_sigstk.ss_flags & SA_ONSTACK) && grow ((u_int)sp))
+			goto out;
 		i = SIGSEGV;
 		break;
-		}
 
 	/*
 	 * The code here is a half-hearted attempt to do something with
@@ -210,18 +177,23 @@ trap(dev, sp, r1, ov, nps, r0, pc, ps)
 		printf("Random intr ignored\n");
 		return;
 	}
-	psignal(p, i);
+	psignal (p, i);
 out:
-	while (i = CURSIG(p))
-		postsig(i);
+	/* Process all received signals. */
+	for (;;) {
+		i = CURSIG (p);
+		if (i <= 0)
+			break;
+		postsig (i);
+	}
 	curpri = setpri(p);
 	if (runrun) {
-		setrq(u.u_procp);
+		setrq (u.u_procp);
 		u.u_ru.ru_nivcsw++;
 		swtch();
 	}
 	if (u.u_prof.pr_scale)
-		addupc(pc, &u.u_prof, (int) (u.u_ru.ru_stime - syst));
+		addupc (pc, &u.u_prof, (int) (u.u_ru.ru_stime - syst));
 }
 
 /*
@@ -231,7 +203,7 @@ out:
  */
 /*ARGSUSED*/
 void
-syscall(dev, sp, r1, ov, nps, r0, pc, ps)
+syscall (dev, sp, r1, ov, nps, r0, pc, ps)
 	dev_t dev;
 	caddr_t sp, pc;
 	int r1, ov, nps, r0, ps;
@@ -249,8 +221,8 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 	syst = u.u_ru.ru_stime;
 	u.u_ar0 = &r0;
 	u.u_error = 0;
-	opc = pc - 2;			/* opc now points at syscall */
-	code = fuiword((caddr_t)opc) & 0377;	/* bottom 8 bits are index */
+	opc = pc - 4;			/* opc now points at syscall */
+	code = *(u_int*)opc & 0377;	/* bottom 8 bits are index */
 	if (code >= nsysent)
 		callp = &sysent[0];	/* indir (illegal) */
 	else
@@ -261,10 +233,6 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 	u.u_r.r_val2 = r1;
 	if (setjmp(&u.u_qsave) == 0) {
 		(*callp->sy_call)();
-#ifdef	DIAGNOSTIC
-		if (hasmap)
-			panic("hasmap");
-#endif
 	}
 	switch (u.u_error) {
 	case 0:
@@ -282,8 +250,13 @@ syscall(dev, sp, r1, ov, nps, r0, pc, ps)
 		r0 = u.u_error;
 		break;
 	}
-	while (i = CURSIG(u.u_procp))
-		postsig(i);
+	/* Process all received signals. */
+	for (;;) {
+		i = CURSIG (u.u_procp);
+		if (i <= 0)
+			break;
+		postsig (i);
+	}
 	curpri = setpri(u.u_procp);
 	if (runrun) {
 		setrq(u.u_procp);

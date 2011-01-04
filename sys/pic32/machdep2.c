@@ -22,13 +22,13 @@
 #include "mount.h"
 #include "systm.h"
 
-size_t	physmem;	/* total amount of physical memory (for savecore) */
-
 int waittime = -1;
 
 static int
-nodump()
+nodump (dev)
+	dev_t dev;
 {
+	printf ("\ndumping to dev %o off %D: not implemented\n", dumpdev, dumplo);
 	return (0);
 }
 
@@ -79,42 +79,8 @@ startup()
 		callout[i-1].c_next = &callout[i];
 }
 
-/*
- * Dumpsys takes a dump of memory by calling (*dump)(), which must
- * correspond to dumpdev.  *(dump)() should dump from dumplo blocks
- * to the end of memory or to the end of the logical device.
- */
 void
-dumpsys()
-{
-	register int error;
-
-	if (dumpdev != NODEV) {
-		printf("\ndumping to dev %o off %D\ndump ",dumpdev,dumplo);
-		error = (*dump) (dumpdev);
-		switch(error) {
-
-		case EFAULT:
-			printf("dev !ready:EFAULT\n");
-			break;
-		case EINVAL:
-			printf("args:EINVAL\n");
-			break;
-		case EIO:
-			printf("err:EIO\n");
-			break;
-		default:
-			printf("unknown err:%d\n",error);
-			break;
-		case 0:
-			printf("succeeded\n");
-			break;
-		}
-	}
-}
-
-void
-boot(dev, howto)
+boot (dev, howto)
 	register dev_t dev;
 	register int howto;
 {
@@ -125,7 +91,7 @@ boot(dev, howto)
 	 * so the date will be as current as possible after
 	 * rebooting.
 	 */
-	fp = getfs(rootdev);
+	fp = getfs (rootdev);
 	if (fp)
 		fp->fs_fmod = 1;
 	if ((howto & RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
@@ -147,26 +113,76 @@ boot(dev, howto)
 					nbusy++;
 			if (nbusy == 0)
 				break;
-			printf("%d ", nbusy);
-			delay(40000L * iter);
+			printf ("%d ", nbusy);
+			udelay (40000L * iter);
 		  }
 		}
 		printf("done\n");
 	}
 	(void) splhigh();
 	if (howto & RB_HALT) {
-		printf("halting\n");
-		halt();
-		/*NOTREACHED*/
-	} else {
-		if (howto & RB_DUMP) {
-			/*
-			 * save the registers in low core.
-			 */
-			saveregs();
-			dumpsys();
+		printf ("halting\n");
+		for (;;) {
+			asm volatile ("wait");
 		}
-		doboot(dev, howto);
 		/*NOTREACHED*/
 	}
+	if ((howto & RB_DUMP) && dumpdev != NODEV) {
+		/*
+		 * Take a dump of memory by calling (*dump)(),
+		 * which must correspond to dumpdev.
+		 * It should dump from dumplo blocks to the end
+		 * of memory or to the end of the logical device.
+		 */
+		(*dump) (dumpdev);
+	}
+	/* TODO: doboot (dev, howto); */
+	for (;;) {
+		asm volatile ("wait");
+	}
+	/*NOTREACHED*/
+}
+
+/*
+ * Microsecond delay routine for MIPS processor.
+ */
+void
+udelay (usec)
+	u_int usec;
+{
+	unsigned now = mips_read_c0_register (C0_COUNT);
+	unsigned final = now + usec * (KHZ / 1000);
+
+	for (;;) {
+		now = mips_read_c0_register (C0_COUNT);
+
+		/* This comparison is valid only when using a signed type. */
+		if ((int) (now - final) >= 0)
+			break;
+	}
+}
+
+/*
+ * Increment user profiling counters.
+ */
+void addupc (caddr_t pc, struct uprof *pbuf, int ticks)
+{
+	/* TODO */
+}
+
+/*
+ * Save the process' current register context.
+ */
+int setjmp (label_t *env)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Map in a user structure and jump to a saved context.
+ */
+void longjmp (memaddr u, label_t *env)
+{
+	/* TODO */
 }

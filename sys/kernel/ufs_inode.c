@@ -29,6 +29,7 @@ struct inode *ifreeh, **ifreet;
  * Initialize hash links for inodes
  * and build inode free list.
  */
+void
 ihinit()
 {
 	register int i;
@@ -667,19 +668,19 @@ iflush(dev)
 /*
  * Lock an inode. If its already locked, set the WANT bit and sleep.
  */
+void
 ilock(ip)
 	register struct inode *ip;
 {
-
 	ILOCK(ip);
 }
 
 /*
  * Unlock an inode.  If WANT bit is on, wakeup.
  */
+void
 iunlock(ip)
 	register struct inode *ip;
 {
-
 	IUNLOCK(ip);
 }

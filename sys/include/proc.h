@@ -98,14 +98,40 @@ struct	proc *freeproc, *zombproc, *allproc, *qs;
 int	nproc;
 
 /*
+ * Init the process queues.
+ */
+void pqinit (void);
+
+/*
  * Find a process by pid.
  */
 struct proc *pfind (int pid);
 
 /*
+ * Set user priority.
+ */
+int setpri (struct proc *pp);
+
+/*
  * Send the specified signal to the specified process.
  */
 void psignal (struct proc *p, int sig);
+
+/*
+ * Take the action for the specified signal.
+ */
+void postsig (int sig);
+
+/*
+ * If the current process has received a signal, return the signal number.
+ */
+int issignal (struct proc *p);
+
+/*
+ * Initialize signal state for process 0;
+ * set to ignore signals that are ignored by default.
+ */
+void siginit (struct proc *p);
 
 /*
  * Remove a process from its wait queue
@@ -122,6 +148,21 @@ void setrun (struct proc *p);
  * Reschedule the CPU.
  */
 void swtch (void);
+
+/*
+ * Recompute process priorities, once a second.
+ */
+void schedcpu (void);
+
+/*
+ * The main loop of the scheduling process. No return.
+ */
+void sched (void);
+
+/*
+ * Create a new process -- the internal version of system call fork.
+ */
+int newproc (int isvfork);
 
 /*
  * Put the process into the run queue.

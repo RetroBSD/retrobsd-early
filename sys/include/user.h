@@ -115,4 +115,10 @@ struct user {
 
 #ifdef KERNEL
 extern	struct user u;
+
+/*
+ * Increment user profiling counters.
+ */
+void addupc (caddr_t pc, struct uprof *pbuf, int ticks);
+
 #endif

@@ -53,7 +53,7 @@ getmdev (pdev, fname)
 	return (0);
 }
 
-static void
+void
 mount_updname (fs, on, from, lenon, lenfrom)
 	struct	fs	*fs;
 	char	*on, *from;

@@ -2,10 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)stat.h	7.1.5 (2.11BSD) 1996/09/20
  */
-
 #ifndef	_STAT_H_
 #define	_STAT_H_
 
@@ -13,22 +10,18 @@ struct	stat
 {
 	dev_t	st_dev;
 	ino_t	st_ino;
-	unsigned short st_mode;
-	short	st_nlink;
+	u_int	st_mode;
+	int	st_nlink;
 	uid_t	st_uid;
 	gid_t	st_gid;
 	dev_t	st_rdev;
 	off_t	st_size;
 	time_t	st_atime;
-	int	st_spare1;
 	time_t	st_mtime;
-	int	st_spare2;
 	time_t	st_ctime;
-	int	st_spare3;
 	long	st_blksize;
 	long	st_blocks;
-	u_short	st_flags;
-	u_short	st_spare4[3];
+	u_int	st_flags;
 };
 
 #define	S_IFMT	0170000		/* type of file */

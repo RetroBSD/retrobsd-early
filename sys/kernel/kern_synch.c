@@ -370,7 +370,7 @@ setrun(p)
  * than the currently running process.
  */
 int
-setpri(pp)
+setpri (pp)
 	register struct proc *pp;
 {
 	register int p;

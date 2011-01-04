@@ -606,8 +606,11 @@ ttnread(tp)
 	return (nread);
 }
 
+/*
+ * Check that input or output is possible on a terminal.
+ */
 int
-ttyselect(tp,rw)
+ttyselect (tp, rw)
 	register struct tty *tp;
 	int	rw;
 {

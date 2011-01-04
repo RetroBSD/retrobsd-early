@@ -23,6 +23,25 @@
  */
 
 /*
+ * Allocate a user file descriptor.
+ */
+static int
+ufalloc(i)
+	register int i;
+{
+	for (; i < NOFILE; i++)
+		if (u.u_ofile[i] == NULL) {
+			u.u_r.r_val1 = i;
+			u.u_pofile[i] = 0;
+			if (i > u.u_lastfile)
+				u.u_lastfile = i;
+			return (i);
+		}
+	u.u_error = EMFILE;
+	return (-1);
+}
+
+/*
  * System calls on descriptors.
  */
 void
@@ -98,7 +117,7 @@ fcntl()
 		int	cmd;
 		int	arg;
 	} *uap;
-	register i;
+	register int i;
 	register char *pop;
 
 	uap = (struct a *)u.u_ap;
@@ -133,20 +152,20 @@ fcntl()
 	case F_SETFL:
 		fp->f_flag &= ~FCNTLFLAGS;
 		fp->f_flag |= (FFLAGS(uap->arg)) & FCNTLFLAGS;
-		u.u_error = fset(fp, FNONBLOCK, fp->f_flag & FNONBLOCK);
+		u.u_error = fset (fp, FNONBLOCK, fp->f_flag & FNONBLOCK);
 		if (u.u_error)
 			break;
-		u.u_error = fset(fp, FASYNC, fp->f_flag & FASYNC);
+		u.u_error = fset (fp, FASYNC, fp->f_flag & FASYNC);
 		if (u.u_error)
-			(void) fset(fp, FNONBLOCK, 0);
+			(void) fset (fp, FNONBLOCK, 0);
 		break;
 
 	case F_GETOWN:
-		u.u_error = fgetown(fp, &u.u_r.r_val1);
+		u.u_error = fgetown (fp, &u.u_r.r_val1);
 		break;
 
 	case F_SETOWN:
-		u.u_error = fsetown(fp, uap->arg);
+		u.u_error = fsetown (fp, uap->arg);
 		break;
 
 	default:
@@ -155,7 +174,19 @@ fcntl()
 }
 
 int
-fset(fp, bit, value)
+fioctl(fp, cmd, value)
+	register struct file *fp;
+	u_int cmd;
+	caddr_t value;
+{
+	return ((*Fops[fp->f_type]->fo_ioctl)(fp, cmd, value));
+}
+
+/*
+ * Set/clear file flags: nonblock and async.
+ */
+int
+fset (fp, bit, value)
 	register struct file *fp;
 	int bit, value;
 {
@@ -167,6 +198,9 @@ fset(fp, bit, value)
 			(caddr_t)&value));
 }
 
+/*
+ * Get process group id for a file.
+ */
 int
 fgetown(fp, valuep)
 	register struct file *fp;
@@ -185,12 +219,14 @@ fgetown(fp, valuep)
 	return (error);
 }
 
+/*
+ * Set process group id for a file.
+ */
 int
 fsetown(fp, value)
 	register struct file *fp;
 	int value;
 {
-
 #ifdef INET
 	if (fp->f_type == DTYPE_SOCKET) {
 		mtsd(&fp->f_socket->so_pgrp, value);
@@ -205,15 +241,6 @@ fsetown(fp, value)
 	} else
 		value = -value;
 	return (fioctl(fp, (u_int)TIOCSPGRP, (caddr_t)&value));
-}
-
-int
-fioctl(fp, cmd, value)
-	register struct file *fp;
-	u_int cmd;
-	caddr_t value;
-{
-	return ((*Fops[fp->f_type]->fo_ioctl)(fp, cmd, value));
 }
 
 void
@@ -269,26 +296,6 @@ fstat()
 		    sizeof (ub));
 }
 
-/* copied, for supervisory networking, to sys_net.c */
-/*
- * Allocate a user file descriptor.
- */
-int
-ufalloc(i)
-	register int i;
-{
-	for (; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL) {
-			u.u_r.r_val1 = i;
-			u.u_pofile[i] = 0;
-			if (i > u.u_lastfile)
-				u.u_lastfile = i;
-			return (i);
-		}
-	u.u_error = EMFILE;
-	return (-1);
-}
-
 struct	file *lastf;
 
 /*
@@ -301,7 +308,7 @@ struct file *
 falloc()
 {
 	register struct file *fp;
-	register i;
+	register int i;
 
 	i = ufalloc(0);
 	if (i < 0)
@@ -398,8 +405,9 @@ flock()
 	if (uap->how & LOCK_EX)
 		uap->how &= ~LOCK_SH;
 	/* avoid work... */
-	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX) ||
-	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
+	if ((fp->f_flag & FEXLOCK) && (uap->how & LOCK_EX))
+		return;
+	if ((fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
 	error = ino_lock(fp, uap->how);
 	u.u_error = error;

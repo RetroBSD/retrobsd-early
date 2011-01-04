@@ -64,4 +64,17 @@ typedef	u_int	mode_t;
 typedef int	bool_t;		/* boolean */
 typedef u_int	memaddr;	/* core or swap address */
 
+#ifdef KERNEL
+/*
+ * Save the process' current register context.
+ */
+int setjmp (label_t *env);
+
+/*
+ * Map in a user structure and jump to a saved context.
+ */
+void longjmp (memaddr u, label_t *env);
+
+#endif /* KERNEL */
+
 #endif

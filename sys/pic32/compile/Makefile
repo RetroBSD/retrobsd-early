@@ -18,7 +18,7 @@ vpath %.c ${M}:${S}:${D}
 vpath %.S ${M}:${S}:${D}
 
 # Kernel options.
-DEFS		+= -I. -I${H} -DKERNEL -DPIC32MX -DUCB_METER
+DEFS		+= -I. -I${H} -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
 
 # kl console driver
 DEFS		+= -DNKL=1
@@ -30,7 +30,7 @@ DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O ${DEFS} ${DEPFLAGS}
 ASFLAGS		= ${DEFS} ${DEPFLAGS}
 CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
-CC		+= -Werror #-Wall
+CC		+= -Werror -Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 
 # Machine-dependent files:

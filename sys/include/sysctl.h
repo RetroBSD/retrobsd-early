@@ -340,11 +340,33 @@ extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
 typedef int (sysctlfn) (int *name, u_int namelen,
 	void *oldp, size_t *oldlenp, void *newp, size_t newlen);
 
-//int sysctl_int();
-//int sysctl_rdint();
-//int sysctl_string();
-//int sysctl_rdstring();
-//int sysctl_rdstruct();
+/*
+ * Get old / set new parameters for an integer value.
+ */
+int sysctl_int (void *oldp, size_t *oldlenp,
+	void *newp, size_t newlen, int *valp);
+
+/*
+ * As above, but read-only.
+ */
+int sysctl_rdint (void *oldp, size_t *oldlenp, void *newp, int val);
+
+/*
+ * Get old / set new parameters	for a string value.
+ */
+int sysctl_string (void *oldp, size_t *oldlenp,
+	void *newp, size_t newlen, char *str, int maxlen);
+
+/*
+ * As above, but read-only.
+ */
+int sysctl_rdstring (void *oldp, size_t *oldlenp, void *newp, char *str);
+
+/*
+ * Get old parameters for a structure.
+ */
+int sysctl_rdstruct (void *oldp, size_t *oldlenp,
+	void *newp, void *sp, int len);
 
 #else	/* !KERNEL */
 

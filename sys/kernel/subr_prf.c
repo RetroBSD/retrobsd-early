@@ -281,17 +281,15 @@ tprintf(tp, fmt, x1)
  */
 /*VARARGS2*/
 void
-log(level, fmt, x1)
-	char *fmt;
-	unsigned x1;
+log (int level, char *fmt, ...)
 {
 	register s = splhigh();
 
 	logpri(level);
-	prf(fmt, &x1, TOLOG, (struct tty *)0);
+	prf(fmt, &fmt + 1, TOLOG, (struct tty *)0);
 	splx(s);
 	if (!logisopen(logMSG))
-		prf(fmt, &x1, TOCONS, (struct tty *)0);
+		prf(fmt, &fmt + 1, TOCONS, (struct tty *)0);
 	logwakeup(logMSG);
 }
 

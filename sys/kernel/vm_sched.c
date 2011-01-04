@@ -29,6 +29,7 @@ int	maxslp = MAXSLP;
  * It is awakened when the core situation changes and in any case once per
  * second.
  */
+void
 sched()
 {
 	register struct proc *rp;

@@ -30,8 +30,17 @@ struct text
 extern struct	text text[], *textNTEXT;
 int	ntext;
 
+/*
+ * Initialize text table.
+ */
+void xinit (void);
+
+/*
+ * Free the swap image of all unused saved-text text segments on dev.
+ */
 void xumount (dev_t dev);
-#endif
+
+#endif /* KERNEL */
 
 #define	XTRC	0x01		/* Text may be written, exclusive use */
 #define	XWRIT	0x02		/* Text written into, must swap out */

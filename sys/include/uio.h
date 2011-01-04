@@ -66,4 +66,12 @@ struct uio {
 	enum	uio_seg uio_segflg;
 	enum	uio_rw uio_rw;
 };
+
+#ifdef KERNEL
+/*
+ * Move data to/from user space.
+ */
+int uiomove (caddr_t cp, u_int n, struct uio *uio);
+
+#endif /* KERNEL */
 #endif /* !_SYS_UIO_H_ */

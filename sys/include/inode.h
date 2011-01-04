@@ -134,6 +134,8 @@ struct dinode {
 #define	di_ctime	di_ic2.ic_ctime
 
 #ifdef KERNEL
+struct stat;
+
 /*
  * Invalidate an inode. Used by the namei cache to detect stale
  * information. In order to save space and also reduce somewhat the
@@ -156,6 +158,11 @@ struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* the number of slots in the table */
 
 struct	inode *rootdir;			/* pointer to inode of root directory */
+
+/*
+ * Initialize hash links for inodes and build inode free list.
+ */
+void ihinit (void);
 
 /*
  * Get an inode pointer of a file descriptor.
@@ -192,6 +199,17 @@ int chmod1 (struct inode *ip, int mode);
  * Change an owner of a file.
  */
 int chown1 (struct inode *ip, int uid, int gid);
+
+/*
+ * Lock/unlock an inode.
+ */
+void ilock (struct inode *ip);
+void iunlock (struct inode *ip);
+
+/*
+ * Get inode statistics.
+ */
+int ino_stat (struct inode *ip, struct stat *sb);
 
 #endif /* KERNEL */
 

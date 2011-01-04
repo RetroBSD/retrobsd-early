@@ -155,7 +155,8 @@ bdwrite(bp)
 /*
  * Release the buffer, with no I/O implied.
  */
-brelse(bp)
+void
+brelse (bp)
 	register struct buf *bp;
 {
 	register struct buf *flist;

@@ -406,7 +406,8 @@ out:
  *	while (signum = CURSIG(u.u_procp))
  *		postsig(signum);
  */
-issignal(p)
+int
+issignal (p)
 	register struct proc *p;
 {
 	register int sig;

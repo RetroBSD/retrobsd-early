@@ -84,12 +84,24 @@ int	noproc;			/* no one is running just now */
 char	*panicstr;
 int	boothowto;		/* reboot flags, from boot */
 int	selwait;
+size_t	physmem;		/* total amount of physical memory */
 
 extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
 
 void panic (char *msg);
 void printf (char *fmt, ...);
 int loginit (void);
+/*
+ * Write to the log buffer, and optionally to the console.
+ */
+void log (int level, char *fmt, ...);
+void tablefull (char *tab);	/* warn that a system table is full */
+
+void bzero (void *s, size_t n);
+
+void startup (void);		/* machine-dependent startup code */
+int chrtoblk (dev_t dev);	/* convert from character to block device number */
+int blktochr (dev_t dev);	/* convert from block to character device number */
 
 /*
  * Syscalls.

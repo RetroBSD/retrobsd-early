@@ -20,6 +20,7 @@
 #include "systm.h"
 #include "kernel.h"
 #include "namei.h"
+#include "text.h"
 #include "disklabel.h"
 #include "stat.h"
 
@@ -27,15 +28,12 @@ int	netoff = 1;
 int	cmask = CMASK;
 int	securelevel;
 
-memaddr	bpaddr;		/* physical click-address of buffers */
-
-extern	size_t physmem;
-extern	struct	mapent _coremap[];
+memaddr	bpaddr;		/* physical address of buffers */
 
 /*
  * Initialize hash links for buffers.
  */
-static
+static void
 bhinit()
 {
 	register int i;
@@ -49,7 +47,7 @@ bhinit()
  * Initialize the buffer I/O system by freeing
  * all buffers and setting all device buffer lists to empty.
  */
-static
+static void
 binit()
 {
 	register struct buf *bp;
@@ -74,7 +72,7 @@ binit()
  * Initialize clist by freeing all character blocks, then count
  * number of character devices. (Once-only routine)
  */
-static
+static void
 cinit()
 {
 	register int ccp;
@@ -102,6 +100,7 @@ cinit()
  *	fork - process 0 to schedule
  *	     - process 1 execute bootstrap
  */
+int
 main()
 {
 	extern dev_t bootdev;
@@ -235,7 +234,8 @@ main()
 	mount[0].m_inodp = (struct inode *)1;	/* XXX */
 	mount_updname(fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
-	if (toytime = toyclk())
+	toytime = toyclk();
+	if (toytime)
 		time.tv_sec = toytime;
 	boottime = time;
 
@@ -269,7 +269,7 @@ main()
 	/*
 	 * make init process
 	 */
-	if (newproc(0)) {
+	if (newproc (0)) {
 		expand (szicode, S_DATA);
 		expand (1, S_STACK);		/* one click of stack */
 		estabur (0, szicode, 1, 0);
@@ -278,8 +278,9 @@ main()
 		 * return goes to location 0 of user init code
 		 * just copied out.
 		 */
-		return;
+		return 0;
 	}
-	else
-		sched();
+
+	sched();
+	return 0;
 }

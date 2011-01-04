@@ -167,6 +167,11 @@ int ttwrite (struct tty *tp, struct uio *uio, int flag);
  */
 int ttymodem (struct tty *tp, int flag);
 
+/*
+ * Check that input or output is possible on a terminal.
+ */
+int ttyselect (struct tty *tp, int rw);
+
 #endif /* KERNEL */
 
 /* internal state bits */

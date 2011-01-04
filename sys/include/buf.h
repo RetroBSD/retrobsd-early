@@ -107,7 +107,12 @@ struct buf *bread (dev_t dev, daddr_t blkno);
  */
 struct buf *breada (dev_t dev, daddr_t blkno, daddr_t rablkno);
 
-#endif
+/*
+ * Release the buffer, with no I/O implied.
+ */
+void brelse (struct buf *bp);
+
+#endif /* KERNEL */
 
 /*
  * These flags are kept in b_flags.

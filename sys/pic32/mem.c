@@ -6,12 +6,14 @@
 #include "param.h"
 #include "user.h"
 #include "conf.h"
+#include "systm.h"
 #include "uio.h"
 
 /*
+ * Read/write routine for /dev/mem family.
  */
 int
-mmrw(dev, uio, flag)
+mmrw (dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
 	int flag;
@@ -19,10 +21,9 @@ mmrw(dev, uio, flag)
 	register struct iovec *iov;
 	int error = 0;
 	register u_int c;
-	u_int on;
-	char	zero[1024];
+	char zero[1024];
 
-	if	(minor(dev) == 3)
+	if (minor(dev) == 3)
 		bzero(zero, sizeof (zero));
 	while (uio->uio_resid && error == 0) {
 		iov = uio->uio_iov;
@@ -48,7 +49,7 @@ mmrw(dev, uio, flag)
 			uio->uio_resid -= c;
 			break;
 		case 3:		/* minor device 3 is ZERO (/dev/zero) */
-			if	(uio->uio_rw == UIO_WRITE)
+			if (uio->uio_rw == UIO_WRITE)
 				return(EIO);
 			c = MIN(iov->iov_len, sizeof (zero));
 			error = uiomove(zero, c, uio);
