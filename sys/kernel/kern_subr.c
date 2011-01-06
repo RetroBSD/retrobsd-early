@@ -32,27 +32,6 @@ uiomove (cp, n, uio)
 		}
 		if (cnt > n)
 			cnt = n;
-
-//		switch (uio->uio_segflg) {
-//		case UIO_USERSPACE:
-//		case UIO_USERISPACE:
-//			if (cnt > 100 /*&& cp + cnt < SEG6*/)
-//				error = uiofmove (cp, cnt, uio, iov);
-//			else if ((cnt | (int)cp | (int)iov->iov_base) & 1)
-//				if (uio->uio_rw == UIO_READ)
-//					error = vcopyout (cp, iov->iov_base, cnt);
-//				else
-//					error = vcopyin (iov->iov_base, cp, cnt);
-//			else {
-//				if (uio->uio_rw == UIO_READ)
-//					error = copyout (cp, iov->iov_base, cnt);
-//				else
-//					error = copyin (iov->iov_base, cp, cnt);
-//			}
-//			if (error)
-//				return (error);
-//			break;
-
 		if (uio->uio_rw == UIO_READ)
 			bcopy ((caddr_t) cp, iov->iov_base, cnt);
 		else
@@ -67,12 +46,11 @@ uiomove (cp, n, uio)
 	return (error);
 }
 
-/* copied, for supervisory networking, to sys_net.c */
 /*
  * Give next character to user as result of read.
  */
 int
-ureadc(c, uio)
+ureadc (c, uio)
 	register int c;
 	register struct uio *uio;
 {

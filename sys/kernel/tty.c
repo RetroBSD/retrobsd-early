@@ -44,7 +44,7 @@ int	TTYUNBLOCK=64;
  * if the low 6 bits are 0, then the character needs
  * no special processing on output.
  */
-char partab[] = {
+const char partab[] = {
 	0001,0201,0201,0001,0201,0001,0001,0201,
 	0202,0004,0003,0201,0005,0206,0201,0001,
 	0201,0001,0001,0201,0001,0201,0201,0001,
@@ -87,10 +87,10 @@ char partab[] = {
 	0007,0007,0007,0007,0007,0007,0007,0007
 };
 
-short	tthiwat[16] =
+const int tthiwat[16] =
    { 100,100,100,100,100,100,100,200,200,400,400,400,650,650,1300,2000 };
 
-short	ttlowat[16] =
+const int ttlowat[16] =
    {  30, 30, 30, 30, 30, 30, 30, 50, 50,120,120,120,125,125,125,125 };
 
 struct	ttychars ttydefaults = {
@@ -125,10 +125,10 @@ ttyowake(tp)
 	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
 		if (ISSET(tp->t_state,TS_ASLEEP)) {
 			CLR(tp->t_state,TS_ASLEEP);
-			wakeup((caddr_t)&tp->t_outq);
+			wakeup ((caddr_t)&tp->t_outq);
 		}
 		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			selwakeup (tp->t_wsel, tp->t_state & TS_WCOLL);
 			tp->t_wsel = 0;
 			CLR(tp->t_state,TS_WCOLL);
 		}
@@ -170,11 +170,9 @@ ttywflush(tp)
 }
 
 static void
-ttyunblock(tp)
+ttyunblock (tp)
 	register struct tty *tp;
 {
-	register int s = spltty();
-
 	if (ISSET(tp->t_flags,TANDEM) &&
 	    tp->t_startc != _POSIX_VDISABLE &&
 	    putc(tp->t_startc, &tp->t_outq) == 0) {
@@ -189,9 +187,9 @@ ttyunblock(tp)
 }
 
 /*
- * Flush all TTY queues
+ * Flush all TTY queues.
  */
-ttyflush(tp, rw)
+void ttyflush (tp, rw)
 	register struct tty *tp;
 {
 	register int s;
@@ -205,15 +203,15 @@ ttyflush(tp, rw)
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
 		tp->t_state &= ~TS_LOCAL;
-		ttwakeup(tp);
+		ttwakeup (tp);
 	}
 	if (rw & FWRITE) {
 		tp->t_state &= ~TS_TTSTOP;
 		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
-		wakeup((caddr_t)&tp->t_outq);
+		wakeup ((caddr_t)&tp->t_outq);
 		while (getc(&tp->t_outq) >= 0)
 			;
-		selwakeup(&tp->t_wsel, tp->t_state & TS_WCOLL);
+		selwakeup (tp->t_wsel, tp->t_state & TS_WCOLL);
 		CLR(tp->t_state, TS_WCOLL);
 		tp->t_wsel = 0;
 	}
@@ -288,6 +286,41 @@ ttstart(tp)
 {
 	if (tp->t_oproc)		/* kludge for pty */
 		(*tp->t_oproc) (tp);
+}
+
+/*
+ * reinput pending characters after state switch
+ * call at spltty().
+ */
+static void
+ttypend (tp)
+	register struct tty *tp;
+{
+	struct clist tq;
+	register int c;
+
+	tp->t_flags &= ~PENDIN;
+	tp->t_state |= TS_TYPEN;
+	tq = tp->t_rawq;
+	tp->t_rawq.c_cc = 0;
+	tp->t_rawq.c_cf = tp->t_rawq.c_cl = 0;
+	while ((c = getc(&tq)) >= 0)
+		ttyinput(c, tp);
+	tp->t_state &= ~TS_TYPEN;
+}
+
+static int
+ttnread (tp)
+	register struct tty *tp;
+{
+	register int nread = 0;
+
+	if (tp->t_flags & PENDIN)
+		ttypend(tp);
+	nread = tp->t_canq.c_cc;
+	if (tp->t_flags & (RAW|CBREAK))
+		nread += tp->t_rawq.c_cc;
+	return (nread);
 }
 
 /*
@@ -458,7 +491,7 @@ ttioctl(tp, com, data, flag)
 			} else {
 				tp->t_flags |= PENDIN;
 				newflags |= PENDIN;
-				ttwakeup(tp);
+				ttwakeup (tp);
 			}
 		}
 		tp->t_flags = newflags;
@@ -572,41 +605,6 @@ ttioctl(tp, com, data, flag)
 }
 
 /*
- * reinput pending characters after state switch
- * call at spltty().
- */
-static void
-ttypend (tp)
-	register struct tty *tp;
-{
-	struct clist tq;
-	register int c;
-
-	tp->t_flags &= ~PENDIN;
-	tp->t_state |= TS_TYPEN;
-	tq = tp->t_rawq;
-	tp->t_rawq.c_cc = 0;
-	tp->t_rawq.c_cf = tp->t_rawq.c_cl = 0;
-	while ((c = getc(&tq)) >= 0)
-		ttyinput(c, tp);
-	tp->t_state &= ~TS_TYPEN;
-}
-
-int
-ttnread(tp)
-	register struct tty *tp;
-{
-	register int nread = 0;
-
-	if (tp->t_flags & PENDIN)
-		ttypend(tp);
-	nread = tp->t_canq.c_cc;
-	if (tp->t_flags & (RAW|CBREAK))
-		nread += tp->t_rawq.c_cc;
-	return (nread);
-}
-
-/*
  * Check that input or output is possible on a terminal.
  */
 int
@@ -680,7 +678,7 @@ ttyopen(dev, tp)
  * "close" a line discipline
  */
 int
-ttylclose(tp, flag)
+ttylclose (tp, flag)
 	register struct tty *tp;
 	int flag;
 {
@@ -694,6 +692,7 @@ ttylclose(tp, flag)
 	else
 		ttywflush(tp);
 	tp->t_line = 0;
+	return (0);
 }
 
 /*
@@ -747,7 +746,7 @@ ttymodem(tp, flag)
 		 * Carrier now on.
 		 */
 		tp->t_state |= TS_CARR_ON;
-		wakeup((caddr_t)&tp->t_rawq);
+		wakeup ((caddr_t) &tp->t_rawq);
 	}
 	return (1);
 }
@@ -778,8 +777,8 @@ ttyout (cp, tp)
 {
 	register int c;
 
-	while (c = *cp++)
-		(void) ttyoutput(c, tp);
+	while ((c = *cp++))
+		(void) ttyoutput (c, tp);
 }
 
 /*
@@ -821,7 +820,7 @@ ttyecho(c, tp)
 		c = '\n';
 	c7 = c & 0177;
 	if (tp->t_flags&CTLECH) {
-		if (c7 <= 037 && c != '\t' && c != '\n' || c7 == 0177) {
+		if ((c7 <= 037 && c != '\t' && c != '\n') || c7 == 0177) {
 			(void) ttyoutput('^', tp);
 			if (c7 == 0177)
 				c7 = '?';
@@ -944,6 +943,18 @@ ttyrub(c, tp)
 }
 
 /*
+ * Is c a break char for tp?
+ */
+int
+ttbreakc (c, tp)
+	register int c;
+	register struct tty *tp;
+{
+	return (c == '\n' || CCEQ (tp->t_eofc, c) || CCEQ (tp->t_brkc, c) ||
+		(c == '\r' && (tp->t_flags & CRMOD)));
+}
+
+/*
  * Place a character on raw TTY input queue,
  * putting in delimiters and waking up top
  * half as needed.  Also echo if required.
@@ -983,7 +994,7 @@ ttyinput (c, tp)
 			ttyflush(tp, FREAD|FWRITE);
 		else {
 			if (putc(c, &tp->t_rawq) == 0)
-				ttwakeup(tp);
+				ttwakeup (tp);
 			ttyecho(c, tp);
 		}
 		goto endcase;
@@ -1089,8 +1100,8 @@ ttyinput (c, tp)
 			    tp->t_line == NTTYDISC)
 				(void) ttyoutput(CTRL(g), tp);
 		} else if (putc(c, &tp->t_rawq) == 0) {
-			ttwakeup(tp);
-			ttyecho(c, tp);
+			ttwakeup (tp);
+			ttyecho (c, tp);
 		}
 		goto endcase;
 	}
@@ -1165,10 +1176,10 @@ ttyinput (c, tp)
 	 * wakeup on seeing a line delimiter.
 	 */
 	if (putc(c, &tp->t_rawq) == 0) {
-		if (ttbreakc(c, tp)) {
+		if (ttbreakc (c, tp)) {
 			tp->t_rocount = 0;
 			catq(&tp->t_rawq, &tp->t_canq);
-			ttwakeup(tp);
+			ttwakeup (tp);
 		} else if (tp->t_rocount++ == 0)
 			tp->t_rocol = tp->t_col;
 		if (tp->t_state&TS_ERASE) {
@@ -1424,7 +1435,7 @@ loop:
 		 * In cooked mode check for a "break character"
 		 * marking the end of a "line of input".
 		 */
-		if ((t_flags&CBREAK) == 0 && ttbreakc(c, tp))
+		if ((t_flags&CBREAK) == 0 && ttbreakc (c, tp))
 			break;
 		first = 0;
 	}
@@ -1435,7 +1446,7 @@ checktandem:
 	 * the input queue has gone down.
 	 */
 	s = spltty();
-	if	(ISSET(tp->t_state,TS_TBLOCK) && tp->t_rawq.c_cc < TTYUNBLOCK)
+	if (ISSET(tp->t_state,TS_TBLOCK) && tp->t_rawq.c_cc < TTYUNBLOCK)
 		ttyunblock(tp);
 	splx(s);
 	return(error);
@@ -1450,7 +1461,7 @@ checktandem:
  * if new signals come in.
  */
 int
-ttycheckoutq(tp, wait)
+ttycheckoutq (tp, wait)
 	register struct tty *tp;
 	int wait;
 {
@@ -1466,12 +1477,31 @@ ttycheckoutq(tp, wait)
 			splx(s);
 			return(0);
 		}
-		timeout(wakeup, (caddr_t)&tp->t_outq, hz);
+		timeout (wakeup, (caddr_t)&tp->t_outq, hz);
 		tp->t_state |= TS_ASLEEP;
-		sleep((caddr_t)&tp->t_outq, PZERO - 1);
+		sleep ((caddr_t) &tp->t_outq, PZERO - 1);
 	}
 	splx(s);
 	return(1);
+}
+
+/*
+ * Scan through str up to (but not including str[size]) stopping when a
+ * character who's entry in table has mask bits set.  Return number of
+ * characters left in str.
+ */
+static int
+scanc (size, str, table, mask)
+	unsigned size, mask;
+	const char *str, *table;
+{
+	if (size == 0)
+		return 0;
+	do {
+		if (table [(u_char) *str++] & mask)
+			break;
+	} while (--size != 0);
+	return size;
 }
 
 /*
@@ -1484,7 +1514,7 @@ ttwrite (tp, uio, flag)
 	register struct uio *uio;
 {
 	char *cp;
-	register int cc, ce, c;
+	register int cc, ce;
 	int i, hiwat, cnt, error, s;
 	char obuf[OBUFSIZ];
 
@@ -1494,7 +1524,7 @@ ttwrite (tp, uio, flag)
 	cc = 0;
 loop:
 	s = spltty();
-	if (!(tp->t_state&TS_CARR_ON)) {
+	if (! (tp->t_state&TS_CARR_ON)) {
 		if (tp->t_state & TS_ISOPEN) {
 			splx(s);
 			return(EIO);
@@ -1514,8 +1544,8 @@ loop:
 	 */
 	if (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 	    (tp->t_flags&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
-	    !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-	    !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
+	    ! (u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
+	    ! (u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
 		gsignal(u.u_procp->p_pgrp, SIGTTOU);
 		sleep((caddr_t)&lbolt, TTIPRI);
 		goto loop;
@@ -1528,6 +1558,7 @@ loop:
 	 * mark, sleep on overflow awaiting device aid
 	 * in acquiring new space.
 	 */
+	cp = 0;
 	while (uio->uio_resid || cc > 0) {
 		if (tp->t_flags&FLUSHO) {
 			uio->uio_resid = 0;
@@ -1640,20 +1671,8 @@ ovhiwat:
 	goto loop;
 }
 
-/*
- * Is c a break char for tp?
- */
-int
-ttbreakc (c, tp)
-	register int c;
-	register struct tty *tp;
-{
-	return (c == '\n' || CCEQ (tp->t_eofc, c) || CCEQ (tp->t_brkc, c) ||
-		c == '\r' && (tp->t_flags & CRMOD));
-}
-
 void
-ttwakeup(tp)
+ttwakeup (tp)
 	register struct tty *tp;
 {
 	if (tp->t_rsel) {

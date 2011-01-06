@@ -104,6 +104,7 @@ breada(dev, blkno, rablkno)
  * Write the buffer, waiting for completion.
  * Then release the buffer.
  */
+void
 bwrite(bp)
 	register struct buf *bp;
 {
@@ -416,6 +417,7 @@ loop:
  * Make sure all write-behind blocks on dev are flushed out.
  * (from umount and sync)
  */
+void
 bflush(dev)
 	register dev_t dev;
 {
@@ -466,6 +468,7 @@ geterror(bp)
  * properly flush the queues. Until that happy day, this suffices for
  * correctness.						... kre
  */
+void
 binval(dev)
 	register dev_t dev;
 {

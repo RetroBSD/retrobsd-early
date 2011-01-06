@@ -118,6 +118,11 @@ int setpri (struct proc *pp);
 void psignal (struct proc *p, int sig);
 
 /*
+ * Send the specified signal to a process group.
+ */
+void gsignal (int pgrp, int sig);
+
+/*
  * Take the action for the specified signal.
  */
 void postsig (int sig);
@@ -138,6 +143,8 @@ void siginit (struct proc *p);
  */
 void unsleep (struct proc *p);
 
+void selwakeup (struct proc *p, long coll);
+
 /*
  * Set the process running;
  * arrange for it to be swapped in if necessary.
@@ -152,7 +159,7 @@ void swtch (void);
 /*
  * Recompute process priorities, once a second.
  */
-void schedcpu (caddr_t arg, int t);
+void schedcpu (caddr_t arg);
 
 /*
  * The main loop of the scheduling process. No return.
@@ -197,19 +204,14 @@ void sleep (caddr_t chan, int pri);
 int tsleep (caddr_t ident, int priority, u_int timo);
 
 /*
- * Wake up all processes sleeping on chan.
- */
-void wakeup (caddr_t chan);
-
-/*
  * Arrange that given function is called in t/hz seconds.
  */
-void timeout (void (*fun) (caddr_t, int), caddr_t arg, int t);
+void timeout (void (*fun) (caddr_t), caddr_t arg, int t);
 
 /*
  * Remove a function timeout call from the callout structure.
  */
-void untimeout (void (*fun) (caddr_t, int), caddr_t arg);
+void untimeout (void (*fun) (caddr_t), caddr_t arg);
 
 /*
  * Change the size of the data+stack regions of the process.

@@ -22,7 +22,7 @@
 struct	callout {
 	int	c_time;				/* incremental time */
 	caddr_t	c_arg;				/* argument to routine */
-	void	(*c_func) (caddr_t, int);	/* routine */
+	void	(*c_func) (caddr_t);		/* routine */
 	struct	callout *c_next;
 };
 

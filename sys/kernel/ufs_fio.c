@@ -111,87 +111,85 @@ suser()
 /*
  * Set the attributes on a file.  This was placed here because ufs_syscalls
  * is too large already (it will probably be split into two files eventually).
-*/
-
-ufs_setattr(ip, vap)
+ */
+int
+ufs_setattr (ip, vap)
 	register struct inode *ip;
 	register struct vattr *vap;
-	{
+{
 	int	error;
 	struct	timeval atimeval, mtimeval;
 
-	if	(ip->i_fs->fs_ronly)	/* can't change anything on a RO fs */
+	if (ip->i_fs->fs_ronly)	/* can't change anything on a RO fs */
 		return(EROFS);
-	if	(vap->va_flags != VNOVAL)
-		{
-		if	(u.u_uid != ip->i_uid && !suser())
+	if (vap->va_flags != VNOVAL) {
+		if (u.u_uid != ip->i_uid && !suser())
 			return(u.u_error);
-		if	(u.u_uid == 0)
-			{
-			if	((ip->i_flags & (SF_IMMUTABLE|SF_APPEND)) &&
-					securelevel > 0)
+		if (u.u_uid == 0) {
+			if ((ip->i_flags &
+			    (SF_IMMUTABLE|SF_APPEND)) && securelevel > 0)
 				return(EPERM);
 			ip->i_flags = vap->va_flags;
-			}
-		else
-			{
-			if	(ip->i_flags & (SF_IMMUTABLE|SF_APPEND))
+		} else {
+			if (ip->i_flags & (SF_IMMUTABLE|SF_APPEND))
 				return(EPERM);
 			ip->i_flags &= SF_SETTABLE;
 			ip->i_flags |= (vap->va_flags & UF_SETTABLE);
-			}
-		ip->i_flag |= ICHG;
-		if	(vap->va_flags & (IMMUTABLE|APPEND))
-			return(0);
 		}
-	if	(ip->i_flags & (IMMUTABLE|APPEND))
+		ip->i_flag |= ICHG;
+		if (vap->va_flags & (IMMUTABLE|APPEND))
+			return(0);
+	}
+	if (ip->i_flags & (IMMUTABLE|APPEND))
 		return(EPERM);
-/*
- * Go thru the fields (other than 'flags') and update iff not VNOVAL.
-*/
-	if	(vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL)
-		if	(error = chown1(ip, vap->va_uid, vap->va_gid))
+	/*
+	 * Go thru the fields (other than 'flags') and update iff not VNOVAL.
+	 */
+	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL)
+		if (error = chown1(ip, vap->va_uid, vap->va_gid))
 			return(error);
-	if	(vap->va_size != (off_t)VNOVAL)
-		{
-		if	((ip->i_mode & IFMT) == IFDIR)
+	if (vap->va_size != (off_t)VNOVAL) {
+		if ((ip->i_mode & IFMT) == IFDIR)
 			return(EISDIR);
 		itrunc(ip, vap->va_size, 0);
-		if	(u.u_error)
+		if (u.u_error)
 			return(u.u_error);
-		}
-	if	(vap->va_atime != (time_t)VNOVAL ||
-		 vap->va_mtime != (time_t)VNOVAL)
-		{
-		if	(u.u_uid != ip->i_uid && !suser() &&
-			 ((vap->va_vaflags & VA_UTIMES_NULL) == 0 ||
+	}
+	if (vap->va_atime != (time_t)VNOVAL ||
+	    vap->va_mtime != (time_t)VNOVAL) {
+		if (u.u_uid != ip->i_uid && !suser() &&
+		    ((vap->va_vaflags & VA_UTIMES_NULL) == 0 ||
 			 access(ip, IWRITE)))
 			return(u.u_error);
-		if	(vap->va_atime != (time_t)VNOVAL &&
-				!(ip->i_fs->fs_flags & MNT_NOATIME))
+		if (vap->va_atime != (time_t)VNOVAL &&
+		    ! (ip->i_fs->fs_flags & MNT_NOATIME))
 			ip->i_flag |= IACC;
-		if	(vap->va_mtime != (time_t)VNOVAL)
+		if (vap->va_mtime != (time_t)VNOVAL)
 			ip->i_flag |= (IUPD|ICHG);
 		atimeval.tv_sec = vap->va_atime;
 		mtimeval.tv_sec = vap->va_mtime;
 		iupdat(ip, &atimeval, &mtimeval, 1);
-		}
-	if	(vap->va_mode != (mode_t)VNOVAL)
+	}
+	if (vap->va_mode != (mode_t)VNOVAL)
 		return(chmod1(ip, vap->va_mode));
 	return(0);
-	}
+}
 
-ufs_mountedon(dev)
+/*
+ * Check that device is mounted somewhere.
+ * Return EBUSY if mounted, 0 otherwise.
+ */
+int
+ufs_mountedon (dev)
 	dev_t dev;
-	{
+{
 	register struct mount *mp;
 
-	for	(mp = mount; mp < &mount[NMOUNT]; mp++)
-		{
-		if	(mp->m_inodp == NULL)
+	for (mp = mount; mp < &mount[NMOUNT]; mp++) {
+		if (mp->m_inodp == NULL)
 			continue;
-		if	(mp->m_dev == dev)
+		if (mp->m_dev == dev)
 			return(EBUSY);
-		}
-	return(0);
 	}
+	return(0);
+}

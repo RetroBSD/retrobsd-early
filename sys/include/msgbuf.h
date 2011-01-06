@@ -16,3 +16,10 @@ struct	msgbuf {
 #define	logMSG	0		/* /dev/klog */
 #define	logDEV	1		/* /dev/erlg */
 #define	logACCT	2		/* /dev/acct */
+
+#ifdef KERNEL
+/*
+ * Check that log is open by a user program.
+ */
+int logisopen (int unit);
+#endif

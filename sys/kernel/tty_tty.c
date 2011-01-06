@@ -19,7 +19,7 @@
 
 /*ARGSUSED*/
 int
-syopen(dev, flag)
+syopen (dev, flag)
 	dev_t dev;
 	int flag;
 {
@@ -29,7 +29,8 @@ syopen(dev, flag)
 }
 
 /*ARGSUSED*/
-syread(dev, uio, flag)
+int
+syread (dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 	int flag;
@@ -40,7 +41,8 @@ syread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-sywrite(dev, uio, flag)
+int
+sywrite (dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
@@ -50,7 +52,8 @@ sywrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-syioctl(dev, cmd, addr, flag)
+int
+syioctl (dev, cmd, addr, flag)
 	dev_t dev;
 	u_int cmd;
 	caddr_t addr;
@@ -68,7 +71,8 @@ syioctl(dev, cmd, addr, flag)
 }
 
 /*ARGSUSED*/
-syselect(dev, flag)
+int
+syselect (dev, flag)
 	dev_t dev;
 	int flag;
 {

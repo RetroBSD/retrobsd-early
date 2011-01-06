@@ -24,7 +24,7 @@ struct	proc *slpque[SQSIZE];
  * Recompute process priorities, once a second
  */
 void
-schedcpu (caddr_t arg, int t)
+schedcpu (caddr_t arg)
 {
 	register struct proc *p;
 	register int a;
@@ -94,7 +94,7 @@ updatepri(p)
  * is stopped just unsleep so it will remain stopped.
  */
 static void
-endtsleep(p)
+endtsleep (p)
 	register struct proc *p;
 {
 	register int	s;
@@ -194,7 +194,7 @@ resume:
 		if (sig == 0)
 			return(EWOULDBLOCK);
 	} else if (timo)
-		untimeout(endtsleep, (caddr_t)p);
+		untimeout (endtsleep, (caddr_t)p);
 	if (catch && (sig != 0 || (sig = CURSIG(p)))) {
 		if (u.u_sigintr & sigmask(sig))
 			return(EINTR);

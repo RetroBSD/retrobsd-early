@@ -229,7 +229,7 @@ again:
 	for (next = 0; next < 3; ++next)
 		if (madd[next])
 			madd[next]->m_size += sizes[next];
-	if (!retry++)
+	if (! retry++) {
 		if (mp == swapmap) {
 			printf("short of swap\n");
 			xumount(NODEV);
@@ -241,6 +241,7 @@ again:
 			xuncore(sizes[0]);
 			goto again;
 		}
+	}
 	return((memaddr)NULL);
 
 resolve:

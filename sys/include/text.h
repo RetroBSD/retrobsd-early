@@ -36,11 +36,6 @@ int	ntext;
 void xinit (void);
 
 /*
- * Free the swap image of all unused saved-text text segments on dev.
- */
-void xumount (dev_t dev);
-
-/*
  * Attach to a shared text segment.
  */
 void xalloc (struct inode *ip, struct exec *ep);

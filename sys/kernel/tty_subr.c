@@ -7,6 +7,7 @@
 #include "clist.h"
 #include "ioctl.h"
 #include "tty.h"
+#include "systm.h"
 
 char	cwaiting;
 
@@ -36,7 +37,7 @@ getc(p)
 			cfreelist = bp;
 			cfreecount += CBSIZE;
 			if (cwaiting) {
-				wakeup(&cwaiting);
+				wakeup (&cwaiting);
 				cwaiting = 0;
 			}
 		} else if (((int)p->c_cf & CROUND) == 0){
@@ -47,7 +48,7 @@ getc(p)
 			cfreelist = bp;
 			cfreecount += CBSIZE;
 			if (cwaiting) {
-				wakeup(&cwaiting);
+				wakeup (&cwaiting);
 				cwaiting = 0;
 			}
 		}
@@ -57,15 +58,16 @@ getc(p)
 }
 
 /*
- * copy clist to buffer.
- * return number of bytes moved.
+ * Copy clist to buffer.
+ * Return number of bytes moved.
  */
-q_to_b(q, cp, cc)
+int
+q_to_b (q, cp, cc)
 	register struct clist *q;
 	char *cp;
 {
 	register struct cblock *bp;
-	register nc;
+	register int nc;
 	int s;
 	char *acp;
 
@@ -97,7 +99,7 @@ q_to_b(q, cp, cc)
 			cfreelist = bp;
 			cfreecount += CBSIZE;
 			if (cwaiting) {
-				wakeup(&cwaiting);
+				wakeup (&cwaiting);
 				cwaiting = 0;
 			}
 			break;
@@ -110,7 +112,7 @@ q_to_b(q, cp, cc)
 			cfreelist = bp;
 			cfreecount += CBSIZE;
 			if (cwaiting) {
-				wakeup(&cwaiting);
+				wakeup (&cwaiting);
 				cwaiting = 0;
 			}
 		}
@@ -124,7 +126,7 @@ q_to_b(q, cp, cc)
  * in clist starting at q->c_cf.
  * Stop counting if flag&character is non-null.
  */
-ndqb(q, flag)
+int ndqb (q, flag)
 	register struct clist *q;
 {
 	int cc;
@@ -162,9 +164,10 @@ out:
 /*
  * Flush cc bytes from q.
  */
-ndflush(q, cc)
+void
+ndflush (q, cc)
 	register struct clist *q;
-	register cc;
+	register int cc;
 {
 	register struct cblock *bp;
 	char *end;
@@ -189,7 +192,7 @@ ndflush(q, cc)
 			cfreelist = bp;
 			cfreecount += CBSIZE;
 			if (cwaiting) {
-				wakeup(&cwaiting);
+				wakeup (&cwaiting);
 				cwaiting = 0;
 			}
 		} else {
@@ -200,7 +203,7 @@ ndflush(q, cc)
 				cfreelist = bp;
 				cfreecount += CBSIZE;
 				if (cwaiting) {
-					wakeup(&cwaiting);
+					wakeup (&cwaiting);
 					cwaiting = 0;
 				}
 			}
@@ -215,12 +218,16 @@ out:
 	splx(s);
 }
 
-putc(c, p)
+/*
+ * Put a symbol to a character list.
+ */
+int
+putc (c, p)
 	register struct clist *p;
 {
 	register struct cblock *bp;
 	register char *cp;
-	register s;
+	register int s;
 
 	s = spltty();
 	if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
@@ -252,17 +259,18 @@ putc(c, p)
 }
 
 /*
- * copy buffer to clist.
- * return number of bytes not transfered.
+ * Copy buffer to clist.
+ * Return number of bytes not transfered.
  */
-b_to_q(cp, cc, q)
+int
+b_to_q (cp, cc, q)
 	register char *cp;
 	struct clist *q;
 	register int cc;
 {
 	register char *cq;
 	register struct cblock *bp;
-	register s, nc;
+	register int s, nc;
 	int acc;
 
 	if (cc <= 0)
@@ -311,7 +319,7 @@ out:
  * pointer becomes invalid.  Note that interrupts are NOT masked.
  */
 char *
-nextc(p, cp)
+nextc (p, cp)
 	register struct clist *p;
 	register char *cp;
 {
@@ -330,7 +338,8 @@ nextc(p, cp)
 /*
  * Remove the last character in the list and return it.
  */
-unputc(p)
+int
+unputc (p)
 	register struct clist *p;
 {
 	register struct cblock *bp;
@@ -372,11 +381,12 @@ unputc(p)
  * Put the chars in the from que
  * on the end of the to que.
  */
-catq(from, to)
+void
+catq (from, to)
 	register struct clist *from, *to;
 {
-	char bbuf[CBSIZE*4];
-	register c;
+	char bbuf [CBSIZE*4];
+	register int c;
 	int s;
 
 	s = spltty();
@@ -394,119 +404,3 @@ catq(from, to)
 		(void) b_to_q(bbuf, c, to);
 	}
 }
-
-#ifdef unneeded
-/*
- * Integer (short) get/put using clists.
- * Note dependency on byte order.
- */
-typedef	u_short word_t;
-
-getw(p)
-	register struct clist *p;
-{
-	register int s, c;
-	register struct cblock *bp;
-
-	if (p->c_cc <= 1)
-		return(-1);
-	if (p->c_cc & 01) {
-		c = getc(p);
-#if defined(vax)
-		return (c | (getc(p)<<8));
-#else
-		return (getc(p) | (c<<8));
-#endif
-	}
-	s = spltty();
-#if defined(vax)
-	c = *((word_t *)p->c_cf);
-#else
-	c = (((u_char *)p->c_cf)[1] << 8) | ((u_char *)p->c_cf)[0];
-#endif
-	p->c_cf += sizeof (word_t);
-	p->c_cc -= sizeof (word_t);
-	if (p->c_cc <= 0) {
-		bp = (struct cblock *)(p->c_cf-1);
-		bp = (struct cblock *)((int)bp & ~CROUND);
-		p->c_cf = NULL;
-		p->c_cl = NULL;
-		bp->c_next = cfreelist;
-		cfreelist = bp;
-		cfreecount += CBSIZE;
-		if (cwaiting) {
-			wakeup(&cwaiting);
-			cwaiting = 0;
-		}
-	} else if (((int)p->c_cf & CROUND) == 0) {
-		bp = (struct cblock *)(p->c_cf);
-		bp--;
-		p->c_cf = bp->c_next->c_info;
-		bp->c_next = cfreelist;
-		cfreelist = bp;
-		cfreecount += CBSIZE;
-		if (cwaiting) {
-			wakeup(&cwaiting);
-			cwaiting = 0;
-		}
-	}
-	splx(s);
-	return (c);
-}
-
-putw(c, p)
-	register struct clist *p;
-	word_t c;
-{
-	register s;
-	register struct cblock *bp;
-	register char *cp;
-
-	s = spltty();
-	if (cfreelist==NULL) {
-		splx(s);
-		return(-1);
-	}
-	if (p->c_cc & 01) {
-#if defined(vax)
-		(void) putc(c, p);
-		(void) putc(c>>8, p);
-#else
-		(void) putc(c>>8, p);
-		(void) putc(c, p);
-#endif
-	} else {
-		if ((cp = p->c_cl) == NULL || p->c_cc < 0 ) {
-			if ((bp = cfreelist) == NULL) {
-				splx(s);
-				return (-1);
-			}
-			cfreelist = bp->c_next;
-			cfreecount -= CBSIZE;
-			bp->c_next = NULL;
-			p->c_cf = cp = bp->c_info;
-		} else if (((int)cp & CROUND) == 0) {
-			bp = (struct cblock *)cp - 1;
-			if ((bp->c_next = cfreelist) == NULL) {
-				splx(s);
-				return (-1);
-			}
-			bp = bp->c_next;
-			cfreelist = bp->c_next;
-			cfreecount -= CBSIZE;
-			bp->c_next = NULL;
-			cp = bp->c_info;
-		}
-#if defined(vax)
-		*(word_t *)cp = c;
-#else
-		((u_char *)cp)[0] = c>>8;
-		((u_char *)cp)[1] = c;
-#endif
-		p->c_cl = cp + sizeof (word_t);
-		p->c_cc += sizeof (word_t);
-	}
-	splx(s);
-	return (0);
-}
-#endif /* unneeded */

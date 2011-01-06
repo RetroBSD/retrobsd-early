@@ -204,12 +204,12 @@ ioctl()
 	}
 	if (com & IOC_IN) {
 		if (size) {
-			if (((u_int) uap->cmarg | size) & 1)
-				u.u_error = vcopyin (uap->cmarg, (caddr_t) data, size);
-			else
-				u.u_error = copyin (uap->cmarg, (caddr_t) data, size);
-			if (u.u_error)
+			if (baduaddr ((unsigned) uap->cmarg) ||
+			    baduaddr ((unsigned) (uap->cmarg + size - 1))) {
+				u.u_error = EFAULT;
 				return;
+			}
+			bcopy (uap->cmarg, data, size);
 		} else
 			*(caddr_t*) data = uap->cmarg;
 	} else if ((com & IOC_OUT) && size)
@@ -240,11 +240,14 @@ ioctl()
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if (u.u_error == 0 && (com&IOC_OUT) && size)
-		if (((u_int) uap->cmarg | size) & 1)
-			u.u_error = vcopyout (data, uap->cmarg, size);
-		else
-			u.u_error = copyout (data, uap->cmarg, size);
+	if (u.u_error == 0 && (com & IOC_OUT) && size) {
+		if (baduaddr ((unsigned) uap->cmarg) ||
+		    baduaddr ((unsigned) (uap->cmarg + size - 1))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		bcopy (data, uap->cmarg, size);
+	}
 }
 
 int	nselcoll;
@@ -257,6 +260,43 @@ struct pselect_args {
 	struct	timespec *ts;
 	sigset_t	*maskp;
 };
+
+int
+selscan(ibits, obits, nfd, retval)
+	fd_set *ibits, *obits;
+	int nfd, *retval;
+{
+	register int i, j, flag;
+	fd_mask bits;
+	struct file *fp;
+	int	which, n = 0;
+
+	for (which = 0; which < 3; which++) {
+		switch (which) {
+		case 0:
+			flag = FREAD; break;
+		case 1:
+			flag = FWRITE; break;
+		case 2:
+			flag = 0; break;
+		}
+		for (i = 0; i < nfd; i += NFDBITS) {
+			bits = ibits[which].fds_bits[i/NFDBITS];
+			while ((j = ffs(bits)) && i + --j < nfd) {
+				bits &= ~(1L << j);
+				fp = u.u_ofile[i + j];
+				if (fp == NULL)
+					return(EBADF);
+				if ((*Fops[fp->f_type]->fo_select) (fp, flag)) {
+					FD_SET(i + j, &obits[which]);
+					n++;
+				}
+			}
+		}
+	}
+	*retval = n;
+	return(0);
+}
 
 /*
  * Select helper function common to both select() and pselect()
@@ -357,7 +397,7 @@ retry:
 		u.u_psflags |= SAS_OLDMASK;
 		u.u_procp->p_sigmask = sigmsk;
 	}
-	error = tsleep(&selwait, PSOCK | PCATCH, timo);
+	error = tsleep ((caddr_t) &selwait, PSOCK | PCATCH, timo);
 	if (uap->maskp)
 		u.u_procp->p_sigmask = u.u_oldmask;
 	splx(s);
@@ -421,43 +461,6 @@ pselect()
 	u.u_error = select1(uap, 1);
 }
 
-int
-selscan(ibits, obits, nfd, retval)
-	fd_set *ibits, *obits;
-	int nfd, *retval;
-{
-	register int i, j, flag;
-	fd_mask bits;
-	struct file *fp;
-	int	which, n = 0;
-
-	for (which = 0; which < 3; which++) {
-		switch (which) {
-		case 0:
-			flag = FREAD; break;
-		case 1:
-			flag = FWRITE; break;
-		case 2:
-			flag = 0; break;
-		}
-		for (i = 0; i < nfd; i += NFDBITS) {
-			bits = ibits[which].fds_bits[i/NFDBITS];
-			while ((j = ffs(bits)) && i + --j < nfd) {
-				bits &= ~(1L << j);
-				fp = u.u_ofile[i + j];
-				if (fp == NULL)
-					return(EBADF);
-				if ((*Fops[fp->f_type]->fo_select) (fp, flag)) {
-					FD_SET(i + j, &obits[which]);
-					n++;
-				}
-			}
-		}
-	}
-	*retval = n;
-	return(0);
-}
-
 /*ARGSUSED*/
 int
 seltrue(dev, flag)
@@ -468,13 +471,13 @@ seltrue(dev, flag)
 }
 
 void
-selwakeup(p, coll)
+selwakeup (p, coll)
 	register struct proc *p;
 	long coll;
 {
 	if (coll) {
 		nselcoll++;
-		wakeup((caddr_t)&selwait);
+		wakeup ((caddr_t)&selwait);
 	}
 	if (p) {
 		register int s = splhigh();

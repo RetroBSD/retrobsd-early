@@ -29,6 +29,7 @@ int	nlog = NLOG;
 #include "errno.h"
 #include "uio.h"
 #include "map.h"
+#include "systm.h"
 
 #define LOG_RDPRI	(PZERO + 1)
 
@@ -47,7 +48,7 @@ static struct logsoftc {
 
 /*ARGSUSED*/
 int
-logopen(dev, mode)
+logopen(dev, mode, unused)
 	dev_t dev;
 	int mode;
 {
@@ -69,7 +70,7 @@ logopen(dev, mode)
 
 /*ARGSUSED*/
 int
-logclose(dev, flag)
+logclose(dev, flag, unused)
 	dev_t	dev;
 	int	flag;
 {
@@ -197,7 +198,7 @@ logwakeup(unit)
 	if (lp->sc_state & LOG_ASYNC && (mp->msg_bufx != mp->msg_bufr)) {
 		if (lp->sc_pgid < 0)
 			gsignal(-lp->sc_pgid, SIGIO);
-		else if (p = pfind(lp->sc_pgid))
+		else if ((p = pfind(lp->sc_pgid)))
 			psignal(p, SIGIO);
 	}
 	if (lp->sc_state & LOG_RDWAIT) {
@@ -258,7 +259,7 @@ logioctl(dev, com, data, flag)
  * to be buffered would affect the networking code's use of printf.
 */
 int
-logwrt(buf,len,log)
+logwrt (buf, len, log)
 	char	*buf;
 	int	len;
 	int	log;
@@ -301,7 +302,7 @@ again:		infront = MSG_BSIZE - mp->msg_bufx;
 			 */
 			lp->sc_overrun++;
 			mp->msg_bufx = mp->msg_bufr;
-			goto	again;
+			goto again;
 		}
 		if (infront > len)
 			infront = len;
@@ -310,7 +311,7 @@ again:		infront = MSG_BSIZE - mp->msg_bufx;
 		len -= infront;
 		buf += infront;
 	}
-out:	splx(s);
+	splx(s);
 	return(err);
 }
 

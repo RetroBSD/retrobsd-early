@@ -79,8 +79,7 @@ ptrace()
 int
 procxmt()
 {
-	register int i;
-	register *p;
+	register int i, *p;
 	register struct text *xp;
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
@@ -115,17 +114,17 @@ procxmt()
 		/*
 		 * If text, must assure exclusive use
 		 */
-		if (xp = u.u_procp->p_textp) {
+		xp = u.u_procp->p_textp;
+		if (xp) {
 			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
 				goto error;
 			xp->x_flag |= XTRC;
 		}
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 1);
-		i = suiword((caddr_t)ipc.ip_addr, 0);
-		suiword((caddr_t)ipc.ip_addr, ipc.ip_data);
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 0);
-		if (i<0)
+		if (baduaddr ((unsigned) ipc.ip_addr))
 			goto error;
+		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 1);
+		bcopy ((caddr_t) &ipc.ip_data, (caddr_t) ipc.ip_addr, sizeof(int));
+		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 0);
 		if (xp)
 			xp->x_flag |= XWRIT;
 		break;

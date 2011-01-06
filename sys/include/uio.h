@@ -63,5 +63,10 @@ struct uio {
  */
 int uiomove (caddr_t cp, u_int n, struct uio *uio);
 
+/*
+ * Give next character to user as result of read.
+ */
+int ureadc (int c, struct uio *uio);
+
 #endif /* KERNEL */
 #endif /* !_SYS_UIO_H_ */

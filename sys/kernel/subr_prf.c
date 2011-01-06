@@ -48,8 +48,10 @@ putchar (c, flags, tp)
 		}
 		splx(s);
 	}
-	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177)
-		logwrt(&c, 1, logMSG);
+	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177) {
+		char sym = c;
+		logwrt (&sym, 1, logMSG);
+	}
 	if ((flags & TOCONS) && c != '\0')
 		cnputc(c);
 }
@@ -82,7 +84,7 @@ printn (n, b, flags, ttyp)
 		}
 	do {
 		*cp++ = "0123456789ABCDEF"[offset + n%b];
-	} while (n = n/b);	/* Avoid  n /= b, since that requires alrem */
+	} while ((n /= b));
 	do {
 		putchar(*--cp, flags, ttyp);
 	} while (cp > prbuf);
@@ -157,7 +159,7 @@ number:		printn((long)*adx, b, flags, ttyp);
 		printn((long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
-			while (i = *s++) {
+			while ((i = *s++)) {
 				if (b & (1 << (i - 1))) {
 					putchar(any? ',' : '<', flags, ttyp);
 					any = 1;
@@ -173,7 +175,7 @@ number:		printn((long)*adx, b, flags, ttyp);
 		break;
 	case 's':
 		s = (char *)*adx;
-		while (c = *s++)
+		while ((c = *s++))
 			putchar(c, flags, ttyp);
 		break;
 	case '%':
@@ -283,12 +285,12 @@ tprintf(tp, fmt, x1)
 void
 log (int level, char *fmt, ...)
 {
-	register s = splhigh();
+	register int s = splhigh();
 
 	logpri(level);
 	prf(fmt, &fmt + 1, TOLOG, (struct tty *)0);
 	splx(s);
-	if (!logisopen(logMSG))
+	if (! logisopen(logMSG))
 		prf(fmt, &fmt + 1, TOCONS, (struct tty *)0);
 	logwakeup(logMSG);
 }

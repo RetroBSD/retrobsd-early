@@ -281,3 +281,14 @@ wait4()
 	if (! u.u_error)
 		u.u_r.r_val1 = retval[0];
 }
+
+void
+reboot()
+{
+	struct a {
+		int	opt;
+	};
+
+	if (suser ())
+		boot (rootdev, ((struct a*)u.u_ap)->opt);
+}

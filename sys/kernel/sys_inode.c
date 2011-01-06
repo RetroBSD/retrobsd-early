@@ -209,7 +209,7 @@ rwip (ip, uio, ioflag)
 	 * This behaviour should probably be selectable via "sysctl fs.async.dirs" and
 	 * "fs.async.ofsync".  A project for a rainy day.
 	 */
-	if (type == IFREG  || type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC))
+	if (type == IFREG || (type == IFDIR && (ip->i_fs->fs_flags & MNT_ASYNC)))
 		ioflag &= ~IO_SYNC;
 
 	if (type == IFCHR) {
@@ -253,7 +253,7 @@ rwip (ip, uio, ioflag)
 			} else
 				bn = bmap(ip,lbn,B_WRITE,
 				       n == DEV_BSIZE ? flags : flags|B_CLRBUF);
-			if (u.u_error || uio->uio_rw == UIO_WRITE && (long)bn<0)
+			if (u.u_error || (uio->uio_rw == UIO_WRITE && (long)bn < 0))
 				return (u.u_error);
 			if (uio->uio_rw == UIO_WRITE && uio->uio_offset + n > ip->i_size &&
 			   (type == IFDIR || type == IFREG || type == IFLNK))
@@ -263,19 +263,19 @@ rwip (ip, uio, ioflag)
 			rablock = bn + 1;
 		}
 		if (uio->uio_rw == UIO_READ) {
-			if ((long)bn<0) {
+			if ((long)bn < 0) {
 				bp = geteblk();
-				clrbuf(bp);
+				bzero (bp->b_addr, MAXBSIZE);
 			} else if (ip->i_lastr + 1 == lbn)
-				bp = breada(dev, bn, rablock);
+				bp = breada (dev, bn, rablock);
 			else
-				bp = bread(dev, bn);
+				bp = bread (dev, bn);
 			ip->i_lastr = lbn;
 		} else {
 			if (n == DEV_BSIZE)
-				bp = getblk(dev, bn);
+				bp = getblk (dev, bn);
 			else
-				bp = bread(dev, bn);
+				bp = bread (dev, bn);
 			/*
 			 * 4.3 didn't do this, but 2.10 did.  not sure why.
 			 * something about tape drivers don't clear buffers on end-of-tape
@@ -283,7 +283,7 @@ rwip (ip, uio, ioflag)
 			 */
 			if (bp->b_resid == DEV_BSIZE) {
 				bp->b_resid = 0;
-				clrbuf(bp);
+				bzero (bp->b_addr, MAXBSIZE);
 			}
 		}
 		n = MIN(n, DEV_BSIZE - bp->b_resid);
@@ -414,7 +414,7 @@ closei (ip, flag)
 		/* MOUNT TABLE SHOULD HOLD INODE */
 		for (mp = mount; mp < &mount[NMOUNT]; mp++)
 			if (mp->m_inodp != NULL && mp->m_dev == dev)
-				return;
+				return(0);
 		cfunc = bdevsw[major(dev)].d_close;
 		break;
 	default:

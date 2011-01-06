@@ -86,23 +86,45 @@ int	boothowto;		/* reboot flags, from boot */
 int	selwait;
 size_t	physmem;		/* total amount of physical memory */
 
-extern	char	regloc[];	/* offsets of saved user registers (trap.c) */
+extern const int regloc[];	/* offsets of saved user registers (trap.c) */
 
 void panic (char *msg);
 void printf (char *fmt, ...);
 int loginit (void);
 void log (int level, char *fmt, ...);
-void tablefull (char *tab);	/* warn that a system table is full */
+int logwrt (char *buf, int len, int log);
+void logwakeup (int unit);
+void cnputc (char c);
+void tablefull (char *tab);		/* warn that a system table is full */
 
-void bzero (void *s, size_t n);
-void bcopy (const void *src, void *dest, size_t n);
+void bzero (void *s, size_t nbytes);
+void bcopy (const void *src, void *dest, size_t nbytes);
+int bcmp (const void *a, void *b, size_t nbytes);
 int copystr (caddr_t src, caddr_t dest, u_int maxlen, u_int *copied);
 size_t strlen (const char *s);
-int ffs (u_long i);		/* find the index of the lsb set bit */
+int ffs (u_long i);			/* find the index of the lsb set bit */
 
-void startup (void);		/* machine-dependent startup code */
-int chrtoblk (dev_t dev);	/* convert from character to block device number */
-int blktochr (dev_t dev);	/* convert from block to character device number */
+void startup (void);			/* machine-dependent startup code */
+int chrtoblk (dev_t dev);		/* convert from character to block device number */
+int blktochr (dev_t dev);		/* convert from block to character device number */
+int isdisk (dev_t dev, int type);	/* determine if a device is a disk */
+int iskmemdev (dev_t dev);		/* identify /dev/mem and /dev/kmem */
+void boot (dev_t dev, int howto);
+
+/*
+ * Free the swap image of all unused saved-text text segments on dev.
+ */
+void xumount (dev_t dev);
+
+/*
+ * Free up "size" core.
+ */
+void xuncore (size_t size);
+
+/*
+ * Wake up all processes sleeping on chan.
+ */
+void wakeup (caddr_t chan);
 
 /*
  * Syscalls.

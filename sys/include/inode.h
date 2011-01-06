@@ -200,6 +200,9 @@ enum uio_rw;
 int rdwri (enum uio_rw rw, struct inode *ip, caddr_t base, int len,
 	off_t offset, int ioflg, int *aresid);
 
+struct uio;
+int rwip (struct inode *ip, struct uio *uio, int ioflag);
+
 /*
  * Check mode permission on inode pointer.
  */
@@ -230,6 +233,11 @@ int ino_stat (struct inode *ip, struct stat *sb);
  * Truncate the inode ip to at most length size.
  */
 void itrunc (struct inode *oip, u_long length, int ioflags);
+
+/*
+ * Check that device is mounted somewhere.
+ */
+int ufs_mountedon (dev_t dev);
 
 #endif /* KERNEL */
 

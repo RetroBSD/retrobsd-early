@@ -82,7 +82,7 @@ softclock(pc, ps)
 	for (;;) {
 		register struct callout *p1;
 		register caddr_t arg;
-		register void (*func) (caddr_t, int);
+		register void (*func) (caddr_t);
 		register int a, s;
 
 		s = splhigh();
@@ -90,12 +90,14 @@ softclock(pc, ps)
 			splx(s);
 			break;
 		}
-		arg = p1->c_arg; func = p1->c_func; a = p1->c_time;
+		arg = p1->c_arg;
+		func = p1->c_func;
+		a = p1->c_time;
 		calltodo.c_next = p1->c_next;
 		p1->c_next = callfree;
 		callfree = p1;
 		splx(s);
-		(*func)(arg, a);
+		(*func) (arg);
 	}
 	/*
 	 * If trapped user-mode and profiling, give it
@@ -251,8 +253,8 @@ hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
  * Arrange that (*fun)(arg) is called in t/hz seconds.
  */
 void
-timeout(fun, arg, t)
-	void (*fun) (caddr_t, int);
+timeout (fun, arg, t)
+	void (*fun) (caddr_t);
 	caddr_t arg;
 	register int t;
 {
@@ -284,7 +286,7 @@ timeout(fun, arg, t)
  */
 void
 untimeout (fun, arg)
-	void (*fun) (caddr_t, int);
+	void (*fun) (caddr_t);
 	caddr_t arg;
 {
 	register struct callout *p1, *p2;

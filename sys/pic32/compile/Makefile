@@ -45,7 +45,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_mman.o kern_proc.o kern_prot.o \
 		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \
 		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
-		   kern_xxx.o subr_log.o subr_prf.o subr_rmap.o \
+		   subr_log.o subr_prf.o subr_rmap.o \
 		   syscalls.o sys_generic.o sys_inode.o \
 		   sys_pipe.o sys_process.o tty.o tty_conf.o \
 		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \

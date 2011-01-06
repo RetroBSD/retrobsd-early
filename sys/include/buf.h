@@ -108,6 +108,11 @@ struct buf *bread (dev_t dev, daddr_t blkno);
 struct buf *breada (dev_t dev, daddr_t blkno, daddr_t rablkno);
 
 /*
+ * Write the buffer, waiting for completion. Then release the buffer.
+ */
+void bwrite (struct buf *bp);
+
+/*
  * Release the buffer, with delayed write.
  */
 void bdwrite (struct buf *bp);
@@ -126,6 +131,16 @@ void biowait (struct buf *bp);
  * See if the block is associated with some buffer.
  */
 int incore (dev_t dev, daddr_t blkno);
+
+/*
+ * Make sure all write-behind blocks on dev are flushed out.
+ */
+void bflush (dev_t dev);
+
+/*
+ * Invalidate in core blocks belonging to closed or umounted filesystem.
+ */
+void binval (dev_t dev);
 
 #endif /* KERNEL */
 

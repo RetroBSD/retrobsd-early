@@ -22,7 +22,7 @@ static int savhasmap;
  * Offsets of the user's registers relative to
  * the saved r0.  See sys/reg.h.
  */
-char regloc[] = {
+const int regloc[] = {
 	R0, R1, R2, R3, R4, R5, R6, R7, RPS
 };
 

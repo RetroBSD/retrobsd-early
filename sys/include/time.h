@@ -71,7 +71,24 @@ struct	itimerval {
 	struct	timeval it_value;	/* current value */
 };
 
-#ifndef KERNEL
+#ifdef KERNEL
+/*
+ * Round up a proposed time value to a minimal resolution of the clock.
+ */
+int itimerfix (struct timeval *tv);
+
+/*
+ * Add and subtract routines for timevals.
+ */
+void timevaladd (struct timeval *t1, struct timeval *t2);
+void timevalsub (struct timeval *t1, struct timeval *t2);
+
+/*
+ * Compute number of hz until specified time.
+ */
+int hzto (struct timeval *tv);
+
+#else
 #include <time.h>
 #endif
 

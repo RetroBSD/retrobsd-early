@@ -93,7 +93,7 @@ struct tty {
 
 #ifdef KERNEL
 
-short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
+const int tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
@@ -128,6 +128,26 @@ int getc (struct clist *p);
 char *nextc (struct clist *p, char *cp);
 
 /*
+ * Put a symbol to a character list.
+ */
+int putc (int c, struct clist *p);
+
+/*
+ * Remove the last character in the list and return it.
+ */
+int unputc (struct clist *p);
+
+/*
+ * Put the chars in the from que on the end of the to que.
+ */
+void catq (struct clist *from, struct clist *to);
+
+/*
+ * Copy buffer to clist.
+ */
+int b_to_q (char *cp, int nbytes, struct clist *q);
+
+/*
  * Common code for tty ioctls.
  */
 int ttioctl (struct tty *tp, u_int com, caddr_t data, int flag);
@@ -145,6 +165,11 @@ void ttwakeup (struct tty *tp);
 void ttyinput (int c, struct tty *tp);
 
 /*
+ * Put character on TTY output queue.
+ */
+int ttyoutput (int c, struct tty *tp);
+
+/*
  * Initial open of tty, or (re)entry to line discipline.
  */
 int ttyopen (dev_t dev, struct tty *tp);
@@ -153,6 +178,11 @@ int ttyopen (dev_t dev, struct tty *tp);
  * Close a line discipline.
  */
 int ttylclose (struct tty *tp, int flag);
+
+/*
+ * Check the output queue for space.
+ */
+int ttycheckoutq (struct tty *tp, int wait);
 
 /*
  * Called from device's read routine after it has
@@ -171,6 +201,11 @@ int ttymodem (struct tty *tp, int flag);
  * Check that input or output is possible on a terminal.
  */
 int ttyselect (struct tty *tp, int rw);
+
+/*
+ * Flush all TTY queues.
+ */
+void ttyflush (struct tty *tp, int rw);
 
 #endif /* KERNEL */
 

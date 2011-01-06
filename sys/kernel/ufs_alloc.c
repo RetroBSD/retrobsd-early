@@ -86,7 +86,7 @@ balloc(ip, flags)
 	bp = getblk(ip->i_dev, bno);
 	bp->b_resid = 0;
 	if (flags & B_CLRBUF)
-		clrbuf(bp);
+		bzero (bp->b_addr, MAXBSIZE);
 	fs->fs_fmod = 1;
 	fs->fs_tfree--;
 	return(bp);
