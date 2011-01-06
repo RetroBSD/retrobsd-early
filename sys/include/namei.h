@@ -72,6 +72,21 @@ extern int	nchsize;
  */
 void nchinit (void);
 
+/*
+ * Common code for vnode open operations.
+ */
+int vn_open (struct nameidata *ndp, int fmode, int cmode);
+
+/*
+ * Write a directory entry after a call to namei.
+ */
+int direnter (struct inode *ip, struct nameidata *ndp);
+
+/*
+ * Remove a directory entry after a call to namei.
+ */
+int dirremove (struct nameidata *ndp);
+
 #endif /* KERNEL */
 
 /*

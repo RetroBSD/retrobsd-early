@@ -19,7 +19,7 @@
 #define	TR_BREADMISSRA	4	/* buffer read-ahead not in cache */
 #define	TR_BRELSE	5	/* brelse */
 #define	TR_SWAPIO	6	/* swap i/o request arrives */
-#define	TR_NUM_210	7	/* size of array for 2.10BSD
+#define	TR_NUM_210	7	/* size of array for 2.10BSD */
 
 #define	TR_XFODMISS	5	/* exe fod read */
 #define	TR_XFODHIT	6	/* exe fod read */

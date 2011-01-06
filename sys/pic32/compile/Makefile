@@ -76,7 +76,7 @@ machine:
 		ln -s .. $@
 
 unix:		${KERNOBJ}
-		$(CC) -nostdlib -T using-bootloader.ld ${KERNOBJ} -r -o unix
+		$(CC) -nostdlib -T using-bootloader.ld ${KERNOBJ} -o unix
 		$(SIZE) unix
 
 vers.o:		${H}/*.h ${M}/*.[ch] ${S}/*.c ${D}/*.[ch]

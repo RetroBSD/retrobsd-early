@@ -131,7 +131,8 @@ loop:
 			if (ip->i_count == 0) {		/* ino on free list */
 				register struct inode *iq;
 
-				if (iq = ip->i_freef)
+				iq = ip->i_freef;
+				if (iq)
 					iq->i_freeb = ip->i_freeb;
 				else
 					ifreet = ip->i_freeb;
@@ -151,13 +152,14 @@ loop:
 	}
 	if (ip->i_count)
 		panic("free inode isn't");
-{
+	{
 	register struct inode *iq;
 
-	if (iq = ip->i_freef)
+	iq = ip->i_freef;
+	if (iq)
 		iq->i_freeb = &ifreeh;
 	ifreeh = iq;
-}
+	}
 	ip->i_freef = NULL;
 	ip->i_freeb = NULL;
 	/*
@@ -218,7 +220,8 @@ loop:
  * filesystems.  It is caller's responsibility to check that
  * the inode pointer is valid.
  */
-igrab(ip)
+void
+igrab (ip)
 	register struct inode *ip;
 {
 	while ((ip->i_flag&ILOCKED) != 0) {
@@ -228,7 +231,8 @@ igrab(ip)
 	if (ip->i_count == 0) {		/* ino on free list */
 		register struct inode *iq;
 
-		if (iq = ip->i_freef)
+		iq = ip->i_freef;
+		if (iq)
 			iq->i_freeb = ip->i_freeb;
 		else
 			ifreet = ip->i_freeb;
@@ -264,7 +268,8 @@ iput (ip)
 	irele(ip);
 }
 
-irele(ip)
+void
+irele (ip)
 	register struct inode *ip;
 {
 	if (ip->i_count == 1) {
@@ -311,7 +316,8 @@ irele(ip)
  * If waitfor set, then must insure
  * i/o order so wait for the write to complete.
  */
-iupdat(ip, ta, tm, waitfor)
+void
+iupdat (ip, ta, tm, waitfor)
 	struct inode *ip;
 	struct timeval *ta, *tm;
 	int waitfor;
@@ -350,6 +356,131 @@ iupdat(ip, ta, tm, waitfor)
 #define	SINGLE	0	/* index of single indirect block */
 #define	DOUBLE	1	/* index of double indirect block */
 #define	TRIPLE	2	/* index of triple indirect block */
+
+static void
+trsingle (ip, bp, last, aflags)
+	register struct inode *ip;
+	struct buf *bp;
+	daddr_t last;
+	int aflags;
+{
+	register daddr_t *bstart, *bstop;
+	daddr_t blarray[NINDIR];
+
+	bcopy (bp->b_addr, blarray, NINDIR * sizeof(daddr_t));
+	bstart = &blarray[NINDIR - 1];
+	bstop = &blarray[last];
+	for (; bstart > bstop; --bstart)
+		if (*bstart)
+			free (ip, *bstart);
+}
+
+/*
+ * Release blocks associated with the inode ip and
+ * stored in the indirect block bn.  Blocks are free'd
+ * in LIFO order up to (but not including) lastbn.  If
+ * level is greater than SINGLE, the block is an indirect
+ * block and recursive calls to indirtrunc must be used to
+ * cleanse other indirect blocks.
+ *
+ * NB: triple indirect blocks are untested.
+ */
+void
+indirtrunc (ip, bn, lastbn, level, aflags)
+	struct inode *ip;
+	daddr_t bn, lastbn;
+	int level;
+	int aflags;
+{
+	register struct buf *bp;
+	daddr_t nb, last;
+	long factor;
+
+	/*
+	 * Calculate index in current block of last
+	 * block to be kept.  -1 indicates the entire
+	 * block so we need not calculate the index.
+	 */
+	switch (level) {
+	default:
+	case SINGLE:
+		factor = 1;
+		break;
+	case DOUBLE:
+		factor = NINDIR;
+		break;
+	case TRIPLE:
+		factor = NINDIR * NINDIR;
+		break;
+	}
+	last = lastbn;
+	if (lastbn > 0)
+		last = last / factor;
+	/*
+	 * Get buffer of block pointers, zero those
+	 * entries corresponding to blocks to be free'd,
+	 * and update on disk copy first.
+	 */
+	{
+		register daddr_t *bap;
+		register struct buf *cpy;
+
+		bp = bread(ip->i_dev, bn);
+		if (bp->b_flags&B_ERROR) {
+			brelse(bp);
+			return;
+		}
+		cpy = geteblk();
+		bcopy (bp->b_addr, cpy->b_addr, DEV_BSIZE);
+		bap = (daddr_t*) bp->b_addr;
+		bzero((caddr_t)&bap[last + 1],
+		    (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
+		if (aflags & B_SYNC)
+			bwrite(bp);
+		else
+			bawrite(bp);
+		bp = cpy;
+	}
+
+	/*
+	 * Optimized for single indirect blocks, i.e. until a file is
+	 * greater than 4K + 256K you don't have to do a mapin/mapout
+	 * for every entry.  The mapin/mapout is required since free()
+	 * may have to map an item in.  Have to use another routine
+	 * since it requires 1K of kernel stack to get around the problem
+	 * and that doesn't work well with recursion.
+	 */
+	if (level == SINGLE)
+		trsingle (ip, bp, last, aflags);
+	else {
+		register daddr_t *bstart, *bstop;
+
+		bstart = (daddr_t*) bp->b_addr;
+		bstop = &bstart[last];
+		bstart += NINDIR - 1;
+		/*
+		 * Recursively free totally unused blocks.
+		 */
+		for (;bstart > bstop;--bstart) {
+			nb = *bstart;
+			if (nb) {
+				indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
+				free(ip, nb);
+			}
+		}
+
+		/*
+		 * Recursively free last partial block.
+		 */
+		if (lastbn >= 0) {
+			nb = *bstop;
+			last = lastbn % factor;
+			if (nb != 0)
+				indirtrunc(ip, nb, last, level - 1, aflags);
+		}
+	}
+	brelse(bp);
+}
 
 /*
  * Truncate the inode ip to at most
@@ -500,131 +631,8 @@ updret:
 	iupdat(oip, &time, &time, 1);
 }
 
-static
-trsingle(ip, bp, last, aflags)
-	register struct inode *ip;
-	struct buf *bp;
-	daddr_t last;
-	int aflags;
-{
-	register daddr_t *bstart, *bstop;
-	daddr_t blarray[NINDIR];
-
-	bcopy (bp->b_addr, blarray, NINDIR * sizeof(daddr_t));
-	bstart = &blarray[NINDIR - 1];
-	bstop = &blarray[last];
-	for (;bstart > bstop;--bstart)
-		if (*bstart)
-			free(ip, *bstart);
-}
-
 /*
- * Release blocks associated with the inode ip and
- * stored in the indirect block bn.  Blocks are free'd
- * in LIFO order up to (but not including) lastbn.  If
- * level is greater than SINGLE, the block is an indirect
- * block and recursive calls to indirtrunc must be used to
- * cleanse other indirect blocks.
- *
- * NB: triple indirect blocks are untested.
- */
-indirtrunc(ip, bn, lastbn, level, aflags)
-	struct inode *ip;
-	daddr_t bn, lastbn;
-	int level;
-	int aflags;
-{
-	register struct buf *bp;
-	daddr_t nb, last;
-	long factor;
-
-	/*
-	 * Calculate index in current block of last
-	 * block to be kept.  -1 indicates the entire
-	 * block so we need not calculate the index.
-	 */
-	switch(level) {
-		case SINGLE:
-			factor = 1;
-			break;
-		case DOUBLE:
-			factor = NINDIR;
-			break;
-		case TRIPLE:
-			factor = NINDIR * NINDIR;
-			break;
-	}
-	last = lastbn;
-	if (lastbn > 0)
-		last = last / factor;
-	/*
-	 * Get buffer of block pointers, zero those
-	 * entries corresponding to blocks to be free'd,
-	 * and update on disk copy first.
-	 */
-	{
-		register daddr_t *bap;
-		register struct buf *cpy;
-
-		bp = bread(ip->i_dev, bn);
-		if (bp->b_flags&B_ERROR) {
-			brelse(bp);
-			return;
-		}
-		cpy = geteblk();
-		copy (bftopaddr(bp), bftopaddr(cpy), DEV_BSIZE);
-		bap = (daddr_t*) bp->b_addr;
-		bzero((caddr_t)&bap[last + 1],
-		    (u_int)(NINDIR - (last + 1)) * sizeof(daddr_t));
-		if (aflags & B_SYNC)
-			bwrite(bp);
-		else
-			bawrite(bp);
-		bp = cpy;
-	}
-
-	/*
-	 * Optimized for single indirect blocks, i.e. until a file is
-	 * greater than 4K + 256K you don't have to do a mapin/mapout
-	 * for every entry.  The mapin/mapout is required since free()
-	 * may have to map an item in.  Have to use another routine
-	 * since it requires 1K of kernel stack to get around the problem
-	 * and that doesn't work well with recursion.
-	 */
-	if (level == SINGLE)
-		trsingle(ip, bp, last, aflags);
-	else {
-		register daddr_t *bstart, *bstop;
-
-		bstart = (daddr_t*) bp->b_addr;
-		bstop = &bstart[last];
-		bstart += NINDIR - 1;
-		/*
-		 * Recursively free totally unused blocks.
-		 */
-		for (;bstart > bstop;--bstart) {
-			nb = *bstart;
-			if (nb) {
-				indirtrunc(ip,nb,(daddr_t)-1, level-1, aflags);
-				free(ip, nb);
-			}
-		}
-
-		/*
-		 * Recursively free last partial block.
-		 */
-		if (lastbn >= 0) {
-			nb = *bstop;
-			last = lastbn % factor;
-			if (nb != 0)
-				indirtrunc(ip, nb, last, level - 1, aflags);
-		}
-	}
-	brelse(bp);
-}
-
-/*
- * remove any inodes in the inode cache belonging to dev
+ * Remove any inodes in the inode cache belonging to dev.
  *
  * There should not be any active ones, return error if any are found
  * (nb: this is a user error, not a system err)
@@ -636,7 +644,8 @@ indirtrunc(ip, bn, lastbn, level, aflags)
  *
  * this is called from sumount() when dev is being unmounted
  */
-iflush(dev)
+int
+iflush (dev)
 	dev_t dev;
 {
 	register struct inode *ip;

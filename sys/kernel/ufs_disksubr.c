@@ -267,7 +267,7 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 	 * Copy in mapped out label to the local copy on the stack.  We're in the
 	 * high kernel at this point so saving the mapping is not necessary.
 	 */
-	bcopy(disk->dk_label, lp, sizeof (*lp));
+	bcopy ((void*) disk->dk_label, lp, sizeof (*lp));
 
 	switch (cmd) {
 	case DIOCGDINFO:
@@ -305,8 +305,8 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 		 * update the partition tables (which are resident in the kernel).
 		 */
 		if (error == 0) 	{
-			bcopy(lp, disk->dk_label, sizeof (*lp));
-			bcopy(&lp->d_partitions, &disk->dk_parts,
+			bcopy (lp, (void*) disk->dk_label, sizeof (*lp));
+			bcopy (&lp->d_partitions, &disk->dk_parts,
 				sizeof (lp->d_partitions));
 		}
 		return(error);
@@ -322,8 +322,8 @@ ioctldisklabel(dev, cmd, data, flag, disk, strat)
 		 * Copy to external label.  Ah - need to also update the kernel resident
 		 * partition tables!
 		 */
-		bcopy(lp, disk->dk_label, sizeof (*lp));
-		bcopy(&lp->d_partitions, &disk->dk_parts,
+		bcopy (lp, (void*) disk->dk_label, sizeof (*lp));
+		bcopy (&lp->d_partitions, &disk->dk_parts,
 			sizeof (lp->d_partitions));
 
 		/*

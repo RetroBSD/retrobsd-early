@@ -259,3 +259,37 @@ baduaddr (addr)
 		return 0;
 	return 1;
 }
+
+/*
+ * Insert the specified element into a queue immediately after
+ * the specified predecessor element.
+ */
+void insque (void *element, void *predecessor)
+{
+	struct que {
+		struct que *q_next;
+		struct que *q_prev;
+	};
+	register struct que *e = (struct que *) element;
+	register struct que *prev = (struct que *) predecessor;
+
+	e->q_prev = prev;
+	e->q_next = prev->q_next;
+	prev->q_next->q_prev = e;
+	prev->q_next = e;
+}
+
+/*
+ * Remove the specified element from the queue.
+ */
+void remque (void *element)
+{
+	struct que {
+		struct que *q_next;
+		struct que *q_prev;
+	};
+	register struct que *e = (struct que *) element;
+
+	e->q_prev->q_next = e->q_next;
+	e->q_next->q_prev = e->q_prev;
+}

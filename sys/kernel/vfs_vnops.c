@@ -59,115 +59,102 @@
  * Check permissions, and call the VOP_OPEN (openi for 2.11) or VOP_CREATE
  * (maknode) routine.
  */
-vn_open(ndp, fmode, cmode)
+int
+vn_open (ndp, fmode, cmode)
 	register struct nameidata *ndp;
 	int fmode, cmode;
-	{
+{
 	register struct inode *ip;
 	register int error;
 
-	if	(fmode & O_CREAT)
-		{
-		if	((fmode & O_EXCL) == 0)
+	if (fmode & O_CREAT) {
+		if ((fmode & O_EXCL) == 0)
 			ndp->ni_nameiop |= (CREATE|FOLLOW);
 		else
 			ndp->ni_nameiop= CREATE;
 		ip = namei(ndp);
-		if	(ip == NULL)
-			{
-			if	(u.u_error)
+		if (ip == NULL) {
+			if (u.u_error)
 				goto retuerr;
 			ip = maknode(cmode, ndp);
-			if	(ip == NULL)
+			if (ip == NULL)
 				goto retuerr;
 			fmode &= ~O_TRUNC;
-			}
-		else
-			{
-			if	(fmode & O_EXCL)
-				{
+		} else {
+			if (fmode & O_EXCL) {
 				error = EEXIST;
 				goto bad;
-				}
-			fmode &= ~O_CREAT;
 			}
+			fmode &= ~O_CREAT;
 		}
-	else
-		{
+	} else {
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
 		ip = namei(ndp);
-		if	(ip == NULL)
+		if (ip == NULL)
 			goto retuerr;
-		}
-	if	((ip->i_mode & IFMT) == IFSOCK)
-		{
+	}
+	if ((ip->i_mode & IFMT) == IFSOCK) {
 		error = EOPNOTSUPP;
 		goto bad;
-		}
-	if	((ip->i_flags & APPEND) && (fmode&(FWRITE|O_APPEND)) == FWRITE)
-		{
+	}
+	if ((ip->i_flags & APPEND) && (fmode&(FWRITE|O_APPEND)) == FWRITE) {
 		error = EPERM;
 		goto bad;
-		}
-	if	((fmode & O_CREAT) == 0)
-		{
-		if	(fmode & FREAD)
-			{
-			if	(access(ip, IREAD))
-				{
+	}
+	if ((fmode & O_CREAT) == 0) {
+		if (fmode & FREAD) {
+			if (access(ip, IREAD)) {
 				error = u.u_error;	/* XXX */
 				goto bad;
-				}
 			}
-		if	(fmode & (FWRITE | O_TRUNC))
-			{
-			if	((ip->i_mode & IFMT) == IFDIR)
-				{
+		}
+		if (fmode & (FWRITE | O_TRUNC)) {
+			if ((ip->i_mode & IFMT) == IFDIR) {
 				error = EISDIR;
 				goto bad;
-				}
-			if	(access(ip, IWRITE))
-				{
+			}
+			if (access(ip, IWRITE)) 	{
 				error = u.u_error;
 				goto bad;
-				}
 			}
 		}
-	if	(fmode & O_TRUNC)
+	}
+	if (fmode & O_TRUNC)
 		itrunc(ip, (off_t)0, fmode & O_FSYNC ? IO_SYNC : 0);
-/*
- * 4.4 returns the vnode locked from vn_open which means that each caller
- * has to go and unlock it.
- *
- * 2.11 returns the inode unlocked (for now).
-*/
+	/*
+	 * 4.4 returns the vnode locked from vn_open which means that each caller
+	 * has to go and unlock it.
+	 *
+	 * 2.11 returns the inode unlocked (for now).
+	 */
 	iunlock(ip);		/* because namei returns a locked inode */
-	if	(setjmp(&u.u_qsave))
-		{
+	if (setjmp(&u.u_qsave)) {
 		error = EINTR;	/* opens are not restarted after signals */
 		goto lbad;
-		}
-	if	(error = openi(ip, fmode))
+	}
+	error = openi (ip, fmode);
+	if (error)
 		goto lbad;
 	return(0);
-/*
- * Gratuitous lock but it does (correctly) implement the earlier behaviour of
- * copen (it also avoids a panic in iput).
-*/
 
+	/*
+	 * Gratuitous lock but it does (correctly) implement the earlier behaviour of
+	 * copen (it also avoids a panic in iput).
+	 */
 lbad:
 	ilock(ip);
 
 bad:
-/*
- * Do NOT do an 'ilock' here - this tag is to be used only when the inode is
- * locked (i.e. from namei).
-*/
+	/*
+	 * Do NOT do an 'ilock' here - this tag is to be used only when the inode is
+	 * locked (i.e. from namei).
+	 */
 	iput(ip);
 	return(error);
+
 retuerr:
 	return(u.u_error);	/* XXX - Bletch */
-	}
+}
 
 /*
  * Inode close call.  Pipes and sockets do NOT enter here.  This routine is
@@ -179,6 +166,7 @@ retuerr:
  * while vn_closefile (called from the closef routine for DTYPE_INODE inodes)
  * takes a "file *" and extracts the flags from the file structure.
  */
+int
 vn_close(ip, flags)
 	register struct inode *ip;
 	int flags;

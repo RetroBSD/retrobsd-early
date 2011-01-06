@@ -12,6 +12,8 @@
 #include "file.h"
 #include "stat.h"
 #include "kernel.h"
+#include "proc.h"
+#include "text.h"
 
 /*
  * Common routine for chroot and chdir.
@@ -301,11 +303,14 @@ symlink()
 
 	tp = uap->target;
 	nc = 0;
-	while (c = fubyte(tp)) {
-		if (c < 0) {
+	for (;;) {
+		if (baduaddr ((unsigned) tp)) {
 			u.u_error = EFAULT;
 			return;
 		}
+		c = (u_char) *tp;
+		if (c == 0)
+			break;
 		tp++;
 		nc++;
 	}

@@ -11,6 +11,8 @@
 #include "user.h"
 #include "kernel.h"
 #include "mount.h"
+#include "proc.h"
+#include "systm.h"
 
 typedef	struct fblk *FBLKP;
 
@@ -41,7 +43,7 @@ balloc(ip, flags)
 		if (fs->fs_nfree <= 0)
 			goto nospace;
 		if (fs->fs_nfree > NICFREE) {
-			fserr(fs, "bad free count");
+			fserr (fs, "bad free count");
 			goto nospace;
 		}
 		bno = fs->fs_free[--fs->fs_nfree];
@@ -94,7 +96,7 @@ balloc(ip, flags)
 nospace:
 	fs->fs_nfree = 0;
 	fs->fs_tfree = 0;
-	fserr(fs, "file system full");
+	fserr (fs, "file system full");
 	/*
 	 * THIS IS A KLUDGE...
 	 * SHOULD RATHER SEND A SIGNAL AND SUSPEND THE PROCESS IN A
@@ -176,7 +178,8 @@ fromtop:
 		adr = SUPERB+1;
 		fs->fs_nbehind = 0;
 	}
-	for (;adr < fs->fs_isize;adr++) {
+	inobas = 0;
+	for (; adr < fs->fs_isize; adr++) {
 		inobas = ino;
 		bp = bread(pip->i_dev, adr);
 		if ((bp->b_flags & B_ERROR) || bp->b_resid) {
@@ -208,7 +211,7 @@ fromtop:
 	wakeup((caddr_t)&fs->fs_ilock);
 	if (fs->fs_ninode > 0)
 		goto loop;
-	fserr(fs, emsg);
+	fserr (fs, emsg);
 	uprintf("\n%s: %s\n", fs->fs_fsmnt, emsg);
 	u.u_error = ENOSPC;
 	return(NULL);
@@ -220,7 +223,8 @@ fromtop:
  * Place the specified disk block back on the free list of the
  * specified device.
  */
-free(ip, bno)
+void
+free (ip, bno)
 	struct inode *ip;
 	daddr_t bno;
 {
@@ -229,7 +233,7 @@ free(ip, bno)
 	struct fblk *fbp;
 
 	fs = ip->i_fs;
-	if (badblock(fs, bno)) {
+	if (badblock (fs, bno)) {
 		printf("bad block %D, ino %d\n", bno, ip->i_number);
 		return;
 	}
@@ -263,7 +267,8 @@ free(ip, bno)
  * Free the specified I node on the specified device.  The algorithm
  * stores up to NICINOD I nodes in the super block and throws away any more.
  */
-ifree(ip, ino)
+void
+ifree (ip, ino)
 	struct inode *ip;
 	ino_t ino;
 {
@@ -288,9 +293,10 @@ ifree(ip, ino)
  * The form of the error message is:
  *	fs: error message
  */
-fserr(fp, cp)
+void
+fserr (fp, cp)
 	struct fs *fp;
 	char *cp;
 {
-	printf("%s: %s\n", fp->fs_fsmnt, cp);
+	printf ("%s: %s\n", fp->fs_fsmnt, cp);
 }

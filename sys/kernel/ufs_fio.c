@@ -11,6 +11,7 @@
 #include "namei.h"
 #include "systm.h"
 #include "stat.h"
+#include "text.h"
 
 /*
  * Check mode permission on inode pointer.
@@ -30,7 +31,7 @@ access (ip, mode)
 	register struct inode *ip;
 	int mode;
 {
-	register m;
+	register int m;
 	register gid_t *gp;
 
 	m = mode;
@@ -145,9 +146,11 @@ ufs_setattr (ip, vap)
 	/*
 	 * Go thru the fields (other than 'flags') and update iff not VNOVAL.
 	 */
-	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL)
-		if (error = chown1(ip, vap->va_uid, vap->va_gid))
+	if (vap->va_uid != (uid_t)VNOVAL || vap->va_gid != (gid_t)VNOVAL) {
+		error = chown1 (ip, vap->va_uid, vap->va_gid);
+		if (error)
 			return(error);
+	}
 	if (vap->va_size != (off_t)VNOVAL) {
 		if ((ip->i_mode & IFMT) == IFDIR)
 			return(EISDIR);

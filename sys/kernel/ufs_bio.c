@@ -12,6 +12,7 @@
 #include "systm.h"
 #include "map.h"
 #include "trace.h"
+#include "proc.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.
@@ -108,7 +109,7 @@ void
 bwrite(bp)
 	register struct buf *bp;
 {
-	register flag;
+	register int flag;
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
@@ -162,7 +163,7 @@ brelse (bp)
 	register struct buf *bp;
 {
 	register struct buf *flist;
-	register s;
+	register int s;
 
 	trace(TR_BRELSE);
 	/*
@@ -175,12 +176,12 @@ brelse (bp)
 		bfreelist[0].b_flags &= ~B_WANTED;
 		wakeup((caddr_t)bfreelist);
 	}
-	if (bp->b_flags&B_ERROR)
+	if (bp->b_flags&B_ERROR) {
 		if (bp->b_flags & B_LOCKED)
 			bp->b_flags &= ~B_ERROR;	/* try again later */
 		else
 			bp->b_dev = NODEV;  		/* no assoc */
-
+	}
 	/*
 	 * Stick the buffer back on a free list.
 	 */
@@ -363,6 +364,7 @@ biowait(bp)
  * Mark I/O complete on a buffer.
  * Wake up anyone waiting for it.
  */
+void
 biodone(bp)
 	register struct buf *bp;
 {
@@ -381,7 +383,8 @@ biodone(bp)
 /*
  * Insure that no part of a specified block is in an incore buffer.
  */
-blkflush(dev, blkno)
+void
+blkflush (dev, blkno)
 	register dev_t dev;
 	daddr_t blkno;
 {
@@ -446,7 +449,8 @@ loop:
  * Pick up the device's error number and pass it to the user;
  * if there is an error but the number is 0 set a generalized code.
  */
-geterror(bp)
+int
+geterror (bp)
 	register struct buf *bp;
 {
 	register int error = 0;

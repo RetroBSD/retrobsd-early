@@ -12,6 +12,7 @@
 #include "user.h"
 #include "buf.h"
 #include "namei.h"
+#include "proc.h"
 
 struct	buf *blkatoff();
 int	dirchk = 0;
@@ -45,6 +46,31 @@ dirbad (ip, offset, how)
 {
 	printf ("%s: bad dir I=%u off %ld: %s\n",
 		ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
+}
+
+/*
+ * Do consistency checking on a directory entry:
+ *	record length must be multiple of 4
+ *	entry must fit in rest of its DIRBLKSIZ block
+ *	record must be large enough to contain entry
+ *	name is not longer than MAXNAMLEN
+ *	name must be as long as advertised, and null terminated
+ */
+static int
+dirbadentry (ep, entryoffsetinblock)
+	register struct direct *ep;
+	int entryoffsetinblock;
+{
+	register int i;
+
+	if ((ep->d_reclen & 0x3) != 0 ||
+	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
+	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
+		return (1);
+	for (i = 0; i < ep->d_namlen; i++)
+		if (ep->d_name[i] == '\0')
+			return (1);
+	return (ep->d_name[i]);
 }
 
 /*
@@ -115,36 +141,36 @@ dirbad (ip, offset, how)
  *	 but unlocked.
  */
 struct inode *
-namei(ndp)
+namei (ndp)
 	register struct nameidata *ndp;
 {
 	register char *cp;		/* pointer into pathname argument */
 /* these variables refer to things which must be freed or unlocked */
 	struct inode *dp = 0;		/* the directory we are searching */
-	struct namecache *ncp;		/* cache slot for entry */
+	struct namecache *ncp = 0;	/* cache slot for entry */
 	struct fs *fs;			/* file system that directory is in */
 	struct buf *bp = 0;		/* a buffer of directory entries */
 	struct direct *ep;		/* the current directory entry */
-	int  entryoffsetinblock;	/* offset of ep in bp's buffer */
+	int entryoffsetinblock = 0;	/* offset of ep in bp's buffer */
 /* these variables hold information about the search for a slot */
 	enum {NONE, COMPACT, FOUND} slotstatus;
 	off_t slotoffset = -1;		/* offset of area with free space */
-	int slotsize;			/* size of area at slotoffset */
-	int slotfreespace;		/* amount of space free in slot */
-	int slotneeded;			/* size of the entry we're seeking */
+	int slotsize = 0;		/* size of area at slotoffset */
+	int slotfreespace = 0;		/* amount of space free in slot */
+	int slotneeded = 0;		/* size of the entry we're seeking */
 /* */
 	int numdirpasses;		/* strategy for directory search */
 	off_t endsearch;		/* offset to end directory search */
-	off_t prevoff;			/* ndp->ni_offset of previous entry */
+	off_t prevoff = 0;		/* ndp->ni_offset of previous entry */
 	int nlink = 0;			/* number of symbolic links taken */
 	struct inode *pdp;		/* saved dp during symlink work */
-register int i;
+	register int i;
 	int error;
 	int lockparent;
 	int docache;			/* == 0 do not cache last component */
 	int makeentry;			/* != 0 if name to be added to cache */
 	unsigned hash;			/* value of name hash for entry */
-	union nchash *nhp;		/* cache chain head for entry */
+	union nchash *nhp = 0;		/* cache chain head for entry */
 	int isdotdot;			/* != 0 if current name is ".." */
 	int flag;			/* op ie, LOOKUP, CREATE, or DELETE */
 	off_t enduseful;		/* pointer past last used dir slot */
@@ -422,7 +448,7 @@ searchloop:
 		 */
 		ep = (struct direct*) ((caddr_t) bp->b_addr + entryoffsetinblock);
 		if (ep->d_reclen == 0 ||
-		    dirchk && dirbadentry(ep, entryoffsetinblock)) {
+		    (dirchk && dirbadentry (ep, entryoffsetinblock))) {
 			dirbad(dp, ndp->ni_offset, "mangled entry");
 			i = DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1));
 			ndp->ni_offset += i;
@@ -715,7 +741,8 @@ found:
 		/*
 		 * Free the cache slot at head of lru chain.
 		 */
-		if (ncp = nchhead) {
+		ncp = nchhead;
+		if (ncp) {
 			/* remove from lru chain */
 			*ncp->nc_prev = ncp->nc_nxt;
 			if (ncp->nc_nxt)
@@ -823,31 +850,6 @@ bad:
 retNULL:
 	ndp->ni_ip = NULL;
 	return (NULL);
-}
-
-/*
- * Do consistency checking on a directory entry:
- *	record length must be multiple of 4
- *	entry must fit in rest of its DIRBLKSIZ block
- *	record must be large enough to contain entry
- *	name is not longer than MAXNAMLEN
- *	name must be as long as advertised, and null terminated
- */
-int
-dirbadentry(ep, entryoffsetinblock)
-	register struct direct *ep;
-	int entryoffsetinblock;
-{
-	register int i;
-
-	if ((ep->d_reclen & 0x3) != 0 ||
-	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
-	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN)
-		return (1);
-	for (i = 0; i < ep->d_namlen; i++)
-		if (ep->d_name[i] == '\0')
-			return (1);
-	return (ep->d_name[i]);
 }
 
 /*
@@ -1039,7 +1041,6 @@ blkatoff(ip, offset, res)
 	off_t offset;
 	char **res;
 {
-	register struct fs *fs = ip->i_fs;
 	daddr_t lbn = lblkno(offset);
 	register struct buf *bp;
 	daddr_t bn;
@@ -1073,7 +1074,7 @@ blkatoff(ip, offset, res)
  * NB: does not handle corrupted directories.
  */
 int
-dirempty(ip, parentino)
+dirempty (ip, parentino)
 	register struct inode *ip;
 	ino_t parentino;
 {
@@ -1123,7 +1124,7 @@ dirempty(ip, parentino)
  * The target is always iput() before returning.
  */
 int
-checkpath(source, target)
+checkpath (source, target)
 	struct inode *source, *target;
 {
 	struct dirtemplate dirbuf;
@@ -1211,7 +1212,7 @@ nchinit()
  * inode.  This makes the algorithm O(n^2), but do you think I care?
  */
 void
-nchinval(dev)
+nchinval (dev)
 	register dev_t dev;
 {
 	register struct namecache *ncp, *nxtcp;
@@ -1250,7 +1251,7 @@ nchinval(dev)
  * Name cache invalidation of all entries.
  */
 void
-cacheinvalall()
+cinvalall()
 {
 	register struct namecache *ncp, *encp = &namecache[nchsize];
 

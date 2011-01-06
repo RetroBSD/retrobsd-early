@@ -33,6 +33,7 @@ struct bufhd
 	int	b_flags;		/* see defines below */
 	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
+
 struct buf
 {
 	int	b_flags;		/* see defines below */
@@ -67,15 +68,15 @@ struct buf
 #define B_CLRBUF	0x01	/* Request allocated buffer be cleared. */
 #define B_SYNC		0x02	/* Do all allocations synchronously. */
 
-#define	bawrite(bp)	{(bp)->b_flags |= B_ASYNC; bwrite(bp);}
+#define	bawrite(bp)	{ (bp)->b_flags |= B_ASYNC; bwrite(bp); }
 #define	bfree(bp)	(bp)->b_bcount = 0
-#define	bftopaddr(bp)	((u_int)(bp)->b_addr >> 6)
 
 #ifdef KERNEL
 struct inode;
 
-#define	BUFHSZ	16	/* must be power of 2 */
-#define	BUFHASH(dev,blkno)	((struct buf *)&bufhash[((long)(dev) + blkno) & ((long)(BUFHSZ - 1))])
+#define	BUFHSZ		16	/* must be power of 2 */
+#define	BUFHASH(dev,bn)	((struct buf*) &bufhash [((dev) + bn) & (BUFHSZ - 1)])
+
 extern struct	buf buf[];		/* the buffer pool itself */
 extern int	nbuf;			/* number of buffer headers */
 extern struct	bufhd bufhash[];	/* heads of hash lists */
@@ -118,6 +119,11 @@ void bwrite (struct buf *bp);
 void bdwrite (struct buf *bp);
 
 /*
+ * Mark I/O complete on a buffer.
+ */
+void biodone (struct buf *bp);
+
+/*
  * Release the buffer, with no I/O implied.
  */
 void brelse (struct buf *bp);
@@ -138,9 +144,24 @@ int incore (dev_t dev, daddr_t blkno);
 void bflush (dev_t dev);
 
 /*
+ * Insure that no part of a specified block is in an incore buffer.
+ */
+void blkflush (dev_t dev, daddr_t blkno);
+
+/*
  * Invalidate in core blocks belonging to closed or umounted filesystem.
  */
 void binval (dev_t dev);
+
+/*
+ * Pick up the device's error number and pass it to the user.
+ */
+int geterror (struct buf *bp);
+
+/*
+ * Print hard error preface message.
+ */
+void harderr (struct buf *bp, char *devname);
 
 #endif /* KERNEL */
 

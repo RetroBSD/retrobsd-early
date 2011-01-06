@@ -144,12 +144,12 @@ struct stat;
  * in about 11 minutes.  Ha!
  * Assumes the cacheinvalall routine will map the namei cache.
  */
-#define cacheinvalall _cinvall
+void cinvalall (void);
 
 #define cacheinval(ip) \
 	(ip)->i_id = ++nextinodeid; \
 	if (nextinodeid == 0) \
-		cacheinvalall();
+		cinvalall();
 
 u_short	nextinodeid;		/* unique id generator */
 
@@ -190,6 +190,16 @@ void iput (struct inode *ip);
  */
 struct nameidata;
 struct inode *maknode (int mode, struct nameidata *ndp);
+
+/*
+ * Open inode: initialize and validate special files.
+ */
+int openi (struct inode *ip, int mode);
+
+/*
+ * Close inode: call the device driver for special (IBLK, ICHR) files.
+*/
+int closei (struct inode *ip, int flag);
 
 /*
  * Convert a pathname into a pointer to a locked inode.
@@ -235,9 +245,70 @@ int ino_stat (struct inode *ip, struct stat *sb);
 void itrunc (struct inode *oip, u_long length, int ioflags);
 
 /*
+ * Update the inode with the current time.
+ */
+struct timeval;
+void iupdat (struct inode *ip, struct timeval *ta, struct timeval *tm,
+	int waitfor);
+
+void irele (struct inode *ip);
+
+/*
+ * Free an inode.
+ */
+void ifree (struct inode *ip, ino_t ino);
+
+/*
+ * Free a block or fragment.
+ */
+void free (struct inode *ip, daddr_t bno);
+
+/*
+ * Flush all the blocks associated with an inode.
+ */
+void syncip (struct inode *ip);
+
+/*
+ * Remove any inodes in the inode cache belonging to dev.
+ */
+int iflush (dev_t dev);
+
+/*
+ * Convert a pointer to an inode into a reference to an inode.
+ */
+void igrab (struct inode *ip);
+
+/*
+ * Check if source directory is in the path of the target directory.
+ */
+int checkpath (struct inode *source, struct inode *target);
+
+/*
+ * Check if a directory is empty or not.
+ */
+int dirempty (struct inode *ip, ino_t parentino);
+
+/*
+ * Rewrite an existing directory entry to point at the inode supplied.
+ */
+void dirrewrite (struct inode *dp, struct inode *ip, struct nameidata *ndp);
+
+/*
  * Check that device is mounted somewhere.
  */
 int ufs_mountedon (dev_t dev);
+
+/*
+ * Set the attributes on a file.  This was placed here because ufs_syscalls
+ * is too large already (it will probably be split into two files eventually).
+ */
+struct vattr;
+int ufs_setattr (struct inode *ip, struct vattr *vap);
+
+/*
+ * Cache flush, called when filesys is umounted.
+ */
+void nchinval (dev_t dev);
 
 #endif /* KERNEL */
 
@@ -289,12 +360,6 @@ int ufs_mountedon (dev_t dev);
 /*#define IO_NODELOCKED	0x08		   not implemented */
 #define	IO_NDELAY	0x10		/* FNDELAY flag set in file table */
 
-/*
- * Token indicating no attribute value yet assigned.
- */
-#define	VNOVAL	(-1)
-
-#define	VATTR_NULL(vp) (vattr_null(vp))
 
 /*
  * This is a bit of a misnomer.  2.11BSD does not have 'vnodes' but it was
@@ -319,6 +384,24 @@ struct vattr {
 	u_short	va_flags;
 	u_short	va_vaflags;
 };
+
+/*
+ * Token indicating no attribute value yet assigned.
+ */
+#define	VNOVAL	(-1)
+
+/*
+ * Initialize a inode attribute structure.
+ */
+#define	VATTR_NULL(vp) { \
+	(vp)->va_mode = VNOVAL; \
+	(vp)->va_uid = VNOVAL; \
+	(vp)->va_gid = VNOVAL; \
+	(vp)->va_size = VNOVAL; \
+	(vp)->va_atime = VNOVAL; \
+	(vp)->va_mtime = VNOVAL; \
+	(vp)->va_flags = VNOVAL; \
+	(vp)->va_vaflags = VNOVAL; }
 
 /*
  * N.B:  If the above structure changes be sure to modify the function

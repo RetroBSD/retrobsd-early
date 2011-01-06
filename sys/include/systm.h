@@ -90,6 +90,9 @@ extern const int regloc[];	/* offsets of saved user registers (trap.c) */
 
 void panic (char *msg);
 void printf (char *fmt, ...);
+void uprintf (char *fmt, ...);		/* print to the current user's terminal */
+struct tty;
+void tprintf (struct tty *tp, char *fmt, ...);	/* print to the specified terminal */
 int loginit (void);
 void log (int level, char *fmt, ...);
 int logwrt (char *buf, int len, int log);
@@ -103,6 +106,8 @@ int bcmp (const void *a, void *b, size_t nbytes);
 int copystr (caddr_t src, caddr_t dest, u_int maxlen, u_int *copied);
 size_t strlen (const char *s);
 int ffs (u_long i);			/* find the index of the lsb set bit */
+void insque (void *element, void *pred);
+void remque (void *element);
 
 void startup (void);			/* machine-dependent startup code */
 int chrtoblk (dev_t dev);		/* convert from character to block device number */
@@ -110,6 +115,11 @@ int blktochr (dev_t dev);		/* convert from block to character device number */
 int isdisk (dev_t dev, int type);	/* determine if a device is a disk */
 int iskmemdev (dev_t dev);		/* identify /dev/mem and /dev/kmem */
 void boot (dev_t dev, int howto);
+
+/*
+ * Check if gid is a member of the group set.
+ */
+int groupmember (gid_t gid);
 
 /*
  * Free the swap image of all unused saved-text text segments on dev.
@@ -125,6 +135,11 @@ void xuncore (size_t size);
  * Wake up all processes sleeping on chan.
  */
 void wakeup (caddr_t chan);
+
+/*
+ * Allocate iostat disk monitoring slots for a driver.
+ */
+void dk_alloc (int *dkn, int slots, char *name, long wps);
 
 /*
  * Syscalls.
@@ -230,3 +245,4 @@ int logioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
 int logselect (dev_t dev, int rw);
 
 int fdopen (dev_t dev, int flag, int mode);
+int dupfdopen (int indx, int dfd, int mode, int error);

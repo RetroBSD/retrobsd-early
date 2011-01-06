@@ -11,49 +11,11 @@
 #include "namei.h"
 #include "mount.h"
 #include "kernel.h"
+#include "systm.h"
+#include "proc.h"
 
-int
-statfs()
-{
-	register struct a {
-		char	*path;
-		struct	statfs	*buf;
-	} *uap = (struct a *)u.u_ap;
-	register struct	inode	*ip;
-	struct	nameidata nd;
-	register struct nameidata *ndp = &nd;
-	struct	mount	*mp;
-
-	NDINIT (ndp, LOOKUP, FOLLOW, uap->path);
-	ip = namei(ndp);
-	if (! ip)
-		return(u.u_error);
-	mp = (struct mount *)((int)ip->i_fs - offsetof(struct mount, m_filsys));
-	iput(ip);
-	u.u_error = statfs1(mp, uap->buf);
-	return(u.u_error);
-}
-
-int
-fstatfs()
-{
-	register struct a {
-		int	fd;
-		struct	statfs *buf;
-	} *uap = (struct a *)u.u_ap;
-	register struct inode *ip;
-	struct	mount *mp;
-
-	ip = getinode(uap->fd);
-	if (! ip)
-		return(u.u_error);
-	mp = (struct mount *)((int)ip->i_fs - offsetof(struct mount, m_filsys));
-	u.u_error = statfs1(mp, uap->buf);
-	return(u.u_error);
-}
-
-int
-statfs1(mp, sbp)
+static int
+statfs1 (mp, sbp)
 	struct	mount	*mp;
 	struct	statfs	*sbp;
 {
@@ -75,10 +37,52 @@ statfs1(mp, sbp)
 	bcopy(xmp->xm_mnton, sfsp->f_mntonname, MNAMELEN);
 	bcopy(xmp->xm_mntfrom, sfsp->f_mntfromname, MNAMELEN);
 	sfsp->f_flags = mp->m_flags & MNT_VISFLAGMASK;
-	return(copyout(sfsp, sbp, sizeof (struct statfs)));
+	if (baduaddr ((unsigned) sbp) ||
+	    baduaddr ((unsigned) (sbp + sizeof (struct statfs) - 1)))
+		return EFAULT;
+	bcopy (sfsp, sbp, sizeof (struct statfs));
+	return 0;
 }
 
-int
+void
+statfs()
+{
+	register struct a {
+		char	*path;
+		struct	statfs	*buf;
+	} *uap = (struct a *)u.u_ap;
+	register struct	inode	*ip;
+	struct	nameidata nd;
+	register struct nameidata *ndp = &nd;
+	struct	mount	*mp;
+
+	NDINIT (ndp, LOOKUP, FOLLOW, uap->path);
+	ip = namei(ndp);
+	if (! ip)
+		return;
+	mp = (struct mount *)((int)ip->i_fs - offsetof(struct mount, m_filsys));
+	iput(ip);
+	u.u_error = statfs1 (mp, uap->buf);
+}
+
+void
+fstatfs()
+{
+	register struct a {
+		int	fd;
+		struct	statfs *buf;
+	} *uap = (struct a *)u.u_ap;
+	register struct inode *ip;
+	struct	mount *mp;
+
+	ip = getinode(uap->fd);
+	if (! ip)
+		return;
+	mp = (struct mount *)((int)ip->i_fs - offsetof(struct mount, m_filsys));
+	u.u_error = statfs1 (mp, uap->buf);
+}
+
+void
 getfsstat()
 {
 	register struct a {
@@ -97,8 +101,11 @@ getfsstat()
 		if (mp->m_inodp == NULL)
 			continue;
 		if (count < maxcount) {
-			if (error = statfs1(mp, sfsp))
-				return(u.u_error = error);
+			error = statfs1 (mp, sfsp);
+			if (error) {
+				u.u_error = error;
+				return;
+			}
 			sfsp += sizeof (struct statfs);
 		}
 		count++;
@@ -107,7 +114,6 @@ getfsstat()
 		u.u_r.r_val1 = maxcount;
 	else
 		u.u_r.r_val1 = count;
-	return(0);
 }
 
 /*
@@ -263,8 +269,11 @@ utimes()
 	if (uap->tptr == NULL) {
 		tv[0].tv_sec = tv[1].tv_sec = time.tv_sec;
 		vattr.va_vaflags |= VA_UTIMES_NULL;
-	} else if (u.u_error = copyin((caddr_t)uap->tptr,(caddr_t)tv,sizeof(tv)))
-		return;
+	} else {
+		u.u_error = copyin ((caddr_t)uap->tptr,(caddr_t)tv,sizeof(tv));
+		if (u.u_error)
+			return;
+	}
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	if ((ip = namei(ndp)) == NULL)
 		return;

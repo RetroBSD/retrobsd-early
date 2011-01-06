@@ -87,7 +87,7 @@ swapin (p)
  *
  * panic: out of swap space
  */
-int
+void
 swapout (p, freecore, odata, ostack)
 	register struct proc *p;
 	int freecore;
@@ -144,7 +144,6 @@ swapout (p, freecore, odata, ostack)
 #ifdef UCB_METER
 	cnt.v_swpout++;
 #endif
-
 	if (runout) {
 		runout = 0;
 		wakeup((caddr_t)&runout);

@@ -507,7 +507,7 @@ setrq (p)
  * reinserted in the qs with setrq when it is swapped back in.
  */
 void
-remrq(p)
+remrq (p)
 	register struct proc *p;
 {
 	register struct proc *q;

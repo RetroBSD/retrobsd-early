@@ -218,8 +218,6 @@ logpri (level)
  * would produce output:
  *	reg=3<BITTWO,BITONE>
  */
-
-/*VARARGS1*/
 void
 printf(char *fmt, ...)
 {
@@ -236,19 +234,17 @@ printf(char *fmt, ...)
  * a savemap/restormap would be needed here or in putchar if uprintf
  * was to be used at interrupt time.
  */
-/*VARARGS1*/
 void
-uprintf(fmt, x1)
-	char	*fmt;
-	unsigned x1;
+uprintf (char *fmt, ...)
 {
 	register struct tty *tp;
 
-	if ((tp = u.u_ttyp) == NULL)
+	tp = u.u_ttyp;
+	if (tp == NULL)
 		return;
 
-	if (ttycheckoutq(tp, 1))
-		prf(fmt, &x1, TOTTY, tp);
+	if (ttycheckoutq (tp, 1))
+		prf (fmt, &fmt+1, TOTTY, tp);
 }
 
 /*
@@ -257,12 +253,8 @@ uprintf(fmt, x1)
  * single-open devices, and may be called from interrupt level
  * (does not sleep).
  */
-/*VARARGS2*/
 void
-tprintf(tp, fmt, x1)
-	register struct tty *tp;
-	char *fmt;
-	unsigned x1;
+tprintf (register struct tty *tp, char *fmt, ...)
 {
 	int flags = TOTTY | TOLOG;
 	extern struct tty cons;
@@ -272,7 +264,7 @@ tprintf(tp, fmt, x1)
 		tp = &cons;
 	if (ttycheckoutq(tp, 0) == 0)
 		flags = TOLOG;
-	prf(fmt, &x1, flags, tp);
+	prf(fmt, &fmt + 1, flags, tp);
 	logwakeup(logMSG);
 }
 
@@ -320,7 +312,7 @@ panic(s)
  * Warn that a system table is full.
  */
 void
-tablefull(tab)
+tablefull (tab)
 	char *tab;
 {
 	log(LOG_ERR, "%s: table full\n", tab);
@@ -331,7 +323,7 @@ tablefull(tab)
  * about failing disk tranfers.
  */
 void
-harderr(bp, cp)
+harderr (bp, cp)
 	struct buf *bp;
 	char *cp;
 {

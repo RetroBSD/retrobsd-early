@@ -443,7 +443,7 @@ fdopen(dev, mode, type)
  * Duplicate the specified descriptor to a free descriptor.
  */
 int
-dupfdopen(indx, dfd, mode, error)
+dupfdopen (indx, dfd, mode, error)
 	register int indx, dfd;
 	int mode;
 	int error;

@@ -74,4 +74,6 @@ struct	vmtotal total;
  */
 void vmmeter (void);
 
+void vmtotal (void);
+
 #endif

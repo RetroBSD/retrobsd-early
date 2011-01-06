@@ -35,7 +35,7 @@ rkstart()
 {
 	register struct	rkdevice *rkaddr = RKADDR;
 	register struct buf *bp;
-	register com;
+	register int com;
 	daddr_t bn;
 	int dn, cn, sn;
 

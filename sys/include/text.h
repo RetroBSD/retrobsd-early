@@ -38,12 +38,29 @@ void xinit (void);
 /*
  * Attach to a shared text segment.
  */
+struct exec;
 void xalloc (struct inode *ip, struct exec *ep);
 
 /*
  * Decrement loaded reference count of text object.
  */
 void xfree (void);
+
+/*
+ * Remove text image from the text table.
+ */
+void xuntext (struct text *xp);
+
+/*
+ * Lock and unlock a text segment from swapping
+ */
+void xlock (struct text *xp);
+void xunlock (struct text *xp);
+
+/*
+ * Decrement the in-core usage count of a shared text segment.
+ */
+void xccdec (struct text *xp);
 
 #endif /* KERNEL */
 

@@ -15,7 +15,8 @@
 #include "buf.h"
 #include "dk.h"
 
-disksort(dp, bp)
+void
+disksort (dp, bp)
 	register struct buf *dp, *bp;
 {
 	register struct buf *ap;
@@ -55,7 +56,8 @@ disksort(dp, bp)
  * allocated (*dkn >= 0) or not enough slots left to satisfy request simply
  * ignore it.
  */
-dk_alloc(dkn, slots, name, wps)
+void
+dk_alloc (dkn, slots, name, wps)
 	int *dkn;	/* pointer to number for iostat */
 	int slots;	/* number of iostat slots requested */
 	char *name;	/* name of device */

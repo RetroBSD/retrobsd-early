@@ -141,6 +141,22 @@ struct fs *mountfs (dev_t dev, int flags, struct inode *ip);
 void mount_updname (struct fs *fs, char *on, char *from,
 	int lenon, int lenfrom);
 
+/*
+ * Sync a single filesystem.
+ */
+struct mount;
+int ufs_sync (struct mount *mp);
+
+/*
+ * Check that a specified block number is in range.
+ */
+int badblock (struct fs *fp, daddr_t bn);
+
+/*
+ * Print the name of a file system with an error diagnostic.
+ */
+void fserr (struct fs *fp, char *message);
+
 #endif /* KERNEL */
 
 #endif /* _SYS_FS_H_ */

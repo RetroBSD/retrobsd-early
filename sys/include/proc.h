@@ -182,9 +182,19 @@ void endvfork (void);
 void setrq (struct proc *p);
 
 /*
+ * Remove runnable job from run queue.
+ */
+void remrq (struct proc *p);
+
+/*
  * Exit the process.
  */
 void exit (int rv);
+
+/*
+ * Swap I/O.
+ */
+void swap (memaddr blkno, memaddr coreaddr, int count, int rdflg);
 
 /*
  * Kill a process when ran out of swap space.
@@ -221,7 +231,7 @@ void expand (int newsize, int segment);
 /*
  * Swap out a process.
  */
-int swapout (struct proc *p, int freecore, u_int odata, u_int ostack);
+void swapout (struct proc *p, int freecore, u_int odata, u_int ostack);
 
 /*
  * Swap a process in.

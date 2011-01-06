@@ -94,16 +94,16 @@ int ucb_clist = 0;
 
 struct mapent	_coremap[CMAPSIZ];
 struct map	coremap[1] = {
-	_coremap,
-	&_coremap[CMAPSIZ],
-	"coremap",
+	{ _coremap,
+	  &_coremap[CMAPSIZ],
+	  "coremap" },
 };
 
 struct mapent	_swapmap[SMAPSIZ];
 struct map	swapmap[1] = {
-	_swapmap,
-	&_swapmap[SMAPSIZ],
-	"swapmap",
+	{ _swapmap,
+	  &_swapmap[SMAPSIZ],
+	  "swapmap" },
 };
 
 /*
@@ -117,3 +117,7 @@ struct map	swapmap[1] = {
 struct proc	PROC[NPROC];	/* TODO: use linker script*/
 struct file	FILE[NFILE];
 struct text	TEXT[NTEXT];
+
+/* TODO */
+#include "user.h"
+struct user u;

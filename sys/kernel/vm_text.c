@@ -80,7 +80,7 @@ xinit()
  * the use count must be zero.
  */
 void
-xuntext(xp)
+xuntext (xp)
 	register struct text *xp;
 {
 	register struct inode *ip;
@@ -202,7 +202,6 @@ xalloc (ip, ep)
 	register struct inode *ip;
 {
 	register struct text *xp;
-	register u_int	count;
 	off_t	offset;
 	size_t ts;
 
@@ -287,14 +286,14 @@ xalloc (ip, ep)
  * Lock and unlock a text segment from swapping
  */
 void
-xlock(xp)
+xlock (xp)
 	register struct text *xp;
 {
 	X_LOCK(xp);
 }
 
 void
-xunlock(xp)
+xunlock (xp)
 	register struct text *xp;
 {
 	XUNLOCK(xp);
@@ -305,7 +304,8 @@ xunlock(xp)
  * When it drops to zero, free the core space.  Write the swap
  * copy of the text if as yet unwritten.
  */
-xccdec(xp)
+void
+xccdec (xp)
 	register struct text *xp;
 {
 	if (!xp->x_ccount)

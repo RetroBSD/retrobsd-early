@@ -9,6 +9,7 @@
 #include "text.h"
 #include "map.h"
 #include "kernel.h"
+#include "systm.h"
 
 /*
  * Change the size of the data+stack regions of the process.
@@ -24,7 +25,7 @@
  * stack segment will not have to be copied again after expansion.
  */
 void
-expand(newsize, segment)
+expand (newsize, segment)
 	int newsize, segment;
 {
 	register struct proc *p;
@@ -48,7 +49,7 @@ expand(newsize, segment)
 		if(n >= newsize) {
 			n -= newsize;
 			p->p_saddr += n;
-			mfree(coremap, n, a1);
+			mfree (coremap, n, a1);
 			/*
 			 *  Since the base of stack is different,
 			 *  segmentation registers must be repointed.
@@ -57,7 +58,7 @@ expand(newsize, segment)
 			return;
 		}
 	}
-	if (setjmp(&u.u_ssave)) {
+	if (setjmp (&u.u_ssave)) {
 		/*
 		 * If we had to swap, the stack needs moving up.
 		 */
@@ -72,19 +73,19 @@ expand(newsize, segment)
 			 */
 			while (n >= i) {
 				n -= i;
-				copy(a1+n, a2+n, i);
+				bcopy ((void*) (a1 + n), (void*) (a2 + n), i);
 			}
-			copy(a1, a2, n);
+			bcopy ((void*) a1, (void*) a2, n);
 		}
 		sureg();
 		return;
 	}
-	a2 = malloc(coremap, newsize);
+	a2 = malloc (coremap, newsize);
 	if (a2 == NULL) {
 		if (segment == S_DATA)
-			swapout(p, X_FREECORE, n, X_OLDSIZE);
+			swapout (p, X_FREECORE, n, X_OLDSIZE);
 		else
-			swapout(p, X_FREECORE, X_OLDSIZE, n);
+			swapout (p, X_FREECORE, X_OLDSIZE, n);
 		p->p_flag |= SSWAP;
 		swtch();
 		/* NOTREACHED */
@@ -97,7 +98,7 @@ expand(newsize, segment)
 		a2 += newsize - n;
 	} else
 		p->p_daddr = a2;
-	copy(a1, a2, n);
-	mfree(coremap, n, a1);
+	bcopy ((void*) a1, (void*) a2, n);
+	mfree (coremap, n, a1);
 	sureg();
 }

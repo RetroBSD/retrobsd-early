@@ -16,6 +16,7 @@
 #include "stat.h"
 #include "disklabel.h"
 #include "ioctl.h"
+#include "proc.h"
 
 /*
  * Common code for mount and umount.
@@ -89,7 +90,8 @@ smount()
 	int	error = 0;
 	char	mnton[MNAMELEN], mntfrom[MNAMELEN];
 
-	if (u.u_error = getmdev(&dev, uap->fspec))
+	u.u_error = getmdev (&dev, uap->fspec);
+	if (u.u_error)
 		return;
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->freg);
 	if ((ip = namei(ndp)) == NULL)
@@ -98,12 +100,8 @@ smount()
 		error = ENOTDIR;
 		goto	cmnout;
 	}
-	/*
-	 * The following two copyinstr calls will not fault because getmdev() or
-	 * namei() would have returned an error for invalid parameters.
-	 */
-	copyinstr(uap->freg, mnton, sizeof (mnton) - 1, &lenon);
-	copyinstr(uap->fspec, mntfrom, sizeof (mntfrom) - 1, &lenfrom);
+	copystr (uap->freg, mnton, sizeof (mnton) - 1, &lenon);
+	copystr (uap->fspec, mntfrom, sizeof (mntfrom) - 1, &lenfrom);
 
 	if (uap->flags & MNT_UPDATE) {
 		fs = ip->i_fs;

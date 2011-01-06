@@ -576,7 +576,7 @@ ino_unlock(fp, kind)
  * validate before actual IO.
  */
 int
-openi(ip, mode)
+openi (ip, mode)
 	register struct inode *ip;
 {
 	register dev_t dev = ip->i_rdev;
