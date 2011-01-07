@@ -103,12 +103,9 @@ cinit()
 int
 main()
 {
-	extern dev_t bootdev;
-	extern caddr_t bootcsr;
 	register struct proc *p;
 	register int i;
 	register struct fs *fs;
-	time_t  toytime, toyclk();
 	daddr_t swsize;
 	int	(*ioctl)();
 	struct	partinfo dpart;
@@ -148,46 +145,6 @@ main()
 	binit();
 	nchinit();
 	clkstart();
-
-	/*
-	 * If the kernel is configured for the boot/load device AND the use of the
-	 * compiled in 'bootdev' has not been overridden (by turning on RB_DFLTROOT,
-	 * see conf/boot.c for details) THEN switch 'rootdev', 'swapdev' and 'pipedev'
-	 * over to the boot/load device.  Set 'pipedev' to be 'rootdev'.
-	 *
-	 * The &077 removes the controller number (bits 6 and 7) - those bits are
-	 * passed thru from /boot but would only greatly confuse the rest of the kernel.
-	 */
-	i = major(bootdev);
-	if ((bdevsw[i].d_strategy != nostrategy) && ! (boothowto & RB_DFLTROOT)) {
-		rootdev = makedev (i, minor(bootdev) & 077);
-		swapdev = rootdev | 1;	/* partition 'b' */
-		pipedev = rootdev;
-		/*
-		 * We check that the dump device is the same as the boot device.  If it is
-		 * different then it is likely that crashdumps go to a tape device rather than
-		 * the swap area.  In that case do not switch the dump device.
-		 */
-		if ((dumpdev != NODEV) && major(dumpdev) == i)
-			dumpdev = swapdev;
-	}
-
-/*
- * Need to attach the root device.  The CSR is passed thru because this
- * may be a 2nd or 3rd controller rather than the 1st.  NOTE: This poses
- * a big problem if 'swapdev' is not on the same controller as 'rootdev'
- * _or_ if 'swapdev' itself is on a 2nd or 3rd controller.  Short of moving
- * autconfigure back in to the kernel it is not known what can be done about
- * this.
- *
- * One solution (for now) is to call swapdev's attach routine with a zero
- * address.  The MSCP driver treats the 0 as a signal to perform the
- * old (fixed address) attach.  Drivers (all the rest at this point) which
- * do not support alternate controller booting always attach the first
- * (primary) CSR and do not expect an argument to be passed.
-*/
-	(void)(*bdevsw[major(bootdev)].d_root)(bootcsr);
-	(void)(*bdevsw[major(swapdev)].d_root)((caddr_t) 0);	/* XXX */
 
 /*
  * Now we find out how much swap space is available.  Since 'nswap' is
@@ -234,9 +191,6 @@ main()
 	mount[0].m_inodp = (struct inode *)1;	/* XXX */
 	mount_updname(fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
-	toytime = toyclk();
-	if (toytime)
-		time.tv_sec = toytime;
 	boottime = time;
 
 /* kick off timeout driven events by calling first time */
@@ -270,10 +224,10 @@ main()
 	 * make init process
 	 */
 	if (newproc (0)) {
-		expand (szicode, S_DATA);
+		expand (icodeend - icode, S_DATA);
 		expand (1, S_STACK);		/* one click of stack */
-		estabur (0, szicode, 1, 0);
-		copyout ((caddr_t)icode, (caddr_t)0, szicode);
+		estabur (0, icodeend - icode, 1, 0);
+		copyout ((caddr_t) icode, (caddr_t) 0, icodeend - icode);
 		/*
 		 * return goes to location 0 of user init code
 		 * just copied out.

@@ -63,13 +63,11 @@ long	dumplo;			/* offset into dumpdev */
 dev_t	swapdev;		/* swapping device */
 dev_t	pipedev;		/* pipe device */
 
-extern	int icode[];		/* user init code */
-extern	int szicode;		/* its size */
+extern	const char icode[];	/* user init code */
+extern	const char icodeend[];	/* its end */
 
 struct inode;
 daddr_t bmap (struct inode *ip, daddr_t bn, int rwflg, int flags);
-
-extern int	cputype;	/* type of cpu = 40, 44, 45, 60, or 70 */
 
 /*
  * Structure of the system-entry table
@@ -99,10 +97,11 @@ int logwrt (char *buf, int len, int log);
 void logwakeup (int unit);
 void cnputc (char c);
 void tablefull (char *tab);		/* warn that a system table is full */
+int baduaddr (caddr_t addr);		/* detect bad user address */
 
 void bzero (void *s, size_t nbytes);
 void bcopy (const void *src, void *dest, size_t nbytes);
-int bcmp (const void *a, void *b, size_t nbytes);
+int bcmp (const void *a, const void *b, size_t nbytes);
 int copystr (caddr_t src, caddr_t dest, u_int maxlen, u_int *copied);
 size_t strlen (const char *s);
 int ffs (u_long i);			/* find the index of the lsb set bit */

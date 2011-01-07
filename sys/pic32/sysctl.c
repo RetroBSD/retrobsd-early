@@ -88,14 +88,12 @@ fperr()
 	/* TODO */
 }
 
-extern	struct tty cons[];
-
 /*
  * This was moved here when the TMSCP portion was added.  At that time it
  * became (even more) system specific and didn't belong in kern_sysctl.c
  */
 int
-cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
 	u_int namelen;
 	void *oldp;
@@ -104,46 +102,44 @@ cpu_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	size_t newlen;
 {
 
-	switch	(name[0])
-		{
-		case	CPU_CONSDEV:
-			if	(namelen != 1)
-				return(ENOTDIR);
-			return(sysctl_rdstruct(oldp, oldlenp, newp,
-					&cons[0].t_dev, sizeof &cons[0].t_dev));
+	switch (name[0]) {
+	case CPU_CONSDEV:
+		if (namelen != 1)
+			return (ENOTDIR);
+		return (sysctl_rdstruct (oldp, oldlenp, newp,
+				&cnttys[0].t_dev, sizeof &cnttys[0].t_dev));
 #if NTMSCP > 0
-		case	CPU_TMSCP:
+	case CPU_TMSCP:
 		/* All sysctl names at this level are terminal */
-			if	(namelen != 2)
-				return(ENOTDIR);
-			switch	(name[1])
-				{
-				case	TMSCP_CACHE:
-					return(sysctl_int(oldp, oldlenp, newp,
-						newlen, &tmscpcache));
-				case	TMSCP_PRINTF:
-					return(sysctl_int(oldp, oldlenp, newp,
-						newlen, &tmscpprintf));
-				default:
-					return(EOPNOTSUPP);
-				}
+		if (namelen != 2)
+			return(ENOTDIR);
+		switch (name[1]) {
+		case TMSCP_CACHE:
+			return (sysctl_int (oldp, oldlenp, newp,
+				newlen, &tmscpcache));
+		case TMSCP_PRINTF:
+			return (sysctl_int (oldp, oldlenp, newp,
+				newlen, &tmscpprintf));
+		default:
+			return (EOPNOTSUPP);
+		}
 #endif
 #if NRAC > 0
-		case	CPU_MSCP:
+	case CPU_MSCP:
 		/* All sysctl names at this level are terminal */
-			if (namelen != 2)
-				return(ENOTDIR);
-			switch (name[1]) {
-				extern	int mscpprintf;
-			case MSCP_PRINTF:
-				return(sysctl_int(oldp, oldlenp, newp,
-						newlen, &mscpprintf));
-			default:
-				return(EOPNOTSUPP);
-			}
-#endif
+		if (namelen != 2)
+			return(ENOTDIR);
+		switch (name[1]) {
+			extern	int mscpprintf;
+		case MSCP_PRINTF:
+			return (sysctl_int(oldp, oldlenp, newp,
+					newlen, &mscpprintf));
 		default:
-			return(EOPNOTSUPP);
+			return (EOPNOTSUPP);
 		}
+#endif
+	default:
+		return (EOPNOTSUPP);
+	}
 	/* NOTREACHED */
 }

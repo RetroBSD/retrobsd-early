@@ -257,15 +257,14 @@ void
 tprintf (register struct tty *tp, char *fmt, ...)
 {
 	int flags = TOTTY | TOLOG;
-	extern struct tty cons;
 
-	logpri(LOG_INFO);
-	if (tp == (struct tty *)NULL)
-		tp = &cons;
-	if (ttycheckoutq(tp, 0) == 0)
+	logpri (LOG_INFO);
+	if (tp == (struct tty*) NULL)
+		tp = &cnttys[0];
+	if (ttycheckoutq (tp, 0) == 0)
 		flags = TOLOG;
-	prf(fmt, &fmt + 1, flags, tp);
-	logwakeup(logMSG);
+	prf (fmt, &fmt + 1, flags, tp);
+	logwakeup (logMSG);
 }
 
 /*

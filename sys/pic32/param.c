@@ -106,18 +106,10 @@ struct map	swapmap[1] = {
 	  "swapmap" },
 };
 
-/*
- * Declarations of structures loaded last and allowed to reside in the
- * 0120000-140000 range (where buffers and clists are mapped).  These
- * structures must be extern everywhere else, and the asm output of cc
- * is edited to move these structures from comm to bss (which is last)
- * (see the script :comm-to-bss).  They are in capital letters so that
- * the edit script doesn't find some other occurrence.
- */
-struct proc	PROC[NPROC];	/* TODO: use linker script*/
-struct file	FILE[NFILE];
-struct text	TEXT[NTEXT];
+struct proc	proc [NPROC];
+struct file	file [NFILE];
+struct text	text [NTEXT];
 
-/* TODO */
+/* TODO: use linker script*/
 #include "user.h"
 struct user u;

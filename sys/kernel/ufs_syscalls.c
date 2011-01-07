@@ -304,7 +304,7 @@ symlink()
 	tp = uap->target;
 	nc = 0;
 	for (;;) {
-		if (baduaddr ((unsigned) tp)) {
+		if (baduaddr (tp)) {
 			u.u_error = EFAULT;
 			return;
 		}

@@ -37,11 +37,7 @@ statfs1 (mp, sbp)
 	bcopy(xmp->xm_mnton, sfsp->f_mntonname, MNAMELEN);
 	bcopy(xmp->xm_mntfrom, sfsp->f_mntfromname, MNAMELEN);
 	sfsp->f_flags = mp->m_flags & MNT_VISFLAGMASK;
-	if (baduaddr ((unsigned) sbp) ||
-	    baduaddr ((unsigned) (sbp + sizeof (struct statfs) - 1)))
-		return EFAULT;
-	bcopy (sfsp, sbp, sizeof (struct statfs));
-	return 0;
+	return copyout ((caddr_t) sfsp, (caddr_t) sbp, sizeof (struct statfs));
 }
 
 void

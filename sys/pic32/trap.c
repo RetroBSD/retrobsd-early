@@ -38,7 +38,7 @@ const int regloc[] = {
  */
 /*ARGSUSED*/
 void
-trap(dev, sp, r1, ov, nps, r0, pc, ps)
+exception (dev, sp, r1, ov, nps, r0, pc, ps)
 	dev_t dev;
 	caddr_t sp, pc;
 	int r1, ov, nps, r0, ps;

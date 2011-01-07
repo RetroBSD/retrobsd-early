@@ -275,21 +275,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	/* NOTREACHED */
 }
 
-static char *
-cpu2str(buf, len)
-	char	*buf;
-	int	len;
-{
-	register char *cp = buf + len;
-	register int i = cputype;
-
-	*--cp = '\0';
-	do {
-		*--cp = (i % 10) + '0';
-	} while (i /= 10);
-	return(cp);
-}
-
 /*
  * hardware related system variables.
  */
@@ -302,19 +287,15 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
-	char c[10];
-	extern	size_t physmem;			/* machdep2.c */
-
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1)
 		return (ENOTDIR);		/* overloaded */
 
 	switch (name[0]) {
 	case HW_MACHINE:
-		return (sysctl_rdstring(oldp, oldlenp, newp, "pdp11"));
+		return (sysctl_rdstring(oldp, oldlenp, newp, "pic32"));
 	case HW_MODEL:
-		return (sysctl_rdstring(oldp, oldlenp, newp,
-				cpu2str(c,sizeof (c))));
+		return (sysctl_rdstring(oldp, oldlenp, newp, "mips"));
 	case HW_NCPU:
 		return (sysctl_rdint(oldp, oldlenp, newp, 1));	/* XXX */
 	case HW_BYTEORDER:
@@ -556,18 +537,10 @@ sysctl_string(oldp, oldlenp, newp, newlen, str, maxlen)
 		return (EINVAL);
 	if (oldp) {
 		*oldlenp = len;
-		if (baduaddr ((unsigned) oldp) ||
-		    baduaddr ((unsigned) (oldp + len - 1)))
-			error = EFAULT;
-		else
-			bcopy (str, oldp, len);
+		error = copyout (str, oldp, len);
 	}
 	if (error == 0 && newp) {
-		if (baduaddr ((unsigned) newp) ||
-		    baduaddr ((unsigned) (newp + newlen - 1)))
-			error = EFAULT;
-		else
-			bcopy (newp, str, newlen);
+		error = copyin (newp, str, newlen);
 		str[newlen] = 0;
 	}
 	return (error);
@@ -591,13 +564,8 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 	if (newp)
 		return (EPERM);
 	*oldlenp = len;
-	if (oldp) {
-		if (baduaddr ((unsigned) oldp) ||
-		    baduaddr ((unsigned) (oldp + len - 1)))
-			error = EFAULT;
-		else
-			bcopy (str, oldp, len);
-	}
+	if (oldp)
+		error = copyout (str, oldp, len);
 	return (error);
 }
 

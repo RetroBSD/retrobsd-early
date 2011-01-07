@@ -95,7 +95,7 @@ procxmt()
 
 	/* read user D */
 	case PT_READ_D:
-		if (baduaddr ((unsigned) ipc.ip_addr))
+		if (baduaddr ((caddr_t) ipc.ip_addr))
 			goto error;
 		ipc.ip_data = *(int*) ipc.ip_addr;
 		break;
@@ -120,7 +120,7 @@ procxmt()
 				goto error;
 			xp->x_flag |= XTRC;
 		}
-		if (baduaddr ((unsigned) ipc.ip_addr))
+		if (baduaddr ((caddr_t) ipc.ip_addr))
 			goto error;
 		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 1);
 		bcopy ((caddr_t) &ipc.ip_data, (caddr_t) ipc.ip_addr, sizeof(int));
@@ -131,7 +131,7 @@ procxmt()
 
 	/* write user D */
 	case PT_WRITE_D:
-		if (baduaddr ((unsigned) ipc.ip_addr))
+		if (baduaddr ((caddr_t) ipc.ip_addr))
 			goto error;
 		*(int*) ipc.ip_addr = ipc.ip_data;
 		break;

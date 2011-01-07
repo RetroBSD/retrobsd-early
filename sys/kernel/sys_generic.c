@@ -204,12 +204,9 @@ ioctl()
 	}
 	if (com & IOC_IN) {
 		if (size) {
-			if (baduaddr ((unsigned) uap->cmarg) ||
-			    baduaddr ((unsigned) (uap->cmarg + size - 1))) {
-				u.u_error = EFAULT;
+			u.u_error = copyin (uap->cmarg, (caddr_t) data, size);
+			if (u.u_error)
 				return;
-			}
-			bcopy (uap->cmarg, data, size);
 		} else
 			*(caddr_t*) data = uap->cmarg;
 	} else if ((com & IOC_OUT) && size)
@@ -240,14 +237,8 @@ ioctl()
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if (u.u_error == 0 && (com & IOC_OUT) && size) {
-		if (baduaddr ((unsigned) uap->cmarg) ||
-		    baduaddr ((unsigned) (uap->cmarg + size - 1))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		bcopy (data, uap->cmarg, size);
-	}
+	if (u.u_error == 0 && (com & IOC_OUT) && size)
+		u.u_error = copyout (data, uap->cmarg, size);
 }
 
 int	nselcoll;

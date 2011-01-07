@@ -12,6 +12,8 @@
 #include "kernel.h"
 #include "systm.h"
 
+struct	callout *callfree, calltodo;
+
 #ifdef UCB_METER
 int	dk_ndrive = DK_NDRIVE;
 

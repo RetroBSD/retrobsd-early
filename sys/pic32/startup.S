@@ -40,6 +40,25 @@ _reset_vector_:	.globl	_reset_vector_
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
 
 #---------------------------------------
+# Icode is copied out to process 1 to exec /etc/init.
+# If the exec fails, process 1 exits.
+#
+		.globl	icode, icodeend
+icode:
+		syscall	11				# SYS_execv
+		syscall	1				# SYS_exit
+#init:
+#		.ascii	"/etc/init\0"
+#initflags:
+#		.ascii	"-00000\0"			# decimal ASCII initflags
+#argv:
+#		.word	init + 5 - icode		# address of "init\0"
+#		.word	initflags - icode
+#		.word	0
+
+icodeend:	nop
+
+#---------------------------------------
 # Restore CPU state and return from interrupt
 #
 		.section .exception
@@ -164,6 +183,6 @@ _exception_vector_: .globl _exception_vector_
 
 		addi	$sp, -MIPS_FSPACE		# Make an arg frame
 
-		.extern _irq_handler_
-		j	_irq_handler_			# Jump to C code, no return
+		.extern exception
+		j	exception			# Jump to C code, no return
 		lui	$gp, 0x8000			# Set global pointer (delay slot)

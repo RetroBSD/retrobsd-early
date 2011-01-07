@@ -107,11 +107,6 @@ void udelay (unsigned usec);
  */
 void clkstart (void);
 
-/*
- * Return 0 if a user address is valid.
- */
-int baduaddr (unsigned addr);
-
 #endif
 
 #endif /* ENDIAN */

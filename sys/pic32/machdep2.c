@@ -251,11 +251,13 @@ strlen (s)
  */
 int
 baduaddr (addr)
-	register unsigned addr;
+	register caddr_t addr;
 {
-	if (addr >= USER_FLASH_START && addr < USER_FLASH_END)
+	if (addr >= (caddr_t) USER_FLASH_START &&
+	    addr < (caddr_t) USER_FLASH_END)
 		return 0;
-	if (addr >= USER_DATA_START && addr < USER_DATA_END)
+	if (addr >= (caddr_t) USER_DATA_START &&
+	    addr < (caddr_t) USER_DATA_END)
 		return 0;
 	return 1;
 }
@@ -292,4 +294,152 @@ void remque (void *element)
 
 	e->q_prev->q_next = e->q_next;
 	e->q_next->q_prev = e->q_prev;
+}
+
+/* Nonzero if pointer is not aligned on a "sz" boundary.  */
+#define UNALIGNED(p, sz)	((unsigned) (p) & ((sz) - 1))
+
+/*
+ * Copy data from the memory region pointed to by src0 to the memory
+ * region pointed to by dst0.
+ * If the regions overlap, the behavior is undefined.
+ */
+void
+bcopy (const void *src0, void *dst0, size_t nbytes)
+{
+	unsigned char *dst = dst0;
+	const unsigned char *src = src0;
+	unsigned *aligned_dst;
+	const unsigned *aligned_src;
+
+	/* If the size is small, or either SRC or DST is unaligned,
+	 * then punt into the byte copy loop.  This should be rare.  */
+	if (nbytes >= 4*sizeof(unsigned) &&
+	    ! UNALIGNED (src, sizeof(unsigned)) &&
+	    ! UNALIGNED (dst, sizeof(unsigned))) {
+		aligned_dst = (unsigned*) dst;
+		aligned_src = (const unsigned*) src;
+
+		/* Copy 4X unsigned words at a time if possible.  */
+		while (nbytes >= 4*sizeof(unsigned)) {
+			*aligned_dst++ = *aligned_src++;
+			*aligned_dst++ = *aligned_src++;
+			*aligned_dst++ = *aligned_src++;
+			*aligned_dst++ = *aligned_src++;
+			nbytes -= 4*sizeof(unsigned);
+		}
+
+		/* Copy one unsigned word at a time if possible.  */
+		while (nbytes >= sizeof(unsigned)) {
+			*aligned_dst++ = *aligned_src++;
+			nbytes -= sizeof(unsigned);
+		}
+
+		/* Pick up any residual with a byte copier.  */
+		dst = (unsigned char*) aligned_dst;
+		src = (const unsigned char*) aligned_src;
+	}
+
+	while (nbytes--)
+		*dst++ = *src++;
+}
+
+/*
+ * Fill the array with zeroes.
+ */
+void
+bzero (void *dst0, size_t nbytes)
+{
+	unsigned char *dst;
+	unsigned *aligned_dst;
+
+	dst = (unsigned char*) dst0;
+	while (UNALIGNED (dst, sizeof(unsigned))) {
+		*dst++ = 0;
+		if (--nbytes == 0)
+			return;
+	}
+	if (nbytes >= sizeof(unsigned)) {
+		/* If we get this far, we know that nbytes is large and dst is word-aligned. */
+		aligned_dst = (unsigned*) dst;
+
+		while (nbytes >= 4*sizeof(unsigned)) {
+			*aligned_dst++ = 0;
+			*aligned_dst++ = 0;
+			*aligned_dst++ = 0;
+			*aligned_dst++ = 0;
+			nbytes -= 4*sizeof(unsigned);
+		}
+		while (nbytes >= sizeof(unsigned)) {
+			*aligned_dst++ = 0;
+			nbytes -= sizeof(unsigned);
+		}
+		dst = (unsigned char*) aligned_dst;
+	}
+
+	/* Pick up the remainder with a bytewise loop.  */
+	while (nbytes--)
+		*dst++ = 0;
+}
+
+/*
+ * Compare not more than nbytes of data pointed to by m1 with
+ * the data pointed to by m2. Return an integer greater than, equal to or
+ * less than zero according to whether the object pointed to by
+ * m1 is greater than, equal to or less than the object
+ * pointed to by m2.
+ */
+int
+bcmp (const void *m1, const void *m2, size_t nbytes)
+{
+	const unsigned char *s1 = (const unsigned char*) m1;
+	const unsigned char *s2 = (const unsigned char*) m2;
+	const unsigned *aligned1, *aligned2;
+
+	/* If the size is too small, or either pointer is unaligned,
+	 * then we punt to the byte compare loop.  Hopefully this will
+	 * not turn up in inner loops.  */
+	if (nbytes >= 4*sizeof(unsigned) &&
+	    ! UNALIGNED (s1, sizeof(unsigned)) &&
+	    ! UNALIGNED (s2, sizeof(unsigned))) {
+		/* Otherwise, load and compare the blocks of memory one
+		   word at a time.  */
+		aligned1 = (const unsigned*) s1;
+		aligned2 = (const unsigned*) s2;
+		while (nbytes >= sizeof(unsigned)) {
+			if (*aligned1 != *aligned2)
+				break;
+			aligned1++;
+			aligned2++;
+			nbytes -= sizeof(unsigned);
+		}
+
+		/* check remaining characters */
+		s1 = (const unsigned char*) aligned1;
+		s2 = (const unsigned char*) aligned2;
+	}
+	while (nbytes--) {
+		if (*s1 != *s2)
+			return *s1 - *s2;
+		s1++;
+		s2++;
+	}
+	return 0;
+}
+
+int
+copyout (caddr_t from, caddr_t to, u_int nbytes)
+{
+	if (baduaddr (to) || baduaddr (to + nbytes - 1))
+		return EFAULT;
+	bcopy (from, to, nbytes);
+	return 0;
+}
+
+int copyin (caddr_t from, caddr_t to, u_int nbytes)
+{
+	if (baduaddr (from) || baduaddr (from + nbytes - 1))
+		return EFAULT;
+	bcopy (from, to, nbytes);
+	return 0;
 }
