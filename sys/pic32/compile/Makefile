@@ -37,7 +37,7 @@ OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
 # Machine-dependent files:
 # startuo.o MUST be loaded first, param.o MUST be loaded last.
 KERNOBJ		= startup.o clock.o conf.o cons.o sysctl.o \
-		  machdep.o machdep2.o mem.o trap.o
+		  machdep.o machdep2.o mem.o exception.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -61,6 +61,7 @@ KERNOBJ		+= rk.o
 KERNOBJ		+= vers.o param.o
 
 all:		.deps sys machine unix
+		$(SIZE) unix
 
 clean:
 		rm -rf unix core mklog *.o assym.h vers.c genassym .deps
@@ -77,7 +78,6 @@ machine:
 
 unix:		${KERNOBJ}
 		$(CC) -nostdlib -T using-bootloader.ld ${KERNOBJ} -o unix
-		$(SIZE) unix
 
 vers.o:		${H}/*.h ${M}/*.[ch] ${S}/*.c ${D}/*.[ch]
 		sh newvers.sh

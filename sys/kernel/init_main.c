@@ -107,8 +107,8 @@ main()
 	register int i;
 	register struct fs *fs;
 	daddr_t swsize;
-	int	(*ioctl)();
-	struct	partinfo dpart;
+	struct partinfo dpart;
+	int (*ioctl) (dev_t, u_int, caddr_t, int);
 
 	startup();
 
@@ -118,7 +118,7 @@ main()
 	p = &proc[0];
 	p->p_addr = 0; /*TODO*/
 	p->p_stat = SRUN;
-	p->p_flag |= SLOAD|SSYS;
+	p->p_flag |= SLOAD | SSYS;
 	p->p_nice = NZERO;
 
 	u.u_procp = p;			/* init user structure */
@@ -132,7 +132,7 @@ main()
 		    RLIM_INFINITY;
 
 	/* Initialize signal state for process 0 */
-	siginit(p);
+	siginit (p);
 
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
@@ -146,82 +146,73 @@ main()
 	nchinit();
 	clkstart();
 
-/*
- * Now we find out how much swap space is available.  Since 'nswap' is
- * a "u_int" we have to restrict the amount of swap to 65535 sectors (~32mb).
- * Considering that 4mb is the maximum physical memory capacity of a pdp-11
- * 32mb swap should be enough ;-)
- *
- * The initialization of the swap map was moved here from machdep2.c because
- * 'nswap' was no longer statically defined and this is where the swap dev
- * is opened/initialized.
- *
- * Also, we toss away/ignore .5kb (1 sector) of swap space (because a 0 value
- * can not be placed in a resource map).
- *
- * 'swplo' was a hack which has _finally_ gone away!  It was never anything
- * but 0 and caused a number of double word adds in the kernel.
-*/
+	/*
+	 * Now we find out how much swap space is available.
+	 * We toss away/ignore 1 sector of swap space (because a 0 value
+	 * can not be placed in a resource map).
+	 *
+	 * 'swplo' was a hack which has _finally_ gone away!  It was never anything
+	 * but 0 and caused a number of double word adds in the kernel.
+	 */
 	(*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK);
 	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
 	if (swsize <= 0)
-		panic("swsiz");		/* don't want to panic, but what ? */
+		panic ("swsiz");	/* don't want to panic, but what ? */
 
-/*
- * Next we make sure that we do not swap on a partition unless it is of
- * type FS_SWAP.  If the driver does not have an ioctl entry point or if
- * retrieving the partition information fails then the driver does not
- * support labels and we proceed normally, otherwise the partition must be
- * a swap partition (so that we do not swap on top of a filesystem by mistake).
-*/
+	/*
+	 * Next we make sure that we do not swap on a partition unless it is of
+	 * type FS_SWAP.  If the driver does not have an ioctl entry point or if
+	 * retrieving the partition information fails then the driver does not
+	 * support labels and we proceed normally, otherwise the partition must be
+	 * a swap partition (so that we do not swap on top of a filesystem by mistake).
+	 */
 	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
-	if (ioctl && !(*ioctl)(swapdev, DIOCGPART, (caddr_t)&dpart, FREAD)) {
+	if (ioctl && !(*ioctl) (swapdev, DIOCGPART, (caddr_t)&dpart, FREAD)) {
 		if (dpart.part->p_fstype != FS_SWAP)
-			panic("swtyp");
+			panic ("swtyp");
 	}
-	if (swsize > (daddr_t)65535)
-		swsize = 65535;
 	nswap = swsize;
-	mfree(swapmap, --nswap, 1);
+	mfree (swapmap, --nswap, 1);
 
-	fs = mountfs(rootdev, boothowto & RB_RDONLY ? MNT_RDONLY : 0,
-			(struct inode *)0);
-	if (!fs)
-		panic("iinit");
-	mount[0].m_inodp = (struct inode *)1;	/* XXX */
-	mount_updname(fs, "/", "root", 1, 4);
+	/* Mount a root filesystem. */
+	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
+			(struct inode*) 0);
+	if (! fs)
+		panic ("iinit");
+	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
+	mount_updname (fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
 	boottime = time;
 
-/* kick off timeout driven events by calling first time */
+	/* Kick off timeout driven events by calling first time. */
 	schedcpu (0);
 
-/* set up the root file system */
-	rootdir = iget (rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
-	iunlock(rootdir);
-	u.u_cdir = iget (rootdev, &mount[0].m_filsys, (ino_t)ROOTINO);
-	iunlock(u.u_cdir);
+	/* Set up the root file system. */
+	rootdir = iget (rootdev, &mount[0].m_filsys, (ino_t) ROOTINO);
+	iunlock (rootdir);
+	u.u_cdir = iget (rootdev, &mount[0].m_filsys, (ino_t) ROOTINO);
+	iunlock (u.u_cdir);
 	u.u_rdir = NULL;
 
-/*
- * This came from pdp/machdep2.c because the memory available statements
- * were being made _before_ memory for the networking code was allocated.
- * A side effect of moving this code is that network "attach" and MSCP
- * "online" messages can appear before the memory sizes.  The (currently
- * safe) assumption is made that no 'free' calls are made so that the
- * size in the first entry of the core map is correct.
-*/
-	printf("\nphys mem  = %u\n", physmem);
-	printf("avail mem = %u\n", _coremap[0].m_size);
+	/*
+	 * This came from pdp/machdep2.c because the memory available statements
+	 * were being made _before_ memory for the networking code was allocated.
+	 * A side effect of moving this code is that network "attach" and MSCP
+	 * "online" messages can appear before the memory sizes.  The (currently
+	 * safe) assumption is made that no 'free' calls are made so that the
+	 * size in the first entry of the core map is correct.
+	 */
+	printf ("\nphys mem  = %u\n", physmem);
+	printf ("avail mem = %u\n", _coremap[0].m_size);
 	maxmem = MAXMEM;
-	printf("user mem  = %u\n", MAXMEM);
+	printf ("user mem  = %u\n", MAXMEM);
 #if NRAM > 0
-	printf("ram disk  = %u\n", ramsize);
+	printf ("ram disk  = %u\n", ramsize);
 #endif
-	printf("\n");
+	printf ("\n");
 
 	/*
-	 * make init process
+	 * Make init process.
 	 */
 	if (newproc (0)) {
 		expand (icodeend - icode, S_DATA);

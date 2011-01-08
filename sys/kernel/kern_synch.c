@@ -401,11 +401,6 @@ swtch()
 	struct proc *pp, *pq;
 	int s;
 
-#ifdef DIAGNOSTIC
-	extern struct buf *hasmap;
-	if (hasmap)
-		panic("swtch hasmap");
-#endif
 #ifdef UCB_METER
 	cnt.v_swtch++;
 #endif

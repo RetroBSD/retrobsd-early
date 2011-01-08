@@ -6,17 +6,42 @@
 #include "param.h"
 #include "machine/psl.h"
 #include "machine/reg.h"
-#include "machine/trap.h"
 #include "signalvar.h"
 #include "systm.h"
 #include "user.h"
 #include "proc.h"
 #include "vm.h"
 
-#ifdef DIAGNOSTIC
-extern int hasmap;
-static int savhasmap;
-#endif
+/*
+ * Trap type values
+ */
+#define	T_BUSFLT	000		/* bus error */
+#define	T_INSTRAP	001		/* illegal instruction */
+#define	T_BPTTRAP	002		/* bpt/trace trap */
+#define	T_IOTTRAP	003		/* iot trap */
+#define	T_POWRFAIL	004		/* power failure */
+#define	T_EMTTRAP	005		/* emt trap */
+#define	T_SYSCALL	006		/* system call */
+#define	T_PIRQ		007		/* program interrupt request */
+#define	T_ARITHTRAP	010		/* floating point trap */
+#define	T_SEGFLT	011		/* segmentation fault */
+#define	T_PARITYFLT	012		/* parity fault */
+#define	T_SWITCHTRAP	014		/* process switch */
+/*
+ * T_RANDOMTRAP is used by autoconfig/do_config.c when it substitutes
+ * the trap routine for the standard device interrupt routines when
+ * probing a device in case the device probe routine causes an interrupt.
+ * Ignored in trap.c
+ */
+#define	T_RANDOMTRAP	016		/* random trap */
+#define	T_ZEROTRAP	017		/* trap to zero */
+
+/*
+ * User mode flag added to trap code passed to trap routines
+ * if trap is from user space.
+ */
+#define	USER		020
+#define	SUPV		040
 
 /*
  * Offsets of the user's registers relative to
@@ -69,7 +94,7 @@ exception (dev, sp, r1, ov, nps, r0, pc, ps)
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
 	u.u_ar0 = &r0;
-	switch(minor(dev)) {
+	switch (minor (dev)) {
 
 	/*
 	 * Trap not expected.  Usually a kernel mode bus error.  The numbers
@@ -82,15 +107,6 @@ exception (dev, sp, r1, ov, nps, r0, pc, ps)
 	 */
 	default:
 		once_thru = 1;
-#ifdef DIAGNOSTIC
-		/*
-		 * Clear hasmap if we attempt to sync the fs.
-		 * Else it might fail if we faulted with a mapped
-		 * buffer.
-		 */
-		savhasmap = hasmap;
-		hasmap = 0;
-#endif
 		i = splhigh();
 		printf("aps %o\npc %o ps %o\nov %d\n", &ps, pc, ps, ov);
 		printf("trap type %o\n", dev);

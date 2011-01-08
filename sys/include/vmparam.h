@@ -2,18 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)vmparam.h	7.1.1 (2.11BSD GTE) 1/14/95
  */
-
-/*
- * Machine dependent constants
- */
-#ifdef KERNEL
-#   include "machine/vmparam.h"
-#else
-#   include <machine/vmparam.h>
-#endif
 
 /*
  * CTL_VM identifiers
