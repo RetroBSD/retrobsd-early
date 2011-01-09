@@ -13,7 +13,6 @@
 #include "stat.h"
 #include "kernel.h"
 #include "proc.h"
-#include "text.h"
 
 /*
  * Common routine for chroot and chdir.
@@ -365,8 +364,6 @@ unlink()
 		u.u_error = EPERM;
 		goto out;
 	}
-	if (ip->i_flag&ITEXT)
-		xuntext(ip->i_text);	/* try once to free text */
 	if (dirremove(ndp)) {
 		ip->i_nlink--;
 		ip->i_flag |= ICHG;
@@ -607,8 +604,6 @@ chmod1(ip, mode)
 	ip->i_mode &= ~07777;		/* why? */
 	ip->i_mode |= mode&07777;
 	ip->i_flag |= ICHG;
-	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
-		xuntext(ip->i_text);
 	return (0);
 }
 

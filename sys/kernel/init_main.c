@@ -20,15 +20,12 @@
 #include "systm.h"
 #include "kernel.h"
 #include "namei.h"
-#include "text.h"
 #include "disklabel.h"
 #include "stat.h"
 
 int	netoff = 1;
 int	cmask = CMASK;
 int	securelevel;
-
-memaddr	bpaddr;		/* physical address of buffers */
 
 /*
  * Initialize hash links for buffers.
@@ -52,16 +49,16 @@ binit()
 {
 	register struct buf *bp;
 	register int i;
-	long paddr;
+	caddr_t paddr;
 
 	for (bp = bfreelist; bp < &bfreelist[BQUEUES]; bp++)
 		bp->b_forw = bp->b_back = bp->av_forw = bp->av_back = bp;
-	paddr = ((long)bpaddr) << 6;
-	for (i = 0; i < nbuf; i++, paddr += MAXBSIZE) {
+	paddr = bufdata;
+	for (i = 0; i < NBUF; i++, paddr += MAXBSIZE) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
-		bp->b_addr = (caddr_t) paddr;
+		bp->b_addr = paddr;
 		binshash(bp, &bfreelist[BQ_AGE]);
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
@@ -139,7 +136,6 @@ main()
 	 */
 	cinit();
 	pqinit();
-	xinit();
 	ihinit();
 	bhinit();
 	binit();
@@ -216,8 +212,8 @@ main()
 	 */
 	if (newproc (0)) {
 		expand (icodeend - icode, S_DATA);
-		expand (1, S_STACK);		/* one click of stack */
-		estabur (0, icodeend - icode, 1, 0);
+		expand (1024, S_STACK);			/* one kbyte of stack */
+		estabur (0, icodeend - icode, 1024, 0);
 		copyout ((caddr_t) icode, (caddr_t) 0, icodeend - icode);
 		/*
 		 * return goes to location 0 of user init code

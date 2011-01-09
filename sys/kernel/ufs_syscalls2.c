@@ -21,7 +21,6 @@ statfs1 (mp, sbp)
 {
 	struct	statfs	sfs;
 	register struct	statfs	*sfsp;
-	struct	xmount	*xmp = (struct xmount *) mp->m_extern;
 	struct	fs	*fs = &mp->m_filsys;
 
 	sfsp = &sfs;
@@ -34,8 +33,8 @@ statfs1 (mp, sbp)
 	sfsp->f_files = (fs->fs_isize - 2) * INOPB;
 	sfsp->f_ffree = fs->fs_tinode;
 
-	bcopy(xmp->xm_mnton, sfsp->f_mntonname, MNAMELEN);
-	bcopy(xmp->xm_mntfrom, sfsp->f_mntfromname, MNAMELEN);
+	bcopy (mp->m_mnton, sfsp->f_mntonname, MNAMELEN);
+	bcopy (mp->m_mntfrom, sfsp->f_mntfromname, MNAMELEN);
 	sfsp->f_flags = mp->m_flags & MNT_VISFLAGMASK;
 	return copyout ((caddr_t) sfsp, (caddr_t) sbp, sizeof (struct statfs));
 }

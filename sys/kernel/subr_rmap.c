@@ -48,16 +48,13 @@ malloc (mp, size)
 {
 	register struct mapent *bp, *ep;
 	memaddr addr;
-	int retry;
 
-	if (!size)
-		panic("malloc: size = 0");
+	if (! size)
+		panic ("malloc: size = 0");
 	/*
 	 * Search for a piece of the resource map which has enough
 	 * free space to accomodate the request.
 	 */
-	retry = 0;
-again:
 	for (bp = mp->m_map; bp->m_size; ++bp)
 		if (bp->m_size >= size) {
 			/*
@@ -80,17 +77,6 @@ again:
 			return(addr);
 		}
 	/* no entries big enough */
-	if (!retry++) {
-		if (mp == swapmap) {
-			printf("short of swap\n");
-			xumount(NODEV);
-			goto again;
-		}
-		else if (mp == coremap) {
-			xuncore(size);
-			goto again;
-		}
-	}
 	return((memaddr)NULL);
 }
 
@@ -204,11 +190,11 @@ malloc3 (mp, d_size, s_size, u_size, a)
 	register int next;
 	struct mapent *madd[3];
 	size_t sizes[3];
-	int found, retry;
+	int found;
 
-	sizes[0] = d_size; sizes[1] = s_size; sizes[2] = u_size;
-	retry = 0;
-again:
+	sizes[0] = d_size;
+	sizes[1] = s_size;
+	sizes[2] = u_size;
 	/*
 	 * note, this has to work for d_size and s_size of zero,
 	 * since init() comes in that way.
@@ -229,19 +215,6 @@ again:
 	for (next = 0; next < 3; ++next)
 		if (madd[next])
 			madd[next]->m_size += sizes[next];
-	if (! retry++) {
-		if (mp == swapmap) {
-			printf("short of swap\n");
-			xumount(NODEV);
-			goto again;
-		}
-		else if (mp == coremap) {
-			xuncore(sizes[2]);	/* smallest to largest; */
-			xuncore(sizes[1]);	/* free up minimum space */
-			xuncore(sizes[0]);
-			goto again;
-		}
-	}
 	return((memaddr)NULL);
 
 resolve:

@@ -244,11 +244,11 @@ syscall (dev, sp, r1, ov, nps, r0, pc, ps)
 	else
 		callp = &sysent[code];
 	if (callp->sy_narg)
-		copyin(sp+2, (caddr_t)u.u_arg, callp->sy_narg*NBPW);
+		copyin (sp+2, (caddr_t) u.u_arg, callp->sy_narg*NBPW);
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = r1;
-	if (setjmp(&u.u_qsave) == 0) {
-		(*callp->sy_call)();
+	if (setjmp (&u.u_qsave) == 0) {
+		(*callp->sy_call) ();
 	}
 	switch (u.u_error) {
 	case 0:
@@ -293,5 +293,5 @@ nosys()
 {
 	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
 		u.u_error = EINVAL;
-	psignal(u.u_procp, SIGSYS);
+	psignal (u.u_procp, SIGSYS);
 }

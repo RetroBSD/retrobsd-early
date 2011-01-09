@@ -45,6 +45,11 @@
 #define	MAXSLP 		20
 
 /*
+ * Number of i/o buffers.
+ */
+#define	NBUF		8
+
+/*
  * Disk blocks.
  */
 #define	DEV_BSIZE	1024		/* the same as MAXBSIZE */

@@ -11,7 +11,6 @@
 #include "fs.h"
 #include "map.h"
 #include "buf.h"
-#include "text.h"
 #include "file.h"
 #include "clist.h"
 #include "callout.h"
@@ -49,27 +48,20 @@ startup()
 {
 	int i;
 
-	printf("\n%s\n", version);
+	printf ("\n%s\n", version);
 
 	/* TODO */
 	physmem = MAXMEM;
 
 	procNPROC = proc + nproc;
-	textNTEXT = text + ntext;
+//	textNTEXT = text + ntext;
 	inodeNINODE = inode + ninode;
 	fileNFILE = file + nfile;
-
-	bpaddr = malloc (coremap, (size_t) ((long) nbuf * MAXBSIZE));
-	if (bpaddr == 0)
-		panic("buffers");
 
 	/*
 	 * Now initialize the log driver (kernel logger, error logger and accounting)
 	 */
 	loginit();
-
-	for (i=0; i<NMOUNT; i++)
-		mount[i].m_extern = (memaddr) malloc (coremap, sizeof(struct xmount));
 
 	/*
 	 * Initialize callouts
@@ -95,27 +87,22 @@ boot (dev, howto)
 	if (fp)
 		fp->fs_fmod = 1;
 	if ((howto & RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
+		register struct buf *bp;
+		int iter, nbusy;
+
 		waittime = 0;
 		printf("syncing disks... ");
 		(void) splnet();
-		/*
-		 * Release inodes held by texts before update.
-		 */
-		xumount(NODEV);
 		sync();
-		{ register struct buf *bp;
-		  int iter, nbusy;
-
-		  for (iter = 0; iter < 20; iter++) {
+		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
-			for (bp = &buf[nbuf]; --bp >= buf; )
+			for (bp = &buf[NBUF]; --bp >= buf; )
 				if (bp->b_flags & B_BUSY)
 					nbusy++;
 			if (nbusy == 0)
 				break;
 			printf ("%d ", nbusy);
 			udelay (40000L * iter);
-		  }
 		}
 		printf("done\n");
 	}

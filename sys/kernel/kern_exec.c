@@ -15,7 +15,6 @@
 #include "fs.h"
 #include "mount.h"
 #include "file.h"
-#include "text.h"
 #include "signalvar.h"
 
 /*
@@ -70,7 +69,7 @@ execsigs(p)
  * u.u_error set on error
  */
 static void
-getxfile(ip, ep, nargc, uid, gid)
+getxfile (ip, ep, nargc, uid, gid)
 	struct inode *ip;
 	register struct exec *ep;
 	int nargc, uid, gid;
@@ -79,31 +78,27 @@ getxfile(ip, ep, nargc, uid, gid)
 	off_t offset;
 	u_int ds, ts, ss;
 
-	switch(ep->a_magic) {
-		case A_MAGIC1:
-			lsize = (long)ep->a_data + ep->a_text;
-			ep->a_data = (u_int)lsize;
-			if (lsize != ep->a_data) {	/* check overflow */
-				u.u_error = ENOMEM;
-				return;
-			}
-			ep->a_text = 0;
-			break;
+	switch (ep->a_magic) {
+	case A_MAGIC1:
+		lsize = (long) ep->a_data + ep->a_text;
+		ep->a_data = (u_int) lsize;
+		if (lsize != ep->a_data) {	/* check overflow */
+			u.u_error = ENOMEM;
+			return;
+		}
+		ep->a_text = 0;
+		break;
 	}
 
-	if (ip->i_text && (ip->i_text->x_flag & XTRC)) {
-		u.u_error = ETXTBSY;
-		return;
-	}
-	if (ep->a_text != 0 && (ip->i_flag&ITEXT) == 0 &&
+	if (ep->a_text != 0 && (ip->i_flag & ITEXT) == 0 &&
 	    ip->i_count != 1) {
 		register struct file *fp;
 
 		for (fp = file; fp < fileNFILE; fp++) {
 			if (fp->f_type == DTYPE_INODE &&
 			    fp->f_count > 0 &&
-			    (struct inode *)fp->f_data == ip &&
-			    (fp->f_flag&FWRITE)) {
+			    (struct inode*)fp->f_data == ip &&
+			    (fp->f_flag & FWRITE)) {
 				u.u_error = ETXTBSY;
 				return;
 			}
@@ -115,15 +110,15 @@ getxfile(ip, ep, nargc, uid, gid)
 	 * overflow of max sizes
 	 */
 	ts = ep->a_text;
-	lsize = (long)ep->a_data + ep->a_bss;
-	if (lsize != (u_int)lsize) {
+	lsize = (long) ep->a_data + ep->a_bss;
+	if (lsize != (u_int) lsize) {
 		u.u_error = ENOMEM;
 		return;
 	}
 	ds = lsize;
 	ss = SSIZE + nargc;
 
-	if (estabur(ts, ds, ss, 0)) {
+	if (estabur (ts, ds, ss, 0)) {
 		return;
 	}
 
@@ -134,9 +129,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	u.u_prof.pr_scale = 0;
 	if (u.u_procp->p_flag & SVFORK)
 		endvfork();
-	else
-		xfree();
-	expand(ds, S_DATA);
+	expand (ds, S_DATA);
 	{
 		register u_int numc, startc;
 
@@ -148,12 +141,11 @@ getxfile(ip, ep, nargc, uid, gid)
 	}
 	expand (ss, S_STACK);
 	bzero ((void*) u.u_procp->p_saddr, ss);
-	xalloc (ip, ep);
 
 	/*
 	 * read in data segment
 	 */
-	estabur(0, ds, 0, 0);
+	estabur (0, ds, 0, 0);
 	offset = sizeof(struct exec);
 	offset += ep->a_text;
 	rdwri (UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
@@ -162,19 +154,19 @@ getxfile(ip, ep, nargc, uid, gid)
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
-	if ((u.u_procp->p_flag & P_TRACED)==0) {
+	if ((u.u_procp->p_flag & P_TRACED) == 0) {
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_groups[0] = gid;
 	} else
-		psignal(u.u_procp, SIGTRAP);
+		psignal (u.u_procp, SIGTRAP);
 	u.u_svuid = u.u_uid;
 	u.u_svgid = u.u_groups[0];
 
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
-	estabur(ts, ds, ss, 0);
+	estabur (ts, ds, ss, 0);
 }
 
 void
@@ -198,11 +190,11 @@ execve()
 	char *sharg;
 	struct inode *ip;
 	memaddr bno;
-	char cfname[MAXCOMLEN + 1];
+	char cfname [MAXCOMLEN + 1];
 #define	SHSIZE	32
-	char cfarg[SHSIZE];
+	char cfarg [SHSIZE];
 	union {
-		char	ex_shell[SHSIZE];	/* #! and name of interpreter */
+		char	ex_shell [SHSIZE];	/* #! and name of interpreter */
 		struct	exec ex_exec;
 	} exdata;
 	struct	nameidata nd;
@@ -210,7 +202,7 @@ execve()
 	int resid, error;
 
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
-	ip = namei(ndp);
+	ip = namei (ndp);
 	if (ip == NULL)
 		return;
 	bno = 0;
@@ -228,13 +220,13 @@ execve()
 		if (ip->i_mode & ISGID)
 			gid = ip->i_gid;
 	}
-  again:
-	if (access(ip, IEXEC))
+again:
+	if (access (ip, IEXEC))
 		goto bad;
-	if ((u.u_procp->p_flag & P_TRACED) && access(ip, IREAD))
+	if ((u.u_procp->p_flag & P_TRACED) && access (ip, IREAD))
 		goto bad;
 	if ((ip->i_mode & IFMT) != IFREG ||
-	    (ip->i_mode & (IEXEC|(IEXEC>>3)|(IEXEC>>6))) == 0) {
+	    (ip->i_mode & (IEXEC | (IEXEC>>3) | (IEXEC>>6))) == 0) {
 		u.u_error = EACCES;
 		goto bad;
 	}
@@ -267,7 +259,7 @@ execve()
 		goto bad;
 	}
 
-	switch ((int)exdata.ex_exec.a_magic) {
+	switch ((int) exdata.ex_exec.a_magic) {
 	case A_MAGIC1:
 	case A_MAGIC2:
 	case A_MAGIC3:
@@ -282,12 +274,12 @@ execve()
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
-/*
- * If setuid/gid scripts were to be disallowed this is where it would
- * have to be done.
- *		u.u_uid = uid;
- *		u.u_gid = u_groups[0];
- */
+		/*
+		 * If setuid/gid scripts were to be disallowed this is where it would
+		 * have to be done.
+		 * u.u_uid = uid;
+		 * u.u_gid = u_groups[0];
+		 */
 		cp = &exdata.ex_shell[2];		/* skip "#!" */
 		while (cp < &exdata.ex_shell[SHSIZE]) {
 			if (*cp == '\t')
@@ -314,16 +306,16 @@ execve()
 			while (*cp == ' ')
 				cp++;
 			if (*cp)
-				bcopy((caddr_t)cp, (caddr_t)cfarg, SHSIZE);
+				bcopy ((caddr_t) cp, (caddr_t) cfarg, SHSIZE);
 		}
 		indir = 1;
-		iput(ip);
+		iput (ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
-		ip = namei(ndp);
+		ip = namei (ndp);
 		if (ip == NULL)
 			return;
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname, MAXCOMLEN);
-		cfname[MAXCOMLEN] = '\0';
+		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) cfname, MAXCOMLEN);
+		cfname [MAXCOMLEN] = '\0';
 		goto again;
 	}
 
@@ -337,7 +329,7 @@ execve()
 	cp = 0;
 	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
-		swkill(u.u_procp, "exec");
+		swkill (u.u_procp, "exec");
 		goto bad;
 	}
 	/*
@@ -352,9 +344,9 @@ execve()
 			uap->argp++;		/* ignore argv[0] */
 		} else if (indir && (na == 1 && cfarg[0])) {
 			sharg = cfarg;
-			ap = (int)sharg;
+			ap = (int) sharg;
 		} else if (indir && (na == 1 || (na == 2 && cfarg[0])))
-			ap = (int)uap->fname;
+			ap = (int) uap->fname;
 		else if (uap->argp) {
 			ap = *(int*) uap->argp;
 			uap->argp++;
@@ -387,7 +379,7 @@ execve()
 					bdwrite(bp);
 				}
 				cc = DEV_BSIZE;
-				bp = getblk(swapdev, dbtofsb(bno) + lblkno(nc));
+				bp = getblk (swapdev, dbtofsb(bno) + lblkno(nc));
 				cp = bp->b_addr;
 			}
 			if (sharg) {
@@ -413,18 +405,18 @@ execve()
 		}
 	}
 	if (bp) {
-		bdwrite(bp);
+		bdwrite (bp);
 	}
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	getxfile (ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
-		for (cc = 0;cc < nc; cc += DEV_BSIZE) {
+		for (cc = 0; cc < nc; cc += DEV_BSIZE) {
 			daddr_t blkno;
 
 			blkno = dbtofsb(bno) + lblkno(cc);
-			if (incore(swapdev,blkno)) {
+			if (incore (swapdev, blkno)) {
 				bp = bread (swapdev, blkno);
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
@@ -461,7 +453,7 @@ badarg:
 					brelse(bp);
 				}
 				cc = DEV_BSIZE;
-				bp = bread(swapdev, dbtofsb(bno) + lblkno(nc));
+				bp = bread (swapdev, dbtofsb(bno) + lblkno(nc));
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_addr;
@@ -474,26 +466,24 @@ badarg:
 			cc -= len;
 		} while (error == ENOENT);
 		if (error == EFAULT)
-			panic("exec: EFAULT");
+			panic ("exec: EFAULT");
 	}
 	*(int*) ap = 0;
 	*(int*) (-NBPW) = 0;
 	if (bp) {
 		bp->b_flags |= B_AGE;
-		brelse(bp);
+		brelse (bp);
 		bp = NULL;
 	}
-	execsigs(u.u_procp);
-	for	(cp = u.u_pofile, cc = 0; cc <= u.u_lastfile; cc++, cp++)
-		{
-		if	(*cp & UF_EXCLOSE)
-			{
-			(void)closef(u.u_ofile[cc]);
-			u.u_ofile[cc] = NULL;
+	execsigs (u.u_procp);
+	for (cp = u.u_pofile, cc = 0; cc <= u.u_lastfile; cc++, cp++) {
+		if (*cp & UF_EXCLOSE) {
+			(void) closef (u.u_ofile [cc]);
+			u.u_ofile [cc] = NULL;
 			*cp = 0;
-			}
 		}
-	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
+	}
+	while (u.u_lastfile >= 0 && u.u_ofile [u.u_lastfile] == NULL)
 		u.u_lastfile--;
 
 	/*
@@ -505,16 +495,16 @@ badarg:
 	 * Remember file name for accounting.
 	 */
 	if (indir)
-		bcopy((caddr_t)cfname, (caddr_t)u.u_comm, MAXCOMLEN);
+		bcopy ((caddr_t) cfname, (caddr_t) u.u_comm, MAXCOMLEN);
 	else
-		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)u.u_comm, MAXCOMLEN);
+		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) u.u_comm, MAXCOMLEN);
 bad:
 	if (bp) {
 		bp->b_flags |= B_AGE;
-		brelse(bp);
+		brelse (bp);
 	}
 	if (bno)
-		mfree(swapmap, btod (NCARGS + MAXBSIZE), bno);
+		mfree (swapmap, btod (NCARGS + MAXBSIZE), bno);
 	if (ip)
 		iput(ip);
 }

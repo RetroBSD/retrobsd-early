@@ -254,13 +254,11 @@ loop:
 		goto loop;
 	}
 	if(bp->b_flags & (B_RAMREMAP|B_PHYS)) {
-		register memaddr paddr;	/* click address of real buffer */
 #ifdef DIAGNOSTIC
-		if ((bp < &buf[0]) || (bp >= &buf[nbuf]))
+		if ((bp < &buf[0]) || (bp >= &buf[NBUF]))
 			panic("getnewbuf: RAMREMAP bp addr");
 #endif
-		paddr = bpaddr + DEV_BSIZE * (bp - buf);
-		bp->b_addr = (caddr_t) (paddr << 6);
+		bp->b_addr = bufdata + DEV_BSIZE * (bp - buf);
 	}
 	trace(TR_BRELSE);
 	bp->b_flags = B_BUSY;

@@ -42,7 +42,6 @@ struct inode {
 		struct	proc *I_rsel;	/* pipe read select */
 	} i_un0;
 	union {
-		struct	text *I_text;	/* text entry, if any */
 		struct	proc *I_wsel;	/* pipe write select */
 	} i_un1;
 	union {
@@ -105,7 +104,6 @@ struct dinode {
 #define	i_shlockc	i_un0.i_l.I_shlockc
 #define	i_exlockc	i_un0.i_l.I_exlockc
 #define	i_rsel		i_un0.I_rsel
-#define	i_text		i_un1.I_text
 #define	i_wsel		i_un1.I_wsel
 #define	i_db		i_un2.i_f.I_db
 #define	i_ib		i_un2.i_f.I_ib

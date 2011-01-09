@@ -48,17 +48,13 @@ struct statfs {
  */
 struct	mount
 {
-	dev_t	m_dev;		/* device mounted */
-	struct	fs m_filsys;	/* superblock data */
+	dev_t	m_dev;			/* device mounted */
+	struct	fs m_filsys;		/* superblock data */
 #define	m_flags	m_filsys.fs_flags
-	struct	inode *m_inodp;	/* pointer to mounted on inode */
-	struct	inode *m_qinod; /* QUOTA: pointer to quota file */
-	memaddr	m_extern;	/* click address of mount table extension */
-};
-
-struct xmount {
-	char	xm_mntfrom[MNAMELEN];	/* /dev/xxxx mounted from */
-	char	xm_mnton[MNAMELEN];	/* directory mounted on - this is the
+	struct	inode *m_inodp;		/* pointer to mounted on inode */
+	struct	inode *m_qinod;		/* QUOTA: pointer to quota file */
+	char	m_mntfrom [MNAMELEN];	/* /dev/xxxx mounted from */
+	char	m_mnton [MNAMELEN];	/* directory mounted on - this is the
 					 * full(er) version of fs_fsmnt. */
 };
 

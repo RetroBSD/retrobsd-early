@@ -10,7 +10,6 @@
 #include "user.h"
 #include "proc.h"
 #include "inode.h"
-#include "text.h"
 #include "vm.h"
 #include "ptrace.h"
 
@@ -80,7 +79,6 @@ int
 procxmt()
 {
 	register int i, *p;
-	register struct text *xp;
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
 		return(0);
@@ -111,22 +109,11 @@ procxmt()
 	/* write user I */
 	/* Must set up to allow writing */
 	case PT_WRITE_I:
-		/*
-		 * If text, must assure exclusive use
-		 */
-		xp = u.u_procp->p_textp;
-		if (xp) {
-			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
-				goto error;
-			xp->x_flag |= XTRC;
-		}
 		if (baduaddr ((caddr_t) ipc.ip_addr))
 			goto error;
 		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 1);
 		bcopy ((caddr_t) &ipc.ip_data, (caddr_t) ipc.ip_addr, sizeof(int));
 		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 0);
-		if (xp)
-			xp->x_flag |= XWRIT;
 		break;
 
 	/* write user D */

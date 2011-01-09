@@ -10,7 +10,6 @@
 #include "kernel.h"
 #include "file.h"
 #include "inode.h"
-#include "text.h"
 #include "sysctl.h"
 #include "cpu.h"
 #include "tty.h"

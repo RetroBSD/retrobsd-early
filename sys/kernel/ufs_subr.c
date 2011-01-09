@@ -45,7 +45,7 @@ sync()
 /*
  * Flush all the blocks associated with an inode.
  * There are two strategies based on the size of the file;
- * large files are those with more than (nbuf / 2) blocks.
+ * large files are those with more than NBUF/2 blocks.
  * Large files
  * 	Walk through the buffer pool and push any dirty pages
  *	associated with the device on which the file resides.
@@ -68,13 +68,13 @@ syncip(ip)
 	daddr_t blkno;
 
 	lastlbn = howmany(ip->i_size, DEV_BSIZE);
-	if (lastlbn < nbuf / 2) {
+	if (lastlbn < NBUF / 2) {
 		for (lbn = 0; lbn < lastlbn; lbn++) {
 			blkno = fsbtodb(bmap(ip, lbn, B_READ, 0));
 			blkflush(ip->i_dev, blkno);
 		}
 	} else {
-		lastbufp = &buf[nbuf];
+		lastbufp = &buf[NBUF];
 		for (bp = buf; bp < lastbufp; bp++) {
 			if (bp->b_dev != ip->i_dev ||
 			    (bp->b_flags & B_DELWRI) == 0)

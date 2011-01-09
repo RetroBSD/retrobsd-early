@@ -53,7 +53,6 @@ struct	proc {
 		size_t	P_dsize;	/* size of data area (clicks) */
 		size_t	P_ssize;	/* size of stack segment (clicks) */
 		caddr_t	P_wchan;	/* event process is awaiting */
-		struct	text *P_textp;	/* pointer to text structure */
 		struct	k_itimerval P_realtimer;
 	    } p_alive;
 	    struct {
@@ -80,7 +79,6 @@ struct	proc {
 #define	p_dsize		p_un.p_alive.P_dsize
 #define	p_ssize		p_un.p_alive.P_ssize
 #define	p_wchan		p_un.p_alive.P_wchan
-#define	p_textp		p_un.p_alive.P_textp
 #define	p_realtimer	p_un.p_alive.P_realtimer
 #define	p_clktim	p_realtimer.it_value
 
@@ -89,6 +87,11 @@ struct	proc {
 
 #define	PIDHSZ		16
 #define	PIDHASH(pid)	((pid) & (PIDHSZ - 1))
+
+/* arguments to swapout: */
+#define	X_OLDSIZE	(-1)	/* the old size is the same as current */
+#define	X_DONTFREE	0	/* save core image (for parent in newproc) */
+#define	X_FREECORE	1	/* free core space after swap */
 
 #ifdef KERNEL
 struct	proc *pidhash[PIDHSZ];

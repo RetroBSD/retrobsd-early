@@ -12,7 +12,6 @@
 #include "inode.h"
 #include "file.h"
 #include "vm.h"
-#include "text.h"
 #include "kernel.h"
 
 /*
@@ -27,8 +26,7 @@ newproc (isvfork)
 	register int n;
 	static int pidchecked = 0;
 	struct file *fp;
-	int a1, s;
-	memaddr a[3];
+	int a1;
 
 	/*
 	 * First, just locate a slot for a process
@@ -70,7 +68,8 @@ again:
 			goto again;
 		}
 	}
-	if ((rpp = freeproc) == NULL)
+	rpp = freeproc;
+	if (rpp == NULL)
 		panic("no procs");
 
 	freeproc = rpp->p_nxt;			/* off freeproc */
@@ -85,7 +84,6 @@ again:
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
 	rpp->p_nice = rip->p_nice;
-	rpp->p_textp = rip->p_textp;
 	rpp->p_pid = mpid;
 	rpp->p_ppid = rip->p_pid;
 	rpp->p_pptr = rip;
@@ -107,7 +105,7 @@ again:
 	rpp->p_wchan = 0;
 	rpp->p_slptime = 0;
 	{
-	struct proc **hash = &pidhash[PIDHASH(rpp->p_pid)];
+	struct proc **hash = &pidhash [PIDHASH (rpp->p_pid)];
 
 	rpp->p_hash = *hash;
 	*hash = rpp;
@@ -132,10 +130,6 @@ again:
 			continue;
 		fp->f_count++;
 	}
-	if ((rip->p_textp != NULL) && !isvfork) {
-		rip->p_textp->x_count++;
-		rip->p_textp->x_ccount++;
-	}
 	u.u_cdir->i_count++;
 	if (u.u_rdir)
 		u.u_rdir->i_count++;
@@ -144,7 +138,7 @@ again:
 	 * When the longjmp is executed for the new process,
 	 * here's where it will resume.
 	 */
-	if (setjmp(&u.u_ssave)) {
+	if (setjmp (&u.u_ssave)) {
 		sureg();
 		return(1);
 	}
@@ -154,10 +148,6 @@ again:
 	rpp->p_daddr = rip->p_daddr;
 	rpp->p_saddr = rip->p_saddr;
 	a1 = rip->p_addr;
-	if (isvfork)
-		a[2] = malloc(coremap,USIZE);
-	else
-		a[2] = malloc3(coremap, rip->p_dsize, rip->p_ssize, USIZE, a);
 
 	/*
 	 * Partially simulate the environment of the new process so that
@@ -166,70 +156,42 @@ again:
 	u.u_procp = rpp;
 
 	/*
-	 * If there is not enough core for the new process, swap out the
-	 * current process to generate the copy.
+	 * Swap out the current process to generate the copy.
 	 */
-	if (a[2] == NULL) {
-		rip->p_stat = SIDL;
-		rpp->p_addr = a1;
-		rpp->p_stat = SRUN;
-		swapout(rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
-		rip->p_stat = SRUN;
-		u.u_procp = rip;
-	}
-	else {
-		/*
-		 * There is core, so just copy.
-		 */
-		rpp->p_addr = a[2];
-		bcopy ((const void*) a1, (void*) rpp->p_addr, USIZE);
-		u.u_procp = rip;
-		if (isvfork == 0) {
-			rpp->p_daddr = a[0];
-			bcopy ((const void*) rip->p_daddr,
-				(void*) rpp->p_daddr, rpp->p_dsize);
-			rpp->p_saddr = a[1];
-			bcopy ((const void*) rip->p_saddr,
-				(void*) rpp->p_saddr, rpp->p_ssize);
-		}
-		s = splhigh();
-		rpp->p_stat = SRUN;
-		setrq(rpp);
-		splx(s);
-	}
+	rip->p_stat = SIDL;
+	rpp->p_addr = a1;
+	rpp->p_stat = SRUN;
+	swapout (rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+	rip->p_stat = SRUN;
+	u.u_procp = rip;
+
 	rpp->p_flag |= SSWAP;
 	if (isvfork) {
 		/*
-		 *  Set the parent's sizes to 0, since the child now
-		 *  has the data and stack.
-		 *  (If we had to swap, just free parent resources.)
+		 *  We had to swap, so just free parent resources.
 		 *  Then wait for the child to finish with it.
 		 */
-		if (a[2] == NULL) {
-			mfree(coremap,rip->p_dsize,rip->p_daddr);
-			mfree(coremap,rip->p_ssize,rip->p_saddr);
-		}
+		mfree (coremap, rip->p_dsize, rip->p_daddr);
+		mfree (coremap, rip->p_ssize, rip->p_saddr);
+
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
-		rip->p_textp = NULL;
 		rpp->p_flag |= SVFORK;
 		rip->p_flag |= SVFPRNT;
 		while (rpp->p_flag & SVFORK)
-			sleep((caddr_t)rpp,PSWP+1);
+			sleep ((caddr_t)rpp,PSWP+1);
 		if ((rpp->p_flag & SLOAD) == 0)
-			panic("newproc vfork");
+			panic ("newproc vfork");
 		u.u_dsize = rip->p_dsize = rpp->p_dsize;
 		rip->p_daddr = rpp->p_daddr;
 		rpp->p_dsize = 0;
 		u.u_ssize = rip->p_ssize = rpp->p_ssize;
 		rip->p_saddr = rpp->p_saddr;
 		rpp->p_ssize = 0;
-		rip->p_textp = rpp->p_textp;
-		rpp->p_textp = NULL;
 		rpp->p_flag |= SVFDONE;
-		wakeup((caddr_t)rip);
+		wakeup ((caddr_t) rip);
 		/* must do estabur if dsize/ssize are different */
-		estabur(u.u_tsize, u.u_dsize, u.u_ssize, 0);
+		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 0);
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

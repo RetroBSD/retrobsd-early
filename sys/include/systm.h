@@ -121,16 +121,6 @@ void boot (dev_t dev, int howto);
 int groupmember (gid_t gid);
 
 /*
- * Free the swap image of all unused saved-text text segments on dev.
- */
-void xumount (dev_t dev);
-
-/*
- * Free up "size" core.
- */
-void xuncore (size_t size);
-
-/*
  * Wake up all processes sleeping on chan.
  */
 void wakeup (caddr_t chan);

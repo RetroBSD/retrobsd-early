@@ -8,7 +8,6 @@
 #include "user.h"
 #include "inode.h"
 #include "proc.h"
-#include "text.h"
 #include "namei.h"
 #include "signalvar.h"
 
@@ -570,8 +569,6 @@ core()
 	if (! suser())
 		return(0);
 	if (USIZE + u.u_dsize + u.u_ssize >= u.u_rlimit[RLIMIT_CORE].rlim_cur)
-		return (0);
-	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
 		return (0);
 	cp = u.u_comm;
 	np = name;

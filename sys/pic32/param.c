@@ -9,7 +9,6 @@
 #include "time.h"
 #include "resource.h"
 #include "proc.h"
-#include "text.h"
 #include "file.h"
 #include "dir.h"
 #include "inode.h"
@@ -27,8 +26,7 @@
  * the kernel; it should be modified there to suit local taste
  * if necessary.
  */
-#define	MAXUSERS	4
-#define	NBUF		32
+#define	MAXUSERS	1
 
 int	hz = 60;
 u_short	mshz = (1000000L + 60 - 1) / 60;
@@ -36,9 +34,6 @@ struct	timezone tz = { 480, 1 };
 
 #define	NPROC (10 + 7 * MAXUSERS)
 int	nproc = NPROC;
-
-#define NTEXT (26 + MAXUSERS)
-int	ntext = NTEXT;
 
 #define NINODE ((NPROC + 16 + MAXUSERS) + 22)
 int	ninode = NINODE;
@@ -52,7 +47,7 @@ int	nfile = NFILE;
 
 #define NCALL (16 + MAXUSERS)
 int	ncallout = NCALL;
-int	nbuf = NBUF;
+char	bufdata [NBUF * MAXBSIZE];
 
 #define NCLIST (20 + 8 * MAXUSERS)
 
@@ -68,7 +63,6 @@ int	nclist = NCLIST;
  * (if they've been externed everywhere else; hah!).
  */
 struct	proc *procNPROC;
-struct	text *textNTEXT;
 struct	inode inode [NINODE], *inodeNINODE;
 struct	file *fileNFILE;
 struct	callout callout [NCALL];
@@ -108,7 +102,6 @@ struct map	swapmap[1] = {
 
 struct proc	proc [NPROC];
 struct file	file [NFILE];
-struct text	text [NTEXT];
 
 /* TODO: use linker script*/
 #include "user.h"

@@ -11,7 +11,6 @@
 #include "mount.h"
 #include "kernel.h"
 #include "buf.h"
-#include "text.h"
 #include "systm.h"
 #include "syslog.h"
 

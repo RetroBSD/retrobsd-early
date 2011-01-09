@@ -44,7 +44,6 @@
 #include <sys/resource.h>
 #include <sys/file.h>
 #include <sys/inode.h>
-#include <sys/text.h>
 #include <sys/proc.h>
 #include <sys/vm.h>
 #include <sys/map.h>
@@ -187,14 +186,6 @@ struct kinfo_proc {
 		pid_t	e_tpgid;		/* tty process group id */
 		uid_t	e_ruid;			/* real uid */
 	} kp_eproc;
-};
-
-/*
- * KERN_TEXT op returns array of augmented text structures:
-*/
-struct	kinfo_text {
-	struct	text *kp_textp;			/* address of text */
-	struct	text kp_text;			/* text structure */
 };
 
 /*

@@ -61,15 +61,14 @@ mount_updname (fs, on, from, lenon, lenfrom)
 	int	lenon, lenfrom;
 {
 	struct	mount	*mp;
-	register struct	xmount	*xmp;
 
-	bzero(fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
-	bcopy(on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
-	mp = (struct mount *)((int)fs - offsetof(struct mount, m_filsys));
-	xmp = (struct xmount *) mp->m_extern;
-	bzero(xmp, sizeof (struct xmount));
-	bcopy(on, xmp->xm_mnton, lenon);
-	bcopy(from, xmp->xm_mntfrom, lenfrom);
+	bzero (fs->fs_fsmnt, sizeof (fs->fs_fsmnt));
+	bcopy (on, fs->fs_fsmnt, sizeof (fs->fs_fsmnt) - 1);
+	mp = (struct mount*) ((int) fs - offsetof (struct mount, m_filsys));
+	bzero (mp->m_mnton, sizeof (mp->m_mnton));
+	bzero (mp->m_mntfrom, sizeof (mp->m_mntfrom));
+	bcopy (on, mp->m_mnton, lenon);
+	bcopy (from, mp->m_mntfrom, lenfrom);
 }
 
 void
@@ -290,8 +289,7 @@ unmount1 (fname)
 			goto found;
 	return (EINVAL);
 found:
-	xumount(dev);	/* remove unused sticky files from text table */
-	nchinval(dev);	/* flush the name cache */
+	nchinval (dev);	/* flush the name cache */
 	aflag = mp->m_flags & MNT_ASYNC;
 	mp->m_flags &= ~MNT_ASYNC;	/* Don't want async when unmounting */
 	ufs_sync(mp);

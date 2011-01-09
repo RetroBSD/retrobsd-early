@@ -78,7 +78,7 @@ struct inode;
 #define	BUFHASH(dev,bn)	((struct buf*) &bufhash [((dev) + bn) & (BUFHSZ - 1)])
 
 extern struct	buf buf[];		/* the buffer pool itself */
-extern int	nbuf;			/* number of buffer headers */
+extern char	bufdata[];		/* core data */
 extern struct	bufhd bufhash[];	/* heads of hash lists */
 extern struct	buf bfreelist[];	/* heads of available lists */
 

@@ -44,7 +44,6 @@
 #include <sys/file.h>
 #include <sys/inode.h>
 #include <sys/ioctl.h>
-#include <sys/text.h>
 #include <sys/tty.h>
 #include <sys/vm.h>
 #include <sys/map.h>
@@ -85,7 +84,6 @@ struct sysctl_args {
 static int sysctl_clockrate (char *where, size_t *sizep);
 static int sysctl_inode (char *where, size_t *sizep);
 static int sysctl_file (char *where, size_t *sizep);
-static int sysctl_text (char *where, size_t *sizep);
 static int sysctl_doproc (int *name, u_int namelen, char *where, size_t *sizep);
 
 void
@@ -220,8 +218,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, nproc));
 	case KERN_MAXFILES:
 		return (sysctl_rdint(oldp, oldlenp, newp, nfile));
-	case KERN_MAXTEXTS:
-		return (sysctl_rdint(oldp, oldlenp, newp, ntext));
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, NCARGS));
 	case KERN_SECURELVL:
@@ -255,8 +251,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
 	case KERN_FILE:
 		return (sysctl_file(oldp, oldlenp));
-	case KERN_TEXT:
-		return (sysctl_text(oldp, oldlenp));
 #ifdef GPROF
 	case KERN_PROF:
 		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp,
@@ -733,57 +727,6 @@ sysctl_inode (where, sizep)
 	}
 
 	*sizep = bp - where;
-	return (0);
-}
-
-/*
- * Get text structures.  This is a 2.11BSD extension.  sysctl() is supposed
- * to be extensible...
- */
-int
-sysctl_text(where, sizep)
-	char *where;
-	size_t *sizep;
-{
-	int buflen, error;
-	register struct text *xp;
-	struct	text *xpp;
-	char *start = where;
-	register int i;
-
-	buflen = *sizep;
-	if (where == NULL) {
-		for (i = 0, xp = text; xp < textNTEXT; xp++)
-			if (xp->x_count) i++;
-
-#define	TPTRSZ	sizeof (struct text *)
-#define	TEXTSZ	sizeof (struct text)
-		/*
-		 * overestimate by 3 text structures
-		 */
-		*sizep = (i + 3) * (TEXTSZ + TPTRSZ);
-		return (0);
-	}
-
-	/*
-	 * array of extended file structures: first the address then the
-	 * file structure.
-	 */
-	for (xp = text; xp < textNTEXT; xp++) {
-		if (xp->x_count == 0)
-			continue;
-		if (buflen < (TPTRSZ + TEXTSZ)) {
-			*sizep = where - start;
-			return (ENOMEM);
-		}
-		xpp = xp;
-		if ((error = copyout ((caddr_t) &xpp, (caddr_t) where, TPTRSZ)) ||
-		    (error = copyout ((caddr_t) xp, (caddr_t) (where + TPTRSZ), TEXTSZ)))
-			return (error);
-		buflen -= (TPTRSZ + TEXTSZ);
-		where += (TPTRSZ + TEXTSZ);
-	}
-	*sizep = where - start;
 	return (0);
 }
 

@@ -7,7 +7,6 @@
 #include "user.h"
 #include "proc.h"
 #include "vm.h"
-#include "text.h"
 #include "systm.h"
 
 void
@@ -91,14 +90,9 @@ void
 sureg()
 {
 	int taddr, daddr, saddr;
-	struct text *tp;
 
 	daddr = u.u_procp->p_daddr;
 	saddr = u.u_procp->p_saddr;
-	tp = u.u_procp->p_textp;
-	if (tp != NULL)
-		taddr = tp->x_caddr;
-	else
-		taddr = daddr;
+	taddr = daddr;
 	/* TODO */
 }

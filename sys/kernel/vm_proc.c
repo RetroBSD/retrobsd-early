@@ -6,7 +6,6 @@
 #include "param.h"
 #include "user.h"
 #include "proc.h"
-#include "text.h"
 #include "map.h"
 #include "kernel.h"
 #include "systm.h"

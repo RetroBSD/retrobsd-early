@@ -15,11 +15,10 @@
 #include "file.h"
 #include "wait.h"
 #include "kernel.h"
-#include "text.h"
 
 /*
  * Notify parent that vfork child is finished with parent's data.  Called
- * during exit/exec(getxfile); must be called before xfree().  The child
+ * during exit/exec(getxfile).  The child
  * must be locked in core so it will be in core when the parent runs.
  */
 void
@@ -87,9 +86,8 @@ exit (rv)
 	if (p->p_flag & SVFORK)
 		endvfork();
 	else {
-		xfree();
-		mfree(coremap, p->p_dsize, p->p_daddr);
-		mfree(coremap, p->p_ssize, p->p_saddr);
+		mfree (coremap, p->p_dsize, p->p_daddr);
+		mfree (coremap, p->p_ssize, p->p_saddr);
 	}
 	mfree(coremap, USIZE, p->p_addr);
 

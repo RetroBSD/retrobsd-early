@@ -11,7 +11,6 @@
 #include "namei.h"
 #include "systm.h"
 #include "stat.h"
-#include "text.h"
 
 /*
  * Check mode permission on inode pointer.
@@ -52,17 +51,6 @@ access (ip, mode)
 				u.u_error = EROFS;
 				return (1);
 			}
-		}
-		/*
-		 * If there's shared text associated with
-		 * the inode, try to free it up once.  If
-		 * we fail, we can't allow writing.
-		 */
-		if (ip->i_flag&ITEXT)
-			xuntext(ip->i_text);
-		if (ip->i_flag & ITEXT) {
-			u.u_error = ETXTBSY;
-			return (1);
 		}
 	}
 	/*

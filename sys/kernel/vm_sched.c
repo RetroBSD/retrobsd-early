@@ -6,7 +6,6 @@
 #include "param.h"
 #include "user.h"
 #include "proc.h"
-#include "text.h"
 #include "vm.h"
 #include "kernel.h"
 #include "systm.h"
@@ -95,8 +94,6 @@ sched()
 		for (rp = allproc; rp != NULL; rp = rp->p_nxt) {
 			if (rp->p_stat == SZOMB ||
 			    (rp->p_flag & (SSYS|SLOCK|SULOCK|SLOAD)) != SLOAD)
-				continue;
-			if (rp->p_textp && rp->p_textp->x_flag & XLOCK)
 				continue;
 			if ((rp->p_stat == SSLEEP && (rp->p_flag & P_SINTR)) ||
 			    rp->p_stat == SSTOP) {
@@ -214,22 +211,10 @@ vmtotal()
 	register struct proc *p;
 	register int nrun = 0;
 #ifdef UCB_METER
-	char textcounted[100];
-
 	total.t_vmtxt = 0;
 	total.t_avmtxt = 0;
 	total.t_rmtxt = 0;
 	total.t_armtxt = 0;
-	{
-	register struct text *xp;
-
-	for (xp = text; xp < textNTEXT; xp++)
-		if (xp->x_iptr) {
-			total.t_vmtxt += xp->x_size;
-			if (xp->x_ccount)
-				total.t_rmtxt += xp->x_size;
-		}
-	}
 	total.t_vm = 0;
 	total.t_avm = 0;
 	total.t_rm = 0;
@@ -238,7 +223,6 @@ vmtotal()
 	total.t_dw = 0;
 	total.t_sl = 0;
 	total.t_sw = 0;
-	bzero(textcounted, ntext * sizeof(char));
 #endif
 	for (p = allproc; p != NULL; p = p->p_nxt) {
 		if (p->p_flag & SSYS)
@@ -284,28 +268,6 @@ active:
 				if (p->p_flag & SLOAD)
 					total.t_arm += p->p_dsize + p->p_ssize
 					    + USIZE;
-				if (p->p_textp) switch (p->p_stat) {
-
-				case SSTOP:
-				case SSLEEP:
-					if (p->p_slptime >= maxslp)
-						break;
-					/* fall into... */
-
-				case SRUN:
-				case SIDL:
-				{	register int nt;
-
-					total.t_avmtxt += p->p_textp->x_size;
-					nt = p->p_textp - text;
-					if (!textcounted[nt]) {
-						textcounted[nt] = 1;
-						if (p->p_textp->x_ccount)
-							total.t_armtxt +=
-							    p->p_textp->x_size;
-					}
-				}
-				}
 #endif
 				break;
 			}

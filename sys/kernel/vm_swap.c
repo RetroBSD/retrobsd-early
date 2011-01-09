@@ -6,7 +6,6 @@
 #include "param.h"
 #include "user.h"
 #include "proc.h"
-#include "text.h"
 #include "map.h"
 #include "buf.h"
 #include "systm.h"
@@ -22,59 +21,33 @@ int
 swapin (p)
 	register struct proc *p;
 {
-	register struct text *xp;
-	register memaddr x = NULL;
 	memaddr a[3];
 
 	/* Malloc the text segment first, as it tends to be largest. */
-	xp = p->p_textp;
-	if (xp) {
-		xlock(xp);
-		if (!xp->x_caddr && !xp->x_ccount) {
-			x = malloc(coremap, xp->x_size);
-			if (!x) {
-				xunlock(xp);
-				return(0);
-			}
-		}
-	}
-	if (malloc3(coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
-		if (x)
-			mfree(coremap, xp->x_size, x);
-		if (xp)
-			xunlock(xp);
-		return(0);
-	}
-	if (xp) {
-		if (x) {
-			xp->x_caddr = x;
-			if ((xp->x_flag & XLOAD) == 0)
-				swap(xp->x_daddr, x, xp->x_size, B_READ);
-		}
-		xp->x_ccount++;
-		xunlock(xp);
+	if (malloc3 (coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
+		return (0);
 	}
 	if (p->p_dsize) {
-		swap(p->p_daddr, a[0], p->p_dsize, B_READ);
-		mfree(swapmap, btod(p->p_dsize), p->p_daddr);
+		swap (p->p_daddr, a[0], p->p_dsize, B_READ);
+		mfree (swapmap, btod (p->p_dsize), p->p_daddr);
 	}
 	if (p->p_ssize) {
-		swap(p->p_saddr, a[1], p->p_ssize, B_READ);
-		mfree(swapmap, btod(p->p_ssize), p->p_saddr);
+		swap (p->p_saddr, a[1], p->p_ssize, B_READ);
+		mfree (swapmap, btod (p->p_ssize), p->p_saddr);
 	}
-	swap(p->p_addr, a[2], USIZE, B_READ);
-	mfree(swapmap, btod(USIZE), p->p_addr);
+	swap (p->p_addr, a[2], USIZE, B_READ);
+	mfree (swapmap, btod (USIZE), p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];
 	if (p->p_stat == SRUN)
-		setrq(p);
+		setrq (p);
 	p->p_flag |= SLOAD;
 	p->p_time = 0;
 #ifdef UCB_METER
 	cnt.v_swpin++;
 #endif
-	return(1);
+	return (1);
 }
 
 /*
@@ -95,25 +68,23 @@ swapout (p, freecore, odata, ostack)
 {
 	memaddr a[3];
 
-	if (odata == (u_int)X_OLDSIZE)
+	if (odata == (u_int) X_OLDSIZE)
 		odata = p->p_dsize;
-	if (ostack == (u_int)X_OLDSIZE)
+	if (ostack == (u_int) X_OLDSIZE)
 		ostack = p->p_ssize;
-	if (malloc3(swapmap, btod(p->p_dsize), btod(p->p_ssize),
-	    btod(USIZE), a) == NULL)
-		panic("out of swap space");
+	if (malloc3 (swapmap, btod (p->p_dsize), btod (p->p_ssize),
+	    btod (USIZE), a) == NULL)
+		panic ("out of swap space");
 	p->p_flag |= SLOCK;
-	if (p->p_textp)
-		xccdec(p->p_textp);
 	if (odata) {
-		swap(a[0], p->p_daddr, odata, B_WRITE);
+		swap (a[0], p->p_daddr, odata, B_WRITE);
 		if (freecore == X_FREECORE)
-			mfree(coremap, odata, p->p_daddr);
+			mfree (coremap, odata, p->p_daddr);
 	}
 	if (ostack) {
-		swap(a[1], p->p_saddr, ostack, B_WRITE);
+		swap (a[1], p->p_saddr, ostack, B_WRITE);
 		if (freecore == X_FREECORE)
-			mfree(coremap, ostack, p->p_saddr);
+			mfree (coremap, ostack, p->p_saddr);
 	}
 	/*
 	 * Increment u_ru.ru_nswap for process being tossed out of core.
@@ -130,11 +101,11 @@ swapout (p, freecore, odata, ostack)
 
 		s = splclock();
 		u.u_ru.ru_nswap++;
-		splx(s);
+		splx (s);
 	}
-	swap(a[2], p->p_addr, USIZE, B_WRITE);
+	swap (a[2], p->p_addr, USIZE, B_WRITE);
 	if (freecore == X_FREECORE)
-		mfree(coremap, USIZE, p->p_addr);
+		mfree (coremap, USIZE, p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];
@@ -146,6 +117,6 @@ swapout (p, freecore, odata, ostack)
 #endif
 	if (runout) {
 		runout = 0;
-		wakeup((caddr_t)&runout);
+		wakeup ((caddr_t)&runout);
 	}
 }
