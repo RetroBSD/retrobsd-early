@@ -168,12 +168,8 @@ again:
 	rpp->p_flag |= SSWAP;
 	if (isvfork) {
 		/*
-		 *  We had to swap, so just free parent resources.
-		 *  Then wait for the child to finish with it.
+		 * Wait for the child to finish with it.
 		 */
-		mfree (coremap, rip->p_dsize, rip->p_daddr);
-		mfree (coremap, rip->p_ssize, rip->p_saddr);
-
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;
 		rpp->p_flag |= SVFORK;

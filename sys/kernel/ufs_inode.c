@@ -44,7 +44,7 @@ ihinit()
 	ip->i_freeb = &ifreeh;
 	ip->i_forw = ip;
 	ip->i_back = ip;
-	for (i = ninode; --i > 0; ) {
+	for (i = NINODE; --i > 0; ) {
 		++ip;
 		ip->i_forw = ip;
 		ip->i_back = ip;
@@ -650,7 +650,7 @@ iflush (dev)
 	register struct inode *ip;
 	register int open = 0;
 
-	for (ip = inode; ip < inodeNINODE; ip++) {
+	for (ip = inode; ip < inode+NINODE; ip++) {
 		if (ip->i_dev == dev)
 			if (ip->i_count)
 				return(-1);

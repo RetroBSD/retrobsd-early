@@ -16,7 +16,7 @@
 #include "systm.h"
 
 static void
-rwuio(uio)
+rwuio (uio)
 	register struct uio *uio;
 {
 	struct a {
@@ -350,7 +350,7 @@ select1(uap, is_pselect)
 			goto done;
 		}
 		s = splhigh();
-		time.tv_usec = lbolt * mshz;
+		time.tv_usec = lbolt * usechz;
 		timevaladd(&atv, &time);
 		splx(s);
 	}
@@ -364,7 +364,7 @@ retry:
 	if (uap->ts) {
 		/* this should be timercmp(&time, &atv, >=) */
 		if ((time.tv_sec > atv.tv_sec || (time.tv_sec == atv.tv_sec
-		    && lbolt * mshz >= atv.tv_usec))) {
+		    && lbolt * usechz >= atv.tv_usec))) {
 			splx(s);
 			goto done;
 		}
@@ -543,11 +543,13 @@ socls(fp)
  * place.  the socketops table has to be in kernel space, but since
  * networking might not be defined an appropriate error has to be set
  */
-struct fileops	socketops = { sorw, soctl, sosel, socls };
+const struct fileops socketops = {
+	sorw, soctl, sosel, socls
+};
 
-extern struct fileops	inodeops, pipeops;
-
-struct fileops	*Fops[] = { NULL, &inodeops, &socketops, &pipeops };
+const struct fileops *const Fops[] = {
+	NULL, &inodeops, &socketops, &pipeops
+};
 
 /*
  * Routine placed in illegal entries in the bdevsw and cdevsw tables.

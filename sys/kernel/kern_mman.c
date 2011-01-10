@@ -69,11 +69,11 @@ grow(sp)
  * read-write or read-only.
  */
 int
-estabur(nt, nd, ns, wflag)
+estabur (nt, nd, ns, wflag)
 	u_int nt, nd, ns;
 	int wflag;
 {
-	if (nt + nd + ns + USIZE > maxmem) {
+	if (nt + nd + ns + USIZE > MAXMEM) {
 		u.u_error = ENOMEM;
 		return (-1);
 	}

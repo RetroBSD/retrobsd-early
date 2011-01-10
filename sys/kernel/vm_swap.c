@@ -17,29 +17,28 @@
  * to do largest first.  Text, data, stack and u. are allocated in
  * that order, as that is likely to be in order of size.
  */
-int
+void
 swapin (p)
 	register struct proc *p;
 {
-	memaddr a[3];
+	memaddr daddr = USER_DATA_START;
+	memaddr saddr = USER_DATA_END - p->p_ssize;
+	memaddr uaddr = (memaddr) &u;
 
-	/* Malloc the text segment first, as it tends to be largest. */
-	if (malloc3 (coremap, p->p_dsize, p->p_ssize, USIZE, a) == NULL) {
-		return (0);
-	}
 	if (p->p_dsize) {
-		swap (p->p_daddr, a[0], p->p_dsize, B_READ);
+		swap (p->p_daddr, daddr, p->p_dsize, B_READ);
 		mfree (swapmap, btod (p->p_dsize), p->p_daddr);
 	}
 	if (p->p_ssize) {
-		swap (p->p_saddr, a[1], p->p_ssize, B_READ);
+		swap (p->p_saddr, saddr, p->p_ssize, B_READ);
 		mfree (swapmap, btod (p->p_ssize), p->p_saddr);
 	}
-	swap (p->p_addr, a[2], USIZE, B_READ);
+	swap (p->p_addr, uaddr, USIZE, B_READ);
 	mfree (swapmap, btod (USIZE), p->p_addr);
-	p->p_daddr = a[0];
-	p->p_saddr = a[1];
-	p->p_addr = a[2];
+
+	p->p_daddr = daddr;
+	p->p_saddr = saddr;
+	p->p_addr = uaddr;
 	if (p->p_stat == SRUN)
 		setrq (p);
 	p->p_flag |= SLOAD;
@@ -47,7 +46,6 @@ swapin (p)
 #ifdef UCB_METER
 	cnt.v_swpin++;
 #endif
-	return (1);
 }
 
 /*
@@ -78,13 +76,9 @@ swapout (p, freecore, odata, ostack)
 	p->p_flag |= SLOCK;
 	if (odata) {
 		swap (a[0], p->p_daddr, odata, B_WRITE);
-		if (freecore == X_FREECORE)
-			mfree (coremap, odata, p->p_daddr);
 	}
 	if (ostack) {
 		swap (a[1], p->p_saddr, ostack, B_WRITE);
-		if (freecore == X_FREECORE)
-			mfree (coremap, ostack, p->p_saddr);
 	}
 	/*
 	 * Increment u_ru.ru_nswap for process being tossed out of core.
@@ -104,8 +98,6 @@ swapout (p, freecore, odata, ostack)
 		splx (s);
 	}
 	swap (a[2], p->p_addr, USIZE, B_WRITE);
-	if (freecore == X_FREECORE)
-		mfree (coremap, USIZE, p->p_addr);
 	p->p_daddr = a[0];
 	p->p_saddr = a[1];
 	p->p_addr = a[2];

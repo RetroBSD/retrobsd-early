@@ -50,6 +50,23 @@
 #define	NBUF		8
 
 /*
+ * Clock ticks per second.
+ */
+#define	HZ		100
+
+/*
+ * System parameter formulae.
+ */
+#define	MAXUSERS	1
+#define	NPROC		(1 + 7 * MAXUSERS)
+#define NINODE		((NPROC + 16 + MAXUSERS) + 22)
+#define NFILE		((8 * NINODE / 10) + 20)
+#define NNAMECACHE	(NINODE * 11/10)
+#define NCALL		(16 + MAXUSERS)
+#define NCLIST		(20 + 8 * MAXUSERS)
+#define SMAPSIZ		((9 * NPROC) / 10)	/* size of swap allocation map */
+
+/*
  * Disk blocks.
  */
 #define	DEV_BSIZE	1024		/* the same as MAXBSIZE */

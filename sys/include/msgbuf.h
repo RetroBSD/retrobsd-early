@@ -4,13 +4,13 @@
  * specifies the terms and conditions for redistribution.
  */
 #define	MSG_MAGIC	0x063061
-#define	MSG_BSIZE	4096
+#define	MSG_BSIZE	2048
 
 struct	msgbuf {
 	long	msg_magic;
 	int	msg_bufx;
 	int	msg_bufr;
-	char	*msg_bufc;
+	char	msg_bufc [MSG_BSIZE];
 };
 
 #define	logMSG	0		/* /dev/klog */

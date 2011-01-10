@@ -58,9 +58,9 @@ struct linesw
 };
 
 #ifdef KERNEL
-extern struct	bdevsw bdevsw[];
-extern struct	cdevsw cdevsw[];
-extern struct	linesw linesw[];
+extern const struct	bdevsw bdevsw[];
+extern const struct	cdevsw cdevsw[];
+extern const struct	linesw linesw[];
 
 int rawrw (dev_t dev, struct uio *uio, int flag);
 #endif

@@ -362,7 +362,7 @@ int sysctl_string (void *oldp, size_t *oldlenp,
 /*
  * As above, but read-only.
  */
-int sysctl_rdstring (void *oldp, size_t *oldlenp, void *newp, char *str);
+int sysctl_rdstring (void *oldp, size_t *oldlenp, void *newp, const char *str);
 
 /*
  * Get old parameters for a structure.

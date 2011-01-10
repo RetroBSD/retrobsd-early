@@ -200,4 +200,4 @@ const struct sysent sysent[] = {
 	{ 0, nosys },			/* 155 = fperr */
 };
 
-int	nsysent = sizeof (sysent) / sizeof (sysent[0]);
+const int nsysent = sizeof (sysent) / sizeof (sysent[0]);

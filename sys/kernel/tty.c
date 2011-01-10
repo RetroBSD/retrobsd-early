@@ -93,7 +93,7 @@ const int tthiwat[16] =
 const int ttlowat[16] =
    {  30, 30, 30, 30, 30, 30, 30, 50, 50,120,120,120,125,125,125,125 };
 
-struct	ttychars ttydefaults = {
+const struct ttychars ttydefaults = {
 	CERASE,	CKILL,	CINTR,	CQUIT,	CSTART,	CSTOP,	CEOF,
 	CBRK,	CSUSP,	CDSUSP, CRPRNT, CFLUSH, CWERASE,CLNEXT
 };

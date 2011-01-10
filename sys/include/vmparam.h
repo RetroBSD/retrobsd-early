@@ -10,7 +10,6 @@
 #define	VM_METER	1		/* struct vmmeter */
 #define	VM_LOADAVG	2		/* struct loadavg */
 #define	VM_SWAPMAP	3		/* struct mapent _swapmap[] */
-#define	VM_COREMAP	4		/* struct mapent _coremap[] */
 #define	VM_MAXID	5		/* number of valid vm ids */
 
 #ifndef	KERNEL
@@ -19,6 +18,5 @@
 	{ "vmmeter", CTLTYPE_STRUCT }, \
 	{ "loadavg", CTLTYPE_STRUCT }, \
 	{ "swapmap", CTLTYPE_STRUCT }, \
-	{ "coremap", CTLTYPE_STRUCT }, \
 }
 #endif

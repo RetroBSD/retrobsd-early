@@ -50,7 +50,7 @@ pqinit()
 	 */
 
 	freeproc = NULL;
-	for (p = procNPROC; --p > proc; freeproc = p)
+	for (p = proc+NPROC; --p > proc; freeproc = p)
 		p->p_nxt = freeproc;
 
 	/*

@@ -33,26 +33,29 @@
  */
 extern int securelevel;		/* system security level */
 
-extern	char version[];		/* system version */
+extern const char version[];	/* system version */
 
 /*
  * Nblkdev is the number of entries (rows) in the block switch.
  * Used in bounds checking on major device numbers.
  */
-int	nblkdev;
+const int nblkdev;
 
 /*
  * Number of character switch entries.
  */
-int	nchrdev;
+const int nchrdev;
+
+/*
+ * Number of system call entries.
+ */
+const int nsysent;
 
 int	mpid;			/* generic for unique process id's */
 char	runin;			/* scheduling flag */
 char	runout;			/* scheduling flag */
 int	runrun;			/* scheduling flag */
 char	curpri;			/* more scheduling */
-
-u_int	maxmem;			/* actual max memory per process */
 
 u_int	nswap;			/* size of swap space */
 int	updlock;		/* lock for sync */
@@ -114,6 +117,20 @@ int blktochr (dev_t dev);		/* convert from block to character device number */
 int isdisk (dev_t dev, int type);	/* determine if a device is a disk */
 int iskmemdev (dev_t dev);		/* identify /dev/mem and /dev/kmem */
 void boot (dev_t dev, int howto);
+
+/*
+ * Copy data from kernel space fromaddr to user space address toaddr.
+ * Fromaddr and toaddr must be word aligned.  Returns zero on success,
+ * EFAULT on failure.
+ */
+int copyout (const caddr_t from, caddr_t to, u_int nbytes);
+
+/*
+ * Copy data from user space fromaddr to kernel space address toaddr.
+ * Fromaddr and toaddr must be word aligned.  Returns zero on success,
+ * EFAULT on failure.
+ */
+int copyin (const caddr_t from, caddr_t to, u_int nbytes);
 
 /*
  * Check if gid is a member of the group set.

@@ -224,7 +224,6 @@ syscall (dev, sp, r1, ov, nps, r0, pc, ps)
 	caddr_t sp, pc;
 	int r1, ov, nps, r0, ps;
 {
-	extern int nsysent;
 	register int code;
 	register const struct sysent *callp;
 	time_t syst;

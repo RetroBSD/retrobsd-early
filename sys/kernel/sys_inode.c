@@ -118,8 +118,9 @@ ino_select(fp, which)
 	}
 }
 
-struct 	fileops inodeops =
-	{ ino_rw, ino_ioctl, ino_select, vn_closefile };
+const struct fileops inodeops = {
+	ino_rw, ino_ioctl, ino_select, vn_closefile
+};
 
 int
 rdwri (rw, ip, base, len, offset, ioflg, aresid)
@@ -425,7 +426,7 @@ closei (ip, flag)
 	 * This is because the same device can be referenced by two
 	 * different inodes.
 	 */
-	for (fp = file; fp < fileNFILE; fp++) {
+	for (fp = file; fp < file+NFILE; fp++) {
 		if (fp->f_type != DTYPE_INODE)
 			continue;
 		if (fp->f_count && (ip = (struct inode *)fp->f_data) &&
@@ -649,7 +650,7 @@ forceclose(dev)
 	register struct file *fp;
 	register struct inode *ip;
 
-	for (fp = file; fp < fileNFILE; fp++) {
+	for (fp = file; fp < file+NFILE; fp++) {
 		if (fp->f_count == 0)
 			continue;
 		if (fp->f_type != DTYPE_INODE)

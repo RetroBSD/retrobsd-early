@@ -77,7 +77,7 @@ cinit()
 
 	ccp = (int)cfree;
 	ccp = (ccp + CROUND) & ~CROUND;
-	for (cp = (struct cblock *)ccp; cp <= &cfree[nclist - 1]; cp++) {
+	for (cp = (struct cblock *)ccp; cp <= &cfree[NCLIST - 1]; cp++) {
 		cp->c_next = cfreelist;
 		cfreelist = cp;
 		cfreecount += CBSIZE;
@@ -113,7 +113,7 @@ main()
 	 * set up system process 0 (swapper)
 	 */
 	p = &proc[0];
-	p->p_addr = 0; /*TODO*/
+	p->p_addr = (memaddr) &u;
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD | SSYS;
 	p->p_nice = NZERO;
@@ -199,8 +199,6 @@ main()
 	 * size in the first entry of the core map is correct.
 	 */
 	printf ("\nphys mem  = %u\n", physmem);
-	printf ("avail mem = %u\n", _coremap[0].m_size);
-	maxmem = MAXMEM;
 	printf ("user mem  = %u\n", MAXMEM);
 #if NRAM > 0
 	printf ("ram disk  = %u\n", ramsize);

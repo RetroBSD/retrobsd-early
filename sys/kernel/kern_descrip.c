@@ -315,7 +315,7 @@ falloc()
 		return (NULL);
 	if (lastf == 0)
 		lastf = file;
-	for (fp = lastf; fp < fileNFILE; fp++)
+	for (fp = lastf; fp < file+NFILE; fp++)
 		if (fp->f_count == 0)
 			goto slot;
 	for (fp = file; fp < lastf; fp++)

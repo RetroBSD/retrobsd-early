@@ -10,9 +10,9 @@
 #include "errno.h"
 #include "conf.h"
 
-struct	linesw linesw[] = {
+const struct linesw linesw[] = {
 { ttyopen,	ttylclose,	ttread,		ttwrite,	/* 0- NTTYDISC */
   0,		ttyinput,	ttstart,	ttymodem },
 };
 
-int	nldisp = sizeof (linesw) / sizeof (linesw[0]);
+int nldisp = sizeof (linesw) / sizeof (linesw[0]);

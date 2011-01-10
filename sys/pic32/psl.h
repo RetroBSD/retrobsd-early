@@ -7,7 +7,6 @@
 /*
  * PDP program status longword
  */
-
 #define	PSL_C		0x00000001	/* carry bit */
 #define	PSL_V		0x00000002	/* overflow bit */
 #define	PSL_Z		0x00000004	/* zero bit */
@@ -27,5 +26,5 @@
 #define	PSL_BR6		0x000000c0	/* bus request level 6 */
 #define	PSL_BR7		0x000000e0	/* bus request level 7 */
 
-#define	PSL_USERSET	(PSL_PRVMOD|PSL_CURMOD)
+#define	PSL_USERSET	(PSL_PRVMOD | PSL_CURMOD)
 #define	PSL_USERCLR	PSL_IPL		/* must be clear in user mode */

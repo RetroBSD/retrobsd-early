@@ -125,7 +125,7 @@ syncinodes(fs)
 	/*
 	 * Write back each (modified) inode.
 	 */
-	for (ip = inode; ip < inodeNINODE; ip++) {
+	for (ip = inode; ip < inode+NINODE; ip++) {
 		/*
 		 * Attempt to reduce the overhead by short circuiting the scan if the
 		 * inode is not for the filesystem being processed.

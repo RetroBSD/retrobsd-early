@@ -195,7 +195,6 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int error, level;
 	u_long longhostid;
 	char bsd[10];
-	extern char version[];
 
 	/* all sysctl names at this level are terminal */
 	if (namelen != 1 && !(name[0] == KERN_PROC || name[0] == KERN_PROF))
@@ -213,11 +212,11 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	case KERN_VERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, version));
 	case KERN_MAXINODES:
-		return(sysctl_rdint(oldp, oldlenp, newp, ninode));
+		return(sysctl_rdint(oldp, oldlenp, newp, NINODE));
 	case KERN_MAXPROC:
-		return (sysctl_rdint(oldp, oldlenp, newp, nproc));
+		return (sysctl_rdint(oldp, oldlenp, newp, NPROC));
 	case KERN_MAXFILES:
-		return (sysctl_rdint(oldp, oldlenp, newp, nfile));
+		return (sysctl_rdint(oldp, oldlenp, newp, NFILE));
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, NCARGS));
 	case KERN_SECURELVL:
@@ -360,7 +359,7 @@ debug_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
  * We do not call vmtotal(), that could get rather expensive, rather we rely
  * on the 5 second update.
  *
- * The coremap and swapmap cases are 2.11BSD extensions.
+ * The swapmap case is 2.11BSD extension.
  */
 int
 vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
@@ -399,14 +398,6 @@ vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		}
 		return (sysctl_rdstruct(oldp, oldlenp, newp, swapmap,
 			(int)swapmap[0].m_limit - (int)swapmap[0].m_map));
-	case VM_COREMAP:
-		if (oldp == NULL) {
-			*oldlenp = (char *)coremap[0].m_limit -
-					(char *)coremap[0].m_map;
-			return(0);
-		}
-		return (sysctl_rdstruct(oldp, oldlenp, newp, coremap,
-			(int)coremap[0].m_limit - (int)coremap[0].m_map));
 	default:
 		return (EOPNOTSUPP);
 	}
@@ -548,7 +539,7 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 	void *oldp;
 	size_t *oldlenp;
 	void *newp;
-	char *str;
+	const char *str;
 {
 	int len, error = 0;
 
@@ -559,7 +550,7 @@ sysctl_rdstring(oldp, oldlenp, newp, str)
 		return (EPERM);
 	*oldlenp = len;
 	if (oldp)
-		error = copyout (str, oldp, len);
+		error = copyout ((caddr_t) str, oldp, len);
 	return (error);
 }
 
@@ -630,7 +621,7 @@ sysctl_file(where, sizep)
 
 	buflen = *sizep;
 	if (where == NULL) {
-		for (i = 0, fp = file; fp < fileNFILE; fp++)
+		for (i = 0, fp = file; fp < file+NFILE; fp++)
 			if (fp->f_count) i++;
 
 #define	FPTRSZ	sizeof (struct file *)
@@ -646,7 +637,7 @@ sysctl_file(where, sizep)
 	 * array of extended file structures: first the address then the
 	 * file structure.
 	 */
-	for (fp = file; fp < fileNFILE; fp++) {
+	for (fp = file; fp < file+NFILE; fp++) {
 		if (fp->f_count == 0)
 			continue;
 		if (buflen < (FPTRSZ + FILESZ)) {
@@ -679,7 +670,7 @@ sysctl_clockrate (where, sizep)
 	 * Construct clockinfo structure.
 	*/
 	clkinfo.hz = hz;
-	clkinfo.tick = mshz;
+	clkinfo.tick = usechz;
 	clkinfo.profhz = 0;
 	clkinfo.stathz = hz;
 	return(sysctl_rdstruct(where, sizep, NULL, &clkinfo, sizeof (clkinfo)));
@@ -701,7 +692,7 @@ sysctl_inode (where, sizep)
 	char *ewhere;
 	int error, numi;
 
-	for (numi = 0, ip = inode; ip < inodeNINODE; ip++)
+	for (numi = 0, ip = inode; ip < inode+NINODE; ip++)
 		if (ip->i_count) numi++;
 
 #define IPTRSZ	sizeof (struct inode *)
@@ -712,7 +703,7 @@ sysctl_inode (where, sizep)
 	}
 	ewhere = where + *sizep;
 
-	for (ip = inode; ip < inodeNINODE; ip++) {
+	for (ip = inode; ip < inode+NINODE; ip++) {
 		if (ip->i_count == 0)
 			continue;
 		if (bp + IPTRSZ + INODESZ > ewhere) {

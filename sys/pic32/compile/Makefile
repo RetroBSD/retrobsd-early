@@ -35,9 +35,9 @@ SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
 
 # Machine-dependent files:
-# startuo.o MUST be loaded first, param.o MUST be loaded last.
-KERNOBJ		= startup.o clock.o conf.o cons.o sysctl.o \
-		  machdep.o machdep2.o mem.o exception.o
+# startup.o MUST be loaded first.
+KERNOBJ		= startup.o clock.o devsw.o cons.o sysctl.o \
+		  signal.o machdep.o mem.o exception.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -46,7 +46,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \
 		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
 		   subr_log.o subr_prf.o subr_rmap.o \
-		   syscalls.o sys_generic.o sys_inode.o \
+		   sys_generic.o sys_inode.o \
 		   sys_pipe.o sys_process.o tty.o tty_conf.o \
 		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \
 		   ufs_bmap.o ufs_disksubr.o ufs_dsort.o ufs_fio.o \
@@ -57,8 +57,8 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 # Drivers.
 KERNOBJ		+= rk.o
 
-# Configuration-dependent files: param.o MUST be loaded last.
-KERNOBJ		+= vers.o param.o
+# Configuration-dependent files.
+KERNOBJ		+= vers.o
 
 all:		.deps sys machine unix
 		$(SIZE) unix

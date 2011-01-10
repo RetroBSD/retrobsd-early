@@ -98,8 +98,6 @@ const int tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
 
-extern struct ttychars ttydefaults;
-
 extern int nldisp;		/* number of line disciplines */
 
 /*

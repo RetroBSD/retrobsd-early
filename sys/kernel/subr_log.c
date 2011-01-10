@@ -325,9 +325,6 @@ loginit()
 	register struct msgbuf *mp;
 
 	for (mp = &msgbuf[0]; mp < &msgbuf[NLOG]; mp++) {
-		mp->msg_bufc = (char*) malloc (coremap, MSG_BSIZE);
-		if (! mp->msg_bufc)
-			return(-1);
 		mp->msg_magic = MSG_MAGIC;
 		mp->msg_bufx = mp->msg_bufr = 0;
 	}

@@ -1118,7 +1118,7 @@ maknode (mode, ndp)
 /*
  * A virgin directory (no blushing please).
  */
-struct dirtemplate mastertemplate = {
+const struct dirtemplate mastertemplate = {
 	0, 8, 1, ".",
 	0, DIRBLKSIZ - 8, 2, ".."
 };

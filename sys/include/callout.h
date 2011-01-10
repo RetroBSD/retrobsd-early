@@ -28,5 +28,4 @@ struct	callout {
 
 #ifdef KERNEL
 extern struct	callout *callfree, callout[], calltodo;
-int	ncallout;
 #endif

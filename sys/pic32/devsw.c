@@ -61,13 +61,13 @@ noroot (csr)
 #define	rksize		NULL
 #endif
 
-struct bdevsw	bdevsw[] = {
+const struct bdevsw	bdevsw[] = {
 	{ rkopen,	nulldev,	rkstrategy,	/* rk = 0 */
 	  noroot,	rksize,		0 },
 };
-int	nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
+const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
-struct cdevsw	cdevsw[] = {
+const struct cdevsw	cdevsw[] = {
 { /* cn = 0 */
 	cnopen,		cnclose,	cnread,		cnwrite,
 	cnioctl,	nulldev,	cnttys,		cnselect,
@@ -94,7 +94,7 @@ struct cdevsw	cdevsw[] = {
 	nostrategy,	},
 };
 
-int	nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
+const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
 /*
  * Routine that identifies /dev/mem and /dev/kmem.
@@ -137,7 +137,7 @@ isdisk(dev, type)
 }
 
 #define MAXDEV	7
-static char chrtoblktbl[MAXDEV] =  {
+static const char chrtoblktbl[MAXDEV] =  {
       /* CHR */      /* BLK */
 	/* 0 */		NODEV,
 	/* 1 */		NODEV,

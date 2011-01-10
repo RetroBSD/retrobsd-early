@@ -37,7 +37,8 @@ setthetime (tv)
 /* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv->tv_sec - time.tv_sec;
 	s = splhigh();
-	time = *tv; lbolt = time.tv_usec / mshz;
+	time = *tv;
+	lbolt = time.tv_usec / usechz;
 	splx(s);
 #ifdef	notyet
 	/*
@@ -69,15 +70,18 @@ gettimeofday()
 		 * We don't resolve the milliseconds on every clock tick; it's
 		 * easier to do it here.  Long casts are out of paranoia.
 		 */
-		s = splhigh(); atv = time; ms = lbolt; splx(s);
-		atv.tv_usec = (long)ms * mshz;
-		u.u_error = copyout((caddr_t)&atv, (caddr_t)(uap->tp),
+		s = splhigh();
+		atv = time;
+		ms = lbolt;
+		splx(s);
+		atv.tv_usec = (long)ms * usechz;
+		u.u_error = copyout ((caddr_t) &atv, (caddr_t) uap->tp,
 			sizeof(atv));
 		if (u.u_error)
 			return;
 	}
 	if (uap->tzp)
-		u.u_error = copyout((caddr_t)&tz, (caddr_t)uap->tzp,
+		u.u_error = copyout ((caddr_t) &tz, (caddr_t) uap->tzp,
  			sizeof (tz));
 }
 
@@ -125,12 +129,12 @@ adjtime()
 		sizeof (struct timeval));
 	if (u.u_error)
 		return;
-	adjust = (atv.tv_sec * hz) + (atv.tv_usec / mshz);
+	adjust = (atv.tv_sec * hz) + (atv.tv_usec / usechz);
 	/* if unstoreable values, just set the clock */
 	if (adjust > 0x7fff || adjust < 0x8000) {
 		s = splclock();
 		time.tv_sec += atv.tv_sec;
-		lbolt += atv.tv_usec / mshz;
+		lbolt += atv.tv_usec / usechz;
 		while (lbolt >= hz) {
 			lbolt -= hz;
 			++time.tv_sec;
@@ -145,7 +149,7 @@ adjtime()
 			return;
 		}
 		atv.tv_sec = adjdelta / hz;
-		atv.tv_usec = (adjdelta % hz) * mshz;
+		atv.tv_usec = (adjdelta % hz) * usechz;
 		adjdelta = adjust;
 	}
 	u.u_error = copyout ((caddr_t) &atv, (caddr_t) uap->olddelta,

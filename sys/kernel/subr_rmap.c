@@ -70,10 +70,6 @@ malloc (mp, size)
 				if (!bp->m_size)
 					break;
 			}
-#ifdef UCB_METER
-			if (mp == coremap)
-				freemem -= size;
-#endif
 			return(addr);
 		}
 	/* no entries big enough */
@@ -93,20 +89,11 @@ mfree (mp, size, addr)
 	register struct mapent *bp, *ep;
 	struct mapent *start;
 
-	if (!size)
+	if (! size)
 		return;
 	/* the address must not be 0, or the protocol has broken down. */
-	if (!addr)
-		panic("mfree: addr = 0");
-	if (mp == coremap) {
-		if (runin) {
-			runin = 0;
-			wakeup((caddr_t)&runin);
-		}
-#ifdef UCB_METER
-		freemem += size;
-#endif
-	}
+	if (! addr)
+		panic ("mfree: addr = 0");
 
 	/*
 	 * locate the piece of the map which starts after the
@@ -224,11 +211,6 @@ resolve:
 		a[next] = bp->m_addr;
 		bp->m_addr += sizes[next];
 	}
-
-#ifdef UCB_METER
-	if (mp == coremap)
-		freemem -= d_size + s_size + u_size;
-#endif
 
 	/* remove any entries of size 0; addr of 0 terminates */
 	if (remap)

@@ -1188,7 +1188,7 @@ nchinit()
 
 	nchhead = 0;
 	nchtail = &nchhead;
-	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
+	for (ncp = namecache; ncp < &namecache[NNAMECACHE]; ncp++) {
 		ncp->nc_forw = ncp;			/* hash chain */
 		ncp->nc_back = ncp;
 		ncp->nc_nxt = NULL;			/* lru chain */
@@ -1253,7 +1253,7 @@ nchinval (dev)
 void
 cinvalall()
 {
-	register struct namecache *ncp, *encp = &namecache[nchsize];
+	register struct namecache *ncp, *encp = &namecache[NNAMECACHE];
 
 	for (ncp = namecache; ncp < encp; ncp++)
 		ncp->nc_id = 0;

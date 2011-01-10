@@ -14,7 +14,7 @@ awk ' {
 	host = $5;
 }
 END {
-	printf "char version[] = \"2.11 BSD Unix for PIC32, build #%d:\\n", version;
+	printf "const char version[] = \"2.11 BSD Unix for PIC32, build #%d:\\n", version;
 	printf "     Compiled %s by %s@%s:\\n", date, user, host;
 	printf "     Origin %s\\n\";\n", dir;
 	printf "%d\n", version > "version";

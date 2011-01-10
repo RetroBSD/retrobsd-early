@@ -231,7 +231,7 @@ pipe_close(fp)
 	return(0);
 }
 
-struct fileops	pipeops = {
+const struct fileops pipeops = {
 	pipe_rw, ino_ioctl, pipe_select, pipe_close
 };
 

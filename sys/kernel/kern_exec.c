@@ -94,7 +94,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	    ip->i_count != 1) {
 		register struct file *fp;
 
-		for (fp = file; fp < fileNFILE; fp++) {
+		for (fp = file; fp < file+NFILE; fp++) {
 			if (fp->f_type == DTYPE_INODE &&
 			    fp->f_count > 0 &&
 			    (struct inode*)fp->f_data == ip &&

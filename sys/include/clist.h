@@ -7,12 +7,11 @@
  */
 struct cblock {
 	struct cblock *c_next;
-	char	c_info[CBSIZE];
+	char	c_info [CBSIZE];
 };
 
 #ifdef KERNEL
 extern struct cblock cfree[];
-int	nclist;
 struct	cblock *cfreelist;
 int	cfreecount;
 #endif

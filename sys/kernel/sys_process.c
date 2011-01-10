@@ -136,8 +136,7 @@ procxmt()
 			goto ok;
 		}
 		goto error;
-
-	ok:
+ok:
 		*p = ipc.ip_data;
 		break;
 

@@ -37,10 +37,10 @@ struct	fileops {
 #define f_data		f_un.f_Data
 #define f_socket	f_un.f_Socket
 
-extern struct	file file[], *fileNFILE;
-int	nfile;
-
-extern struct	fileops	*Fops[];
+extern struct file file[];
+extern const struct fileops *const Fops[];
+extern const struct fileops inodeops;
+extern const struct fileops pipeops;
 
 /*
  * Convert a user supplied file descriptor into a pointer to a file structure.

@@ -152,10 +152,7 @@ void cinvalall (void);
 u_short	nextinodeid;		/* unique id generator */
 
 extern struct inode inode[];	/* the inode table itself */
-struct inode *inodeNINODE;	/* the end of the inode table */
-int	ninode;			/* the number of slots in the table */
-
-struct	inode *rootdir;			/* pointer to inode of root directory */
+struct inode *rootdir;		/* pointer to inode of root directory */
 
 /*
  * Initialize hash links for inodes and build inode free list.

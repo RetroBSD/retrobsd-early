@@ -21,7 +21,7 @@ struct	timeval time;
 struct	timezone tz;			/* XXX */
 int	adjdelta;
 int	hz;
-int	mshz;				/* # milliseconds per hz */
+int	usechz;				/* # microseconds per hz */
 int	lbolt;				/* awoken once a second */
 
 short	avenrun[3];

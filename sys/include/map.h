@@ -33,11 +33,7 @@ struct mapent {
 };
 
 #ifdef KERNEL
-extern struct	map	coremap[1];	/* space for core allocation */
-extern struct	map	swapmap[1];	/* space for swap allocation */
-extern struct	map	ub_map[1];	/* space for UNIBUS allocation */
-
-extern struct mapent _coremap[];
+extern struct map swapmap[];	/* space for swap allocation */
 
 /*
  * Allocate units from the given map.

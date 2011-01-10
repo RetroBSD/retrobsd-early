@@ -94,12 +94,10 @@ struct	proc {
 #define	X_FREECORE	1	/* free core space after swap */
 
 #ifdef KERNEL
-struct	proc *pidhash[PIDHSZ];
-extern struct	proc proc[], *procNPROC;	/* the proc table itself */
+struct	proc *pidhash [PIDHSZ];
+extern struct	proc proc[];	/* the proc table itself */
 struct	proc *freeproc, *zombproc, *allproc, *qs;
 			/* lists of procs in various states */
-int	nproc;
-
 /*
  * Init the process queues.
  */
@@ -239,7 +237,7 @@ void swapout (struct proc *p, int freecore, u_int odata, u_int ostack);
 /*
  * Swap a process in.
  */
-int swapin (struct proc *p);
+void swapin (struct proc *p);
 
 /*
  * Is p an inferior of the current process?
@@ -277,20 +275,6 @@ int grow (unsigned sp);
  * Kill current process with the specified signal in an uncatchable manner.
  */
 void fatalsig (int signum);
-
-/*
- * Copy data from kernel space fromaddr to user space address toaddr.
- * Fromaddr and toaddr must be word aligned.  Returns zero on success,
- * EFAULT on failure.
- */
-int copyout (caddr_t from, caddr_t to, u_int nbytes);
-
-/*
- * Copy data from user space fromaddr to kernel space address toaddr.
- * Fromaddr and toaddr must be word aligned.  Returns zero on success,
- * EFAULT on failure.
- */
-int copyin (caddr_t from, caddr_t to, u_int nbytes);
 
 /*
  * Parent controlled tracing.

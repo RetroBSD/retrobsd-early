@@ -256,9 +256,9 @@ rucvt (rup, krup)
 {
 	bzero((caddr_t)rup, sizeof(*rup));
 	rup->ru_utime.tv_sec   = krup->ru_utime / hz;
-	rup->ru_utime.tv_usec  = (krup->ru_utime % hz) * mshz;
+	rup->ru_utime.tv_usec  = (krup->ru_utime % hz) * usechz;
 	rup->ru_stime.tv_sec   = krup->ru_stime / hz;
-	rup->ru_stime.tv_usec  = (krup->ru_stime % hz) * mshz;
+	rup->ru_stime.tv_usec  = (krup->ru_stime % hz) * usechz;
 	rup->ru_nswap = krup->ru_nswap;
 	rup->ru_inblock = krup->ru_inblock;
 	rup->ru_oublock = krup->ru_oublock;

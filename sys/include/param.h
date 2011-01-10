@@ -15,10 +15,9 @@
 /*
  * Machine-independent constants
  */
-#define NMOUNT		6	/* number of mountable file systems */
+#define NMOUNT		2	/* number of mountable file systems */
 #define	MAXUPRC		20	/* max processes per user */
 #define	NOFILE		30	/* max open files per process */
-#define	CANBSIZ		256	/* max size of typewriter line */
 #define	NCARGS		5120	/* # characters in exec arglist */
 #define	NGROUPS		16	/* max number groups */
 
@@ -111,4 +110,4 @@
 /*
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
-#define	MAXMEM		(300*16)
+#define	MAXMEM		(96*1024)

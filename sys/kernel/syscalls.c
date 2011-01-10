@@ -8,7 +8,7 @@
  * System call names.
  */
 #ifndef pdp11
-char *syscallnames[] = {
+const char *syscallnames[] = {
 	"indir",		/*   0 = indir */
 	"exit",			/*   1 = exit */
 	"fork",			/*   2 = fork */
