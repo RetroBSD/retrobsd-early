@@ -31,7 +31,7 @@ struct user {
 /* syscall parameters, results and catches */
 	int	u_arg[6];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
-	label_t	u_qsave;		/* for non-local gotos on interrupts */
+	label_t u_qsave;		/* for non-local gotos on interrupts */
 	union {				/* syscall return values */
 		struct	{
 			int	R_val1;
@@ -114,7 +114,8 @@ struct user {
 #include <sys/errno.h>
 
 #ifdef KERNEL
-extern	struct user u;
+extern	struct user *uarea, u0, u1;
+#define u (*uarea)
 
 /*
  * Increment user profiling counters.

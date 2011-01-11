@@ -406,11 +406,11 @@ swtch()
 #endif
 	/* If not the idle process, resume the idle process. */
 	if (u.u_procp != &proc[0]) {
-		if (setjmp(&u.u_rsave)) {
+		if (setjmp (&u.u_rsave)) {
 			sureg();
 			return;
 		}
-		longjmp(proc[0].p_addr, &u.u_qsave);
+		longjmp (proc[0].p_addr, &u.u_qsave);
 	}
 	/*
 	 * The first save returns nonzero when proc 0 is resumed
@@ -423,7 +423,7 @@ swtch()
 	 * Thus when proc 0 is awakened by being made runnable, it will
 	 * find itself and resume itself at rsave, and return to sched().
 	 */
-	if (setjmp(&u.u_qsave)==0 && setjmp(&u.u_rsave))
+	if (setjmp (&u.u_qsave) == 0 && setjmp (&u.u_rsave))
 		return;
 loop:
 	s = splhigh();
@@ -432,7 +432,7 @@ loop:
 #ifdef DIAGNOSTIC
 	for (p = qs; p; p = p->p_link)
 		if (p->p_stat != SRUN)
-			panic("swtch SRUN");
+			panic ("swtch SRUN");
 #endif
 	pp = NULL;
 	q = NULL;
@@ -469,7 +469,7 @@ loop:
 	 */
 	n = p->p_flag & SSWAP;
 	p->p_flag &= ~SSWAP;
-	longjmp(p->p_addr, n ? &u.u_ssave: &u.u_rsave);
+	longjmp (p->p_addr, n ? &u.u_ssave: &u.u_rsave);
 }
 
 /*

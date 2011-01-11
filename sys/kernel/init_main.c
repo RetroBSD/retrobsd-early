@@ -107,6 +107,8 @@ main()
 	struct partinfo dpart;
 	int (*ioctl) (dev_t, u_int, caddr_t, int);
 
+	printf ("\n%s\n", version);
+
 	startup();
 
 	/*
@@ -134,6 +136,8 @@ main()
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
+	loginit();
+	coutinit();
 	cinit();
 	pqinit();
 	ihinit();
@@ -163,7 +167,7 @@ main()
 	 * a swap partition (so that we do not swap on top of a filesystem by mistake).
 	 */
 	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
-	if (ioctl && !(*ioctl) (swapdev, DIOCGPART, (caddr_t)&dpart, FREAD)) {
+	if (ioctl && ! (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD)) {
 		if (dpart.part->p_fstype != FS_SWAP)
 			panic ("swtyp");
 	}
@@ -212,7 +216,7 @@ main()
 		expand (icodeend - icode, S_DATA);
 		expand (1024, S_STACK);			/* one kbyte of stack */
 		estabur (0, icodeend - icode, 1024, 0);
-		copyout ((caddr_t) icode, (caddr_t) 0, icodeend - icode);
+		copyout ((caddr_t) icode, (caddr_t) USER_DATA_START, icodeend - icode);
 		/*
 		 * return goes to location 0 of user init code
 		 * just copied out.

@@ -363,3 +363,16 @@ hzto(tv)
 #endif
 	return ((int)ticks);
 }
+
+/*
+ * Initialize callouts.
+ */
+void
+coutinit()
+{
+	int i;
+
+	callfree = callout;
+	for (i=1; i<NCALL; i++)
+		callout[i-1].c_next = &callout[i];
+}

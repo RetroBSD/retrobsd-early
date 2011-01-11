@@ -35,7 +35,7 @@ typedef	struct	label_t	{
 #ifdef PIC32MX
 typedef	unsigned physadr;
 typedef	struct	label_t	{
-	unsigned val[11];		/* regs S0-S8, RA and SP */
+	unsigned val[12];		/* regs S0-S8, RA, GP and SP */
 } label_t;
 #endif
 typedef	struct	_quad { long val[2]; } quad;
@@ -73,7 +73,7 @@ int setjmp (label_t *env);
 /*
  * Map in a user structure and jump to a saved context.
  */
-void longjmp (memaddr u, label_t *env);
+void longjmp (memaddr unew, label_t *env);
 
 #endif /* KERNEL */
 

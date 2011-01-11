@@ -25,7 +25,7 @@
 #include "machine/io.h"
 
 		.set	noreorder
-		.set	mips32
+		.set	mips32r2
 
 #---------------------------------------
 # Reset vector at 0x9D006000
@@ -57,6 +57,62 @@ icode:
 #		.word	0
 
 icodeend:	nop
+
+#
+# int setjmp (label_t *env);
+#
+# Setjmp(env) will save the process' current register variables, stack
+# and program counter context and return a zero.
+#
+setjmp:		.globl	setjmp
+		sw	$s0, (0 * 4) ($a0)		# save register variables s0-s8
+		sw	$s1, (1 * 4) ($a0)
+		sw	$s2, (2 * 4) ($a0)
+		sw	$s3, (3 * 4) ($a0)
+		sw	$s4, (4 * 4) ($a0)
+		sw	$s5, (5 * 4) ($a0)
+		sw	$s6, (6 * 4) ($a0)
+		sw	$s7, (7 * 4) ($a0)
+		sw	$s8, (8 * 4) ($a0)		# frame pointer
+		sw	$ra, (9 * 4) ($a0)		# return address
+		sw	$gp, (10 * 4) ($a0)		# global data pointer
+		sw	$sp, (11 * 4) ($a0)		# stack pointer
+		j	$ra
+		move	$v0, $zero			# return a zero for the setjmp call
+
+#
+# void longjmp (memaddr u, label_t *env);
+#
+# Longjmp(u, env) will generate a "return(1)" from the last
+# call to setjmp(env) by mapping in the user structure pointed to by u,
+# restoring the context saved by setjmp in env and returning a "1".
+# Note that registers are recovered statically from the env buffer.
+# Stack is not used.
+#
+# This longjmp differs from the longjmp found in the standard library -
+# it's actually closer to the resume routine of the 4.3BSD kernel.
+#
+longjmp:	.globl	longjmp
+		.extern	uarea
+		di				# can't let anything in till we get a valid stack...
+		sw	$a0, uarea		# map new process' u structure in
+
+		lw	$s0, (0 * 4) ($a1)	# restore register variables s0-s8
+		lw	$s1, (1 * 4) ($a1)
+		lw	$s2, (2 * 4) ($a1)
+		lw	$s3, (3 * 4) ($a1)
+		lw	$s4, (4 * 4) ($a1)
+		lw	$s5, (5 * 4) ($a1)
+		lw	$s6, (6 * 4) ($a1)
+		lw	$s7, (7 * 4) ($a1)
+		lw	$s8, (8 * 4) ($a1)	# frame pointer
+		lw	$ra, (9 * 4) ($a1)	# return address
+		lw	$gp, (10 * 4) ($a1)	# global data pointer
+		lw	$sp, (11 * 4) ($a1)	# stack pointer
+
+		ei				# release interrupts
+		j	$ra			# transfer back to setjmp()
+		li	$v0, 1			# return value of 1
 
 #---------------------------------------
 # Restore CPU state and return from interrupt

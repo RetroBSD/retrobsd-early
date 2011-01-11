@@ -147,6 +147,12 @@ void wakeup (caddr_t chan);
  */
 void dk_alloc (int *dkn, int slots, char *name, long wps);
 
+
+/*
+ * Initialize callouts.
+ */
+void coutinit (void);
+
 /*
  * Syscalls.
  */

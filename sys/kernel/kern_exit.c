@@ -263,9 +263,10 @@ void
 wait4()
 {
 	int retval[2];
-	register struct	args *uap = (struct args *)u.u_ap;
+	register struct	args *uap = (struct args*) u.u_ap;
 
 	uap->compat = 0;
+	retval[0] = 0;
 	u.u_error = wait1 (u.u_procp, uap, retval);
 	if (! u.u_error)
 		u.u_r.r_val1 = retval[0];

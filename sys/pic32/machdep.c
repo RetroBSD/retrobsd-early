@@ -37,8 +37,8 @@ struct proc	proc [NPROC];
 struct file	file [NFILE];
 
 /* TODO: use linker script*/
-//#include "user.h"
-struct user u;
+struct user u0, u1;
+struct user *uarea = &u0;
 
 /*
  * Remove the ifdef/endif to run the kernel in unsecure mode even when in
@@ -82,23 +82,7 @@ daddr_t	dumplo = (daddr_t) 1024;
 void
 startup()
 {
-	int i;
-
-	printf ("\n%s\n", version);
-
 	physmem = 128 * 1024;	/* TODO */
-
-	/*
-	 * Now initialize the log driver (kernel logger, error logger and accounting)
-	 */
-	loginit();
-
-	/*
-	 * Initialize callouts
-	 */
-	callfree = callout;
-	for (i=1; i<NCALL; i++)
-		callout[i-1].c_next = &callout[i];
 }
 
 void
@@ -183,23 +167,6 @@ udelay (usec)
  * Increment user profiling counters.
  */
 void addupc (caddr_t pc, struct uprof *pbuf, int ticks)
-{
-	/* TODO */
-}
-
-/*
- * Save the process' current register context.
- */
-int setjmp (label_t *env)
-{
-	/* TODO */
-	return 0;
-}
-
-/*
- * Map in a user structure and jump to a saved context.
- */
-void longjmp (memaddr u, label_t *env)
 {
 	/* TODO */
 }

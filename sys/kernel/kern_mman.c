@@ -37,7 +37,7 @@ sbrk()
  * Return true if successful.
  */
 int
-grow(sp)
+grow (sp)
 	register unsigned sp;
 {
 	register int si;
@@ -50,7 +50,7 @@ grow(sp)
 	 */
 	if (si <= 0)
 		return (0);
-	if (estabur(u.u_tsize, u.u_dsize, u.u_ssize + si, 0))
+	if (estabur (u.u_tsize, u.u_dsize, u.u_ssize + si, 0))
 		return (0);
 	/*
 	 *  expand will put the stack in the right place;
@@ -73,7 +73,7 @@ estabur (nt, nd, ns, wflag)
 	u_int nt, nd, ns;
 	int wflag;
 {
-	if (nt + nd + ns + USIZE > MAXMEM) {
+	if (nt + nd + ns > MAXMEM) {
 		u.u_error = ENOMEM;
 		return (-1);
 	}
