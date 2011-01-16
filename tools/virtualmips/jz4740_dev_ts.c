@@ -25,8 +25,8 @@
 #include "vp_sdl.h"
 #include "vp_timer.h"
 #include "utils.h"
-#include "mips64_exec.h"
 
+extern cpu_mips_t *current_cpu;
 
 #define TSMAXX 4096
 #define TSMAXY 4096

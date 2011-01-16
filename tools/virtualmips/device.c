@@ -112,7 +112,7 @@ void dev_reset_all(vm_instance_t * vm)
    for (dev = vm->dev_list; dev; dev = dev->next)
    {
       ASSERT(dev->reset_handler != NULL, "reset_handler is NULL. name %s\n", dev->name);
-      dev->reset_handler(vm->cpu, dev);
+      dev->reset_handler(vm->boot_cpu, dev);
    }
 }
 
@@ -140,6 +140,7 @@ void dev_remove(vm_instance_t * vm, struct vdevice *dev)
       return;
 
    vm_unbind_device(vm, dev);
+
    vm_log(vm, "DEVICE",
           "Removal of device %s, fd=%d, host_addr=0x%" LL "x, flags=%d\n",
           dev->name, dev->fd, (m_uint64_t) dev->host_addr, dev->flags);
@@ -161,6 +162,8 @@ void dev_remove(vm_instance_t * vm, struct vdevice *dev)
                 dev->name, dev->fd, (m_uint64_t) dev->host_addr, dev->phys_len);
          munmap((void *) dev->host_addr, dev->phys_len);
       }
+
+
       close(dev->fd);
    }
    else
@@ -226,6 +229,7 @@ struct vdevice *dev_create_ram(vm_instance_t * vm, char *name, m_pa_t paddr, m_u
 
    dev->phys_addr = paddr;
    dev->phys_len = len;
+   //dev->flags = VDEVICE_FLAG_CACHING;
    dev->host_addr = (m_iptr_t) m_memalign(4096, dev->phys_len);
 
    if (!dev->host_addr)

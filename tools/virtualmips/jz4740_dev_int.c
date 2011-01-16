@@ -25,6 +25,7 @@
 
 #define VALIDE_INT_OPERATION 0
 
+extern cpu_mips_t *current_cpu;
 m_uint32_t jz4740_int_table[JZ4740_INT_INDEX_MAX];
 
 struct jz4740_int_data

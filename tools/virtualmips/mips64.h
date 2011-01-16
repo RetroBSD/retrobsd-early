@@ -284,46 +284,46 @@ MIPS INTERRUPT
 
 enum
 {
-    MIPS_KUSEG = 0,
-    MIPS_KSEG0,
-    MIPS_KSEG1,
-    MIPS_KSEG2,
+   MIPS_KUSEG = 0,
+   MIPS_KSEG0,
+   MIPS_KSEG1,
+   MIPS_KSEG2,
 };
 /* Memory operations */
 enum
 {
-    MIPS_MEMOP_LOOKUP = 0,
+   MIPS_MEMOP_LOOKUP = 0,
 
-    MIPS_MEMOP_LB,
-    MIPS_MEMOP_LBU,
-    MIPS_MEMOP_LH,
-    MIPS_MEMOP_LHU,
-    MIPS_MEMOP_LW,
-    MIPS_MEMOP_LWU,
-    MIPS_MEMOP_LD,
-    MIPS_MEMOP_SB,
-    MIPS_MEMOP_SH,
-    MIPS_MEMOP_SW,
-    MIPS_MEMOP_SD,
+   MIPS_MEMOP_LB,
+   MIPS_MEMOP_LBU,
+   MIPS_MEMOP_LH,
+   MIPS_MEMOP_LHU,
+   MIPS_MEMOP_LW,
+   MIPS_MEMOP_LWU,
+   MIPS_MEMOP_LD,
+   MIPS_MEMOP_SB,
+   MIPS_MEMOP_SH,
+   MIPS_MEMOP_SW,
+   MIPS_MEMOP_SD,
 
-    MIPS_MEMOP_LWL,
-    MIPS_MEMOP_LWR,
-    MIPS_MEMOP_LDL,
-    MIPS_MEMOP_LDR,
-    MIPS_MEMOP_SWL,
-    MIPS_MEMOP_SWR,
-    MIPS_MEMOP_SDL,
-    MIPS_MEMOP_SDR,
+   MIPS_MEMOP_LWL,
+   MIPS_MEMOP_LWR,
+   MIPS_MEMOP_LDL,
+   MIPS_MEMOP_LDR,
+   MIPS_MEMOP_SWL,
+   MIPS_MEMOP_SWR,
+   MIPS_MEMOP_SDL,
+   MIPS_MEMOP_SDR,
 
-    MIPS_MEMOP_LL,
-    MIPS_MEMOP_SC,
+   MIPS_MEMOP_LL,
+   MIPS_MEMOP_SC,
 
-    MIPS_MEMOP_LDC1,
-    MIPS_MEMOP_SDC1,
+   MIPS_MEMOP_LDC1,
+   MIPS_MEMOP_SDC1,
 
-    MIPS_MEMOP_CACHE,
+   MIPS_MEMOP_CACHE,
 
-    MIPS_MEMOP_MAX,
+   MIPS_MEMOP_MAX,
 };
 
 /* Maximum number of breakpoints */
@@ -343,148 +343,166 @@ enum
 //typedef struct cpu_mips cpu_mips_t;
 
 /* Memory operation function prototype */
-typedef u_int (*mips_memop_fn) (cpu_mips_t * cpu, m_va_t vaddr, u_int reg);
+typedef  u_int fastcall (*mips_memop_fn) (cpu_mips_t * cpu, m_va_t vaddr, u_int reg);
 
 /* TLB entry definition */
 typedef struct
 {
-    m_va_t mask;
-    m_va_t hi;
-    m_va_t lo0;
-    m_va_t lo1;
+   m_va_t mask;
+   m_va_t hi;
+   m_va_t lo0;
+   m_va_t lo1;
 } tlb_entry_t;
 
 /* System Coprocessor (CP0) definition */
 typedef struct
 {
-    m_cp0_reg_t reg[MIPS64_CP0_REG_NR];
-    /*because configure has sel 0-7, seperate it to reg */
-    m_cp0_reg_t config_reg[MIPS64_CP0_CONFIG_REG_NR];
-    m_uint8_t config_usable;    /*if configure register sel N is useable, set the bit in config_usable to 1 */
+   m_cp0_reg_t reg[MIPS64_CP0_REG_NR];
+   /*because configure has sel 0-7, seperate it to reg */
+   m_cp0_reg_t config_reg[MIPS64_CP0_CONFIG_REG_NR];
+   m_uint8_t config_usable;     /*if configure register sel N is useable, set the bit in config_usable to 1 */
 
 
-    tlb_entry_t tlb[MIPS64_TLB_MAX_ENTRIES];
+   tlb_entry_t tlb[MIPS64_TLB_MAX_ENTRIES];
 
-    /* Number of TLB entries */
-    u_int tlb_entries;
+   /* Number of TLB entries */
+   u_int tlb_entries;
 
 
 } mips_cp0_t;
 
 
-typedef struct mips_def {
-    const  char *name;
-    int32_t CP0_PRid;
-    /*which cp0 config regiser is useable*/
-    int32_t config_usable;
-    int32_t CP0_Config0;
-    int32_t CP0_Config1;
-    int32_t CP0_Config2;
-    int32_t CP0_Config3;
-    int32_t CP0_Config4;
-    int32_t CP0_Config5;
-    int32_t CP0_Config6;
-    int32_t CP0_Config7;
-    int32_t SEGBITS;
-    int32_t PABITS;
-    m_pa_t pc;
-    int32_t tlb_entries;
-    int32_t address_model; /*32bit address or 64 bit address*/
-    }mips_def_t;
+
 
 
 /* mips CPU definition */
 struct cpu_mips
 {
-    u_int id;
-    u_int type;
-    mips_def_t def;
+   /* CPU identifier for MP systems */
+   u_int id;
+   u_int type;
 
-    m_va_t pc;
-    m_reg_t gpr[MIPS64_GPR_NR];
-    m_reg_t lo, hi;
+   m_va_t pc, ret_pc;
+   m_va_t jit_pc;
+   m_reg_t gpr[MIPS64_GPR_NR];
+   m_reg_t lo, hi;
+   /* VM instance */
+   vm_instance_t *vm;
+	/* Next CPU in group */
+   cpu_mips_t *next;
+	/* System coprocessor (CP0) */
+   mips_cp0_t cp0;
+   
 
-    /* VM instance */
-    vm_instance_t *vm;
-
-    /* System coprocessor (CP0) */
-    mips_cp0_t cp0;
-
-
-    /* CPU states */
-    volatile m_uint32_t state;
-    /* Thread running this CPU */
-    pthread_t cpu_thread;
-    int cpu_thread_running;
-
-    /* MTS32/MTS64 caches */
-    union
-    {
-        mts32_entry_t *mts32_cache;
-        mts64_entry_t *mts64_cache;
-    } mts_u;
-
-    /* General Purpose Registers, Pointer Counter, LO/HI, IRQ */
-    m_uint32_t irq_pending, irq_cause, ll_bit;
-    /*pause request. INTERRUPT will pause cpu */
-    m_uint32_t pause_request;
+   
+   
+   /* CPU states */
+   volatile m_uint32_t state, prev_state;
 
 
-    /* Methods */
-    int (*reg_get) (cpu_mips_t * cpu, u_int reg, m_reg_t * val);
-    void (*reg_set) (cpu_mips_t * cpu, u_int reg_index, m_reg_t val);
-    void (*mts_rebuild) (cpu_mips_t * cpu);
-    void (*mts_map) (cpu_mips_t * cpu, m_va_t vaddr, m_pa_t paddr, m_uint32_t len, int cache_access, int tlb_index);
-    void (*mts_unmap) (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t len, m_uint32_t val, int tlb_index);
-    void (*mts_shutdown) (cpu_mips_t * cpu);
-     u_int(*mips_mts_gdb_lb) (cpu_mips_t * cpu, m_va_t vaddr, void *cur);
-     void *  (*mem_op_lookup) (cpu_mips_t * cpu, m_va_t vaddr);
+   /* Thread running this CPU */
+   pthread_t cpu_thread;
+   int cpu_thread_running;
 
-    /* Virtual address to physical page translation */
-    int (*translate) (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t * phys_page);
+	/*pause request. INTERRUPT will pause cpu*/
+   m_uint32_t pause_request;
 
-    mips_memop_fn mem_op_fn[MIPS_MEMOP_MAX];
+   /* Methods */
+   int (*reg_get) (cpu_mips_t * cpu, u_int reg, m_reg_t * val);
+   void (*reg_set) (cpu_mips_t * cpu, u_int reg_index, m_reg_t val);
+   void (*mts_rebuild) (cpu_mips_t * cpu);
+    u_int(*mips_mts_gdb_lb) (cpu_mips_t * cpu, m_va_t vaddr, void *cur);
 
-    /* Address bus mask for physical addresses */
-    m_va_t addr_bus_mask;
+   /* MTS32/MTS64 caches */
+   union
+   {
+      mts32_entry_t *mts32_cache;
+      mts64_entry_t *mts64_cache;
+   } mts_u;
+
+   /* General Purpose Registers, Pointer Counter, LO/HI, IRQ */
+   m_uint32_t irq_pending, irq_cause, ll_bit;
+   
+
+   /* Virtual address to physical page translation */
+   int (*translate) (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t * phys_page);
+   /* Memory access functions */
+   mips_memop_fn mem_op_fn[MIPS_MEMOP_MAX];
+   /* Memory lookup function (to load ELF image,...) */
+   void * fastcall (*mem_op_lookup) (cpu_mips_t * cpu, m_va_t vaddr);
 
 
-    /* MTS cache statistics */
-    m_uint64_t mts_misses, mts_lookups;
 
-    /* Address mode (32 or 64 bits) */
-    u_int addr_mode;
+
+   /* Address bus mask for physical addresses */
+   m_va_t addr_bus_mask;
+
+   /* MTS map/unmap/rebuild operations */
+   void (*mts_map) (cpu_mips_t * cpu, m_va_t vaddr, m_pa_t paddr, m_uint32_t len, int cache_access, int tlb_index);
+   void (*mts_unmap) (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t len, m_uint32_t val, int tlb_index);
+   void (*mts_shutdown) (cpu_mips_t * cpu);
+   /* MTS cache statistics */
+   m_uint64_t mts_misses, mts_lookups;
+
+   /* Address mode (32 or 64 bits) */
+   u_int addr_mode;
 
     int is_in_bdslot;
+   
+   /* Current exec page (non-JIT) info */
+   m_va_t njm_exec_page;
+   mips_insn_t *njm_exec_ptr;
 
-    /* Current exec page (non-JIT) info */
-    m_va_t njm_exec_page;
-    mips_insn_t *njm_exec_ptr;
 
 
+#ifdef _USE_JIT_
+   /* JIT flush method */
+   u_int jit_flush_method;
+
+   /* Number of compiled pages */
+   u_int compiled_pages;
+   
+ /* Code page translation cache */
+   mips64_jit_tcb_t **exec_blk_map;
+   void *exec_page_area;
+   size_t exec_page_area_size;  /*M bytes*/
+   size_t exec_page_count,exec_page_alloc;
+   insn_exec_page_t *exec_page_free_list;
+   insn_exec_page_t *exec_page_array;
+    /* Current and free lists of translated code blocks */
+   mips64_jit_tcb_t *tcb_list,*tcb_last,*tcb_free_list;
+     /* Direct block jump.Optimization */
+   u_int exec_blk_direct_jump;
+     
+#endif
+   
 };
 
 
 
-
+/* Register names */
+extern char *mips64_gpr_reg_names[];
 
 #define MAJOR_OP(_inst) (((uint)_inst >> 26) & 0x3f )
 
+int mips_load_elf_image(cpu_mips_t * cpu, char *filename, m_va_t * entry_point);
 
+int mips64_get_reg_index(char *name);
+int mips64_cca_cached(m_uint8_t val);
 void mips64_dump_regs(cpu_mips_t * cpu);
 void mips64_delete(cpu_mips_t * cpu);
 int mips64_reset(cpu_mips_t * cpu);
 int mips64_init(cpu_mips_t * cpu);
 int mips64_load_elf_image(cpu_mips_t * cpu, char *filename, m_va_t * entry_point);
 void mips64_delete(cpu_mips_t * cpu);
-int  mips64_update_irq_flag(cpu_mips_t * cpu);
+int fastcall mips64_update_irq_flag(cpu_mips_t * cpu);
 void mips64_trigger_exception(cpu_mips_t * cpu, u_int exc_code, int bd_slot);
-void  mips64_exec_soft_fpu(cpu_mips_t * cpu);
-void  mips64_exec_eret(cpu_mips_t * cpu);
-void  mips64_exec_break(cpu_mips_t * cpu, u_int code);
-void  mips64_trigger_trap_exception(cpu_mips_t * cpu);
-void  mips64_exec_syscall(cpu_mips_t * cpu);
-void  mips64_trigger_irq(cpu_mips_t * cpu);
+void fastcall mips64_exec_soft_fpu(cpu_mips_t * cpu);
+void fastcall mips64_exec_eret(cpu_mips_t * cpu);
+void fastcall mips64_exec_break(cpu_mips_t * cpu, u_int code);
+void fastcall mips64_trigger_trap_exception(cpu_mips_t * cpu);
+void fastcall mips64_exec_syscall(cpu_mips_t * cpu);
+void fastcall mips64_trigger_irq(cpu_mips_t * cpu);
 void mips64_set_irq(cpu_mips_t * cpu, m_uint8_t irq);
 void mips64_clear_irq(cpu_mips_t * cpu, m_uint8_t irq);
 

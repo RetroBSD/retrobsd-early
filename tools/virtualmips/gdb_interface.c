@@ -415,6 +415,12 @@ static void attach_gdb(vm_instance_t * vm)
 #define BYTE_SZ   1
 int debug_read_memory(cpu_mips_t * cpu, m_uint32_t vaddr, unsigned int len, char *buf)
 {
+   //void *haddr=NULL;
+   //m_uint32_t exc;
+   //m_uint32_t data;
+   //m_uint8_t has_set_value=FALSE;
+
+
    char readout_buf[MAX_XFER];
    if (len > MAX_XFER)
    {
@@ -559,7 +565,7 @@ Simdebug_result Simdebug_run(vm_instance_t * vm, int sig)
             for (i = 0; i < GDB_NUM_REGS; i++)
             {
                //FIXME: find the mapping from register index to register of cpu and cpu0 of gdb
-               if (vm->cpu->reg_get(vm->cpu, i, &r) == FAILURE)
+               if (vm->boot_cpu->reg_get(vm->boot_cpu, i, &r) == FAILURE)
                   r = 0;
                /*
                 * flip the bytes around 
@@ -589,7 +595,7 @@ Simdebug_result Simdebug_run(vm_instance_t * vm, int sig)
             else
             {
 
-               if (debug_read_memory(vm->cpu, memaddr, len, cmd_buf) != SUCCESS)
+               if (debug_read_memory(vm->boot_cpu, memaddr, len, cmd_buf) != SUCCESS)
                   write_enn(cmd_buf);
             }
             break;
@@ -604,7 +610,7 @@ Simdebug_result Simdebug_run(vm_instance_t * vm, int sig)
             else
             {
                // index=vmtoh32(index);
-               if (vm->cpu->reg_get(vm->cpu, index, &r) == FAILURE)
+               if (vm->boot_cpu->reg_get(vm->boot_cpu, index, &r) == FAILURE)
                   r = 0;
                /*
                 * flip the bytes around 

@@ -25,9 +25,10 @@
 #include "cpu.h"
 #include "jz4740.h"
 #include "vp_timer.h"
-#include "mips64_exec.h"
+
 
 #define RTC_TIMEOUT  1000       //1000MS=1S
+extern cpu_mips_t *current_cpu;
 m_uint32_t jz4740_rtc_table[JZ4740_RTC_INDEX_MAX];
 
 struct jz4740_rtc_data

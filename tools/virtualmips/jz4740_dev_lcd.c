@@ -23,8 +23,6 @@
 #include "vp_sdl.h"
 #include "vp_timer.h"
 #include "utils.h"
-#include "mips64_exec.h"
-
 
 int dev_jz4740_ts_init(vm_instance_t * vm, char *name, m_pa_t paddr, m_uint32_t len, struct DisplayState *ds);
 
@@ -35,6 +33,7 @@ int dev_jz4740_ts_init(vm_instance_t * vm, char *name, m_pa_t paddr, m_uint32_t 
 #define LCD_HEIGHT  272
 #define LCD_BPP  32             /*32 bit per pixel */
 
+extern cpu_mips_t *current_cpu;
 
 m_uint32_t jz4740_lcd_table[JZ4740_LCD_INDEX_MAX];
 struct jz_fb_dma_descriptor

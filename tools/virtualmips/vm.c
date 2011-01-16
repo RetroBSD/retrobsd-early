@@ -6,9 +6,9 @@
  */
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -36,8 +36,17 @@ char *vm_get_type(vm_instance_t * vm)
 
    switch (vm->type)
    {
+   case VM_TYPE_SWARM:
+      machine = "swarm";
+      break;
+   case VM_TYPE_ADM5120:
+      machine = "ADM5120";
+      break;
    case VM_TYPE_PAVO:
       machine = "PAVO";
+      break;
+   case VM_TYPE_PIC32:
+      machine = "PIC32";
       break;
    default:
       machine = "unknown";
@@ -53,8 +62,14 @@ char *vm_get_platform_type(vm_instance_t * vm)
 
    switch (vm->type)
    {
-   case VM_TYPE_PAVO:
-      machine = "PAVO";
+   case VM_TYPE_SWARM:
+      machine = "swarm";
+      break;
+   case VM_TYPE_ADM5120:
+      machine = "ADM5120";
+      break;
+   case VM_TYPE_PIC32:
+      machine = "PIC32";
       break;
    default:
       machine = "VM";
@@ -167,10 +182,13 @@ vm_instance_t *vm_create(char *name, int machine_type)
    }
 
    memset(vm, 0, sizeof(*vm));
+   //vm->instance_id          = instance_id;
    vm->type = machine_type;
    vm->status = VM_STATUS_HALTED;
+   vm->jit_use = 0;
    vm->vtty_con1_type = VTTY_TYPE_TERM;
    vm->vtty_con2_type = VTTY_TYPE_NONE;
+   //vm->timer_irq_check_itv  = VM_TIMER_IRQ_CHECK_ITV;
    vm->log_file_enabled = TRUE;
 
    if (!(vm->name = strdup(name)))
@@ -179,27 +197,36 @@ vm_instance_t *vm_create(char *name, int machine_type)
       goto err_name;
    }
 
+   /* create lock file */
+   // if (vm_get_lock(vm) == -1)
+   //    goto err_lock;
 
    /* create log file */
    if (vm_create_log(vm) == -1)
       goto err_log;
 
-   /*create configure*/
-   if (!(vm->configure= malloc(sizeof(*vm->configure))))
-		goto err_configure;
-   memset(vm->configure,0,sizeof(*vm->configure));
+   /*if (registry_add(vm->name,OBJ_TYPE_VM,vm) == -1) {
+      fprintf(stderr,"VM: Unable to store instance '%s' in registry!\n",
+      vm->name);
+      goto err_reg_add;
+      } */
+
+
 
    return vm;
-err_configure:
-	vm_close_log(vm);
+
+// err_reg_add:
+//   vm_close_log(vm);
  err_log:
+//  free(vm->lock_file);
+// err_lock:
    free(vm->name);
  err_name:
    free(vm);
    return NULL;
 }
 
-/* 
+/*
  * Shutdown hardware resources used by a VM.
  * The CPU must have been stopped.
  */
@@ -207,7 +234,7 @@ static int vm_hardware_shutdown(vm_instance_t * vm)
 {
    //int i;
 
-   if ((vm->status == VM_STATUS_HALTED) )
+   if ((vm->status == VM_STATUS_HALTED) || !vm->cpu_group)
    {
       vm_log(vm, "VM", "trying to shutdown an inactive VM.\n");
       return (-1);
@@ -250,7 +277,9 @@ static int vm_hardware_shutdown(vm_instance_t * vm)
 
    /* Delete system CPU group */
    vm_log(vm, "VM", "deleting system CPUs.\n");
-   vm->cpu = NULL;
+   cpu_group_delete(vm->cpu_group);
+   vm->cpu_group = NULL;
+   vm->boot_cpu = NULL;
 
    vm_log(vm, "VM", "shutdown procedure completed.\n");
    return (0);
@@ -291,7 +320,7 @@ int vm_ram_init(vm_instance_t * vm, m_pa_t paddr)
 {
    m_uint32_t len;
 
-   len = vm->configure->ram_size * 1048576;
+   len = vm->ram_size * 1048576;
 #ifdef SIM_PAVO
 /*
 Why plus 0x2000 (8k) for PAVO??
@@ -331,7 +360,7 @@ int vm_bind_device(vm_instance_t * vm, struct vdevice *dev)
    struct vdevice **cur;
    u_int i;
 
-   /* 
+   /*
     * Add this device to the device array. The index in the device array
     * is used by the MTS subsystem.
     */
@@ -394,6 +423,16 @@ int vm_unbind_device(vm_instance_t * vm, struct vdevice *dev)
 /* Map a device at the specified physical address */
 int vm_map_device(vm_instance_t * vm, struct vdevice *dev, m_pa_t base_addr)
 {
+#if 0
+   /* Suspend VM activity */
+   vm_suspend(vm);
+
+   if (cpu_group_sync_state(vm->cpu_group) == -1)
+   {
+      fprintf(stderr, "VM%u: unable to sync with system CPUs.\n", vm->instance_id);
+      return (-1);
+   }
+#endif
 
    /* Unbind the device if it was already active */
    vm_unbind_device(vm, dev);
@@ -401,6 +440,11 @@ int vm_map_device(vm_instance_t * vm, struct vdevice *dev, m_pa_t base_addr)
    /* Map the device at the new base address and rebuild MTS */
    dev->phys_addr = base_addr;
    vm_bind_device(vm, dev);
+   cpu_group_rebuild_mts(vm->cpu_group);
+
+#if 0
+   vm_resume(vm);
+#endif
    return (0);
 }
 
@@ -409,6 +453,8 @@ int vm_suspend(vm_instance_t * vm)
 {
    if (vm->status == VM_STATUS_RUNNING)
    {
+      cpu_group_save_state(vm->cpu_group);
+      cpu_group_set_state(vm->cpu_group, CPU_STATE_SUSPENDED);
       vm->status = VM_STATUS_SUSPENDED;
    }
    return (0);
@@ -419,6 +465,7 @@ int vm_resume(vm_instance_t * vm)
 {
    if (vm->status == VM_STATUS_SUSPENDED)
    {
+      cpu_group_restore_state(vm->cpu_group);
       vm->status = VM_STATUS_RUNNING;
    }
    return (0);
@@ -427,6 +474,7 @@ int vm_resume(vm_instance_t * vm)
 /* Stop an instance */
 int vm_stop(vm_instance_t * vm)
 {
+   cpu_group_stop_all_cpu(vm->cpu_group);
    vm->status = VM_STATUS_SHUTDOWN;
    return (0);
 }
@@ -438,6 +486,3 @@ void vm_monitor(vm_instance_t * vm)
    while (vm->status != VM_STATUS_SHUTDOWN)
       usleep(1000);
 }
-
-
-

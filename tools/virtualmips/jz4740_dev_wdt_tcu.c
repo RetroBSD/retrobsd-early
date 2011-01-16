@@ -27,9 +27,9 @@
 #include "jz4740.h"
 #include "vp_timer.h"
 #include "vp_clock.h"
-#include "mips64_exec.h"
 
 #define  VALIDE_WDT_TCU_OPERATION 0
+extern cpu_mips_t *current_cpu;
 m_uint32_t jz4740_wdt_tcu_table[JZ4740_WDT_INDEX_MAX];
 
 /*4:EXT 2:RTC 1:PCK*/
@@ -434,4 +434,96 @@ int dev_jz4740_wdt_tcu_init(vm_instance_t * vm, char *name, m_pa_t paddr, m_uint
    return (-1);
 }
 
+#if 0
 
+/*-------------Virtual Timer and WDT Timer----------------------*/
+m_uint32_t past_instructions = 0;
+//m_uint32_t   past_instructions[6];
+/*TODO:need to adjust*/
+#define COUNT_PER_INSTRUCTION   0x80    //0X180
+
+/*JUST TIMER 0*/
+void forced_inline virtual_jz4740_timer(cpu_mips_t * cpu)
+{
+
+   if (unlikely(jz4740_wdt_tcu_table[TCU_TSR / 4] & 0x01))
+   {
+      return;
+   }
+   if (likely(jz4740_wdt_tcu_table[TCU_TER / 4] & 0x01))
+   {
+      //allow counter
+      past_instructions++;
+      if (past_instructions == COUNT_PER_INSTRUCTION)
+      {
+         jz4740_wdt_tcu_table[TCU_TCNT0 / 4] += 1;
+         if (jz4740_wdt_tcu_table[TCU_TCNT0 / 4] == jz4740_wdt_tcu_table[TCU_TDHR0 / 4])
+         {
+            /*set TFR */
+            jz4740_wdt_tcu_table[TCU_TFR / 4] |= 1 << 16;
+            if (!(jz4740_wdt_tcu_table[TCU_TMR / 4] & (1 << 16)))
+               cpu->vm->set_irq(cpu->vm, IRQ_TCU0);
+         }
+         if (jz4740_wdt_tcu_table[TCU_TCNT0 / 4] == jz4740_wdt_tcu_table[TCU_TDFR0 / 4])
+         {
+            jz4740_wdt_tcu_table[TCU_TFR / 4] |= 1;
+            if (!(jz4740_wdt_tcu_table[TCU_TMR / 4] & (0x1)))
+            {
+               cpu->vm->set_irq(cpu->vm, IRQ_TCU0);
+            }
+
+            jz4740_wdt_tcu_table[TCU_TCNT0 / 4] = 0;
+         }
+         past_instructions = 0;
+
+
+      }
+   }
+
+
+
+}
+
+m_uint32_t wdt_past_instructions = 0;
+
+void forced_inline virtual_jz4740_wdt(cpu_mips_t * cpu)
+{
+
+   if (likely(jz4740_wdt_tcu_table[TCU_TSR / 4] & WDT_TIMER_STOP))
+   {
+      return;
+   }
+
+   if (unlikely(jz4740_wdt_tcu_table[WDT_TCER / 4] & 0x01))
+   {
+
+      wdt_past_instructions++;
+      if (wdt_past_instructions >= COUNT_PER_INSTRUCTION)
+      {
+         jz4740_wdt_tcu_table[WDT_TCNT / 4] += 1;
+         wdt_past_instructions = 0;
+         if (jz4740_wdt_tcu_table[WDT_TCNT / 4] & 0xffff0000)
+            jz4740_wdt_tcu_table[WDT_TCNT / 4] = 0;
+
+         if (jz4740_wdt_tcu_table[WDT_TCNT / 4] >= jz4740_wdt_tcu_table[WDT_TDR / 4])
+         {
+            /*RESET soc */
+            cpu_stop(cpu);
+            cpu->cpu_thread_running = FALSE;
+            jz4740_reset(cpu->vm);
+
+         }
+      }
+
+
+   }
+
+}
+
+
+void forced_inline virtual_timer(cpu_mips_t * cpu)
+{
+   virtual_jz4740_timer(cpu);
+   virtual_jz4740_wdt(cpu);
+}
+#endif

@@ -20,7 +20,16 @@ cpu_mips_t *current_cpu;
 /*select different main loop*/
 void *mips64_exec_run_cpu(cpu_mips_t * cpu)
 {
+#ifdef _USE_JIT_
+if (cpu->vm->jit_use)
+{
+   	mips64_jit_init(cpu);
+   return mips64_jit_run_cpu( cpu);
+}
+else
+#endif
  	return mips64_cpu_fdd(cpu);
+
 }
 
 

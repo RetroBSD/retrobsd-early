@@ -15,18 +15,7 @@
 
 #include "types.h"
 
-
-
-#define TARGET_MIPS32
-#define TARGET_SOFT_FPU
-#define TARGET_LONG_LEN   32
-#define LL
-
-
-
-
-
-/*------------Data types---------------*/
+/*virtual address and physical address*/
 typedef m_uint32_t m_va_t;
 typedef m_uint32_t m_pa_t;
 typedef m_uint32_t m_reg_t;
@@ -34,14 +23,11 @@ typedef m_int32_t m_ireg_t;
 typedef m_uint32_t m_cp0_reg_t;
 
 
+#define  DATA_WIDTH 32          /*64 */
+#define LL
 
-
-
-
-
-
-
-
+/*JZ4740 use soft fpu*/
+#define SOFT_FPU   1
 
 /*Guest endian*/
 #define GUEST_BYTE_ORDER  ARCH_LITTLE_ENDIAN
@@ -77,8 +63,6 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh32(x) (htonl(x))
 #define vmtoh64(x) (swap64(x))
 #endif
-
-
 
 #define JZ4740_CONFIG0  0x80000082
 #define JZ4740_CONFIG1 0x3E613080       /*CACHE (128SET*32 BYTES*2 WAY)= 8K */

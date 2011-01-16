@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -10,7 +10,7 @@
  /*
     cs8900 net card emulation.
     (jz4740 driver).
-    Only works in linux 2.6.24/2.6.22/2.4.20 
+    Only works in linux 2.6.24/2.6.22/2.4.20
     uboot can not use it.
 
     Please use TCP instead of UDP when using NFS.
@@ -310,7 +310,7 @@ static inline int cs8900_handle_len(struct cs8900_data *d, m_uint8_t * pkt, ssiz
    if (pkt_len < CS8900_MIN_PKT_SIZE)
       return FALSE;
 
-   ASSERT((pkt_len >= CS8900_RUN_PKT_SIZE) && (pkt_len <= CS8900_MAX_PKT_SIZE), "not valid pktlen 0x%x\n", pkt_len);
+   ASSERT((pkt_len >= CS8900_RUN_PKT_SIZE) && (pkt_len <= CS8900_MAX_PKT_SIZE), "not valid pktlen 0x%x\n", (unsigned) pkt_len);
    /*64<LEN<1518 */
 
    return TRUE;
@@ -502,7 +502,7 @@ static int dev_cs8900_tx(struct cs8900_data *d)
 }
 
 /*
-how to determinte the timeout value??? 
+how to determinte the timeout value???
 */
 void dev_cs8900_active_timer(struct cs8900_data *d)
 {
@@ -545,7 +545,7 @@ void dev_cs8900_cb(void *opaque)
       /*Why we need to adjust CS8900_MAX_RX_TIMEOUT? yajin
          If CS8900_MAX_RX_TIMEOUT is small, that means rx packets quickly. Tx can not get enough time to tell cpu
          that tx ok.
-         If CS8900_MAX_RX_TIMEOUT is big, that means rx packets slow. This will decrease network throughtput and 
+         If CS8900_MAX_RX_TIMEOUT is big, that means rx packets slow. This will decrease network throughtput and
          some applications will complain about rx timeout.
          So I adjut the CS8900_MAX_RX_TIMEOUT dynamicly when receiving a packet .
 
@@ -806,7 +806,7 @@ static void *dev_cs8900_access(cpu_mips_t * cpu, struct vdevice *dev,
             *(m_uint16_t *) (ram_base + PP_ISQ) &= ~TxEvent;
             *(m_uint16_t *) data = *(m_uint16_t *) (ram_base + PP_TxEvent);
             *(m_uint16_t *) (ram_base + PP_TxEvent) = 0X8;
-            //return (void*)(ram_base+PP_TxEvent); 
+            //return (void*)(ram_base+PP_TxEvent);
          }
          else if (isq & RxEvent)
          {
@@ -814,7 +814,7 @@ static void *dev_cs8900_access(cpu_mips_t * cpu, struct vdevice *dev,
             *(m_uint16_t *) data = *(m_uint16_t *) (ram_base + PP_RxEvent);
             *(m_uint16_t *) (ram_base + PP_RxEvent) = 0X4;
 
-            //return (void*)(ram_base+PP_RxEvent); 
+            //return (void*)(ram_base+PP_RxEvent);
          }
          else if (isq & BufEvent)
          {
@@ -822,7 +822,7 @@ static void *dev_cs8900_access(cpu_mips_t * cpu, struct vdevice *dev,
             *(m_uint16_t *) data = *(m_uint16_t *) (ram_base + PP_BufEvent);
             *(m_uint16_t *) (ram_base + PP_BufEvent) = 0Xc;
 
-            //return (void*)(ram_base+PP_BufEvent);  
+            //return (void*)(ram_base+PP_BufEvent);
          }
 
          else if (isq & RxMISS)
@@ -830,14 +830,14 @@ static void *dev_cs8900_access(cpu_mips_t * cpu, struct vdevice *dev,
             *(m_uint16_t *) (ram_base + PP_ISQ) &= ~RxMISS;
             *(m_uint16_t *) data = *(m_uint16_t *) (ram_base + PP_RxMISS);
             *(m_uint16_t *) (ram_base + PP_RxMISS) = 0x10;
-            //return (void*)(ram_base+PP_RxMISS);  
+            //return (void*)(ram_base+PP_RxMISS);
          }
          else if (isq & TxCOL)
          {
             *(m_uint16_t *) (ram_base + PP_ISQ) &= ~TxCOL;
             *(m_uint16_t *) data = *(m_uint16_t *) (ram_base + PP_TxCOL);
             *(m_uint16_t *) (ram_base + PP_TxCOL) = 0x12;
-            //return (void*)(ram_base+PP_TxCOL);  
+            //return (void*)(ram_base+PP_TxCOL);
          }
          else
          {
@@ -877,7 +877,7 @@ static void *dev_cs8900_access(cpu_mips_t * cpu, struct vdevice *dev,
          return (void *) (ram_base + io_address);
       case PP_BusST:
          *(m_uint16_t *) (ram_base + PP_BusST) |= Rdy4TxNOW;
-         //else 
+         //else
          //{
          //      *(m_uint16_t*)(ram_base+PP_BusST) &= ~Rdy4TxNOW;
          //}

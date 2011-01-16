@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -63,6 +63,7 @@
 #define unlikely(x)  (x)
 #endif
 
+#define fastcall   __attribute__((regparm(3)))
 #define asmlinkage __attribute__((regparm(0)))
 
 
@@ -179,14 +180,15 @@ static inline int check_bit(u_int old, u_int new, u_int bit)
 }
 
 /* Sign-extension */
-#ifdef TARGET_MIPS64 
+#if DATA_WIDTH==64
 static forced_inline m_int64_t sign_extend(m_int64_t x, int len)
-#endif
-#ifdef TARGET_MIPS32
+#elif DATA_WIDTH==32
 static forced_inline m_int32_t sign_extend(m_int32_t x, int len)
+#else
+#error Undefined DATA_WIDTH
 #endif
 {
-   len = TARGET_LONG_LEN - len;
+   len = DATA_WIDTH - len;
    return (x << len) >> len;
 }
 

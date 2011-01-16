@@ -613,7 +613,7 @@ static int cop0_op(cpu_mips_t * cpu, mips_insn_t insn)
 
 static int cop1_op(cpu_mips_t * cpu, mips_insn_t insn)
 {
-#ifdef TARGET_SOFT_FPU  
+#if SOFT_FPU
    mips64_exec_soft_fpu(cpu);
    return (1);
 #else
@@ -623,7 +623,7 @@ static int cop1_op(cpu_mips_t * cpu, mips_insn_t insn)
 
 static int cop1x_op(cpu_mips_t * cpu, mips_insn_t insn)
 {
-#ifdef TARGET_SOFT_FPU  
+#if SOFT_FPU
    mips64_exec_soft_fpu(cpu);
    return (1);
 #else
@@ -952,7 +952,7 @@ static int lw_op(cpu_mips_t * cpu, mips_insn_t insn)
 
 static int lwc1_op(cpu_mips_t * cpu, mips_insn_t insn)
 {
-#ifdef TARGET_SOFT_FPU  
+#if SOFT_FPU
    mips64_exec_soft_fpu(cpu);
    return (1);
 #else
@@ -1289,7 +1289,7 @@ static int sd_op(cpu_mips_t * cpu, mips_insn_t insn)
 
 static int sdc1_op(cpu_mips_t * cpu, mips_insn_t insn)
 {
-#ifdef TARGET_SOFT_FPU  
+#if SOFT_FPU
    mips64_exec_soft_fpu(cpu);
    return (1);
 #else
@@ -1508,7 +1508,7 @@ static int sw_op(cpu_mips_t * cpu, mips_insn_t insn)
 
 static int swc1_op(cpu_mips_t * cpu, mips_insn_t insn)
 {
-#ifdef TARGET_SOFT_FPU  
+#if SOFT_FPU
    mips64_exec_soft_fpu(cpu);
    return (1);
 #else

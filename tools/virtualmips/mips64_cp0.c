@@ -25,6 +25,42 @@
 #include "mips64_cp0.h"
 #include "cpu.h"
 
+/* MIPS cp0 registers names */
+char *mips64_cp0_reg_names[MIPS64_CP0_REG_NR] = {
+   "index",
+   "random",
+   "entry_lo",
+   "cp0_r3",
+   "context",
+   "cp0_r5",
+   "wired",
+   "cp0_r7",
+   "badvaddr",
+   "cp0_r9",
+   "entry_hi",
+   "cp0_r11",
+   "status",
+   "cause",
+   "epc",
+   "prid",
+   "dreg",
+   "depc",
+   "cp0_r18",
+   "cp0_r19",
+   "cctl",
+   "cp0_r21",
+   "cp0_r22",
+   "cp0_r23",
+   "cp0_r24",
+   "cp0_r25",
+   "cp0_r26",
+   "cp0_r27",
+   "cp0_r28",
+   "cp0_r29",
+   "cp0_r30",
+   "desave",
+};
+
 
 
 /* Get value of random register */
@@ -62,6 +98,15 @@ m_cp0_reg_t mips64_cp0_get_reg(cpu_mips_t * cpu, u_int cp0_reg)
    return (mips64_cp0_get_reg_fast(cpu, cp0_reg, 0));
 }
 
+
+void fastcall mips64_cp0_exec_mfc0_fastcall(cpu_mips_t * cpu, mips_insn_t insn)
+{
+	int rt = bits(insn, 16, 20);
+   int rd = bits(insn, 11, 15);
+   int sel = bits(insn, 0, 2);
+	cpu->gpr[rt] = sign_extend(mips64_cp0_get_reg_fast(cpu, rd, sel), 32);
+
+}
 /* MFC0 */
 void mips64_cp0_exec_mfc0(cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg, u_int sel)
 {
@@ -69,6 +114,15 @@ void mips64_cp0_exec_mfc0(cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg, u_int s
 
 }
 
+void fastcall mips64_cp0_exec_mtc0_fastcall(cpu_mips_t * cpu, mips_insn_t insn)
+{
+	 int rt = bits(insn, 16, 20);
+   int rd = bits(insn, 11, 15);
+   int sel = bits(insn, 0, 2);
+
+	mips64_cp0_set_reg(cpu, rd, sel, cpu->gpr[rt] & 0xffffffff);
+   
+}
 void mips64_cp0_exec_mtc0(cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg, u_int sel)
 {
    mips64_cp0_set_reg(cpu, cp0_reg, sel, cpu->gpr[gp_reg] & 0xffffffff);
@@ -160,7 +214,7 @@ m_cp0_reg_t mips64_cp0_get_vpn2_mask(cpu_mips_t * cpu)
 
 
 /* TLBP: Probe a TLB entry */
-void  mips64_cp0_exec_tlbp(cpu_mips_t * cpu)
+void fastcall mips64_cp0_exec_tlbp(cpu_mips_t * cpu)
 {
    mips_cp0_t *cp0 = &cpu->cp0;
 
@@ -255,7 +309,7 @@ static forced_inline void mips64_cp0_exec_tlbw(cpu_mips_t * cpu, u_int index)
 
 
 /* TLBWI: Write Indexed TLB entry */
-void  mips64_cp0_exec_tlbwi(cpu_mips_t * cpu)
+void fastcall mips64_cp0_exec_tlbwi(cpu_mips_t * cpu)
 {
    m_uint32_t index;
 
@@ -292,13 +346,13 @@ void  mips64_cp0_exec_tlbwi(cpu_mips_t * cpu)
 }
 
 /* TLBWR: Write Random TLB entry */
-void  mips64_cp0_exec_tlbwr(cpu_mips_t * cpu)
+void fastcall mips64_cp0_exec_tlbwr(cpu_mips_t * cpu)
 {
    mips64_cp0_exec_tlbw(cpu, mips64_cp0_get_random_reg(cpu));
 }
 
 /* TLBR: Read Indexed TLB entry */
-void  mips64_cp0_exec_tlbr(cpu_mips_t * cpu)
+void fastcall mips64_cp0_exec_tlbr(cpu_mips_t * cpu)
 {
    mips_cp0_t *cp0 = &cpu->cp0;
    tlb_entry_t *entry;
@@ -365,13 +419,20 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             res->vaddr = vaddr & MIPS_MIN_PAGE_MASK;
             res->paddr = (entry->lo0 & MIPS_TLB_PFN_MASK) << 6;
             res->paddr += ((res->vaddr) & (page_size - 1));
+            //res->paddr += ( (vaddr  )& (page_size-1));
+
             res->paddr &= cpu->addr_bus_mask;
 
             res->dirty = (entry->lo0 & MIPS_TLB_D_MASK) >> MIPS_TLB_D_SHIT;
             res->valid = (entry->lo0 & MIPS_TLB_V_MASK) >> MIPS_TLB_V_SHIT;
             res->asid = asid;
             res->g_bit = entry->hi & MIPS_TLB_G_MASK;
+
+
+
+
             return (TRUE);
+
          }
          else
          {
@@ -379,6 +440,7 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             res->vaddr = vaddr & MIPS_MIN_PAGE_MASK;
             res->paddr = (entry->lo1 & MIPS_TLB_PFN_MASK) << 6;
             res->paddr += ((res->vaddr) & (page_size - 1));
+            //res->paddr += ( (vaddr  )& (page_size-1));
             res->paddr &= cpu->addr_bus_mask;
 
             res->dirty = (entry->lo1 & MIPS_TLB_D_MASK) >> MIPS_TLB_D_SHIT;
@@ -387,13 +449,118 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             res->asid = asid;
             res->g_bit = entry->hi & MIPS_TLB_G_MASK;
 
+
+
             return (TRUE);
+
+
          }
+
       }
+
+
    }
 
    return FALSE;
 
 
 }
+#if 0
+/* Write page size in buffer */
+static char *get_page_size_str(char *buffer, size_t len, m_uint32_t page_mask)
+{
+   m_uint32_t page_size;
+
+   page_size = get_page_size(page_mask);
+
+   /* Mb ? */
+   if (page_size >= (1024 * 1024))
+      snprintf(buffer, len, "%uMB", page_size >> 20);
+   else
+      snprintf(buffer, len, "%uKB", page_size >> 10);
+
+   return buffer;
+}
+
+
+/* Dump the specified TLB entry */
+void mips64_tlb_dump_entry(cpu_mips_t * cpu, u_int index)
+{
+
+   tlb_entry_t *entry;
+   char buffer[256];
+
+   entry = &cpu->cp0.tlb[index];
+
+   /* virtual Address */
+   printf(" %2d: vaddr=0x%8.8" LL "x ", index, entry->hi & mips64_cp0_get_vpn2_mask(cpu));
+
+   /* global or ASID */
+   if ((entry->lo0 & MIPS_TLB_G_MASK) && ((entry->lo1 & MIPS_TLB_G_MASK)))
+      printf("(global)    ");
+   else
+      printf("(asid 0x%2.2" LL "x) ", entry->hi & MIPS_TLB_ASID_MASK);
+
+   /* 1st page: Lo0 */
+   printf("p0=");
+
+   if (entry->lo0 & MIPS_TLB_V_MASK)
+      printf("0x%9.9" LL "x", (entry->lo0 & MIPS_TLB_PFN_MASK) << 6);
+   else
+      printf("(invalid)  ");
+
+   printf(" %c ", (entry->lo0 & MIPS_TLB_D_MASK) ? 'D' : ' ');
+
+   /* 2nd page: Lo1 */
+   printf("p1=");
+
+   if (entry->lo1 & MIPS_TLB_V_MASK)
+      printf("0x%9.9" LL "x", (entry->lo1 & MIPS_TLB_PFN_MASK) << 6);
+   else
+      printf("(invalid)  ");
+
+   printf(" %c ", (entry->lo1 & MIPS_TLB_D_MASK) ? 'D' : ' ');
+
+   /* page size */
+   printf(" (%s)\n", get_page_size_str(buffer, sizeof(buffer), entry->mask));
+
+}
+
+
+
+/* Human-Readable dump of the TLB */
+void mips64_tlb_dump(cpu_mips_t * cpu)
+{
+   cpu_mips_t *mcpu = (cpu);
+   u_int i;
+
+   printf("TLB dump:\n");
+   for (i = 0; i < mcpu->cp0.tlb_entries; i++)
+      mips64_tlb_dump_entry(mcpu, i);
+
+   printf("\n");
+
+}
+
+/* Raw dump of the TLB */
+void mips64_tlb_raw_dump(cpu_mips_t * cpu)
+{
+
+   cpu_mips_t *mcpu = (cpu);
+   tlb_entry_t *entry;
+   u_int i;
+
+   printf("TLB dump:\n");
+
+   for (i = 0; i < mcpu->cp0.tlb_entries; i++)
+   {
+      entry = &mcpu->cp0.tlb[i];
+      printf(" %2d: mask=0x%16.16" LL "x hi=0x%16.16" LL "x "
+             "lo0=0x%16.16" LL "x lo1=0x%16.16" LL "x\n", i, entry->mask, entry->hi, entry->lo0, entry->lo1);
+   }
+
+   printf("\n");
+
+}
+#endif
 

@@ -2,9 +2,9 @@
 
 /*
  * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
- *     
- * This file is part of the virtualmips distribution. 
- * See LICENSE file for terms of the license. 
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
  *
  */
 
@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <error.h>
 #include <time.h>
 #include <signal.h>
 

@@ -17,6 +17,7 @@
 #include "utils.h"
 #include "system.h"
 
+#include "mips64_jit.h"
 
  struct mips64_op_desc {
   char       *opname;
@@ -25,8 +26,12 @@
 };
 
 
-
-extern cpu_mips_t *current_cpu;
+ struct mips64_jit_desc {
+  char  *opname;
+  int (*emit_func) (cpu_mips_t *, mips64_jit_tcb_t *,mips_insn_t);
+  m_uint16_t num;
+  int delay_slot; /*can this instruction in delay slot. 1:can. 0: can not*/
+};
 
 
 /* Run MIPS code in step-by-step mode */

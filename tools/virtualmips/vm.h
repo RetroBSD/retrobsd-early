@@ -6,9 +6,9 @@
  */
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -36,6 +36,8 @@
 enum
 {
    VM_TYPE_SWARM = 0,
+   VM_TYPE_ADM5120,
+   VM_TYPE_PIC32,
    VM_TYPE_PAVO,
 };
 
@@ -49,16 +51,6 @@ enum
 };
 
 
-typedef struct configure
-{
-   u_int ram_size;              /* RAM   size in Mb */
-
-   u_int flash_type;            /*NAND Flash OR NOR FLASH */
-   u_int flash_size;            /*   FLASH size in Mb */
-   char *flash_filename;        /* FLASH filename */
-   m_pa_t flash_address;        /*FLASH phy address */
-
-}configure_t;
 
 /* VM instance */
 struct vm_instance
@@ -69,15 +61,30 @@ struct vm_instance
 
    char *log_file;              /* Log filename */
    int log_file_enabled;        /* Logging enabled */
-   FILE *log_fd;      /* Lock/Log file descriptors */
+   u_int ram_size;              /* RAM   size in Mb */
+   //u_int rom_size;                    /*   ROM size in Mb */
+   //char *rom_filename;             /* ROM filename */
+   //m_pa_t rom_address;           /*ROM phy address*/
 
+   u_int flash_size;            /*   FLASH size in Mb */
+   char *flash_filename;        /* FLASH filename */
+   m_pa_t flash_address;        /*FLASH phy address */
+   u_int flash_type;            /*NAND Flash OR NOR FLASH */
 
-	configure_t *configure;
+   u_int boot_method;           /*binary or elf */
+   char *kernel_filename;
+   u_int boot_from;
+
    char *configure_filename;
 
 
+   FILE *lock_fd, *log_fd;      /* Lock/Log file descriptors */
+   int debug_level;             /* Debugging Level */
+   int jit_use;                 /* CPUs use JIT */
 
-   cpu_mips_t *cpu;
+   /* Basic hardware: system CPU */
+   cpu_group_t *cpu_group;
+   cpu_mips_t *boot_cpu;
 
    /* Memory mapped devices */
    struct vdevice *dev_list;
@@ -88,18 +95,20 @@ struct vm_instance
    void (*clear_irq) (vm_instance_t * vm, u_int irq);
 
 
+
+
+
    /* Console  VTTY type and parameters */
    int vtty_con1_type, vtty_con2_type;
    int vtty_con1_tcp_port, vtty_con2_tcp_port;
    vtty_serial_option_t vtty_con1_serial_option, vtty_con2_serial_option;
+   /* Virtual TTY for Console and AUX ports */
    vtty_t *vtty_con1, *vtty_con2;
-
 
    /* Specific hardware data */
    void *hw_data;
 
-
-   /*gdb interface for simos*/
+   /*gdb interface */
    m_uint32_t gdb_debug, gdb_port;
    int gdb_interact_sock;       //connect socket
    int gdb_listen_sock;         //listen socket
@@ -107,6 +116,7 @@ struct vm_instance
    virtual_breakpoint_t *breakpoint_head, *breakpoint_tail;
    int mipsy_debug_mode;
    int mipsy_break_nexti;
+
 
 };
 

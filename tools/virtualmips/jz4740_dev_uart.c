@@ -256,6 +256,7 @@ void dev_jz4740_uart_reset(cpu_mips_t * cpu, struct vdevice *dev)
    d->uacr = 0x0;
 
 }
+extern cpu_mips_t *current_cpu;
 
 #define UART_TIME_OUT     25
 void dev_jz4740_uart_cb(void *opaque)

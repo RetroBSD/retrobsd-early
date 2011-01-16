@@ -7,10 +7,12 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <linux/rtc.h>
 #include <sys/ioctl.h>
 #include <time.h>
 #include <errno.h>
+#ifdef __linux__
+#include <linux/rtc.h>
+#endif
 
 #include "cpu.h"
 #include "vm.h"
@@ -28,6 +30,8 @@
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 static struct qemu_alarm_timer *alarm_timer;
 
+
+extern cpu_mips_t *current_cpu;
 
 #define RTC_FREQ 1024
 
@@ -73,6 +77,7 @@ void host_alarm_handler(int host_signum)
 
 }
 
+#ifdef __linux__
 
 static void enable_sigio_timer(int fd)
 {
@@ -174,6 +179,7 @@ static void rtc_stop_timer(struct qemu_alarm_timer *t)
     close(rtc_fd);
 }
 
+#endif /* __linux__ */
 
 static int unix_start_timer(struct qemu_alarm_timer *t)
 {

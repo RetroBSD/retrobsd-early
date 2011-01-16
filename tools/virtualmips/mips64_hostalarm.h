@@ -1,7 +1,6 @@
 #ifndef __MIPS64_HOSTALARM_H__
 #define __MIPS64_HOSTALARM_H__
 
-
 struct qemu_alarm_timer {
     char const *name;
     unsigned int flags;
