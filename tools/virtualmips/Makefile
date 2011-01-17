@@ -16,7 +16,7 @@ CFLAGS		+= -O
 # Microchip PIC32.
 CFLAGS		+= -DSIM_PIC32
 PROG		= pic32
-OBJS		= pic32.o
+OBJS		= pic32.o pic32_dev_flash.o
 
 # Ingenic JZ4740.
 #CFLAGS		+= -DSIM_PAVO -D_USE_FDD_
@@ -52,3 +52,5 @@ $(PROG):	$(OBJS)
 
 clean:
 			rm -f *.o *~ *_log.txt pavo pic32
+
+include .deps/*.dep

@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -258,8 +258,8 @@ void pavo_set_irq(vm_instance_t * vm, u_int irq)
       /*
          we set IPR, not *or* . yajin
 
-         JZ Kernel 'plat_irq_dispatch' determine which is the highest priority interrupt 
-         and handle. 
+         JZ Kernel 'plat_irq_dispatch' determine which is the highest priority interrupt
+         and handle.
          It uses a function ffs to find first set irq from least bit to highest bit.
          260         irq = ffs(intc_ipr) - 1;
 
@@ -268,8 +268,8 @@ void pavo_set_irq(vm_instance_t * vm, u_int irq)
 
          In pavo gpio1->cs8900 int
 
-         TCU0 irq occurs every 10 ms and gpio1 occurs about 10ms (cs8900 has received a packet 
-         or has txed a packet), jz kernel always handle tcu0 irq. gpio1 irq is hungry. So I just set 
+         TCU0 irq occurs every 10 ms and gpio1 occurs about 10ms (cs8900 has received a packet
+         or has txed a packet), jz kernel always handle tcu0 irq. gpio1 irq is hungry. So I just set
          jz4740_int_table[INTC_IPR/4]= irq_mask not or(|) irq_mask. TCU0 irq may be lost. However,
          gpio1 irq is not so ofen so it is not a big problem.
 
@@ -310,7 +310,7 @@ static void pavo_parse_configure(pavo_t * pavo)
           CFG_SIMPLE_INT("cs8900_enable", &(pavo->cs8900_enable)),
       CFG_SIMPLE_STR("cs8900_iotype", &(pavo->cs8900_iotype)),
       CFG_SIMPLE_INT("jit_use", &(vm->jit_use)),
-      
+
       CFG_END()
    };
    cfg_t *cfg;
@@ -326,13 +326,17 @@ static void pavo_parse_configure(pavo_t * pavo)
    {
       ASSERT(vm->boot_from == 2, "boot_from must be 2(NAND Flash)\n pavo only can boot from NAND Flash.\n");
    }
+   if (vm->flash_size != 0)
+   {
+      ASSERT(vm->flash_size==4, "flash_size should be 4.\n We only support 4MB NOR flash emulation\n");
+   }
    if (pavo->cs8900_enable == 1)
    {
       ASSERT(pavo->cs8900_iotype != NULL, "You must set cs8900_enable \n");
    }
    if (vm->jit_use==1)
    	{
-   		ASSERT(JIT_SUPPORT==1, "You must compile with JIT Support to use jit. \n"); 
+   		ASSERT(JIT_SUPPORT==1, "You must compile with JIT Support to use jit. \n");
    	}
 
    /*Print the configure information */
@@ -401,5 +405,3 @@ int init_instance(vm_instance_t * vm)
    return (pavo_boot(pavo));
 
 }
-
-

@@ -5,13 +5,11 @@
 
   /*
    * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-   *     
-   * This file is part of the virtualmips distribution. 
-   * See LICENSE file for terms of the license. 
+   *
+   * This file is part of the virtualmips distribution.
+   * See LICENSE file for terms of the license.
    *
    */
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,6 +28,7 @@
 #include "mips64_cp0.h"
 #include "gdb_interface.h"
 #include "mips64_jit.h"
+
 void bad_memory_access(cpu_mips_t * cpu, m_va_t vaddr)
 {
    printf("cpu->pc  %x vaddr %x\n", cpu->pc, vaddr);
@@ -45,8 +44,8 @@ void mips_access_special(cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
 {
    m_reg_t vpn;
    m_uint8_t exc_code;
-               
-       
+
+
    switch (mask)
    {
    case MTS_ACC_U:
@@ -104,7 +103,6 @@ void mips_access_special(cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
 
    }
 }
-
 
 #if   0
 64 bit operation. for future use. yajin
@@ -192,7 +190,7 @@ void mips_mts64_invalidate_tlb_entry(cpu_mips_t * cpu, u_int tlb_index)
    mips_mts64_invalidate_cache(cpu);
 }
 
-/* 
+/*
  * MTS mapping.
  *
  * It is NOT inlined since it triggers a GCC bug on my config (x86, GCC 3.3.5)
@@ -517,8 +515,8 @@ u_int mips_mts64_ldc1(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
       m_uint8_t has_set_value=FALSE;
 
       haddr = mips_mts64_access(cpu,vaddr,MIPS_MEMOP_LDC1,8,MTS_READ,&data,&exc,&has_set_value);
-      if ((haddr==NULL)&&(has_set_value==FALSE))  
-      { 
+      if ((haddr==NULL)&&(has_set_value==FALSE))
+      {
       bad_memory_access(cpu,vaddr);
       }
       if (likely(haddr != NULL)) data = vmtoh64(*(m_uint64_t *)haddr);
@@ -893,8 +891,8 @@ u_int mips_mts64_sdc1(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
       data = cpu->fpu.reg[reg];
       haddr = mips_mts64_access(cpu,vaddr,MIPS_MEMOP_SDC1,8,MTS_WRITE,
       &data,&exc,&has_set_value);
-      if ((haddr==NULL)&&(has_set_value==FALSE))  
-      { 
+      if ((haddr==NULL)&&(has_set_value==FALSE))
+      {
       bad_memory_access(cpu,vaddr);
       }
       if (likely(haddr != NULL)) *(m_uint64_t *)haddr = htovm64(data);
@@ -1039,28 +1037,15 @@ void mips_mts64_init_memop_vectors(cpu_mips_t * cpu)
    /* Cache Operation */
    cpu->mem_op_fn[MIPS_MEMOP_CACHE] = mips_mts64_cache;
 }
-
-
-
-
-
-
-
-
 #endif
-
-
-
-
-
-
-
 
 /* === MTS for 32-bit address space ======================================= */
-#ifdef  MTS_ADDR_SIZE
+#ifdef MTS_ADDR_SIZE
 #undef MTS_ADDR_SIZE
 #endif
+
 #define MTS_ADDR_SIZE      32
+
 /* Forward declarations */
 static void *mips_mts32_access(cpu_mips_t * cpu, m_va_t vaddr,
                                u_int op_code, u_int op_size,
@@ -1147,7 +1132,7 @@ void mips_mts32_invalidate_tlb_entry(cpu_mips_t * cpu, m_va_t vaddr)
 
 }
 
-/* 
+/*
  * MTS mapping.
  *
  * It is NOT inlined since it triggers a GCC bug on my config (x86, GCC 3.3.5)
@@ -1211,7 +1196,8 @@ u_int  mips_mts32_gdb_lb(cpu_mips_t * cpu, m_va_t vaddr, void *cur)
    u_int exc;
    m_uint8_t has_set_value = FALSE;
 
-   haddr = mips_mts32_access(cpu, vaddr, MIPS_MEMOP_LB, 1, MTS_READ, (m_reg_t *) cur, &exc, &has_set_value, 1);
+   haddr = mips_mts32_access(cpu, vaddr, MIPS_MEMOP_LB, 1, MTS_READ,
+        (m_reg_t *) cur, &exc, &has_set_value, 1);
 
    if ((exc) || (haddr == NULL))
       *(m_uint8_t *) cur = 0x0;
@@ -1407,8 +1393,8 @@ u_int fastcall mips_mts32_sb(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
  #endif
  *(m_uint8_t *) haddr = data;
    	}
-   
-     
+
+
    return (exc);
 }
 
@@ -1434,10 +1420,10 @@ u_int fastcall mips_mts32_sh(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
  #ifdef _USE_JIT_
   if (cpu->vm->jit_use)
    		jit_handle_self_write(cpu,vaddr);
- #endif   	
+ #endif
  *(m_uint16_t *) haddr = htovm16(data);
    	}
-      
+
    return (exc);
 }
 
@@ -1449,9 +1435,7 @@ u_int fastcall  mips_mts32_sw(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
    u_int exc;
    m_uint8_t has_set_value = FALSE;
 
-
    data = cpu->gpr[reg] & 0xffffffff;
-
 
    haddr = mips_mts32_access(cpu, vaddr, MIPS_MEMOP_SW, 4, MTS_WRITE, &data, &exc, &has_set_value, 0);
    if (exc)
@@ -1468,7 +1452,7 @@ u_int fastcall  mips_mts32_sw(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
  #endif
    		*(m_uint32_t *) haddr = htovm32(data);
    	}
-      
+
 
    return (exc);
 }
@@ -2025,8 +2009,8 @@ u_int fastcall mips_mts32_sdc1(cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
       data = cpu->fpu.reg[reg];
       haddr = mips_mts32_access(cpu,vaddr,MIPS_MEMOP_SDC1,8,MTS_WRITE,
       &data,&exc,&has_set_value);
-      if ((haddr==NULL)&&(has_set_value==FALSE))  
-      { 
+      if ((haddr==NULL)&&(has_set_value==FALSE))
+      {
       bad_memory_access(cpu,vaddr);
       }
       if (likely(haddr != NULL)) *(m_uint64_t *)haddr = htovm64(data);
@@ -2444,7 +2428,7 @@ static mts32_entry_t *mips_mts32_slow_lookup(cpu_mips_t * cpu, m_uint64_t vaddr,
          goto err_undef;
 
       return (entry);
-      
+
       break;
    }
  err_mod:
@@ -2481,12 +2465,10 @@ static forced_inline int mips_mts32_check_tlbcache(cpu_mips_t * cpu, m_va_t vadd
    return 1;
 }
 
-extern int tttt;
 /* MTS32 access */
-static
-    void *mips_mts32_access(cpu_mips_t * cpu, m_va_t vaddr,
-                            u_int op_code, u_int op_size,
-                            u_int op_type, m_reg_t * data, u_int * exc, m_uint8_t * has_set_value, u_int is_fromgdb)
+static void *mips_mts32_access (cpu_mips_t *cpu, m_va_t vaddr,
+        u_int op_code, u_int op_size, u_int op_type, m_reg_t *data,
+        u_int *exc, m_uint8_t *has_set_value, u_int is_fromgdb)
 {
    mts32_entry_t *entry, alt_entry;
    m_uint32_t hash_bucket;
@@ -2497,7 +2479,7 @@ static
 /*
 A job need to be done first: check whether access is aligned!!!
 MIPS FPU Emulator use a unaligned lw access to cause exception and then handle it.
- 72         
+ 72
  73          * The strategy is to push the instruction onto the user stack
  74          * and put a trap after it which we can catch and jump to
  75          * the required address any alternative apart from full
@@ -2513,16 +2495,12 @@ MIPS FPU Emulator use a unaligned lw access to cause exception and then handle i
  85          * non-existing CP1 instruction. This prevents us from emulating
  86          * branches, but gives us a cleaner interface to the exception
  87          * handler (single entry point).
- 88          
+ 88
 
-I did not check it before version 0.04 and hwclock/qtopia always segment fault.  
+I did not check it before version 0.04 and hwclock/qtopia always segment fault.
 Very hard to debug this problem!!!!
 yajin
 */
-
-	
-	
-
    if (MTS_HALF_WORD == op_size)
    {
       if (unlikely((vaddr & 0x00000001UL) != 0x0))
@@ -2565,12 +2543,11 @@ yajin
    /* Raw memory access */
    haddr = entry->hpa + (vaddr & MIPS_MIN_PAGE_IMASK);
    return ((void *) haddr);
- err_addr:
+err_addr:
    if (is_fromgdb)
       return NULL;
    mips_access_special(cpu, vaddr, MTS_ACC_AE, op_code, op_type, op_size, data, exc);
    return NULL;
-
 }
 
 /* MTS32 virtual address to physical address translation */
@@ -2591,7 +2568,7 @@ static  int mips_mts32_translate(cpu_mips_t * cpu, m_va_t vaddr, m_pa_t * phys_p
       entry = mips_mts32_slow_lookup(cpu, vaddr, MIPS_MEMOP_LOOKUP, 4, MTS_READ, &data, &exc, &alt_entry, 0);
       if (!entry)
          return (-1);
-      
+
       ASSERT(!(entry->flags&MTS_FLAG_DEV),"error when translating virtual address to phyaddrss \n");
       }
    *phys_page = entry->gppa >> MIPS_MIN_PAGE_SHIFT;
@@ -2643,9 +2620,10 @@ int mips_set_addr_mode(cpu_mips_t * cpu, u_int addr_mode)
 
 
 /* Get host pointer for the physical ram address */
-void *physmem_get_hptr(vm_instance_t * vm, m_pa_t paddr, u_int op_size, u_int op_type, m_uint32_t * data)
+void *physmem_get_hptr(vm_instance_t *vm, m_pa_t paddr, u_int op_size,
+    u_int op_type, m_uint32_t *data)
 {
-	
+
    struct vdevice *dev;
    m_uint32_t offset;
 

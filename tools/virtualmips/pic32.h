@@ -9,9 +9,6 @@
 
 #include "types.h"
 
-#define TARGET_MIPS32
-#define TARGET_SOFT_FPU
-#define TARGET_LONG_LEN     32
 #define DATA_WIDTH          32
 #define LL
 
@@ -45,13 +42,6 @@
 #define IRQ_IPU		29
 #define IRQ_LCD		30
 
-#define JZ4740_CONFIG0  0x80000082
-#define JZ4740_CONFIG1  0x3E613080       /*CACHE (128SET*32 BYTES*2 WAY)= 8K */
-#define JZ4740_CONFIG7  0x0
-#define JZ4740_PRID    0x0ad0024f       /*jz4740 prid */
-#define JZ4740_ROM_PC  0x80000004
-#define JZ4740_DEFAULT_TLB_ENTRYNO   32 /*32 pairs */
-
 /*
  * Data types
  */
@@ -84,27 +74,20 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh64(x) (swap64(x))
 #endif
 
-#define PIC32_DEFAULT_CONFIG_FILE       "pic32.conf"
-#define PIC32_DEFAULT_RAM_SIZE          16
-#define PIC32_DEFAULT_BOOT_METHOD       BOOT_BINARY
-#define PIC32_DEFAULT_KERNEL_FILENAME   "vmlinux"
-#define PIC32_ADDR_BUS_MASK             0xffffffff /*32bit phy address */
-
-
 struct pic32_system
 {
    /* Associated VM instance */
    vm_instance_t *vm;
 
-   /* TODO */
+   unsigned pflash_size;            /* size of program flash in kbytes */
+   unsigned pflash_address;         /* phys.address of program flash */
 };
 
 typedef struct pic32_system pic32_t;
 
-#define VM_PIC32(vm) ((pic32_t*) vm->hw_data)
-
-vm_instance_t *create_instance(char *conf);
-int init_instance(vm_instance_t * vm);
-int pic32_reset(vm_instance_t * vm);
-
+vm_instance_t *create_instance (char *conf);
+int init_instance (vm_instance_t * vm);
+int pic32_reset (vm_instance_t * vm);
+int dev_pic32_flash_init (vm_instance_t *vm, char *name, unsigned flash_kbytes,
+    unsigned flash_address, char *filename);
 #endif

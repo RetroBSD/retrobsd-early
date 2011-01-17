@@ -171,59 +171,39 @@ void vm_error(vm_instance_t * vm, char *format, ...)
 }
 
 /* Create a new VM instance */
-vm_instance_t *vm_create(char *name, int machine_type)
+vm_instance_t *vm_create (const char *name, int machine_type)
 {
-   vm_instance_t *vm;
+    vm_instance_t *vm;
 
-   if (!(vm = malloc(sizeof(*vm))))
-   {
-      fprintf(stderr, "VM %s: unable to create new instance!\n", name);
-      return NULL;
-   }
+    vm = malloc(sizeof(*vm));
+    if (! vm) {
+        fprintf(stderr, "VM %s: unable to create new instance!\n", name);
+        return NULL;
+    }
 
-   memset(vm, 0, sizeof(*vm));
-   //vm->instance_id          = instance_id;
-   vm->type = machine_type;
-   vm->status = VM_STATUS_HALTED;
-   vm->jit_use = 0;
-   vm->vtty_con1_type = VTTY_TYPE_TERM;
-   vm->vtty_con2_type = VTTY_TYPE_NONE;
-   //vm->timer_irq_check_itv  = VM_TIMER_IRQ_CHECK_ITV;
-   vm->log_file_enabled = TRUE;
+    memset(vm, 0, sizeof(*vm));
+    vm->type = machine_type;
+    vm->status = VM_STATUS_HALTED;
+    vm->jit_use = 0;
+    vm->vtty_con1_type = VTTY_TYPE_TERM;
+    vm->vtty_con2_type = VTTY_TYPE_NONE;
+    //vm->timer_irq_check_itv = VM_TIMER_IRQ_CHECK_ITV;
+    vm->log_file_enabled = TRUE;
 
-   if (!(vm->name = strdup(name)))
-   {
-      fprintf(stderr, "VM %s: unable to store instance name!\n", name);
-      goto err_name;
-   }
+    vm->name = strdup(name);
+    if (! name) {
+        fprintf(stderr, "VM %s: unable to store instance name!\n", name);
+        goto err_name;
+    }
 
-   /* create lock file */
-   // if (vm_get_lock(vm) == -1)
-   //    goto err_lock;
-
-   /* create log file */
-   if (vm_create_log(vm) == -1)
-      goto err_log;
-
-   /*if (registry_add(vm->name,OBJ_TYPE_VM,vm) == -1) {
-      fprintf(stderr,"VM: Unable to store instance '%s' in registry!\n",
-      vm->name);
-      goto err_reg_add;
-      } */
-
-
-
-   return vm;
-
-// err_reg_add:
-//   vm_close_log(vm);
- err_log:
-//  free(vm->lock_file);
-// err_lock:
-   free(vm->name);
- err_name:
-   free(vm);
-   return NULL;
+    /* create log file */
+    if (vm_create_log(vm) == -1) {
+        free(vm->name);
+err_name:
+        free(vm);
+        return NULL;
+    }
+    return vm;
 }
 
 /*
@@ -315,12 +295,16 @@ void vm_free(vm_instance_t * vm)
 
 
 int dev_ram_init(vm_instance_t * vm, char *name, m_pa_t paddr, m_uint32_t len);
-/* Initialize RAM */
-int vm_ram_init(vm_instance_t * vm, m_pa_t paddr)
+
+/*
+ * Initialize RAM
+ */
+int vm_ram_init (vm_instance_t * vm, m_pa_t paddr)
 {
    m_uint32_t len;
 
-   len = vm->ram_size * 1048576;
+   len = vm->ram_size * 1024;
+
 #ifdef SIM_PAVO
 /*
 Why plus 0x2000 (8k) for PAVO??
@@ -463,26 +447,24 @@ int vm_suspend(vm_instance_t * vm)
 /* Resume a VM instance */
 int vm_resume(vm_instance_t * vm)
 {
-   if (vm->status == VM_STATUS_SUSPENDED)
-   {
-      cpu_group_restore_state(vm->cpu_group);
-      vm->status = VM_STATUS_RUNNING;
-   }
-   return (0);
+   if (vm->status == VM_STATUS_SUSPENDED) {
+        cpu_group_restore_state(vm->cpu_group);
+        vm->status = VM_STATUS_RUNNING;
+    }
+    return (0);
 }
 
 /* Stop an instance */
 int vm_stop(vm_instance_t * vm)
 {
-   cpu_group_stop_all_cpu(vm->cpu_group);
-   vm->status = VM_STATUS_SHUTDOWN;
-   return (0);
+    cpu_group_stop_all_cpu(vm->cpu_group);
+    vm->status = VM_STATUS_SHUTDOWN;
+    return (0);
 }
-
 
 /* Monitor an instance periodically */
 void vm_monitor(vm_instance_t * vm)
 {
-   while (vm->status != VM_STATUS_SHUTDOWN)
-      usleep(1000);
+    while (vm->status != VM_STATUS_SHUTDOWN)
+        usleep(1000);
 }

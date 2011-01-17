@@ -6,9 +6,9 @@
 
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -410,8 +410,6 @@ void fastcall mips64_exec_soft_fpu(cpu_mips_t * cpu)
 
 }
 
-extern int tttt;
-
 /* Execute ERET instruction */
 void fastcall mips64_exec_eret(cpu_mips_t * cpu)
 {
@@ -498,5 +496,3 @@ void mips64_clear_irq(cpu_mips_t * cpu, m_uint8_t irq)
    if (!cpu->irq_cause)
       cpu->irq_pending = 0;
 }
-
-

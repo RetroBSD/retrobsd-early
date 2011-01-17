@@ -8,9 +8,9 @@
 
   /*
    * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-   *     
-   * This file is part of the virtualmips distribution. 
-   * See LICENSE file for terms of the license. 
+   *
+   * This file is part of the virtualmips distribution.
+   * See LICENSE file for terms of the license.
    *
    */
 
@@ -69,7 +69,6 @@ static inline u_int mips64_cp0_get_random_reg(cpu_mips_t * cpu)
    int random_value;
    random_value = (int) ((double) (cpu->cp0.tlb_entries) * rand() / (RAND_MAX + 1.0));
    return random_value;
-
 }
 
 /* Get a cp0 register (fast version) */
@@ -121,7 +120,7 @@ void fastcall mips64_cp0_exec_mtc0_fastcall(cpu_mips_t * cpu, mips_insn_t insn)
    int sel = bits(insn, 0, 2);
 
 	mips64_cp0_set_reg(cpu, rd, sel, cpu->gpr[rt] & 0xffffffff);
-   
+
 }
 void mips64_cp0_exec_mtc0(cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg, u_int sel)
 {
@@ -242,13 +241,8 @@ void fastcall mips64_cp0_exec_tlbp(cpu_mips_t * cpu)
 #if DEBUG_TLB_ACTIVITY
          cpu_log(cpu, "", "CPU: CP0_TLBP returned %x\n", i);
 #endif
-
       }
-
-
    }
-
-
 }
 
 /* Get the page size corresponding to a page mask */
@@ -302,32 +296,29 @@ static forced_inline void mips64_cp0_exec_tlbw(cpu_mips_t * cpu, u_int index)
       /* Clear G bit in TLB lo0 and lo1 */
       entry->lo0 &= ~MIPS_CP0_LO_G_MASK;
       entry->lo1 &= ~MIPS_CP0_LO_G_MASK;
-
    }
 }
-
-
 
 /* TLBWI: Write Indexed TLB entry */
 void fastcall mips64_cp0_exec_tlbwi(cpu_mips_t * cpu)
 {
    m_uint32_t index;
 
-/*FIX ME: 
+/*FIX ME:
   May be a bug in tlblhandler of 2.6.11.  by yajin.
 
  IN kernel, TLBL exception handler run a tlbp and then tlbw without checking tlbp is successful.
- assume  
- 2aaa8a9c  lw  t0,(s0) 
+ assume
+ 2aaa8a9c  lw  t0,(s0)
  1.First we need to load instruction in 2aaa8a9c. A tlbl exception occurs. tlbp failed and tlbw
  write tlb entry into entry x.
  2. And then exceute the instruction. load a data from a memory. A tlbl exception occurs. tlbp failed
- and tlbw write tlb entry into entry x.  and return to pc=2aaa8a9c and do the process 1. 
+ and tlbw write tlb entry into entry x.  and return to pc=2aaa8a9c and do the process 1.
  This will cause a infinate loop.
 
  In fact, we need to check whether is successfully. If success, tlbw. otherwise tlbwr.
 
- So I first check whether last tlbp failed(check highest bit of index register). If tlbp failed, write 
+ So I first check whether last tlbp failed(check highest bit of index register). If tlbp failed, write
  tlbwr instead tlbw. It works well.
 	 */
 
@@ -368,7 +359,6 @@ void fastcall mips64_cp0_exec_tlbr(cpu_mips_t * cpu)
    {
       entry = &cp0->tlb[index];
 
-
       cp0->reg[MIPS_CP0_PAGEMASK] = entry->mask;
       cp0->reg[MIPS_CP0_TLB_HI] = entry->hi;
       cp0->reg[MIPS_CP0_TLB_LO_0] = entry->lo0;
@@ -384,8 +374,6 @@ void fastcall mips64_cp0_exec_tlbr(cpu_mips_t * cpu)
    }
 }
 
-
-
 int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
 {
    mips_cp0_t *cp0 = &cpu->cp0;
@@ -394,9 +382,6 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
    tlb_entry_t *entry;
    u_int asid;
    int i;
-
-
-
 
    vpn_addr = vaddr & mips64_cp0_get_vpn2_mask(cpu);
 
@@ -428,11 +413,7 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             res->asid = asid;
             res->g_bit = entry->hi & MIPS_TLB_G_MASK;
 
-
-
-
             return (TRUE);
-
          }
          else
          {
@@ -449,22 +430,13 @@ int mips64_cp0_tlb_lookup(cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             res->asid = asid;
             res->g_bit = entry->hi & MIPS_TLB_G_MASK;
 
-
-
             return (TRUE);
-
-
          }
-
       }
-
-
    }
-
    return FALSE;
-
-
 }
+
 #if 0
 /* Write page size in buffer */
 static char *get_page_size_str(char *buffer, size_t len, m_uint32_t page_mask)
@@ -482,11 +454,9 @@ static char *get_page_size_str(char *buffer, size_t len, m_uint32_t page_mask)
    return buffer;
 }
 
-
 /* Dump the specified TLB entry */
 void mips64_tlb_dump_entry(cpu_mips_t * cpu, u_int index)
 {
-
    tlb_entry_t *entry;
    char buffer[256];
 
@@ -526,8 +496,6 @@ void mips64_tlb_dump_entry(cpu_mips_t * cpu, u_int index)
 
 }
 
-
-
 /* Human-Readable dump of the TLB */
 void mips64_tlb_dump(cpu_mips_t * cpu)
 {
@@ -539,13 +507,11 @@ void mips64_tlb_dump(cpu_mips_t * cpu)
       mips64_tlb_dump_entry(mcpu, i);
 
    printf("\n");
-
 }
 
 /* Raw dump of the TLB */
 void mips64_tlb_raw_dump(cpu_mips_t * cpu)
 {
-
    cpu_mips_t *mcpu = (cpu);
    tlb_entry_t *entry;
    u_int i;
@@ -558,9 +524,6 @@ void mips64_tlb_raw_dump(cpu_mips_t * cpu)
       printf(" %2d: mask=0x%16.16" LL "x hi=0x%16.16" LL "x "
              "lo0=0x%16.16" LL "x lo1=0x%16.16" LL "x\n", i, entry->mask, entry->hi, entry->lo0, entry->lo1);
    }
-
    printf("\n");
-
 }
 #endif
-

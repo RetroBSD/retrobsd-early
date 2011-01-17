@@ -1,17 +1,12 @@
 /*
+ * This is the basic fetch-decode-dispatch(fdd) routine.
+ * Emulation speed is slow but easy to debug.
+ *
  * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
  *
  * This file is part of the virtualmips distribution.
  * See LICENSE file for terms of the license.
- *
  */
-
-
-/*This is the basic fetch-decode-dispatch(fdd) routine.
-Emulation speed is slow but easy to debug.
-*/
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,7 +29,6 @@ Emulation speed is slow but easy to debug.
 #include "vp_timer.h"
 #include "mips64_hostalarm.h"
 
-
 //#ifdef  _USE_FDD_
 
 static struct mips64_op_desc mips_opcodes[];
@@ -45,11 +39,6 @@ static struct mips64_op_desc mips_mad_opcodes[];
 static struct mips64_op_desc mips_tlb_opcodes[];
 
 extern cpu_mips_t *current_cpu;
-
-
-
-
-
 
 /*for emulation performance check*/
 #ifdef DEBUG_MHZ
@@ -96,15 +85,13 @@ static forced_inline int mips64_fetch_instruction(cpu_mips_t * cpu, m_va_t pc, m
    cpu->njm_exec_page = exec_page;
    offset = (pc & MIPS_MIN_PAGE_IMASK) >> 2;
    *insn = vmtoh32(cpu->njm_exec_ptr[offset]);
+printf ("(%08x) %08x\n", pc, *insn);
    return (0);
-
 }
-
 
 /* Execute a single instruction */
 static forced_inline  int mips64_exec_single_instruction(cpu_mips_t * cpu, mips_insn_t instruction)
 {
-
 #ifdef DEBUG_MHZ
    if (unlikely(instructions_executed == 0))
    {
@@ -121,12 +108,10 @@ static forced_inline  int mips64_exec_single_instruction(cpu_mips_t * cpu, mips_
       exit(1);
    }
 #endif
-
    register uint op;
    op = MAJOR_OP(instruction);
    return mips_opcodes[op].func(cpu, instruction);
 }
-
 
 /* Single-step execution */
 void fastcall mips64_exec_single_step(cpu_mips_t *cpu,mips_insn_t instruction)
@@ -138,21 +123,20 @@ void fastcall mips64_exec_single_step(cpu_mips_t *cpu,mips_insn_t instruction)
    if (likely(!res)) cpu->pc += 4;
 }
 
-
-
-  /*MIPS64 fetch->decode->dispatch main loop */
+/*
+ * MIPS64 fetch->decode->dispatch main loop
+ */
 void *mips64_cpu_fdd(cpu_mips_t * cpu)
 {
    mips_insn_t insn = 0;
    int res;
-
 
    cpu->cpu_thread_running = TRUE;
    current_cpu = cpu;
 
    mips64_init_host_alarm();
 
- start_cpu:
+start_cpu:
 
    for (;;)
    {
@@ -164,7 +148,6 @@ void *mips64_cpu_fdd(cpu_mips_t * cpu)
          cpu->state = CPU_STATE_PAUSING;
          break;
       }
-
 
       /* Reset "zero register" (for safety) */
       cpu->gpr[0] = 0;
@@ -198,7 +181,6 @@ void *mips64_cpu_fdd(cpu_mips_t * cpu)
       /* Normal flow ? */
       if (likely(!res))
          cpu->pc += sizeof(mips_insn_t);
-
    }
 
    while (cpu->cpu_thread_running)
@@ -251,8 +233,6 @@ static forced_inline int mips64_exec_bdslot(cpu_mips_t * cpu)
    return res;
 }
 
-
 #include "mips64_codetable.h"
-
 
 //#endif

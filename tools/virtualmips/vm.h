@@ -120,23 +120,23 @@ struct vm_instance
 
 };
 
-char *vm_get_type(vm_instance_t * vm);
-char *vm_get_platform_type(vm_instance_t * vm);
-void vm_flog(vm_instance_t * vm, char *module, char *format, va_list ap);
-void vm_log(vm_instance_t * vm, char *module, char *format, ...);
-int vm_close_log(vm_instance_t * vm);
-int vm_create_log(vm_instance_t * vm);
-void vm_error(vm_instance_t * vm, char *format, ...);
-vm_instance_t *vm_create(char *name, int machine_type);
-void vm_free(vm_instance_t * vm);
-int vm_ram_init(vm_instance_t * vm, m_pa_t paddr);
-int vm_init_vtty(vm_instance_t * vm);
-void vm_delete_vtty(vm_instance_t * vm);
-int vm_bind_device(vm_instance_t * vm, struct vdevice *dev);
-int vm_unbind_device(vm_instance_t * vm, struct vdevice *dev);
-int vm_map_device(vm_instance_t * vm, struct vdevice *dev, m_pa_t base_addr);
-int vm_suspend(vm_instance_t * vm);
-int vm_resume(vm_instance_t * vm);
-int vm_stop(vm_instance_t * vm);
-void vm_monitor(vm_instance_t * vm);
+char *vm_get_type (vm_instance_t *vm);
+char *vm_get_platform_type (vm_instance_t *vm);
+void vm_flog (vm_instance_t *vm, char *module, char *format, va_list ap);
+void vm_log (vm_instance_t *vm, char *module, char *format, ...);
+int vm_close_log (vm_instance_t *vm);
+int vm_create_log (vm_instance_t *vm);
+void vm_error (vm_instance_t *vm, char *format, ...);
+vm_instance_t *vm_create (const char *name, int machine_type);
+void vm_free (vm_instance_t *vm);
+int vm_ram_init (vm_instance_t *vm, m_pa_t paddr);
+int vm_init_vtty (vm_instance_t *vm);
+void vm_delete_vtty (vm_instance_t *vm);
+int vm_bind_device (vm_instance_t *vm, struct vdevice *dev);
+int vm_unbind_device (vm_instance_t *vm, struct vdevice *dev);
+int vm_map_device (vm_instance_t *vm, struct vdevice *dev, m_pa_t base_addr);
+int vm_suspend (vm_instance_t *vm);
+int vm_resume (vm_instance_t *vm);
+int vm_stop (vm_instance_t *vm);
+void vm_monitor (vm_instance_t *vm);
 #endif

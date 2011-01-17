@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -17,7 +17,7 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 
 
 #define COMMON_CONFIG_OPTION  \
-           CFG_SIMPLE_INT("ram_size", &(vm->ram_size)),   \
+            CFG_SIMPLE_INT("ram_size", &(vm->ram_size)),   \
 			CFG_SIMPLE_INT("gdb_debug", &(vm->gdb_debug)),  \
 			CFG_SIMPLE_INT("gdb_port", &(vm->gdb_port)),  \
  			CFG_SIMPLE_INT("flash_size", &(vm->flash_size)),   \
@@ -30,12 +30,12 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 
 #define  PRINT_COMMON_COFING_OPTION    \
     printf("Using configure file: %s\n",vm->configure_filename);  \
-	printf("ram_size: %dM bytes \n",vm->ram_size);  \
+	printf("ram_size: %dk bytes \n",vm->ram_size);  \
 	printf("boot_method: %s \n",boot_method_string[vm->boot_method-1]);  \
 	if (vm->flash_size!=0)   \
 	{   \
 	    printf("flash_type: %s \n",flash_type_string[vm->flash_type-1]);   \
-		printf("flash_size: %dM bytes \n",vm->flash_size);   \
+		printf("flash_size: %dk bytes \n",vm->flash_size);   \
 		if (vm->flash_type==FLASH_TYPE_NOR_FLASH)   \
 		  {  \
 		  printf("flash_file_name: %s \n",vm->flash_filename);   \
@@ -62,7 +62,6 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
     {  \
 	    if (vm->flash_size!=0)   \
 	    {   \
-		    ASSERT(vm->flash_size==4,"flash_size should be 4.\n We only support 4MB NOR flash emulation\n");   \
 		    /*ASSERT(vm->flash_filename!=NULL,"flash_file_name can not be NULL\n"); */  \
 		    /*flash_filename can be null. virtualmips will create it.*/   \
 		    ASSERT(vm->flash_address!=0,"flash_address can not be 0\n");   \
