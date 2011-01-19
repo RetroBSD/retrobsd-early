@@ -6,10 +6,8 @@
   *
   */
 
-
 #ifndef __TYPES_H__
 #define __TYPES_H__
-
 
 /*types from qemu*/
 typedef unsigned char uint8_t;
@@ -40,9 +38,6 @@ typedef signed long long int64_t;
 #endif
 #endif
 
-
-
-
 /*used in dynamips. so just typedef again*/
 /* Common types */
 typedef uint8_t m_uint8_t;
@@ -60,15 +55,14 @@ typedef int64_t m_int64_t;
 typedef unsigned long m_iptr_t;
 typedef m_uint64_t m_tmcnt_t;
 
-
 #if defined (__x86_64__) || defined(__ia64)
 /*function label address*/
-typedef m_uint64_t  m_hiptr_t;
+typedef m_uint64_t m_hiptr_t;
 #else
-typedef m_uint32_t  m_hiptr_t;
+typedef m_uint32_t m_hiptr_t;
 #endif
 
-typedef void (*pvoid)(void);
+typedef void (*pvoid) (void);
 
 /* MIPS instruction */
 typedef m_uint32_t mips_insn_t;
@@ -84,8 +78,7 @@ typedef m_uint32_t mips_insn_t;
 
 //for gdb interface
 /* Used for functions which can fail */
-enum result_t
-{ SUCCESS, FAILURE, STALL, BUSERROR, SCFAILURE };
+enum result_t { SUCCESS, FAILURE, STALL, BUSERROR, SCFAILURE };
 
 /* Forward declarations */
 typedef struct cpu_mips cpu_mips_t;

@@ -9,7 +9,6 @@
 #ifndef __SYSTEM_H__
 #define __SYSTEM_H__
 
-
 #ifdef SIM_ADM5120
 #include "adm5120.h"
 #endif
@@ -21,6 +20,5 @@
 #ifdef SIM_PIC32
 #include "pic32.h"
 #endif
-
 
 #endif

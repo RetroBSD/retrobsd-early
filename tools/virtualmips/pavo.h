@@ -22,36 +22,28 @@
 #define PAVO_DEFAULT_KERNEL_FILENAME     "vmlinux"
 #define PAVO_ADDR_BUS_MASK   0xffffffff /*32bit phy address */
 
+struct pavo_system {
+    /* Associated VM instance */
+    vm_instance_t *vm;
+    nand_flash_1g_data_t *nand_flash;
 
+    m_uint32_t cs8900_enable;
+    char *cs8900_iotype;
 
-struct pavo_system
-{
-   /* Associated VM instance */
-   vm_instance_t *vm;
-   nand_flash_1g_data_t *nand_flash;
-
-   m_uint32_t cs8900_enable;
-   char *cs8900_iotype;
-
-
-   /*For LCD */
+    /*For LCD */
 //#ifdef SIM_LCD 
 //struct DisplayState *ds;
 //#endif
 
-
 };
-
 
 typedef struct pavo_system pavo_t;
 
-
 #define VM_PAVO(vm) ((pavo_t *)vm->hw_data)
 
-
-vm_instance_t *create_instance(char *conf);
-int init_instance(vm_instance_t * vm);
+vm_instance_t *create_instance (char *conf);
+int init_instance (vm_instance_t * vm);
 //void  virtual_timer(cpu_mips_t *cpu);
-int pavo_reset(vm_instance_t * vm);
+int pavo_reset (vm_instance_t * vm);
 
 #endif

@@ -6,44 +6,40 @@
   *
   */
 
-  
-
 #ifndef __VSDL_H__
 #define __VSDL_H__
 
-
-#ifdef SIM_LCD            /*defined in Makefile */
+#ifdef SIM_LCD                  /*defined in Makefile */
 
 #include "utils.h"
 #include "SDL/SDL.h"
 
+struct DisplayState {
+    uint8_t *data;
+    int linesize;
+    int depth;
+    int bgr;                    /* BGR color order instead of RGB. Only valid for depth == 32 */
+    int width;
+    int height;
+    void *opaque;
 
-struct DisplayState
-{
-   uint8_t *data;
-   int linesize;
-   int depth;
-   int bgr;                     /* BGR color order instead of RGB. Only valid for depth == 32 */
-   int width;
-   int height;
-   void *opaque;
-
-   void (*dpy_update) (struct DisplayState * s, int x, int y, int w, int h);
-   void (*dpy_resize) (struct DisplayState * s, int w, int h);
-   void (*dpy_refresh) (struct DisplayState * s);
-   void (*dpy_copy) (struct DisplayState * s, int src_x, int src_y, int dst_x, int dst_y, int w, int h);
+    void (*dpy_update) (struct DisplayState * s, int x, int y, int w, int h);
+    void (*dpy_resize) (struct DisplayState * s, int w, int h);
+    void (*dpy_refresh) (struct DisplayState * s);
+    void (*dpy_copy) (struct DisplayState * s, int src_x, int src_y,
+        int dst_x, int dst_y, int w, int h);
 };
 
 typedef struct DisplayState DisplayState;
 
-static inline void dpy_update(DisplayState * s, int x, int y, int w, int h)
+static inline void dpy_update (DisplayState * s, int x, int y, int w, int h)
 {
-   s->dpy_update(s, x, y, w, h);
+    s->dpy_update (s, x, y, w, h);
 }
 
-static inline void dpy_resize(DisplayState * s, int w, int h)
+static inline void dpy_resize (DisplayState * s, int w, int h)
 {
-   s->dpy_resize(s, w, h);
+    s->dpy_resize (s, w, h);
 }
 
 /*
@@ -89,9 +85,9 @@ static inline void draw_pixel(SDL_Surface *screen, Uint8 R, Uint8 G, Uint8 B,Uin
 
 }
 */
-void sdl_display_init(DisplayState * ds, int full_screen);
-SDL_Event *sdl_getmouse_down();
-SDL_Event *sdl_getmouse_up();
+void sdl_display_init (DisplayState * ds, int full_screen);
+SDL_Event *sdl_getmouse_down ();
+SDL_Event *sdl_getmouse_up ();
 #endif
 
 #endif

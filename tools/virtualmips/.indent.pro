@@ -1,11 +1,15 @@
--bad
+-nbad
 -bap
 -nbc
+-blf
 -br
+-brs
 -c33
+-ci4
+-cbi4
 -cd33
 -ce
--ci8
+-ci4
 -cli0
 -di0
 -nfc1
@@ -17,3 +21,4 @@
 -npsl
 -sc
 -sob
+-nut

@@ -21,5 +21,5 @@ void *mips64_exec_run_cpu (cpu_mips_t * cpu)
         return mips64_jit_run_cpu (cpu);
     } else
 #endif
- 	return mips64_cpu_fdd (cpu);
+        return mips64_cpu_fdd (cpu);
 }

@@ -19,165 +19,165 @@
 // x86 register numbers
 */
 typedef enum {
-	X86_EAX = 0,
-	X86_ECX = 1,
-	X86_EDX = 2,
-	X86_EBX = 3,
-	X86_ESP = 4,
-	X86_EBP = 5,
-	X86_ESI = 6,
-	X86_EDI = 7,
-	X86_NREG
+    X86_EAX = 0,
+    X86_ECX = 1,
+    X86_EDX = 2,
+    X86_EBX = 3,
+    X86_ESP = 4,
+    X86_EBP = 5,
+    X86_ESI = 6,
+    X86_EDI = 7,
+    X86_NREG
 } X86_Reg_No;
 /*
 // opcodes for alu instructions
 */
 typedef enum {
-	X86_ADD = 0,
-	X86_OR  = 1,
-	X86_ADC = 2,
-	X86_SBB = 3,
-	X86_AND = 4,
-	X86_SUB = 5,
-	X86_XOR = 6,
-	X86_CMP = 7,
-	X86_NALU
+    X86_ADD = 0,
+    X86_OR = 1,
+    X86_ADC = 2,
+    X86_SBB = 3,
+    X86_AND = 4,
+    X86_SUB = 5,
+    X86_XOR = 6,
+    X86_CMP = 7,
+    X86_NALU
 } X86_ALU_Opcode;
 /*
 // opcodes for shift instructions
 */
 typedef enum {
-	X86_SHLD,
-	X86_SHLR,
-	X86_ROL = 0,
-	X86_ROR = 1,
-	X86_RCL = 2,
-	X86_RCR = 3,
-	X86_SHL = 4,
-	X86_SHR = 5,
-	X86_SAR = 7,
-	X86_NSHIFT = 8
+    X86_SHLD,
+    X86_SHLR,
+    X86_ROL = 0,
+    X86_ROR = 1,
+    X86_RCL = 2,
+    X86_RCR = 3,
+    X86_SHL = 4,
+    X86_SHR = 5,
+    X86_SAR = 7,
+    X86_NSHIFT = 8
 } X86_Shift_Opcode;
 /*
 // opcodes for floating-point instructions
 */
 typedef enum {
-	X86_FADD  = 0,
-	X86_FMUL  = 1,
-	X86_FCOM  = 2,
-	X86_FCOMP = 3,
-	X86_FSUB  = 4,
-	X86_FSUBR = 5,
-	X86_FDIV  = 6,
-	X86_FDIVR = 7,
-	X86_NFP   = 8
+    X86_FADD = 0,
+    X86_FMUL = 1,
+    X86_FCOM = 2,
+    X86_FCOMP = 3,
+    X86_FSUB = 4,
+    X86_FSUBR = 5,
+    X86_FDIV = 6,
+    X86_FDIVR = 7,
+    X86_NFP = 8
 } X86_FP_Opcode;
 /*
 // integer conditions codes
 */
 typedef enum {
-	X86_CC_EQ = 0, X86_CC_E = 0, X86_CC_Z = 0,
-	X86_CC_NE = 1, X86_CC_NZ = 1,
-	X86_CC_LT = 2, X86_CC_B = 2, X86_CC_C = 2, X86_CC_NAE = 2,
-	X86_CC_LE = 3, X86_CC_BE = 3, X86_CC_NA = 3,
-	X86_CC_GT = 4, X86_CC_A = 4, X86_CC_NBE = 4,
-	X86_CC_GE = 5, X86_CC_AE = 5, X86_CC_NB = 5, X86_CC_NC = 5,
-	X86_CC_LZ = 6, X86_CC_S = 6,
-	X86_CC_GEZ = 7, X86_CC_NS = 7,
-	X86_CC_P = 8, X86_CC_PE = 8,
-	X86_CC_NP = 9, X86_CC_PO = 9,
-	X86_CC_O = 10,
-	X86_CC_NO = 11,
-	X86_NCC
+    X86_CC_EQ = 0, X86_CC_E = 0, X86_CC_Z = 0,
+    X86_CC_NE = 1, X86_CC_NZ = 1,
+    X86_CC_LT = 2, X86_CC_B = 2, X86_CC_C = 2, X86_CC_NAE = 2,
+    X86_CC_LE = 3, X86_CC_BE = 3, X86_CC_NA = 3,
+    X86_CC_GT = 4, X86_CC_A = 4, X86_CC_NBE = 4,
+    X86_CC_GE = 5, X86_CC_AE = 5, X86_CC_NB = 5, X86_CC_NC = 5,
+    X86_CC_LZ = 6, X86_CC_S = 6,
+    X86_CC_GEZ = 7, X86_CC_NS = 7,
+    X86_CC_P = 8, X86_CC_PE = 8,
+    X86_CC_NP = 9, X86_CC_PO = 9,
+    X86_CC_O = 10,
+    X86_CC_NO = 11,
+    X86_NCC
 } X86_CC;
 
 /* FP status */
 enum {
-	X86_FP_C0 = 0x100,
-	X86_FP_C1 = 0x200,
-	X86_FP_C2 = 0x400,
-	X86_FP_C3 = 0x4000,
-	X86_FP_CC_MASK = 0x4500
+    X86_FP_C0 = 0x100,
+    X86_FP_C1 = 0x200,
+    X86_FP_C2 = 0x400,
+    X86_FP_C3 = 0x4000,
+    X86_FP_CC_MASK = 0x4500
 };
 
 /* FP control word */
 enum {
-	X86_FPCW_INVOPEX_MASK = 0x1,
-	X86_FPCW_DENOPEX_MASK = 0x2,
-	X86_FPCW_ZERODIV_MASK = 0x4,
-	X86_FPCW_OVFEX_MASK   = 0x8,
-	X86_FPCW_UNDFEX_MASK  = 0x10,
-	X86_FPCW_PRECEX_MASK  = 0x20,
-	X86_FPCW_PRECC_MASK   = 0x300,
-	X86_FPCW_ROUNDC_MASK  = 0xc00,
+    X86_FPCW_INVOPEX_MASK = 0x1,
+    X86_FPCW_DENOPEX_MASK = 0x2,
+    X86_FPCW_ZERODIV_MASK = 0x4,
+    X86_FPCW_OVFEX_MASK = 0x8,
+    X86_FPCW_UNDFEX_MASK = 0x10,
+    X86_FPCW_PRECEX_MASK = 0x20,
+    X86_FPCW_PRECC_MASK = 0x300,
+    X86_FPCW_ROUNDC_MASK = 0xc00,
 
-	/* values for precision control */
-	X86_FPCW_PREC_SINGLE    = 0,
-	X86_FPCW_PREC_DOUBLE    = 0x200,
-	X86_FPCW_PREC_EXTENDED  = 0x300,
+    /* values for precision control */
+    X86_FPCW_PREC_SINGLE = 0,
+    X86_FPCW_PREC_DOUBLE = 0x200,
+    X86_FPCW_PREC_EXTENDED = 0x300,
 
-	/* values for rounding control */
-	X86_FPCW_ROUND_NEAREST  = 0,
-	X86_FPCW_ROUND_DOWN     = 0x400,
-	X86_FPCW_ROUND_UP       = 0x800,
-	X86_FPCW_ROUND_TOZERO   = 0xc00
+    /* values for rounding control */
+    X86_FPCW_ROUND_NEAREST = 0,
+    X86_FPCW_ROUND_DOWN = 0x400,
+    X86_FPCW_ROUND_UP = 0x800,
+    X86_FPCW_ROUND_TOZERO = 0xc00
 };
 
 /*
 // prefix code
 */
 typedef enum {
-	X86_LOCK_PREFIX = 0xF0,
-	X86_REPNZ_PREFIX = 0xF2,
-	X86_REPZ_PREFIX = 0xF3, 
-	X86_REP_PREFIX = 0xF3,
-	X86_CS_PREFIX = 0x2E,
-	X86_SS_PREFIX = 0x36,
-	X86_DS_PREFIX = 0x3E,
-	X86_ES_PREFIX = 0x26,
-	X86_FS_PREFIX = 0x64,
-	X86_GS_PREFIX = 0x65,
-	X86_UNLIKELY_PREFIX = 0x2E,
-	X86_LIKELY_PREFIX = 0x3E,
-	X86_OPERAND_PREFIX = 0x66,
-	X86_ADDRESS_PREFIX = 0x67
+    X86_LOCK_PREFIX = 0xF0,
+    X86_REPNZ_PREFIX = 0xF2,
+    X86_REPZ_PREFIX = 0xF3,
+    X86_REP_PREFIX = 0xF3,
+    X86_CS_PREFIX = 0x2E,
+    X86_SS_PREFIX = 0x36,
+    X86_DS_PREFIX = 0x3E,
+    X86_ES_PREFIX = 0x26,
+    X86_FS_PREFIX = 0x64,
+    X86_GS_PREFIX = 0x65,
+    X86_UNLIKELY_PREFIX = 0x2E,
+    X86_LIKELY_PREFIX = 0x3E,
+    X86_OPERAND_PREFIX = 0x66,
+    X86_ADDRESS_PREFIX = 0x67
 } X86_Prefix;
 
-static const unsigned char 
-x86_cc_unsigned_map [X86_NCC] = {
-	0x74, /* eq  */
-	0x75, /* ne  */
-	0x72, /* lt  */
-	0x76, /* le  */
-	0x77, /* gt  */
-	0x73, /* ge  */
-	0x78, /* lz  */
-	0x79, /* gez */
-	0x7a, /* p   */
-	0x7b, /* np  */
-	0x70, /* o  */
-	0x71, /* no  */
+static const unsigned char
+     x86_cc_unsigned_map[X86_NCC] = {
+    0x74,                       /* eq  */
+    0x75,                       /* ne  */
+    0x72,                       /* lt  */
+    0x76,                       /* le  */
+    0x77,                       /* gt  */
+    0x73,                       /* ge  */
+    0x78,                       /* lz  */
+    0x79,                       /* gez */
+    0x7a,                       /* p   */
+    0x7b,                       /* np  */
+    0x70,                       /* o  */
+    0x71,                       /* no  */
 };
 
-static const unsigned char 
-x86_cc_signed_map [X86_NCC] = {
-	0x74, /* eq  */
-	0x75, /* ne  */
-	0x7c, /* lt  */
-	0x7e, /* le  */
-	0x7f, /* gt  */
-	0x7d, /* ge  */
-	0x78, /* lz  */
-	0x79, /* gez */
-	0x7a, /* p   */
-	0x7b, /* np  */
-	0x70, /* o  */
-	0x71, /* no  */
+static const unsigned char
+     x86_cc_signed_map[X86_NCC] = {
+    0x74,                       /* eq  */
+    0x75,                       /* ne  */
+    0x7c,                       /* lt  */
+    0x7e,                       /* le  */
+    0x7f,                       /* gt  */
+    0x7d,                       /* ge  */
+    0x78,                       /* lz  */
+    0x79,                       /* gez */
+    0x7a,                       /* p   */
+    0x7b,                       /* np  */
+    0x70,                       /* o  */
+    0x71,                       /* no  */
 };
 
 typedef union {
-	int val;
-	unsigned char b [4];
+    int val;
+    unsigned char b[4];
 } x86_imm_buf;
 
 #define X86_NOBASEREG (-1)
@@ -194,8 +194,8 @@ typedef union {
 #define X86_CALLER_REGS ((1<<X86_EBX) | (1<<X86_EBP) | (1<<X86_ESI) | (1<<X86_EDI))
 #define X86_BYTE_REGS   ((1<<X86_EAX) | (1<<X86_ECX) | (1<<X86_EDX) | (1<<X86_EBX))
 
-#define X86_IS_SCRATCH(reg) (X86_CALLER_REGS & (1 << (reg))) /* X86_EAX, X86_ECX, or X86_EDX */
-#define X86_IS_CALLEE(reg)  (X86_CALLEE_REGS & (1 << (reg))) 	/* X86_ESI, X86_EDI, X86_EBX, or X86_EBP */
+#define X86_IS_SCRATCH(reg) (X86_CALLER_REGS & (1 << (reg)))    /* X86_EAX, X86_ECX, or X86_EDX */
+#define X86_IS_CALLEE(reg)  (X86_CALLEE_REGS & (1 << (reg)))    /* X86_ESI, X86_EDI, X86_EBX, or X86_EBP */
 
 #define X86_IS_BYTE_REG(reg) ((reg) < 4)
 
@@ -237,7 +237,6 @@ typedef union {
 //
 //
 */
-
 
 /*
  * useful building blocks
@@ -388,14 +387,14 @@ typedef union {
 		*(inst)++ = (unsigned char)0xb1;	\
 		x86_reg_emit ((inst), (reg), (dreg));	\
 	} while (0)
-	
+
 #define x86_cmpxchg_mem_reg(inst,mem,reg)	\
 	do {	\
 		*(inst)++ = (unsigned char)0x0f;	\
 		*(inst)++ = (unsigned char)0xb1;	\
 		x86_mem_emit ((inst), (reg), (mem));	\
 	} while (0)
-	
+
 #define x86_cmpxchg_membase_reg(inst,basereg,disp,reg)	\
 	do {	\
 		*(inst)++ = (unsigned char)0x0f;	\
@@ -569,7 +568,7 @@ typedef union {
 			x86_imm_emit32 ((inst), (imm));	\
 		}	\
 	} while (0)
-	
+
 #define x86_alu_membase8_imm(inst,opc,basereg,disp,imm) 	\
 	do {	\
 		*(inst)++ = (unsigned char)0x80;	\
@@ -1083,7 +1082,6 @@ typedef union {
                 *(inst)++ = (unsigned char)0xe0; \
        } while (0)
 
-
 #define x86_cdq(inst)  do { *(inst)++ = (unsigned char)0x99; } while (0)
 #define x86_wait(inst) do { *(inst)++ = (unsigned char)0x9b; } while (0)
 
@@ -1303,13 +1301,11 @@ typedef union {
 		x86_mem_emit ((inst), 7, (mem));	\
 	} while (0)
 
-
 #define x86_fst80_membase(inst,basereg,disp)	\
 	do {	\
 		*(inst)++ = (unsigned char)0xdb;	\
 		x86_membase_emit ((inst), 7, (basereg), (disp));	\
 	} while (0)
-
 
 #define x86_fist_pop(inst,mem,is_long)	\
 	do {	\
@@ -1357,7 +1353,6 @@ typedef union {
 		}	\
 	} while (0)
 
-
 #define x86_push_reg(inst,reg)	\
 	do {	\
 		*(inst)++ = (unsigned char)0x50 + (reg);	\
@@ -1388,7 +1383,7 @@ typedef union {
 	} while (0)
 
 #define x86_push_imm_template(inst) x86_push_imm (inst, 0xf0f0f0f0)
-	
+
 #define x86_push_imm(inst,imm)	\
 	do {	\
 		int _imm = (int) (imm);	\
@@ -1647,7 +1642,7 @@ typedef union {
 		x86_imm_emit16 ((inst), (framesize));	\
 		*(inst)++ = 0;	\
 	} while (0)
-	
+
 #define x86_leave(inst) do { *(inst)++ = (unsigned char)0xc9; } while (0)
 #define x86_sahf(inst)  do { *(inst)++ = (unsigned char)0x9e; } while (0)
 

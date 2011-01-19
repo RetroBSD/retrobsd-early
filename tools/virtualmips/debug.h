@@ -14,7 +14,7 @@
 #define MIPS_NOBREAK      (-2)
 #define MIPS_BREAKANYCPU  (-1)
 
-void vm_debug_init(vm_instance_t * vm);
-int mips_debug(vm_instance_t * vm, int is_break);
+void vm_debug_init (vm_instance_t * vm);
+int mips_debug (vm_instance_t * vm, int is_break);
 
 #endif

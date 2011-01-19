@@ -64,7 +64,7 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh16(x) (x)
 #define vmtoh32(x) (x)
 #define vmtoh64(x) (x)
-#else                           //host:big guest:little
+#else //host:big guest:little
 
 #define htovm16(x) (ntohs(x))
 #define htovm32(x) (ntohl(x))
@@ -75,15 +75,14 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh64(x) (swap64(x))
 #endif
 
-struct pic32_system
-{
+struct pic32_system {
     /* Associated VM instance */
     vm_instance_t *vm;
 
-    unsigned start_address;         /* jump here on reset */
-    unsigned boot_flash_size;       /* size of boot flash in kbytes */
-    unsigned boot_flash_address;    /* phys.address of boot flash */
-    char *boot_file_name;           /* image of boot flash */
+    unsigned start_address;     /* jump here on reset */
+    unsigned boot_flash_size;   /* size of boot flash in kbytes */
+    unsigned boot_flash_address;        /* phys.address of boot flash */
+    char *boot_file_name;       /* image of boot flash */
 };
 
 typedef struct pic32_system pic32_t;
@@ -91,6 +90,6 @@ typedef struct pic32_system pic32_t;
 vm_instance_t *create_instance (char *conf);
 int init_instance (vm_instance_t * vm);
 int pic32_reset (vm_instance_t * vm);
-int dev_pic32_flash_init (vm_instance_t *vm, char *name, unsigned flash_kbytes,
-    unsigned flash_address, char *filename);
+int dev_pic32_flash_init (vm_instance_t * vm, char *name,
+    unsigned flash_kbytes, unsigned flash_address, char *filename);
 #endif

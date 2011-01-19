@@ -11,8 +11,6 @@
 #ifndef __JZ4740_H__
 #define __JZ4740_H__
 
-
-
 #include "types.h"
 
 /*virtual address and physical address*/
@@ -21,7 +19,6 @@ typedef m_uint32_t m_pa_t;
 typedef m_uint32_t m_reg_t;
 typedef m_int32_t m_ireg_t;
 typedef m_uint32_t m_cp0_reg_t;
-
 
 #define  DATA_WIDTH 32          /*64 */
 #define LL
@@ -34,7 +31,6 @@ typedef m_uint32_t m_cp0_reg_t;
 #ifndef GUEST_BYTE_ORDER
 #error Please define guest architecture in utils.h!
 #endif
-
 
 /* Host to VM conversion functions */
 #if HOST_BYTE_ORDER == GUEST_BYTE_ORDER
@@ -53,7 +49,7 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh16(x) (ntohs(x))
 #define vmtoh32(x) (ntohl(x))
 #define vmtoh64(x) (swap64(x))
-#else                           //host:big guest:little
+#else //host:big guest:little
 
 #define htovm16(x) (ntohs(x))
 #define htovm32(x) (ntohl(x))
@@ -68,22 +64,14 @@ typedef m_uint32_t m_cp0_reg_t;
 #define JZ4740_CONFIG1 0x3E613080       /*CACHE (128SET*32 BYTES*2 WAY)= 8K */
 #define JZ4740_CONFIG7 0x0
 
-
-
-
-
 #define JZ4740_ROM_PC  0x80000004
 #define JZ4740_PRID    0x0ad0024f       /*jz4740 prid */
 #define JZ4740_DEFAULT_TLB_ENTRYNO   32 /*32 pairs */
-
-
-
 
 /*------------------------REG DEFINE---------------------------------*/
 #define NAND_DATAPORT	0x18000000
 #define NAND_ADDRPORT	0x18010000
 #define NAND_COMMPORT	0x18008000
-
 
 /*FOR CS8900*/
 #define CS8900_IO_BASE  0x8000000
@@ -100,11 +88,6 @@ typedef m_uint32_t m_cp0_reg_t;
 
 so irq 107 is in gpio group 1
 */
-
-
-
-
-
 
 /*---------------------GPIO----------------------------------*/
 #define JZ4740_GPIO_BASE       0x10010000
@@ -138,15 +121,12 @@ so irq 107 is in gpio group 1
 
 #define JZ4740_GPIO_INDEX_MAX  0xe2     /*0x388/4 */
 
-
 /*---------------------UART----------------------------------*/
 
 #define JZ4740_UART_SIZE       0x302c
 
 #define JZ4740_UART0_BASE       0x10030000
 #define JZ4740_UART0_SIZE       0x2c
-
-
 
 #define JZ4740_UART1_BASE       0x10031000
 #define JZ4740_UART1_SIZE       0x2c
@@ -199,7 +179,6 @@ so irq 107 is in gpio group 1
 #define UART_LSR_TEMP   0x40
 #define UART_LSR_FIFOE   0x80
 
-
 /*-------------------PLL----------------------*/
 
 #define JZ4740_CPM_BASE 0x10000000
@@ -225,10 +204,9 @@ so irq 107 is in gpio group 1
 
 #define JZ4740_CPM_INDEX_MAX 0X1c       /*0X70/4 */
 
-
 /*-------------------EMC----------------------*/
 #define JZ4740_EMC_BASE 0x13010000
-#define JZ4740_EMC_SIZE 0xa400   /*FROM A000-A3FF is mode register*/
+#define JZ4740_EMC_SIZE 0xa400  /*FROM A000-A3FF is mode register */
 
 #define EMC_BCR         ( 0x0)  /* BCR */
 #define EMC_SMCR0       ( 0x10) /* Static Memory Control Register 0 */
@@ -261,13 +239,10 @@ so irq 107 is in gpio group 1
 #define EMC_RTCOR       ( 0x8c) /* Refresh Time Constant Register */
 #define EMC_DMAR0       ( 0x90) /* SDRAM Bank 0 Addr Config Register */
 
-
 #define EMC_SDMR0       ( 0xa000)       /* Mode Register of SDRAM bank 0 */
 /*has other register*/
 
 #define JZ4740_EMC_INDEX_MAX 0x4b       /*0x12c/4 */
-
-
 
 /*-----------------------RTC-------------------------------------*/
 
@@ -323,10 +298,7 @@ so irq 107 is in gpio group 1
 #define RTC_HWRSR_PIN           (1 << 1)        /* Wakeup pin status bit */
 #define RTC_HWRSR_ALM           (1 << 0)        /* RTC alarm status bit */
 
-
-
 #define JZ4740_RTC_INDEX_MAX 0xe        /*0x38/4 */
-
 
 /*----------------------WDT&TCU--------------------------------*/
 #define JZ4740_WDT_TCU_BASE 0x10002000
@@ -353,10 +325,8 @@ so irq 107 is in gpio group 1
 #define WDT_CLOCK_PRESCALE_MASK  0x38
 #define WDT_CLOCK_PRESCALE_OFFSET  0x3
 
-
 #define EXT_CLOCK  12000000     /*12M */
 #define RTC_CLOCK       32768
-
 
 /*************************************************************************
  * TCU (Timer Counter Unit)
@@ -403,11 +373,8 @@ so irq 107 is in gpio group 1
 #define TCU_TCNT(n)   (TCU_TCNT0+n*0x10)
 #define TCU_TCSR(n)   (TCU_TCSR0+n*0x10)
 
-
-
 #define  WDT_TIMER_STOP  0x10000
 #define JZ4740_WDT_INDEX_MAX 0x28       /*0xa0/4 */
-
 
 /*-------------------LCD---------------------*/
 #define JZ4740_LCD_BASE 0x13050000
@@ -496,9 +463,7 @@ so irq 107 is in gpio group 1
 #define LCD_CMD_LEN_BIT         0
 #define LCD_CMD_LEN_MASK        (0xffffff << LCD_CMD_LEN_BIT)
 
-
 #define JZ4740_LCD_INDEX_MAX 0x18       /*0x60/4 */
-
 
 /*---------------------touch screen------------------*/
 #define JZ4740_TS_BASE 0x10070000
@@ -585,10 +550,7 @@ so irq 107 is in gpio group 1
 #define SADC_TSDAT_DATA1_MASK   (0xfff << SADC_TSDAT_DATA1_BIT)
 #define SADC_TSDAT_TYPE1        (1 << 31)
 
-
 #define JZ4740_TS_INDEX_MAX 0xA /*0x28/4 */
-
-
 
 /*--------------DMA--------------------*/
 #define JZ4740_DMA_BASE 0x13020000
@@ -690,8 +652,6 @@ so irq 107 is in gpio group 1
 #define DMAC_DCCSR_CT		(1 << 1)        /* count terminated */
 #define DMAC_DCCSR_EN		(1 << 0)        /* channel enable bit */
 
-
-
 // DMA channel command register 
 #define DMAC_DCMD_SAI		(1 << 23)       /* source address increment */
 #define DMAC_DCMD_DAI		(1 << 22)       /* dest address increment */
@@ -743,11 +703,6 @@ so irq 107 is in gpio group 1
 #define DMAC_DDA_OFFSET_BIT	4       /* descriptor offset address */
 #define DMAC_DDA_OFFSET_MASK	(0x0ff << DMAC_DDA_OFFSET_BIT)
 
-
-
-
-
-
 // DMA control register
 #define DMAC_DMACR_PR_BIT	8       /* channel priority mode */
 #define DMAC_DMACR_PR_MASK	(0x03 << DMAC_DMACR_PR_BIT)
@@ -759,14 +714,9 @@ so irq 107 is in gpio group 1
 #define DMAC_DMACR_AR		(1 << 2)        /* address error flag */
 #define DMAC_DMACR_DMAE		(1 << 0)        /* DMA enable bit */
 
-
-
-
-
 /*------------INT CONTROLLER------------------------*/
 #define JZ4740_INT_BASE 0x10001000
 #define JZ4740_INT_SIZE  0x1C
-
 
 #define INTC_ISR	( 0x00)
 #define INTC_IMR	( 0x04)
@@ -797,21 +747,14 @@ so irq 107 is in gpio group 1
 #define IRQ_IPU		29
 #define IRQ_LCD		30
 
-
 // 2nd-level interrupts
 #define IRQ_DMA_0	32      /* 32 to 37 for DMAC channel 0 to 5 */
 #define IRQ_GPIO_0	48      /* 48 to 175 for GPIO pin 0 to 127 */
 
-
-
 #define JZ4740_INT_INDEX_MAX 0x7        /*0x1C/4 */
 #define JZ4740_INT_TO_MIPS   0x2        /*jz4740 intc will issue int 2 to mips cpu */
 
-
-
-
-
-int jz4740_boot_from_nandflash(vm_instance_t * vm);
-int jz4740_reset(vm_instance_t * vm);
+int jz4740_boot_from_nandflash (vm_instance_t * vm);
+int jz4740_reset (vm_instance_t * vm);
 
 #endif

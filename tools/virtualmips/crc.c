@@ -28,79 +28,73 @@ m_uint16_t crc12_array[256], crc16_array[256];
 m_uint32_t crc32_array[256];
 
 /* Initialize CRC-12 algorithm */
-static void crc12_init(void)
+static void crc12_init (void)
 {
-   m_uint16_t crc, c;
-   int i, j;
+    m_uint16_t crc, c;
+    int i, j;
 
-   for (i = 0; i < 256; i++)
-   {
-      crc = 0;
-      c = (m_uint16_t) i;
+    for (i = 0; i < 256; i++) {
+        crc = 0;
+        c = (m_uint16_t) i;
 
-      for (j = 0; j < 8; j++)
-      {
-         if ((crc ^ c) & 0x0001)
-            crc = (crc >> 1) ^ CRC12_POLY;
-         else
-            crc = crc >> 1;
+        for (j = 0; j < 8; j++) {
+            if ((crc ^ c) & 0x0001)
+                crc = (crc >> 1) ^ CRC12_POLY;
+            else
+                crc = crc >> 1;
 
-         c = c >> 1;
-      }
+            c = c >> 1;
+        }
 
-      crc12_array[i] = crc;
-   }
+        crc12_array[i] = crc;
+    }
 }
 
 /* Initialize CRC-16 algorithm */
-static void crc16_init(void)
+static void crc16_init (void)
 {
-   m_uint16_t crc, c;
-   int i, j;
+    m_uint16_t crc, c;
+    int i, j;
 
-   for (i = 0; i < 256; i++)
-   {
-      crc = 0;
-      c = (m_uint16_t) i;
+    for (i = 0; i < 256; i++) {
+        crc = 0;
+        c = (m_uint16_t) i;
 
-      for (j = 0; j < 8; j++)
-      {
-         if ((crc ^ c) & 0x0001)
-            crc = (crc >> 1) ^ CRC16_POLY;
-         else
-            crc = crc >> 1;
+        for (j = 0; j < 8; j++) {
+            if ((crc ^ c) & 0x0001)
+                crc = (crc >> 1) ^ CRC16_POLY;
+            else
+                crc = crc >> 1;
 
-         c = c >> 1;
-      }
+            c = c >> 1;
+        }
 
-      crc16_array[i] = crc;
-   }
+        crc16_array[i] = crc;
+    }
 }
 
 /* Initialize CRC-32 algorithm */
-static void crc32_init(void)
+static void crc32_init (void)
 {
-   unsigned long c;
-   int n, k;
+    unsigned long c;
+    int n, k;
 
-   for (n = 0; n < 256; n++)
-   {
-      c = (unsigned long) n;
-      for (k = 0; k < 8; k++)
-      {
-         if (c & 1)
-            c = CRC32_POLY ^ (c >> 1);
-         else
-            c = c >> 1;
-      }
-      crc32_array[n] = c;
-   }
+    for (n = 0; n < 256; n++) {
+        c = (unsigned long) n;
+        for (k = 0; k < 8; k++) {
+            if (c & 1)
+                c = CRC32_POLY ^ (c >> 1);
+            else
+                c = c >> 1;
+        }
+        crc32_array[n] = c;
+    }
 }
 
 /* Initialize CRC algorithms */
-void crc_init(void)
+void crc_init (void)
 {
-   crc12_init();
-   crc16_init();
-   crc32_init();
+    crc12_init ();
+    crc16_init ();
+    crc32_init ();
 }

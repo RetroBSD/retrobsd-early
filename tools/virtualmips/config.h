@@ -15,7 +15,6 @@
 static char *boot_from_string[2]={"NOR FLASH","NAND FLASH"};\
 static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 
-
 #define COMMON_CONFIG_OPTION  \
             CFG_SIMPLE_INT("ram_size", &(vm->ram_size)),   \
 			CFG_SIMPLE_INT("gdb_debug", &(vm->gdb_debug)),  \

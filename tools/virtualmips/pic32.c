@@ -24,10 +24,10 @@
 #include "device.h"
 #include "mips64_jit.h"
 
-m_uint32_t pic32_int_table [JZ4740_INT_INDEX_MAX];
+m_uint32_t pic32_int_table[JZ4740_INT_INDEX_MAX];
 
 /* Initialize the PIC32 Platform (MIPS) */
-static int pic32_init_platform (pic32_t *pic32)
+static int pic32_init_platform (pic32_t * pic32)
 {
     struct vm_instance *vm = pic32->vm;
     cpu_mips_t *cpu0;
@@ -40,8 +40,8 @@ static int pic32_init_platform (pic32_t *pic32)
 
     /* Initialize the virtual MIPS processor */
     cpu0 = cpu_create (vm, CPU_TYPE_MIPS32, 0);
-    if (! cpu0) {
-        vm_error(vm, "unable to create CPU0!\n");
+    if (!cpu0) {
+        vm_error (vm, "unable to create CPU0!\n");
         return (-1);
     }
     /* Add this CPU to the system CPU group */
@@ -51,9 +51,10 @@ static int pic32_init_platform (pic32_t *pic32)
     /* create the CPU thread execution */
     cpu_run_fn = (void *) mips64_exec_run_cpu;
     if (pthread_create (&cpu0->cpu_thread, NULL, cpu_run_fn, cpu0) != 0) {
-       fprintf (stderr, "cpu_create: unable to create thread for CPU%u\n", 0);
-       free (cpu0);
-       return (-1);
+        fprintf (stderr, "cpu_create: unable to create thread for CPU%u\n",
+            0);
+        free (cpu0);
+        return (-1);
     }
     /* 32-bit address */
     cpu0->addr_bus_mask = 0xffffffff;
@@ -71,26 +72,33 @@ static int pic32_init_platform (pic32_t *pic32)
                 pic32->boot_flash_address, pic32->boot_file_name) == -1)
             return (-1);
     if (dev_pic32_uart_init (vm, "PIC32 UART1", PIC32_U1MODE,
-                PIC32_IRQ_U1E, vm->vtty_con1) == -1)
+            PIC32_IRQ_U1E, vm->vtty_con1) == -1)
         return (-1);
     if (dev_pic32_uart_init (vm, "PIC32 UART2", PIC32_U2MODE,
-                PIC32_IRQ_U2E, vm->vtty_con2) == -1)
-       return (-1);
+            PIC32_IRQ_U2E, vm->vtty_con2) == -1)
+        return (-1);
 #if 0
-    if (dev_pic32_gpio_init (vm, "JZ4740 GPIO", JZ4740_GPIO_BASE, JZ4740_GPIO_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_cpm_init (vm, "JZ4740 CPM", JZ4740_CPM_BASE, JZ4740_CPM_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_emc_init (vm, "JZ4740 EMC", JZ4740_EMC_BASE, JZ4740_EMC_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_rtc_init (vm, "JZ4740 RTC", JZ4740_RTC_BASE, JZ4740_RTC_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_wdt_tcu_init (vm, "JZ4740 WDT/TCU", JZ4740_WDT_TCU_BASE, JZ4740_WDT_TCU_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_int_init (vm, "JZ4740 INT", JZ4740_INT_BASE, JZ4740_INT_SIZE) == -1)
-       return (-1);
-    if (dev_pic32_dma_init (vm, "JZ4740 DMA", JZ4740_DMA_BASE, JZ4740_DMA_SIZE) == -1)
-       return (-1);
+    if (dev_pic32_gpio_init (vm, "JZ4740 GPIO", JZ4740_GPIO_BASE,
+            JZ4740_GPIO_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_cpm_init (vm, "JZ4740 CPM", JZ4740_CPM_BASE,
+            JZ4740_CPM_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_emc_init (vm, "JZ4740 EMC", JZ4740_EMC_BASE,
+            JZ4740_EMC_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_rtc_init (vm, "JZ4740 RTC", JZ4740_RTC_BASE,
+            JZ4740_RTC_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_wdt_tcu_init (vm, "JZ4740 WDT/TCU", JZ4740_WDT_TCU_BASE,
+            JZ4740_WDT_TCU_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_int_init (vm, "JZ4740 INT", JZ4740_INT_BASE,
+            JZ4740_INT_SIZE) == -1)
+        return (-1);
+    if (dev_pic32_dma_init (vm, "JZ4740 DMA", JZ4740_DMA_BASE,
+            JZ4740_DMA_SIZE) == -1)
+        return (-1);
 #endif
     return (0);
 }
@@ -126,7 +134,7 @@ int forced_inline plat_soc_irq (u_int irq)
     return irq;
 }
 
-void pic32_set_irq (vm_instance_t *vm, u_int irq)
+void pic32_set_irq (vm_instance_t * vm, u_int irq)
 {
     m_uint32_t irq_mask;
 
@@ -138,7 +146,7 @@ void pic32_set_irq (vm_instance_t *vm, u_int irq)
     /* First check ICMR. Masked interrupt is **invisible** to cpu. */
     if (unlikely (pic32_int_table[INTC_IMR / 4] & irq_mask)) {
         /* The irq is masked - clear IPR. */
-        pic32_int_table [INTC_IPR / 4] &= ~irq_mask;
+        pic32_int_table[INTC_IPR / 4] &= ~irq_mask;
     } else {
         /* The irq is not masked - set IPR.
          *
@@ -170,21 +178,20 @@ void pic32_set_irq (vm_instance_t *vm, u_int irq)
 
 COMMON_CONFIG_INFO_ARRAY;
 
-static void pic32_parse_configure (pic32_t *pic32)
+static void pic32_parse_configure (pic32_t * pic32)
 {
     vm_instance_t *vm = pic32->vm;
     char *start_address = 0;
     cfg_opt_t opts[] = {
-        COMMON_CONFIG_OPTION
-        CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
+        COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
         CFG_SIMPLE_INT ("boot_flash_size", &pic32->boot_flash_size),
         CFG_SIMPLE_INT ("boot_flash_address", &pic32->boot_flash_address),
         CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
         CFG_SIMPLE_STR ("start_address", &start_address),
 
-        /*CFG_SIMPLE_STR ("cs8900_iotype", &(pic32->cs8900_iotype)),*/
+        /*CFG_SIMPLE_STR ("cs8900_iotype", &(pic32->cs8900_iotype)), */
         /* add other configure information here */
-        CFG_END()
+        CFG_END ()
     };
     cfg_t *cfg;
 
@@ -198,8 +205,9 @@ static void pic32_parse_configure (pic32_t *pic32)
 
     /*add other configure information validation here */
     if (vm->jit_use) {
-   		ASSERT (JIT_SUPPORT == 1, "You must compile with JIT Support to use jit.\n");
-   	}
+        ASSERT (JIT_SUPPORT == 1,
+            "You must compile with JIT Support to use jit.\n");
+    }
 
     /* Print the configure information */
     PRINT_COMMON_COFING_OPTION;
@@ -222,17 +230,17 @@ vm_instance_t *create_instance (char *configure_filename)
     pic32_t *pic32;
     const char *name = "pic32";
 
-    pic32 = malloc(sizeof(*pic32));
-    if (! pic32) {
-        fprintf(stderr, "PIC32: unable to create new instance!\n");
+    pic32 = malloc (sizeof (*pic32));
+    if (!pic32) {
+        fprintf (stderr, "PIC32: unable to create new instance!\n");
         return NULL;
     }
-    memset(pic32, 0, sizeof(*pic32));
+    memset (pic32, 0, sizeof (*pic32));
 
-    vm = vm_create(name, VM_TYPE_PIC32);
-    if (! vm) {
-        fprintf(stderr, "PIC32: unable to create VM instance!\n");
-        free(pic32);
+    vm = vm_create (name, VM_TYPE_PIC32);
+    if (!vm) {
+        fprintf (stderr, "PIC32: unable to create VM instance!\n");
+        free (pic32);
         return NULL;
     }
     vm->hw_data = pic32;
@@ -242,7 +250,7 @@ vm_instance_t *create_instance (char *configure_filename)
     if (configure_filename == NULL)
         configure_filename = "pic32.conf";
     vm->configure_filename = strdup (configure_filename);
-    vm->ram_size = 128;                             /* kilobytes */
+    vm->ram_size = 128;         /* kilobytes */
     vm->boot_method = BOOT_BINARY;
     vm->boot_from = BOOT_FROM_NOR_FLASH;
     vm->flash_type = FLASH_TYPE_NOR_FLASH;
@@ -255,16 +263,16 @@ vm_instance_t *create_instance (char *configure_filename)
     return pic32->vm;
 }
 
-int init_instance (vm_instance_t *vm)
+int init_instance (vm_instance_t * vm)
 {
-    pic32_t *pic32 = (pic32_t*) vm->hw_data;
+    pic32_t *pic32 = (pic32_t *) vm->hw_data;
     cpu_mips_t *cpu;
 
     if (pic32_init_platform (pic32) == -1) {
         vm_error (vm, "unable to initialize the platform hardware.\n");
         return (-1);
     }
-    if (! vm->boot_cpu)
+    if (!vm->boot_cpu)
         return (-1);
 
     /* IRQ routing */
@@ -275,7 +283,7 @@ int init_instance (vm_instance_t *vm)
 
     /* Check that CPU activity is really suspended */
     if (cpu_group_sync_state (vm->cpu_group) == -1) {
-        vm_error(vm, "unable to sync with system CPUs.\n");
+        vm_error (vm, "unable to sync with system CPUs.\n");
         return (-1);
     }
 
@@ -296,17 +304,17 @@ int init_instance (vm_instance_t *vm)
     cpu->pc = pic32->start_address;
 
     /* reset all devices */
-    dev_reset_all(vm);
+    dev_reset_all (vm);
 
 #ifdef _USE_JIT_
-    /* if jit is used. flush all jit buffer*/
+    /* if jit is used. flush all jit buffer */
     if (vm->jit_use)
         mips64_jit_flush (cpu, 0);
 #endif
 
     /* Launch the simulation */
-    printf ("VM '%s': starting simulation (CPU0 PC=0x%" LL "x), JIT %sabled.\n",
-        vm->name, cpu->pc, vm->jit_use ? "en" : "dis");
+    printf ("VM '%s': starting simulation (CPU0 PC=0x%" LL
+        "x), JIT %sabled.\n", vm->name, cpu->pc, vm->jit_use ? "en" : "dis");
     vm->status = VM_STATUS_RUNNING;
     cpu_start (vm->boot_cpu);
     return (0);

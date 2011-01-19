@@ -24,15 +24,15 @@
 
 /* flash private data */
 typedef struct flash_data {
-    struct vdevice  *dev;
-    m_uint8_t       *flash_ptr;
-    m_uint32_t      flash_size;
-    m_uint8_t       *flash_file_name;
+    struct vdevice *dev;
+    m_uint8_t *flash_ptr;
+    m_uint32_t flash_size;
+    m_uint8_t *flash_file_name;
 } flash_data_t;
 
-void *dev_flash_access (cpu_mips_t *cpu, struct vdevice *dev,
+void *dev_flash_access (cpu_mips_t * cpu, struct vdevice *dev,
     m_uint32_t offset, u_int op_size, u_int op_type,
-    m_uint32_t *data, m_uint8_t *has_set_value)
+    m_uint32_t * data, m_uint8_t * has_set_value)
 {
     flash_data_t *d = dev->priv_data;
 
@@ -45,14 +45,14 @@ void *dev_flash_access (cpu_mips_t *cpu, struct vdevice *dev,
         return NULL;
     }
     if (op_type == MTS_READ) {
-        printf ("-- %08x\n", *(unsigned*) (d->flash_ptr + offset));
+        printf ("-- %08x\n", *(unsigned *) (d->flash_ptr + offset));
         return d->flash_ptr + offset;
     }
     if (op_type == MTS_WRITE) {
         printf ("***\n");
         return NULL;
     }
-    assert(0);
+    assert (0);
 }
 
 static int dev_flash_load (char *flash_file_name, unsigned flash_len,
@@ -63,13 +63,15 @@ static int dev_flash_load (char *flash_file_name, unsigned flash_len,
 
     fd = open (flash_file_name, O_RDONLY);
     if (fd < 0) {
-       fprintf (stderr, "%s does not exist.\n", flash_file_name);
-       return (-1);
+        fprintf (stderr, "%s does not exist.\n", flash_file_name);
+        return (-1);
     }
     fstat (fd, &sb);
     if (flash_len < sb.st_size) {
-        fprintf (stderr, "Too large flash file. flash len: %d M, flash file name %s, "
-            "flash file legth: %d bytes.\n", flash_len, flash_file_name, (int) sb.st_size);
+        fprintf (stderr,
+            "Too large flash file. flash len: %d M, flash file name %s, "
+            "flash file legth: %d bytes.\n", flash_len, flash_file_name,
+            (int) sb.st_size);
         return (-1);
     }
     if (sb.st_size <= 0) {
@@ -85,7 +87,7 @@ static int dev_flash_load (char *flash_file_name, unsigned flash_len,
     return 0;
 }
 
-static void dev_flash_reset (cpu_mips_t *cpu, struct vdevice *dev)
+static void dev_flash_reset (cpu_mips_t * cpu, struct vdevice *dev)
 {
     //flash_data_t *d = dev->priv_data;
 
@@ -95,8 +97,8 @@ static void dev_flash_reset (cpu_mips_t *cpu, struct vdevice *dev)
 /*
  * Initialize a NOR Flash zone
  */
-int dev_pic32_flash_init (vm_instance_t *vm, char *name, unsigned flash_kbytes,
-    unsigned flash_address, char *filename)
+int dev_pic32_flash_init (vm_instance_t * vm, char *name,
+    unsigned flash_kbytes, unsigned flash_address, char *filename)
 {
     flash_data_t *d;
     unsigned char *flash_data_hp;
@@ -106,18 +108,18 @@ int dev_pic32_flash_init (vm_instance_t *vm, char *name, unsigned flash_kbytes,
         return (-1);
 
     /* allocate the private data structure */
-    d = malloc (sizeof(*d));
-    if (! d) {
+    d = malloc (sizeof (*d));
+    if (!d) {
         fprintf (stderr, "FLASH: unable to create device.\n");
         return (-1);
     }
 
-    memset (d, 0, sizeof(*d));
+    memset (d, 0, sizeof (*d));
     d->flash_ptr = flash_data_hp;
     d->flash_size = flash_kbytes * 1024;
 
     d->dev = dev_create (name);
-    if (! d->dev) {
+    if (!d->dev) {
         free (d);
         return (-1);
     }

@@ -11,7 +11,6 @@
   *
   */
 
-
 #ifndef __MIPS64_MEM_H__
 #define __MIPS64_MEM_H__
 
@@ -74,45 +73,39 @@
 #define MTS32_CHUNK_SIZE   256
 
 /* MTS64: chunk definition */
-struct mts64_chunk
-{
-   mts64_entry_t entry[MTS64_CHUNK_SIZE];
-   struct mts64_chunk *next;
-   u_int count;
+struct mts64_chunk {
+    mts64_entry_t entry[MTS64_CHUNK_SIZE];
+    struct mts64_chunk *next;
+    u_int count;
 };
 
 /* MTS32: chunk definition */
-struct mts32_chunk
-{
-   mts32_entry_t entry[MTS32_CHUNK_SIZE];
-   struct mts32_chunk *next;
-   u_int count;
+struct mts32_chunk {
+    mts32_entry_t entry[MTS32_CHUNK_SIZE];
+    struct mts32_chunk *next;
+    u_int count;
 };
 
-
 /*check whether vaddr need map*/
-static int forced_inline vaddr_mapped(m_va_t vaddr)
+static int forced_inline vaddr_mapped (m_va_t vaddr)
 {
-	 int zone = (vaddr >> 29) & 0x7;
-   if ((zone==0x4) ||(zone==0x5) )
-   	{
-   		return 0;
-   	}
-   else
-   	{
-   		return 1;
-   	}
+    int zone = (vaddr >> 29) & 0x7;
+    if ((zone == 0x4) || (zone == 0x5)) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 /* Shutdown the MTS subsystem */
-void mips_mem_shutdown(cpu_mips_t * cpu);
+void mips_mem_shutdown (cpu_mips_t * cpu);
 
 /* Set the address mode */
-int mips_set_addr_mode(cpu_mips_t * cpu, u_int addr_mode);
+int mips_set_addr_mode (cpu_mips_t * cpu, u_int addr_mode);
 
-void physmem_dma_transfer(vm_instance_t * vm, m_pa_t src, m_pa_t dst, size_t len);
-void *physmem_get_hptr(vm_instance_t * vm, m_pa_t paddr, u_int op_size, u_int op_type, m_uint32_t * data);
-
-
+void physmem_dma_transfer (vm_instance_t * vm, m_pa_t src, m_pa_t dst,
+    size_t len);
+void *physmem_get_hptr (vm_instance_t * vm, m_pa_t paddr, u_int op_size,
+    u_int op_type, m_uint32_t * data);
 
 #endif

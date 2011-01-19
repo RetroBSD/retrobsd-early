@@ -3,10 +3,13 @@
 #
 CC          = gcc -g
 CFLAGS		= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
-LIBS		= -L/opt/local/lib -L/usr/local/lib -lconfuse -lintl -lpthread -lelf
+LIBS		= -L/opt/local/lib -L/usr/local/lib -lconfuse -lpthread -lelf
 
 # Linux.
-#LIBS		+= -lrt
+LIBS		+= -lrt
+
+# Mac OS X
+#LIBS		+= -lintl
 
 # Optimization.
 CFLAGS		+= -O
@@ -53,4 +56,6 @@ $(PROG):	$(OBJS)
 clean:
 			rm -f *.o *~ *_log.txt pavo pic32
 
-include .deps/*.dep
+ifeq (.deps, $(wildcard .deps))
+-include .deps/*.dep
+endif

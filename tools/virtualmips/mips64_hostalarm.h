@@ -5,13 +5,12 @@ struct qemu_alarm_timer {
     char const *name;
     unsigned int flags;
 
-    int (*start)(struct qemu_alarm_timer *t);
-    void (*stop)(struct qemu_alarm_timer *t);
-    void (*rearm)(struct qemu_alarm_timer *t);
+    int (*start) (struct qemu_alarm_timer * t);
+    void (*stop) (struct qemu_alarm_timer * t);
+    void (*rearm) (struct qemu_alarm_timer * t);
     void *priv;
 };
 
-
-void mips64_init_host_alarm(void);
+void mips64_init_host_alarm (void);
 
 #endif

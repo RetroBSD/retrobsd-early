@@ -6,7 +6,6 @@
   *
   */
 
-
 #ifndef __ADM5120_H__
 #define __ADM5120_H__
 
@@ -19,7 +18,6 @@ typedef m_uint32_t m_reg_t;
 typedef m_int32_t m_ireg_t;
 typedef m_uint32_t m_cp0_reg_t;
 
-
 #define  DATA_WIDTH 32          /*64 */
 #define LL
 
@@ -31,7 +29,6 @@ typedef m_uint32_t m_cp0_reg_t;
 #ifndef GUEST_BYTE_ORDER
 #error Please define guest architecture in utils.h!
 #endif
-
 
 /* Host to VM conversion functions */
 #if HOST_BYTE_ORDER == GUEST_BYTE_ORDER
@@ -50,7 +47,7 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh16(x) (ntohs(x))
 #define vmtoh32(x) (ntohl(x))
 #define vmtoh64(x) (swap64(x))
-#else                           //host:big guest:little
+#else //host:big guest:little
 
 #define htovm16(x) (ntohs(x))
 #define htovm32(x) (ntohl(x))
@@ -60,8 +57,6 @@ typedef m_uint32_t m_cp0_reg_t;
 #define vmtoh32(x) (htonl(x))
 #define vmtoh64(x) (swap64(x))
 #endif
-
-
 
 #define ADM5120_DEFAULT_CONFIG_FILE     "adm5120.conf"
 #define ADM5120_DEFAULT_RAM_SIZE     16
@@ -81,32 +76,21 @@ typedef m_uint32_t m_cp0_reg_t;
 #define ADM5120_PRID    0x0001800b
 #define ADM5120_DEFAULT_TLB_ENTRYNO   16
 
-
-struct adm5120_system
-{
-   /* Associated VM instance */
-   vm_instance_t *vm;
+struct adm5120_system {
+    /* Associated VM instance */
+    vm_instance_t *vm;
 };
-
 
 typedef struct adm5120_system adm5120_t;
 
-
 #define VM_ADM5120(vm) ((adm5120_t *)vm->hw_data)
 
-
-vm_instance_t *create_instance(char *conf);
-int init_instance(vm_instance_t * vm);
+vm_instance_t *create_instance (char *conf);
+int init_instance (vm_instance_t * vm);
 
 //void virtual_timer(cpu_mips_t *cpu);
 
-
-
-
-
 /*---------ADM5120 SOC releated--------------------*/
-
-
 
 /*=========================  Physical Memory Map  ============================*/
 #define ADM5120_SDRAM_BASE						0
@@ -129,8 +113,6 @@ int init_instance(vm_instance_t * vm);
 #define ADM5120_UART1_BASE						0x12800000
 
 #define ADM5120_SMEM0_BASE						0x1FC00000
-
-
 
 /*=========================  Switch Control Register  ========================*/
 /* Control Register */
@@ -213,7 +195,6 @@ int init_instance(vm_instance_t * vm);
 
 #define SW_INDEX_MAX							0x45    //0x0114/4
 
-
 /* Timer_int_REG */
 #define SW_TIMER_INT_DISABLE					0x10000
 #define SW_TIMER_INT							0x1
@@ -288,7 +269,6 @@ int init_instance(vm_instance_t * vm);
 
 #define MPMC_INDEX_MAX							0x9f    //0x027C/4
 
-
 /*===========================  UART Control Register  
 ========================*/
 #define UART_DR_REG								0x00
@@ -356,8 +336,6 @@ int init_instance(vm_instance_t * vm);
 
 #define ADM5120_UARTCLK_FREQ					62500000
 
-
-
 /*  uart_baudrate  */
 #define UART_230400bps_DIVISOR					UART_BAUDDIV(230400)
 // #define UART_115200bps_DIVISOR                                       UART_BAUDDIV(115200)
@@ -378,7 +356,6 @@ int init_instance(vm_instance_t * vm);
 #define UART_2400bps_DIVISOR					1627
 //#define UART_1200bps_DIVISOR                                  UART_BAUDDIV(1200)
 
-
 #define UART_INDEX_MAX							0x9     //0x024/4
 
 /* pci space 
@@ -390,8 +367,6 @@ pci configuration data port       0x115ffff8
 */
 #define ADM5120_PCI_BASE						0x11400000
 #define PCI_INDEX_MAX                         0X80000   //0X200000/4
-
-
 
 /*==========================  Interrupt Controller  ==========================*/
 /* registers offset */
@@ -438,7 +413,6 @@ pci configuration data port       0x115ffff8
 
 #define IRQ_MASK								0x3ff
 
-
 #define ADM5120_MIPSINT_SOFT0					0
 #define ADM5120_MIPSINT_SOFT1					1
 #define ADM5120_MIPSINT_IRQ						2
@@ -447,8 +421,5 @@ pci configuration data port       0x115ffff8
 #define ADM5120_MIPSINT_REV1					5
 #define ADM5120_MIPSINT_REV2					6
 #define ADM5120_MIPSINT_TIMER					7
-
-
-
 
 #endif

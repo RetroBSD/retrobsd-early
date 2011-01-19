@@ -127,32 +127,32 @@
 /*--------------------------------------
  * UART registers.
  */
-#define PIC32_U1MODE            PIC32_R (0x6000) /* Mode */
+#define PIC32_U1MODE            PIC32_R (0x6000)        /* Mode */
 #define PIC32_U1MODECLR         PIC32_R (0x6004)
 #define PIC32_U1MODESET         PIC32_R (0x6008)
 #define PIC32_U1MODEINV         PIC32_R (0x600C)
-#define PIC32_U1STA             PIC32_R (0x6010) /* Status and control */
+#define PIC32_U1STA             PIC32_R (0x6010)        /* Status and control */
 #define PIC32_U1STACLR          PIC32_R (0x6014)
 #define PIC32_U1STASET          PIC32_R (0x6018)
 #define PIC32_U1STAINV          PIC32_R (0x601C)
-#define PIC32_U1TXREG           PIC32_R (0x6020) /* Transmit */
-#define PIC32_U1RXREG           PIC32_R (0x6030) /* Receive */
-#define PIC32_U1BRG             PIC32_R (0x6040) /* Baud rate */
+#define PIC32_U1TXREG           PIC32_R (0x6020)        /* Transmit */
+#define PIC32_U1RXREG           PIC32_R (0x6030)        /* Receive */
+#define PIC32_U1BRG             PIC32_R (0x6040)        /* Baud rate */
 #define PIC32_U1BRGCLR          PIC32_R (0x6044)
 #define PIC32_U1BRGSET          PIC32_R (0x6048)
 #define PIC32_U1BRGINV          PIC32_R (0x604C)
 
-#define PIC32_U2MODE            PIC32_R (0x6200) /* Mode */
+#define PIC32_U2MODE            PIC32_R (0x6200)        /* Mode */
 #define PIC32_U2MODECLR         PIC32_R (0x6204)
 #define PIC32_U2MODESET         PIC32_R (0x6208)
 #define PIC32_U2MODEINV         PIC32_R (0x620C)
-#define PIC32_U2STA             PIC32_R (0x6210) /* Status and control */
+#define PIC32_U2STA             PIC32_R (0x6210)        /* Status and control */
 #define PIC32_U2STACLR          PIC32_R (0x6214)
 #define PIC32_U2STASET          PIC32_R (0x6218)
 #define PIC32_U2STAINV          PIC32_R (0x621C)
-#define PIC32_U2TXREG           PIC32_R (0x6220) /* Transmit */
-#define PIC32_U2RXREG           PIC32_R (0x6230) /* Receive */
-#define PIC32_U2BRG             PIC32_R (0x6240) /* Baud rate */
+#define PIC32_U2TXREG           PIC32_R (0x6220)        /* Transmit */
+#define PIC32_U2RXREG           PIC32_R (0x6230)        /* Receive */
+#define PIC32_U2BRG             PIC32_R (0x6240)        /* Baud rate */
 #define PIC32_U2BRGCLR          PIC32_R (0x6244)
 #define PIC32_U2BRGSET          PIC32_R (0x6248)
 #define PIC32_U2BRGINV          PIC32_R (0x624C)
@@ -184,28 +184,28 @@
 /*
  * UART Control and status register.
  */
-#define PIC32_USTA_URXDA        0x00000001 /* Receive Data Available (read-only) */
-#define PIC32_USTA_OERR         0x00000002 /* Receive Buffer Overrun */
-#define PIC32_USTA_FERR         0x00000004 /* Framing error detected (read-only) */
-#define PIC32_USTA_PERR         0x00000008 /* Parity error detected (read-only) */
-#define PIC32_USTA_RIDLE        0x00000010 /* Receiver is idle (read-only) */
-#define PIC32_USTA_ADDEN        0x00000020 /* Address Detect mode */
-#define PIC32_USTA_URXISEL      0x000000C0 /* Bitmask: receive interrupt is set when... */
-#define PIC32_USTA_URXISEL_NEMP 0x00000000 /* ...receive buffer is not empty */
-#define PIC32_USTA_URXISEL_HALF 0x00000040 /* ...receive buffer becomes 1/2 full */
-#define PIC32_USTA_URXISEL_3_4  0x00000080 /* ...receive buffer becomes 3/4 full */
-#define PIC32_USTA_TRMT         0x00000100 /* Transmit shift register is empty (read-only) */
-#define PIC32_USTA_UTXBF        0x00000200 /* Transmit buffer is full (read-only) */
-#define PIC32_USTA_UTXEN        0x00000400 /* Transmit Enable */
-#define PIC32_USTA_UTXBRK       0x00000800 /* Transmit Break */
-#define PIC32_USTA_URXEN        0x00001000 /* Receiver Enable */
-#define PIC32_USTA_UTXINV       0x00002000 /* Transmit Polarity Inversion */
-#define PIC32_USTA_UTXISEL      0x0000C000 /* Bitmask: TX interrupt is generated when... */
-#define PIC32_USTA_UTXISEL_1    0x00000000 /* ...the transmit buffer contains at least one empty space */
-#define PIC32_USTA_UTXISEL_ALL  0x00004000 /* ...all characters have been transmitted */
-#define PIC32_USTA_UTXISEL_EMP  0x00008000 /* ...the transmit buffer becomes empty */
-#define PIC32_USTA_ADDR         0x00FF0000 /* Automatic Address Mask */
-#define PIC32_USTA_ADM_EN       0x01000000 /* Automatic Address Detect */
+#define PIC32_USTA_URXDA        0x00000001      /* Receive Data Available (read-only) */
+#define PIC32_USTA_OERR         0x00000002      /* Receive Buffer Overrun */
+#define PIC32_USTA_FERR         0x00000004      /* Framing error detected (read-only) */
+#define PIC32_USTA_PERR         0x00000008      /* Parity error detected (read-only) */
+#define PIC32_USTA_RIDLE        0x00000010      /* Receiver is idle (read-only) */
+#define PIC32_USTA_ADDEN        0x00000020      /* Address Detect mode */
+#define PIC32_USTA_URXISEL      0x000000C0      /* Bitmask: receive interrupt is set when... */
+#define PIC32_USTA_URXISEL_NEMP 0x00000000      /* ...receive buffer is not empty */
+#define PIC32_USTA_URXISEL_HALF 0x00000040      /* ...receive buffer becomes 1/2 full */
+#define PIC32_USTA_URXISEL_3_4  0x00000080      /* ...receive buffer becomes 3/4 full */
+#define PIC32_USTA_TRMT         0x00000100      /* Transmit shift register is empty (read-only) */
+#define PIC32_USTA_UTXBF        0x00000200      /* Transmit buffer is full (read-only) */
+#define PIC32_USTA_UTXEN        0x00000400      /* Transmit Enable */
+#define PIC32_USTA_UTXBRK       0x00000800      /* Transmit Break */
+#define PIC32_USTA_URXEN        0x00001000      /* Receiver Enable */
+#define PIC32_USTA_UTXINV       0x00002000      /* Transmit Polarity Inversion */
+#define PIC32_USTA_UTXISEL      0x0000C000      /* Bitmask: TX interrupt is generated when... */
+#define PIC32_USTA_UTXISEL_1    0x00000000      /* ...the transmit buffer contains at least one empty space */
+#define PIC32_USTA_UTXISEL_ALL  0x00004000      /* ...all characters have been transmitted */
+#define PIC32_USTA_UTXISEL_EMP  0x00008000      /* ...the transmit buffer becomes empty */
+#define PIC32_USTA_ADDR         0x00FF0000      /* Automatic Address Mask */
+#define PIC32_USTA_ADM_EN       0x01000000      /* Automatic Address Detect */
 
 /*
  * Compute the 16-bit baud rate divisor, given
@@ -217,134 +217,134 @@
 /*--------------------------------------
  * Port A-G registers.
  */
-#define PIC32_TRISA             PIC32_R (0x86000) /* Port A: mask of inputs */
+#define PIC32_TRISA             PIC32_R (0x86000)       /* Port A: mask of inputs */
 #define PIC32_TRISACLR          PIC32_R (0x86004)
 #define PIC32_TRISASET          PIC32_R (0x86008)
 #define PIC32_TRISAINV          PIC32_R (0x8600C)
-#define PIC32_PORTA             PIC32_R (0x86010) /* Port A: read inputs, write outputs */
+#define PIC32_PORTA             PIC32_R (0x86010)       /* Port A: read inputs, write outputs */
 #define PIC32_PORTACLR          PIC32_R (0x86014)
 #define PIC32_PORTASET          PIC32_R (0x86018)
 #define PIC32_PORTAINV          PIC32_R (0x8601C)
-#define PIC32_LATA              PIC32_R (0x86020) /* Port A: read/write outputs */
+#define PIC32_LATA              PIC32_R (0x86020)       /* Port A: read/write outputs */
 #define PIC32_LATACLR           PIC32_R (0x86024)
 #define PIC32_LATASET           PIC32_R (0x86028)
 #define PIC32_LATAINV           PIC32_R (0x8602C)
-#define PIC32_ODCA              PIC32_R (0x86030) /* Port A: open drain configuration */
+#define PIC32_ODCA              PIC32_R (0x86030)       /* Port A: open drain configuration */
 #define PIC32_ODCACLR           PIC32_R (0x86034)
 #define PIC32_ODCASET           PIC32_R (0x86038)
 #define PIC32_ODCAINV           PIC32_R (0x8603C)
 
-#define PIC32_TRISB             PIC32_R (0x86040) /* Port B: mask of inputs */
+#define PIC32_TRISB             PIC32_R (0x86040)       /* Port B: mask of inputs */
 #define PIC32_TRISBCLR          PIC32_R (0x86044)
 #define PIC32_TRISBSET          PIC32_R (0x86048)
 #define PIC32_TRISBINV          PIC32_R (0x8604C)
-#define PIC32_PORTB             PIC32_R (0x86050) /* Port B: read inputs, write outputs */
+#define PIC32_PORTB             PIC32_R (0x86050)       /* Port B: read inputs, write outputs */
 #define PIC32_PORTBCLR          PIC32_R (0x86054)
 #define PIC32_PORTBSET          PIC32_R (0x86058)
 #define PIC32_PORTBINV          PIC32_R (0x8605C)
-#define PIC32_LATB              PIC32_R (0x86060) /* Port B: read/write outputs */
+#define PIC32_LATB              PIC32_R (0x86060)       /* Port B: read/write outputs */
 #define PIC32_LATBCLR           PIC32_R (0x86064)
 #define PIC32_LATBSET           PIC32_R (0x86068)
 #define PIC32_LATBINV           PIC32_R (0x8606C)
-#define PIC32_ODCB              PIC32_R (0x86070) /* Port B: open drain configuration */
+#define PIC32_ODCB              PIC32_R (0x86070)       /* Port B: open drain configuration */
 #define PIC32_ODCBCLR           PIC32_R (0x86074)
 #define PIC32_ODCBSET           PIC32_R (0x86078)
 #define PIC32_ODCBINV           PIC32_R (0x8607C)
 
-#define PIC32_TRISC             PIC32_R (0x86080) /* Port C: mask of inputs */
+#define PIC32_TRISC             PIC32_R (0x86080)       /* Port C: mask of inputs */
 #define PIC32_TRISCCLR          PIC32_R (0x86084)
 #define PIC32_TRISCSET          PIC32_R (0x86088)
 #define PIC32_TRISCINV          PIC32_R (0x8608C)
-#define PIC32_PORTC             PIC32_R (0x86090) /* Port C: read inputs, write outputs */
+#define PIC32_PORTC             PIC32_R (0x86090)       /* Port C: read inputs, write outputs */
 #define PIC32_PORTCCLR          PIC32_R (0x86094)
 #define PIC32_PORTCSET          PIC32_R (0x86098)
 #define PIC32_PORTCINV          PIC32_R (0x8609C)
-#define PIC32_LATC              PIC32_R (0x860A0) /* Port C: read/write outputs */
+#define PIC32_LATC              PIC32_R (0x860A0)       /* Port C: read/write outputs */
 #define PIC32_LATCCLR           PIC32_R (0x860A4)
 #define PIC32_LATCSET           PIC32_R (0x860A8)
 #define PIC32_LATCINV           PIC32_R (0x860AC)
-#define PIC32_ODCC              PIC32_R (0x860B0) /* Port C: open drain configuration */
+#define PIC32_ODCC              PIC32_R (0x860B0)       /* Port C: open drain configuration */
 #define PIC32_ODCCCLR           PIC32_R (0x860B4)
 #define PIC32_ODCCSET           PIC32_R (0x860B8)
 #define PIC32_ODCCINV           PIC32_R (0x860BC)
 
-#define PIC32_TRISD             PIC32_R (0x860C0) /* Port D: mask of inputs */
+#define PIC32_TRISD             PIC32_R (0x860C0)       /* Port D: mask of inputs */
 #define PIC32_TRISDCLR          PIC32_R (0x860C4)
 #define PIC32_TRISDSET          PIC32_R (0x860C8)
 #define PIC32_TRISDINV          PIC32_R (0x860CC)
-#define PIC32_PORTD             PIC32_R (0x860D0) /* Port D: read inputs, write outputs */
+#define PIC32_PORTD             PIC32_R (0x860D0)       /* Port D: read inputs, write outputs */
 #define PIC32_PORTDCLR          PIC32_R (0x860D4)
 #define PIC32_PORTDSET          PIC32_R (0x860D8)
 #define PIC32_PORTDINV          PIC32_R (0x860DC)
-#define PIC32_LATD              PIC32_R (0x860E0) /* Port D: read/write outputs */
+#define PIC32_LATD              PIC32_R (0x860E0)       /* Port D: read/write outputs */
 #define PIC32_LATDCLR           PIC32_R (0x860E4)
 #define PIC32_LATDSET           PIC32_R (0x860E8)
 #define PIC32_LATDINV           PIC32_R (0x860EC)
-#define PIC32_ODCD              PIC32_R (0x860F0) /* Port D: open drain configuration */
+#define PIC32_ODCD              PIC32_R (0x860F0)       /* Port D: open drain configuration */
 #define PIC32_ODCDCLR           PIC32_R (0x860F4)
 #define PIC32_ODCDSET           PIC32_R (0x860F8)
 #define PIC32_ODCDINV           PIC32_R (0x860FC)
 
-#define PIC32_TRISE             PIC32_R (0x86100) /* Port E: mask of inputs */
+#define PIC32_TRISE             PIC32_R (0x86100)       /* Port E: mask of inputs */
 #define PIC32_TRISECLR          PIC32_R (0x86104)
 #define PIC32_TRISESET          PIC32_R (0x86108)
 #define PIC32_TRISEINV          PIC32_R (0x8610C)
-#define PIC32_PORTE             PIC32_R (0x86110) /* Port E: read inputs, write outputs */
+#define PIC32_PORTE             PIC32_R (0x86110)       /* Port E: read inputs, write outputs */
 #define PIC32_PORTECLR          PIC32_R (0x86114)
 #define PIC32_PORTESET          PIC32_R (0x86118)
 #define PIC32_PORTEINV          PIC32_R (0x8611C)
-#define PIC32_LATE              PIC32_R (0x86120) /* Port E: read/write outputs */
+#define PIC32_LATE              PIC32_R (0x86120)       /* Port E: read/write outputs */
 #define PIC32_LATECLR           PIC32_R (0x86124)
 #define PIC32_LATESET           PIC32_R (0x86128)
 #define PIC32_LATEINV           PIC32_R (0x8612C)
-#define PIC32_ODCE              PIC32_R (0x86130) /* Port E: open drain configuration */
+#define PIC32_ODCE              PIC32_R (0x86130)       /* Port E: open drain configuration */
 #define PIC32_ODCECLR           PIC32_R (0x86134)
 #define PIC32_ODCESET           PIC32_R (0x86138)
 #define PIC32_ODCEINV           PIC32_R (0x8613C)
 
-#define PIC32_TRISF             PIC32_R (0x86140) /* Port F: mask of inputs */
+#define PIC32_TRISF             PIC32_R (0x86140)       /* Port F: mask of inputs */
 #define PIC32_TRISFCLR          PIC32_R (0x86144)
 #define PIC32_TRISFSET          PIC32_R (0x86148)
 #define PIC32_TRISFINV          PIC32_R (0x8614C)
-#define PIC32_PORTF             PIC32_R (0x86150) /* Port F: read inputs, write outputs */
+#define PIC32_PORTF             PIC32_R (0x86150)       /* Port F: read inputs, write outputs */
 #define PIC32_PORTFCLR          PIC32_R (0x86154)
 #define PIC32_PORTFSET          PIC32_R (0x86158)
 #define PIC32_PORTFINV          PIC32_R (0x8615C)
-#define PIC32_LATF              PIC32_R (0x86160) /* Port F: read/write outputs */
+#define PIC32_LATF              PIC32_R (0x86160)       /* Port F: read/write outputs */
 #define PIC32_LATFCLR           PIC32_R (0x86164)
 #define PIC32_LATFSET           PIC32_R (0x86168)
 #define PIC32_LATFINV           PIC32_R (0x8616C)
-#define PIC32_ODCF              PIC32_R (0x86170) /* Port F: open drain configuration */
+#define PIC32_ODCF              PIC32_R (0x86170)       /* Port F: open drain configuration */
 #define PIC32_ODCFCLR           PIC32_R (0x86174)
 #define PIC32_ODCFSET           PIC32_R (0x86178)
 #define PIC32_ODCFINV           PIC32_R (0x8617C)
 
-#define PIC32_TRISG             PIC32_R (0x86180) /* Port G: mask of inputs */
+#define PIC32_TRISG             PIC32_R (0x86180)       /* Port G: mask of inputs */
 #define PIC32_TRISGCLR          PIC32_R (0x86184)
 #define PIC32_TRISGSET          PIC32_R (0x86188)
 #define PIC32_TRISGINV          PIC32_R (0x8618C)
-#define PIC32_PORTG             PIC32_R (0x86190) /* Port G: read inputs, write outputs */
+#define PIC32_PORTG             PIC32_R (0x86190)       /* Port G: read inputs, write outputs */
 #define PIC32_PORTGCLR          PIC32_R (0x86194)
 #define PIC32_PORTGSET          PIC32_R (0x86198)
 #define PIC32_PORTGINV          PIC32_R (0x8619C)
-#define PIC32_LATG              PIC32_R (0x861A0) /* Port G: read/write outputs */
+#define PIC32_LATG              PIC32_R (0x861A0)       /* Port G: read/write outputs */
 #define PIC32_LATGCLR           PIC32_R (0x861A4)
 #define PIC32_LATGSET           PIC32_R (0x861A8)
 #define PIC32_LATGINV           PIC32_R (0x861AC)
-#define PIC32_ODCG              PIC32_R (0x861B0) /* Port G: open drain configuration */
+#define PIC32_ODCG              PIC32_R (0x861B0)       /* Port G: open drain configuration */
 #define PIC32_ODCGCLR           PIC32_R (0x861B4)
 #define PIC32_ODCGSET           PIC32_R (0x861B8)
 #define PIC32_ODCGINV           PIC32_R (0x861BC)
 
-#define PIC32_CNCON             PIC32_R (0x861C0) /* Interrupt-on-change control */
+#define PIC32_CNCON             PIC32_R (0x861C0)       /* Interrupt-on-change control */
 #define PIC32_CNCONCLR          PIC32_R (0x861C4)
 #define PIC32_CNCONSET          PIC32_R (0x861C8)
 #define PIC32_CNCONINV          PIC32_R (0x861CC)
-#define PIC32_CNEN              PIC32_R (0x861D0) /* Input change interrupt enable */
+#define PIC32_CNEN              PIC32_R (0x861D0)       /* Input change interrupt enable */
 #define PIC32_CNENCLR           PIC32_R (0x861D4)
 #define PIC32_CNENSET           PIC32_R (0x861D8)
 #define PIC32_CNENINV           PIC32_R (0x861DC)
-#define PIC32_CNPUE             PIC32_R (0x861E0) /* Input pin pull-up enable */
+#define PIC32_CNPUE             PIC32_R (0x861E0)       /* Input pin pull-up enable */
 #define PIC32_CNPUECLR          PIC32_R (0x861E4)
 #define PIC32_CNPUESET          PIC32_R (0x861E8)
 #define PIC32_CNPUEINV          PIC32_R (0x861EC)
@@ -352,31 +352,31 @@
 /*--------------------------------------
  * A/D Converter registers.
  */
-#define PIC32_AD1CON1           PIC32_R (0x9000) /* Control register 1 */
+#define PIC32_AD1CON1           PIC32_R (0x9000)        /* Control register 1 */
 #define PIC32_AD1CON1CLR        PIC32_R (0x9004)
 #define PIC32_AD1CON1SET        PIC32_R (0x9008)
 #define PIC32_AD1CON1INV        PIC32_R (0x900C)
-#define PIC32_AD1CON2           PIC32_R (0x9010) /* Control register 2 */
+#define PIC32_AD1CON2           PIC32_R (0x9010)        /* Control register 2 */
 #define PIC32_AD1CON2CLR        PIC32_R (0x9014)
 #define PIC32_AD1CON2SET        PIC32_R (0x9018)
 #define PIC32_AD1CON2INV        PIC32_R (0x901C)
-#define PIC32_AD1CON3           PIC32_R (0x9020) /* Control register 3 */
+#define PIC32_AD1CON3           PIC32_R (0x9020)        /* Control register 3 */
 #define PIC32_AD1CON3CLR        PIC32_R (0x9024)
 #define PIC32_AD1CON3SET        PIC32_R (0x9028)
 #define PIC32_AD1CON3INV        PIC32_R (0x902C)
-#define PIC32_AD1CHS            PIC32_R (0x9040) /* Channel select */
+#define PIC32_AD1CHS            PIC32_R (0x9040)        /* Channel select */
 #define PIC32_AD1CHSCLR         PIC32_R (0x9044)
 #define PIC32_AD1CHSSET         PIC32_R (0x9048)
 #define PIC32_AD1CHSINV         PIC32_R (0x904C)
-#define PIC32_AD1CSSL           PIC32_R (0x9050) /* Input scan selection */
+#define PIC32_AD1CSSL           PIC32_R (0x9050)        /* Input scan selection */
 #define PIC32_AD1CSSLCLR        PIC32_R (0x9054)
 #define PIC32_AD1CSSLSET        PIC32_R (0x9058)
 #define PIC32_AD1CSSLINV        PIC32_R (0x905C)
-#define PIC32_AD1PCFG           PIC32_R (0x9060) /* Port configuration */
+#define PIC32_AD1PCFG           PIC32_R (0x9060)        /* Port configuration */
 #define PIC32_AD1PCFGCLR        PIC32_R (0x9064)
 #define PIC32_AD1PCFGSET        PIC32_R (0x9068)
 #define PIC32_AD1PCFGINV        PIC32_R (0x906C)
-#define PIC32_ADC1BUF0          PIC32_R (0x9070) /* Result words */
+#define PIC32_ADC1BUF0          PIC32_R (0x9070)        /* Result words */
 #define PIC32_ADC1BUF1          PIC32_R (0x9080)
 #define PIC32_ADC1BUF2          PIC32_R (0x9090)
 #define PIC32_ADC1BUF3          PIC32_R (0x90A0)
@@ -396,31 +396,31 @@
 /*--------------------------------------
  * Parallel master port registers.
  */
-#define PIC32_PMCON             PIC32_R (0x7000) /* Control */
+#define PIC32_PMCON             PIC32_R (0x7000)        /* Control */
 #define PIC32_PMCONCLR          PIC32_R (0x7004)
 #define PIC32_PMCONSET          PIC32_R (0x7008)
 #define PIC32_PMCONINV          PIC32_R (0x700C)
-#define PIC32_PMMODE            PIC32_R (0x7010) /* Mode */
+#define PIC32_PMMODE            PIC32_R (0x7010)        /* Mode */
 #define PIC32_PMMODECLR         PIC32_R (0x7014)
 #define PIC32_PMMODESET         PIC32_R (0x7018)
 #define PIC32_PMMODEINV         PIC32_R (0x701C)
-#define PIC32_PMADDR            PIC32_R (0x7020) /* Address */
+#define PIC32_PMADDR            PIC32_R (0x7020)        /* Address */
 #define PIC32_PMADDRCLR         PIC32_R (0x7024)
 #define PIC32_PMADDRSET         PIC32_R (0x7028)
 #define PIC32_PMADDRINV         PIC32_R (0x702C)
-#define PIC32_PMDOUT            PIC32_R (0x7030) /* Data output */
+#define PIC32_PMDOUT            PIC32_R (0x7030)        /* Data output */
 #define PIC32_PMDOUTCLR         PIC32_R (0x7034)
 #define PIC32_PMDOUTSET         PIC32_R (0x7038)
 #define PIC32_PMDOUTINV         PIC32_R (0x703C)
-#define PIC32_PMDIN             PIC32_R (0x7040) /* Data input */
+#define PIC32_PMDIN             PIC32_R (0x7040)        /* Data input */
 #define PIC32_PMDINCLR          PIC32_R (0x7044)
 #define PIC32_PMDINSET          PIC32_R (0x7048)
 #define PIC32_PMDININV          PIC32_R (0x704C)
-#define PIC32_PMAEN             PIC32_R (0x7050) /* Pin enable */
+#define PIC32_PMAEN             PIC32_R (0x7050)        /* Pin enable */
 #define PIC32_PMAENCLR          PIC32_R (0x7054)
 #define PIC32_PMAENSET          PIC32_R (0x7058)
 #define PIC32_PMAENINV          PIC32_R (0x705C)
-#define PIC32_PMSTAT            PIC32_R (0x7060) /* Status (slave only) */
+#define PIC32_PMSTAT            PIC32_R (0x7060)        /* Status (slave only) */
 #define PIC32_PMSTATCLR         PIC32_R (0x7064)
 #define PIC32_PMSTATSET         PIC32_R (0x7068)
 #define PIC32_PMSTATINV         PIC32_R (0x706C)
@@ -428,33 +428,33 @@
 /*
  * PMP Control register.
  */
-#define PIC32_PMCON_RDSP        0x0001 /* Read strobe polarity active-high */
-#define PIC32_PMCON_WRSP        0x0002 /* Write strobe polarity active-high */
-#define PIC32_PMCON_CS1P        0x0008 /* Chip select 0 polarity active-high */
-#define PIC32_PMCON_CS2P        0x0010 /* Chip select 1 polarity active-high */
-#define PIC32_PMCON_ALP         0x0020 /* Address latch polarity active-high */
-#define PIC32_PMCON_CSF         0x00C0 /* Chip select function bitmask: */
-#define PIC32_PMCON_CSF_NONE    0x0000 /* PMCS2 and PMCS1 as A[15:14] */
-#define PIC32_PMCON_CSF_CS2     0x0040 /* PMCS2 as chip select */
-#define PIC32_PMCON_CSF_CS21    0x0080 /* PMCS2 and PMCS1 as chip select */
-#define PIC32_PMCON_PTRDEN      0x0100 /* Read/write strobe port enable */
-#define PIC32_PMCON_PTWREN      0x0200 /* Write enable strobe port enable */
-#define PIC32_PMCON_PMPTTL      0x0400 /* TTL input buffer select */
-#define PIC32_PMCON_ADRMUX      0x1800 /* Address/data mux selection bitmask: */
-#define PIC32_PMCON_ADRMUX_NONE 0x0000 /* Address and data separate */
-#define PIC32_PMCON_ADRMUX_AD   0x0800 /* Lower address on PMD[7:0], high on PMA[15:8] */
-#define PIC32_PMCON_ADRMUX_D8   0x1000 /* All address on PMD[7:0] */
-#define PIC32_PMCON_ADRMUX_D16  0x1800 /* All address on PMD[15:0] */
-#define PIC32_PMCON_SIDL        0x2000 /* Stop in idle */
-#define PIC32_PMCON_FRZ         0x4000 /* Freeze in debug exception */
-#define PIC32_PMCON_ON          0x8000 /* Parallel master port enable */
+#define PIC32_PMCON_RDSP        0x0001  /* Read strobe polarity active-high */
+#define PIC32_PMCON_WRSP        0x0002  /* Write strobe polarity active-high */
+#define PIC32_PMCON_CS1P        0x0008  /* Chip select 0 polarity active-high */
+#define PIC32_PMCON_CS2P        0x0010  /* Chip select 1 polarity active-high */
+#define PIC32_PMCON_ALP         0x0020  /* Address latch polarity active-high */
+#define PIC32_PMCON_CSF         0x00C0  /* Chip select function bitmask: */
+#define PIC32_PMCON_CSF_NONE    0x0000  /* PMCS2 and PMCS1 as A[15:14] */
+#define PIC32_PMCON_CSF_CS2     0x0040  /* PMCS2 as chip select */
+#define PIC32_PMCON_CSF_CS21    0x0080  /* PMCS2 and PMCS1 as chip select */
+#define PIC32_PMCON_PTRDEN      0x0100  /* Read/write strobe port enable */
+#define PIC32_PMCON_PTWREN      0x0200  /* Write enable strobe port enable */
+#define PIC32_PMCON_PMPTTL      0x0400  /* TTL input buffer select */
+#define PIC32_PMCON_ADRMUX      0x1800  /* Address/data mux selection bitmask: */
+#define PIC32_PMCON_ADRMUX_NONE 0x0000  /* Address and data separate */
+#define PIC32_PMCON_ADRMUX_AD   0x0800  /* Lower address on PMD[7:0], high on PMA[15:8] */
+#define PIC32_PMCON_ADRMUX_D8   0x1000  /* All address on PMD[7:0] */
+#define PIC32_PMCON_ADRMUX_D16  0x1800  /* All address on PMD[15:0] */
+#define PIC32_PMCON_SIDL        0x2000  /* Stop in idle */
+#define PIC32_PMCON_FRZ         0x4000  /* Freeze in debug exception */
+#define PIC32_PMCON_ON          0x8000  /* Parallel master port enable */
 
 /*
  * PMP Mode register.
  */
-#define PIC32_PMMODE_WAITE(x)   ((x)<<0) /* Wait states: data hold after RW strobe */
-#define PIC32_PMMODE_WAITM(x)   ((x)<<2) /* Wait states: data RW strobe */
-#define PIC32_PMMODE_WAITB(x)   ((x)<<6) /* Wait states: data setup to RW strobe */
+#define PIC32_PMMODE_WAITE(x)   ((x)<<0)        /* Wait states: data hold after RW strobe */
+#define PIC32_PMMODE_WAITM(x)   ((x)<<2)        /* Wait states: data RW strobe */
+#define PIC32_PMMODE_WAITB(x)   ((x)<<6)        /* Wait states: data setup to RW strobe */
 #define PIC32_PMMODE_MODE       0x0300  /* Mode select bitmask: */
 #define PIC32_PMMODE_MODE_SLAVE 0x0000  /* Legacy slave */
 #define PIC32_PMMODE_MODE_SLENH 0x0100  /* Enhanced slave */
@@ -475,24 +475,24 @@
 /*
  * PMP Address register.
  */
-#define PIC32_PMADDR_PADDR      0x3FFF /* Destination address */
-#define PIC32_PMADDR_CS1        0x4000 /* Chip select 1 is active */
-#define PIC32_PMADDR_CS2        0x8000 /* Chip select 2 is active */
+#define PIC32_PMADDR_PADDR      0x3FFF  /* Destination address */
+#define PIC32_PMADDR_CS1        0x4000  /* Chip select 1 is active */
+#define PIC32_PMADDR_CS2        0x8000  /* Chip select 2 is active */
 
 /*
  * PMP status register (slave only).
  */
-#define PIC32_PMSTAT_OB0E       0x0001 /* Output buffer 0 empty */
-#define PIC32_PMSTAT_OB1E       0x0002 /* Output buffer 1 empty */
-#define PIC32_PMSTAT_OB2E       0x0004 /* Output buffer 2 empty */
-#define PIC32_PMSTAT_OB3E       0x0008 /* Output buffer 3 empty */
-#define PIC32_PMSTAT_OBUF       0x0040 /* Output buffer underflow */
-#define PIC32_PMSTAT_OBE        0x0080 /* Output buffer empty */
-#define PIC32_PMSTAT_IB0F       0x0100 /* Input buffer 0 full */
-#define PIC32_PMSTAT_IB1F       0x0200 /* Input buffer 1 full */
-#define PIC32_PMSTAT_IB2F       0x0400 /* Input buffer 2 full */
-#define PIC32_PMSTAT_IB3F       0x0800 /* Input buffer 3 full */
-#define PIC32_PMSTAT_IBOV       0x4000 /* Input buffer overflow */
-#define PIC32_PMSTAT_IBF        0x8000 /* Input buffer full */
+#define PIC32_PMSTAT_OB0E       0x0001  /* Output buffer 0 empty */
+#define PIC32_PMSTAT_OB1E       0x0002  /* Output buffer 1 empty */
+#define PIC32_PMSTAT_OB2E       0x0004  /* Output buffer 2 empty */
+#define PIC32_PMSTAT_OB3E       0x0008  /* Output buffer 3 empty */
+#define PIC32_PMSTAT_OBUF       0x0040  /* Output buffer underflow */
+#define PIC32_PMSTAT_OBE        0x0080  /* Output buffer empty */
+#define PIC32_PMSTAT_IB0F       0x0100  /* Input buffer 0 full */
+#define PIC32_PMSTAT_IB1F       0x0200  /* Input buffer 1 full */
+#define PIC32_PMSTAT_IB2F       0x0400  /* Input buffer 2 full */
+#define PIC32_PMSTAT_IB3F       0x0800  /* Input buffer 3 full */
+#define PIC32_PMSTAT_IBOV       0x4000  /* Input buffer overflow */
+#define PIC32_PMSTAT_IBF        0x8000  /* Input buffer full */
 
 #endif /* _IO_PIC32MX_H */

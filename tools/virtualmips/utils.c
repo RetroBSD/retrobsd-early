@@ -1,4 +1,4 @@
-/*  
+/*
  * Cisco router simulation platform.
  * Copyright (c) 2005,2006 Christophe Fillot.  All rights reserved.
  *
@@ -6,12 +6,11 @@
  */
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
-
 
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -39,478 +38,456 @@
 
 extern FILE *log_file;
 
-
-unsigned int get_file_size(const char *file_path)
+unsigned int get_file_size (const char *file_path)
 {
-   struct stat statbuf;
-   if (stat(file_path, &statbuf) == -1)
-   {
-      printf("Get stat on %s Error:%s\n", file_path, strerror(errno));
-      return (0);
-   }
-   if (S_ISDIR(statbuf.st_mode))
-      return (0);
-   if (S_ISREG(statbuf.st_mode))
-      return (statbuf.st_size);
+    struct stat statbuf;
+    if (stat (file_path, &statbuf) == -1) {
+        printf ("Get stat on %s Error:%s\n", file_path, strerror (errno));
+        return (0);
+    }
+    if (S_ISDIR (statbuf.st_mode))
+        return (0);
+    if (S_ISREG (statbuf.st_mode))
+        return (statbuf.st_size);
 
-   return 0;
+    return 0;
 }
 
-
-
 /* Dynamic sprintf */
-char *dyn_sprintf(const char *fmt, ...)
+char *dyn_sprintf (const char *fmt, ...)
 {
-   int n, size = 512;
-   va_list ap;
-   char *p, *p2;
+    int n, size = 512;
+    va_list ap;
+    char *p, *p2;
 
-   if ((p = malloc(size)) == NULL)
-   {
-      perror("dyn_sprintf: malloc");
-      return NULL;
-   }
+    if ((p = malloc (size)) == NULL) {
+        perror ("dyn_sprintf: malloc");
+        return NULL;
+    }
 
-   for (;;)
-   {
-      /* Try to print in the allocated space */
-      va_start(ap, fmt);
-      n = vsnprintf(p, size, fmt, ap);
-      va_end(ap);
+    for (;;) {
+        /* Try to print in the allocated space */
+        va_start (ap, fmt);
+        n = vsnprintf (p, size, fmt, ap);
+        va_end (ap);
 
-      /* If that worked, return the string */
-      if ((n > -1) && (n < size))
-         return p;
+        /* If that worked, return the string */
+        if ((n > -1) && (n < size))
+            return p;
 
-      /* Else try again with more space. */
-      if (n > -1)
-         size = n + 1;
-      else
-         size *= 2;
-      free(p);
-      if ((p2 = malloc(size)) == NULL)
-      {
-         perror("dyn_sprintf: realloc");
-         return NULL;
-      }
+        /* Else try again with more space. */
+        if (n > -1)
+            size = n + 1;
+        else
+            size *= 2;
+        free (p);
+        if ((p2 = malloc (size)) == NULL) {
+            perror ("dyn_sprintf: realloc");
+            return NULL;
+        }
 
-      p = p2;
-   }
-   free(p2);
+        p = p2;
+    }
+    free (p2);
 }
 
 /* Split a string */
-int m_strsplit(char *str, char delim, char **array, int max_count)
+int m_strsplit (char *str, char delim, char **array, int max_count)
 {
-   int i, pos = 0;
-   size_t len;
-   char *ptr;
+    int i, pos = 0;
+    size_t len;
+    char *ptr;
 
-   for (i = 0; i < max_count; i++)
-      array[i] = NULL;
+    for (i = 0; i < max_count; i++)
+        array[i] = NULL;
 
-   do
-   {
-      if (pos == max_count)
-         goto error;
+    do {
+        if (pos == max_count)
+            goto error;
 
-      ptr = strchr(str, delim);
-      if (!ptr)
-         ptr = str + strlen(str);
+        ptr = strchr (str, delim);
+        if (!ptr)
+            ptr = str + strlen (str);
 
-      len = ptr - str;
+        len = ptr - str;
 
-      if (!(array[pos] = malloc(len + 1)))
-         goto error;
+        if (!(array[pos] = malloc (len + 1)))
+            goto error;
 
-      memcpy(array[pos], str, len);
-      array[pos][len] = 0;
+        memcpy (array[pos], str, len);
+        array[pos][len] = 0;
 
-      str = ptr + 1;
-      pos++;
-   }
-   while (*ptr);
-   return (pos);
+        str = ptr + 1;
+        pos++;
+    }
+    while (*ptr);
+    return (pos);
 
- error:
-   for (i = 0; i < max_count; i++)
-      free(array[i]);
-   return (-1);
+  error:
+    for (i = 0; i < max_count; i++)
+        free (array[i]);
+    return (-1);
 }
 
 /* Tokenize a string */
-int m_strtok(char *str, char delim, char **array, int max_count)
+int m_strtok (char *str, char delim, char **array, int max_count)
 {
-   int i, pos = 0;
-   size_t len;
-   char *ptr;
+    int i, pos = 0;
+    size_t len;
+    char *ptr;
 
-   for (i = 0; i < max_count; i++)
-      array[i] = NULL;
+    for (i = 0; i < max_count; i++)
+        array[i] = NULL;
 
-   do
-   {
-      if (pos == max_count)
-         goto error;
+    do {
+        if (pos == max_count)
+            goto error;
 
-      ptr = strchr(str, delim);
-      if (!ptr)
-         ptr = str + strlen(str);
+        ptr = strchr (str, delim);
+        if (!ptr)
+            ptr = str + strlen (str);
 
-      len = ptr - str;
+        len = ptr - str;
 
-      if (!(array[pos] = malloc(len + 1)))
-         goto error;
+        if (!(array[pos] = malloc (len + 1)))
+            goto error;
 
-      memcpy(array[pos], str, len);
-      array[pos][len] = 0;
+        memcpy (array[pos], str, len);
+        array[pos][len] = 0;
 
-      while (*ptr == delim)
-         ptr++;
+        while (*ptr == delim)
+            ptr++;
 
-      str = ptr;
-      pos++;
-   }
-   while (*ptr);
+        str = ptr;
+        pos++;
+    }
+    while (*ptr);
 
-   return (pos);
+    return (pos);
 
- error:
-   for (i = 0; i < max_count; i++)
-      free(array[i]);
-   return (-1);
+  error:
+    for (i = 0; i < max_count; i++)
+        free (array[i]);
+    return (-1);
 }
 
 /* Quote a string */
-char *m_strquote(char *buffer, size_t buf_len, char *str)
+char *m_strquote (char *buffer, size_t buf_len, char *str)
 {
-   char *p;
+    char *p;
 
-   if (!(p = strpbrk(str, " \t\"'")))
-      return str;
+    if (!(p = strpbrk (str, " \t\"'")))
+        return str;
 
-   snprintf(buffer, buf_len, "\"%s\"", str);
-   return buffer;
+    snprintf (buffer, buf_len, "\"%s\"", str);
+    return buffer;
 }
 
 /* Ugly function that dumps a structure in hexa and ascii. */
-void mem_dump(FILE * f_output, u_char * pkt, u_int len)
+void mem_dump (FILE * f_output, u_char * pkt, u_int len)
 {
-   u_int x, i = 0, tmp;
+    u_int x, i = 0, tmp;
 
-   while (i < len)
-   {
-      if ((len - i) > 16)
-         x = 16;
-      else
-         x = len - i;
+    while (i < len) {
+        if ((len - i) > 16)
+            x = 16;
+        else
+            x = len - i;
 
-      fprintf(f_output, "%4.4x: ", i);
+        fprintf (f_output, "%4.4x: ", i);
 
-      for (tmp = 0; tmp < x; tmp++)
-         fprintf(f_output, "%2.2x ", pkt[i + tmp]);
-      for (tmp = x; tmp < 16; tmp++)
-         fprintf(f_output, "   ");
+        for (tmp = 0; tmp < x; tmp++)
+            fprintf (f_output, "%2.2x ", pkt[i + tmp]);
+        for (tmp = x; tmp < 16; tmp++)
+            fprintf (f_output, "   ");
 
-      for (tmp = 0; tmp < x; tmp++)
-      {
-         char c = pkt[i + tmp];
+        for (tmp = 0; tmp < x; tmp++) {
+            char c = pkt[i + tmp];
 
-         if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) || ((c >= '0') && (c <= '9')))
-            fprintf(f_output, "%c", c);
-         else
-            fputs(".", f_output);
-      }
+            if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'))
+                || ((c >= '0') && (c <= '9')))
+                fprintf (f_output, "%c", c);
+            else
+                fputs (".", f_output);
+        }
 
-      i += x;
-      fprintf(f_output, "\n");
-   }
+        i += x;
+        fprintf (f_output, "\n");
+    }
 
-   fprintf(f_output, "\n");
+    fprintf (f_output, "\n");
 }
 
 /* Logging function */
-void m_flog(FILE * fd, char *module, char *fmt, va_list ap)
+void m_flog (FILE * fd, char *module, char *fmt, va_list ap)
 {
-   struct timeval now;
-   static char buf[256];
-   time_t ct;
+    struct timeval now;
+    static char buf[256];
+    time_t ct;
 
-   gettimeofday(&now, 0);
-   ct = now.tv_sec;
-   strftime(buf, sizeof(buf), "%b %d %H:%M:%S", localtime(&ct));
-   if (fd)
-   {
-      fprintf(fd, "%s.%03ld %s: ", buf, (long) now.tv_usec / 1000, module);
-      vfprintf(fd, fmt, ap);
-      fflush(fd);
-   }
+    gettimeofday (&now, 0);
+    ct = now.tv_sec;
+    strftime (buf, sizeof (buf), "%b %d %H:%M:%S", localtime (&ct));
+    if (fd) {
+        fprintf (fd, "%s.%03ld %s: ", buf, (long) now.tv_usec / 1000, module);
+        vfprintf (fd, fmt, ap);
+        fflush (fd);
+    }
 }
 
 #if 0
 /* Logging function */
-void m_log(char *module, char *fmt, ...)
+void m_log (char *module, char *fmt, ...)
 {
-   va_list ap;
+    va_list ap;
 
-   va_start(ap, fmt);
-   m_flog(log_file, module, fmt, ap);
-   va_end(ap);
+    va_start (ap, fmt);
+    m_flog (log_file, module, fmt, ap);
+    va_end (ap);
 }
 #endif
+
 /* Returns a line from specified file (remove trailing '\n') */
-char *m_fgets(char *buffer, int size, FILE * fd)
+char *m_fgets (char *buffer, int size, FILE * fd)
 {
-   int len;
+    int len;
 
-   buffer[0] = '\0';
-   fgets(buffer, size, fd);
+    buffer[0] = '\0';
+    if (fgets (buffer, size, fd) == NULL)
+        return NULL;
 
-   if ((len = strlen(buffer)) == 0)
-      return NULL;
+    len = strlen (buffer);
+    if (len == 0)
+        return NULL;
 
-   /* remove trailing '\n' */
-   if (buffer[len - 1] == '\n')
-      buffer[len - 1] = '\0';
+    /* remove trailing '\n' */
+    if (buffer[len - 1] == '\n')
+        buffer[len - 1] = '\0';
 
-   return buffer;
+    return buffer;
 }
 
 /* Read a file and returns it in a buffer */
-ssize_t m_read_file(char *filename, char **buffer)
+ssize_t m_read_file (char *filename, char **buffer)
 {
-   char tmp[256], *ptr, *nptr;
-   size_t len, tot_len;
-   FILE *fd;
+    char tmp[256], *ptr, *nptr;
+    size_t len, tot_len;
+    FILE *fd;
 
-   *buffer = ptr = NULL;
-   tot_len = 0;
+    *buffer = ptr = NULL;
+    tot_len = 0;
 
-   /* Open file for reading */
-   if ((fd = fopen(filename, "r")) == NULL)
-      return (-1);
+    /* Open file for reading */
+    if ((fd = fopen (filename, "r")) == NULL)
+        return (-1);
 
-   while ((len = fread(tmp, 1, sizeof(tmp), fd)) > 0)
-   {
-      /* Reallocate memory */
-      nptr = realloc(ptr, tot_len + len + 1);
-      if (nptr == NULL)
-      {
-         if (ptr)
-            free(ptr);
-         fclose(fd);
-         return (-1);
-      }
+    while ((len = fread (tmp, 1, sizeof (tmp), fd)) > 0) {
+        /* Reallocate memory */
+        nptr = realloc (ptr, tot_len + len + 1);
+        if (nptr == NULL) {
+            if (ptr)
+                free (ptr);
+            fclose (fd);
+            return (-1);
+        }
 
-      ptr = nptr;
+        ptr = nptr;
 
-      /* Ok, memory could be allocated */
-      memcpy(&ptr[tot_len], tmp, len);
-      tot_len += len;
-   }
+        /* Ok, memory could be allocated */
+        memcpy (&ptr[tot_len], tmp, len);
+        tot_len += len;
+    }
 
-   fclose(fd);
-   *buffer = ptr;
-   return (tot_len);
+    fclose (fd);
+    *buffer = ptr;
+    return (tot_len);
 }
 
 /* Allocate aligned memory */
-void *m_memalign(size_t boundary, size_t size)
+void *m_memalign (size_t boundary, size_t size)
 {
-   void *p;
+    void *p;
 
 #ifdef __linux__
-   if (posix_memalign((void *) &p, boundary, size))
+    if (posix_memalign ((void *) &p, boundary, size))
 #else
 #if defined(__CYGWIN__) || defined(SUNOS)
-   if (!(p = memalign(boundary, size)))
+    if (!(p = memalign (boundary, size)))
 #else
-   if (!(p = malloc(size)))
+    if (!(p = malloc (size)))
 #endif
 #endif
-      return NULL;
+        return NULL;
 
-   assert(((m_iptr_t) p & (boundary - 1)) == 0);
-   return p;
+    assert (((m_iptr_t) p & (boundary - 1)) == 0);
+    return p;
 }
 
 /* Block specified signal for calling thread */
-int m_signal_block(int sig)
+int m_signal_block (int sig)
 {
-   sigset_t sig_mask;
-   sigemptyset(&sig_mask);
-   sigaddset(&sig_mask, sig);
-   return (pthread_sigmask(SIG_BLOCK, &sig_mask, NULL));
+    sigset_t sig_mask;
+    sigemptyset (&sig_mask);
+    sigaddset (&sig_mask, sig);
+    return (pthread_sigmask (SIG_BLOCK, &sig_mask, NULL));
 }
 
 /* Unblock specified signal for calling thread */
-int m_signal_unblock(int sig)
+int m_signal_unblock (int sig)
 {
-   sigset_t sig_mask;
-   sigemptyset(&sig_mask);
-   sigaddset(&sig_mask, sig);
-   return (pthread_sigmask(SIG_UNBLOCK, &sig_mask, NULL));
+    sigset_t sig_mask;
+    sigemptyset (&sig_mask);
+    sigaddset (&sig_mask, sig);
+    return (pthread_sigmask (SIG_UNBLOCK, &sig_mask, NULL));
 }
 
 /* Set non-blocking mode on a file descriptor */
-int m_fd_set_non_block(int fd)
+int m_fd_set_non_block (int fd)
 {
-   int flags;
+    int flags;
 
-   if ((flags = fcntl(fd, F_GETFL, 0)) < 1)
-      return (-1);
+    if ((flags = fcntl (fd, F_GETFL, 0)) < 1)
+        return (-1);
 
-   return (fcntl(fd, F_SETFL, flags | O_NONBLOCK));
+    return (fcntl (fd, F_SETFL, flags | O_NONBLOCK));
 }
 
 /* Map a memory zone from a file */
-u_char *memzone_map_file(int fd, size_t len)
+u_char *memzone_map_file (int fd, size_t len)
 {
-   return (mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t) 0));
+    return (mmap (NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd,
+            (off_t) 0));
 }
 
 /* Map a memory zone from a file, with copy-on-write (COW) */
-u_char *memzone_map_cow_file(int fd, size_t len)
+u_char *memzone_map_cow_file (int fd, size_t len)
 {
-   return (mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, (off_t) 0));
+    return (mmap (NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd,
+            (off_t) 0));
 }
 
 /* Create a file to serve as a memory zone */
-int memzone_create_file(char *filename, size_t len, u_char ** ptr)
+int memzone_create_file (char *filename, size_t len, u_char ** ptr)
 {
-   int fd;
+    int fd;
 
-   if ((fd = open(filename, O_CREAT | O_RDWR, S_IRWXU)) == -1)
-   {
-      perror("memzone_create_file: open");
-      return (-1);
-   }
+    if ((fd = open (filename, O_CREAT | O_RDWR, S_IRWXU)) == -1) {
+        perror ("memzone_create_file: open");
+        return (-1);
+    }
 
-   if (ftruncate(fd, len) == -1)
-   {
-      perror("memzone_create_file: ftruncate");
-      close(fd);
-      return (-1);
-   }
+    if (ftruncate (fd, len) == -1) {
+        perror ("memzone_create_file: ftruncate");
+        close (fd);
+        return (-1);
+    }
 
-   *ptr = memzone_map_file(fd, len);
+    *ptr = memzone_map_file (fd, len);
 
-   if (!*ptr)
-   {
-      close(fd);
-      fd = -1;
-   }
+    if (!*ptr) {
+        close (fd);
+        fd = -1;
+    }
 
-   return (fd);
+    return (fd);
 }
 
 /* Open a file to serve as a COW memory zone */
-int memzone_open_cow_file(char *filename, size_t len, u_char ** ptr)
+int memzone_open_cow_file (char *filename, size_t len, u_char ** ptr)
 {
-   int fd;
+    int fd;
 
-   if ((fd = open(filename, O_RDWR, S_IRWXU)) == -1)
-   {
-      perror("memzone_open_file: open");
-      return (-1);
-   }
+    if ((fd = open (filename, O_RDWR, S_IRWXU)) == -1) {
+        perror ("memzone_open_file: open");
+        return (-1);
+    }
 
-   *ptr = memzone_map_cow_file(fd, len);
+    *ptr = memzone_map_cow_file (fd, len);
 
-   if (!*ptr)
-   {
-      close(fd);
-      fd = -1;
-   }
+    if (!*ptr) {
+        close (fd);
+        fd = -1;
+    }
 
-   return (fd);
+    return (fd);
 }
 
 /* Open a file and map it in memory */
-int memzone_open_file(char *filename, u_char ** ptr, off_t * fsize)
+int memzone_open_file (char *filename, u_char ** ptr, off_t * fsize)
 {
-   struct stat fprop;
-   int fd;
+    struct stat fprop;
+    int fd;
 
-   if ((fd = open(filename, O_RDWR, S_IRWXU)) == -1)
-      return (-1);
+    if ((fd = open (filename, O_RDWR, S_IRWXU)) == -1)
+        return (-1);
 
-   if (fstat(fd, &fprop) == -1)
-      goto err_fstat;
+    if (fstat (fd, &fprop) == -1)
+        goto err_fstat;
 
-   *fsize = fprop.st_size;
-   if (!(*ptr = memzone_map_file(fd, *fsize)))
-      goto err_mmap;
+    *fsize = fprop.st_size;
+    if (!(*ptr = memzone_map_file (fd, *fsize)))
+        goto err_mmap;
 
-   return (fd);
+    return (fd);
 
- err_mmap:
- err_fstat:
-   close(fd);
-   return (-1);
+  err_mmap:
+  err_fstat:
+    close (fd);
+    return (-1);
 }
 
 /* Compute NVRAM checksum */
-m_uint16_t nvram_cksum(m_uint16_t * ptr, size_t count)
+m_uint16_t nvram_cksum (m_uint16_t * ptr, size_t count)
 {
-   m_uint32_t sum = 0;
+    m_uint32_t sum = 0;
 
-   while (count > 1)
-   {
-      sum = sum + ntohs(*ptr);
-      ptr++;
-      count -= sizeof(m_uint16_t);
-   }
+    while (count > 1) {
+        sum = sum + ntohs (*ptr);
+        ptr++;
+        count -= sizeof (m_uint16_t);
+    }
 
-   if (count > 0)
-      sum = sum + ((ntohs(*ptr) & 0xFF) << 8);
+    if (count > 0)
+        sum = sum + ((ntohs (*ptr) & 0xFF) << 8);
 
-   while (sum >> 16)
-      sum = (sum & 0xffff) + (sum >> 16);
+    while (sum >> 16)
+        sum = (sum & 0xffff) + (sum >> 16);
 
-   return (~sum);
+    return (~sum);
 }
 
 /* Byte-swap a memory block */
-void mem_bswap32(void *ptr, size_t len)
+void mem_bswap32 (void *ptr, size_t len)
 {
-   m_uint32_t *p = ptr;
-   size_t count = len >> 2;
-   int i;
+    m_uint32_t *p = ptr;
+    size_t count = len >> 2;
+    int i;
 
-   for (i = 0; i < count; i++, p++)
-      *p = swap32(*p);
+    for (i = 0; i < count; i++, p++)
+        *p = swap32 (*p);
 }
 
 /* Reverse a byte */
-m_uint8_t m_reverse_u8(m_uint8_t val)
+m_uint8_t m_reverse_u8 (m_uint8_t val)
 {
-   m_uint8_t res = 0;
-   int i;
+    m_uint8_t res = 0;
+    int i;
 
-   for (i = 0; i < 8; i++)
-      if (val & (1 << i))
-         res |= 1 << (7 - i);
+    for (i = 0; i < 8; i++)
+        if (val & (1 << i))
+            res |= 1 << (7 - i);
 
-   return (res);
+    return (res);
 }
 
-
-
-
-
-
-
-void SubstituteLLx(char *out, const char *text, int maxlen)
+void SubstituteLLx (char *out, const char *text, int maxlen)
 {
-   int i;
-   for (i = 0; i < maxlen && text[i]; i++)
-   {
-      out[i] = text[i];
-   }
-   out[i] = text[i];
+    int i;
+    for (i = 0; i < maxlen && text[i]; i++) {
+        out[i] = text[i];
+    }
+    out[i] = text[i];
 }
-
 
 /*****************************************************************
  * Debug
@@ -518,22 +495,22 @@ void SubstituteLLx(char *out, const char *text, int maxlen)
  * only with an extra argument on the front.
  * to output debug infomation , you should excute "simos -d [flag]"
  ****************************************************************/
-void Debug(char flag, char *format, ...)
+void Debug (char flag, char *format, ...)
 {
-   // if (DebugIsEnabled(flag)) {
-   char llformat[1024];
-   va_list ap;
-   va_start(ap, format);
+    // if (DebugIsEnabled(flag)) {
+    char llformat[1024];
+    va_list ap;
+    va_start (ap, format);
 
-   SubstituteLLx(llformat, format, 1024);
+    SubstituteLLx (llformat, format, 1024);
 
-   /* Make this go to stderr also...  */
-   vfprintf(stderr, llformat, ap);
+    /* Make this go to stderr also...  */
+    vfprintf (stderr, llformat, ap);
 
-   //vCPUPrint(llformat, ap);
-   fprintf(stderr, "\r");
-   fflush(stderr);
-   va_end(ap);
+    //vCPUPrint(llformat, ap);
+    fprintf (stderr, "\r");
+    fflush (stderr);
+    va_end (ap);
 
-   //}
+    //}
 }
