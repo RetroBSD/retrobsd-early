@@ -8,6 +8,7 @@
 #define __PIC32_H__
 
 #include "types.h"
+#include "pic32mx.h"
 
 #define DATA_WIDTH          32
 #define LL
@@ -76,11 +77,13 @@ typedef m_uint32_t m_cp0_reg_t;
 
 struct pic32_system
 {
-   /* Associated VM instance */
-   vm_instance_t *vm;
+    /* Associated VM instance */
+    vm_instance_t *vm;
 
-   unsigned pflash_size;            /* size of program flash in kbytes */
-   unsigned pflash_address;         /* phys.address of program flash */
+    unsigned start_address;         /* jump here on reset */
+    unsigned boot_flash_size;       /* size of boot flash in kbytes */
+    unsigned boot_flash_address;    /* phys.address of boot flash */
+    char *boot_file_name;           /* image of boot flash */
 };
 
 typedef struct pic32_system pic32_t;
