@@ -86,7 +86,7 @@ static forced_inline int mips64_fetch_instruction (cpu_mips_t * cpu,
     cpu->njm_exec_page = exec_page;
     offset = (pc & MIPS_MIN_PAGE_IMASK) >> 2;
     *insn = vmtoh32 (cpu->njm_exec_ptr[offset]);
-    printf ("(%08x) %08x\n", pc, *insn);
+//  printf ("(%08x) %08x\n", pc, *insn);
     return (0);
 }
 
@@ -174,7 +174,12 @@ void *mips64_cpu_fdd (cpu_mips_t * cpu)
                 continue;
             }
         }
-
+#if 1
+        printf ("%08x:       %08x        ", cpu->pc, insn);
+        print_insn_mips (cpu->pc, insn, stdout);
+        printf ("\n");
+        fflush (stdout);
+#endif
         res = mips64_exec_single_instruction (cpu, insn);
 
         /* Normal flow ? */

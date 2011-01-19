@@ -3,7 +3,6 @@
   *
   * This file is part of the virtualmips distribution.
   * See LICENSE file for terms of the license.
-  *
   */
 
  /*Pavo emulation
@@ -255,25 +254,25 @@ void pavo_set_irq (vm_instance_t * vm, u_int irq)
         /*set IPR */
         /*
          * we set IPR, not *or* . yajin
-         * 
+         *
          * JZ Kernel 'plat_irq_dispatch' determine which is the highest priority interrupt
          * and handle.
          * It uses a function ffs to find first set irq from least bit to highest bit.
          * 260         irq = ffs(intc_ipr) - 1;
-         * 
+         *
          * That means when tcu0 irq and gpio1 irq occurs at the same time ,INTC_IPR=0x8800000
          * and irq handler will handle tcu0 irq(bit 23) not gpio1 irq(bit 27).
-         * 
+         *
          * In pavo gpio1->cs8900 int
-         * 
+         *
          * TCU0 irq occurs every 10 ms and gpio1 occurs about 10ms (cs8900 has received a packet
          * or has txed a packet), jz kernel always handle tcu0 irq. gpio1 irq is hungry. So I just set
          * jz4740_int_table[INTC_IPR/4]= irq_mask not or(|) irq_mask. TCU0 irq may be lost. However,
          * gpio1 irq is not so ofen so it is not a big problem.
-         * 
+         *
          * In emulator, irq is not a good method for hardware to tell kernel something has happened.
          * Emulator likes polling more than interrupt :) .
-         * 
+         *
          */
         jz4740_int_table[INTC_IPR / 4] = irq_mask;
 
