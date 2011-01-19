@@ -1,12 +1,11 @@
-  /*
-   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-   *
-   * This file is part of the virtualmips distribution.
-   * See LICENSE file for terms of the license.
-   *
-   */
-
-/*---------------------------code dispatch table-----------------------*/
+/*
+ * Code dispatch table.
+ *
+ * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
+ */
 
 static int unknown_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
@@ -547,6 +546,7 @@ static int clz_op (cpu_mips_t * cpu, mips_insn_t insn)
 static int cop0_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     uint16_t special_func = bits (insn, 21, 25);
+//printf ("cop0 instruction. func %x\n", special_func);
     return mips_cop0_opcodes[special_func].func (cpu, insn);
 }
 
@@ -616,7 +616,6 @@ static int div_op (cpu_mips_t * cpu, mips_insn_t insn)
     cpu->lo = sign_extend (cpu->lo, 32);
     cpu->hi = sign_extend (cpu->hi, 32);
     return (0);
-
 }
 
 static int divu_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -639,7 +638,6 @@ static int divu_op (cpu_mips_t * cpu, mips_insn_t insn)
 static int dmfc0_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     return unknown_op (cpu, insn);
-
 }
 
 static int dmtc0_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -785,6 +783,25 @@ static int jr_op (cpu_mips_t * cpu, mips_insn_t insn)
         cpu->pc = new_pc;
     return (1);
 
+}
+
+static int seh_op (cpu_mips_t * cpu, mips_insn_t insn)
+{
+    int rt = bits (insn, 16, 20);
+    int rd = bits (insn, 11, 15);
+    int func = bits (insn, 0, 10);
+//printf ("seh rt=%d, rd=%d, func=%x\n", rt, rd, func);
+    switch (func) {
+    case 0x420:
+        /* seb - sign extend byte */
+        cpu->gpr[rd] = sign_extend (cpu->gpr[rt], 8);
+        return (0);
+    case 0x620:
+        /* seh - sign extend halfword */
+        cpu->gpr[rd] = sign_extend (cpu->gpr[rt], 16);
+        return (0);
+    }
+    return unknown_op (cpu, insn);
 }
 
 static int lb_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1472,6 +1489,22 @@ static int teqi_op (cpu_mips_t * cpu, mips_insn_t insn)
     return (0);
 }
 
+static int di_op (cpu_mips_t * cpu, mips_insn_t insn)
+{
+//  int rt = bits (insn, 16, 20);
+    uint16_t func = bits (insn, 0, 5);
+
+    switch (func) {
+    case 0x00:                  /* di - disable interrupts */
+        cpu->cp0.reg [MIPS_CP0_STATUS] &= MIPS_CP0_STATUS_IE;
+        return 0;
+    case 0x20:                  /* ei - enable interrupts */
+        cpu->cp0.reg [MIPS_CP0_STATUS] |= MIPS_CP0_STATUS_IE;
+        return 0;
+    }
+    return unknown_op (cpu, insn);
+}
+
 static int tlb_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     uint16_t func = bits (insn, 0, 5);
@@ -1651,7 +1684,7 @@ static struct mips64_op_desc mips_opcodes[] = {
     {"undef", mad_op, 0x1C},
     {"undef", undef_op, 0x1D},
     {"undef", undef_op, 0x1E},
-    {"undef", undef_op, 0x1F},
+    {"seh", seh_op, 0x1F},
     {"lb", lb_op, 0x20},
     {"lh", lh_op, 0x21},
     {"lwl", lwl_op, 0x22},
@@ -1802,7 +1835,7 @@ static struct mips64_op_desc mips_cop0_opcodes[] = {
     {"unknowncop0", unknowncop0_op, 0x8},
     {"unknowncop0", unknowncop0_op, 0x9},
     {"unknowncop0", unknowncop0_op, 0xa},
-    {"unknowncop0", unknowncop0_op, 0xb},
+    {"unknowncop0", di_op, 0xb},
     {"unknowncop0", unknowncop0_op, 0xc},
     {"unknowncop0", unknowncop0_op, 0xd},
     {"unknowncop0", unknowncop0_op, 0xe},
