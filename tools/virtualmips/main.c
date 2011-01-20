@@ -30,7 +30,7 @@ void signal_gen_handler (int sig)
         break;
 
     case SIGQUIT:
-        printf ("\n--- stop simulation\n");
+        printf ("\n--- Stop simulation\n");
         /*do not worry, exit will release all resource */
         exit (EXIT_SUCCESS);
         break;

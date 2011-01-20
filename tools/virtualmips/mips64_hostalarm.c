@@ -221,27 +221,23 @@ static struct qemu_alarm_timer alarm_timers[] = {
 /*host alarm*/
 void mips64_init_host_alarm (void)
 {
-
     struct qemu_alarm_timer *t;
     int i, err = -1;
 
     for (i = 0; alarm_timers[i].name; i++) {
         t = &alarm_timers[i];
-
         err = t->start (t);
-        if (!err)
+        if (! err)
             break;
     }
 #define DEBUG_HOST_ALARM
 #ifdef DEBUG_HOST_ALARM
-    printf ("Using %s timer \n", alarm_timers[i].name);
+    printf ("--- Using %s timer\n", alarm_timers[i].name);
 #endif
     if (err) {
         fprintf (stderr, "Unable to find any suitable alarm timer.\n");
         fprintf (stderr, "Terminating\n");
         exit (1);
     }
-
     alarm_timer = t;
-
 }
