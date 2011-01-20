@@ -13,9 +13,9 @@
 
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -60,28 +60,32 @@ static struct termios tios, tios_orig;
 static void vtty_telnet_will_echo (vtty_t * vtty)
 {
     u_char cmd[] = { IAC, WILL, TELOPT_ECHO };
-    write (vtty->fd, cmd, sizeof (cmd));
+    if (write (vtty->fd, cmd, sizeof (cmd)) < 0)
+        perror ("vtty_telnet_will_echo");
 }
 
 /* Send Telnet command: Suppress Go-Ahead */
 static void vtty_telnet_will_suppress_go_ahead (vtty_t * vtty)
 {
     u_char cmd[] = { IAC, WILL, TELOPT_SGA };
-    write (vtty->fd, cmd, sizeof (cmd));
+    if (write (vtty->fd, cmd, sizeof (cmd)) < 0)
+        perror ("vtty_telnet_will_suppress_go_ahead");
 }
 
 /* Send Telnet command: Don't use linemode */
 static void vtty_telnet_dont_linemode (vtty_t * vtty)
 {
     u_char cmd[] = { IAC, DONT, TELOPT_LINEMODE };
-    write (vtty->fd, cmd, sizeof (cmd));
+    if (write (vtty->fd, cmd, sizeof (cmd)) < 0)
+        perror ("vtty_telnet_dont_linemode");
 }
 
 /* Send Telnet command: does the client support terminal type message? */
 static void vtty_telnet_do_ttype (vtty_t * vtty)
 {
     u_char cmd[] = { IAC, DO, TELOPT_TTYPE };
-    write (vtty->fd, cmd, sizeof (cmd));
+    if (write (vtty->fd, cmd, sizeof (cmd)) < 0)
+        perror ("vtty_telnet_do_ttype");
 }
 
 /* Restore TTY original settings */
@@ -200,7 +204,7 @@ static int vtty_tcp_conn_accept (vtty_t * vtty)
     return (0);
 }
 
-/* 
+/*
  * Parse serial interface descriptor string, return 0 if success
  * string takes the form "device:baudrate:databits:parity:stopbits:hwflow"
  * device is mandatory, other options are optional (default=9600,8,N,1,0).
@@ -255,7 +259,7 @@ void cfmakeraw (struct termios *termios_p)
 }
 #endif
 
-/* 
+/*
  * Setup serial port, return 0 if success.
  */
 static int vtty_serial_setup (vtty_t * vtty,
@@ -586,7 +590,7 @@ int vtty_store_ctrlc (vtty_t * vtty)
     return (0);
 }
 
-/* 
+/*
  * Read a character from the terminal.
  */
 static int vtty_term_read (vtty_t * vtty)
@@ -600,7 +604,7 @@ static int vtty_term_read (vtty_t * vtty)
     return (-1);
 }
 
-/* 
+/*
  * Read a character from the TCP connection.
  */
 static int vtty_tcp_read (vtty_t * vtty)
@@ -815,7 +819,7 @@ static void vtty_read_and_store (vtty_t * vtty)
         /* parse ttype string: first char is sufficient */
         /* if client is xterm or vt, set the title bar */
         if ((c == 'x') || (c == 'X') || (c == 'v') || (c == 'V')) {
-            // fprintf(vtty->fstream, "\033]0;Dynamips(%i): %s, %s\07", 
+            // fprintf(vtty->fstream, "\033]0;Dynamips(%i): %s, %s\07",
             //         vtty->vm->instance_id, vtty->vm->name, vtty->name);
         }
         vtty->input_state = VTTY_INPUT_TELNET_NEXT;

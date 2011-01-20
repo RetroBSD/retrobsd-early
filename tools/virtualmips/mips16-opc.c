@@ -1,29 +1,17 @@
-/* mips16-opc.c.  Mips16 opcode table.
-   Copyright 1996, 1997, 1998, 2000, 2005, 2006, 2007
-   Free Software Foundation, Inc.
-   Contributed by Ian Lance Taylor, Cygnus Support
-
-   This file is part of the GNU opcodes library.
-
-   This library is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
-
-   It is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this file; see the file COPYING.  If not, write to the
-   Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
-   MA 02110-1301, USA.  */
-
-/* This is the opcodes table for the mips16 processor.  The format of
-   this table is intentionally identical to the one in mips-opc.c.
-   However, the special letters that appear in the argument string are
-   different, and the table uses some different flags.  */
+/*
+ * This is the opcodes table for the mips16 processor.  The format of
+ * this table is intentionally identical to the one in mips-opc.c.
+ * However, the special letters that appear in the argument string are
+ * different, and the table uses some different flags.
+ *
+ * Copyright 1996, 1997, 1998, 2000, 2005, 2006, 2007
+ * Free Software Foundation, Inc.
+ * Contributed by Ian Lance Taylor, Cygnus Support
+ * Adapted for VirtualMIPS by Serge Vakulenko.
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
+ */
 
 /* Use some short hand macros to keep down the length of the lines in
    the opcodes table.  */

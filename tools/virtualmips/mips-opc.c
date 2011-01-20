@@ -1,28 +1,18 @@
-/* mips-opc.c -- MIPS opcode list.
-   Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
-   2003, 2004, 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
-   Contributed by Ralph Campbell and OSF
-   Commented and modified by Ian Lance Taylor, Cygnus Support
-   Extended for MIPS32 support by Anders Norlander, and by SiByte, Inc.
-   MIPS-3D, MDMX, and MIPS32 Release 2 support added by Broadcom
-   Corporation (SiByte).
-
-   This file is part of the GNU opcodes library.
-
-   This library is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
-
-   It is distributed in the hope that it will be useful, but WITHOUT
-   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-   License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this file; see the file COPYING.  If not, write to the
-   Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
-   MA 02110-1301, USA.  */
+/*
+ * MIPS opcode list.
+ *
+ * Copyright 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002
+ * 2003, 2004, 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
+ * Contributed by Ralph Campbell and OSF
+ * Commented and modified by Ian Lance Taylor, Cygnus Support
+ * Extended for MIPS32 support by Anders Norlander, and by SiByte, Inc.
+ * MIPS-3D, MDMX, and MIPS32 Release 2 support added by Broadcom
+ * Corporation (SiByte).
+ * Adapted for VirtualMIPS by Serge Vakulenko.
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
+ */
 
 /* Short hand so the lines aren't too long.  */
 

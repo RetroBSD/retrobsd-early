@@ -1,17 +1,17 @@
 /*
  * Copyright (C) 1996-1998 by the Board of Trustees
  *    of Leland Stanford Junior University.
- * 
- * This file is part of the SimOS distribution. 
- * See LICENSE file for terms of the license. 
+ *
+ * This file is part of the SimOS distribution.
+ * See LICENSE file for terms of the license.
  *
  */
 
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -185,7 +185,7 @@ static void convert_int_to_ascii (char *from, char *to, int n)
 
 /*****************************************************************
  * readchar
- * Returns next char from remote GDB.  -1 if error.  
+ * Returns next char from remote GDB.  -1 if error.
  *****************************************************************/
 static int readchar (int fd)
 {
@@ -211,7 +211,7 @@ static int readchar (int fd)
  * getpkt
  *
  * Read a packet from the remote machine, with error checking,
- * and store it in BUF.  Returns length of packet, or negative if error. 
+ * and store it in BUF.  Returns length of packet, or negative if error.
  *****************************************************************/
 static int getpkt (int fd, char *buf)
 {
@@ -258,10 +258,12 @@ static int getpkt (int fd, char *buf)
         if (csum == (c1 << 4) + c2)
             break;
 
-        write (fd, "-", 1);
+        if (write (fd, "-", 1) < 0)
+            return -1;
     }
 
-    write (fd, "+", 1);
+    if (write (fd, "+", 1) < 0)
+        return -1;
     return bp - buf;
 
   errout:
@@ -521,7 +523,7 @@ Simdebug_result Simdebug_run (vm_instance_t * vm, int sig)
                             &r) == FAILURE)
                         r = 0;
                     /*
-                     * flip the bytes around 
+                     * flip the bytes around
                      */
                     r = htovm32 (r);    //gdb likes the data of target machine format
                     convert_int_to_ascii ((char *) &r, b, 4);
@@ -563,7 +565,7 @@ Simdebug_result Simdebug_run (vm_instance_t * vm, int sig)
                             &r) == FAILURE)
                         r = 0;
                     /*
-                     * flip the bytes around 
+                     * flip the bytes around
                      */
                     r = htovm32 (r);    //gdb likes the data of target machine format
                     convert_int_to_ascii ((char *) &r, b, 4);

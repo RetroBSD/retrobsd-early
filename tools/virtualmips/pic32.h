@@ -86,10 +86,14 @@ struct pic32_system {
 };
 
 typedef struct pic32_system pic32_t;
+struct virtual_tty;
 
 vm_instance_t *create_instance (char *conf);
-int init_instance (vm_instance_t * vm);
-int pic32_reset (vm_instance_t * vm);
-int dev_pic32_flash_init (vm_instance_t * vm, char *name,
+int init_instance (vm_instance_t *vm);
+int pic32_reset (vm_instance_t *vm);
+int dev_pic32_flash_init (vm_instance_t *vm, char *name,
     unsigned flash_kbytes, unsigned flash_address, char *filename);
+int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
+    unsigned irq, struct virtual_tty *vtty);
+
 #endif

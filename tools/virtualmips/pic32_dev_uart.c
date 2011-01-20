@@ -84,17 +84,14 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                 d->sta &= ~PIC32_USTA_URXDA;
                 //d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
             }
-            *has_set_value = TRUE;
             break;
 
         case PIC32_U1BRG & 0xff:                /* Baud rate */
             *data = d->brg;
-            *has_set_value = TRUE;
             break;
 
         case PIC32_U1MODE & 0xff:               /* Mode */
             *data = d->mode;
-            *has_set_value = TRUE;
             break;
 
         case PIC32_U1STA & 0xff:                /* Status and control */
@@ -103,7 +100,6 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
             if (vtty_is_char_avail (d->vtty))
                 d->sta |= PIC32_USTA_URXDA;
             *data = d->sta;
-            *has_set_value = TRUE;
             break;
 
         case PIC32_U1TXREG & 0xff:              /* Transmit */
@@ -117,16 +113,24 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
         case PIC32_U1BRGSET & 0xff:
         case PIC32_U1BRGINV & 0xff:
             *data = 0;
-            *has_set_value = TRUE;
             break;
 
         default:
             ASSERT (0, "reading unknown uart offset %x\n", offset);
         }
+        *has_set_value = TRUE;
+#if 0
+        printf ("--- uart: read %02x -> %08x\n", offset, *data);
+        fflush (stdout);
+#endif
     } else {
         /*
          * Writing UART registers.
          */
+#if 0
+        printf ("--- uart: write %02x := %08x\n", offset, *data);
+        fflush (stdout);
+#endif
         switch (offset) {
         case PIC32_U1TXREG & 0xff:              /* Transmit */
             vtty_put_char (d->vtty, (char) (*data));
@@ -158,12 +162,11 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                 d->output = TRUE;
                 d->vm->set_irq (d->vm, d->irq + IRQ_TX);
             }
-            *has_set_value = TRUE;
             break;
 
         case PIC32_U1MODE & 0xff:               /* Mode */
             newval = *data;
-          write_mode:
+write_mode:
             d->mode = newval;
             if (!(d->mode & PIC32_UMODE_ON)) {
                 d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
@@ -173,7 +176,6 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                     PIC32_USTA_PERR | PIC32_USTA_UTXBF);
                 d->sta |= PIC32_USTA_RIDLE | PIC32_USTA_TRMT;
             }
-            *has_set_value = TRUE;
             break;
         case PIC32_U1MODECLR & 0xff:
             newval = d->mode & ~*data;
@@ -187,7 +189,7 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
 
         case PIC32_U1STA & 0xff:                /* Status and control */
             newval = *data;
-          write_sta:
+write_sta:
             d->sta &= PIC32_USTA_URXDA | PIC32_USTA_FERR |
                 PIC32_USTA_PERR | PIC32_USTA_RIDLE |
                 PIC32_USTA_TRMT | PIC32_USTA_UTXBF;
@@ -204,7 +206,6 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                 d->sta &= ~PIC32_USTA_UTXBF;
                 d->sta |= PIC32_USTA_TRMT;
             }
-            *has_set_value = TRUE;
             break;
         case PIC32_U1STACLR & 0xff:
             newval = d->mode & ~*data;
@@ -218,9 +219,8 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
 
         case PIC32_U1BRG & 0xff:                /* Baud rate */
             newval = *data;
-          write_brg:
+write_brg:
             d->brg = newval;
-            *has_set_value = TRUE;
             break;
         case PIC32_U1BRGCLR & 0xff:
             newval = d->mode & ~*data;
@@ -234,12 +234,12 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
 
         case PIC32_U1RXREG & 0xff:              /* Receive */
             /* Ignore */
-            *has_set_value = TRUE;
             break;
 
         default:
             ASSERT (0, "writing unknown uart offset %x\n", offset);
         }
+        *has_set_value = TRUE;
     }
     return NULL;
 }
@@ -285,15 +285,15 @@ void dev_pic32_uart_cb (void *opaque)
     vp_mod_timer (d->uart_timer, vp_get_clock (rt_clock) + UART_TIME_OUT);
 }
 
-int dev_pic32_uart_init (vm_instance_t * vm, char *name, m_pa_t paddr,
-    u_int irq, vtty_t * vtty)
+int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
+    unsigned irq, vtty_t *vtty)
 {
     struct pic32_uart_data *d;
 
     /* allocate the private data structure */
     d = malloc (sizeof (*d));
     if (!d) {
-        fprintf (stderr, "JZ4740 UART: unable to create device.\n");
+        fprintf (stderr, "PIC32 UART: unable to create device.\n");
         return (-1);
     }
     memset (d, 0, sizeof (*d));

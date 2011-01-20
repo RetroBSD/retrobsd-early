@@ -36,20 +36,21 @@ void *dev_flash_access (cpu_mips_t * cpu, struct vdevice *dev,
 {
     flash_data_t *d = dev->priv_data;
 
-    printf ("%08x %s", dev->phys_addr + offset, op_type == MTS_READ ? "read  " :
-        op_type == MTS_WRITE ? "write " : "access");
     if (offset >= d->flash_size) {
-        printf (" -- out of memory\n");
+        printf ("-- flash: access %08x -- out of memory\n", dev->phys_addr + offset);
         *data = 0xff;
         *has_set_value = TRUE;
         return NULL;
     }
     if (op_type == MTS_READ) {
-        printf (" %08x\n", *(unsigned *) (d->flash_ptr + offset));
+#if 0
+        printf ("-- flash: read %08x -> %08x\n", dev->phys_addr + offset,
+                *(unsigned *) (d->flash_ptr + offset));
+#endif
         return d->flash_ptr + offset;
     }
     if (op_type == MTS_WRITE) {
-        printf (" ***\n");
+        printf ("-- flash: write %08x ***\n", dev->phys_addr + offset);
         return NULL;
     }
     assert (0);

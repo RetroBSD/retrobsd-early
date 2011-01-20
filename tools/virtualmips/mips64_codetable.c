@@ -1491,14 +1491,16 @@ static int teqi_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int di_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-//  int rt = bits (insn, 16, 20);
+    int rt = bits (insn, 16, 20);
     uint16_t func = bits (insn, 0, 5);
 
     switch (func) {
     case 0x00:                  /* di - disable interrupts */
+        cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
         cpu->cp0.reg [MIPS_CP0_STATUS] &= MIPS_CP0_STATUS_IE;
         return 0;
     case 0x20:                  /* ei - enable interrupts */
+        cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
         cpu->cp0.reg [MIPS_CP0_STATUS] |= MIPS_CP0_STATUS_IE;
         return 0;
     }

@@ -140,8 +140,7 @@ void *mips64_cpu_fdd (cpu_mips_t * cpu)
 
     mips64_init_host_alarm ();
 
-  start_cpu:
-
+start_cpu:
     for (;;) {
         if (unlikely (cpu->state != CPU_STATE_RUNNING))
             break;
@@ -174,7 +173,7 @@ void *mips64_cpu_fdd (cpu_mips_t * cpu)
                 continue;
             }
         }
-#if 1
+#if 0
         printf ("%08x:       %08x        ", cpu->pc, insn);
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
@@ -234,6 +233,6 @@ static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
     return res;
 }
 
-#include "mips64_codetable.h"
+#include "mips64_codetable.c"
 
 //#endif
