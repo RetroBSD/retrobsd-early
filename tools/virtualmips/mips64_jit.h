@@ -1,15 +1,15 @@
 /*
  * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
- *     
- * This file is part of the virtualmips distribution. 
- * See LICENSE file for terms of the license. 
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
  *
  */
 
 /*
 JIT Support.
-In order to improve the emulation speed, JIT is always used in emulators.
-Unlike the JIT of high language, virtualmips does not have basic block. 
+In order to improve the simulation speed, JIT is always used in simulators.
+Unlike the JIT of high language, virtualmips does not have basic block.
 It translates one page(4K) code one time and then run it.
 
 Problems:
@@ -18,13 +18,13 @@ Problems:
 2. delay slot
 3. interrupt emulation
 4. Self-modify code
-5. debug JIT 
+5. debug JIT
 
-How to debug JIT is the most tricky problem. 
-I do not have better method, but just logging and comparing with 
+How to debug JIT is the most tricky problem.
+I do not have better method, but just logging and comparing with
 interpreter. Thanks to the file diff tools.
 
-If you know how to debug JIT, please tell me. 
+If you know how to debug JIT, please tell me.
 
 Most of the code is stripped from Dynamips.  Thanks Christophe Fillot.
 

@@ -1489,22 +1489,24 @@ static int teqi_op (cpu_mips_t * cpu, mips_insn_t insn)
     return (0);
 }
 
-static int di_op (cpu_mips_t * cpu, mips_insn_t insn)
+static int mfmc0_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     int rt = bits (insn, 16, 20);
-    uint16_t func = bits (insn, 0, 5);
+    int rd = bits (insn, 11, 15);
+    int func = bits (insn, 0, 5);
 
-    switch (func) {
-    case 0x00:                  /* di - disable interrupts */
-        cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
-        cpu->cp0.reg [MIPS_CP0_STATUS] &= MIPS_CP0_STATUS_IE;
-        return 0;
-    case 0x20:                  /* ei - enable interrupts */
-        cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
+    if (rd != 12)
+        return unknown_op (cpu, insn);
+
+    cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
+    if (func & 0x20) {
+        /* ei - enable interrupts */
         cpu->cp0.reg [MIPS_CP0_STATUS] |= MIPS_CP0_STATUS_IE;
-        return 0;
+    } else {
+        /* di - disable interrupts */
+        cpu->cp0.reg [MIPS_CP0_STATUS] &= MIPS_CP0_STATUS_IE;
     }
-    return unknown_op (cpu, insn);
+    return 0;
 }
 
 static int tlb_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1837,7 +1839,7 @@ static struct mips64_op_desc mips_cop0_opcodes[] = {
     {"unknowncop0", unknowncop0_op, 0x8},
     {"unknowncop0", unknowncop0_op, 0x9},
     {"unknowncop0", unknowncop0_op, 0xa},
-    {"unknowncop0", di_op, 0xb},
+    {"unknowncop0", mfmc0_op, 0xb},
     {"unknowncop0", unknowncop0_op, 0xc},
     {"unknowncop0", unknowncop0_op, 0xd},
     {"unknowncop0", unknowncop0_op, 0xe},

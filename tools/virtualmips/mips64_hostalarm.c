@@ -234,7 +234,7 @@ void mips64_init_host_alarm (void)
     }
 #define DEBUG_HOST_ALARM
 #ifdef DEBUG_HOST_ALARM
-    printf ("using %s timer \n", alarm_timers[i].name);
+    printf ("Using %s timer \n", alarm_timers[i].name);
 #endif
     if (err) {
         fprintf (stderr, "Unable to find any suitable alarm timer.\n");

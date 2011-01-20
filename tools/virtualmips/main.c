@@ -20,7 +20,7 @@
 #include "crc.h"
 #include "net_io.h"
 
-#define VERSION  "0.06"
+#define VERSION  "0.06-retrobsd"
 
 void signal_gen_handler (int sig)
 {
@@ -30,7 +30,7 @@ void signal_gen_handler (int sig)
         break;
 
     case SIGQUIT:
-        printf ("\nStop emulation\n");
+        printf ("\n--- stop simulation\n");
         /*do not worry, exit will release all resource */
         exit (EXIT_SUCCESS);
         break;
@@ -63,7 +63,7 @@ int main (int argc, char *argv[])
     char *configure_filename = NULL;
 
     printf ("VirtualMIPS (version %s)\n", VERSION);
-    printf ("Copyright (c) 2008 yajin.\n");
+    printf ("Copyright (c) 2008 yajin, 2011 vak.\n");
     printf ("Build date: %s %s\n\n", __DATE__, __TIME__);
 
     /* Initialize CRC functions */
@@ -77,7 +77,7 @@ int main (int argc, char *argv[])
     if (!vm)
         return EXIT_FAILURE;
 
-    /*set seed for random value */
+    /* Set seed for random value. */
     srand ((int) time (0));
 
     setup_signals ();
@@ -87,7 +87,7 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    /* we touch here, because the cpu is not running now */
+    /* We get here, because the cpu is not running now. */
     vm_monitor (vm);
 
     printf ("VM shut down\n");

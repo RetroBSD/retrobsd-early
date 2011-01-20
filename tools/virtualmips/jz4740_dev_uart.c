@@ -1,32 +1,32 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
  /*JZ4740 UART Emulation.
-  * 
+  *
   * JZ4740 UART is compatible with 16c550 .
-  * 
-  * Linux use uart interrupt to receive and send data. 
-  * 
-  * For emulator, it is a bad idea for os to use interrupt to send data . 
-  * Because emulator is always READY for sending, so interrupt is slow than polling.
-  * 
-  * 
+  *
+  * Linux use uart interrupt to receive and send data.
+  *
+  * For simulator, it is a bad idea for os to use interrupt to send data .
+  * Because simulator is always READY for sending, so interrupt is slow than polling.
+  *
+  *
   * receive:
   * 1.set IER
   * 2. Wating interrupt (read IIR and LSR)
   * 3. if IIR says an interrupt and LSR says that data ready. read RBR.
-  * 
+  *
   * send:
   * 1. set IER to enable transmit request interrupt
   * 2. if UART can send data, generate an interrupt and set IIR LSR
   * 3. linux receives the interrupt ,read IIR and LSR
   * 4. send data.
-  * 
+  *
   */
 
 #define _GNU_SOURCE
@@ -113,21 +113,21 @@ void *dev_jz4740_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
             if ((d->ier & UART_IER_TDRIE) && (d->output == 0)
                 && (d->fcr & 0x10)) {
                 /*yajin.
-                 * 
-                 * In order to put the next data more quickly, just set irq not waiting for host_alarm_handler to set irq. 
+                 *
+                 * In order to put the next data more quickly, just set irq not waiting for host_alarm_handler to set irq.
                  * Sorry uart, too much work for you.
-                 * 
+                 *
                  * Sometimes, linux kernel prints "serial8250: too much work for irq9" if we print large data on screen.
                  * Please patch the kernel. comment "printk(KERN_ERR "serial8250: too much work for "
                  * "irq%d\n", irq);"
                  * qemu has some question.
                  * http://lkml.org/lkml/2008/1/12/135
                  * http://kerneltrap.org/mailarchive/linux-kernel/2008/2/7/769924
-                 * 
-                 * If jit is used in future, we may not need to set irq here because emulation is quick enough. Then we have 
-                 * no "too much work for irq9" problem. 
-                 * 
-                 * 
+                 *
+                 * If jit is used in future, we may not need to set irq here because simulation is quick enough. Then we have
+                 * no "too much work for irq9" problem.
+                 *
+                 *
                  */
                 d->output = TRUE;
                 d->vm->set_irq (d->vm, d->irq);

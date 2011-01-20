@@ -203,7 +203,7 @@ static no_inline mts64_entry_t *mips_mts64_map (cpu_mips_t * cpu,
 
     /* if (dev->flags & VDEVICE_FLAG_SPARSE) {
      * host_ptr = dev_sparse_get_host_addr(cpu->vm,dev,map->paddr,op_type,&cow);
-     * 
+     *
      * entry->gvpa  = map->vaddr;
      * entry->gppa  = map->paddr;
      * entry->hpa   = host_ptr;
@@ -519,7 +519,7 @@ u_int mips_mts64_ldc1 (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
      * void *haddr;
      * u_int exc;
      * m_uint8_t has_set_value=FALSE;
-     * 
+     *
      * haddr = mips_mts64_access(cpu,vaddr,MIPS_MEMOP_LDC1,8,MTS_READ,&data,&exc,&has_set_value);
      * if ((haddr==NULL)&&(has_set_value==FALSE))
      * {
@@ -901,7 +901,7 @@ u_int mips_mts64_sdc1 (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
      * void *haddr;
      * u_int exc;
      * m_uint8_t has_set_value=FALSE;
-     * 
+     *
      * data = cpu->fpu.reg[reg];
      * haddr = mips_mts64_access(cpu,vaddr,MIPS_MEMOP_SDC1,8,MTS_WRITE,
      * &data,&exc,&has_set_value);
@@ -921,17 +921,17 @@ u_int mips_mts64_cache (cpu_mips_t * cpu, m_va_t vaddr, u_int op)
 {
     /* mips64_jit_tcb_t *block;
      * m_uint32_t pc_hash;
-     * 
+     *
      * #if DEBUG_CACHE
      * cpu_log(cpu->gen,
      * "MTS","CACHE: PC=0x%llx, vaddr=0x%llx, cache=%u, code=%u\n",
      * cpu->pc, vaddr, op & 0x3, op >> 2);
      * #endif
-     * 
+     *
      * if (cpu->exec_blk_map) {
      * pc_hash = mips64_jit_get_pc_hash(vaddr);
      * block = cpu->exec_blk_map[pc_hash];
-     * 
+     *
      * if (block && (block->start_pc == (vaddr & MIPS_MIN_PAGE_MASK))) {
      * #if DEBUG_CACHE
      * cpu_log(cpu->gen,"MTS",
@@ -948,7 +948,7 @@ u_int mips_mts64_cache (cpu_mips_t * cpu, m_va_t vaddr, u_int op)
      * "CACHE: trying to remove page 0x%llx with pc=0x%llx\n",
      * vaddr, cpu->pc);
      * #endif
-     * 
+     *
      * }
      * } */
     printf ("cache pc %x\n", cpu->pc);
@@ -1997,8 +1997,8 @@ u_int fastcall mips_mts32_sdc1 (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
      * void *haddr;
      * u_int exc;
      * m_uint8_t has_set_value=FALSE;
-     * 
-     * 
+     *
+     *
      * data = cpu->fpu.reg[reg];
      * haddr = mips_mts32_access(cpu,vaddr,MIPS_MEMOP_SDC1,8,MTS_WRITE,
      * &data,&exc,&has_set_value);
@@ -2489,7 +2489,7 @@ MIPS FPU Emulator use a unaligned lw access to cause exception and then handle i
  73          * The strategy is to push the instruction onto the user stack
  74          * and put a trap after it which we can catch and jump to
  75          * the required address any alternative apart from full
- 76          * instruction emulation!!.
+ 76          * instruction simulation!!.
  77          *
  78          * Algorithmics used a system call instruction, and
  79          * borrowed that vector.  MIPS/Linux version is a bit

@@ -313,8 +313,9 @@ int init_instance (vm_instance_t * vm)
 #endif
 
     /* Launch the simulation */
-    printf ("VM '%s': starting simulation (CPU0 PC=0x%" LL
-        "x), JIT %sabled.\n", vm->name, cpu->pc, vm->jit_use ? "en" : "dis");
+    printf ("VM '%s': CPU0 PC=0x%" LL "x, JIT %sabled.\n",
+            vm->name, cpu->pc, vm->jit_use ? "en" : "dis");
+    printf ("--- start simulation\n");
     vm->status = VM_STATUS_RUNNING;
     cpu_start (vm->boot_cpu);
     return (0);

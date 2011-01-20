@@ -155,7 +155,7 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                  * nel/2008/2/7/769924
                  *
                  * If jit is used in future, we may not need to
-                 * set irq here because emulation is quick
+                 * set irq here because simulation is quick
                  * enough. Then we have no "too much work for
                  * irq9" problem.
                  */
