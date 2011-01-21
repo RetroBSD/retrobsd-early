@@ -2517,7 +2517,6 @@ yajin
             if (unlikely ((vaddr & 0x00000003UL) != 0x0))
                 goto err_addr;
         }
-
     }
 
     *exc = 0;
@@ -2536,8 +2535,10 @@ yajin
             haddr = entry->hpa & MTS_DEVOFF_MASK;
             haddr += vaddr - entry->gvpa;
 
-            return (dev_access_fast (cpu, dev_id, haddr, op_size, op_type,
-                    data, has_set_value));
+            void *addr = dev_access_fast (cpu, dev_id, haddr, op_size, op_type,
+                    data, has_set_value);
+/*printf ("%08x: mts32_access fast returned %p\n", cpu->pc, addr);*/
+            return addr;
         }
     }
 

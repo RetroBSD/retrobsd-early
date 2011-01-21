@@ -78,7 +78,7 @@ void host_alarm_handler (int host_signum)
                 set_timer_irq (current_cpu);
         }
     }
-printf ("-- count = %u, compare = %u\n", current_cpu->cp0.reg[MIPS_CP0_COUNT], current_cpu->cp0.reg[MIPS_CP0_COMPARE]);
+/*printf ("-- count = %u, compare = %u\n", current_cpu->cp0.reg[MIPS_CP0_COUNT], current_cpu->cp0.reg[MIPS_CP0_COMPARE]);*/
 }
 
 #ifdef __linux__

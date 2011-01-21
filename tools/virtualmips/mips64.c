@@ -269,11 +269,13 @@ static forced_inline fastcall int mips64_update_irq_flag_fast (cpu_mips_t *
     cause = cp0->reg[MIPS_CP0_CAUSE] & ~MIPS_CP0_CAUSE_IMASK;
     cp0->reg[MIPS_CP0_CAUSE] = cause | cpu->irq_cause;
 
+/*printf ("(%08x-%08x) ", cpu->pc, cp0->reg[MIPS_CP0_STATUS]); fflush (stdout);*/
     if ((cp0->reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_IE |
         MIPS_CP0_STATUS_EXL | MIPS_CP0_STATUS_ERL)) == MIPS_CP0_STATUS_IE) {
 #ifdef SIM_PIC32
         m_uint32_t current_ipl = cp0->reg[MIPS_CP0_STATUS] >> 10 & 63;
         m_uint32_t requested_ipl = cp0->reg[MIPS_CP0_CAUSE] >> 10 & 63;
+/*printf ("(%d-%d) ", requested_ipl, current_ipl); fflush (stdout);*/
         if (unlikely (requested_ipl > current_ipl)) {
             cpu->irq_pending = TRUE;
             return (TRUE);
@@ -331,6 +333,10 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
     /*TODO: RESET SOFT RESET AND NMI EXCEPTION */
     cp0->reg[MIPS_CP0_STATUS] &= ~MIPS_CP0_STATUS_ERL;
 
+#if SIM_PIC32
+    /* TODO */
+    new_pc = 0x9d005200;
+#else
     if (cp0->reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_BEV) {
         if ((exc_code == MIPS_CP0_CAUSE_TLB_LOAD)
             || (exc_code == MIPS_CP0_CAUSE_TLB_SAVE)) {
@@ -362,6 +368,7 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
         } else
             new_pc = 0xffffffff80000180ULL;
     }
+#endif
 
     cpu->pc = (m_va_t) new_pc;
 

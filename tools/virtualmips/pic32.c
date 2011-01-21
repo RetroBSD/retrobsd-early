@@ -188,9 +188,9 @@ void pic32_update_irq_flag (pic32_t *pic32)
         pic32->intstat = vector | (level << 8);
 
         cpu->irq_cause = level << 10;
-printf ("-- vector = %d, level = %d\n", vector, level);
+/*printf ("-- vector = %d, level = %d\n", vector, level);*/
     }
-else printf ("-- no irq pending\n");
+/*else printf ("-- no irq pending\n");*/
 
     mips64_update_irq_flag (cpu);
 }

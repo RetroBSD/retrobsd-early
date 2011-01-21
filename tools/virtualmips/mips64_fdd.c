@@ -163,6 +163,7 @@ start_cpu:
 
         if (unlikely (res == 1)) {
             /*exception when fetching instruction */
+            printf ("%08x: exception when fetching instruction\n", cpu->pc);
             continue;
         }
         if (unlikely ((cpu->vm->mipsy_debug_mode)
@@ -174,10 +175,12 @@ start_cpu:
             }
         }
 #if 0
+if (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL) {
         printf ("%08x:       %08x        ", cpu->pc, insn);
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
         fflush (stdout);
+}
 #endif
         res = mips64_exec_single_instruction (cpu, insn);
 
