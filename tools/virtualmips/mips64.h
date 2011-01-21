@@ -5,9 +5,9 @@
  */
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -16,8 +16,8 @@
 #include "system.h"
 #include "utils.h"
 
-/* 
- * MIPS General Purpose Registers 
+/*
+ * MIPS General Purpose Registers
  */
 #define MIPS_GPR_ZERO        0  /*  zero  */
 #define MIPS_GPR_AT          1  /*  at  */
@@ -53,14 +53,6 @@
 #define MIPS_GPR_RA          31 /*  ra  */
 
 /*
-
-MIPS INTERRUPT
-
- */
-
-#define MIPS_TIMER_INTERRUPT   7
-
-/*
  * Coprocessor 0 (System Coprocessor) Register definitions
  */
 #define MIPS_CP0_INDEX       0  /* TLB Index           */
@@ -93,91 +85,95 @@ MIPS INTERRUPT
 /*
  * CP0 Status Register
  */
-#define MIPS_CP0_STATUS_CU0        0x10000000
-#define MIPS_CP0_STATUS_CU1        0x20000000
-#define MIPS_CP0_STATUS_BEV        0x00400000
-#define MIPS_CP0_STATUS_TS         0x00200000
-#define MIPS_CP0_STATUS_SR         0x00100000
-#define MIPS_CP0_STATUS_CH         0x00040000
-#define MIPS_CP0_STATUS_CE         0x00020000
-#define MIPS_CP0_STATUS_DE         0x00010000
-#define MIPS_CP0_STATUS_RP         0x08000000
-#define MIPS_CP0_STATUS_FR         0x04000000
-#define MIPS_CP0_STATUS_RE         0x02000000
-#define MIPS_CP0_STATUS_KX         0x00000080
-#define MIPS_CP0_STATUS_SX         0x00000040
-#define MIPS_CP0_STATUS_UX         0x00000020
-#define MIPS_CP0_STATUS_KSU        0x00000018
-#define MIPS_CP0_STATUS_ERL        0x00000004
-#define MIPS_CP0_STATUS_EXL        0x00000002
-#define MIPS_CP0_STATUS_IE         0x00000001
-#define MIPS_CP0_STATUS_IMASK7     0x00008000
-#define MIPS_CP0_STATUS_IMASK6     0x00004000
-#define MIPS_CP0_STATUS_IMASK5     0x00002000
-#define MIPS_CP0_STATUS_IMASK4     0x00001000
-#define MIPS_CP0_STATUS_IMASK3     0x00000800
-#define MIPS_CP0_STATUS_IMASK2     0x00000400
-#define MIPS_CP0_STATUS_IMASK1     0x00000200
-#define MIPS_CP0_STATUS_IMASK0     0x00000100
+#define MIPS_CP0_STATUS_CU0         0x10000000
+#define MIPS_CP0_STATUS_CU1         0x20000000
+#define MIPS_CP0_STATUS_BEV         0x00400000
+#define MIPS_CP0_STATUS_TS          0x00200000
+#define MIPS_CP0_STATUS_SR          0x00100000
+#define MIPS_CP0_STATUS_CH          0x00040000
+#define MIPS_CP0_STATUS_CE          0x00020000
+#define MIPS_CP0_STATUS_DE          0x00010000
+#define MIPS_CP0_STATUS_RP          0x08000000
+#define MIPS_CP0_STATUS_FR          0x04000000
+#define MIPS_CP0_STATUS_RE          0x02000000
+#define MIPS_CP0_STATUS_KX          0x00000080
+#define MIPS_CP0_STATUS_SX          0x00000040
+#define MIPS_CP0_STATUS_UX          0x00000020
+#define MIPS_CP0_STATUS_KSU         0x00000018
+#define MIPS_CP0_STATUS_ERL         0x00000004
+#define MIPS_CP0_STATUS_EXL         0x00000002
+#define MIPS_CP0_STATUS_IE          0x00000001
+#define MIPS_CP0_STATUS_IMASK7      0x00008000
+#define MIPS_CP0_STATUS_IMASK6      0x00004000
+#define MIPS_CP0_STATUS_IMASK5      0x00002000
+#define MIPS_CP0_STATUS_IMASK4      0x00001000
+#define MIPS_CP0_STATUS_IMASK3      0x00000800
+#define MIPS_CP0_STATUS_IMASK2      0x00000400
+#define MIPS_CP0_STATUS_IMASK1      0x00000200
+#define MIPS_CP0_STATUS_IMASK0      0x00000100
 
-#define MIPS_CP0_STATUS_DS_MASK    0x00770000
-#define MIPS_CP0_STATUS_CU_MASK    0xF0000000
-#define MIPS_CP0_STATUS_IMASK      0x0000FF00
+#define MIPS_CP0_STATUS_DS_MASK     0x00770000
+#define MIPS_CP0_STATUS_CU_MASK     0xF0000000
+#define MIPS_CP0_STATUS_IMASK       0x0000FF00
 
 /* Addressing mode: Kernel, Supervisor and User */
-#define MIPS_CP0_STATUS_KSU_SHIFT  0x03
-#define MIPS_CP0_STATUS_KSU_MASK   0x03
+#define MIPS_CP0_STATUS_KSU_SHIFT   0x03
+#define MIPS_CP0_STATUS_KSU_MASK    0x03
 
-#define MIPS_CP0_STATUS_KM  0x00
-#define MIPS_CP0_STATUS_SM  0x01
-#define MIPS_CP0_STATUS_UM  0x10
+#define MIPS_CP0_STATUS_KM          0x00
+#define MIPS_CP0_STATUS_SM          0x01
+#define MIPS_CP0_STATUS_UM          0x10
 
 /*
  * CP0 Cause register
  */
 
-#define MIPS_CP0_CAUSE_BD_SLOT        0x80000000
+#define MIPS_CP0_CAUSE_BD_SLOT      0x80000000
 
-#define MIPS_CP0_CAUSE_MASK           0x0000007C
-#define MIPS_CP0_CAUSE_CEMASK         0x30000000
-#define MIPS_CP0_CAUSE_IMASK          0x0000FF00
-#define MIPS_CP0_CAUSE_IV                  0x00800000
-#define MIPS_CP0_CAUSE_SHIFT          2
-#define MIPS_CP0_CAUSE_CESHIFT        28
-#define MIPS_CP0_CAUSE_ISHIFT         8
-#define MIPS_CP0_CAUSE_EXC_MASK           0x0000007C
+#define MIPS_CP0_CAUSE_MASK         0x0000007C
+#define MIPS_CP0_CAUSE_CEMASK       0x30000000
+#ifdef SIM_PIC32
+#define MIPS_CP0_CAUSE_IMASK        0x0000FC00  /* mips r2 */
+#else
+#define MIPS_CP0_CAUSE_IMASK        0x0000FF00  /* mips r1 */
+#endif
+#define MIPS_CP0_CAUSE_IV           0x00800000
+#define MIPS_CP0_CAUSE_SHIFT        2
+#define MIPS_CP0_CAUSE_CESHIFT      28
+#define MIPS_CP0_CAUSE_ISHIFT       8
+#define MIPS_CP0_CAUSE_EXC_MASK     0x0000007C
 
-#define MIPS_CP0_CAUSE_INTERRUPT      0
-#define MIPS_CP0_CAUSE_TLB_MOD        1
-#define MIPS_CP0_CAUSE_TLB_LOAD       2
-#define MIPS_CP0_CAUSE_TLB_SAVE       3
-#define MIPS_CP0_CAUSE_ADDR_LOAD      4 /* ADEL */
-#define MIPS_CP0_CAUSE_ADDR_SAVE      5 /* ADES */
-#define MIPS_CP0_CAUSE_BUS_INSTR      6
-#define MIPS_CP0_CAUSE_BUS_DATA       7
-#define MIPS_CP0_CAUSE_SYSCALL        8
-#define MIPS_CP0_CAUSE_BP             9
-#define MIPS_CP0_CAUSE_ILLOP          10
-#define MIPS_CP0_CAUSE_CP_UNUSABLE    11
-#define MIPS_CP0_CAUSE_OVFLW          12
-#define MIPS_CP0_CAUSE_TRAP           13
-#define MIPS_CP0_CAUSE_VC_INSTR       14        /* Virtual Coherency */
-#define MIPS_CP0_CAUSE_FPE            15
-#define MIPS_CP0_CAUSE_WATCH          23
-#define MIPS_CP0_CAUSE_VC_DATA        31        /* Virtual Coherency */
+#define MIPS_CP0_CAUSE_INTERRUPT    0
+#define MIPS_CP0_CAUSE_TLB_MOD      1
+#define MIPS_CP0_CAUSE_TLB_LOAD     2
+#define MIPS_CP0_CAUSE_TLB_SAVE     3
+#define MIPS_CP0_CAUSE_ADDR_LOAD    4 /* ADEL */
+#define MIPS_CP0_CAUSE_ADDR_SAVE    5 /* ADES */
+#define MIPS_CP0_CAUSE_BUS_INSTR    6
+#define MIPS_CP0_CAUSE_BUS_DATA     7
+#define MIPS_CP0_CAUSE_SYSCALL      8
+#define MIPS_CP0_CAUSE_BP           9
+#define MIPS_CP0_CAUSE_ILLOP        10
+#define MIPS_CP0_CAUSE_CP_UNUSABLE  11
+#define MIPS_CP0_CAUSE_OVFLW        12
+#define MIPS_CP0_CAUSE_TRAP         13
+#define MIPS_CP0_CAUSE_VC_INSTR     14        /* Virtual Coherency */
+#define MIPS_CP0_CAUSE_FPE          15
+#define MIPS_CP0_CAUSE_WATCH        23
+#define MIPS_CP0_CAUSE_VC_DATA      31        /* Virtual Coherency */
 
-#define MIPS_CP0_CAUSE_IBIT7     0x00008000
-#define MIPS_CP0_CAUSE_IBIT6     0x00004000
-#define MIPS_CP0_CAUSE_IBIT5     0x00002000
-#define MIPS_CP0_CAUSE_IBIT4     0x00001000
-#define MIPS_CP0_CAUSE_IBIT3     0x00000800
-#define MIPS_CP0_CAUSE_IBIT2     0x00000400
-#define MIPS_CP0_CAUSE_IBIT1     0x00000200
-#define MIPS_CP0_CAUSE_IBIT0     0x00000100
+#define MIPS_CP0_CAUSE_IBIT7        0x00008000
+#define MIPS_CP0_CAUSE_IBIT6        0x00004000
+#define MIPS_CP0_CAUSE_IBIT5        0x00002000
+#define MIPS_CP0_CAUSE_IBIT4        0x00001000
+#define MIPS_CP0_CAUSE_IBIT3        0x00000800
+#define MIPS_CP0_CAUSE_IBIT2        0x00000400
+#define MIPS_CP0_CAUSE_IBIT1        0x00000200
+#define MIPS_CP0_CAUSE_IBIT0        0x00000100
 
 /* cp0 context */
 #define MIPS_CP0_CONTEXT_PTEBASE_MASK  0xff800000
-#define MIPS_CP0_CONTEXT_BADVPN2_MASK   0x0007ffff0
+#define MIPS_CP0_CONTEXT_BADVPN2_MASK  0x0007ffff0
 
 /* TLB masks and shifts */
 #define MIPS_TLB_PAGE_MASK     0x01ffe000
@@ -476,5 +472,9 @@ void fastcall mips64_exec_syscall (cpu_mips_t * cpu);
 void fastcall mips64_trigger_irq (cpu_mips_t * cpu);
 void mips64_set_irq (cpu_mips_t * cpu, m_uint8_t irq);
 void mips64_clear_irq (cpu_mips_t * cpu, m_uint8_t irq);
+
+/* Control timer interrupt */
+void set_timer_irq (cpu_mips_t *cpu);
+void clear_timer_irq (cpu_mips_t *cpu);
 
 #endif

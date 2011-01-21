@@ -167,8 +167,7 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
     case MIPS_CP0_COMPARE:
 
         //Write to compare will clear timer interrupt
-        mips64_clear_irq (cpu, MIPS_TIMER_INTERRUPT);
-        mips64_update_irq_flag (cpu);
+        clear_timer_irq (cpu);
         cp0->reg[cp0_reg] = val;
 
         break;

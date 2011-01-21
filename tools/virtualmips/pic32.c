@@ -24,7 +24,69 @@
 #include "device.h"
 #include "mips64_jit.h"
 
-m_uint32_t pic32_int_table[JZ4740_INT_INDEX_MAX];
+/*
+ * Translate IRQ number to interrupt vector.
+ */
+static const int irq_to_vector[] = {
+    PIC32_VECT_CT,      /* 0  - Core Timer Interrupt */
+    PIC32_VECT_CS0,     /* 1  - Core Software Interrupt 0 */
+    PIC32_VECT_CS1,     /* 2  - Core Software Interrupt 1 */
+    PIC32_VECT_INT0,    /* 3  - External Interrupt 0 */
+    PIC32_VECT_T1,      /* 4  - Timer1 */
+    PIC32_VECT_IC1,     /* 5  - Input Capture 1 */
+    PIC32_VECT_OC1,     /* 6  - Output Compare 1 */
+    PIC32_VECT_INT1,    /* 7  - External Interrupt 1 */
+    PIC32_VECT_T2,      /* 8  - Timer2 */
+    PIC32_VECT_IC2,     /* 9  - Input Capture 2 */
+    PIC32_VECT_OC2,     /* 10 - Output Compare 2 */
+    PIC32_VECT_INT2,    /* 11 - External Interrupt 2 */
+    PIC32_VECT_T3,      /* 12 - Timer3 */
+    PIC32_VECT_IC3,     /* 13 - Input Capture 3 */
+    PIC32_VECT_OC3,     /* 14 - Output Compare 3 */
+    PIC32_VECT_INT3,    /* 15 - External Interrupt 3 */
+    PIC32_VECT_T4,      /* 16 - Timer4 */
+    PIC32_VECT_IC4,     /* 17 - Input Capture 4 */
+    PIC32_VECT_OC4,     /* 18 - Output Compare 4 */
+    PIC32_VECT_INT4,    /* 19 - External Interrupt 4 */
+    PIC32_VECT_T5,      /* 20 - Timer5 */
+    PIC32_VECT_IC5,     /* 21 - Input Capture 5 */
+    PIC32_VECT_OC5,     /* 22 - Output Compare 5 */
+    PIC32_VECT_SPI1,    /* 23 - SPI1 Fault */
+    PIC32_VECT_SPI1,    /* 24 - SPI1 Transfer Done */
+    PIC32_VECT_SPI1,    /* 25 - SPI1 Receive Done */
+    PIC32_VECT_U1,      /* 26 - UART1 Error */
+    PIC32_VECT_U1,      /* 27 - UART1 Receiver */
+    PIC32_VECT_U1,      /* 28 - UART1 Transmitter */
+    PIC32_VECT_I2C1,    /* 29 - I2C1 Bus Collision Event */
+    PIC32_VECT_I2C1,    /* 30 - I2C1 Slave Event */
+    PIC32_VECT_I2C1,    /* 31 - I2C1 Master Event */
+    PIC32_VECT_CN,      /* 32 - Input Change Interrupt */
+    PIC32_VECT_AD1,     /* 33 - ADC1 Convert Done */
+    PIC32_VECT_PMP,     /* 34 - Parallel Master Port */
+    PIC32_VECT_CMP1,    /* 35 - Comparator Interrupt */
+    PIC32_VECT_CMP2,    /* 36 - Comparator Interrupt */
+    PIC32_VECT_SPI2,    /* 37 - SPI2 Fault */
+    PIC32_VECT_SPI2,    /* 38 - SPI2 Transfer Done */
+    PIC32_VECT_SPI2,    /* 39 - SPI2 Receive Done */
+    PIC32_VECT_U2,      /* 40 - UART2 Error */
+    PIC32_VECT_U2,      /* 41 - UART2 Receiver */
+    PIC32_VECT_U2,      /* 42 - UART2 Transmitter */
+    PIC32_VECT_I2C2,    /* 43 - I2C2 Bus Collision Event */
+    PIC32_VECT_I2C2,    /* 44 - I2C2 Slave Event */
+    PIC32_VECT_I2C2,    /* 45 - I2C2 Master Event */
+    PIC32_VECT_FSCM,    /* 46 - Fail-Safe Clock Monitor */
+    PIC32_VECT_RTCC,    /* 47 - Real-Time Clock and Calendar */
+    PIC32_VECT_DMA0,    /* 48 - DMA Channel 0 */
+    PIC32_VECT_DMA1,    /* 49 - DMA Channel 1 */
+    PIC32_VECT_DMA2,    /* 50 - DMA Channel 2 */
+    PIC32_VECT_DMA3,    /* 51 - DMA Channel 3 */
+    -1,                 /* 52 */
+    -1,                 /* 53 */
+    -1,                 /* 54 */
+    -1,                 /* 55 */
+    PIC32_VECT_FCE,     /* 56 - Flash Control Event */
+    PIC32_VECT_USB,     /* 57 - USB */
+};
 
 /* Initialize the PIC32 Platform (MIPS) */
 static int pic32_init_platform (pic32_t * pic32)
@@ -40,7 +102,7 @@ static int pic32_init_platform (pic32_t * pic32)
 
     /* Initialize the virtual MIPS processor */
     cpu0 = cpu_create (vm, CPU_TYPE_MIPS32, 0);
-    if (!cpu0) {
+    if (! cpu0) {
         vm_error (vm, "unable to create CPU0!\n");
         return (-1);
     }
@@ -77,108 +139,101 @@ static int pic32_init_platform (pic32_t * pic32)
     if (dev_pic32_uart_init (vm, "PIC32 UART2", PIC32_U2MODE,
             PIC32_IRQ_U2E, vm->vtty_con2) == -1)
         return (-1);
+    if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
+        return (-1);
 #if 0
     if (dev_pic32_gpio_init (vm, "JZ4740 GPIO", JZ4740_GPIO_BASE,
             JZ4740_GPIO_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_cpm_init (vm, "JZ4740 CPM", JZ4740_CPM_BASE,
-            JZ4740_CPM_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_emc_init (vm, "JZ4740 EMC", JZ4740_EMC_BASE,
-            JZ4740_EMC_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_rtc_init (vm, "JZ4740 RTC", JZ4740_RTC_BASE,
-            JZ4740_RTC_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_wdt_tcu_init (vm, "JZ4740 WDT/TCU", JZ4740_WDT_TCU_BASE,
-            JZ4740_WDT_TCU_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_int_init (vm, "JZ4740 INT", JZ4740_INT_BASE,
-            JZ4740_INT_SIZE) == -1)
-        return (-1);
-    if (dev_pic32_dma_init (vm, "JZ4740 DMA", JZ4740_DMA_BASE,
-            JZ4740_DMA_SIZE) == -1)
         return (-1);
 #endif
     return (0);
 }
 
-void pic32_clear_irq (vm_instance_t * vm, u_int irq)
+/*
+ * Find pending interrupt with the biggest priority.
+ * Setup INTSTAT and cause registers.
+ * Update irq_pending flag for CPU.
+ */
+void pic32_update_irq_flag (pic32_t *pic32)
 {
-    m_uint32_t irq_mask;
+    cpu_mips_t *cpu = pic32->vm->boot_cpu;
+    int vector, level, irq, n, v;
 
-    irq_mask = 1 << irq;
+    /* Assume no interrupts pending. */
+    cpu->irq_cause = 0;
+    cpu->irq_pending = 0;
+    pic32->intstat = 0;
 
-    /*clear ISR and IPR */
-    pic32_int_table[INTC_ISR / 4] &= ~irq_mask;
-    pic32_int_table[INTC_IPR / 4] &= ~irq_mask;
+    if ((pic32->ifs[0] & pic32->iec[0]) ||
+        (pic32->ifs[1] & pic32->iec[1]) ||
+        (pic32->ifs[2] & pic32->iec[2]))
+    {
+        /* Find the most prioritive pending interrupt,
+         * it's vector and level. */
+        vector = 0;
+        level = 0;
+        for (irq=0; irq<sizeof(irq_to_vector)/sizeof(int); irq++) {
+            n = irq >> 5;
+            if ((pic32->ifs[n] & pic32->iec[n]) >> (irq & 31) & 1) {
+                /* Interrupt is pending. */
+                v = irq_to_vector [irq];
+                if (v < 0)
+                    continue;
+                if (pic32->ivprio[v] > level) {
+                    vector = v;
+                    level = pic32->ivprio[v];
+                }
+            }
+        }
+        pic32->intstat = vector | (level << 8);
+
+        cpu->irq_cause = level << 10;
+printf ("-- vector = %d, level = %d\n", vector, level);
+    }
+else printf ("-- no irq pending\n");
+
+    mips64_update_irq_flag (cpu);
+}
+
+void pic32_clear_irq (vm_instance_t *vm, u_int irq)
+{
+    pic32_t *pic32 = (pic32_t*) vm->hw_data;
+
+    /* Clear interrupt flag status */
+    pic32->ifs [irq >> 5] &= ~(1 << (irq & 31));
+
+    pic32_update_irq_flag (pic32);
+}
+
+void pic32_set_irq (vm_instance_t *vm, u_int irq)
+{
+    pic32_t *pic32 = (pic32_t*) vm->hw_data;
+
+    /* Set interrupt flag status */
+    pic32->ifs [irq >> 5] |= 1 << (irq & 31);
+
+    pic32_update_irq_flag (pic32);
 }
 
 /*
- * map irq to soc irq
+ * Activate core timer interrupt
  */
-int forced_inline plat_soc_irq (u_int irq)
+void set_timer_irq (cpu_mips_t *cpu)
 {
-    if ((irq >= 48) && (irq <= 175)) {
-//      dev_pic32_gpio_setirq(irq);
-        /*GPIO IRQ */
-        if ((irq >= 48) && (irq <= 79))
-            irq = IRQ_GPIO0;
-        else if ((irq >= 80) && (irq <= 111))
-            irq = IRQ_GPIO1;
-        else if ((irq >= 112) && (irq <= 143))
-            irq = IRQ_GPIO2;
-        else if ((irq >= 144) && (irq <= 175))
-            irq = IRQ_GPIO3;
-    }
-    return irq;
+    pic32_set_irq (cpu->vm, PIC32_VECT_CT);
 }
 
-void pic32_set_irq (vm_instance_t * vm, u_int irq)
+/*
+ * Clear core timer interrupt
+ */
+void clear_timer_irq (cpu_mips_t *cpu)
 {
-    m_uint32_t irq_mask;
-
-    irq = plat_soc_irq (irq);
-
-    irq_mask = 1 << irq;
-    pic32_int_table[INTC_ISR / 4] |= irq_mask;
-
-    /* First check ICMR. Masked interrupt is **invisible** to cpu. */
-    if (unlikely (pic32_int_table[INTC_IMR / 4] & irq_mask)) {
-        /* The irq is masked - clear IPR. */
-        pic32_int_table[INTC_IPR / 4] &= ~irq_mask;
-    } else {
-        /* The irq is not masked - set IPR.
-         *
-         * We set IPR, not *or* . yajin
-         *
-         * JZ Kernel 'plat_irq_dispatch' determine which is the highest priority interrupt
-         * and handle.
-         * It uses a function ffs to find first set irq from least bit to highest bit.
-         *
-         * That means when tcu0 irq and gpio1 irq occurs at the same time, INTC_IPR=0x8800000
-         * and irq handler will handle tcu0 irq(bit 23) not gpio1 irq(bit 27).
-         *
-         * In pic32 gpio1->cs8900 int
-         *
-         * TCU0 irq occurs every 10 ms and gpio1 occurs about 10ms (cs8900 has received a packet
-         * or has txed a packet), jz kernel always handle tcu0 irq. gpio1 irq is hungry. So I just set
-         * pic32_int_table[INTC_IPR/4]= irq_mask not or(|) irq_mask. TCU0 irq may be lost. However,
-         * gpio1 irq is not so ofen so it is not a big problem.
-         *
-         * In emulator, irq is not a good method for hardware to tell kernel something has happened.
-         * Emulator likes polling more than interrupt :) .
-         */
-        pic32_int_table[INTC_IPR / 4] = irq_mask;
-
-        mips64_set_irq (vm->boot_cpu, JZ4740_INT_TO_MIPS);
-        mips64_update_irq_flag (vm->boot_cpu);
-    }
+    pic32_clear_irq (cpu->vm, PIC32_VECT_CT);
 }
 
 COMMON_CONFIG_INFO_ARRAY;
 
-static void pic32_parse_configure (pic32_t * pic32)
+static void pic32_parse_configure (pic32_t *pic32)
 {
     vm_instance_t *vm = pic32->vm;
     char *start_address = 0;
@@ -231,14 +286,14 @@ vm_instance_t *create_instance (char *configure_filename)
     const char *name = "pic32";
 
     pic32 = malloc (sizeof (*pic32));
-    if (!pic32) {
+    if (! pic32) {
         fprintf (stderr, "PIC32: unable to create new instance!\n");
         return NULL;
     }
     memset (pic32, 0, sizeof (*pic32));
 
     vm = vm_create (name, VM_TYPE_PIC32);
-    if (!vm) {
+    if (! vm) {
         fprintf (stderr, "PIC32: unable to create VM instance!\n");
         free (pic32);
         return NULL;
@@ -272,7 +327,7 @@ int init_instance (vm_instance_t * vm)
         vm_error (vm, "unable to initialize the platform hardware.\n");
         return (-1);
     }
-    if (!vm->boot_cpu)
+    if (! vm->boot_cpu)
         return (-1);
 
     /* IRQ routing */
@@ -313,9 +368,8 @@ int init_instance (vm_instance_t * vm)
 #endif
 
     /* Launch the simulation */
-    printf ("VM '%s': CPU0 PC=0x%" LL "x, JIT %sabled.\n",
-            vm->name, cpu->pc, vm->jit_use ? "en" : "dis");
-    printf ("--- Start simulation\n");
+    printf ("--- Start simulation: PC=0x%" LL "x, JIT %sabled\n",
+            cpu->pc, vm->jit_use ? "en" : "dis");
     vm->status = VM_STATUS_RUNNING;
     cpu_start (vm->boot_cpu);
     return (0);

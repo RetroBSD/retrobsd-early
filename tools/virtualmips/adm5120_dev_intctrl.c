@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008<yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -81,7 +81,6 @@ int dev_intctrl_init (vm_instance_t * vm, char *name, m_pa_t paddr,
 
     vm_bind_device (vm, d->dev);
     dev_intctrl_init_defaultvalue ();
-
     return (0);
 
   err_dev_create:

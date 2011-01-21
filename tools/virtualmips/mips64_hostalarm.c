@@ -65,10 +65,20 @@ void host_alarm_handler (int host_signum)
 
     if (vp_timer_expired (active_timers[VP_TIMER_REALTIME],
             vp_get_clock (rt_clock))) {
-        /*tell cpu we need to pause because timer out */
+        /* Tell cpu we need to pause because timer out */
         current_cpu->pause_request |= CPU_INTERRUPT_EXIT;
     }
 
+    /* Check count and compare */
+#define KHZ 80000
+    current_cpu->cp0.reg[MIPS_CP0_COUNT] += KHZ / 2;
+    if (current_cpu->cp0.reg[MIPS_CP0_COMPARE] != 0) {
+        if (current_cpu->cp0.reg[MIPS_CP0_COUNT] >=
+            current_cpu->cp0.reg[MIPS_CP0_COMPARE]) {
+                set_timer_irq (current_cpu);
+        }
+    }
+printf ("-- count = %u, compare = %u\n", current_cpu->cp0.reg[MIPS_CP0_COUNT], current_cpu->cp0.reg[MIPS_CP0_COMPARE]);
 }
 
 #ifdef __linux__
@@ -230,7 +240,7 @@ void mips64_init_host_alarm (void)
         if (! err)
             break;
     }
-#define DEBUG_HOST_ALARM
+/*#define DEBUG_HOST_ALARM*/
 #ifdef DEBUG_HOST_ALARM
     printf ("--- Using %s timer\n", alarm_timers[i].name);
 #endif

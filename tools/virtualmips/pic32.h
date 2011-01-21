@@ -10,38 +10,8 @@
 #include "types.h"
 #include "pic32mx.h"
 
-#define DATA_WIDTH          32
-#define LL
-
-/* TODO */
-#define JZ4740_INT_INDEX_MAX 0x7        /*0x1C/4 */
-#define JZ4740_INT_TO_MIPS   0x2        /*jz4740 intc will issue int 2 to mips cpu */
-#define INTC_ISR	( 0x00)
-#define INTC_IMR	( 0x04)
-#define INTC_IMSR	( 0x08)
-#define INTC_IMCR	( 0x0c)
-#define INTC_IPR	( 0x10)
-#define IRQ_I2C		1
-#define IRQ_UHC		3
-#define IRQ_UART0	9
-#define IRQ_SADC	12
-#define IRQ_MSC		14
-#define IRQ_RTC		15
-#define IRQ_SSI		16
-#define IRQ_CIM		17
-#define IRQ_AIC		18
-#define IRQ_ETH		19
-#define IRQ_DMAC	20
-#define IRQ_TCU2	21
-#define IRQ_TCU1	22
-#define IRQ_TCU0	23
-#define IRQ_UDC 	24
-#define IRQ_GPIO3	25
-#define IRQ_GPIO2	26
-#define IRQ_GPIO1	27
-#define IRQ_GPIO0	28
-#define IRQ_IPU		29
-#define IRQ_LCD		30
+#define DATA_WIDTH          32          /* MIPS32 architecture */
+#define LL                              /* empty - printf format for machine word */
 
 /*
  * Data types
@@ -79,10 +49,19 @@ struct pic32_system {
     /* Associated VM instance */
     vm_instance_t *vm;
 
-    unsigned start_address;     /* jump here on reset */
-    unsigned boot_flash_size;   /* size of boot flash in kbytes */
-    unsigned boot_flash_address;        /* phys.address of boot flash */
-    char *boot_file_name;       /* image of boot flash */
+    unsigned start_address;         /* jump here on reset */
+    unsigned boot_flash_size;       /* size of boot flash in kbytes */
+    unsigned boot_flash_address;    /* phys.address of boot flash */
+    char *boot_file_name;           /* image of boot flash */
+
+    struct vdevice *intdev;         /* interrupt controller */
+    unsigned intcon;                /* interrupt control */
+    unsigned intstat;               /* interrupt status */
+    unsigned iptmr;                 /* temporal proximity */
+    unsigned ifs[3];                /* interrupt flag status */
+    unsigned iec[3];                /* interrupt enable control */
+    unsigned ipc[12];               /* interrupt priority control */
+    unsigned ivprio[64];            /* priority of interrupt vectors */
 };
 
 typedef struct pic32_system pic32_t;
@@ -91,9 +70,11 @@ struct virtual_tty;
 vm_instance_t *create_instance (char *conf);
 int init_instance (vm_instance_t *vm);
 int pic32_reset (vm_instance_t *vm);
+void pic32_update_irq_flag (pic32_t *pic32);
 int dev_pic32_flash_init (vm_instance_t *vm, char *name,
     unsigned flash_kbytes, unsigned flash_address, char *filename);
 int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq, struct virtual_tty *vtty);
+int dev_pic32_intcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 
 #endif

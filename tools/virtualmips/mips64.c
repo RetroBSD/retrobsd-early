@@ -263,25 +263,29 @@ static forced_inline fastcall int mips64_update_irq_flag_fast (cpu_mips_t *
     cpu)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
-    m_uint32_t imask, sreg_mask;
     m_uint32_t cause;
     cpu->irq_pending = FALSE;
 
     cause = cp0->reg[MIPS_CP0_CAUSE] & ~MIPS_CP0_CAUSE_IMASK;
     cp0->reg[MIPS_CP0_CAUSE] = cause | cpu->irq_cause;
-    sreg_mask =
-        MIPS_CP0_STATUS_IE | MIPS_CP0_STATUS_EXL | MIPS_CP0_STATUS_ERL;
 
-    if ((cp0->reg[MIPS_CP0_STATUS] & sreg_mask) == MIPS_CP0_STATUS_IE) {
-
-        imask = cp0->reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_IMASK;
-        if (unlikely (cp0->reg[MIPS_CP0_CAUSE] & imask)) {
+    if ((cp0->reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_IE |
+        MIPS_CP0_STATUS_EXL | MIPS_CP0_STATUS_ERL)) == MIPS_CP0_STATUS_IE) {
+#ifdef SIM_PIC32
+        m_uint32_t current_ipl = cp0->reg[MIPS_CP0_STATUS] >> 10 & 63;
+        m_uint32_t requested_ipl = cp0->reg[MIPS_CP0_CAUSE] >> 10 & 63;
+        if (unlikely (requested_ipl > current_ipl)) {
             cpu->irq_pending = TRUE;
-
             return (TRUE);
         }
+#else
+        m_uint32_t imask = cp0->reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_IMASK;
+        if (unlikely (cp0->reg[MIPS_CP0_CAUSE] & imask)) {
+            cpu->irq_pending = TRUE;
+            return (TRUE);
+        }
+#endif
     }
-
     return (FALSE);
 }
 
@@ -444,7 +448,6 @@ void mips64_set_irq (cpu_mips_t * cpu, m_uint8_t irq)
     m = (1 << (irq + MIPS_CP0_CAUSE_ISHIFT)) & MIPS_CP0_CAUSE_IMASK;
     //atomic_or(&cpu->irq_cause,m);
     cpu->irq_cause |= m;
-
 }
 
 /* Clear an IRQ */
@@ -456,6 +459,6 @@ void mips64_clear_irq (cpu_mips_t * cpu, m_uint8_t irq)
     cpu->irq_cause &= ~m;
     //atomic_and(&cpu->irq_cause,~m);
 
-    if (!cpu->irq_cause)
+    if (! cpu->irq_cause)
         cpu->irq_pending = 0;
 }

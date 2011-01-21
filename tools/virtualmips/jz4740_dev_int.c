@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008<yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -75,7 +75,6 @@ void *dev_jz4740_int_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     switch (offset) {
     case INTC_IMSR:            /*set */
-
         assert (op_type == MTS_WRITE);
         mask_data = (*data) & mask;
         jz4740_int_table[INTC_IMR / 4] |= mask_data;
@@ -131,11 +130,9 @@ int dev_jz4740_int_init (vm_instance_t * vm, char *name, m_pa_t paddr,
     d->jz4740_int_size = len;
     d->dev->handler = dev_jz4740_int_access;
     d->dev->reset_handler = dev_jz4740_int_reset;
-
     d->dev->flags = VDEVICE_FLAG_NO_MTS_MMAP;
 
     vm_bind_device (vm, d->dev);
-
     return (0);
 
   err_dev_create:

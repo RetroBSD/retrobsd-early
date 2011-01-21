@@ -208,13 +208,13 @@ write_sta:
             }
             break;
         case PIC32_U1STACLR & 0xff:
-            newval = d->mode & ~*data;
+            newval = d->sta & ~*data;
             goto write_sta;
         case PIC32_U1STASET & 0xff:
-            newval = d->mode | *data;
+            newval = d->sta | *data;
             goto write_sta;
         case PIC32_U1STAINV & 0xff:
-            newval = d->mode ^ *data;
+            newval = d->sta ^ *data;
             goto write_sta;
 
         case PIC32_U1BRG & 0xff:                /* Baud rate */
@@ -223,13 +223,13 @@ write_brg:
             d->brg = newval;
             break;
         case PIC32_U1BRGCLR & 0xff:
-            newval = d->mode & ~*data;
+            newval = d->brg & ~*data;
             goto write_brg;
         case PIC32_U1BRGSET & 0xff:
-            newval = d->mode | *data;
+            newval = d->brg | *data;
             goto write_brg;
         case PIC32_U1BRGINV & 0xff:
-            newval = d->mode & *data;
+            newval = d->brg ^ *data;
             goto write_brg;
 
         case PIC32_U1RXREG & 0xff:              /* Receive */

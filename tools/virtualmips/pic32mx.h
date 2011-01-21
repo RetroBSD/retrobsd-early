@@ -15,6 +15,62 @@
 #ifndef _IO_PIC32MX_H
 #define _IO_PIC32MX_H
 
+/*--------------------------------------
+ * Interrupt controller registers.
+ */
+#define PIC32_INTCON	PIC32_R (0x81000)           /* Interrupt Control */
+#define PIC32_INTCONCLR	PIC32_R (0x81004)
+#define PIC32_INTCONSET	PIC32_R (0x81008)
+#define PIC32_INTCONINV	PIC32_R (0x8100C)
+#define PIC32_INTSTAT	PIC32_R (0x81010)           /* Interrupt Status */
+#define PIC32_IPTMR		PIC32_R (0x81020)           /* Temporal Proximity Timer */
+#define PIC32_IPTMRCLR	PIC32_R (0x81024)
+#define PIC32_IPTMRSET	PIC32_R (0x81028)
+#define PIC32_IPTMRINV	PIC32_R (0x8102C)
+#define PIC32_IFS(n)	PIC32_R (0x81030+((n)<<4))  /* IFS(0..2) - Interrupt Flag Status */
+#define PIC32_IFSCLR(n)	PIC32_R (0x81034+((n)<<4))
+#define PIC32_IFSSET(n)	PIC32_R (0x81038+((n)<<4))
+#define PIC32_IFSINV(n)	PIC32_R (0x8103C+((n)<<4))
+#define PIC32_IEC(n)	PIC32_R (0x81060+((n)<<4))  /* IEC(0..2) - Interrupt Enable Control */
+#define PIC32_IECCLR(n)	PIC32_R (0x81064+((n)<<4))
+#define PIC32_IECSET(n)	PIC32_R (0x81068+((n)<<4))
+#define PIC32_IECINV(n)	PIC32_R (0x8106C+((n)<<4))
+#define PIC32_IPC(n)	PIC32_R (0x81090+((n)<<4))  /* IPC(0..11) - Interrupt Priority Control */
+#define PIC32_IPCCLR(n)	PIC32_R (0x81094+((n)<<4))
+#define PIC32_IPCSET(n)	PIC32_R (0x81098+((n)<<4))
+#define PIC32_IPCINV(n)	PIC32_R (0x8109C+((n)<<4))
+
+/*
+ * Interrupt Control register.
+ */
+#define PIC32_INTCON_INT0EP	0x0001      /* External interrupt 0 polarity rising edge */
+#define PIC32_INTCON_INT1EP	0x0002      /* External interrupt 1 polarity rising edge */
+#define PIC32_INTCON_INT2EP	0x0004      /* External interrupt 2 polarity rising edge */
+#define PIC32_INTCON_INT3EP	0x0008      /* External interrupt 3 polarity rising edge */
+#define PIC32_INTCON_INT4EP	0x0010      /* External interrupt 4 polarity rising edge */
+#define PIC32_INTCON_TPC(x)	((x)<<8)    /* Temporal proximity group priority */
+#define PIC32_INTCON_MVEC	0x1000      /* Multi-vectored mode */
+#define PIC32_INTCON_FRZ	0x4000      /* Freeze in debug mode */
+#define PIC32_INTCON_SS0	0x8000      /* Single vector has a shadow register set */
+
+/*
+ * Interrupt Status register.
+ */
+#define PIC32_INTSTAT_VEC(s)	((s) & 0xFF)	/* Interrupt vector */
+#define PIC32_INTSTAT_SRIPL(s)	((s) >> 8 & 7)	/* Requested priority level */
+
+/*
+ * Interrupt Prority Control register.
+ */
+#define PIC32_IPC_IS0(x)	(x)         /* Interrupt 0 subpriority */
+#define PIC32_IPC_IP0(x)	((x)<<2)	/* Interrupt 0 priority */
+#define PIC32_IPC_IS1(x)	((x)<<8)	/* Interrupt 1 subpriority */
+#define PIC32_IPC_IP1(x)	((x)<<10)	/* Interrupt 1 priority */
+#define PIC32_IPC_IS2(x)	((x)<<16)	/* Interrupt 2 subpriority */
+#define PIC32_IPC_IP2(x)	((x)<<18)	/* Interrupt 2 priority */
+#define PIC32_IPC_IS3(x)	((x)<<24)	/* Interrupt 3 subpriority */
+#define PIC32_IPC_IP3(x)	((x)<<26)	/* Interrupt 3 priority */
+
 /*
  * IRQ numbers for PIC32MX3xx/4xx.
  */

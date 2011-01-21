@@ -28,6 +28,8 @@
 #include "dev_cs8900.h"
 #include "mips64_jit.h"
 
+#define MIPS_TIMER_INTERRUPT    7
+
 extern m_uint32_t jz4740_int_table[JZ4740_INT_INDEX_MAX];
 int dev_jz4740_gpio_init (vm_instance_t * vm, char *name, m_pa_t paddr,
     m_uint32_t len);
@@ -336,6 +338,13 @@ static void pavo_parse_configure (pavo_t * pavo)
     /*Print the configure information */
     printf_configure (pavo);
 
+}
+
+/* Clear timer interrupt */
+void clear_timer_irq (cpu_mips_t *cpu)
+{
+    mips64_clear_irq (cpu, MIPS_TIMER_INTERRUPT);
+    mips64_update_irq_flag (cpu);
 }
 
 /* Create a router instance */
