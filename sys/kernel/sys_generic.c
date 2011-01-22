@@ -43,7 +43,7 @@ rwuio (uio)
 		return;
 	}
 	count = uio->uio_resid;
-	if (setjmp(&u.u_qsave)) {
+	if (setjmp (&u.u_qsave)) {
 		/*
 		 * The ONLY way we can get here is via the longjump in sleep.  Thus signals
 		 * have been checked and u_error set accordingly.  If no bytes have been

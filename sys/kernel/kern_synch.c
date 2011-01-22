@@ -242,7 +242,7 @@ sleep (chan, pri)
 	 * EINTR - put into u_error for trap.c to find (interrupted syscall)
 	 * ERESTART - system call to be restared
 	 */
-	longjmp(u.u_procp->p_addr, &u.u_qsave);
+	longjmp (u.u_procp->p_addr, &u.u_qsave);
 	/*NOTREACHED*/
 }
 
@@ -271,7 +271,7 @@ unsleep (p)
  * Wake up all processes sleeping on chan.
  */
 void
-wakeup(chan)
+wakeup (chan)
 	register caddr_t chan;
 {
 	register struct proc *p, **q;
@@ -325,7 +325,7 @@ restart:
  * arrange for it to be swapped in if necessary.
  */
 void
-setrun(p)
+setrun (p)
 	register struct proc *p;
 {
 	register int s;
@@ -469,7 +469,7 @@ loop:
 	 */
 	n = p->p_flag & SSWAP;
 	p->p_flag &= ~SSWAP;
-	longjmp (p->p_addr, n ? &u.u_ssave: &u.u_rsave);
+	longjmp (p->p_addr, n ? &u.u_ssave : &u.u_rsave);
 }
 
 /*

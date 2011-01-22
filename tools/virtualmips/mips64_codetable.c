@@ -1599,6 +1599,7 @@ static int tnei_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int wait_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
+    usleep (1000);
     return (0);
 }
 
