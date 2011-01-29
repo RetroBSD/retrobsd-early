@@ -26,99 +26,31 @@
 
 		.set	noreorder
 		.set	mips32r2
+		.set	nomips16
+
+		.extern	u
+		.extern	u_end
+		.extern	u0
 
 #---------------------------------------
 # Reset vector at 0x9D006000
 #
 		.section .init
 		.org	0
+		.type	_reset_vector_, @function
 _reset_vector_:	.globl	_reset_vector_
 
 		.extern	main
-		la	$sp, _estack			# Stack at end of internal SRAM
+		la	$sp, u_end			# Stack at end of internal SRAM
 		j	main				# Jump to main()
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
-
-#---------------------------------------
-# Icode is copied out to process 1 to exec /etc/init.
-# If the exec fails, process 1 exits.
-#
-		.globl	icode, icodeend
-icode:
-		syscall	11				# SYS_execv
-		syscall	1				# SYS_exit
-#init:
-#		.ascii	"/etc/init\0"
-#initflags:
-#		.ascii	"-00000\0"			# decimal ASCII initflags
-#argv:
-#		.word	init + 5 - icode		# address of "init\0"
-#		.word	initflags - icode
-#		.word	0
-
-icodeend:	nop
-
-#
-# int setjmp (label_t *env);
-#
-# Setjmp(env) will save the process' current register variables, stack
-# and program counter context and return a zero.
-#
-setjmp:		.globl	setjmp
-		sw	$s0, (0 * 4) ($a0)		# save register variables s0-s8
-		sw	$s1, (1 * 4) ($a0)
-		sw	$s2, (2 * 4) ($a0)
-		sw	$s3, (3 * 4) ($a0)
-		sw	$s4, (4 * 4) ($a0)
-		sw	$s5, (5 * 4) ($a0)
-		sw	$s6, (6 * 4) ($a0)
-		sw	$s7, (7 * 4) ($a0)
-		sw	$s8, (8 * 4) ($a0)		# frame pointer
-		sw	$ra, (9 * 4) ($a0)		# return address
-		sw	$gp, (10 * 4) ($a0)		# global data pointer
-		sw	$sp, (11 * 4) ($a0)		# stack pointer
-		j	$ra
-		move	$v0, $zero			# return a zero for the setjmp call
-
-#
-# void longjmp (memaddr u, label_t *env);
-#
-# Longjmp(u, env) will generate a "return(1)" from the last
-# call to setjmp(env) by mapping in the user structure pointed to by u,
-# restoring the context saved by setjmp in env and returning a "1".
-# Note that registers are recovered statically from the env buffer.
-# Stack is not used.
-#
-# This longjmp differs from the longjmp found in the standard library -
-# it's actually closer to the resume routine of the 4.3BSD kernel.
-#
-longjmp:	.globl	longjmp
-		.extern	uarea
-		di				# can't let anything in till we get a valid stack...
-		sw	$a0, uarea		# map new process' u structure in
-
-		lw	$s0, (0 * 4) ($a1)	# restore register variables s0-s8
-		lw	$s1, (1 * 4) ($a1)
-		lw	$s2, (2 * 4) ($a1)
-		lw	$s3, (3 * 4) ($a1)
-		lw	$s4, (4 * 4) ($a1)
-		lw	$s5, (5 * 4) ($a1)
-		lw	$s6, (6 * 4) ($a1)
-		lw	$s7, (7 * 4) ($a1)
-		lw	$s8, (8 * 4) ($a1)	# frame pointer
-		lw	$ra, (9 * 4) ($a1)	# return address
-		lw	$gp, (10 * 4) ($a1)	# global data pointer
-		lw	$sp, (11 * 4) ($a1)	# stack pointer
-
-		ei				# release interrupts
-		j	$ra			# transfer back to setjmp()
-		li	$v0, 1			# return value of 1
 
 #---------------------------------------
 # Restore CPU state and return from interrupt
 #
 		.section .exception
 		.org	0
+		.type	_restore_regs_, @function
 _restore_regs_: .globl _restore_regs_
 #define MIPS_FSPACE 16
 		addi	$sp, MIPS_FSPACE		# Remove an arg frame
@@ -188,6 +120,7 @@ _restore_regs_: .globl _restore_regs_
 # Exception vector at 0x0x9D005200
 #
 		.org	0x200
+		.type	_exception_vector_, @function
 _exception_vector_: .globl _exception_vector_
 		addi	$sp, -CONTEXT_WORDS*4		# Allocate space for registers
 
@@ -242,3 +175,117 @@ _exception_vector_: .globl _exception_vector_
 		.extern exception
 		j	exception			# Jump to C code, no return
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
+
+#---------------------------------------
+# Icode is copied out to process 1 to exec /etc/init.
+# If the exec fails, process 1 exits.
+#
+		.globl	icode, icodeend
+		.type	icode, @function
+		.type	icodeend, @function
+icode:
+		syscall	11				# SYS_execv
+		syscall	1				# SYS_exit
+#init:
+#		.ascii	"/etc/init\0"
+#initflags:
+#		.ascii	"-00000\0"			# decimal ASCII initflags
+#argv:
+#		.word	init + 5 - icode		# address of "init\0"
+#		.word	initflags - icode
+#		.word	0
+
+icodeend:	nop
+
+#---------------------------------------
+# int setjmp (label_t *env);
+#
+# Setjmp(env) will save the process' current register variables, stack
+# and program counter context and return a zero.
+#
+		.type	setjmp, @function
+setjmp:		.globl	setjmp
+		sw	$s0, (0 * 4) ($a0)		# save register variables s0-s8
+		sw	$s1, (1 * 4) ($a0)
+		sw	$s2, (2 * 4) ($a0)
+		sw	$s3, (3 * 4) ($a0)
+		sw	$s4, (4 * 4) ($a0)
+		sw	$s5, (5 * 4) ($a0)
+		sw	$s6, (6 * 4) ($a0)
+		sw	$s7, (7 * 4) ($a0)
+		sw	$s8, (8 * 4) ($a0)		# frame pointer
+		sw	$ra, (9 * 4) ($a0)		# return address
+		sw	$gp, (10 * 4) ($a0)		# global data pointer
+		sw	$sp, (11 * 4) ($a0)		# stack pointer
+		j	$ra
+		move	$v0, $zero			# return a zero for the setjmp call
+
+#---------------------------------------
+# void longjmp (memaddr uaddr, label_t *env);
+#
+# Longjmp(uaddr, env) will generate a "return(1)" from the last
+# call to setjmp(env) by mapping in the user structure pointed to by uaddr,
+# restoring the context saved by setjmp in env and returning a "1".
+# Note that registers are recovered statically from the env buffer.
+# Stack is not used.
+#
+# This longjmp differs from the longjmp found in the standard library -
+# it's actually closer to the resume routine of the 4.3BSD kernel.
+#
+		.type	longjmp, @function
+longjmp:	.globl	longjmp
+
+		di				# can't let anything in till we get a valid stack...
+
+		la	$v0, u			# pointer to &u
+		beq	$v0, $a0, 2f		# if uaddr == &u...
+		nop				# ...no need to remap U area
+
+		la	$a3, u_end		# pointer to &u + USIZE
+		la	$a0, u0			# pointer to &u0
+
+		lw	$v1, 0($v0)		# u.u_procp
+		sw	$a0, 60($v1)		# u.u_procp->p_addr = &u0
+
+		# exchange contents of u and u0
+		move	$v1, $v0
+1:
+                lw	$a1, 0($v1)
+                lw	$a2, 0($a0)
+                sw	$a2, 0($v1)
+                sw	$a1, 0($a0)
+                lw	$a1, 4($v1)
+                lw	$a2, 4($a0)
+                sw	$a2, 4($v1)
+                sw	$a1, 4($a0)
+                lw	$a1, 8($v1)
+                lw	$a2, 8($a0)
+                sw	$a2, 8($v1)
+                sw	$a1, 8($a0)
+                lw	$a1, 12($v1)
+                lw	$a2, 12($a0)
+                sw	$a2, 12($v1)
+                sw	$a1, 12($a0)
+                addiu	$v1, $v1, 16
+                bne	$a3, $v1, 1b
+                addiu	$a0, $a0, 16
+
+		lw	$v1, 0($v0)		# u.u_procp
+		sw	$v0, 60($v1)		# u.u_procp->p_addr = &u
+2:
+		lw	$s0, (0 * 4) ($a1)	# restore register variables s0-s8
+		lw	$s1, (1 * 4) ($a1)
+		lw	$s2, (2 * 4) ($a1)
+		lw	$s3, (3 * 4) ($a1)
+		lw	$s4, (4 * 4) ($a1)
+		lw	$s5, (5 * 4) ($a1)
+		lw	$s6, (6 * 4) ($a1)
+		lw	$s7, (7 * 4) ($a1)
+		lw	$s8, (8 * 4) ($a1)	# frame pointer
+		lw	$ra, (9 * 4) ($a1)	# return address
+		lw	$gp, (10 * 4) ($a1)	# global data pointer
+		lw	$sp, (11 * 4) ($a1)	# stack pointer
+
+		ei				# release interrupts
+		j	$ra			# transfer back to setjmp()
+		li	$v0, 1			# return value of 1

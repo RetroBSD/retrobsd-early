@@ -7,53 +7,20 @@ OUTPUT_ARCH(mips)
 ENTRY(_reset_vector_)
 MEMORY
 {
-  flash  (rx)   : ORIGIN = 0x9d005000,	LENGTH = 492K
-  ram    (rw!x) : ORIGIN = 0x80000000,	LENGTH = 32K
+  flash  (rx)   : ORIGIN = 0x9d005000,		LENGTH = 492K
+  uarea  (rw!x) : ORIGIN = 0x80000000,		LENGTH = 3K
+  u0area (rw!x) : ORIGIN = 0x80000000+3K,	LENGTH = 3K
+  ram    (rw!x) : ORIGIN = 0x80000000+6K,	LENGTH = 32K
 }
 
 /* higher address of the user mode stack */
-_estack = ORIGIN(ram) + LENGTH(ram);
+u	= ORIGIN(uarea);
+u_end	= ORIGIN(uarea) + LENGTH(uarea);
+u0	= ORIGIN(u0area);
 
 SECTIONS
 {
-  /* Read-only sections, merged into text segment: */
   . = 0x0000;
-  .interp         : { *(.interp) }
-  .hash           : { *(.hash) }
-  .dynsym         : { *(.dynsym) }
-  .dynstr         : { *(.dynstr) }
-  .gnu.version    : { *(.gnu.version) }
-  .gnu.version_d  : { *(.gnu.version_d) }
-  .gnu.version_r  : { *(.gnu.version_r) }
-  .rel.init       : { *(.rel.init) }
-  .rela.init      : { *(.rela.init) }
-  .rel.text       : { *(.rel.text .rel.text.* .rel.gnu.linkonce.t.*) }
-  .rela.text      : { *(.rela.text .rela.text.* .rela.gnu.linkonce.t.*) }
-  .rel.fini       : { *(.rel.fini) }
-  .rela.fini      : { *(.rela.fini) }
-  .rel.rodata     : { *(.rel.rodata .rel.rodata.* .rel.gnu.linkonce.r.*) }
-  .rela.rodata    : { *(.rela.rodata .rela.rodata.* .rela.gnu.linkonce.r.*) }
-  .rel.data       : { *(.rel.data .rel.data.* .rel.gnu.linkonce.d.*) }
-  .rela.data      : { *(.rela.data .rela.data.* .rela.gnu.linkonce.d.*) }
-  .rel.ctors      : { *(.rel.ctors) }
-  .rela.ctors     : { *(.rela.ctors) }
-  .rel.dtors      : { *(.rel.dtors) }
-  .rela.dtors     : { *(.rela.dtors) }
-  .rel.got        : { *(.rel.got) }
-  .rela.got       : { *(.rela.got) }
-  .rel.sdata      : { *(.rel.sdata .rel.sdata.* .rel.gnu.linkonce.s.*) }
-  .rela.sdata     : { *(.rela.sdata .rela.sdata.* .rela.gnu.linkonce.s.*) }
-  .rel.sbss       : { *(.rel.sbss .rel.sbss.* .rel.gnu.linkonce.sb.*) }
-  .rela.sbss      : { *(.rela.sbss .rela.sbss.* .rela.gnu.linkonce.sb.*) }
-  .rel.sdata2     : { *(.rel.sdata2 .rel.sdata2.* .rel.gnu.linkonce.s2.*) }
-  .rela.sdata2    : { *(.rela.sdata2 .rela.sdata2.* .rela.gnu.linkonce.s2.*) }
-  .rel.sbss2      : { *(.rel.sbss2 .rel.sbss2.* .rel.gnu.linkonce.sb2.*) }
-  .rela.sbss2     : { *(.rela.sbss2 .rela.sbss2.* .rela.gnu.linkonce.sb2.*) }
-  .rel.bss        : { *(.rel.bss .rel.bss.* .rel.gnu.linkonce.b.*) }
-  .rela.bss       : { *(.rela.bss .rela.bss.* .rela.gnu.linkonce.b.*) }
-  .rel.plt        : { *(.rel.plt) }
-  .rela.plt       : { *(.rela.plt) }
-  .plt            : { *(.plt) }
 
   .text           :
   {
@@ -67,7 +34,7 @@ SECTIONS
     *(.gnu.warning)
     *(.glue_7t) *(.glue_7)
     __rodata_start = . ;
-    *(.rodata .rodata.* .gnu.linkonce.r.*)
+    *(.rodata .rodata.* .gnu.linkonce.r.* .rel.dyn)
     /* Align here to ensure that the .text section ends on word boundary. */
     . = ALIGN (32 / 8);
     _etext = .;
@@ -77,7 +44,7 @@ SECTIONS
   .data		  : AT (ADDR (.text) + SIZEOF (.text))
   {
     __data_start = . ;
-    _gp = .; 	/* We have only 32k RAM on MC-24, so no need for 0x8000 offset. */
+    _gp = .; 	/* We use only 32k RAM for kernel, so no need for 0x8000 offset. */
     *(.data .data.* .gnu.linkonce.d.*)
     /* We want the small data sections together, so single-instruction offsets
        can access them all, and initialized data all before uninitialized, so

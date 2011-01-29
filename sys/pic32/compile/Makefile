@@ -14,11 +14,11 @@ M		= ..
 S		= ../../kernel
 D		= ../../drivers
 
-vpath %.c ${M}:${S}:${D}
-vpath %.S ${M}:${S}:${D}
+vpath %.c $(M):$(S):$(D)
+vpath %.S $(M):$(S):$(D)
 
 # Kernel options.
-DEFS		+= -I. -I${H} -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
+DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
 
 # kl console driver
 DEFS		+= -DNKL=1
@@ -27,8 +27,8 @@ DEFS		+= -DNKL=1
 DEFS            += -DNRK=2
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
-CFLAGS		= -O ${DEFS} ${DEPFLAGS}
-ASFLAGS		= ${DEFS} ${DEPFLAGS}
+CFLAGS		= -O $(DEFS) $(DEPFLAGS)
+ASFLAGS		= $(DEFS) $(DEPFLAGS)
 CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
 CC		+= -Werror -Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
@@ -64,7 +64,7 @@ all:		.deps sys machine unix
 		$(SIZE) unix
 
 clean:
-		rm -rf unix core mklog *.o assym.h vers.c genassym .deps
+		rm -rf unix core mklog *.o assym.h vers.c genassym .deps unix.dis unix.map
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:
@@ -76,12 +76,13 @@ sys:
 machine:
 		ln -s .. $@
 
-unix:		${KERNOBJ}
-		$(CC) -nostdlib -T using-bootloader.ld ${KERNOBJ} -o unix
+unix:		$(KERNOBJ) using-bootloader.ld
+		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o unix
+		$(OBJDUMP) -d -S $@ > $@.dis
 
-vers.o:		${H}/*.h ${M}/*.[ch] ${S}/*.c ${D}/*.[ch]
+vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c $(D)/*.[ch]
 		sh newvers.sh
-		${CC} -c vers.c
+		$(CC) -c vers.c
 
 .SUFFIXES:	.i .srec .hex .dis .cpp .cxx .bin .elf
 

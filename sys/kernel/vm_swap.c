@@ -14,8 +14,9 @@
 /*
  * Swap a process in.
  * Allocate data and possible text separately.  It would be better
- * to do largest first.  Text, data, stack and u. are allocated in
+ * to do largest first.  Text, data, and stack are allocated in
  * that order, as that is likely to be in order of size.
+ * U area goes into u0 buffer.
  */
 void
 swapin (p)
@@ -23,7 +24,7 @@ swapin (p)
 {
 	memaddr daddr = USER_DATA_START;
 	memaddr saddr = USER_DATA_END - p->p_ssize;
-	memaddr uaddr = (memaddr) &u;
+	memaddr uaddr = (memaddr) &u0;
 
 	if (p->p_dsize) {
 		swap (p->p_daddr, daddr, p->p_dsize, B_READ);

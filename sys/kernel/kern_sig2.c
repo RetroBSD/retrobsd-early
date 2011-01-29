@@ -274,7 +274,7 @@ sigsuspend()
 	register struct a {
 		struct sigset_t *set;
 	} *uap = (struct a *)u.u_ap;
-	sigset_t nmask;
+	sigset_t nmask = 0;
 	struct proc *p = u.u_procp;
 	int error;
 

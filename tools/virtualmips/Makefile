@@ -6,10 +6,10 @@ CFLAGS		= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
 LIBS		= -L/opt/local/lib -L/usr/local/lib -lconfuse -lpthread -lelf
 
 # Linux.
-LIBS		+= -lrt
+#LIBS		+= -lrt
 
 # Mac OS X
-#LIBS		+= -lintl
+LIBS		+= -lintl
 
 # Optimization.
 CFLAGS		+= -O

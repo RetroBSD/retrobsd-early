@@ -93,9 +93,8 @@
 #define USER_DATA_END		(0x00000000 + DATA_SIZE)
 
 /*
- * User area: a user structure, followed by a stack for the networking code
- * (running in supervisor space on the PDP-11), followed by the kernel
- * stack.  The number for KERN_SSIZE is determined empirically.
+ * User area: a user structure, followed by the kernel
+ * stack.  The number for USIZE is determined empirically.
  *
  * Note that the SBASE and STOP constants are only used by the assembly code,
  * but are defined here to localize information about the user area's
@@ -104,8 +103,7 @@
  * applications having to be recompiled for networking versus non-networking
  * systems.
  */
-#define	KERN_SSIZE	2048		/* size of the kernel stack (bytes) */
-#define	USIZE		(sizeof(struct user) + KERN_SSIZE)
+#define	USIZE		3072
 
 #define	SSIZE		2048		/* initial stack size (bytes) */
 #define	SINCR		2048		/* increment of stack (bytes) */

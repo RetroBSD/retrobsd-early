@@ -202,6 +202,8 @@ resume:
 	}
 	return(0);
 }
+	return(0);
+}
 
 /*
  * Give up the processor till a wakeup occurs on chan, at which time the
@@ -245,6 +247,28 @@ sleep (chan, pri)
 	longjmp (u.u_procp->p_addr, &u.u_qsave);
 	/*NOTREACHED*/
 }
+
+#if 0
+void longjmp (memaddr addr, label_t *label)
+{
+	if (addr != (memaddr) &u) {
+		u.u_procp->p_addr = (memaddr) &u0;
+
+		unsigned n = USIZE >> 4;
+		unsigned *p = (unsigned*) &u;
+		unsigned *q = (unsigned*) &u0;
+		do {
+			unsigned word;
+			word = *p; *p++ = *q; *q++ = word;
+			word = *p; *p++ = *q; *q++ = word;
+			word = *p; *p++ = *q; *q++ = word;
+			word = *p; *p++ = *q; *q++ = word;
+		} while (--n);
+
+		u.u_procp->p_addr = (memaddr) &u;
+	}
+}
+#endif
 
 /*
  * Remove a process from its wait queue
@@ -407,24 +431,33 @@ swtch()
 	/* If not the idle process, resume the idle process. */
 	if (u.u_procp != &proc[0]) {
 		if (setjmp (&u.u_rsave)) {
+			/* Returned from swapper to user process. */
 			sureg();
 			return;
 		}
+		/* Switch from user process to swapper. */
 		longjmp (proc[0].p_addr, &u.u_qsave);
 	}
 	/*
 	 * The first save returns nonzero when proc 0 is resumed
 	 * by another process (above); then the second is not done
 	 * and the process-search loop is entered.
-	 *
+	 */
+	if (setjmp (&u.u_qsave)) {
+		/* Returned from user process. */
+		goto loop;
+	}
+	/*
 	 * The first save returns 0 when swtch is called in proc 0
 	 * from sched().  The second save returns 0 immediately, so
 	 * in this case too the process-search loop is entered.
 	 * Thus when proc 0 is awakened by being made runnable, it will
 	 * find itself and resume itself at rsave, and return to sched().
 	 */
-	if (setjmp (&u.u_qsave) == 0 && setjmp (&u.u_rsave))
+	if (setjmp (&u.u_rsave)) {
+		/* Swapper resumed by itself. */
 		return;
+	}
 loop:
 	s = splhigh();
 	noproc = 0;

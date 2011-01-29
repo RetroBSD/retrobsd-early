@@ -36,10 +36,6 @@ struct	cblock cfree [NCLIST];
 struct proc	proc [NPROC];
 struct file	file [NFILE];
 
-/* TODO: use linker script*/
-struct user u0, u1;
-struct user *uarea = &u0;
-
 /*
  * Remove the ifdef/endif to run the kernel in unsecure mode even when in
  * a multiuser state.  Normally 'init' raises the security level to 1

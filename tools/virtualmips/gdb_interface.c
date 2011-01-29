@@ -391,6 +391,7 @@ static void attach_gdb (vm_instance_t * vm)
 #define MAX_XFER (8*1024)
 #define WORD_SZ  4
 #define BYTE_SZ   1
+
 int debug_read_memory (cpu_mips_t * cpu, m_uint32_t vaddr, unsigned int len,
     char *buf)
 {
@@ -428,9 +429,7 @@ int forced_inline cpu_hit_breakpoint (vm_instance_t * vm, m_uint32_t vaddr)
     static char cmd_buf[BUFSIZ + 1];
 
     while (tmp) {
-
         if (tmp->addr == vaddr) {
-
             sprintf (cmd_buf, "S%02x", SIGTRAP);
             if (putpkt (vm->gdb_interact_sock, cmd_buf) < 0) {
                 /* the connection was terminated prematurely.  Reset */
@@ -441,12 +440,9 @@ int forced_inline cpu_hit_breakpoint (vm_instance_t * vm, m_uint32_t vaddr)
                 return FAILURE;
             }
             return SUCCESS;
-
         }
-
         tmp = tmp->next;
     }
-
     return FAILURE;
 }
 
@@ -705,22 +701,20 @@ Simdebug_result Simdebug_run (vm_instance_t * vm, int sig)
             goto errout;
 
     }
-
-  out:
+out:
     return ret;
-  errout:
+errout:
     /* the connection was terminated prematurely.  Reset */
     close (vm->gdb_interact_sock);
     vm->gdb_interact_sock = -1;
     printf ("Remote debugger connection lost, continuing...\n");
     return SD_CONTINUE;
-
 }
 
 void bad_memory_access_gdb (vm_instance_t * vm)
 {
-
     static char cmd_buf[BUFSIZ + 1];
+
     vm->mipsy_break_nexti = MIPS_BREAKANYCPU;
     sprintf (cmd_buf, "S%02x", SIGTRAP);
     if (putpkt (vm->gdb_interact_sock, cmd_buf) < 0) {
@@ -729,7 +723,5 @@ void bad_memory_access_gdb (vm_instance_t * vm)
         vm->gdb_interact_sock = -1;
         vm->mipsy_debug_mode = 0;       //we do not debug anymore
         printf ("Remote debugger connection lost, continuing...\n");
-
     }
-
 }

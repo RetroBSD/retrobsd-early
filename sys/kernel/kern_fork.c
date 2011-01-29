@@ -26,7 +26,6 @@ newproc (isvfork)
 	register int n;
 	static int pidchecked = 0;
 	struct file *fp;
-	int a1;
 
 	/*
 	 * First, just locate a slot for a process
@@ -147,7 +146,6 @@ again:
 	rpp->p_ssize = rip->p_ssize;
 	rpp->p_daddr = rip->p_daddr;
 	rpp->p_saddr = rip->p_saddr;
-	a1 = rip->p_addr;
 
 	/*
 	 * Partially simulate the environment of the new process so that
@@ -159,7 +157,7 @@ again:
 	 * Swap out the current process to generate the copy.
 	 */
 	rip->p_stat = SIDL;
-	rpp->p_addr = a1;
+	rpp->p_addr = rip->p_addr;
 	rpp->p_stat = SRUN;
 	swapout (rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
 	rip->p_stat = SRUN;

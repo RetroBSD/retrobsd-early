@@ -114,8 +114,7 @@ struct user {
 #include <sys/errno.h>
 
 #ifdef KERNEL
-extern	struct user *uarea, u0, u1;
-#define u (*uarea)
+extern	struct user u, u0;
 
 /*
  * Increment user profiling counters.
