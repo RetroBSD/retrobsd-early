@@ -111,9 +111,8 @@
 /*
  * Macros to decode processor status word.
  */
-#define	SUPVMODE(ps)	(((ps) & PSL_CURMOD) == PSL_CURSUP)
-#define	USERMODE(ps)	(((ps) & PSL_USERSET) == PSL_USERSET)
-#define	BASEPRI(ps)	(((ps) & PSL_IPL) == 0)
+#define	USERMODE(ps)	(((ps) & ST_UM) != 0)
+#define	BASEPRI(ps)	(CA_RIPL(ps) == 0)
 
 #define	splbio()	mips_intr_disable ()
 #define	spltty()	mips_intr_disable ()

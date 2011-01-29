@@ -107,9 +107,8 @@ main()
 	struct partinfo dpart;
 	int (*ioctl) (dev_t, u_int, caddr_t, int);
 
-	printf ("\n%s\n", version);
-
 	startup();
+	printf ("\n%s\n", version);
 
 	/*
 	 * set up system process 0 (swapper)

@@ -29,8 +29,8 @@ DEFS            += -DNRK=2
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
-CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -mips32r2 -nostdinc -fno-builtin
-CC		+= -Werror -Wall
+CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -g -mips32r2
+CC		+= -nostdinc -fno-builtin -Werror -Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
 

@@ -34,7 +34,8 @@
 #define C0_STATUS	12	/* Processor status and control */
 #define C0_CAUSE	13	/* Cause of last exception */
 #define C0_EPC		14	/* Program counter at last exception */
-#define C0_PRID_EBASE	15	/* Processor identification; exception base address */
+#define C0_PRID		15	/* Processor identification (read only) */
+#define C0_EBASE	15	/* Select 1: exception base address */
 #define C0_CONFIG	16	/* Configuration */
 #define C0_DEBUG	23	/* Debug control and status */
 #define C0_DEPC		24	/* Program counter at last debug exception */
@@ -624,5 +625,166 @@
 #define PIC32_U1EP_EPCONDIS	0x0010 /*  */
 #define PIC32_U1EP_RETRYDIS	0x0040 /*  */
 #define PIC32_U1EP_LSPD		0x0080 /*  */
+
+/*--------------------------------------
+ * Interrupt controller registers.
+ */
+#define INTCON		PIC32_R (0x81000)	/* Interrupt Control */
+#define INTCONCLR	PIC32_R (0x81004)
+#define INTCONSET	PIC32_R (0x81008)
+#define INTCONINV	PIC32_R (0x8100C)
+#define INTSTAT		PIC32_R (0x81010)	/* Interrupt Status */
+#define IPTMR		PIC32_R (0x81020)	/* Temporal Proximity Timer */
+#define IPTMRCLR	PIC32_R (0x81024)
+#define IPTMRSET	PIC32_R (0x81028)
+#define IPTMRINV	PIC32_R (0x8102C)
+#define IFS(n)		PIC32_R (0x81030+((n)<<4)) /* IFS(0..2) - Interrupt Flag Status */
+#define IFSCLR(n)	PIC32_R (0x81034+((n)<<4))
+#define IFSSET(n)	PIC32_R (0x81038+((n)<<4))
+#define IFSINV(n)	PIC32_R (0x8103C+((n)<<4))
+#define IEC(n)		PIC32_R (0x81060+((n)<<4)) /* IEC(0..2) - Interrupt Enable Control */
+#define IECCLR(n)	PIC32_R (0x81064+((n)<<4))
+#define IECSET(n)	PIC32_R (0x81068+((n)<<4))
+#define IECINV(n)	PIC32_R (0x8106C+((n)<<4))
+#define IPC(n)		PIC32_R (0x81090+((n)<<4)) /* IPC(0..11) - Interrupt Priority Control */
+#define IPCCLR(n)	PIC32_R (0x81094+((n)<<4))
+#define IPCSET(n)	PIC32_R (0x81098+((n)<<4))
+#define IPCINV(n)	PIC32_R (0x8109C+((n)<<4))
+
+/*
+ * Interrupt Control register.
+ */
+#define PIC32_INTCON_INT0EP	0x0001	/* External interrupt 0 polarity rising edge */
+#define PIC32_INTCON_INT1EP	0x0002	/* External interrupt 1 polarity rising edge */
+#define PIC32_INTCON_INT2EP	0x0004	/* External interrupt 2 polarity rising edge */
+#define PIC32_INTCON_INT3EP	0x0008	/* External interrupt 3 polarity rising edge */
+#define PIC32_INTCON_INT4EP	0x0010	/* External interrupt 4 polarity rising edge */
+#define PIC32_INTCON_TPC(x)	((x)<<8) /* Temporal proximity group priority */
+#define PIC32_INTCON_MVEC	0x1000	/* Multi-vectored mode */
+#define PIC32_INTCON_FRZ	0x4000	/* Freeze in debug mode */
+#define PIC32_INTCON_SS0	0x8000	/* Single vector has a shadow register set */
+
+/*
+ * Interrupt Status register.
+ */
+#define PIC32_INTSTAT_VEC(s)	((s) & 0xFF)	/* Interrupt vector */
+#define PIC32_INTSTAT_SRIPL(s)	((s) >> 8 & 7)	/* Requested priority level */
+#define PIC32_INTSTAT_SRIPL_MASK 0x0700
+
+/*
+ * Interrupt Prority Control register.
+ */
+#define PIC32_IPC_IS0(x)	(x)		/* Interrupt 0 subpriority */
+#define PIC32_IPC_IP0(x)	((x)<<2)	/* Interrupt 0 priority */
+#define PIC32_IPC_IS1(x)	((x)<<8)	/* Interrupt 1 subpriority */
+#define PIC32_IPC_IP1(x)	((x)<<10)	/* Interrupt 1 priority */
+#define PIC32_IPC_IS2(x)	((x)<<16)	/* Interrupt 2 subpriority */
+#define PIC32_IPC_IP2(x)	((x)<<18)	/* Interrupt 2 priority */
+#define PIC32_IPC_IS3(x)	((x)<<24)	/* Interrupt 3 subpriority */
+#define PIC32_IPC_IP3(x)	((x)<<26)	/* Interrupt 3 priority */
+
+/*
+ * IRQ numbers for PIC32MX3xx/4xx.
+ */
+#define PIC32_IRQ_CT        0   /* Core Timer Interrupt */
+#define PIC32_IRQ_CS0       1   /* Core Software Interrupt 0 */
+#define PIC32_IRQ_CS1       2   /* Core Software Interrupt 1 */
+#define PIC32_IRQ_INT0      3   /* External Interrupt 0 */
+#define PIC32_IRQ_T1        4   /* Timer1 */
+#define PIC32_IRQ_IC1       5   /* Input Capture 1 */
+#define PIC32_IRQ_OC1       6   /* Output Compare 1 */
+#define PIC32_IRQ_INT1      7   /* External Interrupt 1 */
+#define PIC32_IRQ_T2        8   /* Timer2 */
+#define PIC32_IRQ_IC2       9   /* Input Capture 2 */
+#define PIC32_IRQ_OC2       10  /* Output Compare 2 */
+#define PIC32_IRQ_INT2      11  /* External Interrupt 2 */
+#define PIC32_IRQ_T3        12  /* Timer3 */
+#define PIC32_IRQ_IC3       13  /* Input Capture 3 */
+#define PIC32_IRQ_OC3       14  /* Output Compare 3 */
+#define PIC32_IRQ_INT3      15  /* External Interrupt 3 */
+#define PIC32_IRQ_T4        16  /* Timer4 */
+#define PIC32_IRQ_IC4       17  /* Input Capture 4 */
+#define PIC32_IRQ_OC4       18  /* Output Compare 4 */
+#define PIC32_IRQ_INT4      19  /* External Interrupt 4 */
+#define PIC32_IRQ_T5        20  /* Timer5 */
+#define PIC32_IRQ_IC5       21  /* Input Capture 5 */
+#define PIC32_IRQ_OC5       22  /* Output Compare 5 */
+#define PIC32_IRQ_SPI1E     23  /* SPI1 Fault */
+#define PIC32_IRQ_SPI1TX    24  /* SPI1 Transfer Done */
+#define PIC32_IRQ_SPI1RX    25  /* SPI1 Receive Done */
+#define PIC32_IRQ_U1E       26  /* UART1 Error */
+#define PIC32_IRQ_U1RX      27  /* UART1 Receiver */
+#define PIC32_IRQ_U1TX      28  /* UART1 Transmitter */
+#define PIC32_IRQ_I2C1B     29  /* I2C1 Bus Collision Event */
+#define PIC32_IRQ_I2C1S     30  /* I2C1 Slave Event */
+#define PIC32_IRQ_I2C1M     31  /* I2C1 Master Event */
+#define PIC32_IRQ_CN        32  /* Input Change Interrupt */
+#define PIC32_IRQ_AD1       33  /* ADC1 Convert Done */
+#define PIC32_IRQ_PMP       34  /* Parallel Master Port */
+#define PIC32_IRQ_CMP1      35  /* Comparator Interrupt */
+#define PIC32_IRQ_CMP2      36  /* Comparator Interrupt */
+#define PIC32_IRQ_SPI2E     37  /* SPI2 Fault */
+#define PIC32_IRQ_SPI2TX    38  /* SPI2 Transfer Done */
+#define PIC32_IRQ_SPI2RX    39  /* SPI2 Receive Done */
+#define PIC32_IRQ_U2E       40  /* UART2 Error */
+#define PIC32_IRQ_U2RX      41  /* UART2 Receiver */
+#define PIC32_IRQ_U2TX      42  /* UART2 Transmitter */
+#define PIC32_IRQ_I2C2B     43  /* I2C2 Bus Collision Event */
+#define PIC32_IRQ_I2C2S     44  /* I2C2 Slave Event */
+#define PIC32_IRQ_I2C2M     45  /* I2C2 Master Event */
+#define PIC32_IRQ_FSCM      46  /* Fail-Safe Clock Monitor */
+#define PIC32_IRQ_RTCC      47  /* Real-Time Clock and Calendar */
+#define PIC32_IRQ_DMA0      48  /* DMA Channel 0 */
+#define PIC32_IRQ_DMA1      49  /* DMA Channel 1 */
+#define PIC32_IRQ_DMA2      50  /* DMA Channel 2 */
+#define PIC32_IRQ_DMA3      51  /* DMA Channel 3 */
+#define PIC32_IRQ_FCE       56  /* Flash Control Event */
+#define PIC32_IRQ_USB       57  /* USB */
+
+/*
+ * Interrupt vector numbers for PIC32MX3xx/4xx.
+ */
+#define PIC32_VECT_CT       0   /* Core Timer Interrupt */
+#define PIC32_VECT_CS0      1   /* Core Software Interrupt 0 */
+#define PIC32_VECT_CS1      2   /* Core Software Interrupt 1 */
+#define PIC32_VECT_INT0     3   /* External Interrupt 0 */
+#define PIC32_VECT_T1       4   /* Timer1 */
+#define PIC32_VECT_IC1      5   /* Input Capture 1 */
+#define PIC32_VECT_OC1      6   /* Output Compare 1 */
+#define PIC32_VECT_INT1     7   /* External Interrupt 1 */
+#define PIC32_VECT_T2       8   /* Timer2 */
+#define PIC32_VECT_IC2      9   /* Input Capture 2 */
+#define PIC32_VECT_OC2      10  /* Output Compare 2 */
+#define PIC32_VECT_INT2     11  /* External Interrupt 2 */
+#define PIC32_VECT_T3       12  /* Timer3 */
+#define PIC32_VECT_IC3      13  /* Input Capture 3 */
+#define PIC32_VECT_OC3      14  /* Output Compare 3 */
+#define PIC32_VECT_INT3     15  /* External Interrupt 3 */
+#define PIC32_VECT_T4       16  /* Timer4 */
+#define PIC32_VECT_IC4      17  /* Input Capture 4 */
+#define PIC32_VECT_OC4      18  /* Output Compare 4 */
+#define PIC32_VECT_INT4     19  /* External Interrupt 4 */
+#define PIC32_VECT_T5       20  /* Timer5 */
+#define PIC32_VECT_IC5      21  /* Input Capture 5 */
+#define PIC32_VECT_OC5      22  /* Output Compare 5 */
+#define PIC32_VECT_SPI1     23  /* SPI1 */
+#define PIC32_VECT_U1       24  /* UART1 */
+#define PIC32_VECT_I2C1     25  /* I2C1 */
+#define PIC32_VECT_CN       26  /* Input Change Interrupt */
+#define PIC32_VECT_AD1      27  /* ADC1 Convert Done */
+#define PIC32_VECT_PMP      28  /* Parallel Master Port */
+#define PIC32_VECT_CMP1     29  /* Comparator Interrupt */
+#define PIC32_VECT_CMP2     30  /* Comparator Interrupt */
+#define PIC32_VECT_SPI2     31  /* SPI2 */
+#define PIC32_VECT_U2       32  /* UART2 */
+#define PIC32_VECT_I2C2     33  /* I2C2 */
+#define PIC32_VECT_FSCM     34  /* Fail-Safe Clock Monitor */
+#define PIC32_VECT_RTCC     35  /* Real-Time Clock and Calendar */
+#define PIC32_VECT_DMA0     36  /* DMA Channel 0 */
+#define PIC32_VECT_DMA1     37  /* DMA Channel 1 */
+#define PIC32_VECT_DMA2     38  /* DMA Channel 2 */
+#define PIC32_VECT_DMA3     39  /* DMA Channel 3 */
+#define PIC32_VECT_FCE      44  /* Flash Control Event */
+#define PIC32_VECT_USB      45  /* USB */
 
 #endif /* _IO_PIC32MX_H */

@@ -202,8 +202,6 @@ resume:
 	}
 	return(0);
 }
-	return(0);
-}
 
 /*
  * Give up the processor till a wakeup occurs on chan, at which time the

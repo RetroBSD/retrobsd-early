@@ -78,7 +78,63 @@ daddr_t	dumplo = (daddr_t) 1024;
 void
 startup()
 {
-	physmem = 128 * 1024;	/* TODO */
+	extern void _etext(), _exception_base_();
+	extern unsigned __data_start, _edata, _end;
+
+	physmem = DATA_SIZE;
+
+	/* Initialize STATUS register: master interrupt disable.
+	 * Setup interrupt vector base. */
+	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_BEV);
+	mips_write_c0_select (C0_EBASE, 1, _exception_base_);
+	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
+
+	/* Clear CAUSE register: use special interrupt vector 0x200. */
+	mips_write_c0_register (C0_CAUSE, CA_IV);
+
+	/* Entry to user code. */
+	mips_write_c0_register (C0_EPC, USER_DATA_START);
+
+	/*
+	 * Setup UART registers.
+	 * Compute the divisor for 115.2 kbaud.
+	 */
+	U1BRG = PIC32_BRG_BAUD (KHZ * 1000, 115200);
+	U1STA = 0;
+	U1MODE = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
+		 PIC32_UMODE_ON;		/* UART Enable */
+	U1STASET = PIC32_USTA_URXEN |		/* Receiver Enable */
+		   PIC32_USTA_UTXEN;		/* Transmit Enable */
+
+	/*
+	 * Setup interrupt controller.
+	 */
+	INTCON = 0;				/* Interrupt Control */
+	IPTMR = 0;				/* Temporal Proximity Timer */
+	IFS(0) = IFS(1) = IFS(2) = 0;		/* Interrupt Flag Status */
+	IEC(0) = IEC(1) = IEC(2) = 0;		/* Interrupt Enable Control */
+	IPC(0) = IPC(1) = IPC(2) = IPC(3) = 	/* Interrupt Priority Control */
+	IPC(4) = IPC(5) = IPC(6) = IPC(7) =
+	IPC(8) = IPC(9) = IPC(10) = IPC(11) =
+		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
+		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
+
+	/* Enable interrupts.  */
+	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
+
+	/* Copy the .data image from flash to ram.
+	 * Linker places it at the end of .text segment. */
+	unsigned *src = (unsigned*) &_etext;
+	unsigned *dest = &__data_start;
+	unsigned *limit = &_edata;
+	while (dest < limit)
+		*dest++ = *src++;
+
+	/* Initialize .bss segment by zeroes. */
+	dest = &_edata;
+	limit = &_end;
+	while (dest < limit)
+		*dest++ = 0;
 }
 
 void

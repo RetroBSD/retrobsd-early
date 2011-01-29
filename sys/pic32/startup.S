@@ -31,6 +31,8 @@
 		.extern	u
 		.extern	u_end
 		.extern	u0
+		.extern	main
+		.extern exception
 
 #---------------------------------------
 # Reset vector at 0x9D006000
@@ -40,141 +42,153 @@
 		.type	_reset_vector_, @function
 _reset_vector_:	.globl	_reset_vector_
 
-		.extern	main
-		la	$sp, u_end			# Stack at end of internal SRAM
-		j	main				# Jump to main()
+		la	$sp, u_end - 16			# Stack at end of U area
+		jal	main				# Jump to main()
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
 
-#---------------------------------------
-# Restore CPU state and return from interrupt
-#
-		.section .exception
-		.org	0
-		.type	_restore_regs_, @function
-_restore_regs_: .globl _restore_regs_
-#define MIPS_FSPACE 16
-		addi	$sp, MIPS_FSPACE		# Remove an arg frame
-
-		lw	$a0, (CONTEXT_LO * 4) ($sp)	# Load HI, LO registers
-		mtlo	$a0
-		lw	$a0, (CONTEXT_HI * 4) ($sp)
-		mthi	$a0
-
-		lw	$a0, (CONTEXT_PC * 4) ($sp)	# K1 = EPC
-		mtc0	$a0, $C0_EPC			# put PC in EPC
-
-		.set	noat
-		lw	$1, (CONTEXT_R1 * 4) ($sp)	# Load general registers
-		lw	$2, (CONTEXT_R2 * 4) ($sp)
-		lw	$3, (CONTEXT_R3 * 4) ($sp)
-		lw	$4, (CONTEXT_R4 * 4) ($sp)
-		lw	$5, (CONTEXT_R5 * 4) ($sp)
-		lw	$6, (CONTEXT_R6 * 4) ($sp)
-		lw	$7, (CONTEXT_R7 * 4) ($sp)
-		lw	$8, (CONTEXT_R8 * 4) ($sp)
-		lw	$9, (CONTEXT_R9 * 4) ($sp)
-		lw	$10, (CONTEXT_R10 * 4) ($sp)
-		lw	$11, (CONTEXT_R11 * 4) ($sp)
-		lw	$12, (CONTEXT_R12 * 4) ($sp)
-		lw	$13, (CONTEXT_R13 * 4) ($sp)
-		lw	$14, (CONTEXT_R14 * 4) ($sp)
-		lw	$15, (CONTEXT_R15 * 4) ($sp)
-		lw	$16, (CONTEXT_R16 * 4) ($sp)
-		lw	$17, (CONTEXT_R17 * 4) ($sp)
-		lw	$18, (CONTEXT_R18 * 4) ($sp)
-		lw	$19, (CONTEXT_R19 * 4) ($sp)
-		lw	$20, (CONTEXT_R20 * 4) ($sp)
-		lw	$21, (CONTEXT_R21 * 4) ($sp)
-		lw	$22, (CONTEXT_R22 * 4) ($sp)
-		lw	$23, (CONTEXT_R23 * 4) ($sp)
-		lw	$24, (CONTEXT_R24 * 4) ($sp)
-		lw	$25, (CONTEXT_R25 * 4) ($sp)
-		# Skip $26 - K0
-		# Skip $27 - K1
-		lw	$28, (CONTEXT_GP * 4) ($sp)
-		# Skip $29 - SP
-		lw	$30, (CONTEXT_FP * 4) ($sp)
-		lw	$31, (CONTEXT_RA * 4) ($sp)
-		.set	at
-
-		mfc0	$k0, $C0_STATUS			# Get STATUS
-		li	$k1, -1 - ST_IE			# Prepare bitmask
-		and	$k0, $k1			# Clear IE bit
-		ori	$k0, ST_EXL			# Prevent interrupts until eret
-		lw	$k1, (CONTEXT_STATUS * 4) ($sp)	# K0 = saved status, only IE bit
-		andi	$k1, ST_IE			# Restore only IE bit
-		or	$k0, $k1			# Add saved IE bit
-		mtc0	$k0, $C0_STATUS			# put SR back
+		mfc0	$k0, $C0_STATUS
+		ori	$k0, $k0, ST_UM | ST_EXL	# Set user mode
+		mtc0	$k0, $C0_STATUS			# Put SR back
 		nop
 		nop
-
-		addi	$sp, CONTEXT_WORDS*4		# Deallocate saved context
 
 		# Return from exception
-		.set mips3
 		eret					# PC <= EPC; EXL <= 0
 		nop					# just to be safe
-		.set mips0
+
 
 #---------------------------------------
 # Exception vector at 0x0x9D005200
 #
+		.section .exception
+_exception_base_: .globl _exception_base_
 		.org	0x200
 		.type	_exception_vector_, @function
 _exception_vector_: .globl _exception_vector_
-		addi	$sp, -CONTEXT_WORDS*4		# Allocate space for registers
+
+		mfc0	$k0, $C0_STATUS
+		andi	$k1, $k0, ST_UM			# Check user mode
+		beqz	$k1, kernel_exception
+		move	$k1, $sp
+
+		#
+		# Exception in user mode: switch stack.
+		#
+user_exception:
+		la	$sp, u_end-CONTEXT_WORDS*4-16	# Stack at end of U area
+		j	save_regs
+		nop
+
+kernel_exception:
+		addi    $sp, -16-CONTEXT_WORDS*4	# Allocate space for registers
+save_regs:
+		sw	$k0, (16+CONTEXT_STATUS*4) ($sp)
+                sw      $k1, (16+CONTEXT_SP*4) ($sp)
 
 		.set	noat
-		sw	$1, (CONTEXT_R1 * 4) ($sp)	# Save general registers
-		sw	$2, (CONTEXT_R2 * 4) ($sp)
-		sw	$3, (CONTEXT_R3 * 4) ($sp)
-		sw	$4, (CONTEXT_R4 * 4) ($sp)
-		sw	$5, (CONTEXT_R5 * 4) ($sp)
-		sw	$6, (CONTEXT_R6 * 4) ($sp)
-		sw	$7, (CONTEXT_R7 * 4) ($sp)
-		sw	$8, (CONTEXT_R8 * 4) ($sp)
-		sw	$9, (CONTEXT_R9 * 4) ($sp)
-		sw	$10, (CONTEXT_R10 * 4) ($sp)
-		sw	$11, (CONTEXT_R11 * 4) ($sp)
-		sw	$12, (CONTEXT_R12 * 4) ($sp)
-		sw	$13, (CONTEXT_R13 * 4) ($sp)
-		sw	$14, (CONTEXT_R14 * 4) ($sp)
-		sw	$15, (CONTEXT_R15 * 4) ($sp)
-		sw	$16, (CONTEXT_R16 * 4) ($sp)
-		sw	$17, (CONTEXT_R17 * 4) ($sp)
-		sw	$18, (CONTEXT_R18 * 4) ($sp)
-		sw	$19, (CONTEXT_R19 * 4) ($sp)
-		sw	$20, (CONTEXT_R20 * 4) ($sp)
-		sw	$21, (CONTEXT_R21 * 4) ($sp)
-		sw	$22, (CONTEXT_R22 * 4) ($sp)
-		sw	$23, (CONTEXT_R23 * 4) ($sp)
-		sw	$24, (CONTEXT_R24 * 4) ($sp)
-		sw	$25, (CONTEXT_R25 * 4) ($sp)
+		sw	$1, (16+CONTEXT_R1*4) ($sp)	# Save general registers
+		sw	$2, (16+CONTEXT_R2*4) ($sp)
+		sw	$3, (16+CONTEXT_R3*4) ($sp)
+		sw	$4, (16+CONTEXT_R4*4) ($sp)
+		sw	$5, (16+CONTEXT_R5*4) ($sp)
+		sw	$6, (16+CONTEXT_R6*4) ($sp)
+		sw	$7, (16+CONTEXT_R7*4) ($sp)
+		sw	$8, (16+CONTEXT_R8*4) ($sp)
+		sw	$9, (16+CONTEXT_R9*4) ($sp)
+		sw	$10, (16+CONTEXT_R10*4) ($sp)
+		sw	$11, (16+CONTEXT_R11*4) ($sp)
+		sw	$12, (16+CONTEXT_R12*4) ($sp)
+		sw	$13, (16+CONTEXT_R13*4) ($sp)
+		sw	$14, (16+CONTEXT_R14*4) ($sp)
+		sw	$15, (16+CONTEXT_R15*4) ($sp)
+		sw	$16, (16+CONTEXT_R16*4) ($sp)
+		sw	$17, (16+CONTEXT_R17*4) ($sp)
+		sw	$18, (16+CONTEXT_R18*4) ($sp)
+		sw	$19, (16+CONTEXT_R19*4) ($sp)
+		sw	$20, (16+CONTEXT_R20*4) ($sp)
+		sw	$21, (16+CONTEXT_R21*4) ($sp)
+		sw	$22, (16+CONTEXT_R22*4) ($sp)
+		sw	$23, (16+CONTEXT_R23*4) ($sp)
+		sw	$24, (16+CONTEXT_R24*4) ($sp)
+		sw	$25, (16+CONTEXT_R25*4) ($sp)
 		# Skip $26 - K0
 		# Skip $27 - K1
-		sw	$28, (CONTEXT_GP * 4) ($sp)
+		sw	$28, (16+CONTEXT_GP*4) ($sp)
 		# Skip $29 - SP
-		sw	$30, (CONTEXT_FP * 4) ($sp)
-		sw	$31, (CONTEXT_RA * 4) ($sp)
+		sw	$30, (16+CONTEXT_FP*4) ($sp)
+		sw	$31, (16+CONTEXT_RA*4) ($sp)
 		.set	at
 
-		mfhi	$a0				# Save special registers
-		sw	$a0, (CONTEXT_HI * 4) ($sp)
+		mfhi	$k0				# Save special registers
+		sw	$k0, (16+CONTEXT_HI*4) ($sp)
 
-		mflo	$a0
-		sw	$a0, (CONTEXT_LO * 4) ($sp)
+		mflo	$k0
+		sw	$k0, (16+CONTEXT_LO*4) ($sp)
 
-		mfc0	$a0, $C0_EPC
-		sw	$a0, (CONTEXT_PC * 4) ($sp)
+		mfc0	$k0, $C0_EPC
+		sw	$k0, (16+CONTEXT_PC*4) ($sp)
 
-		mfc0	$a0, $C0_STATUS
-		sw	$a0, (CONTEXT_STATUS * 4) ($sp)
-
-		addi	$sp, -MIPS_FSPACE		# Make an arg frame
-
-		.extern exception
-		j	exception			# Jump to C code, no return
+		move	$a0, $sp
+		addi	$a0, 16				# Arg 0: saved regs.
+		jal	exception			# Call C code.
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
+
+		#
+		# Restore CPU state and return from interrupt.
+		#
+restore_regs:
+		lw	$a0, (16+CONTEXT_LO*4) ($sp)	# Load HI, LO registers
+		mtlo	$a0
+		lw	$a0, (16+CONTEXT_HI*4) ($sp)
+		mthi	$a0
+
+		lw	$a0, (16+CONTEXT_PC*4) ($sp)	# K1 = EPC
+		mtc0	$a0, $C0_EPC			# put PC in EPC
+
+		.set	noat
+		lw	$1, (16+CONTEXT_R1*4) ($sp)	# Load general registers
+		lw	$2, (16+CONTEXT_R2*4) ($sp)
+		lw	$3, (16+CONTEXT_R3*4) ($sp)
+		lw	$4, (16+CONTEXT_R4*4) ($sp)
+		lw	$5, (16+CONTEXT_R5*4) ($sp)
+		lw	$6, (16+CONTEXT_R6*4) ($sp)
+		lw	$7, (16+CONTEXT_R7*4) ($sp)
+		lw	$8, (16+CONTEXT_R8*4) ($sp)
+		lw	$9, (16+CONTEXT_R9*4) ($sp)
+		lw	$10, (16+CONTEXT_R10*4) ($sp)
+		lw	$11, (16+CONTEXT_R11*4) ($sp)
+		lw	$12, (16+CONTEXT_R12*4) ($sp)
+		lw	$13, (16+CONTEXT_R13*4) ($sp)
+		lw	$14, (16+CONTEXT_R14*4) ($sp)
+		lw	$15, (16+CONTEXT_R15*4) ($sp)
+		lw	$16, (16+CONTEXT_R16*4) ($sp)
+		lw	$17, (16+CONTEXT_R17*4) ($sp)
+		lw	$18, (16+CONTEXT_R18*4) ($sp)
+		lw	$19, (16+CONTEXT_R19*4) ($sp)
+		lw	$20, (16+CONTEXT_R20*4) ($sp)
+		lw	$21, (16+CONTEXT_R21*4) ($sp)
+		lw	$22, (16+CONTEXT_R22*4) ($sp)
+		lw	$23, (16+CONTEXT_R23*4) ($sp)
+		lw	$24, (16+CONTEXT_R24*4) ($sp)
+		lw	$25, (16+CONTEXT_R25*4) ($sp)
+		# Skip $26 - K0
+		# Skip $27 - K1
+		lw	$28, (16+CONTEXT_GP*4) ($sp)
+		# Skip $29 - SP
+		lw	$30, (16+CONTEXT_FP*4) ($sp)
+		lw	$31, (16+CONTEXT_RA*4) ($sp)
+		.set	at
+
+		lw	$k0, (16+CONTEXT_STATUS*4) ($sp) # K0 = saved status, only IE bit
+		mtc0	$k0, $C0_STATUS			# put SR back
+		nop
+		nop
+
+		lw	$sp, (16+CONTEXT_SP*4) ($sp)	# Restore stack
+
+		# Return from exception
+		eret					# PC <= EPC; EXL <= 0
+		nop					# just to be safe
 
 #---------------------------------------
 # Icode is copied out to process 1 to exec /etc/init.

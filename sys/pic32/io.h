@@ -54,14 +54,15 @@
 #define CONTEXT_R24	23
 #define CONTEXT_R25	24
 #define CONTEXT_GP	25
-#define CONTEXT_FP	26
-#define CONTEXT_RA	27
-#define CONTEXT_LO	28
-#define CONTEXT_HI	29
-#define CONTEXT_STATUS	30
-#define CONTEXT_PC	31
+#define CONTEXT_SP      26
+#define CONTEXT_FP	27
+#define CONTEXT_RA	28
+#define CONTEXT_LO	29
+#define CONTEXT_HI	30
+#define CONTEXT_STATUS	31
+#define CONTEXT_PC	32
 
-#define CONTEXT_WORDS	32
+#define CONTEXT_WORDS	33
 
 #ifndef __ASSEMBLER__
 
@@ -101,14 +102,29 @@ void *mips_get_stack_pointer ()
 	__value;						\
 })
 
+#define mips_read_c0_select(reg,sel)				\
+	({ int __value;						\
+	asm volatile (						\
+	"mfc0	%0, $%1, %2"					\
+	: "=r" (__value) : "K" (reg), "K" (sel));		\
+	__value;						\
+})
+
 /*
  * Write C0 coprocessor register.
  */
 #define mips_write_c0_register(reg, value)			\
-do {								\
+	do {							\
 	asm volatile (						\
 	"mtc0	%z0, $%1 \n	nop \n	nop \n	nop"		\
 	: : "r" ((unsigned int) (value)), "K" (reg));		\
+	} while (0)
+
+#define mips_write_c0_select(reg, sel, value)			\
+do {								\
+	asm volatile (						\
+	"mtc0	%z0, $%1, %2 \n	nop \n	nop \n	nop"		\
+	: : "r" ((unsigned int) (value)), "K" (reg), "K" (sel));\
 } while (0)
 
 /*
