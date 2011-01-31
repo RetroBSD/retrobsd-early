@@ -128,7 +128,7 @@ procxmt()
 		i = (int)ipc.ip_addr;
 		p = (int*)&u + i/sizeof(int);
 		for (i=0; i<8; i++)
-			if (p == &u.u_ar0[regloc[i]])
+			if (p == &u.u_ar0[i])
 				goto ok;
 		if (p == &u.u_ar0[RPS]) {
 			ipc.ip_data |= PSL_USERSET;	/* user space */

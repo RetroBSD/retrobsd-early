@@ -87,8 +87,6 @@ int	boothowto;		/* reboot flags, from boot */
 int	selwait;
 size_t	physmem;		/* total amount of physical memory */
 
-extern const int regloc[];	/* offsets of saved user registers (trap.c) */
-
 void panic (char *msg);
 void printf (char *fmt, ...);
 void uprintf (char *fmt, ...);		/* print to the current user's terminal */

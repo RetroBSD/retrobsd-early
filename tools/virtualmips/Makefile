@@ -10,7 +10,6 @@ LIBS		+= -lrt                             # Linux
 endif
 ifneq ($(wildcard /opt/local/lib/libintl.a),)
 LIBS		+= -L/opt/local/lib -lintl          # Mac OS X
-LIBS		+= -L/usr/local/lib
 endif
 
 # Optimization.

@@ -12,43 +12,67 @@
 #include "proc.h"
 #include "vm.h"
 
-/*
- * Trap type values
- */
-#define	T_BUSFLT	000		/* bus error */
-#define	T_INSTRAP	001		/* illegal instruction */
-#define	T_BPTTRAP	002		/* bpt/trace trap */
-#define	T_IOTTRAP	003		/* iot trap */
-#define	T_POWRFAIL	004		/* power failure */
-#define	T_EMTTRAP	005		/* emt trap */
-#define	T_SYSCALL	006		/* system call */
-#define	T_PIRQ		007		/* program interrupt request */
-#define	T_ARITHTRAP	010		/* floating point trap */
-#define	T_SEGFLT	011		/* segmentation fault */
-#define	T_PARITYFLT	012		/* parity fault */
-#define	T_SWITCHTRAP	014		/* process switch */
-/*
- * T_RANDOMTRAP is used by autoconfig/do_config.c when it substitutes
- * the trap routine for the standard device interrupt routines when
- * probing a device in case the device probe routine causes an interrupt.
- * Ignored in trap.c
- */
-#define	T_RANDOMTRAP	016		/* random trap */
-#define	T_ZEROTRAP	017		/* trap to zero */
+static void
+dumpregs (frame)
+	int *frame;
+{
+	unsigned int cause;
+	const char *code = 0;
+
+	printf ("\n*** 0x%08x: exception ", frame [CONTEXT_PC]);
+
+	cause = mips_read_c0_register (C0_CAUSE);
+	switch (cause & CA_EXC_CODE) {
+	case CA_Int:	code = "Interrupt"; break;
+	case CA_AdEL:	code = "Address Load"; break;
+	case CA_AdES:	code = "Address Save"; break;
+	case CA_IBE:	code = "Bus fetch"; break;
+	case CA_DBE:	code = "Bus load/store"; break;
+	case CA_Sys:	code = "Syscall"; break;
+	case CA_Bp:	code = "Breakpoint"; break;
+	case CA_RI:	code = "Reserved Instruction"; break;
+	case CA_CPU:	code = "Coprocessor Unusable"; break;
+	case CA_Ov:	code = "Arithmetic Overflow"; break;
+	case CA_Tr:	code = "Trap"; break;
+	}
+	if (code)
+		printf ("'%s'\n", code);
+	else
+		printf ("%d\n", cause >> 2 & 31);
+
+	printf ("*** badvaddr = 0x%08x\n",
+		mips_read_c0_register (C0_BADVADDR));
+
+	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
+		frame [CONTEXT_R8], frame [CONTEXT_R16],
+		frame [CONTEXT_R24], frame [CONTEXT_LO]);
+	printf ("at = %8x   t1 = %8x   s1 = %8x   t9 = %8x   hi = %8x\n",
+		frame [CONTEXT_R1], frame [CONTEXT_R9], frame [CONTEXT_R17],
+		frame [CONTEXT_R25], frame [CONTEXT_HI]);
+	printf ("v0 = %8x   t2 = %8x   s2 = %8x               status = %8x\n",
+		frame [CONTEXT_R2], frame [CONTEXT_R10],
+		frame [CONTEXT_R18], frame [CONTEXT_STATUS]);
+	printf ("v1 = %8x   t3 = %8x   s3 = %8x                cause = %8x\n",
+		frame [CONTEXT_R3], frame [CONTEXT_R11],
+		frame [CONTEXT_R19], cause);
+	printf ("a0 = %8x   t4 = %8x   s4 = %8x   gp = %8x  epc = %8x\n",
+		frame [CONTEXT_R4], frame [CONTEXT_R12],
+		frame [CONTEXT_R20], frame [CONTEXT_GP], frame [CONTEXT_PC]);
+	printf ("a1 = %8x   t5 = %8x   s5 = %8x   sp = %8x\n",
+		frame [CONTEXT_R5], frame [CONTEXT_R13],
+		frame [CONTEXT_R21], frame [CONTEXT_SP]);
+	printf ("a2 = %8x   t6 = %8x   s6 = %8x   fp = %8x\n",
+		frame [CONTEXT_R6], frame [CONTEXT_R14],
+		frame [CONTEXT_R22], frame [CONTEXT_FP]);
+	printf ("a3 = %8x   t7 = %8x   s7 = %8x   ra = %8x\n",
+		frame [CONTEXT_R7], frame [CONTEXT_R15],
+		frame [CONTEXT_R23], frame [CONTEXT_RA]);
+}
 
 /*
- * User mode flag added to trap code passed to trap routines
- * if trap is from user space.
+ * User mode flag added to cause code if exception is from user space.
  */
 #define	USER		1
-
-/*
- * Offsets of the user's registers relative to
- * the saved r0.  See sys/reg.h.
- */
-const int regloc[] = {
-	R0, R1, R2, R3, R4, R5, R6, R7, RPS
-};
 
 /*
  * Called from startup.S when a processor exception occurs.
@@ -70,8 +94,8 @@ exception (frame)
 	/*
 	 * In order to stop the system from destroying
 	 * kernel data space any further, allow only one
-	 * fatal trap. After once_thru is set, any
-	 * futher traps will be handled by looping in place.
+	 * fatal exception. After once_thru is set, any
+	 * futher exceptions will be handled by looping in place.
 	 */
 	if (once_thru) {
 		(void) splhigh();
@@ -92,16 +116,14 @@ exception (frame)
 	switch (cause) {
 
 	/*
-	 * Trap not expected.  Usually a kernel mode bus error.
+	 * Exception not expected.  Usually a kernel mode bus error.
 	 */
 	default:
 		once_thru = 1;
 		i = splhigh();
-		printf ("STATUS %08x\n", ps);
-		printf ("EPC    %08x\n", frame [CONTEXT_PC]);
-		printf ("CAUSE  %08x\n", mips_read_c0_register (C0_CAUSE));
+		dumpregs (frame);
 		splx (i);
-		panic ("trap");
+		panic ("unexpected exception");
 		/*NOTREACHED*/
 
 	case CA_IBE + USER:			/* Bus error, instruction fetch */

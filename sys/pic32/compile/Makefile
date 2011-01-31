@@ -33,6 +33,7 @@ CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall
 SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
 OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
+OBJCOPY		= /usr/local/mipsel441/bin/mipsel-elf32-objcopy
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
@@ -79,6 +80,7 @@ machine:
 unix:		$(KERNOBJ) using-bootloader.ld
 		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o unix
 		$(OBJDUMP) -d -S $@ > $@.dis
+		$(OBJCOPY) -O binary $@ $@.bin
 
 vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c $(D)/*.[ch]
 		sh newvers.sh

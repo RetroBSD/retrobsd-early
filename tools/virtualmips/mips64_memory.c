@@ -47,7 +47,6 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
 
     switch (mask) {
     case MTS_ACC_U:
-
         if (op_type == MTS_READ)
             *data = 0;
         break;
@@ -71,7 +70,12 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
             vaddr = (vaddr >> 13) << 4;
             vaddr = vaddr & MIPS_CP0_CONTEXT_BADVPN2_MASK;
             cpu->cp0.reg[MIPS_CP0_CONTEXT] |= vaddr;
-
+#ifdef SIM_PIC32
+            if (op_type == MTS_READ)
+                exc_code = MIPS_CP0_CAUSE_ADDR_LOAD;
+            else
+                exc_code = MIPS_CP0_CAUSE_ADDR_SAVE;
+#else
             if (mask == MTS_ACC_M)
                 exc_code = MIPS_CP0_CAUSE_TLB_MOD;
             else if (mask == MTS_ACC_T) {
@@ -86,14 +90,11 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
                     exc_code = MIPS_CP0_CAUSE_ADDR_SAVE;
             } else
                 assert (0);
-
+#endif
             mips64_trigger_exception (cpu, exc_code, cpu->is_in_bdslot);
-
         }
-
         *exc = 1;
         break;
-
     }
 }
 
