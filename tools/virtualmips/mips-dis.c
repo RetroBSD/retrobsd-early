@@ -738,11 +738,11 @@ print_insn_args (const char *d,
     }
 }
 
-/* Print the mips instruction at address MEMADDR in debugged memory,
-   on using INFO.  Returns length of the instruction, in bytes, which is
-   always INSNLEN.  BIGENDIAN must be 1 if this is big-endian code, 0 if
-   this is little-endian code.  */
-
+/*
+ * Print the mips instruction at address MEMADDR in debugged memory.
+ * Returns length of the instruction, in bytes, which is
+ * always INSNLEN.
+ */
 int
 print_insn_mips (unsigned memaddr,
     unsigned long int word, FILE *stream)

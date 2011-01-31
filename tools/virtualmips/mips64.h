@@ -477,4 +477,7 @@ void mips64_clear_irq (cpu_mips_t * cpu, m_uint8_t irq);
 void set_timer_irq (cpu_mips_t *cpu);
 void clear_timer_irq (cpu_mips_t *cpu);
 
+/* Print the mips instruction at address MEMADDR in debugged memory. */
+int print_insn_mips (unsigned memaddr, unsigned long int word, FILE *stream);
+
 #endif

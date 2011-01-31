@@ -31,12 +31,13 @@
 
 //#ifdef  _USE_FDD_
 
-static struct mips64_op_desc mips_opcodes[];
-static struct mips64_op_desc mips_spec_opcodes[];
-static struct mips64_op_desc mips_bcond_opcodes[];
-static struct mips64_op_desc mips_cop0_opcodes[];
-static struct mips64_op_desc mips_mad_opcodes[];
-static struct mips64_op_desc mips_tlb_opcodes[];
+static const struct mips64_op_desc mips_opcodes[];
+static const struct mips64_op_desc mips_spec_opcodes[];
+static const struct mips64_op_desc mips_bcond_opcodes[];
+static const struct mips64_op_desc mips_cop0_opcodes[];
+static const struct mips64_op_desc mips_spec2_opcodes[];
+static const struct mips64_op_desc mips_spec3_opcodes[];
+static const struct mips64_op_desc mips_tlb_opcodes[];
 
 extern cpu_mips_t *current_cpu;
 
