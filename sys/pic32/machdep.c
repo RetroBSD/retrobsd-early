@@ -44,12 +44,14 @@ struct file	file [NFILE];
  */
 #ifdef	PERMANENTLY_INSECURE
 int	securelevel = -1;
+#else
+int	securelevel = 0;
 #endif
 
-struct mapent	_swapmap[SMAPSIZ];
+struct mapent	swapent[SMAPSIZ];
 struct map	swapmap[1] = {
-	{ _swapmap,
-	  &_swapmap[SMAPSIZ],
+	{ swapent,
+	  &swapent[SMAPSIZ],
 	  "swapmap" },
 };
 
@@ -127,14 +129,18 @@ startup()
 	unsigned *src = (unsigned*) &_etext;
 	unsigned *dest = &__data_start;
 	unsigned *limit = &_edata;
-	while (dest < limit)
+	while (dest < limit) {
+		/*printf ("copy %08x from (%08x) to (%08x)\n", *src, src, dest);*/
 		*dest++ = *src++;
+	}
 
 	/* Initialize .bss segment by zeroes. */
 	dest = &_edata;
 	limit = &_end;
-	while (dest < limit)
+	while (dest < limit) {
+		/*printf ("clear (%08x)\n", dest);*/
 		*dest++ = 0;
+	}
 }
 
 void

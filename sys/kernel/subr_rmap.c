@@ -94,12 +94,19 @@ mfree (mp, size, addr)
 	/* the address must not be 0, or the protocol has broken down. */
 	if (! addr)
 		panic ("mfree: addr = 0");
+	/*printf ("mfree (%s, %u, %u)\n", mp==swapmap ? "swapmap" : "??", size, addr);*/
 
 	/*
 	 * locate the piece of the map which starts after the
 	 * returned space (or the end of the map).
 	 */
-	for (bp = mp->m_map; bp->m_size && bp->m_addr <= addr; ++bp);
+	bp = mp->m_map;
+	/*printf ("m_map = %08x\n", bp);*/
+
+	while (bp->m_size && bp->m_addr <= addr) {
+		/*printf ("skip m_map[%d]: m_addr %u <= addr %u\n", bp - mp->m_map, bp->m_addr, addr);*/
+		++bp;
+	}
 
 	/* if there is a piece on the left abutting us, combine with it. */
 	ep = bp - 1;

@@ -1546,7 +1546,7 @@ static int mfmc0_op (cpu_mips_t * cpu, mips_insn_t insn)
         cpu->cp0.reg [MIPS_CP0_STATUS] |= MIPS_CP0_STATUS_IE;
     } else {
         /* di - disable interrupts */
-        cpu->cp0.reg [MIPS_CP0_STATUS] &= MIPS_CP0_STATUS_IE;
+        cpu->cp0.reg [MIPS_CP0_STATUS] &= ~MIPS_CP0_STATUS_IE;
     }
     return 0;
 }
@@ -1641,6 +1641,10 @@ static int tnei_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int wait_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
+    if (! (cpu->cp0.reg [MIPS_CP0_STATUS] & MIPS_CP0_STATUS_IE)) {
+        /* Wait instruction with interrupts disabled - stop the simulator. */
+        kill (0, SIGQUIT);
+    }
     usleep (1000);
     return (0);
 }

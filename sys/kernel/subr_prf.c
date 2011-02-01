@@ -35,18 +35,6 @@ putchar (c, flags, tp)
 	int c, flags;
 	register struct tty *tp;
 {
-#if 1
-	/* Wait for transmitter shift register empty. */
-	while (! (U1STA & PIC32_USTA_TRMT))
-		continue;
-
-	/* Send byte. */
-	U1TXREG = c;
-
-	/* Wait for transmitter shift register empty. */
-	while (! (U1STA & PIC32_USTA_TRMT))
-		continue;
-#else
 	if (flags & TOTTY) {
 		register int s = spltty();
 
@@ -65,7 +53,6 @@ putchar (c, flags, tp)
 	}
 	if ((flags & TOCONS) && c != '\0')
 		cnputc(c);
-#endif
 }
 
 static unsigned

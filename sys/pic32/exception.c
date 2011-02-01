@@ -100,7 +100,7 @@ exception (frame)
 	if (once_thru) {
 		(void) splhigh();
 		for (;;)
-			continue;
+			asm volatile ("wait");
 	}
 
 	unsigned cause = mips_read_c0_register (C0_CAUSE);

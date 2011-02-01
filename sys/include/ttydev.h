@@ -18,28 +18,21 @@
 #define B0	0
 #define B50	1
 #define B75	2
-#define B110	3
-#define B134	4
-#define B150	5
-#define B200	6
-#define B300	7
-#define B600	8
-#define B1200	9
-#define	B1800	10
-#define B2400	11
-#define B4800	12
-#define B9600	13
-#define EXTA	14
-#define EXTB	15
+#define B150	3
+#define B200	4
+#define B300	5
+#define B600	6
+#define B1200	7
+#define	B1800	8
+#define B2400	9
+#define B4800	10
+#define B9600	11
+#define B19200	12
+#define B38400	13
+#define B57600	14
+#define B115200	15
 
 #ifdef KERNEL
-/*
- * Hardware bits.
- * SHOULD NOT BE HERE.
- */
-#define	DONE	0200
-#define	IENABLE	0100
-
 /*
  * Modem control commands.
  */

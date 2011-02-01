@@ -23,10 +23,6 @@
 #include "disklabel.h"
 #include "stat.h"
 
-int	netoff = 1;
-int	cmask = CMASK;
-int	securelevel;
-
 /*
  * Initialize hash links for buffers.
  */
@@ -108,7 +104,7 @@ main()
 	int (*ioctl) (dev_t, u_int, caddr_t, int);
 
 	startup();
-	printf ("\n%s\n", version);
+	printf ("\n%s", version);
 
 	/*
 	 * set up system process 0 (swapper)
@@ -121,7 +117,7 @@ main()
 
 	u.u_procp = p;			/* init user structure */
 	u.u_ap = u.u_arg;
-	u.u_cmask = cmask;
+	u.u_cmask = CMASK;
 	u.u_lastfile = -1;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
@@ -149,9 +145,6 @@ main()
 	 * Now we find out how much swap space is available.
 	 * We toss away/ignore 1 sector of swap space (because a 0 value
 	 * can not be placed in a resource map).
-	 *
-	 * 'swplo' was a hack which has _finally_ gone away!  It was never anything
-	 * but 0 and caused a number of double word adds in the kernel.
 	 */
 	(*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK);
 	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
@@ -201,11 +194,8 @@ main()
 	 * safe) assumption is made that no 'free' calls are made so that the
 	 * size in the first entry of the core map is correct.
 	 */
-	printf ("\nphys mem  = %u\n", physmem);
+	printf ("phys mem  = %u\n", physmem);
 	printf ("user mem  = %u\n", MAXMEM);
-#if NRAM > 0
-	printf ("ram disk  = %u\n", ramsize);
-#endif
 	printf ("\n");
 
 	/*
@@ -222,7 +212,6 @@ main()
 		 */
 		return 0;
 	}
-
 	sched();
 	return 0;
 }
