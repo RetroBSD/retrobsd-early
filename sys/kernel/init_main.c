@@ -105,9 +105,12 @@ main()
 
 	startup();
 	printf ("\n%s", version);
+	printf ("phys mem  = %u\n", physmem);
+	printf ("user mem  = %u\n", MAXMEM);
+	printf ("\n");
 
 	/*
-	 * set up system process 0 (swapper)
+	 * Set up system process 0 (swapper).
 	 */
 	p = &proc[0];
 	p->p_addr = (memaddr) &u;
@@ -159,7 +162,7 @@ main()
 	 * a swap partition (so that we do not swap on top of a filesystem by mistake).
 	 */
 	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
-	if (ioctl && ! (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD)) {
+	if (ioctl && (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD) == 0) {
 		if (dpart.part->p_fstype != FS_SWAP)
 			panic ("swtyp");
 	}
@@ -185,18 +188,6 @@ main()
 	u.u_cdir = iget (rootdev, &mount[0].m_filsys, (ino_t) ROOTINO);
 	iunlock (u.u_cdir);
 	u.u_rdir = NULL;
-
-	/*
-	 * This came from pdp/machdep2.c because the memory available statements
-	 * were being made _before_ memory for the networking code was allocated.
-	 * A side effect of moving this code is that network "attach" and MSCP
-	 * "online" messages can appear before the memory sizes.  The (currently
-	 * safe) assumption is made that no 'free' calls are made so that the
-	 * size in the first entry of the core map is correct.
-	 */
-	printf ("phys mem  = %u\n", physmem);
-	printf ("user mem  = %u\n", MAXMEM);
-	printf ("\n");
 
 	/*
 	 * Make init process.

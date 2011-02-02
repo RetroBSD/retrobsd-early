@@ -54,16 +54,17 @@ noroot (csr)
 	/* Empty. */
 }
 
-#if NRK > 0
+#if NSD > 0
 #else
-#define	rkopen		noopen
-#define	rkstrategy	nostrategy
-#define	rksize		NULL
+#define	sdopen		noopen
+#define	sdstrategy	nostrategy
+#define	sdsize		NULL
 #endif
 
 const struct bdevsw	bdevsw[] = {
-	{ rkopen,	nulldev,	rkstrategy,	/* rk = 0 */
-	  noroot,	rksize,		0 },
+{ /* sd = 0 */
+	sdopen,		nulldev,	sdstrategy,
+	noroot,		sdsize,		0 },
 };
 const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
@@ -76,19 +77,19 @@ const struct cdevsw	cdevsw[] = {
 	nulldev,	nulldev,	mmrw,		mmrw,
 	noioctl,	nulldev,	0,		seltrue,
 	nostrategy,	},
-{ /* tty = 3 */
+{ /* tty = 2 */
 	syopen,		nulldev,	syread,		sywrite,
 	syioctl,	nulldev,	0,		syselect,
 	nostrategy,	},
-{ /* rk = 4 */
-	rkopen,		nulldev,	rawrw,		rawrw,
+{ /* sd = 3 */
+	sdopen,		nulldev,	rawrw,		rawrw,
 	noioctl,	nulldev,	0,		seltrue,
-	rkstrategy,	},
-{ /* log = 5 */
+	sdstrategy,	},
+{ /* log = 4 */
 	logopen,	logclose,	logread,	norw,
 	logioctl,	nulldev,	0,		logselect,
 	nostrategy,	},
-{ /* fd = 6 */
+{ /* fd = 5 */
 	fdopen,		nulldev,	norw,		norw,
 	noioctl,	nulldev,	0,		seltrue,
 	nostrategy,	},
@@ -120,13 +121,12 @@ isdisk(dev, type)
 	dev_t dev;
 	register int type;
 {
-
 	switch (major(dev)) {
-	case 0:			/* rk */
+	case 0:			/* sd */
 		if (type == IFBLK)
 			return (1);
 		return (0);
-	case 4:			/* rrk */
+	case 3:			/* rsd */
 		if (type == IFCHR)
 			return (1);
 		/* fall through */
@@ -142,8 +142,8 @@ static const char chrtoblktbl[MAXDEV] =  {
 	/* 0 */		NODEV,
 	/* 1 */		NODEV,
 	/* 2 */		NODEV,
-	/* 3 */		NODEV,
-	/* 4 */		0,		/* rk */
+	/* 3 */		0,		/* sd */
+	/* 4 */		NODEV,
 	/* 5 */		NODEV,
 	/* 6 */		NODEV,
 };

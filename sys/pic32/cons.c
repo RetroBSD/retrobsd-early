@@ -43,17 +43,6 @@ struct tty cnttys [NKL];
 
 void cnstart (struct tty *tp);
 
-int
-cnattach (addr, unit)
-	volatile unsigned *addr;
-{
-	if ((u_int)unit <= NKL) {
-		cnttys[unit].t_addr = (caddr_t) addr;
-		return (1);
-	}
-	return (0);
-}
-
 /*ARGSUSED*/
 int
 cnopen (dev, flag, mode)

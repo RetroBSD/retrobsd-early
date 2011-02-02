@@ -223,9 +223,9 @@ void	vfork (void);		/* awaiting fork w/ copy on write */
 struct buf;
 struct uio;
 
-int rkopen (dev_t dev, int flag, int mode);
-void rkstrategy (struct buf *bp);
-daddr_t rksize (dev_t dev);
+int sdopen (dev_t dev, int flag, int mode);
+void sdstrategy (struct buf *bp);
+daddr_t sdsize (dev_t dev);
 
 int cnopen (dev_t dev, int flag, int mode);
 int cnclose (dev_t dev, int flag, int mode);

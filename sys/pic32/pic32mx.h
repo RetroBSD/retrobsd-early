@@ -627,6 +627,68 @@
 #define PIC32_U1EP_LSPD		0x0080 /*  */
 
 /*--------------------------------------
+ * SPI registers.
+ */
+#define SPI1CON		PIC32_R (0x5800) /* Control */
+#define SPI1CONCLR	PIC32_R (0x5804)
+#define SPI1CONSET	PIC32_R (0x5808)
+#define SPI1CONINV	PIC32_R (0x580C)
+#define SPI1STAT	PIC32_R (0x5810) /* Status */
+#define SPI1STATCLR	PIC32_R (0x5814)
+#define SPI1STATSET	PIC32_R (0x5818)
+#define SPI1STATINV	PIC32_R (0x581C)
+#define SPI1BUF		PIC32_R (0x5820) /* Transmit and receive buffer */
+#define SPI1BRG		PIC32_R (0x5830) /* Baud rate generator */
+#define SPI1BRGCLR	PIC32_R (0x5834)
+#define SPI1BRGSET	PIC32_R (0x5838)
+#define SPI1BRGINV	PIC32_R (0x583C)
+
+#define SPI2CON		PIC32_R (0x5A00) /* Control */
+#define SPI2CONCLR	PIC32_R (0x5A04)
+#define SPI2CONSET	PIC32_R (0x5A08)
+#define SPI2CONINV	PIC32_R (0x5A0C)
+#define SPI2STAT	PIC32_R (0x5A10) /* Status */
+#define SPI2STATCLR	PIC32_R (0x5A14)
+#define SPI2STATSET	PIC32_R (0x5A18)
+#define SPI2STATINV	PIC32_R (0x5A1C)
+#define SPI2BUF		PIC32_R (0x5A20) /* Transmit and receive buffer */
+#define SPI2BRG		PIC32_R (0x5A30) /* Baud rate generator */
+#define SPI2BRGCLR	PIC32_R (0x5A34)
+#define SPI2BRGSET	PIC32_R (0x5A38)
+#define SPI2BRGINV	PIC32_R (0x5A3C)
+
+/*
+ * SPI Control register.
+ */
+#define PIC32_SPICON_MSTEN	0x00000020	/* Master mode */
+#define PIC32_SPICON_CKP	0x00000040      /* Idle clock is high level */
+#define PIC32_SPICON_SSEN	0x00000080      /* Slave mode: SSx pin enable */
+#define PIC32_SPICON_CKE	0x00000100      /* Output data changes on
+						 * transition from active clock
+						 * state to Idle clock state */
+#define PIC32_SPICON_SMP	0x00000200      /* Master mode: input data sampled
+						 * at end of data output time. */
+#define PIC32_SPICON_MODE16	0x00000400      /* 16-bit data width */
+#define PIC32_SPICON_MODE32	0x00000800      /* 32-bit data width */
+#define PIC32_SPICON_DISSDO	0x00001000      /* SDOx pin is not used */
+#define PIC32_SPICON_SIDL	0x00002000      /* Stop in Idle mode */
+#define PIC32_SPICON_FRZ	0x00004000      /* Freeze in Debug mode */
+#define PIC32_SPICON_ON		0x00008000      /* SPI Peripheral is enabled */
+#define PIC32_SPICON_SPIFE	0x00020000      /* Frame synchronization pulse
+						 * coincides with the first bit clock */
+#define PIC32_SPICON_FRMPOL	0x20000000      /* Frame pulse is active-high */
+#define PIC32_SPICON_FRMSYNC	0x40000000      /* Frame sync pulse input (Slave mode) */
+#define PIC32_SPICON_FRMEN	0x80000000      /* Framed SPI support */
+
+/*
+ * SPI Status register.
+ */
+#define PIC32_SPISTAT_SPIRBF	0x00000001      /* Receive buffer is full */
+#define PIC32_SPISTAT_SPITBE	0x00000008      /* Transmit buffer is empty */
+#define PIC32_SPISTAT_SPIROV	0x00000040      /* Receive overflow flag */
+#define PIC32_SPISTAT_SPIBUSY	0x00000800      /* SPI is busy */
+
+/*--------------------------------------
  * Interrupt controller registers.
  */
 #define INTCON		PIC32_R (0x81000)	/* Interrupt Control */

@@ -20,11 +20,8 @@ vpath %.S $(M):$(S):$(D)
 # Kernel options.
 DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
 
-# kl console driver
+# Console driver
 DEFS		+= -DNKL=1
-
-# rk disk driver
-DEFS            += -DNRK=2
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -56,7 +53,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= rk.o
+KERNOBJ		+= sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
