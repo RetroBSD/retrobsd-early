@@ -13,15 +13,13 @@
 struct sdcard {
     char *name;                         /* Device name */
     unsigned kbytes;                    /* Disk size */
+    int unit;                           /* Index (sd0 or sd1) */
     int fd;                             /* Image file */
-
-    unsigned char wbuf [1024];
-    unsigned read_offset;
-    unsigned write_offset;
-    unsigned addr_offset;
-
-    /* for read */
-    unsigned char *data_port_ipr;
+    int select;                         /* Selected */
+    unsigned blen;                      /* Block length */
+    unsigned count;                     /* Byte count */
+    unsigned limit;                     /* Reply length */
+    unsigned char buf [2 + 1024 + 2];
 };
 typedef struct sdcard sdcard_t;
 
@@ -30,7 +28,6 @@ void dev_sdcard_reset (cpu_mips_t *cpu);
 int dev_sdcard_detect (cpu_mips_t *cpu, int unit);
 int dev_sdcard_writable (cpu_mips_t *cpu, int unit);
 void dev_sdcard_select (cpu_mips_t *cpu, int unit, int on);
-unsigned dev_sdcard_read (cpu_mips_t *cpu);
-void dev_sdcard_write (cpu_mips_t *cpu, unsigned data);
+unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data);
 
 #endif

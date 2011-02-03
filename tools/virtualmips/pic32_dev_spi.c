@@ -113,8 +113,6 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
         if (op_type == MTS_READ) {
-            if (dev->phys_addr == PIC32_SPI2CON)
-                d->buf = dev_sdcard_read (cpu);
             *data = d->buf;
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat &= ~PIC32_SPISTAT_SPIRBF;
@@ -123,7 +121,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         } else {
             d->buf = *data;
             if (dev->phys_addr == PIC32_SPI2CON)
-                dev_sdcard_write (cpu, d->buf);
+                d->buf = dev_sdcard_io (cpu, d->buf);
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;
                 //d->vm->set_irq (d->vm, d->irq + IRQ_FAULT);

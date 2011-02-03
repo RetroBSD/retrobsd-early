@@ -105,8 +105,8 @@ main()
 
 	startup();
 	printf ("\n%s", version);
-	printf ("phys mem = %u kbytes\n", physmem / 1024);
-	printf ("user mem = %u kbytes\n", MAXMEM / 1024);
+	printf ("phys mem  = %u kbytes\n", physmem / 1024);
+	printf ("user mem  = %u kbytes\n", MAXMEM / 1024);
 
 	/*
 	 * Set up system process 0 (swapper).
@@ -148,7 +148,7 @@ main()
 	 * We toss away/ignore 1 sector of swap space (because a 0 value
 	 * can not be placed in a resource map).
 	 */
-	printf ("swap dev = (%d,%d)\n", major(swapdev), minor(swapdev));
+	printf ("swap dev  = (%d,%d)\n", major(swapdev), minor(swapdev));
 	if ((*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK) != 0)
 		panic ("cannot open swapdev");
 	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
@@ -172,22 +172,18 @@ main()
 	mfree (swapmap, --nswap, 1);
 
 	/* Mount a root filesystem. */
-	printf ("root dev = (%d,%d)\n", major(rootdev), minor(rootdev));
+	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
 	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
 			(struct inode*) 0);
-printf ("2\n");
 	if (! fs)
 		panic ("no root filesystem");
 	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
-printf ("3\n");
 	mount_updname (fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
 	boottime = time;
-printf ("4\n");
 
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu (0);
-printf ("5\n");
 
 	/* Set up the root file system. */
 	rootdir = iget (rootdev, &mount[0].m_filsys, (ino_t) ROOTINO);

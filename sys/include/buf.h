@@ -158,11 +158,6 @@ void binval (dev_t dev);
  */
 int geterror (struct buf *bp);
 
-/*
- * Print hard error preface message.
- */
-void harderr (struct buf *bp, char *devname);
-
 #endif /* KERNEL */
 
 /*

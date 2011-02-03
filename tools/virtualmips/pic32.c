@@ -155,6 +155,7 @@ static int pic32_init_platform (pic32_t *pic32)
     if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
             pic32->sdcard1_file_name) < 0)
         return (-1);
+    pic32->sdcard[1].unit = 1;
     return (0);
 }
 

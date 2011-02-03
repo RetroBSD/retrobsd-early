@@ -31,7 +31,7 @@
 #include "map.h"
 
 /*
- * Two SD/MMC disks on SPI2, 250 kbit/sec.
+ * Two SD/MMC disks on SPI2.
  * Signals:
  *	G6 - SCK2
  *	G7 - SDI2
@@ -240,7 +240,7 @@ card_init (unit)
 
 	/* Send repeatedly SEND_OP until Idle terminates. */
 	for (i=0; ; i++) {
-		if (i >= 10000) {
+		if (i >= 3 /*10000*/) {
 			/* Init timed out. */
 			return 0;
 		}
@@ -398,10 +398,11 @@ card_write (unit, bno, data)
 
 	/* Send dummy CRC. */
 	spi_io (0xFF);
+	spi_io (0xFF);
 
 	/* Check if data accepted. */
 	reply = spi_io (0xFF);
-	if ((reply & 0x0f) != 0x05) {
+	if ((reply & 0x1f) != 0x05) {
 		/* Data rejected. */
 		spi_select (unit, 0);
 		return 0;
@@ -477,7 +478,7 @@ sdsize (dev)
 		/* Cannot get disk size. */
 		return 0;
 	}
-printf ("sd%d: %u kbytes\n", unit, nbytes / 1024);
+	//printf ("sd%d: %u kbytes\n", unit, nbytes / 1024);
 	return nbytes / DEV_BSIZE;
 }
 
@@ -499,7 +500,7 @@ bad:		bp->b_flags |= B_ERROR;
 		bp->b_error = EINVAL;
 		goto bad;
 	}
-printf ("sd%d: read block %d, length %d bytes\n", unit, bp->b_blkno, bp->b_addr);
+	//printf ("sd%d: read block %u, length %u bytes\n", unit, bp->b_blkno, bp->b_bcount);
 	s = splbio();
 	for (retry=0; retry<3; retry++) {
 		if (bp->b_flags & B_READ) {
@@ -507,14 +508,14 @@ printf ("sd%d: read block %d, length %d bytes\n", unit, bp->b_blkno, bp->b_addr)
 				bp->b_resid = bp->b_bcount - DEV_BSIZE;
 				goto done;
 			}
+			printf("sd%d: hard error, reading block %u\n", unit, bp->b_blkno);
 		} else {
 			if (card_write (unit, bp->b_blkno, bp->b_addr)) {
 				bp->b_resid = bp->b_bcount - DEV_BSIZE;
 				goto done;
 			}
+			printf("sd%d: hard error, writing block %u\n", unit, bp->b_blkno);
 		}
-		harderr (bp, "sd");
-		//log (LOG_NOTICE, "er=%b ds=%b\n", reg->sder, SDER_BITS, reg->sdds, SD_BITS);
 	}
 	bp->b_flags |= B_ERROR;
 done:

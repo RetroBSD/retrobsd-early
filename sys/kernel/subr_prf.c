@@ -531,16 +531,3 @@ tablefull (tab)
 {
 	log(LOG_ERR, "%s: table full\n", tab);
 }
-
-/*
- * Hard error is the preface to plaintive error messages
- * about failing disk tranfers.
- */
-void
-harderr (bp, cp)
-	struct buf *bp;
-	char *cp;
-{
-	printf("%s%d%c: hard error sn%D ", cp,
-		minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev) & 07), bp->b_blkno);
-}
