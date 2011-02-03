@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
 #include "systm.h"
 #include "user.h"
 #include "proc.h"
@@ -130,9 +128,10 @@ procxmt()
 		for (i=0; i<8; i++)
 			if (p == &u.u_ar0[i])
 				goto ok;
-		if (p == &u.u_ar0[RPS]) {
-			ipc.ip_data |= PSL_USERSET;	/* user space */
-			ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
+		if (p == &u.u_ar0 [CONTEXT_STATUS]) {
+			// TODO
+			//ipc.ip_data |= PSL_USERSET;	/* user space */
+			//ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
 			goto ok;
 		}
 		goto error;
@@ -143,11 +142,12 @@ ok:
 	/* set signal and continue */
 	/*  one version causes a trace-trap */
 	case PT_STEP:
-		u.u_ar0[RPS] |= PSL_T;
+		// TODO
+		//u.u_ar0 [CONTEXT_STATUS] |= PSL_T;
 		/* FALL THROUGH TO ... */
 	case PT_CONTINUE:
 		if ((int)ipc.ip_addr != 1)
-			u.u_ar0[PC] = (int)ipc.ip_addr;
+			u.u_ar0 [CONTEXT_PC] = (int)ipc.ip_addr;
 		if (ipc.ip_data > NSIG)
 			goto error;
 		u.u_procp->p_ptracesig = ipc.ip_data;

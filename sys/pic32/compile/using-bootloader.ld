@@ -8,15 +8,15 @@ ENTRY(_reset_vector_)
 MEMORY
 {
   flash  (rx)   : ORIGIN = 0x9d005000,	LENGTH = 492K
-  ram    (rw!x) : ORIGIN = 0x80000000,	LENGTH = 32K
-  uarea  (rw!x) : ORIGIN = 0x80008000,	LENGTH = 3K
-  u0area (rw!x) : ORIGIN = 0x80008c00,	LENGTH = 3K
+  ram    (rw!x) : ORIGIN = 0x80000000,	LENGTH = 26K
+  u0area (rw!x) : ORIGIN = 0x80006800,	LENGTH = 3K
+  uarea  (rw!x) : ORIGIN = 0x80007400,	LENGTH = 3K
 }
 
 /* higher address of the user mode stack */
+u0	= ORIGIN(u0area);
 u	= ORIGIN(uarea);
 u_end	= ORIGIN(uarea) + LENGTH(uarea);
-u0	= ORIGIN(u0area);
 
 SECTIONS
 {

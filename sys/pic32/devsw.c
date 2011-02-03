@@ -54,13 +54,6 @@ noroot (csr)
 	/* Empty. */
 }
 
-#if NSD > 0
-#else
-#define	sdopen		noopen
-#define	sdstrategy	nostrategy
-#define	sdsize		NULL
-#endif
-
 const struct bdevsw	bdevsw[] = {
 { /* sd = 0 */
 	sdopen,		nulldev,	sdstrategy,

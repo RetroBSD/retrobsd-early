@@ -4,7 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/reg.h"
 #include "systm.h"
 #include "map.h"
 #include "user.h"

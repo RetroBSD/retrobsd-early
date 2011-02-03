@@ -4,7 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/reg.h"
 #include "systm.h"
 #include "map.h"
 #include "user.h"
@@ -434,7 +433,7 @@ badarg:
 	 */
 	ucp = -nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
-	u.u_ar0[R6] = ap;
+	u.u_ar0 [CONTEXT_SP] = ap;
 	*(int*) ap = na - ne;
 	nc = 0;
 	cc = 0;
@@ -489,7 +488,7 @@ badarg:
 	/*
 	 * Clear registers.
 	 */
-	u.u_ar0[PC] = exdata.ex_exec.a_entry & ~01;
+	u.u_ar0 [CONTEXT_PC] = exdata.ex_exec.a_entry & ~01;
 
 	/*
 	 * Remember file name for accounting.

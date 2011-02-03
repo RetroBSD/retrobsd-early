@@ -5,9 +5,6 @@
  */
 #include "param.h"
 #include "systm.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
-
 #include "signalvar.h"
 #include "user.h"
 #include "proc.h"
@@ -60,7 +57,7 @@ sendsig (p, sig, mask)
 		n = u.u_sigstk.ss_base + u.u_sigstk.ss_size - sizeof (sf);
 		u.u_sigstk.ss_flags |= SA_ONSTACK;
 	} else
-		n = (caddr_t)regs[R6] - sizeof (sf);
+		n = (caddr_t) regs [CONTEXT_SP] - sizeof (sf);
 
 	if (! (u.u_sigstk.ss_flags & SA_ONSTACK) &&
 	    n < (caddr_t) -u.u_ssize && ! grow ((unsigned ) n)) {
@@ -89,17 +86,18 @@ sendsig (p, sig, mask)
 	 */
 	scp->sc_onstack = oonstack;
 	scp->sc_mask = mask;
-	scp->sc_sp = regs[R6];
-	scp->sc_fp = regs[R5];
-	scp->sc_r1 = regs[R1];
-	scp->sc_r0 = regs[R0];
-	scp->sc_pc = regs[R7];
-	scp->sc_ps = regs[RPS];
-	copyout((caddr_t)sfp, n, sizeof(*sfp));
-	regs[R0] = (int)p;
-	regs[R6] = (int)n;
-	regs[R7] = (int)u.u_sigtramp;
-	regs[RPS] &= ~PSL_T;
+	scp->sc_sp = regs [CONTEXT_SP];
+	scp->sc_fp = regs [CONTEXT_FP];
+	scp->sc_r1 = regs [CONTEXT_R3];
+	scp->sc_r0 = regs [CONTEXT_R2];
+	scp->sc_pc = regs [CONTEXT_PC];
+	scp->sc_ps = regs [CONTEXT_STATUS];
+
+	copyout ((caddr_t) sfp, n, sizeof (*sfp));
+
+	regs [CONTEXT_R2] = (int) p;
+	regs [CONTEXT_SP] = (int) n;
+	regs [CONTEXT_PC] = (int) u.u_sigtramp;
 }
 
 /*
@@ -122,10 +120,10 @@ sigreturn()
 	register struct sigcontext *scp = &sc;
 	register int *regs = u.u_ar0;
 
-	u.u_error = copyin((caddr_t)((struct a *)u.u_ap)->scp, (caddr_t)scp, sizeof(*scp));
+	u.u_error = copyin ((caddr_t) ((struct a*)u.u_ap)->scp, (caddr_t) scp, sizeof (*scp));
 	if (u.u_error)
 		return;
-	if ((scp->sc_ps & PSL_USERCLR) != 0 || !USERMODE(scp->sc_ps)) {
+	if (! USERMODE (scp->sc_ps)) {
 		u.u_error = EINVAL;
 		return;
 	}
@@ -135,10 +133,11 @@ sigreturn()
 	else
 		u.u_sigstk.ss_flags &= ~SA_ONSTACK;
 	u.u_procp->p_sigmask = scp->sc_mask & ~sigcantmask;
-	regs[R6] = scp->sc_sp;
-	regs[R5] = scp->sc_fp;
-	regs[R1] = scp->sc_r1;
-	regs[R0] = scp->sc_r0;
-	regs[R7] = scp->sc_pc;
-	regs[RPS] = scp->sc_ps;
+
+	regs [CONTEXT_SP] = scp->sc_sp;
+	regs [CONTEXT_FP] = scp->sc_fp;
+	regs [CONTEXT_R3] = scp->sc_r1;		/* $v1 */
+	regs [CONTEXT_R2] = scp->sc_r0;		/* $v0 */
+	regs [CONTEXT_PC] = scp->sc_pc;
+	regs [CONTEXT_STATUS] = scp->sc_ps;
 }

@@ -4,8 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "param.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
 #include "signalvar.h"
 #include "systm.h"
 #include "user.h"
