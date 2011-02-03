@@ -76,5 +76,8 @@ int dev_pic32_flash_init (vm_instance_t *vm, char *name,
 int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq, struct virtual_tty *vtty);
 int dev_pic32_intcon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
+    unsigned irq);
+int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr);
 
 #endif

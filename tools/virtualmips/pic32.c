@@ -141,11 +141,14 @@ static int pic32_init_platform (pic32_t * pic32)
         return (-1);
     if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
         return (-1);
-#if 0
-    if (dev_pic32_gpio_init (vm, "JZ4740 GPIO", JZ4740_GPIO_BASE,
-            JZ4740_GPIO_SIZE) == -1)
+    if (dev_pic32_spi_init (vm, "PIC32 SPI1", PIC32_SPI1CON,
+            PIC32_IRQ_SPI1E) == -1)
         return (-1);
-#endif
+    if (dev_pic32_spi_init (vm, "PIC32 SPI2", PIC32_SPI2CON,
+            PIC32_IRQ_SPI2E) == -1)
+        return (-1);
+    if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
+        return (-1);
     return (0);
 }
 

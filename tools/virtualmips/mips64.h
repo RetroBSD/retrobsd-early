@@ -198,11 +198,18 @@
 /* MIPS "jr ra" instruction */
 #define MIPS_INSN_JR_RA        0x03e00008
 
+#ifdef SIM_PIC32
+#define MIPS_MIN_PAGE_SHIFT    8
+#define MIPS_MIN_PAGE_SIZE     (1 << MIPS_MIN_PAGE_SHIFT)
+#define MIPS_MIN_PAGE_IMASK    (MIPS_MIN_PAGE_SIZE - 1)
+#define MIPS_MIN_PAGE_MASK     0xffffffffffffff00ULL
+#else
 /* Minimum page size: 4 Kb */
 #define MIPS_MIN_PAGE_SHIFT    12
 #define MIPS_MIN_PAGE_SIZE     (1 << MIPS_MIN_PAGE_SHIFT)
 #define MIPS_MIN_PAGE_IMASK    (MIPS_MIN_PAGE_SIZE - 1)
 #define MIPS_MIN_PAGE_MASK     0xfffffffffffff000ULL
+#endif
 
 /* Addressing mode: Kernel, Supervisor and User */
 #define MIPS_MODE_KERNEL  00

@@ -43,7 +43,7 @@
  *	E6 - CD1
  *	E7 - WE1
  */
-#define SDADDR		(struct sdreg*) &SPI1CON
+#define SDADDR		(struct sdreg*) &SPI2CON
 #define NSD		2
 #define	SLOW		250
 #define	FAST		20000
@@ -449,10 +449,12 @@ sdopen (dev, flag, mode)
 
 	if (! card_detect (unit)) {
 		/* No card present. */
+printf ("sd%d: no SD/MMC card present\n", unit);
 		return ENODEV;
 	}
 	if (! card_init (unit)) {
 		/* Initialization failed. */
+printf ("sd%d: init failed\n", unit);
 		return ENODEV;
 	}
 
@@ -475,7 +477,7 @@ sdsize (dev)
 		/* Cannot get disk size. */
 		return 0;
 	}
-	printf ("sd%d: %u kbytes\n", nbytes / 1024);
+printf ("sd%d: %u kbytes\n", unit, nbytes / 1024);
 	return nbytes / DEV_BSIZE;
 }
 

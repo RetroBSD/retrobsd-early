@@ -105,8 +105,8 @@ main()
 
 	startup();
 	printf ("\n%s", version);
-	printf ("phys mem  = %u kbytes\n", physmem / 1024);
-	printf ("user mem  = %u kbytes\n", MAXMEM / 1024);
+	printf ("phys mem = %u kbytes\n", physmem / 1024);
+	printf ("user mem = %u kbytes\n", MAXMEM / 1024);
 
 	/*
 	 * Set up system process 0 (swapper).
@@ -148,12 +148,13 @@ main()
 	 * We toss away/ignore 1 sector of swap space (because a 0 value
 	 * can not be placed in a resource map).
 	 */
+	printf ("swap dev = (%d,%d)\n", major(swapdev), minor(swapdev));
 	if ((*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK) != 0)
-		panic ("open swapdev");
+		panic ("cannot open swapdev");
 	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
 	printf ("swap size = %u kbytes\n", swsize * DEV_BSIZE / 1024);
 	if (swsize <= 0)
-		panic ("swsize");	/* don't want to panic, but what ? */
+		panic ("zero swap size");	/* don't want to panic, but what ? */
 
 	/*
 	 * Next we make sure that we do not swap on a partition unless it is of
@@ -165,18 +166,18 @@ main()
 	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
 	if (ioctl && (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD) == 0) {
 		if (dpart.part->p_fstype != FS_SWAP)
-			panic ("swtyp");
+			panic ("invalid swap partition");
 	}
 	nswap = swsize;
 	mfree (swapmap, --nswap, 1);
 
 	/* Mount a root filesystem. */
-printf ("1\n");
+	printf ("root dev = (%d,%d)\n", major(rootdev), minor(rootdev));
 	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
 			(struct inode*) 0);
 printf ("2\n");
 	if (! fs)
-		panic ("iinit");
+		panic ("no root filesystem");
 	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
 printf ("3\n");
 	mount_updname (fs, "/", "root", 1, 4);

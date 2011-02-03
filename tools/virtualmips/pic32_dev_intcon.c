@@ -132,7 +132,7 @@ void *dev_pic32_intcon_access (cpu_mips_t *cpu, struct vdevice *dev,
         break;
 
     default:
-        ASSERT (0, "reading unknown uart offset %x\n", offset);
+        ASSERT (0, "unknown intcon offset %x\n", offset);
     }
     *has_set_value = TRUE;
     return NULL;

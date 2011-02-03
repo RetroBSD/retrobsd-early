@@ -1,15 +1,11 @@
 /*
  * Cisco router simulation platform.
  * Copyright (c) 2005,2006 Christophe Fillot (cf@utc.fr)
+ * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
+ *
+ * This file is part of the virtualmips distribution.
+ * See LICENSE file for terms of the license.
  */
-
-  /*
-   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-   *
-   * This file is part of the virtualmips distribution.
-   * See LICENSE file for terms of the license.
-   *
-   */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -1162,14 +1158,14 @@ static no_inline mts32_entry_t *mips_mts32_map (cpu_mips_t * cpu,
     struct vdevice *dev;
     m_uint32_t offset;
 
-    if (!(dev = dev_lookup (cpu->vm, map->paddr))) {
-        if (!is_fromgdb) {
-            printf ("no device!");
+    dev = dev_lookup (cpu->vm, map->paddr);
+    if (! dev) {
+        if (! is_fromgdb) {
+            printf ("no device!\n");
             printf ("cpu->pc %x vaddr %x paddr %x \n", cpu->pc, map->vaddr,
                 map->paddr);
             exit (-1);
         }
-
         return NULL;
     }
 
@@ -2378,7 +2374,7 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
     case 0x02:
     case 0x03:                 /* kuseg */
         /* trigger TLB exception if no matching entry found */
-        if (!mips64_cp0_tlb_lookup (cpu, vaddr, &map))
+        if (! mips64_cp0_tlb_lookup (cpu, vaddr, &map))
             goto err_tlb;
 
         if ((map.valid & 0x1) != 0x1)
@@ -2387,9 +2383,9 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
             goto err_mod;
 
         map.mapped = TRUE;
-        if (!(entry =
-                mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
-                    is_fromgdb)))
+        entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
+                                is_fromgdb);
+        if (! entry)
             goto err_undef;
 
         return (entry);
@@ -2399,9 +2395,9 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
         map.paddr = map.vaddr - (m_pa_t) 0xFFFFFFFF80000000ULL;
         map.mapped = FALSE;
 
-        if (!(entry =
-                mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
-                    is_fromgdb)))
+        entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
+                                is_fromgdb);
+        if (! entry)
             goto err_undef;
         return (entry);
 
@@ -2410,9 +2406,9 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
         map.paddr = map.vaddr - (m_pa_t) 0xFFFFFFFFA0000000ULL;
         map.mapped = FALSE;
 
-        if (!(entry =
-                mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
-                    is_fromgdb)))
+        entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
+                                is_fromgdb);
+        if (! entry)
             goto err_undef;
         return (entry);
 
@@ -2427,28 +2423,26 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
         if ((MTS_WRITE == op_type) && ((map.dirty & 0x1) != 0x1))
             goto err_mod;
         map.mapped = TRUE;
-        if (!(entry =
-                mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
-                    is_fromgdb)))
+        entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
+                                is_fromgdb);
+        if (! entry)
             goto err_undef;
 
         return (entry);
-
-        break;
     }
-  err_mod:
+err_mod:
     if (is_fromgdb)
         return NULL;
     mips_access_special (cpu, vaddr, MTS_ACC_M, op_code, op_type, op_size,
         data, exc);
     return NULL;
-  err_undef:
+err_undef:
     if (is_fromgdb)
         return NULL;
     mips_access_special (cpu, vaddr, MTS_ACC_U, op_code, op_type, op_size,
         data, exc);
     return NULL;
-  err_tlb:
+err_tlb:
     if (is_fromgdb)
         return NULL;
     mips_access_special (cpu, vaddr, MTS_ACC_T, op_code, op_type, op_size,
