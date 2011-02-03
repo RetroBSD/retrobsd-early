@@ -83,8 +83,6 @@ startup()
 	extern void _etext(), _exception_base_();
 	extern unsigned __data_start, _edata, _end;
 
-	physmem = DATA_SIZE;
-
 	/* Initialize STATUS register: master interrupt disable.
 	 * Setup interrupt vector base. */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_BEV);
@@ -141,6 +139,8 @@ startup()
 		/*printf ("clear (%08x)\n", dest);*/
 		*dest++ = 0;
 	}
+
+	physmem = DATA_SIZE;
 }
 
 void

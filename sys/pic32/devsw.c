@@ -41,7 +41,7 @@ noioctl (dev, cmd, data, flag)
 	caddr_t data;
 	int flag;
 {
-	return (0);
+	return -1;
 }
 
 /*
