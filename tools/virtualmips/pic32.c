@@ -89,7 +89,7 @@ static const int irq_to_vector[] = {
 };
 
 /* Initialize the PIC32 Platform (MIPS) */
-static int pic32_init_platform (pic32_t * pic32)
+static int pic32_init_platform (pic32_t *pic32)
 {
     struct vm_instance *vm = pic32->vm;
     cpu_mips_t *cpu0;
@@ -148,6 +148,12 @@ static int pic32_init_platform (pic32_t * pic32)
             PIC32_IRQ_SPI2E) == -1)
         return (-1);
     if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
+        return (-1);
+    if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
+            pic32->sdcard0_file_name) < 0)
+        return (-1);
+    if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
+            pic32->sdcard1_file_name) < 0)
         return (-1);
     return (0);
 }
@@ -246,6 +252,10 @@ static void pic32_parse_configure (pic32_t *pic32)
         CFG_SIMPLE_INT ("boot_flash_address", &pic32->boot_flash_address),
         CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
         CFG_SIMPLE_STR ("start_address", &start_address),
+        CFG_SIMPLE_INT ("sdcard0_size", &pic32->sdcard0_size),
+        CFG_SIMPLE_INT ("sdcard1_size", &pic32->sdcard1_size),
+        CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
+        CFG_SIMPLE_STR ("sdcard1_file_name", &pic32->sdcard1_file_name),
 
         /*CFG_SIMPLE_STR ("cs8900_iotype", &(pic32->cs8900_iotype)), */
         /* add other configure information here */
@@ -268,13 +278,21 @@ static void pic32_parse_configure (pic32_t *pic32)
     }
 
     /* Print the configure information */
-    PRINT_COMMON_COFING_OPTION;
+    PRINT_COMMON_CONFIG_OPTION;
 
     /* print other configure information here */
     if (pic32->boot_flash_size > 0) {
         printf ("boot_flash_size: %dk bytes\n", pic32->boot_flash_size);
         printf ("boot_flash_address: 0x%x\n", pic32->boot_flash_address);
         printf ("boot_file_name: %s\n", pic32->boot_file_name);
+    }
+    if (pic32->sdcard0_size > 0) {
+        printf ("sdcard0_size: %dM bytes\n", pic32->sdcard0_size);
+        printf ("sdcard0_file_name: %s\n", pic32->sdcard0_file_name);
+    }
+    if (pic32->sdcard1_size > 0) {
+        printf ("sdcard1_size: %dM bytes\n", pic32->sdcard1_size);
+        printf ("sdcard1_file_name: %s\n", pic32->sdcard1_file_name);
     }
     printf ("start_address: 0x%x\n", pic32->start_address);
 }
@@ -363,6 +381,7 @@ int init_instance (vm_instance_t * vm)
 
     /* reset all devices */
     dev_reset_all (vm);
+    dev_sdcard_reset (cpu);
 
 #ifdef _USE_JIT_
     /* if jit is used. flush all jit buffer */

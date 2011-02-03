@@ -27,7 +27,7 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 			CFG_SIMPLE_INT("boot_from", &(vm->boot_from)),   \
 			CFG_SIMPLE_STR("kernel_file_name", &(vm->kernel_filename)),      \
 
-#define  PRINT_COMMON_COFING_OPTION    \
+#define  PRINT_COMMON_CONFIG_OPTION    \
     printf("Using configure file: %s\n",vm->configure_filename);  \
 	printf("ram_size: %dk bytes \n",vm->ram_size);  \
 	printf("boot_method: %s \n",boot_method_string[vm->boot_method-1]);  \

@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008<yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -114,7 +114,7 @@ static int adm5120_init_platform (adm5120_t * adm5120)
 
 extern m_uint32_t sw_table[SW_INDEX_MAX];
 /*set adm5120 reg default value. Only needed if boot from linux elf image.
-Linux will query sw_table[0x7] to get sdram size. 
+Linux will query sw_table[0x7] to get sdram size.
  */
 static void adm5120_reg_default_value (adm5120_t * adm5120)
 {
@@ -125,7 +125,7 @@ static void adm5120_reg_default_value (adm5120_t * adm5120)
     else if (adm5120->vm->ram_size == 32)
         sw_table[0x7] = 0x50423;        //16M *2
     else if (adm5120->vm->ram_size == 16)
-        sw_table[0x7] = 0x50403;        //16M 
+        sw_table[0x7] = 0x50403;        //16M
     else if (adm5120->vm->ram_size == 8)
         sw_table[0x7] = 0x50402;        // 8M
     else if (adm5120->vm->ram_size == 4)
@@ -191,16 +191,16 @@ Mapping adm irq to mips irq.
 So why we need a mapping of interrupts?
 
 IN ADM5120,there are 10 interrupts
-0	 Timer 
-1	Uart 0 
-2	 Uart 1 
-3	 USB Host 
-4	 External I/O 0 
-5	 External I/O 1 
-6	 PCI 0 
-7	 PCI 1 
-8	 PCI 2 
-9	 Switch 
+0	 Timer
+1	Uart 0
+2	 Uart 1
+3	 USB Host
+4	 External I/O 0
+5	 External I/O 1
+6	 PCI 0
+7	 PCI 1
+8	 PCI 2
+9	 Switch
 
 ADM5120 will triger INTERRUPT 2 and 3 to MIPS.
 INT_M(0X14) register control the interrupt releation of ADM5120 and iqr/firq.
@@ -287,7 +287,7 @@ void adm5120_set_irq (vm_instance_t * vm, u_int irq)
 COMMON_CONFIG_INFO_ARRAY static void printf_configure (adm5120_t * adm5120)
 {
     vm_instance_t *vm = adm5120->vm;
-    PRINT_COMMON_COFING_OPTION;
+    PRINT_COMMON_CONFIG_OPTION;
 }
 
 static void adm5120_parse_configure (adm5120_t * adm5120)

@@ -1,5 +1,6 @@
 /*
  * SPI emulation for PIC32.
+ * Two SD/MMC disks attached to SPI2.
  *
  * Copyright (C) 2011 Serge Vakulenko <serge@vak.ru>
  *
@@ -19,13 +20,22 @@
 #include "pic32.h"
 #include "cpu.h"
 #include "vp_timer.h"
+#include "dev_sdcard.h"
 
-#define SPI_REG_SIZE     0x40
+#define SPI_REG_SIZE    0x40
+
+#define PINC_CS0        1
+#define PINC_CD0        2
+#define PINC_WE0        3
+#define PINE_CS1        5
+#define PINE_CD1        6
+#define PINE_WE1        7
 
 struct pic32_spi_data {
     struct vdevice  *dev;
     vtty_t          *vtty;
     vm_instance_t   *vm;
+    pic32_t         *pic32;
 
     u_int           irq;            /* base irq number */
 #define IRQ_FAULT   0               /* error interrupt */
@@ -103,8 +113,8 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
         if (op_type == MTS_READ) {
-/* TODO */
-printf ("%s: read data.\n", dev->name);
+            if (dev->phys_addr == PIC32_SPI2CON)
+                d->buf = dev_sdcard_read (cpu);
             *data = d->buf;
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat &= ~PIC32_SPISTAT_SPIRBF;
@@ -112,8 +122,8 @@ printf ("%s: read data.\n", dev->name);
             }
         } else {
             d->buf = *data;
-/* TODO */
-printf ("%s: write %02x.\n", dev->name, d->buf);
+            if (dev->phys_addr == PIC32_SPI2CON)
+                dev_sdcard_write (cpu, d->buf);
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;
                 //d->vm->set_irq (d->vm, d->irq + IRQ_FAULT);
@@ -139,7 +149,7 @@ printf ("%s: write %02x.\n", dev->name, d->buf);
     return NULL;
 }
 
-void dev_pic32_spi_reset (cpu_mips_t * cpu, struct vdevice *dev)
+void dev_pic32_spi_reset (cpu_mips_t *cpu, struct vdevice *dev)
 {
     struct pic32_spi_data *d = dev->priv_data;
 
@@ -153,6 +163,7 @@ int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq)
 {
     struct pic32_spi_data *d;
+    pic32_t *pic32 = (pic32_t *) vm->hw_data;
 
     /* allocate the private data structure */
     d = malloc (sizeof (*d));
@@ -162,7 +173,7 @@ int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     }
     memset (d, 0, sizeof (*d));
     d->dev = dev_create (name);
-    if (!d->dev) {
+    if (! d->dev) {
         free (d);
         return (-1);
     }
@@ -172,6 +183,7 @@ int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     d->dev->flags = VDEVICE_FLAG_NO_MTS_MMAP;
     d->vm = vm;
     d->irq = irq;
+    d->pic32 = pic32;
     d->dev->handler = dev_pic32_spi_access;
     d->dev->reset_handler = dev_pic32_spi_reset;
 

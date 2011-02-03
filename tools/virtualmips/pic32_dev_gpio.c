@@ -1,5 +1,12 @@
 /*
  * GPIO emulation for PIC32.
+ * Two SD/MMC disks connected to signals:
+ *	C1 - /CS0
+ *	C2 - CD0
+ *	C3 - WE0
+ *	E5 - /CS1
+ *	E6 - CD1
+ *	E7 - WE1
  *
  * Copyright (C) 2011 Serge Vakulenko <serge@vak.ru>
  *
@@ -20,12 +27,20 @@
 #include "cpu.h"
 #include "vp_timer.h"
 
-#define GPIO_REG_SIZE     0x1F0
+#define GPIO_REG_SIZE   0x1F0
+
+#define MASKC_CS0       (1 << 1)
+#define MASKC_CD0       (1 << 2)
+#define MASKC_WE0       (1 << 3)
+#define MASKE_CS1       (1 << 5)
+#define MASKE_CD1       (1 << 6)
+#define MASKE_WE1       (1 << 7)
 
 struct pic32_gpio_data {
     struct vdevice  *dev;
     vtty_t          *vtty;
     vm_instance_t   *vm;
+    pic32_t         *pic32;
 
     unsigned        tris_a;         /* 0x00 - port A mask of inputs */
     unsigned        port_a;         /* 0x10 - port A pins */
@@ -91,7 +106,7 @@ static inline unsigned write_op (a, b, op)
     return a;
 }
 
-void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
+void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
     m_uint32_t offset, u_int op_size, u_int op_type,
     m_reg_t * data, m_uint8_t * has_set_value)
 {
@@ -119,7 +134,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->port_a;
         } else {
-            d->port_a = write_op (d->port_a, *data, offset);
+            goto lat_a;
         }
         break;
 
@@ -127,7 +142,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_a;
         } else {
-            d->lat_a = write_op (d->lat_a, *data, offset);
+lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
         }
         break;
 
@@ -154,7 +169,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->port_b;
         } else {
-            d->port_b = write_op (d->port_b, *data, offset);
+            goto lat_b;
         }
         break;
 
@@ -162,7 +177,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_b;
         } else {
-            d->lat_b = write_op (d->lat_b, *data, offset);
+lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
         }
         break;
 
@@ -187,9 +202,19 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     case PIC32_PORTC & 0x1f0:             /* Port C: read inputs, write outputs */
         if (op_type == MTS_READ) {
+            /* Poll SD card 0 status. */
+            if (dev_sdcard_detect (cpu, 0))
+                d->port_c &= ~MASKC_CD0;
+            else
+                d->port_c |= MASKC_CD0;
+            if (dev_sdcard_writable (cpu, 0))
+                d->port_c &= ~MASKC_WE0;
+            else
+                d->port_c |= MASKC_WE0;
+
             *data = d->port_c;
         } else {
-            d->port_c = write_op (d->port_c, *data, offset);
+            goto lat_c;
         }
         break;
 
@@ -197,7 +222,13 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_c;
         } else {
-            d->lat_c = write_op (d->lat_c, *data, offset);
+lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
+
+            /* Control SD card 0. */
+            if (d->lat_c & MASKC_CS0)
+                dev_sdcard_select (cpu, 0, 0);
+            else
+                dev_sdcard_select (cpu, 0, 1);
         }
         break;
 
@@ -224,7 +255,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->port_d;
         } else {
-            d->port_d = write_op (d->port_d, *data, offset);
+            goto lat_d;
         }
         break;
 
@@ -232,7 +263,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_d;
         } else {
-            d->lat_d = write_op (d->lat_d, *data, offset);
+lat_d:      d->lat_d = write_op (d->lat_d, *data, offset);
         }
         break;
 
@@ -257,9 +288,19 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     case PIC32_PORTE & 0x1f0:             /* Port E: read inputs, write outputs */
         if (op_type == MTS_READ) {
+            /* Poll SD card 1 status. */
+            if (dev_sdcard_detect (cpu, 1))
+                d->port_e &= ~MASKE_CD1;
+            else
+                d->port_e |= MASKE_CD1;
+            if (dev_sdcard_writable (cpu, 1))
+                d->port_e &= ~MASKE_WE1;
+            else
+                d->port_e |= MASKE_WE1;
+
             *data = d->port_e;
         } else {
-            d->port_e = write_op (d->port_e, *data, offset);
+            goto lat_e;
         }
         break;
 
@@ -267,7 +308,13 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_e;
         } else {
-            d->lat_e = write_op (d->lat_e, *data, offset);
+lat_e:      d->lat_e = write_op (d->lat_e, *data, offset);
+
+            /* Control SD card 1. */
+            if (d->lat_e & MASKE_CS1)
+                dev_sdcard_select (cpu, 1, 0);
+            else
+                dev_sdcard_select (cpu, 1, 1);
         }
         break;
 
@@ -294,7 +341,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->port_f;
         } else {
-            d->port_f = write_op (d->port_f, *data, offset);
+            goto lat_f;
         }
         break;
 
@@ -302,7 +349,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_f;
         } else {
-            d->lat_f = write_op (d->lat_f, *data, offset);
+lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
         }
         break;
 
@@ -329,7 +376,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->port_g;
         } else {
-            d->port_g = write_op (d->port_g, *data, offset);
+            goto lat_g;
         }
         break;
 
@@ -337,7 +384,7 @@ void *dev_pic32_gpio_access (cpu_mips_t * cpu, struct vdevice *dev,
         if (op_type == MTS_READ) {
             *data = d->lat_g;
         } else {
-            d->lat_g = write_op (d->lat_g, *data, offset);
+lat_g:      d->lat_g = write_op (d->lat_g, *data, offset);
         }
         break;
 
@@ -415,6 +462,7 @@ void dev_pic32_gpio_reset (cpu_mips_t * cpu, struct vdevice *dev)
 int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr)
 {
     struct pic32_gpio_data *d;
+    pic32_t *pic32 = (pic32_t *) vm->hw_data;
 
     /* allocate the private data structure */
     d = malloc (sizeof (*d));
@@ -433,6 +481,7 @@ int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr)
     d->dev->phys_len = GPIO_REG_SIZE;
     d->dev->flags = VDEVICE_FLAG_NO_MTS_MMAP;
     d->vm = vm;
+    d->pic32 = pic32;
     d->dev->handler = dev_pic32_gpio_access;
     d->dev->reset_handler = dev_pic32_gpio_reset;
 

@@ -9,6 +9,7 @@
 
 #include "types.h"
 #include "pic32mx.h"
+#include "dev_sdcard.h"
 
 #define DATA_WIDTH          32          /* MIPS32 architecture */
 #define LL                              /* empty - printf format for machine word */
@@ -53,6 +54,12 @@ struct pic32_system {
     unsigned boot_flash_size;       /* size of boot flash in kbytes */
     unsigned boot_flash_address;    /* phys.address of boot flash */
     char *boot_file_name;           /* image of boot flash */
+
+    unsigned sdcard0_size;          /* size of SD card 0 in Mbytes */
+    unsigned sdcard1_size;          /* size of SD card 1 in Mbytes */
+    char *sdcard0_file_name;        /* image of SD card 0 */
+    char *sdcard1_file_name;        /* image of SD card 1 */
+    sdcard_t sdcard [2];
 
     struct vdevice *intdev;         /* interrupt controller */
     unsigned intcon;                /* interrupt control */

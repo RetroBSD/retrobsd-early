@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -53,7 +53,7 @@ int dev_ram_init (vm_instance_t * vm, char *name, m_pa_t paddr,
     d->dev->reset_handler = dev_ram_reset;
     return (0);
 
-  err_dev_create:
+err_dev_create:
     free (d);
     return (-1);
 }

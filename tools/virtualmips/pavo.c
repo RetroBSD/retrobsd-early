@@ -288,7 +288,7 @@ static void printf_configure (pavo_t * pavo)
 {
 
     vm_instance_t *vm = pavo->vm;
-    PRINT_COMMON_COFING_OPTION;
+    PRINT_COMMON_CONFIG_OPTION;
 
     /*print other configure information here */
     if (pavo->cs8900_enable == 1) {
