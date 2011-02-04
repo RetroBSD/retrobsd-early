@@ -472,6 +472,7 @@ bcmp (const void *m1, const void *m2, size_t nbytes)
 int
 copyout (caddr_t from, caddr_t to, u_int nbytes)
 {
+//printf ("copyout (from=%p, to=%p, nbytes=%u)\n", from, to, nbytes);
 	if (baduaddr (to) || baduaddr (to + nbytes - 1))
 		return EFAULT;
 	bcopy (from, to, nbytes);

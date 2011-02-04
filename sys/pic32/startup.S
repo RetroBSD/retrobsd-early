@@ -198,16 +198,19 @@ restore_regs:
 		.type	icode, @function
 		.type	icodeend, @function
 icode:
+		la	$a0, etcinit
+		la	$a1, argv
 		syscall	11				# SYS_execv
+		move	$a0, $v0
 		syscall	1				# SYS_exit
-#init:
-#		.ascii	"/etc/init\0"
-#initflags:
-#		.ascii	"-00000\0"			# decimal ASCII initflags
-#argv:
-#		.word	init + 5 - icode		# address of "init\0"
-#		.word	initflags - icode
-#		.word	0
+etcinit:
+		.ascii	"/etc/init\0"
+initflags:
+		.ascii	"-00000\0"			# decimal ASCII initflags
+argv:
+		.word	etcinit + 5 - icode + 0x7f000000	# address of "init\0"
+		.word	initflags - icode + 0x7f000000
+		.word	0
 
 icodeend:	nop
 
@@ -264,22 +267,22 @@ longjmp:	.globl	longjmp
 		# exchange contents of u and u0
 		move	$v1, $v0
 1:
-                lw	$a1, 0($v1)
-                lw	$a2, 0($a0)
-                sw	$a2, 0($v1)
-                sw	$a1, 0($a0)
-                lw	$a1, 4($v1)
-                lw	$a2, 4($a0)
-                sw	$a2, 4($v1)
-                sw	$a1, 4($a0)
-                lw	$a1, 8($v1)
-                lw	$a2, 8($a0)
-                sw	$a2, 8($v1)
-                sw	$a1, 8($a0)
-                lw	$a1, 12($v1)
-                lw	$a2, 12($a0)
-                sw	$a2, 12($v1)
-                sw	$a1, 12($a0)
+                lw	$t1, 0($v1)
+                lw	$t0, 0($a0)
+                sw	$t0, 0($v1)
+                sw	$t1, 0($a0)
+                lw	$t1, 4($v1)
+                lw	$t0, 4($a0)
+                sw	$t0, 4($v1)
+                sw	$t1, 4($a0)
+                lw	$t1, 8($v1)
+                lw	$t0, 8($a0)
+                sw	$t0, 8($v1)
+                sw	$t1, 8($a0)
+                lw	$t1, 12($v1)
+                lw	$t0, 12($a0)
+                sw	$t0, 12($v1)
+                sw	$t1, 12($a0)
                 addiu	$v1, $v1, 16
                 bne	$a3, $v1, 1b
                 addiu	$a0, $a0, 16

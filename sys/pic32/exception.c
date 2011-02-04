@@ -81,7 +81,6 @@ void
 exception (frame)
 	int *frame;
 {
-	static int once_thru = 0;
 	register int i;
 	register struct proc *p;
 	time_t syst;
@@ -89,24 +88,16 @@ exception (frame)
 #ifdef UCB_METER
 	cnt.v_trap++;
 #endif
-	/*
-	 * In order to stop the system from destroying
-	 * kernel data space any further, allow only one
-	 * fatal exception. After once_thru is set, any
-	 * futher exceptions will be handled by looping in place.
-	 */
-	if (once_thru) {
-		(void) splhigh();
-		for (;;)
-			asm volatile ("wait");
-	}
-
+	unsigned status = frame [FRAME_STATUS];
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
-	cause &= CA_EXC_CODE;
+//printf ("exception: cause %08x, status %08x\n", cause, status);
 
-	unsigned ps = frame [FRAME_STATUS];
-	if (USERMODE(ps))
+	cause &= CA_EXC_CODE;
+	if (USERMODE (status))
 		cause |= USER;
+
+	/* Switch to kernel mode, enable interrupts. */
+	mips_write_c0_register (C0_STATUS, status & ~ST_UM);
 
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
@@ -117,7 +108,6 @@ exception (frame)
 	 * Exception not expected.  Usually a kernel mode bus error.
 	 */
 	default:
-		once_thru = 1;
 		i = splhigh();
 		dumpregs (frame);
 		splx (i);
@@ -169,6 +159,7 @@ exception (frame)
 	case CA_Int:			/* Interrupt */
 	case CA_Int + USER:
 		/* TODO */
+printf ("*** interrupt\n");
 		goto out;
 
 	/*
@@ -181,18 +172,33 @@ exception (frame)
 		u.u_error = 0;
 
 		/* original pc for restarting syscalls */
-		int opc = frame [FRAME_PC] - 4;	/* opc now points at syscall */
+		int opc = frame [FRAME_PC];		/* opc now points at syscall */
+//printf ("*** syscall: at %08x\n", opc);
+		frame [FRAME_PC] = opc + 4;		/* return to next instruction */
 
 		const struct sysent *callp;
-		int code = *(u_int*) opc & 0377;	/* bottom 8 bits are index */
+		int code = (*(u_int*) opc >> 6) & 0377;	/* bottom 8 bits are index */
 		if (code >= nsysent)
 			callp = &sysent[0];		/* indir (illegal) */
 		else
 			callp = &sysent[code];
-
-		if (callp->sy_narg)
-			copyin ((caddr_t) (frame [FRAME_SP] + 4),
-				(caddr_t) u.u_arg, callp->sy_narg*NBPW);
+printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], opc);
+		if (callp->sy_narg) {
+			u.u_arg[0] = frame [FRAME_R4];		/* $a0 */
+			u.u_arg[1] = frame [FRAME_R5];		/* $a1 */
+			u.u_arg[2] = frame [FRAME_R6];		/* $a2 */
+			u.u_arg[3] = frame [FRAME_R7];		/* $a3 */
+			if (callp->sy_narg > 4) {
+				unsigned addr = (frame [FRAME_SP] + 16) & ~3;
+				if (! baduaddr ((caddr_t) addr))
+					u.u_arg[4] = *(unsigned*) addr;
+			}
+			if (callp->sy_narg > 5) {
+				unsigned addr = (frame [FRAME_SP] + 20) & ~3;
+				if (! baduaddr ((caddr_t) addr))
+					u.u_arg[5] = *(unsigned*) addr;
+			}
+		}
 		u.u_r.r_val1 = 0;
 		u.u_r.r_val2 = frame [FRAME_R3];		/* $v1 */
 		if (setjmp (&u.u_qsave) == 0) {

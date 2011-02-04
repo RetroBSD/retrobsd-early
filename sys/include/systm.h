@@ -81,6 +81,8 @@ extern const struct sysent
 	void	(*sy_call) (void);	/* handler */
 } sysent[];
 
+extern const char *syscallnames[];
+
 int	noproc;			/* no one is running just now */
 char	*panicstr;
 int	boothowto;		/* reboot flags, from boot */

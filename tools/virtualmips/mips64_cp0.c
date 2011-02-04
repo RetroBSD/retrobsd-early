@@ -360,10 +360,23 @@ void fastcall mips64_cp0_exec_tlbr (cpu_mips_t * cpu)
     }
 }
 
-int mips64_cp0_tlb_lookup (cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
+int mips64_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
 
+#ifdef SIM_PIC32
+    if (vaddr >= 0x7f008000 && vaddr < 0x7f020000) {
+        res->vaddr = vaddr & MIPS_MIN_PAGE_MASK;
+        res->paddr = vaddr & 0x1ffff;
+        res->dirty = 1;
+        res->valid = 1;
+        res->asid = 0;
+        res->g_bit = 1;
+        res->tlb_index = 0;
+        printf ("cp0_tlb_lookup (vaddr = %08x) mapped to paddr = %08x\n", vaddr, res->paddr);
+        return (TRUE);
+    }
+#else
     m_va_t vpn_addr, hi_addr, page_mask, page_size;
     tlb_entry_t *entry;
     u_int asid;
@@ -419,6 +432,7 @@ int mips64_cp0_tlb_lookup (cpu_mips_t * cpu, m_va_t vaddr, mts_map_t * res)
             }
         }
     }
+#endif
     return FALSE;
 }
 

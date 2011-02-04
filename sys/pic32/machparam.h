@@ -85,8 +85,8 @@
 #define USER_FLASH_START	(0x1d000000 + KERNEL_FLASH_SIZE)
 #define USER_FLASH_END		(0x1d000000 + FLASH_SIZE)
 
-#define USER_DATA_START		(0x00000000 + KERNEL_DATA_SIZE)
-#define USER_DATA_END		(0x00000000 + DATA_SIZE)
+#define USER_DATA_START		(0x7f000000 + KERNEL_DATA_SIZE)
+#define USER_DATA_END		(0x7f000000 + DATA_SIZE)
 
 /*
  * User area: a user structure, followed by the kernel
