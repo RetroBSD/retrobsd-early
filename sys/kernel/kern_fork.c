@@ -234,7 +234,7 @@ fork1 (isvfork)
 
 out:
 #ifdef pdp11			/* see libc/pdp/sys/fork.s */
-	u.u_ar0[R7] += NBPW;
+	u.u_frame [R7] += NBPW;
 #else
 	u.u_r.r_val2 = 0;
 #endif

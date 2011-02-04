@@ -28,41 +28,41 @@
 /*
  * Offsets of register values in saved context.
  */
-#define CONTEXT_R1	0
-#define CONTEXT_R2	1
-#define CONTEXT_R3	2
-#define CONTEXT_R4	3
-#define CONTEXT_R5	4
-#define CONTEXT_R6	5
-#define CONTEXT_R7	6
-#define CONTEXT_R8	7
-#define CONTEXT_R9	8
-#define CONTEXT_R10	9
-#define CONTEXT_R11	10
-#define CONTEXT_R12	11
-#define CONTEXT_R13	12
-#define CONTEXT_R14	13
-#define CONTEXT_R15	14
-#define CONTEXT_R16	15
-#define CONTEXT_R17	16
-#define CONTEXT_R18	17
-#define CONTEXT_R19	18
-#define CONTEXT_R20	19
-#define CONTEXT_R21	20
-#define CONTEXT_R22	21
-#define CONTEXT_R23	22
-#define CONTEXT_R24	23
-#define CONTEXT_R25	24
-#define CONTEXT_GP	25
-#define CONTEXT_SP      26
-#define CONTEXT_FP	27
-#define CONTEXT_RA	28
-#define CONTEXT_LO	29
-#define CONTEXT_HI	30
-#define CONTEXT_STATUS	31
-#define CONTEXT_PC	32
+#define FRAME_R1	0
+#define FRAME_R2	1
+#define FRAME_R3	2
+#define FRAME_R4	3
+#define FRAME_R5	4
+#define FRAME_R6	5
+#define FRAME_R7	6
+#define FRAME_R8	7
+#define FRAME_R9	8
+#define FRAME_R10	9
+#define FRAME_R11	10
+#define FRAME_R12	11
+#define FRAME_R13	12
+#define FRAME_R14	13
+#define FRAME_R15	14
+#define FRAME_R16	15
+#define FRAME_R17	16
+#define FRAME_R18	17
+#define FRAME_R19	18
+#define FRAME_R20	19
+#define FRAME_R21	20
+#define FRAME_R22	21
+#define FRAME_R23	22
+#define FRAME_R24	23
+#define FRAME_R25	24
+#define FRAME_GP	25
+#define FRAME_SP	26
+#define FRAME_FP	27
+#define FRAME_RA	28
+#define FRAME_LO	29
+#define FRAME_HI	30
+#define FRAME_STATUS	31
+#define FRAME_PC	32
 
-#define CONTEXT_WORDS	33
+#define FRAME_WORDS	33
 
 #ifndef __ASSEMBLER__
 

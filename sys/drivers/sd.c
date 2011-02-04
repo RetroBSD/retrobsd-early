@@ -486,8 +486,9 @@ void
 sdstrategy (bp)
 	register struct buf *bp;
 {
-	register int s, unit;
-	int retry;
+	int s, unit, retry;
+	unsigned bcount, blkno;
+	char *addr;
 
 	unit = minor (bp->b_dev);
 	if (unit >= NSD) {
@@ -500,23 +501,32 @@ bad:		bp->b_flags |= B_ERROR;
 		bp->b_error = EINVAL;
 		goto bad;
 	}
-	//printf ("sd%d: read block %u, length %u bytes\n", unit, bp->b_blkno, bp->b_bcount);
+	/* printf ("sd%d: %s block %u, length %u bytes, addr %p\n",
+		unit, (bp->b_flags & B_READ) ? "read" : "write",
+		bp->b_blkno, bp->b_bcount, bp->b_addr); */
+	bcount = bp->b_bcount;
+	addr = bp->b_addr;
+	blkno = bp->b_blkno;
 	s = splbio();
+next:
 	for (retry=0; retry<3; retry++) {
 		if (bp->b_flags & B_READ) {
-			if (card_read (unit, bp->b_blkno, bp->b_addr)) {
-				bp->b_resid = bp->b_bcount - DEV_BSIZE;
-				goto done;
+			if (card_read (unit, blkno, addr)) {
+ok:				if (bcount <= DEV_BSIZE)
+					goto done;
+				bcount -= DEV_BSIZE;
+				addr += DEV_BSIZE;
+				blkno++;
+				goto next;
 			}
-			printf("sd%d: hard error, reading block %u\n", unit, bp->b_blkno);
 		} else {
-			if (card_write (unit, bp->b_blkno, bp->b_addr)) {
-				bp->b_resid = bp->b_bcount - DEV_BSIZE;
-				goto done;
+			if (card_write (unit, blkno, addr)) {
+				goto ok;
 			}
-			printf("sd%d: hard error, writing block %u\n", unit, bp->b_blkno);
 		}
 	}
+	printf ("sd%d: hard error, %s block %u\n", unit,
+		(bp->b_flags & B_READ) ? "reading" : "writing", blkno);
 	bp->b_flags |= B_ERROR;
 done:
 	iodone (bp);

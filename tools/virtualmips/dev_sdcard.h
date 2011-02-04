@@ -19,7 +19,7 @@ struct sdcard {
     unsigned blen;                      /* Block length */
     unsigned count;                     /* Byte count */
     unsigned limit;                     /* Reply length */
-    unsigned char buf [2 + 1024 + 2];
+    unsigned char buf [1024 + 16];
 };
 typedef struct sdcard sdcard_t;
 

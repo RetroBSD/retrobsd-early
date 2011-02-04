@@ -25,7 +25,7 @@
 
 struct user {
 	struct	proc *u_procp;		/* pointer to proc structure */
-	int	*u_ar0;			/* address of users saved R0 */
+	int	*u_frame;		/* address of users saved frame */
 	char	u_comm[MAXCOMLEN + 1];
 
 /* syscall parameters, results and catches */

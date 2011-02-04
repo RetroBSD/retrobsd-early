@@ -17,7 +17,7 @@ dumpregs (frame)
 	unsigned int cause;
 	const char *code = 0;
 
-	printf ("\n*** 0x%08x: exception ", frame [CONTEXT_PC]);
+	printf ("\n*** 0x%08x: exception ", frame [FRAME_PC]);
 
 	cause = mips_read_c0_register (C0_CAUSE);
 	switch (cause & CA_EXC_CODE) {
@@ -42,29 +42,29 @@ dumpregs (frame)
 		mips_read_c0_register (C0_BADVADDR));
 
 	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
-		frame [CONTEXT_R8], frame [CONTEXT_R16],
-		frame [CONTEXT_R24], frame [CONTEXT_LO]);
+		frame [FRAME_R8], frame [FRAME_R16],
+		frame [FRAME_R24], frame [FRAME_LO]);
 	printf ("at = %8x   t1 = %8x   s1 = %8x   t9 = %8x   hi = %8x\n",
-		frame [CONTEXT_R1], frame [CONTEXT_R9], frame [CONTEXT_R17],
-		frame [CONTEXT_R25], frame [CONTEXT_HI]);
+		frame [FRAME_R1], frame [FRAME_R9], frame [FRAME_R17],
+		frame [FRAME_R25], frame [FRAME_HI]);
 	printf ("v0 = %8x   t2 = %8x   s2 = %8x               status = %8x\n",
-		frame [CONTEXT_R2], frame [CONTEXT_R10],
-		frame [CONTEXT_R18], frame [CONTEXT_STATUS]);
+		frame [FRAME_R2], frame [FRAME_R10],
+		frame [FRAME_R18], frame [FRAME_STATUS]);
 	printf ("v1 = %8x   t3 = %8x   s3 = %8x                cause = %8x\n",
-		frame [CONTEXT_R3], frame [CONTEXT_R11],
-		frame [CONTEXT_R19], cause);
+		frame [FRAME_R3], frame [FRAME_R11],
+		frame [FRAME_R19], cause);
 	printf ("a0 = %8x   t4 = %8x   s4 = %8x   gp = %8x  epc = %8x\n",
-		frame [CONTEXT_R4], frame [CONTEXT_R12],
-		frame [CONTEXT_R20], frame [CONTEXT_GP], frame [CONTEXT_PC]);
+		frame [FRAME_R4], frame [FRAME_R12],
+		frame [FRAME_R20], frame [FRAME_GP], frame [FRAME_PC]);
 	printf ("a1 = %8x   t5 = %8x   s5 = %8x   sp = %8x\n",
-		frame [CONTEXT_R5], frame [CONTEXT_R13],
-		frame [CONTEXT_R21], frame [CONTEXT_SP]);
+		frame [FRAME_R5], frame [FRAME_R13],
+		frame [FRAME_R21], frame [FRAME_SP]);
 	printf ("a2 = %8x   t6 = %8x   s6 = %8x   fp = %8x\n",
-		frame [CONTEXT_R6], frame [CONTEXT_R14],
-		frame [CONTEXT_R22], frame [CONTEXT_FP]);
+		frame [FRAME_R6], frame [FRAME_R14],
+		frame [FRAME_R22], frame [FRAME_FP]);
 	printf ("a3 = %8x   t7 = %8x   s7 = %8x   ra = %8x\n",
-		frame [CONTEXT_R7], frame [CONTEXT_R15],
-		frame [CONTEXT_R23], frame [CONTEXT_RA]);
+		frame [FRAME_R7], frame [FRAME_R15],
+		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
 /*
@@ -104,13 +104,13 @@ exception (frame)
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
 	cause &= CA_EXC_CODE;
 
-	unsigned ps = frame [CONTEXT_STATUS];
+	unsigned ps = frame [FRAME_STATUS];
 	if (USERMODE(ps))
 		cause |= USER;
 
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
-	u.u_ar0 = frame;
+	u.u_frame = frame;
 	switch (cause) {
 
 	/*
@@ -131,7 +131,7 @@ exception (frame)
 
 	case CA_RI + USER:		/* Reserved instruction */
 		i = SIGILL;
-		u.u_code = frame [CONTEXT_PC];
+		u.u_code = frame [FRAME_PC];
 		break;
 
 	case CA_Bp + USER:		/* Breakpoint */
@@ -149,7 +149,7 @@ exception (frame)
 	case CA_Ov:			/* Arithmetic overflow */
 	case CA_Ov + USER:
 		i = SIGFPE;
-		u.u_code = frame [CONTEXT_PC];
+		u.u_code = frame [FRAME_PC];
 		break;
 
 	/*
@@ -181,7 +181,7 @@ exception (frame)
 		u.u_error = 0;
 
 		/* original pc for restarting syscalls */
-		int opc = frame [CONTEXT_PC] - 4;	/* opc now points at syscall */
+		int opc = frame [FRAME_PC] - 4;	/* opc now points at syscall */
 
 		const struct sysent *callp;
 		int code = *(u_int*) opc & 0377;	/* bottom 8 bits are index */
@@ -191,21 +191,21 @@ exception (frame)
 			callp = &sysent[code];
 
 		if (callp->sy_narg)
-			copyin ((caddr_t) (frame [CONTEXT_SP] + 4),
+			copyin ((caddr_t) (frame [FRAME_SP] + 4),
 				(caddr_t) u.u_arg, callp->sy_narg*NBPW);
 		u.u_r.r_val1 = 0;
-		u.u_r.r_val2 = frame [CONTEXT_R3];		/* $v1 */
+		u.u_r.r_val2 = frame [FRAME_R3];		/* $v1 */
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
 		}
-		frame [CONTEXT_R8] = u.u_error;			/* $t0 */
+		frame [FRAME_R8] = u.u_error;			/* $t0 */
 		switch (u.u_error) {
 		case 0:
-			frame [CONTEXT_R2] = u.u_r.r_val1;	/* $v0 */
-			frame [CONTEXT_R3] = u.u_r.r_val2;	/* $v1 */
+			frame [FRAME_R2] = u.u_r.r_val1;	/* $v0 */
+			frame [FRAME_R3] = u.u_r.r_val2;	/* $v1 */
 			break;
 		case ERESTART:
-			frame [CONTEXT_PC] = opc;
+			frame [FRAME_PC] = opc;
 			break;
 		}
 		goto out;
@@ -226,7 +226,7 @@ out:
 		swtch();
 	}
 	if (u.u_prof.pr_scale)
-		addupc ((caddr_t) frame [CONTEXT_PC],
+		addupc ((caddr_t) frame [FRAME_PC],
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
 }
 

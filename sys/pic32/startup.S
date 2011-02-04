@@ -75,58 +75,58 @@ _exception_vector_: .globl _exception_vector_
 		# Exception in user mode: switch stack.
 		#
 user_exception:
-		la	$sp, u_end-CONTEXT_WORDS*4-16	# Stack at end of U area
+		la	$sp, u_end-FRAME_WORDS*4-16	# Stack at end of U area
 		j	save_regs
 		nop
 
 kernel_exception:
-		addi    $sp, -16-CONTEXT_WORDS*4	# Allocate space for registers
+		addi    $sp, -16-FRAME_WORDS*4		# Allocate space for registers
 save_regs:
-		sw	$k0, (16+CONTEXT_STATUS*4) ($sp)
-                sw      $k1, (16+CONTEXT_SP*4) ($sp)
+		sw	$k0, (16+FRAME_STATUS*4) ($sp)
+                sw      $k1, (16+FRAME_SP*4) ($sp)
 
 		.set	noat
-		sw	$1, (16+CONTEXT_R1*4) ($sp)	# Save general registers
-		sw	$2, (16+CONTEXT_R2*4) ($sp)
-		sw	$3, (16+CONTEXT_R3*4) ($sp)
-		sw	$4, (16+CONTEXT_R4*4) ($sp)
-		sw	$5, (16+CONTEXT_R5*4) ($sp)
-		sw	$6, (16+CONTEXT_R6*4) ($sp)
-		sw	$7, (16+CONTEXT_R7*4) ($sp)
-		sw	$8, (16+CONTEXT_R8*4) ($sp)
-		sw	$9, (16+CONTEXT_R9*4) ($sp)
-		sw	$10, (16+CONTEXT_R10*4) ($sp)
-		sw	$11, (16+CONTEXT_R11*4) ($sp)
-		sw	$12, (16+CONTEXT_R12*4) ($sp)
-		sw	$13, (16+CONTEXT_R13*4) ($sp)
-		sw	$14, (16+CONTEXT_R14*4) ($sp)
-		sw	$15, (16+CONTEXT_R15*4) ($sp)
-		sw	$16, (16+CONTEXT_R16*4) ($sp)
-		sw	$17, (16+CONTEXT_R17*4) ($sp)
-		sw	$18, (16+CONTEXT_R18*4) ($sp)
-		sw	$19, (16+CONTEXT_R19*4) ($sp)
-		sw	$20, (16+CONTEXT_R20*4) ($sp)
-		sw	$21, (16+CONTEXT_R21*4) ($sp)
-		sw	$22, (16+CONTEXT_R22*4) ($sp)
-		sw	$23, (16+CONTEXT_R23*4) ($sp)
-		sw	$24, (16+CONTEXT_R24*4) ($sp)
-		sw	$25, (16+CONTEXT_R25*4) ($sp)
+		sw	$1, (16+FRAME_R1*4) ($sp)	# Save general registers
+		sw	$2, (16+FRAME_R2*4) ($sp)
+		sw	$3, (16+FRAME_R3*4) ($sp)
+		sw	$4, (16+FRAME_R4*4) ($sp)
+		sw	$5, (16+FRAME_R5*4) ($sp)
+		sw	$6, (16+FRAME_R6*4) ($sp)
+		sw	$7, (16+FRAME_R7*4) ($sp)
+		sw	$8, (16+FRAME_R8*4) ($sp)
+		sw	$9, (16+FRAME_R9*4) ($sp)
+		sw	$10, (16+FRAME_R10*4) ($sp)
+		sw	$11, (16+FRAME_R11*4) ($sp)
+		sw	$12, (16+FRAME_R12*4) ($sp)
+		sw	$13, (16+FRAME_R13*4) ($sp)
+		sw	$14, (16+FRAME_R14*4) ($sp)
+		sw	$15, (16+FRAME_R15*4) ($sp)
+		sw	$16, (16+FRAME_R16*4) ($sp)
+		sw	$17, (16+FRAME_R17*4) ($sp)
+		sw	$18, (16+FRAME_R18*4) ($sp)
+		sw	$19, (16+FRAME_R19*4) ($sp)
+		sw	$20, (16+FRAME_R20*4) ($sp)
+		sw	$21, (16+FRAME_R21*4) ($sp)
+		sw	$22, (16+FRAME_R22*4) ($sp)
+		sw	$23, (16+FRAME_R23*4) ($sp)
+		sw	$24, (16+FRAME_R24*4) ($sp)
+		sw	$25, (16+FRAME_R25*4) ($sp)
 		# Skip $26 - K0
 		# Skip $27 - K1
-		sw	$28, (16+CONTEXT_GP*4) ($sp)
+		sw	$28, (16+FRAME_GP*4) ($sp)
 		# Skip $29 - SP
-		sw	$30, (16+CONTEXT_FP*4) ($sp)
-		sw	$31, (16+CONTEXT_RA*4) ($sp)
+		sw	$30, (16+FRAME_FP*4) ($sp)
+		sw	$31, (16+FRAME_RA*4) ($sp)
 		.set	at
 
 		mfhi	$k0				# Save special registers
-		sw	$k0, (16+CONTEXT_HI*4) ($sp)
+		sw	$k0, (16+FRAME_HI*4) ($sp)
 
 		mflo	$k0
-		sw	$k0, (16+CONTEXT_LO*4) ($sp)
+		sw	$k0, (16+FRAME_LO*4) ($sp)
 
 		mfc0	$k0, $C0_EPC
-		sw	$k0, (16+CONTEXT_PC*4) ($sp)
+		sw	$k0, (16+FRAME_PC*4) ($sp)
 
 		move	$a0, $sp
 		addi	$a0, 16				# Arg 0: saved regs.
@@ -137,54 +137,54 @@ save_regs:
 		# Restore CPU state and return from interrupt.
 		#
 restore_regs:
-		lw	$a0, (16+CONTEXT_LO*4) ($sp)	# Load HI, LO registers
+		lw	$a0, (16+FRAME_LO*4) ($sp)	# Load HI, LO registers
 		mtlo	$a0
-		lw	$a0, (16+CONTEXT_HI*4) ($sp)
+		lw	$a0, (16+FRAME_HI*4) ($sp)
 		mthi	$a0
 
-		lw	$a0, (16+CONTEXT_PC*4) ($sp)	# K1 = EPC
+		lw	$a0, (16+FRAME_PC*4) ($sp)	# K1 = EPC
 		mtc0	$a0, $C0_EPC			# put PC in EPC
 
 		.set	noat
-		lw	$1, (16+CONTEXT_R1*4) ($sp)	# Load general registers
-		lw	$2, (16+CONTEXT_R2*4) ($sp)
-		lw	$3, (16+CONTEXT_R3*4) ($sp)
-		lw	$4, (16+CONTEXT_R4*4) ($sp)
-		lw	$5, (16+CONTEXT_R5*4) ($sp)
-		lw	$6, (16+CONTEXT_R6*4) ($sp)
-		lw	$7, (16+CONTEXT_R7*4) ($sp)
-		lw	$8, (16+CONTEXT_R8*4) ($sp)
-		lw	$9, (16+CONTEXT_R9*4) ($sp)
-		lw	$10, (16+CONTEXT_R10*4) ($sp)
-		lw	$11, (16+CONTEXT_R11*4) ($sp)
-		lw	$12, (16+CONTEXT_R12*4) ($sp)
-		lw	$13, (16+CONTEXT_R13*4) ($sp)
-		lw	$14, (16+CONTEXT_R14*4) ($sp)
-		lw	$15, (16+CONTEXT_R15*4) ($sp)
-		lw	$16, (16+CONTEXT_R16*4) ($sp)
-		lw	$17, (16+CONTEXT_R17*4) ($sp)
-		lw	$18, (16+CONTEXT_R18*4) ($sp)
-		lw	$19, (16+CONTEXT_R19*4) ($sp)
-		lw	$20, (16+CONTEXT_R20*4) ($sp)
-		lw	$21, (16+CONTEXT_R21*4) ($sp)
-		lw	$22, (16+CONTEXT_R22*4) ($sp)
-		lw	$23, (16+CONTEXT_R23*4) ($sp)
-		lw	$24, (16+CONTEXT_R24*4) ($sp)
-		lw	$25, (16+CONTEXT_R25*4) ($sp)
+		lw	$1, (16+FRAME_R1*4) ($sp)	# Load general registers
+		lw	$2, (16+FRAME_R2*4) ($sp)
+		lw	$3, (16+FRAME_R3*4) ($sp)
+		lw	$4, (16+FRAME_R4*4) ($sp)
+		lw	$5, (16+FRAME_R5*4) ($sp)
+		lw	$6, (16+FRAME_R6*4) ($sp)
+		lw	$7, (16+FRAME_R7*4) ($sp)
+		lw	$8, (16+FRAME_R8*4) ($sp)
+		lw	$9, (16+FRAME_R9*4) ($sp)
+		lw	$10, (16+FRAME_R10*4) ($sp)
+		lw	$11, (16+FRAME_R11*4) ($sp)
+		lw	$12, (16+FRAME_R12*4) ($sp)
+		lw	$13, (16+FRAME_R13*4) ($sp)
+		lw	$14, (16+FRAME_R14*4) ($sp)
+		lw	$15, (16+FRAME_R15*4) ($sp)
+		lw	$16, (16+FRAME_R16*4) ($sp)
+		lw	$17, (16+FRAME_R17*4) ($sp)
+		lw	$18, (16+FRAME_R18*4) ($sp)
+		lw	$19, (16+FRAME_R19*4) ($sp)
+		lw	$20, (16+FRAME_R20*4) ($sp)
+		lw	$21, (16+FRAME_R21*4) ($sp)
+		lw	$22, (16+FRAME_R22*4) ($sp)
+		lw	$23, (16+FRAME_R23*4) ($sp)
+		lw	$24, (16+FRAME_R24*4) ($sp)
+		lw	$25, (16+FRAME_R25*4) ($sp)
 		# Skip $26 - K0
 		# Skip $27 - K1
-		lw	$28, (16+CONTEXT_GP*4) ($sp)
+		lw	$28, (16+FRAME_GP*4) ($sp)
 		# Skip $29 - SP
-		lw	$30, (16+CONTEXT_FP*4) ($sp)
-		lw	$31, (16+CONTEXT_RA*4) ($sp)
+		lw	$30, (16+FRAME_FP*4) ($sp)
+		lw	$31, (16+FRAME_RA*4) ($sp)
 		.set	at
 
-		lw	$k0, (16+CONTEXT_STATUS*4) ($sp) # K0 = saved status, only IE bit
+		lw	$k0, (16+FRAME_STATUS*4) ($sp)	# K0 = saved status, only IE bit
 		mtc0	$k0, $C0_STATUS			# put SR back
 		nop
 		nop
 
-		lw	$sp, (16+CONTEXT_SP*4) ($sp)	# Restore stack
+		lw	$sp, (16+FRAME_SP*4) ($sp)	# Restore stack
 
 		# Return from exception
 		eret					# PC <= EPC; EXL <= 0

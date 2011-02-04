@@ -23,9 +23,9 @@ swap (blkno, coreaddr, count, rdflg)
 	int rdflg;
 {
 	register struct buf *bp;
-	register int tcount;
 	int s;
 
+printf ("swap (%u, 0x%08x, %d, %d)\n", blkno, coreaddr, count, rdflg);
 #ifdef UCB_METER
 	if (rdflg) {
 		cnt.v_pswpin += count;
@@ -41,23 +41,20 @@ swap (blkno, coreaddr, count, rdflg)
 	while (count) {
 		bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rdflg;
 		bp->b_dev = swapdev;
-		tcount = count;
-		if (tcount >= 01700)	/* prevent byte-count wrap */
-			tcount = 01700;
-		bp->b_bcount = tcount;
+		bp->b_bcount = count;
 		bp->b_blkno = blkno;
-		bp->b_addr = (caddr_t) (coreaddr<<6);
-		trace(TR_SWAPIO);
-		(*bdevsw[major(swapdev)].d_strategy)(bp);
+		bp->b_addr = (caddr_t) coreaddr;
+		trace (TR_SWAPIO);
+		(*bdevsw[major(swapdev)].d_strategy) (bp);
 		s = splbio();
 		while ((bp->b_flags & B_DONE) == 0)
-			sleep((caddr_t)bp, PSWP);
-		splx(s);
+			sleep ((caddr_t)bp, PSWP);
+		splx (s);
 		if ((bp->b_flags & B_ERROR) || bp->b_resid)
-			panic("hard err: swap");
-		count -= tcount;
-		coreaddr += tcount;
-		blkno += btod(tcount);
+			panic ("hard err: swap");
+		count -= count;
+		coreaddr += count;
+		blkno += btod (count);
 	}
 	brelse(bp);
 }

@@ -126,9 +126,9 @@ procxmt()
 		i = (int)ipc.ip_addr;
 		p = (int*)&u + i/sizeof(int);
 		for (i=0; i<8; i++)
-			if (p == &u.u_ar0[i])
+			if (p == &u.u_frame[i])
 				goto ok;
-		if (p == &u.u_ar0 [CONTEXT_STATUS]) {
+		if (p == &u.u_frame [FRAME_STATUS]) {
 			// TODO
 			//ipc.ip_data |= PSL_USERSET;	/* user space */
 			//ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
@@ -143,11 +143,11 @@ ok:
 	/*  one version causes a trace-trap */
 	case PT_STEP:
 		// TODO
-		//u.u_ar0 [CONTEXT_STATUS] |= PSL_T;
+		//u.u_frame [FRAME_STATUS] |= PSL_T;
 		/* FALL THROUGH TO ... */
 	case PT_CONTINUE:
 		if ((int)ipc.ip_addr != 1)
-			u.u_ar0 [CONTEXT_PC] = (int)ipc.ip_addr;
+			u.u_frame [FRAME_PC] = (int)ipc.ip_addr;
 		if (ipc.ip_data > NSIG)
 			goto error;
 		u.u_procp->p_ptracesig = ipc.ip_data;

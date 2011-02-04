@@ -433,7 +433,7 @@ badarg:
 	 */
 	ucp = -nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
-	u.u_ar0 [CONTEXT_SP] = ap;
+	u.u_frame [FRAME_SP] = ap;
 	*(int*) ap = na - ne;
 	nc = 0;
 	cc = 0;
@@ -488,7 +488,7 @@ badarg:
 	/*
 	 * Clear registers.
 	 */
-	u.u_ar0 [CONTEXT_PC] = exdata.ex_exec.a_entry & ~01;
+	u.u_frame [FRAME_PC] = exdata.ex_exec.a_entry & ~01;
 
 	/*
 	 * Remember file name for accounting.
