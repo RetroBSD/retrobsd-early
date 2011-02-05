@@ -55,7 +55,7 @@ sigstack()
 	register struct a {
 		struct	sigstack *nss;
 		struct	sigstack *oss;
-	} *uap = (struct a*) u.u_ap;
+	} *uap = (struct a*) u.u_arg;
 	struct sigstack ss;
 	register int error = 0;
 
@@ -112,7 +112,7 @@ kill()
 	register struct a {
 		int	pid;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct proc *p;
 	register int error = 0;
 
@@ -163,7 +163,7 @@ killpg()
 	register struct a {
 		int	pgrp;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register int error = 0;
 
 	if (uap->signo < 0 || uap->signo >= NSIG) {

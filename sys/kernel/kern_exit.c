@@ -144,7 +144,7 @@ rexit()
 {
 	register struct a {
 		int	rval;
-	} *uap = (struct a*) u.u_ap;
+	} *uap = (struct a*) u.u_arg;
 
 	exit (W_EXITCODE (uap->rval, 0));
 	/* NOTREACHED */
@@ -261,13 +261,13 @@ void
 wait4()
 {
 	int retval[2];
-	register struct	args *uap = (struct args*) u.u_ap;
+	register struct	args *uap = (struct args*) u.u_arg;
 
 	uap->compat = 0;
 	retval[0] = 0;
 	u.u_error = wait1 (u.u_procp, uap, retval);
 	if (! u.u_error)
-		u.u_r.r_val1 = retval[0];
+		u.u_rval = retval[0];
 }
 
 void
@@ -278,5 +278,5 @@ reboot()
 	};
 
 	if (suser ())
-		boot (rootdev, ((struct a*)u.u_ap)->opt);
+		boot (rootdev, ((struct a*)u.u_arg)->opt);
 }

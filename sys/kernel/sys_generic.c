@@ -27,7 +27,7 @@ rwuio (uio)
 	u_int i, count;
 	off_t	total;
 
-	GETF(fp, ((struct a *)u.u_ap)->fdes);
+	GETF(fp, ((struct a *)u.u_arg)->fdes);
 	if ((fp->f_flag & (uio->uio_rw == UIO_READ ? FREAD : FWRITE)) == 0) {
 		u.u_error = EBADF;
 		return;
@@ -57,7 +57,7 @@ rwuio (uio)
 	} else
 		u.u_error = (*Fops[fp->f_type]->fo_rw) (fp, uio);
 
-	u.u_r.r_val1 = count - uio->uio_resid;
+	u.u_rval = count - uio->uio_resid;
 }
 
 /*
@@ -70,7 +70,7 @@ read()
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -89,7 +89,7 @@ readv()
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
@@ -117,7 +117,7 @@ write()
 		int	fdes;
 		char	*cbuf;
 		unsigned count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct uio auio;
 	struct iovec aiov;
 
@@ -136,7 +136,7 @@ writev()
 		int	fdes;
 		struct	iovec *iovp;
 		unsigned iovcnt;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
@@ -171,7 +171,7 @@ ioctl()
 	register u_int size;
 	char data[IOCPARM_MASK+1];
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u.u_arg;
 	if ((fp = getf(uap->fdes)) == NULL)
 		return;
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
@@ -357,8 +357,8 @@ select1(uap, is_pselect)
 retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= P_SELECT;
-	error = selscan(ibits, obits, uap->nd, &u.u_r.r_val1);
-	if (error || u.u_r.r_val1)
+	error = selscan(ibits, obits, uap->nd, &u.u_rval);
+	if (error || u.u_rval)
 		goto done;
 	s = splhigh();
 	if (uap->ts) {
@@ -427,7 +427,7 @@ select()
 		int	nd;
 		fd_set	*in, *ou, *ex;
 		struct	timeval *tv;
-	} *uap = (struct uap *)u.u_ap;
+	} *uap = (struct uap *)u.u_arg;
 	register struct pselect_args *pselargs = (struct pselect_args *)uap;
 
 	/*
@@ -447,7 +447,7 @@ select()
 void
 pselect()
 {
-	register struct	pselect_args *uap = (struct pselect_args *)u.u_ap;
+	register struct	pselect_args *uap = (struct pselect_args *)u.u_arg;
 
 	u.u_error = select1(uap, 1);
 }

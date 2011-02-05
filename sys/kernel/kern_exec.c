@@ -171,7 +171,7 @@ getxfile (ip, ep, nargc, uid, gid)
 void
 execv()
 {
-	((struct execa *)u.u_ap)->envp = NULL;
+	((struct execa *)u.u_arg)->envp = NULL;
 	execve();
 }
 
@@ -181,7 +181,7 @@ execve()
 	int nc;
 	register char *cp;
 	register struct buf *bp;
-	struct execa *uap = (struct execa *)u.u_ap;
+	struct execa *uap = (struct execa *)u.u_arg;
 	int na, ne, ucp, ap;
 	register int cc;
 	unsigned len;
@@ -200,6 +200,7 @@ execve()
 	register struct	nameidata *ndp = &nd;
 	int resid, error;
 
+printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei (ndp);
 	if (ip == NULL)

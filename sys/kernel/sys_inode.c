@@ -86,7 +86,7 @@ ino_ioctl(fp, com, data)
 
 	case IFCHR:
 		dev = ip->i_rdev;
-		u.u_r.r_val1 = 0;
+		u.u_rval = 0;
 		if (setjmp(&u.u_qsave)) {
 			/*
 			 * The ONLY way we can get here is via the longjump in sleep.  Signals have

@@ -40,7 +40,7 @@ ptrace()
 		int	data;
 	} *uap;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u.u_arg;
 	if (uap->req <= 0) {
 		u.u_procp->p_flag |= P_TRACED;
 		return;
@@ -61,7 +61,7 @@ ptrace()
 	setrun(p);
 	while (ipc.ip_req > 0)
 		sleep((caddr_t)&ipc, PZERO);
-	u.u_r.r_val1 = (short)ipc.ip_data;
+	u.u_rval = (short)ipc.ip_data;
 	if (ipc.ip_req < 0)
 		u.u_error = EIO;
 	ipc.ip_lock = 0;

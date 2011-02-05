@@ -16,12 +16,9 @@
  * The lost+found directory is given the next available
  * inode when it is created by ``mkfs''.
  */
-#define BBSIZE		DEV_BSIZE
 #define SBSIZE		DEV_BSIZE
-#define	BBLOCK		((daddr_t)(0))
-#define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
+#define	SUPERB		((daddr_t)0)	/* block number of the super block */
 
-#define	SUPERB		((daddr_t)1)	/* block number of the super block */
 #define	ROOTINO		((ino_t)2)	/* i number of all roots */
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
@@ -45,9 +42,9 @@ struct	fs
 	u_int	fs_isize;		/* first block after i-list */
 	daddr_t	fs_fsize;		/* size in blocks of entire volume */
 	int	fs_nfree;		/* number of addresses in fs_free */
-	daddr_t	fs_free[NICFREE];	/* free block list */
+	daddr_t	fs_free [NICFREE];	/* free block list */
 	int	fs_ninode;		/* number of inodes in fs_inode */
-	ino_t	fs_inode[NICINOD];	/* free inode list */
+	ino_t	fs_inode [NICINOD];	/* free inode list */
 	char	fs_flock;		/* lock during free list manipulation */
 	char	fs_fmod;		/* super block modified flag */
 	char	fs_ilock;		/* lock during i-list manipulation */
@@ -57,7 +54,7 @@ struct	fs
 	ino_t	fs_tinode;		/* total free inodes */
 	int	fs_step;		/* optimal step in free list pattern */
 	int	fs_cyl;			/* number of blocks per pattern */
-	char	fs_fsmnt[MAXMNTLEN];	/* ordinary file mounted on */
+	char	fs_fsmnt [MAXMNTLEN];	/* ordinary file mounted on */
 	ino_t	fs_lasti;		/* start place for circular search */
 	ino_t	fs_nbehind;		/* est # free inodes before s_lasti */
 	u_int	fs_flags;		/* mount time flags */
@@ -66,7 +63,7 @@ struct	fs
 
 struct	fblk {
 	int	df_nfree;		/* number of addresses in df_free */
-	daddr_t	df_free[NICFREE];	/* free block list */
+	daddr_t	df_free [NICFREE];	/* free block list */
 };
 
 /*

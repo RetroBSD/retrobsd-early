@@ -19,7 +19,7 @@ getpriority()
 	register struct a {
 		int	which;
 		int	who;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct proc *p;
 	register int low = PRIO_MAX + 1;
 
@@ -59,7 +59,7 @@ getpriority()
 		u.u_error = ESRCH;
 		return;
 	}
-	u.u_r.r_val1 = low;
+	u.u_rval = low;
 }
 
 static void
@@ -90,7 +90,7 @@ setpriority()
 		int	which;
 		int	who;
 		int	prio;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct proc *p;
 	register int found = 0;
 
@@ -137,7 +137,7 @@ setrlimit()
 	register struct a {
 		u_int	which;
 		struct	rlimit *lim;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct rlimit alim;
 	register struct rlimit *alimp;
 
@@ -176,7 +176,7 @@ getrlimit()
 	register struct a {
 		u_int	which;
 		struct	rlimit *rlp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 
 	if (uap->which >= RLIM_NLIMITS) {
 		u.u_error = EINVAL;
@@ -203,7 +203,7 @@ getrusage()
 	register struct a {
 		int	who;
 		struct	rusage *rusage;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct k_rusage *rup;
 	struct rusage ru;
 

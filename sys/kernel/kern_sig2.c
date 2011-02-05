@@ -115,7 +115,7 @@ sigaction()
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct sigaction vec;
 	register struct sigaction *sa;
 	register int signum;
@@ -209,7 +209,7 @@ sigprocmask()
 		int how;
 		sigset_t *set;
 		sigset_t *oset;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	int error = 0;
 	sigset_t oldmask, newmask;
 	register struct proc *p = u.u_procp;
@@ -252,7 +252,7 @@ sigpending()
 {
 	register struct a {
 		struct sigset_t *set;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register int error = 0;
 	struct	proc *p = u.u_procp;
 
@@ -273,7 +273,7 @@ sigsuspend()
 {
 	register struct a {
 		struct sigset_t *set;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	sigset_t nmask = 0;
 	struct proc *p = u.u_procp;
 	int error;
@@ -300,7 +300,7 @@ sigaltstack()
 	register struct a {
 		struct sigaltstack * nss;
 		struct sigaltstack * oss;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct sigaltstack ss;
 	int error = 0;
 
@@ -341,7 +341,7 @@ sigwait()
 	register struct a {
 		sigset_t *set;
 		int *sig;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	sigset_t wanted, sigsavail;
 	register struct proc *p = u.u_procp;
 	int	signo, error;

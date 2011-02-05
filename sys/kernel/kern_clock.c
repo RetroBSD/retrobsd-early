@@ -315,7 +315,7 @@ profil()
 		unsigned bufsize;
 		unsigned pcoffset;
 		unsigned pcscale;
-	} *uap = (struct a*) u.u_ap;
+	} *uap = (struct a*) u.u_arg;
 	register struct uprof *upp = &u.u_prof;
 
 	upp->pr_base = uap->bufbase;

@@ -118,7 +118,6 @@ main()
 	p->p_nice = NZERO;
 
 	u.u_procp = p;			/* init user structure */
-	u.u_ap = u.u_arg;
 	u.u_cmask = CMASK;
 	u.u_lastfile = -1;
 	for (i = 1; i < NGROUPS; i++)

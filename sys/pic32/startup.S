@@ -24,6 +24,8 @@
 #
 #include "machine/io.h"
 
+#define UBASE	0x7f008000	/* User space base address */
+
 		.set	noreorder
 		.set	mips32r2
 		.set	nomips16
@@ -198,8 +200,10 @@ restore_regs:
 		.type	icode, @function
 		.type	icodeend, @function
 icode:
-		la	$a0, etcinit
-		la	$a1, argv
+		la	$a0, UBASE
+		move	$a1, $a0
+		addi	$a0, etcinit - icode
+		addi	$a1, argv - icode
 		syscall	11				# SYS_execv
 		move	$a0, $v0
 		syscall	1				# SYS_exit
@@ -208,8 +212,8 @@ etcinit:
 initflags:
 		.ascii	"-00000\0"			# decimal ASCII initflags
 argv:
-		.word	etcinit + 5 - icode + 0x7f000000	# address of "init\0"
-		.word	initflags - icode + 0x7f000000
+		.word	etcinit + 5 - icode + UBASE	# address of "init\0"
+		.word	initflags - icode + UBASE	# init options
 		.word	0
 
 icodeend:	nop

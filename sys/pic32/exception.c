@@ -148,8 +148,6 @@ exception (frame)
 	 */
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
 	case CA_AdES + USER:		/* Address error, store */
-//		if (! (u.u_sigstk.ss_flags & SA_ONSTACK) && grow ((u_int) sp))
-//			goto out;
 		i = SIGSEGV;
 		break;
 
@@ -199,19 +197,17 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 					u.u_arg[5] = *(unsigned*) addr;
 			}
 		}
-		u.u_r.r_val1 = 0;
-		u.u_r.r_val2 = frame [FRAME_R3];		/* $v1 */
+		u.u_rval = 0;
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
 		}
 		frame [FRAME_R8] = u.u_error;			/* $t0 */
 		switch (u.u_error) {
 		case 0:
-			frame [FRAME_R2] = u.u_r.r_val1;	/* $v0 */
-			frame [FRAME_R3] = u.u_r.r_val2;	/* $v1 */
+			frame [FRAME_R2] = u.u_rval;		/* $v0 */
 			break;
 		case ERESTART:
-			frame [FRAME_PC] = opc;
+			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		}
 		goto out;

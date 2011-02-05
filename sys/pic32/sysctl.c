@@ -28,7 +28,7 @@ ucall()
 		int (*routine)();
 		int arg1;
 		int arg2;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	int s;
 
 	if (!suser())
@@ -41,7 +41,7 @@ ucall()
 		s = splhigh();
 		break;
 	}
-	u.u_r.r_val1 = (*uap->routine) (uap->arg1, uap->arg2);
+	u.u_rval = (*uap->routine) (uap->arg1, uap->arg2);
 	splx(s);
 }
 
@@ -58,7 +58,7 @@ lock()
 
 	if (!suser())
 		return;
-	if (((struct a *)u.u_ap)->flag)
+	if (((struct a *)u.u_arg)->flag)
 		u.u_procp->p_flag |= SULOCK;
 	else
 		u.u_procp->p_flag &= ~SULOCK;
@@ -72,7 +72,7 @@ lock()
 void
 fetchi()
 {
-	u.u_r.r_val1 = *(unsigned*) u.u_ap;
+	u.u_rval = *(unsigned*) u.u_arg;
 }
 
 /*

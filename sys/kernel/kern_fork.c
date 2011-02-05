@@ -221,23 +221,17 @@ fork1 (isvfork)
 	}
 	p1 = u.u_procp;
 	if (newproc (isvfork)) {
-		u.u_r.r_val1 = p1->p_pid;
-#ifndef pdp11
-		u.u_r.r_val2 = 1;  /* child */
-#endif
+		/* Child */
+		u.u_rval = p1->p_pid;
 		u.u_start = time.tv_sec;
 		bzero(&u.u_ru, sizeof(u.u_ru));
 		bzero(&u.u_cru, sizeof(u.u_cru));
 		return;
 	}
-	u.u_r.r_val1 = p2->p_pid;
-
+	u.u_rval = p2->p_pid;
 out:
-#ifdef pdp11			/* see libc/pdp/sys/fork.s */
-	u.u_frame [R7] += NBPW;
-#else
-	u.u_r.r_val2 = 0;
-#endif
+	/* Parent: skip two instructions on return */
+	u.u_frame [FRAME_PC] += NBPW * 2;
 }
 
 /*

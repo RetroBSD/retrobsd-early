@@ -27,22 +27,13 @@ struct user {
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_frame;		/* address of users saved frame */
 	char	u_comm[MAXCOMLEN + 1];
-
-/* syscall parameters, results and catches */
-	int	u_arg[6];		/* arguments to current system call */
-	int	*u_ap;			/* pointer to arglist */
 	label_t u_qsave;		/* for non-local gotos on interrupts */
-	union {				/* syscall return values */
-		struct	{
-			int	R_val1;
-			int	R_val2;
-		} u_rv;
-#define	r_val1	u_rv.R_val1
-#define	r_val2	u_rv.R_val2
-		long	r_long;
-		off_t	r_off;
-		time_t	r_time;
-	} u_r;
+	label_t	u_rsave;		/* save info when exchanging stacks */
+	label_t	u_ssave;		/* label variable for swapping */
+
+/* syscall parameters and results */
+	int	u_arg[6];		/* arguments to current system call */
+	int	u_rval;			/* return value */
 	int	u_error;		/* return error code */
 
 /* 1.1 - processes and protection */
@@ -57,8 +48,6 @@ struct user {
 	size_t	u_tsize;		/* text size (clicks) */
 	size_t	u_dsize;		/* data size (clicks) */
 	size_t	u_ssize;		/* stack size (clicks) */
-	label_t	u_ssave;		/* label variable for swapping */
-	label_t	u_rsave;		/* save info when exchanging stacks */
 
 /* 1.3 - signal management */
 	sighandler_t u_signal[NSIG];	/* disposition of signals */

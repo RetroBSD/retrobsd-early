@@ -13,14 +13,13 @@
 void
 getpid()
 {
-	u.u_r.r_val1 = u.u_procp->p_pid;
-	u.u_r.r_val2 = u.u_procp->p_ppid;	/* XXX - compatibility */
+	u.u_rval = u.u_procp->p_pid;
 }
 
 void
 getppid()
 {
-	u.u_r.r_val1 = u.u_procp->p_ppid;
+	u.u_rval = u.u_procp->p_ppid;
 }
 
 void
@@ -28,7 +27,7 @@ getpgrp()
 {
 	register struct a {
 		int	pid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct proc *p;
 
 	if (uap->pid == 0)		/* silly... */
@@ -38,33 +37,31 @@ getpgrp()
 		u.u_error = ESRCH;
 		return;
 	}
-	u.u_r.r_val1 = p->p_pgrp;
+	u.u_rval = p->p_pgrp;
 }
 
 void
 getuid()
 {
-	u.u_r.r_val1 = u.u_ruid;
-	u.u_r.r_val2 = u.u_uid;		/* XXX */
+	u.u_rval = u.u_ruid;
 }
 
 void
 geteuid()
 {
-	u.u_r.r_val1 = u.u_uid;
+	u.u_rval = u.u_uid;
 }
 
 void
 getgid()
 {
-	u.u_r.r_val1 = u.u_rgid;
-	u.u_r.r_val2 = u.u_groups[0];		/* XXX */
+	u.u_rval = u.u_rgid;
 }
 
 void
 getegid()
 {
-	u.u_r.r_val1 = u.u_groups[0];
+	u.u_rval = u.u_groups[0];
 }
 
 /*
@@ -77,7 +74,7 @@ getgroups()
 	register struct	a {
 		u_int	gidsetsize;
 		int	*gidset;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register gid_t *gp;
 
 	for (gp = &u.u_groups[NGROUPS]; gp > u.u_groups; gp--)
@@ -92,7 +89,7 @@ getgroups()
 	    uap->gidsetsize * sizeof(u.u_groups[0]));
 	if (u.u_error)
 		return;
-	u.u_r.r_val1 = uap->gidsetsize;
+	u.u_rval = uap->gidsetsize;
 }
 
 void
@@ -102,7 +99,7 @@ setpgrp()
 	register struct a {
 		int	pid;
 		int	pgrp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 
 	if (uap->pid == 0)		/* silly... */
 		uap->pid = u.u_procp->p_pid;
@@ -125,7 +122,7 @@ setgroups()
 	register struct	a {
 		u_int	gidsetsize;
 		int	*gidset;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register gid_t *gp;
 
 	if (!suser())

@@ -60,7 +60,7 @@ gettimeofday()
 	register struct a {
 		struct	timeval *tp;
 		struct	timezone *tzp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct timeval atv;
 	int s;
 	register u_int	ms;
@@ -91,7 +91,7 @@ settimeofday()
 	register struct a {
 		struct	timeval *tv;
 		struct	timezone *tzp;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct timeval atv;
 	struct timezone atz;
 
@@ -118,7 +118,7 @@ adjtime()
 	register struct a {
 		struct timeval *delta;
 		struct timeval *olddelta;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct timeval atv;
 	register int s;
 	long adjust;
@@ -162,7 +162,7 @@ getitimer()
 	register struct a {
 		u_int	which;
 		struct	itimerval *itv;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct itimerval aitv;
 	register int s;
 
@@ -195,7 +195,7 @@ setitimer()
 	register struct a {
 		u_int	which;
 		struct	itimerval *itv, *oitv;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct itimerval aitv;
 	register struct itimerval *aitvp;
 	int s;

@@ -31,7 +31,7 @@ ufalloc(i)
 {
 	for (; i < NOFILE; i++)
 		if (u.u_ofile[i] == NULL) {
-			u.u_r.r_val1 = i;
+			u.u_rval = i;
 			u.u_pofile[i] = 0;
 			if (i > u.u_lastfile)
 				u.u_lastfile = i;
@@ -47,7 +47,7 @@ ufalloc(i)
 void
 getdtablesize()
 {
-	u.u_r.r_val1 = NOFILE;
+	u.u_rval = NOFILE;
 }
 
 static void
@@ -68,7 +68,7 @@ dup()
 {
 	register struct a {
 		int	i;
-	} *uap = (struct a *) u.u_ap;
+	} *uap = (struct a *) u.u_arg;
 	register struct file *fp;
 	register int j;
 
@@ -86,7 +86,7 @@ dup2()
 {
 	register struct a {
 		int	i, j;
-	} *uap = (struct a *) u.u_ap;
+	} *uap = (struct a *) u.u_arg;
 	register struct file *fp;
 
 	GETF(fp, uap->i);
@@ -94,7 +94,7 @@ dup2()
 		u.u_error = EBADF;
 		return;
 	}
-	u.u_r.r_val1 = uap->j;
+	u.u_rval = uap->j;
 	if (uap->i == uap->j)
 		return;
 	if (u.u_ofile[uap->j])
@@ -120,7 +120,7 @@ fcntl()
 	register int i;
 	register char *pop;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u.u_arg;
 	fp = getf(uap->fdes);
 	if (fp == NULL)
 		return;
@@ -138,7 +138,7 @@ fcntl()
 		break;
 
 	case F_GETFD:
-		u.u_r.r_val1 = *pop & 1;
+		u.u_rval = *pop & 1;
 		break;
 
 	case F_SETFD:
@@ -146,7 +146,7 @@ fcntl()
 		break;
 
 	case F_GETFL:
-		u.u_r.r_val1 = OFLAGS(fp->f_flag);
+		u.u_rval = OFLAGS(fp->f_flag);
 		break;
 
 	case F_SETFL:
@@ -161,7 +161,7 @@ fcntl()
 		break;
 
 	case F_GETOWN:
-		u.u_error = fgetown (fp, &u.u_r.r_val1);
+		u.u_error = fgetown (fp, &u.u_rval);
 		break;
 
 	case F_SETOWN:
@@ -248,7 +248,7 @@ close()
 {
 	register struct a {
 		int	i;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct file *fp;
 
 	GETF(fp, uap->i);
@@ -269,7 +269,7 @@ fstat()
 	} *uap;
 	struct stat ub;
 
-	uap = (struct a *)u.u_ap;
+	uap = (struct a *)u.u_arg;
 	fp = getf(uap->fdes);
 	if (fp == NULL)
 		return;
@@ -386,7 +386,7 @@ flock()
 	register struct a {
 		int	fd;
 		int	how;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct file *fp;
 	int error;
 

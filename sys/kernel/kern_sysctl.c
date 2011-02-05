@@ -89,7 +89,7 @@ static int sysctl_doproc (int *name, u_int namelen, char *where, size_t *sizep);
 void
 __sysctl()
 {
-	register struct sysctl_args *uap = (struct sysctl_args*) u.u_ap;
+	register struct sysctl_args *uap = (struct sysctl_args*) u.u_arg;
 	int error;
 	u_int savelen, oldlen = 0;
 	sysctlfn *fn;
@@ -177,7 +177,7 @@ __sysctl()
 			return;
 		}
 	}
-	u.u_r.r_val1 = oldlen;
+	u.u_rval = oldlen;
 }
 
 /*

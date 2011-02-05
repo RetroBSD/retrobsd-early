@@ -22,8 +22,8 @@
 #include "device.h"
 #include "dev_sdcard.h"
 
-#define TRACE       printf
-//#define TRACE(...)  /*empty*/
+//#define TRACE       printf
+#define TRACE(...)  /*empty*/
 
 /*
  * Definitions for MMC/SDC commands.

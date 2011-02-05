@@ -45,7 +45,7 @@ statfs()
 	register struct a {
 		char	*path;
 		struct	statfs	*buf;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct	inode	*ip;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
@@ -66,7 +66,7 @@ fstatfs()
 	register struct a {
 		int	fd;
 		struct	statfs *buf;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	struct	mount *mp;
 
@@ -84,7 +84,7 @@ getfsstat()
 		struct	statfs	*buf;
 		int	bufsize;
 		u_int	flags;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct	mount *mp;
 	caddr_t	sfsp;
 	int	count, maxcount, error;
@@ -106,9 +106,9 @@ getfsstat()
 		count++;
 	}
 	if (sfsp && count > maxcount)
-		u.u_r.r_val1 = maxcount;
+		u.u_rval = maxcount;
 	else
-		u.u_r.r_val1 = count;
+		u.u_rval = count;
 }
 
 /*
@@ -186,9 +186,9 @@ umask()
 {
 	register struct a {
 		int	mask;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 
-	u.u_r.r_val1 = u.u_cmask;
+	u.u_rval = u.u_cmask;
 	u.u_cmask = uap->mask & 07777;
 }
 
@@ -203,7 +203,7 @@ lseek()
 		int	fd;
 		off_t	off;
 		int	sbase;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 
 	if ((fp = getf(uap->fd)) == NULL)
 		return;
@@ -226,7 +226,7 @@ lseek()
 		u.u_error = EINVAL;
 		return;
 	}
-	u.u_r.r_off = fp->f_offset;
+	u.u_rval = fp->f_offset;
 }
 
 /*
@@ -237,7 +237,7 @@ fsync()
 {
 	register struct a {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 
 	if ((ip = getinode(uap->fd)) == NULL)
@@ -253,7 +253,7 @@ utimes()
 	register struct a {
 		char	*fname;
 		struct	timeval *tptr;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;

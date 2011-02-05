@@ -24,7 +24,7 @@ chdirec(ipp)
 	register struct inode *ip;
 	struct a {
 		char	*fname;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
@@ -62,7 +62,7 @@ fchdir()
 {
 	register struct	a {
 		int	fd;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct	inode *ip;
 
 	ip = getinode (uap->fd);
@@ -118,7 +118,7 @@ copen (mode, arg, fname)
 	fp->f_flag = flags & FMASK;
 	fp->f_type = DTYPE_INODE;
 	cmode = (arg & 077777) & ~ISVTX;
-	indx = u.u_r.r_val1;
+	indx = u.u_rval;
 	u.u_dupfd = -indx - 1;
 	NDINIT (ndp, LOOKUP, FOLLOW, fname);
 
@@ -140,7 +140,7 @@ copen (mode, arg, fname)
 		if ((error == ENODEV || error == ENXIO) &&
 		    u.u_dupfd >= 0 &&
 		    (error = dupfdopen(indx,u.u_dupfd,flags,error) == 0)) {
-			u.u_r.r_val1 = indx;
+			u.u_rval = indx;
 			return(0);
 		}
 		u.u_ofile[indx] = NULL;
@@ -177,7 +177,7 @@ open()
 		char	*fname;
 		int	mode;
 		int	crtmode;
-	} *uap = (struct a *) u.u_ap;
+	} *uap = (struct a *) u.u_arg;
 
 	u.u_error = copen (uap->mode, uap->crtmode, uap->fname);
 }
@@ -193,7 +193,7 @@ mknod()
 		char	*fname;
 		int	fmode;
 		int	dev;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
@@ -239,7 +239,7 @@ link()
 	register struct a {
 		char	*target;
 		char	*linkname;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
@@ -293,7 +293,7 @@ symlink()
 	register struct a {
 		char	*target;
 		char	*linkname;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	char *tp;
 	int c, nc;
@@ -341,7 +341,7 @@ unlink()
 {
 	register struct a {
 		char	*fname;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip, *dp;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
@@ -388,7 +388,7 @@ saccess()
 	register struct a {
 		char	*fname;
 		int	fmode;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
@@ -420,7 +420,7 @@ stat1 (follow)
 	register struct a {
 		char	*fname;
 		struct stat *ub;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct stat sb;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
@@ -463,7 +463,7 @@ readlink()
 		char	*name;
 		char	*buf;
 		int	count;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 	int resid;
@@ -480,7 +480,7 @@ readlink()
 				IO_UNIT, &resid);
 out:
 	iput(ip);
-	u.u_r.r_val1 = uap->count - resid;
+	u.u_rval = uap->count - resid;
 }
 
 static int
@@ -505,7 +505,7 @@ chflags()
 	register struct a {
 		char	*fname;
 		u_short	flags;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
 
@@ -525,7 +525,7 @@ fchflags()
 	register struct a {
 		int	fd;
 		u_short	flags;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 
 	ip = getinode (uap->fd);
@@ -546,7 +546,7 @@ chmod()
 	register struct a {
 		char	*fname;
 		int	fmode;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	vattr	vattr;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
@@ -570,7 +570,7 @@ fchmod()
 	register struct a {
 		int	fd;
 		int	fmode;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	struct	vattr	vattr;
 
@@ -618,7 +618,7 @@ chown()
 		char	*fname;
 		int	uid;
 		int	gid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
 	struct	vattr	vattr;
@@ -644,7 +644,7 @@ fchown()
 		int	fd;
 		int	uid;
 		int	gid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	struct	vattr	vattr;
 
@@ -703,7 +703,7 @@ truncate()
 	register struct a {
 		char	*fname;
 		off_t	length;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
@@ -731,7 +731,7 @@ ftruncate()
 	register struct a {
 		int	fd;
 		off_t	length;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 	register struct file *fp;
 	struct	vattr	vattr;
@@ -783,7 +783,7 @@ rename()
 	struct a {
 		char	*from;
 		char	*to;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip, *xp, *dp;
 	struct dirtemplate dirbuf;
 	int doingdirectory = 0, oldparent = 0, newparent = 0;
@@ -1132,7 +1132,7 @@ mkdir()
 	register struct a {
 		char	*name;
 		int	dmode;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip, *dp;
 	struct dirtemplate dirtemplate;
 	struct	nameidata nd;
@@ -1232,7 +1232,7 @@ rmdir()
 {
 	struct a {
 		char	*name;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip, *dp;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;

@@ -257,8 +257,8 @@ pipe()
 	 * to make it a problem.  Besides, 4.3's is just as bad.  Basic
 	 * fantasy is that if m_inodp is set, m_dev *will* be okay.
 	 */
-	if (!mp || !mp->m_inodp || mp->m_dev != pipedev) {
-		for (mp = &mount[0];;++mp) {
+	if (! mp || ! mp->m_inodp || mp->m_dev != pipedev) {
+		for (mp = &mount[0]; ; ++mp) {
 			if (mp == &mount[NMOUNT]) {
 				mp = &mount[0];		/* use root */
 				break;
@@ -274,29 +274,34 @@ pipe()
 	}
 	itmp.i_fs = &mp->m_filsys;
 	itmp.i_dev = mp->m_dev;
-	ip = ialloc(&itmp);
+	ip = ialloc (&itmp);
 	if (ip == NULL)
 		return;
 	rf = falloc();
 	if (rf == NULL) {
-		iput(ip);
+		iput (ip);
 		return;
 	}
-	r = u.u_r.r_val1;
+	r = u.u_rval;
 	wf = falloc();
 	if (wf == NULL) {
 		rf->f_count = 0;
 		u.u_ofile[r] = NULL;
-		iput(ip);
+		iput (ip);
 		return;
 	}
-	u.u_r.r_val2 = u.u_r.r_val1;
-	u.u_r.r_val1 = r;
+#ifdef PIC32MX
+	/* Move a secondary return value to register $v1. */
+	u.u_frame [FRAME_R3] = u.u_rval;
+#else
+	TODO
+#endif
+	u.u_rval = r;
 	wf->f_flag = FWRITE;
 	rf->f_flag = FREAD;
 	rf->f_type = wf->f_type = DTYPE_PIPE;
-	rf->f_data = wf->f_data = (caddr_t)ip;
+	rf->f_data = wf->f_data = (caddr_t) ip;
 	ip->i_count = 2;
 	ip->i_mode = IFREG;
-	ip->i_flag = IACC|IUPD|ICHG|IPIPE;
+	ip->i_flag = IACC | IUPD | ICHG | IPIPE;
 }

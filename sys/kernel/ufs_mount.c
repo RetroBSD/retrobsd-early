@@ -78,7 +78,7 @@ smount()
 		char	*fspec;
 		char	*freg;
 		int	flags;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	dev_t dev;
 	register struct inode *ip;
 	register struct fs *fs;
@@ -155,7 +155,7 @@ smount()
 			error = EBUSY;
 			goto cmnout;
 		}
-		fs = mountfs(dev, uap->flags, ip);
+		fs = mountfs (dev, uap->flags, ip);
 		if (fs == 0)
 			return;
 	}
@@ -204,19 +204,19 @@ mountfs (dev, flags, ip)
 	 * XXX - have a CHR counterpart.  Such drivers can not support labels due to
 	 * XXX - the lack of an ioctl entry point.
 	 */
-	chrdev = blktochr(dev);
+	chrdev = blktochr (dev);
 	if (chrdev == NODEV)
 		ioctl = NULL;
 	else
 		ioctl = cdevsw[chrdev].d_ioctl;
-	if (ioctl && !(*ioctl)(dev, DIOCGPART, &dpart, FREAD)) {
+	if (ioctl && ! (*ioctl) (dev, DIOCGPART, &dpart, FREAD)) {
 		if (dpart.part->p_fstype != FS_V71K) {
 			error = EINVAL;
 			goto out;
 		}
 	}
 	needclose = 1;
-	tp = bread(dev, SBLOCK);
+	tp = bread (dev, SUPERB);
 	if (tp->b_flags & B_ERROR)
 		goto out;
 	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
@@ -237,7 +237,7 @@ found:
 	mp->m_dev = dev;
 	fs = &mp->m_filsys;
 	bcopy (tp->b_addr, (caddr_t)fs, sizeof(struct fs));
-	brelse(tp);
+	brelse (tp);
 	tp = 0;
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
@@ -313,7 +313,7 @@ umount()
 {
 	struct a {
 		char	*fspec;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 
 	u.u_error = unmount1 (uap->fspec);
 }

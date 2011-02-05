@@ -18,7 +18,7 @@ sbrk()
 	register int n, d;
 
 	/* set n to new data size */
-	n = ((struct a*)u.u_ap)->nsiz;
+	n = ((struct a*)u.u_arg)->nsiz;
 	n -= u.u_tsize;
 	if (n < 0)
 		n = 0;

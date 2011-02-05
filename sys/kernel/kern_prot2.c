@@ -45,7 +45,7 @@ setuid()
 {
 	struct a {
 		uid_t uid;
-	} *uap = (struct a*) u.u_ap;
+	} *uap = (struct a*) u.u_arg;
 	register uid_t uid;
 
 	uid = uap->uid;
@@ -66,7 +66,7 @@ seteuid()
 {
 	struct a {
 		uid_t euid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register uid_t euid;
 
 	euid = uap->euid;
@@ -84,7 +84,7 @@ setgid()
 {
 	struct a {
 		gid_t gid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register gid_t gid;
 
 	gid = uap->gid;
@@ -102,7 +102,7 @@ setegid()
 {
 	struct a {
 		gid_t egid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap = (struct a *)u.u_arg;
 	register gid_t egid;
 
 	egid = uap->egid;

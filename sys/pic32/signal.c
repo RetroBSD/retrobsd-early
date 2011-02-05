@@ -120,7 +120,7 @@ sigreturn()
 	register struct sigcontext *scp = &sc;
 	register int *regs = u.u_frame;
 
-	u.u_error = copyin ((caddr_t) ((struct a*)u.u_ap)->scp, (caddr_t) scp, sizeof (*scp));
+	u.u_error = copyin ((caddr_t) ((struct a*)u.u_arg)->scp, (caddr_t) scp, sizeof (*scp));
 	if (u.u_error)
 		return;
 	if (! USERMODE (scp->sc_ps)) {
