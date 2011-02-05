@@ -3,13 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)init.c	5.6.4 (2.11BSD) 1999/2/23";
-#endif
-
 #include <sys/param.h>
 #include <sys/sysctl.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <utmp.h>
 #include <setjmp.h>
@@ -35,6 +33,9 @@ char	utmpf[]	= _PATH_UTMP;
 char	wtmpf[]	= _PATH_WTMP;
 char	ctty[]	= _PATH_CONSOLE;
 
+extern int execl (const char *path, const char *arg0, ...);
+void merge (int signum);
+
 struct utmp wtmp;
 struct	tab
 {
@@ -57,7 +58,7 @@ char	tty[20];
 jmp_buf	sjbuf, shutpass;
 time_t	time0;
 
-int	reset();
+void	reset();
 int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
@@ -67,31 +68,14 @@ int	getsecuritylevel();
 int	badsys();
 extern	int errno;
 
-struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
+struct	sigvec rvec = { reset, sigmask (SIGHUP), 0 };
 
-
-#ifdef vax
-main()
-{
-	register int r11;		/* passed thru from boot */
-#else
 main(argc, argv)
 	char **argv;
 {
-#endif
 	int howto, oldhowto;
 
 	time0 = time(0);
-#ifdef vax
-	howto = r11;
-#else
-#ifdef pdp11
-	if (argc > 1 && argv[1][0] == '-') {
-		howto = atoi(argv[1]+1);
-		bzero(argv[1], strlen(argv[1])); /* keep ps output clean ... */
-	} else
-		howto = RB_SINGLE;
-#else
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
@@ -108,18 +92,13 @@ main(argc, argv)
 	} else {
 		howto = RB_SINGLE;
 	}
-#endif
-#endif
 	if (getuid() != 0)
 		exit(1);
 	if (getpid() != 1)
 		exit(1);
 
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
-#ifdef pdp11
-	if (autoconfig(howto) == 0)
-		howto = RB_SINGLE | (howto & RB_AUTODEBUG);
-#endif
+
 	signal(SIGSYS, badsys);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
@@ -134,9 +113,9 @@ main(argc, argv)
 			shutdown();
 		if (oldhowto & RB_SINGLE)
 			single();
-		if (runcom(oldhowto) == 0) 
+		if (runcom(oldhowto) == 0)
 			continue;
-		merge();
+		merge(0);
 		multiple();
 	}
 }
@@ -322,22 +301,10 @@ runcom(oldhowto)
 			dup2(f, 0);
 		dup2(0, 1);
 		dup2(0, 2);
-#ifdef pdp11
-		if (oldhowto & (RB_SINGLE|RB_NOFSCK))
-			arg1 = "fastboot";
-		else
-			arg1 = "autoboot";
-		if (oldhowto & RB_POWRFAIL)
-			arg2 = "powerfail";
-		else
-			arg2 = (char *)0;
-		execl(shell, shell, runc, arg1, arg2, (char *)0);
-#else
 		if (oldhowto & RB_SINGLE)
 			execl(shell, shell, runc, (char *)0);
 		else
 			execl(shell, shell, runc, "autoboot", (char *)0);
-#endif
 		exit(1);
 	}
 	while (wait(&status) != pid)
@@ -360,10 +327,8 @@ runcom(oldhowto)
 	return (1);
 }
 
-#ifdef pdp11
-int	merge();
-#endif
 struct	sigvec	mvec = { merge, sigmask(SIGTERM), 0 };
+
 /*
  * Multi-user.  Listen for users leaving, SIGHUP's
  * which indicate ttys has changed, and SIGTERM's which
@@ -378,7 +343,7 @@ multiple()
 	/*
 	 * If the administrator has not set the security level to -1
 	 * to indicate that the kernel should not run multiuser in secure
-	 * mode, and the run script has not set a higher level of security 
+	 * mode, and the run script has not set a higher level of security
 	 * than level 1, then put the kernel into secure mode.
 	 */
 	if (getsecuritylevel() == 0)
@@ -415,7 +380,7 @@ multiple()
 #define	CHANGE	2
 #define WCHANGE 4
 
-merge()
+void merge(int signum)
 {
 	register struct tab *p;
 	register struct ttyent *t;
@@ -607,9 +572,9 @@ rmut(p)
 	}
 }
 
+void
 reset()
 {
-
 	longjmp(sjbuf, 1);
 }
 
@@ -706,7 +671,7 @@ execit(s, arg)
 
 	/*
 	 * First we have to set up the argument vector.
-	 * "prog arg1 arg2" maps to exec("prog", "-", "arg1", "arg2"). 
+	 * "prog arg1 arg2" maps to exec("prog", "-", "arg1", "arg2").
 	 */
 	for (i = 1; i < NARGS - 2; i++) {
 		argv[i] = ap;
@@ -738,45 +703,3 @@ done:
 	closelog();
 	sleep(10);	/* prevent failures from eating machine */
 }
-
-#ifdef pdp11
-#include <machine/autoconfig.h>
-
-autoconfig(howto)
-	int	howto;
-{
-	int pid, status, f;
-	static char config[]= "/etc/autoconfig";
-
-	if (!(pid = fork())) {
-		syslog(LOG_NOTICE, "configure system\n");
-		f = open(ctty, O_RDWR, 0);
-		if	(f)
-			dup2(f, 0);
-		dup2(0, 1);
-		dup2(0, 2);
-		execl(config, "autoconfig",
-			 howto & RB_AUTODEBUG ? "-vcd" : "-vc", 0);
-		syslog(LOG_ERR, "init: couldn't exec %s\n", config);
-		exit(AC_SETUP);
-	}
-	while (wait(&status) != pid);
-	if ((status & 0377) == 0)
-		status >>= 8;
-	else
-		status = AC_SINGLE;
-	switch (status) {
-		case AC_SETUP:
-			syslog(LOG_ERR, "configuration setup error\n");
-			return (0);
-		case AC_SINGLE:
-			syslog(LOG_ERR, "SERIOUS CONFIGURATION ERROR\7\7\7\n");
-			return (0);
-		case AC_OK:
-			return (1);
-		default:
-			syslog(LOG_ERR, "unrecognized return from configure\n");
-			return (0);
-	}
-}
-#endif

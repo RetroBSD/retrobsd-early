@@ -6,7 +6,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #ifndef ENDIAN
-#include "machine/io.h"
 
 /*
  * Definitions for byte order,
@@ -104,6 +103,9 @@
 #define	SSIZE		2048		/* initial stack size (bytes) */
 #define	SINCR		2048		/* increment of stack (bytes) */
 
+#ifdef KERNEL
+#include "machine/io.h"
+
 /*
  * Macros to decode processor status word.
  */
@@ -122,7 +124,6 @@
 #define	noop()		asm volatile ("nop")
 #define	idle()		asm volatile ("wait")
 
-#ifdef KERNEL
 /*
  * Microsecond delay routine.
  */
