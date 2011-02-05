@@ -362,8 +362,6 @@ void fastcall mips64_cp0_exec_tlbr (cpu_mips_t * cpu)
 
 int mips64_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
 {
-    mips_cp0_t *cp0 = &cpu->cp0;
-
 #ifdef SIM_PIC32
     if (vaddr >= 0x7f008000 && vaddr < 0x7f020000) {
         res->vaddr = vaddr & MIPS_MIN_PAGE_MASK;
@@ -377,6 +375,8 @@ int mips64_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
         return (TRUE);
     }
 #else
+    mips_cp0_t *cp0 = &cpu->cp0;
+
     m_va_t vpn_addr, hi_addr, page_mask, page_size;
     tlb_entry_t *entry;
     u_int asid;
