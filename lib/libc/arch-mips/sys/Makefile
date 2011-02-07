@@ -2,10 +2,9 @@
 #
 #	@(#)Makefile	1.9 (2.11BSD) 2000/2/28
 
-CPP		= /lib/cpp
-LD		= /bin/ld
-AS		= /bin/as
-ASFLAGS		= ${DEFS} -nostdinc -I../../../../include
+TOPSRC		= $(shell cd ../../../..; pwd)
+include $(TOPSRC)/target.mk
+ASFLAGS		= ${DEFS}
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
 # rest of the system calls are generated with printf(1) and do not have
@@ -55,22 +54,22 @@ TAGSFILE	= tags
 
 syslib:		${OBJS}
 		@echo "building syslib"
-		@ar cru syslib ${OBJS}
+		@$(AR) cru syslib ${OBJS}
 
 ${NORM}:	SYS.h #/usr/include/syscall.h
 		@echo creating $*.o
 		@printf '#include "SYS.h"\nSYSCALL_norm($*)\n' | \
-		    /usr/local/mipsel441/bin/mipsel-elf32-gcc -x assembler-with-cpp ${ASFLAGS} - -c -o $*.o
+			$(AS) ${ASFLAGS} - -c -o $*.o
 
 ${ERROR}:	SYS.h #/usr/include/syscall.h
 		@echo creating $*.o
 		@printf '#include "SYS.h"\nSYSCALL_error($*)\n' | \
-		    /usr/local/mipsel441/bin/mipsel-elf32-gcc -x assembler-with-cpp ${ASFLAGS} - -c -o $*.o
+			$(AS) ${ASFLAGS} - -c -o $*.o
 
 ${NOERROR}:	SYS.h #/usr/include/syscall.h
 		@echo creating $*.o
 		@printf '#include "SYS.h"\nSYSCALL_noerror($*)\n' | \
-		    /usr/local/mipsel441/bin/mipsel-elf32-gcc -x assembler-with-cpp ${ASFLAGS} - -c -o $*.o
+			$(AS) ${ASFLAGS} - -c -o $*.o
 
 clean:
 		rm -f *~ *.o a.out syslib
