@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
-#endif LIBC_SCCS and not lint
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -17,21 +12,6 @@ static char sccsid[] = "@(#)mktemp.c	5.4 (Berkeley) 9/14/87";
 
 #define	YES	1
 #define	NO	0
-
-mkstemp(as)
-	char	*as;
-{
-	int	fd;
-
-	return (_gettemp(as, &fd) ? fd : -1);
-}
-
-char *
-mktemp(as)
-	char	*as;
-{
-	return(_gettemp(as, (int *)NULL) ? as : (char *)NULL);
-}
 
 static
 _gettemp(as, doopen)
@@ -93,4 +73,19 @@ _gettemp(as, doopen)
 		}
 	}
 	/*NOTREACHED*/
+}
+
+mkstemp(as)
+	char	*as;
+{
+	int	fd;
+
+	return (_gettemp(as, &fd) ? fd : -1);
+}
+
+char *
+mktemp(as)
+	char	*as;
+{
+	return(_gettemp(as, (int *)NULL) ? as : (char *)NULL);
 }

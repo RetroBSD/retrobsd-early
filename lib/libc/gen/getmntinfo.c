@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getmntinfo.c	8.1.1 (2.11BSD) 1995/12/26";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <stdlib.h>

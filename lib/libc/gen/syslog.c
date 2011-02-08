@@ -30,13 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	8.4.3 (2.11BSD) 1995/07/15";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <syslog.h>
 #include <sys/uio.h>
 #include <netdb.h>
@@ -46,24 +40,21 @@ static char sccsid[] = "@(#)syslog.c	8.4.3 (2.11BSD) 1995/07/15";
 #include <paths.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+#include <unistd.h>
 #include <time.h>
 
-#include <varargs.h>
+#include <stdarg.h>
 
 #define	STDERR_FILENO	2
 
 static	int	LogFile = -1;		/* fd for log */
-static	char	connected;		/* have done connect */
-#ifdef	pdp11
-static	char	ToFile = 0;		/* set if logfile is used */
-#endif
+static	int	connected;		/* have done connect */
 static	int	LogStat = 0;		/* status bits, set by openlog() */
-static	char	*LogTag = NULL;		/* string to tag the entry with */
+static	const char *LogTag = NULL;	/* string to tag the entry with */
 static	int	LogFacility = LOG_USER;	/* default facility code */
 static	int	LogMask = 0xff;		/* mask of priorities to be logged */
-#ifdef	pdp11
 static	char	logfile[] = "/usr/adm/messages";
-#endif
 
 extern	char	*__progname;		/* Program name, from crt0. */
 extern	int	errno;			/* error number */
@@ -71,24 +62,12 @@ extern	int	errno;			/* error number */
 /*
  * syslog, vsyslog --
  *	print message on log file; output is intended for syslogd(8).
+ *	No sockets: logfile is used.
  */
-void
-syslog(pri, fmt, va_alist)
-	int pri;
-	char *fmt;
-	va_dcl
-{
-	va_list ap;
-
-	va_start(ap);
-	vsyslog(pri, fmt, ap);
-	va_end(ap);
-}
-
 void
 vsyslog(pri, fmt, ap)
 	int pri;
-	register char *fmt;
+	register const char *fmt;
 	va_list ap;
 {
 	int cnt;
@@ -163,14 +142,7 @@ vsyslog(pri, fmt, ap)
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
-#ifdef	pdp11
-	if (ToFile) {
-		if (write(LogFile, tbuf, cnt) == cnt)
-			return;
-	}
-	else
-#endif
-	if (send(LogFile, tbuf, cnt, 0) >= 0)
+	if (write(LogFile, tbuf, cnt) == cnt)
 		return;
 
 	/*
@@ -202,11 +174,19 @@ vsyslog(pri, fmt, ap)
 	}
 }
 
-static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
+void
+syslog (int pri, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start (ap, fmt);
+	vsyslog (pri, fmt, ap);
+	va_end (ap);
+}
 
 void
 openlog(ident, logstat, logfac)
-	char *ident;
+	const char *ident;
 	int logstat;
 	register int logfac;
 {
@@ -217,31 +197,18 @@ openlog(ident, logstat, logfac)
 		LogFacility = logfac;
 
 	if (LogFile == -1) {
-		SyslogAddr.sa_family = AF_UNIX;
-		(void)strncpy(SyslogAddr.sa_data, _PATH_LOG,
-		    sizeof(SyslogAddr.sa_data));
 		if (LogStat & LOG_NDELAY) {
-			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
-#ifdef	pdp11
-			if (LogFile == -1) {
-				LogFile = open(logfile, O_WRONLY|O_APPEND);
-				ToFile = 1;
-				connected = 1;
-			}
-			else
-				ToFile = 0;
-#endif
+			LogFile = open(logfile, O_WRONLY|O_APPEND);
+			connected = 1;
 			if (LogFile == -1)
 				return;
 			(void)fcntl(LogFile, F_SETFD, 1);
 		}
 	}
-	if (LogFile != -1 && !connected)
-		if (connect(LogFile, &SyslogAddr, sizeof(SyslogAddr)) == -1) {
-			(void)close(LogFile);
-			LogFile = -1;
-		} else
-			connected = 1;
+	if (LogFile != -1 && !connected) {
+		(void)close(LogFile);
+		LogFile = -1;
+	}
 }
 
 void

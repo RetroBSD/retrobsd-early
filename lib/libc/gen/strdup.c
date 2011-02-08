@@ -14,20 +14,18 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strdup.c	5.1 (Berkeley) 12/12/88";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 char *
 strdup(str)
-	char *str;
+	const char *str;
 {
 	int len;
-	char *copy, *malloc();
+	char *copy;
 
 	len = strlen(str) + 1;
 	if (!(copy = malloc((u_int)len)))

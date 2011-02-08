@@ -1,17 +1,13 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * ttyname(f): return "/dev/ttyXX" which the the name of the
  * tty belonging to file f.
  *  NULL if it is not a tty
  */
-
-#define	NULL	0
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+
+#define	NULL	0
 
 static	char	dev[]	= "/dev/";
 char	*strcpy();

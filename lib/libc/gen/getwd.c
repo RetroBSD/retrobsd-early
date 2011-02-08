@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * getwd() returns the pathname of the current working directory. On error
  * an error message is copied to pathname and null pointer is returned.
@@ -15,11 +11,29 @@ static char sccsid[] = "@(#)getwd.c	5.2 (Berkeley) 3/9/86";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
+#include <string.h>
 
 #define GETWDERR(s)	strcpy(pathname, (s));
 
-char *strcpy();
 static int pathsize;			/* pathname length */
+
+/*
+ * prepend() tacks a directory name onto the front of a pathname.
+ */
+static char *
+prepend(dirname, pathname)
+	register char *dirname;
+	register char *pathname;
+{
+	register int i;			/* directory name size counter */
+
+	for (i = 0; *dirname != '\0'; i++, dirname++)
+		continue;
+	if ((pathsize += i) < MAXPATHLEN)
+		while (i-- > 0)
+			*--pathname = *--dirname;
+	return (pathname);
+}
 
 char *
 getwd(pathname)
@@ -29,7 +43,6 @@ getwd(pathname)
 	char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
 	char curdir[MAXPATHLEN];	/* current directory buffer */
 	char *dptr = curdir;		/* directory pointer */
-	char *prepend();		/* prepend dirname to pathname */
 	dev_t cdev, rdev;		/* current & root device number */
 	ino_t cino, rino;		/* current & root inode number */
 	DIR *dirp;			/* directory stream */
@@ -92,23 +105,5 @@ getwd(pathname)
 		strcpy(pathname, "/");
 	else
 		strcpy(pathname, pnptr);
-	return (pathname);
-}
-
-/*
- * prepend() tacks a directory name onto the front of a pathname.
- */
-static char *
-prepend(dirname, pathname)
-	register char *dirname;
-	register char *pathname;
-{
-	register int i;			/* directory name size counter */
-
-	for (i = 0; *dirname != '\0'; i++, dirname++)
-		continue;
-	if ((pathsize += i) < MAXPATHLEN)
-		while (i-- > 0)
-			*--pathname = *--dirname;
 	return (pathname);
 }

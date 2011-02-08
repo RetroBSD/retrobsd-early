@@ -1,38 +1,56 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)execvp.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  *	execlp(name, arg,...,0)	(like execl, but does path search)
  *	execvp(name, argv)	(like execv, but does path search)
  */
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <errno.h>
-#define	NULL	0
 
 static	char shell[] =	"/bin/sh";
-char	*execat(), *getenv();
 extern	errno;
 
+int
 execlp(name, argv)
-char *name, *argv;
+	const char *name, *argv;
 {
 	return(execvp(name, &argv));
 }
 
+static char *
+execat(s1, s2, si)
+	register char *s1, *s2;
+	char *si;
+{
+	register char *s;
+
+	s = si;
+	while (*s1 && *s1 != ':')
+		*s++ = *s1++;
+	if (si != s)
+		*s++ = '/';
+	while (*s2)
+		*s++ = *s2++;
+	*s = '\0';
+	return(*s1? ++s1: 0);
+}
+
+int
 execvp(name, argv)
-char *name, **argv;
+	const char *name, **argv;
 {
 	char *pathstr;
 	register char *cp;
 	char fname[128];
-	char *newargs[256];
+	const char *newargs[256];
 	int i;
 	register unsigned etxtbsy = 1;
 	register eacces = 0;
 
-	if ((pathstr = getenv("PATH")) == NULL)
+	pathstr = getenv("PATH");
+	if (! pathstr)
 		pathstr = ":/bin:/usr/bin";
-	cp = index(name, '/')? "": pathstr;
+	cp = strchr(name, '/') ? "" : pathstr;
 
 	do {
 		cp = execat(cp, name, fname);
@@ -66,22 +84,4 @@ char *name, **argv;
 	if (eacces)
 		errno = EACCES;
 	return(-1);
-}
-
-static char *
-execat(s1, s2, si)
-register char *s1, *s2;
-char *si;
-{
-	register char *s;
-
-	s = si;
-	while (*s1 && *s1 != ':')
-		*s++ = *s1++;
-	if (si != s)
-		*s++ = '/';
-	while (*s2)
-		*s++ = *s2++;
-	*s = '\0';
-	return(*s1? ++s1: 0);
 }

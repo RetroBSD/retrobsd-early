@@ -30,16 +30,12 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	8.1.1 (2.11BSD) 1996/1/15";
-#endif /* LIBC_SCCS and not lint */
-
 #include <errno.h>
 #include <fstab.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <sys/uio.h>
 

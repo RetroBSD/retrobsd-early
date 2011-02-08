@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
  * random.c:
@@ -28,7 +24,7 @@ static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
  * zeroeth element of the array is the type of R.N.G. being used (small
  * integer); the remainder of the array is the state information for the
  * R.N.G.  Thus, 32 bytes of state information will give 7 longs worth of
- * state information, which will allow a degree seven polynomial.  (Note: the 
+ * state information, which will allow a degree seven polynomial.  (Note: the
  * zeroeth word of state information also has some other information stored
  * in it -- see setstate() for details).
  * The random number generation technique is a linear feedback shift register
@@ -47,8 +43,6 @@ static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
  * predicted by this formula.
  */
 
-
-
 /*
  * For each of the currently supported random number generators, we have a
  * break value on the amount of state information (you need at least this
@@ -56,7 +50,6 @@ static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
  * for the polynomial (actually a trinomial) that the R.N.G. is based on, and
  * the separation between the two lower order coefficients of the trinomial.
  */
-
 #define		TYPE_0		0		/* linear congruential */
 #define		BREAK_0		8
 #define		DEG_0		0
@@ -87,7 +80,6 @@ static char sccsid[] = "@(#)random.c	5.2 (Berkeley) 3/9/86";
  * Array versions of the above information to make code run faster -- relies
  * on fact that TYPE_i == i.
  */
-
 #define		MAX_TYPES	5		/* max number of types above */
 
 static  int		degrees[ MAX_TYPES ]	= { DEG_0, DEG_1, DEG_2,
@@ -95,7 +87,6 @@ static  int		degrees[ MAX_TYPES ]	= { DEG_0, DEG_1, DEG_2,
 
 static  int		seps[ MAX_TYPES ]	= { SEP_0, SEP_1, SEP_2,
 								SEP_3, SEP_4 };
-
 
 
 /*
@@ -108,15 +99,14 @@ static  int		seps[ MAX_TYPES ]	= { SEP_0, SEP_1, SEP_2,
  * position of the rear pointer is just
  *	MAX_TYPES*(rptr - state) + TYPE_3 == TYPE_3.
  */
-
 static  long		randtbl[ DEG_3 + 1 ]	= { TYPE_3,
-			    0x9a319039, 0x32d9c024, 0x9b663182, 0x5da1f342, 
-			    0xde3b81e0, 0xdf0a6fb5, 0xf103bc02, 0x48f340fb, 
-			    0x7449e56b, 0xbeb1dbb0, 0xab5c5918, 0x946554fd, 
-			    0x8c2e680f, 0xeb3d799f, 0xb11ee0b7, 0x2d436b86, 
-			    0xda672e2a, 0x1588ca88, 0xe369735d, 0x904f35f7, 
-			    0xd7158fd6, 0x6fa6f051, 0x616e6b96, 0xac94efdc, 
-			    0x36413f93, 0xc622c298, 0xf5a42ab8, 0x8a88d77b, 
+			    0x9a319039, 0x32d9c024, 0x9b663182, 0x5da1f342,
+			    0xde3b81e0, 0xdf0a6fb5, 0xf103bc02, 0x48f340fb,
+			    0x7449e56b, 0xbeb1dbb0, 0xab5c5918, 0x946554fd,
+			    0x8c2e680f, 0xeb3d799f, 0xb11ee0b7, 0x2d436b86,
+			    0xda672e2a, 0x1588ca88, 0xe369735d, 0x904f35f7,
+			    0xd7158fd6, 0x6fa6f051, 0x616e6b96, 0xac94efdc,
+			    0x36413f93, 0xc622c298, 0xf5a42ab8, 0x8a88d77b,
 					0xf5ad9d0e, 0x8999220b, 0x27fb47b9 };
 
 /*
@@ -130,11 +120,8 @@ static  long		randtbl[ DEG_3 + 1 ]	= { TYPE_3,
  * in the initialization of randtbl) because the state table pointer is set
  * to point to randtbl[1] (as explained below).
  */
-
 static  long		*fptr			= &randtbl[ SEP_3 + 1 ];
 static  long		*rptr			= &randtbl[ 1 ];
-
-
 
 /*
  * The following things are the pointer to the state information table,
@@ -147,7 +134,6 @@ static  long		*rptr			= &randtbl[ 1 ];
  * indexing every time to find the address of the last element to see if
  * the front and rear pointers have wrapped.
  */
-
 static  long		*state			= &randtbl[ 1 ];
 
 static  int		rand_type		= TYPE_3;
@@ -155,8 +141,6 @@ static  int		rand_deg		= DEG_3;
 static  int		rand_sep		= SEP_3;
 
 static  long		*end_ptr		= &randtbl[ DEG_3 + 1 ];
-
-
 
 /*
  * srandom:
@@ -170,12 +154,11 @@ static  long		*end_ptr		= &randtbl[ DEG_3 + 1 ];
  * Note that the initialization of randtbl[] for default usage relies on
  * values produced by this routine.
  */
-
-srandom( x )
-
-    unsigned		x;
+void
+srandom (x)
+	unsigned x;
 {
-    	register  int		i, j;
+    	register  int	i, j;
 
 	if(  rand_type  ==  TYPE_0  )  {
 	    state[ 0 ] = x;
@@ -192,8 +175,6 @@ srandom( x )
 	}
 }
 
-
-
 /*
  * initstate:
  * Initialize the state information in the given array of n bytes for
@@ -209,15 +190,13 @@ srandom( x )
  * setstate() so that it doesn't matter when initstate is called.
  * Returns a pointer to the old state.
  */
-
-char  *
-initstate( seed, arg_state, n )
-
-    unsigned		seed;			/* seed for R. N. G. */
-    char		*arg_state;		/* pointer to state array */
-    int			n;			/* # bytes of state info */
+char *
+initstate (seed, arg_state, n)
+	unsigned	seed;			/* seed for R. N. G. */
+	char		*arg_state;		/* pointer to state array */
+	int		n;			/* # bytes of state info */
 {
-	register  char		*ostate		= (char *)( &state[ -1 ] );
+	register  char	*ostate		= (char *)( &state[ -1 ] );
 
 	if(  rand_type  ==  TYPE_0  )  state[ -1 ] = rand_type;
 	else  state[ -1 ] = MAX_TYPES*(rptr - state) + rand_type;
@@ -264,8 +243,6 @@ initstate( seed, arg_state, n )
 	return( ostate );
 }
 
-
-
 /*
  * setstate:
  * Restore the state from the given state array.
@@ -277,16 +254,14 @@ initstate( seed, arg_state, n )
  * setstate() with the same state as the current state.
  * Returns a pointer to the old state information.
  */
-
-char  *
-setstate( arg_state )
-
-    char		*arg_state;
+char *
+setstate (arg_state)
+	char	*arg_state;
 {
-	register  long		*new_state	= (long *)arg_state;
-	register  int		type		= new_state[0]%MAX_TYPES;
-	register  int		rear		= new_state[0]/MAX_TYPES;
-	char			*ostate		= (char *)( &state[ -1 ] );
+	register  long	*new_state	= (long *)arg_state;
+	register  int	type		= new_state[0]%MAX_TYPES;
+	register  int	rear		= new_state[0]/MAX_TYPES;
+	char		*ostate		= (char *)( &state[ -1 ] );
 
 	if(  rand_type  ==  TYPE_0  )  state[ -1 ] = rand_type;
 	else  state[ -1 ] = MAX_TYPES*(rptr - state) + rand_type;
@@ -313,8 +288,6 @@ setstate( arg_state )
 	return( ostate );
 }
 
-
-
 /*
  * random:
  * If we are using the trivial TYPE_0 R.N.G., just do the old linear
@@ -329,12 +302,11 @@ setstate( arg_state )
  * pointer if the front one has wrapped.
  * Returns a 31-bit random number.
  */
-
 long
 random()
 {
-	long		i;
-	
+	long	i;
+
 	if(  rand_type  ==  TYPE_0  )  {
 	    i = state[0] = ( state[0]*1103515245 + 12345 )&0x7fffffff;
 	}
@@ -351,4 +323,3 @@ random()
 	}
 	return( i );
 }
-

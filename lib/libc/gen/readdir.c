@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)readdir.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <sys/param.h>
 #include <sys/dir.h>
 
@@ -22,7 +17,7 @@ readdir(dirp)
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
-			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, 
+			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf,
 			    DIRBLKSIZ);
 			if (dirp->dd_size <= 0)
 				return NULL;

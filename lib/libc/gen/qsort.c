@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)qsort.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * qsort.c:
  * Our own version of the system qsort routine which is faster by an average
@@ -24,73 +20,6 @@ static  int		(*qcmp)();		/* the comparison routine */
 static  int		qsz;			/* size of each record */
 static  int		thresh;			/* THRESHold in chars */
 static  int		mthresh;		/* MTHRESHold in chars */
-
-/*
- * qsort:
- * First, set up some global parameters for qst to share.  Then, quicksort
- * with qst(), and then a cleanup insertion sort ourselves.  Sound simple?
- * It's not...
- */
-
-qsort(base, n, size, compar)
-	char	*base;
-	int	n;
-	int	size;
-	int	(*compar)();
-{
-	register char c, *i, *j, *lo, *hi;
-	char *min, *max;
-
-	if (n <= 1)
-		return;
-	qsz = size;
-	qcmp = compar;
-	thresh = qsz * THRESH;
-	mthresh = qsz * MTHRESH;
-	max = base + n * qsz;
-	if (n >= THRESH) {
-		qst(base, max);
-		hi = base + thresh;
-	} else {
-		hi = max;
-	}
-	/*
-	 * First put smallest element, which must be in the first THRESH, in
-	 * the first position as a sentinel.  This is done just by searching
-	 * the first THRESH elements (or the first n if n < THRESH), finding
-	 * the min, and swapping it into the first position.
-	 */
-	for (j = lo = base; (lo += qsz) < hi; )
-		if (qcmp(j, lo) > 0)
-			j = lo;
-	if (j != base) {
-		/* swap j into place */
-		for (i = base, hi = base + qsz; i < hi; ) {
-			c = *j;
-			*j++ = *i;
-			*i++ = c;
-		}
-	}
-	/*
-	 * With our sentinel in place, we now run the following hyper-fast
-	 * insertion sort.  For each remaining element, min, from [1] to [n-1],
-	 * set hi to the index of the element AFTER which this one goes.
-	 * Then, do the standard insertion sort shift on a character at a time
-	 * basis for each element in the frob.
-	 */
-	for (min = base; (hi = min += qsz) < max; ) {
-		while (qcmp(hi -= qsz, min) > 0)
-			/* void */;
-		if ((hi += qsz) != min) {
-			for (lo = min + qsz; --lo >= min; ) {
-				c = *lo;
-				for (i = j = lo; (j -= qsz) >= hi; i = j)
-					*i = *j;
-				*i = c;
-			}
-		}
-	}
-}
 
 /*
  * qst:
@@ -204,4 +133,71 @@ qst(base, max)
 			max = j;
 		}
 	} while (lo >= thresh);
+}
+
+/*
+ * qsort:
+ * First, set up some global parameters for qst to share.  Then, quicksort
+ * with qst(), and then a cleanup insertion sort ourselves.  Sound simple?
+ * It's not...
+ */
+
+qsort(base, n, size, compar)
+	char	*base;
+	int	n;
+	int	size;
+	int	(*compar)();
+{
+	register char c, *i, *j, *lo, *hi;
+	char *min, *max;
+
+	if (n <= 1)
+		return;
+	qsz = size;
+	qcmp = compar;
+	thresh = qsz * THRESH;
+	mthresh = qsz * MTHRESH;
+	max = base + n * qsz;
+	if (n >= THRESH) {
+		qst(base, max);
+		hi = base + thresh;
+	} else {
+		hi = max;
+	}
+	/*
+	 * First put smallest element, which must be in the first THRESH, in
+	 * the first position as a sentinel.  This is done just by searching
+	 * the first THRESH elements (or the first n if n < THRESH), finding
+	 * the min, and swapping it into the first position.
+	 */
+	for (j = lo = base; (lo += qsz) < hi; )
+		if (qcmp(j, lo) > 0)
+			j = lo;
+	if (j != base) {
+		/* swap j into place */
+		for (i = base, hi = base + qsz; i < hi; ) {
+			c = *j;
+			*j++ = *i;
+			*i++ = c;
+		}
+	}
+	/*
+	 * With our sentinel in place, we now run the following hyper-fast
+	 * insertion sort.  For each remaining element, min, from [1] to [n-1],
+	 * set hi to the index of the element AFTER which this one goes.
+	 * Then, do the standard insertion sort shift on a character at a time
+	 * basis for each element in the frob.
+	 */
+	for (min = base; (hi = min += qsz) < max; ) {
+		while (qcmp(hi -= qsz, min) > 0)
+			/* void */;
+		if ((hi += qsz) != min) {
+			for (lo = min + qsz; --lo >= min; ) {
+				c = *lo;
+				for (i = j = lo; (j -= qsz) >= hi; i = j)
+					*i = *j;
+				*i = c;
+			}
+		}
+	}
 }

@@ -24,7 +24,7 @@
  */
 void
 sendsig (p, sig, mask)
-	sighandler_t p;
+	sig_t p;
 	int sig;
 	long mask;
 {

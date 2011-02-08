@@ -3,12 +3,8 @@
  * This file may be freely redistributed provided that this
  * notice remains attached.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getenv.c	5.4 (Berkeley) 3/13/87";
-#endif LIBC_SCCS and not lint
-
 #include <stdio.h>
+#include <stdlib.h>
 
 /*
  * getenv(name) --
@@ -34,7 +30,7 @@ getenv(name)
  *	This routine *should* be a static; don't use it.
  */
 char *
-_findenv(name,offset)
+_findenv(name, offset)
 	register char *name;
 	int	*offset;
 {

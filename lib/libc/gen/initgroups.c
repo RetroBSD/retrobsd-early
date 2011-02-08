@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)initgroups.c	5.3 (Berkeley) 4/27/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * initgroups
  */

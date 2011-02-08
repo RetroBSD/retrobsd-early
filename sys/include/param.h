@@ -111,3 +111,8 @@
  * MAXMEM is the maximum core per process is allowed.  First number is Kb.
 */
 #define	MAXMEM		(96*1024)
+
+/*
+ * Max length of a user login name.
+ */
+#define MAXLOGNAME	16

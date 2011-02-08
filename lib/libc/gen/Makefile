@@ -34,7 +34,7 @@ STDSRC		= abort.c alarm.c atoi.c atol.c calloc.c closedir.c crypt.c \
 		  sleep.c strcasecmp.c strftime.c swab.c sysctl.c syslog.c system.c \
 		  syserrlst.c \
 		  telldir.c time.c timezone.c ttyname.c ttyslot.c ualarm.c usleep.c \
-		  valloc.c strdup.c uname.c wait.c wait3.c waitpid.c
+		  strdup.c uname.c wait.c wait3.c waitpid.c
 STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
 		  ctime.o ctype_.o daemon.o devname.o disklabel.o err.o \
 		  execvp.o fakcu.o \
@@ -51,7 +51,7 @@ STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
 		  sleep.o strcasecmp.o strftime.o swab.o sysctl.o syslog.o system.o \
 		  syserrlst.o \
 		  telldir.o time.o timezone.o ttyname.o ttyslot.o ualarm.o usleep.o \
-		  valloc.o strdup.o uname.o wait.o wait3.o waitpid.o
+		  strdup.o uname.o wait.o wait3.o waitpid.o
 
 TAGSFILE	= tags
 

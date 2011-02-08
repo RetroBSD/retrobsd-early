@@ -16,15 +16,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.7.1 (2.11BSD GTE) 12/31/93";
-#endif
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <a.out.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef struct nlist NLIST;
 #define	_strx	n_un.n_strx

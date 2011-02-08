@@ -33,8 +33,8 @@
  *	@(#)stdlib.h	8.3.2 (2.11BSD) 1996/1/12
  *
  * Adapted from the 4.4-Lite CD.  The odds of a ANSI C compiler for 2.11BSD
- * being slipped under the door are not distinguishable from 0 - so the 
- * prototypes and ANSI ifdefs have been removed from this file. 
+ * being slipped under the door are not distinguishable from 0 - so the
+ * prototypes and ANSI ifdefs have been removed from this file.
  *
  * Some functions (strtoul for example) do not exist yet but are retained in
  * this file because additions to libc.a are anticipated shortly.
@@ -43,7 +43,7 @@
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
 
-/* #include <machine/ansi.h> */
+#include <sys/types.h>
 
 #ifdef	notyet
 typedef struct {
@@ -68,15 +68,15 @@ typedef struct {
 
 void	abort();
 int	abs();
-int	atexit();
+int	atexit (void (*)(void));
 double	atof();
 int	atoi();
 long	atol();
 void	*calloc();
-void	exit();
-void	free();
+void	exit (int);
+void	free (void *);
 char	*getenv();
-void	*malloc();
+void	*malloc (size_t);
 void	qsort();
 int	rand();
 void	*realloc();
@@ -102,9 +102,10 @@ int	getopt();
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	getsubopt();
 
-long	random();
-char	*setstate();
-void	srandom();
+long	random (void);
+char	*setstate (char *);
+void	srandom (unsigned);
 void	unsetenv();
+char	*_findenv (char *name, int *offset);
 
 #endif /* _STDLIB_H_ */

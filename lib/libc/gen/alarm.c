@@ -4,15 +4,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)alarm.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Backwards compatible alarm.
  */
 #include <sys/time.h>
 
+int
 alarm(secs)
 	int secs;
 {

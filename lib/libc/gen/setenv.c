@@ -3,13 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setenv.c	1.3 (Berkeley) 6/16/87";
-#endif LIBC_SCCS and not lint
-
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+
+extern char	**environ;
 
 /*
  * setenv(name,value,rewrite)
@@ -21,12 +21,9 @@ setenv(name,value,rewrite)
 			*value;
 	int	rewrite;
 {
-	extern char	**environ;
 	static int	alloced;		/* if allocated space before */
 	register char	*C;
-	int	l_value,
-		offset;
-	char	*malloc(), *realloc(), *_findenv();
+	int l_value, offset;
 
 	if (*value == '=')			/* no `=' in value */
 		++value;
@@ -79,7 +76,6 @@ void
 unsetenv(name)
 	char	*name;
 {
-	extern	char	**environ;
 	register char	**P;
 	int	offset;
 

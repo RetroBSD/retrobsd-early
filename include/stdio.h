@@ -2,11 +2,11 @@
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)stdio.h	5.3.2 (2.11BSD) 1997/7/29
  */
+#ifndef FILE
 
-# ifndef FILE
+#include <sys/types.h>
+
 #define	BUFSIZ	1024
 extern	struct	_iobuf {
 	int	_cnt;
@@ -46,11 +46,9 @@ extern	struct	_iobuf {
 #define	stdin	(&_iob[0])
 #define	stdout	(&_iob[1])
 #define	stderr	(&_iob[2])
+
 #ifndef lint
 #define	getc(p)		(--(p)->_cnt>=0? (int)(*(unsigned char *)(p)->_ptr++):_filbuf(p))
-#endif not lint
-#define	getchar()	getc(stdin)
-#ifndef lint
 #define putc(x, p)	(--(p)->_cnt >= 0 ?\
 	(int)(*(unsigned char *)(p)->_ptr++ = (x)) :\
 	(((p)->_flag & _IOLBF) && -(p)->_cnt < (p)->_bufsiz ?\
@@ -58,18 +56,46 @@ extern	struct	_iobuf {
 			(int)(*(unsigned char *)(p)->_ptr++) :\
 			_flsbuf(*(unsigned char *)(p)->_ptr, p)) :\
 		_flsbuf((unsigned char)(x), p)))
-#endif not lint
+#endif /* not lint */
+
+#define	getchar()	getc(stdin)
 #define	putchar(x)	putc(x,stdout)
 #define	feof(p)		(((p)->_flag&_IOEOF)!=0)
 #define	ferror(p)	(((p)->_flag&_IOERR)!=0)
 #define	fileno(p)	((p)->_file)
 #define	clearerr(p)	((p)->_flag &= ~(_IOERR|_IOEOF))
 
-FILE	*fopen();
-FILE	*fdopen();
-FILE	*freopen();
-FILE	*popen();
-long	ftell();
-char	*fgets();
-char	*gets();
-# endif /* _FILE */
+FILE	*fopen (const char *, const char *);
+FILE	*fdopen (int, const char *);
+FILE	*freopen (const char *, const char *, FILE *);
+FILE	*popen (const char *, const char *);
+long	ftell (FILE *);
+char	*fgets (char *, int, FILE *);
+char	*gets (char *);
+
+int	 fprintf (FILE *, const char *, ...);
+int	 printf (const char *, ...);
+int	 sprintf (char *, const char *, ...);
+int	 snprintf (char *, size_t, const char *, ...);
+
+int	 fscanf (FILE *, const char *, ...);
+int	 scanf (const char *, ...);
+int	 sscanf (const char *, const char *, ...);
+
+#ifndef _VA_LIST_
+#define va_list		__builtin_va_list	/* For GCC */
+#endif
+
+int	 vfprintf (FILE *, const char *, va_list);
+int	 vprintf (const char *, va_list);
+int	 vsprintf (char *, const char *, va_list);
+int	 vsnprintf (char *, size_t, const char *, va_list);
+
+int	 vfscanf (FILE *, const char *, va_list);
+int	 vscanf (const char *, va_list);
+int	 vsscanf (const char *, const char *, va_list);
+
+#ifndef _VA_LIST_
+#undef va_list
+#endif
+#endif /* _FILE */

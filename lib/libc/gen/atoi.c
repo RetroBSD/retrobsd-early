@@ -1,9 +1,6 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)atoi.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
+int
 atoi(p)
-register char *p;
+	register char *p;
 {
 	register int n;
 	register int f;

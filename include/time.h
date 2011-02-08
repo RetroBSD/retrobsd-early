@@ -28,3 +28,6 @@ struct tm {
 extern	struct tm *gmtime(), *localtime();
 extern	char *asctime(), *ctime();
 extern	time_t	time();
+
+size_t strftime (char *s, size_t maxsize, const char *format,
+	const struct tm *timeptr);

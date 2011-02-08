@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fabs.c	2.2 (Berkeley) 1/25/87";
-#endif LIBC_SCCS and not lint
-
 double
 fabs(arg)
 	double arg;

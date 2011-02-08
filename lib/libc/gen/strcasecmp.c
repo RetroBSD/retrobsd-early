@@ -3,10 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strcasecmp.c	1.2 (Berkeley) 7/2/87";
-#endif LIBC_SCCS and not lint
+#include <strings.h>
 
 /*
  * This array is designed for mapping upper and lower case letter
@@ -48,8 +45,9 @@ static char charmap[] = {
 	'\370', '\371', '\372', '\373', '\374', '\375', '\376', '\377',
 };
 
+int
 strcasecmp(s1, s2)
-	register char *s1, *s2;
+	register const char *s1, *s2;
 {
 	register char *cm = charmap;
 
@@ -59,9 +57,10 @@ strcasecmp(s1, s2)
 	return(cm[*s1] - cm[*--s2]);
 }
 
+int
 strncasecmp(s1, s2, n)
-	register char *s1, *s2;
-	register int n;
+	register const char *s1, *s2;
+	register size_t n;
 {
 	register char *cm = charmap;
 

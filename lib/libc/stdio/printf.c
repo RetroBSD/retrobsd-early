@@ -1,12 +1,9 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#include <stdio.h>
 
-#include	<stdio.h>
-
+int
 printf(fmt, args)
-char *fmt;
+	char *fmt;
 {
 	_doprnt(fmt, &args, stdout);
-	return(ferror(stdout)? EOF: 0);
+	return ferror(stdout) ? EOF : 0;
 }

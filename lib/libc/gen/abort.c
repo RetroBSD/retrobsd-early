@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)abort.c	8.1.1 (2.11BSD) 1997/9/9";
-#endif /* LIBC_SCCS and not lint */
-
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>

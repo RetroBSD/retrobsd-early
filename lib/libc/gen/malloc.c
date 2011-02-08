@@ -1,5 +1,4 @@
-/*	@(#)malloc.c	2.3	(2.11BSD) 1999/1/18 */
-
+#include <stdlib.h>
 #include <unistd.h>
 
 #ifdef debug
@@ -90,11 +89,9 @@ static union store	*allocp;	/* search ptr */
 static union store	*alloct;	/* arena top */
 static union store	*allocx;	/* for benefit of realloc */
 
-extern char		*sbrk();
-
-char *
+void *
 malloc(nbytes)
-	unsigned nbytes;
+	size_t nbytes;
 {
 	register union store *p, *q;
 	register nw;
@@ -164,8 +161,8 @@ found:
 /*
  * Freeing strategy tuned for LIFO allocation.
  */
-free(ap)
-	register char *ap;
+void free(ap)
+	register void *ap;
 {
 	register union store *p = (union store *)ap;
 
@@ -182,11 +179,12 @@ free(ap)
  * since last call of malloc() to have new size nbytes, and old content
  * returns new location, or 0 on failure.
  */
-char *
-realloc(p, nbytes)
-	register union store *p;
-	unsigned nbytes;
+void *
+realloc(vp, nbytes)
+	register void *vp;
+	size_t nbytes;
 {
+	register union store *p = vp;
 	register union store *q;
 	union store *s, *t;
 	register unsigned nw;

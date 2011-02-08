@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)disklabel.c	5.17.1 (2.11BSD) 4/10/95";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/fs.h>
@@ -45,6 +40,7 @@ static char sccsid[] = "@(#)disklabel.c	5.17.1 (2.11BSD) 4/10/95";
 #include <sys/disklabel.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 extern	int	errno;
 
@@ -106,7 +102,7 @@ getdiskbyname(name)
  *	which ever used a value other than 512 was the RL02 and RL01
  *	disktab entries and they have been fixed.
 */
-	
+
 #ifdef	corrupt_filesystems
 	getnumdflt(dp->d_secsize, "se", 512);
 #endif
@@ -135,7 +131,7 @@ getdiskbyname(name)
 /*
  * See the comments in src/bin/disklabel.c for a more detailed explaination
  * which the 'bbsize' is set to 512.  The simple explanation is that the
- * designers of disklabeling confused 'sectors' and 'filesystem blocks'. 
+ * designers of disklabeling confused 'sectors' and 'filesystem blocks'.
  * BBSIZE is set to 1024 even though the real boot area (what the boot roms
  * will read) is 512.
 */
@@ -455,7 +451,7 @@ error(err)
 	iov[0].iov_len = 9;
 	iov[1].iov_base = _PATH_DISKTAB;
 	iov[1].iov_len = sizeof (_PATH_DISKTAB) -  1;
-	iov[2].iov_base = strerror(err);
+	iov[2].iov_base = (void*) strerror(err);
 	iov[2].iov_len = strlen(iov[2].iov_base);
 	iov[3].iov_base = "\n";
 	iov[3].iov_len = 1;
@@ -466,11 +462,11 @@ static long
 _gtnumdflt(dname, dflt)
 	char *dname;
 	long dflt;
-	{
+{
 	long f;
 
 	f = dgetnum(dname);
 	if	(f == -1L)
 		f = dflt;
 	return(f);
-	}
+}

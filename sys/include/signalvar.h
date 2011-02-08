@@ -45,8 +45,8 @@
 #define	SAS_ALTSTACK	0x02		/* have alternate signal stack */
 
 /* additional signal action values, used only temporarily/internally */
-#define	SIG_CATCH	(sighandler_t) 2
-#define	SIG_HOLD	(sighandler_t) 3
+#define	SIG_CATCH	(sig_t) 2
+#define	SIG_HOLD	(sig_t) 3
 
 /*
  * Determine signal that should be delivered to process p, the current

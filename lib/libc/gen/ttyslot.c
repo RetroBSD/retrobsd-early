@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyslot.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Return the number of the slot in the utmp file
  * corresponding to the current user: try for file 0, 1, 2.

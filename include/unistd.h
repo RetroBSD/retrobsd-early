@@ -53,7 +53,7 @@
 #define	NULL		0	/* null pointer constant */
 #endif
 
-void	 _exit();
+void	 _exit (int);
 int	 access();
 unsigned int	 alarm();
 pid_t	 fork();
@@ -89,6 +89,9 @@ void	 sync();
 unsigned int	 ualarm();
 void	 usleep();
 pid_t	 vfork();
+
+int	execl (const char *path, const char *arg0, ...);
+int	execlp (const char *file, const char *arg0, ...);
 
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	opterr, optind, optopt;

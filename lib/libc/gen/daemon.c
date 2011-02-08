@@ -30,13 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)daemon.c	8.1.1 (2.11BSD GTE) 2/3/95";
-#endif /* LIBC_SCCS and not lint */
-
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include <paths.h>
 
 int

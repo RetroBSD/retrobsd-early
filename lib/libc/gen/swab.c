@@ -1,22 +1,18 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)swab.c	5.3 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Swab bytes
  * Jeffrey Mogul, Stanford
  */
-
-swab(from, to, n)
+void
+swab (from, to, n)
 	register char *from, *to;
 	register int n;
 {
 #ifdef pdp11
 	register int temp;
-#else !pdp11
+#else
 	register unsigned long temp;
-#endif pdp11
-	
+#endif
+
 	n >>= 1; n++;
 #define	STEP	temp = *from++,*to++ = *from++,*to++ = temp
 	/* round to multiple of 8 */

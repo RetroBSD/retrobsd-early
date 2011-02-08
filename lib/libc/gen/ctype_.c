@@ -1,8 +1,4 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctype_.c	5.4 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<ctype.h>
+#include <ctype.h>
 
 char _ctype_[1 + 256] = {
 	0,

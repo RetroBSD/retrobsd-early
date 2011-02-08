@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	1.1 (Berkeley) 1/19/87";
-#endif LIBC_SCCS and not lint
-
 /*
  * bcopy -- vax movc3 instruction
  */

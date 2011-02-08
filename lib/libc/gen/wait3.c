@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wait3.c	5.6 (Berkeley) 2/23/91";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/wait.h>

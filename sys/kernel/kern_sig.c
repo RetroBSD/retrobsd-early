@@ -218,7 +218,7 @@ psignal(p, sig)
 	register int sig;
 {
 	register int s;
-	sighandler_t action;
+	sig_t action;
 	int prop;
 	long mask;
 
@@ -624,7 +624,7 @@ postsig(sig)
 {
 	register struct proc *p = u.u_procp;
 	long mask = sigmask(sig), returnmask;
-	register sighandler_t action;
+	register sig_t action;
 
 	p->p_sig &= ~mask;
 	action = u.u_signal[sig];

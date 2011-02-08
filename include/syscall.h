@@ -49,11 +49,11 @@
 #define	SYS_sync	36
 #define	SYS_kill	37
 #define	SYS_stat	38
-#define	SYS__getlogin	39
+				/* 39 was getlogin */
 #define	SYS_lstat	40
 #define	SYS_dup		41
 #define	SYS_pipe	42
-#define	SYS_setlogin	43
+				/* 43 was setlogin */
 #define	SYS_profil	44
 #define	SYS_setuid	45
 #define	SYS_seteuid	46

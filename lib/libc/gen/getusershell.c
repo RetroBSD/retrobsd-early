@@ -14,16 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getusershell.c	5.5 (Berkeley) 7/21/88";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define SHELLS "/etc/shells"
 
@@ -35,41 +31,6 @@ static char *okshells[] =
 
 static char **shells, *strings;
 static char **curshell = NULL;
-extern char **initshells();
-
-/*
- * Get a list of shells from SHELLS, if it exists.
- */
-char *
-getusershell()
-{
-	char *ret;
-
-	if (curshell == NULL)
-		curshell = initshells();
-	ret = *curshell;
-	if (ret != NULL)
-		curshell++;
-	return (ret);
-}
-
-endusershell()
-{
-	
-	if (shells != NULL)
-		free((char *)shells);
-	shells = NULL;
-	if (strings != NULL)
-		free(strings);
-	strings = NULL;
-	curshell = NULL;
-}
-
-setusershell()
-{
-
-	curshell = initshells();
-}
 
 static char **
 initshells()
@@ -77,7 +38,6 @@ initshells()
 	register char **sp, *cp;
 	register FILE *fp;
 	struct stat statb;
-	extern char *malloc(), *calloc();
 
 	if (shells != NULL)
 		free((char *)shells);
@@ -117,4 +77,38 @@ initshells()
 	*sp = (char *)0;
 	(void)fclose(fp);
 	return (shells);
+}
+
+/*
+ * Get a list of shells from SHELLS, if it exists.
+ */
+char *
+getusershell()
+{
+	char *ret;
+
+	if (curshell == NULL)
+		curshell = initshells();
+	ret = *curshell;
+	if (ret != NULL)
+		curshell++;
+	return (ret);
+}
+
+endusershell()
+{
+
+	if (shells != NULL)
+		free((char *)shells);
+	shells = NULL;
+	if (strings != NULL)
+		free(strings);
+	strings = NULL;
+	curshell = NULL;
+}
+
+setusershell()
+{
+
+	curshell = initshells();
 }

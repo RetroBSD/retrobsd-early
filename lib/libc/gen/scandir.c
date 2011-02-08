@@ -4,20 +4,16 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)scandir.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Scan the directory dirname calling select to make a list of selected
  * directory entries then sort using qsort and compare routine dcomp.
  * Returns the number of entries and a pointer to a list of pointers to
  * struct direct (through namelist). Returns -1 if there were any errors.
  */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
+#include <stdlib.h>
 
 scandir(dirname, namelist, select, dcomp)
 	char *dirname;
@@ -38,7 +34,7 @@ scandir(dirname, namelist, select, dcomp)
 
 	/*
 	 * estimate the array size by taking the size of the directory file
-	 * and dividing it by a multiple of the minimum size entry. 
+	 * and dividing it by a multiple of the minimum size entry.
 	 */
 	arraysz = (stb.st_size / 24);
 	names = (struct direct **)malloc(arraysz * sizeof(struct direct *));

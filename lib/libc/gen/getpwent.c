@@ -14,11 +14,6 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,6 +21,7 @@ static char sccsid[] = "@(#)getpwent.c	5.9.1 (2.11BSD) 1996/1/12";
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
+#include <strings.h>
 
 static DBM *_pw_db;
 static FILE *_pw_fp;
@@ -35,80 +31,6 @@ static char _pw_flag, *_pw_file = _PATH_PASSWD;
 
 #define	MAXLINELENGTH	256
 static char line[MAXLINELENGTH];
-
-struct passwd *
-getpwent()
-{
-	datum key;
-	register int rval;
-
-	if (!_pw_db && !_pw_fp && !start_pw())
-		return((struct passwd *)NULL);
-	do {
-		if (_pw_db) {
-			key.dptr = NULL;
-			rval = fetch_pw(key);
-		} else /* _pw_fp */
-			rval = scanpw();
-	} while (rval && _pw_flag != _PW_KEYBYNAME);
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-}
-
-struct passwd *
-getpwnam(nam)
-	char *nam;
-{
-	register int rval;
-
-	if (!start_pw())
-		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
-
-		key.dptr = nam;
-		key.dsize = strlen(nam);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (!strcmp(nam, _pw_passwd.pw_name)) {
-				rval = 1;
-				break;
-			}
-	if (!_pw_stayopen)
-		endpwent();
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-}
-
-struct passwd *
-getpwuid(uid)
-	int uid;
-{
-	register int rval;
-
-	if (!start_pw())
-		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
-
-		key.dptr = (char *)&uid;
-		key.dsize = sizeof(uid);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (_pw_passwd.pw_uid == uid) {
-				rval = 1;
-				break;
-			}
-	if (!_pw_stayopen)
-		endpwent();
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-}
 
 static
 start_pw()
@@ -137,39 +59,6 @@ start_pw()
 	return(0);
 }
 
-setpwent()
-{
-	return(setpassent(0));
-}
-
-setpassent(stayopen)
-	int stayopen;
-{
-	if (!start_pw())
-		return(0);
-	_pw_stayopen = stayopen;
-	return(1);
-}
-
-void
-endpwent()
-{
-	if (_pw_db) {
-		dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
-	} else if (_pw_fp) {
-		(void)fclose(_pw_fp);
-		_pw_fp = (FILE *)NULL;
-	}
-}
-
-void
-setpwfile(file)
-	char *file;
-{
-	_pw_file = file;
-}
-
 static
 scanpw()
 {
@@ -181,7 +70,7 @@ scanpw()
 		if (!(fgets(line, sizeof(line), _pw_fp)))
 			return(0);
 		/* skip lines that are too big */
-		if (!(cp = index(line, '\n'))) {
+		if (!(cp = strchr(line, '\n'))) {
 			while ((ch = fgetc(_pw_fp)) != '\n' && ch != EOF)
 				;
 			continue;
@@ -286,4 +175,111 @@ getpw()
 			break;
 		}
 bad:	(void)close(fd);
+}
+
+struct passwd *
+getpwent()
+{
+	datum key;
+	register int rval;
+
+	if (!_pw_db && !_pw_fp && !start_pw())
+		return((struct passwd *)NULL);
+	do {
+		if (_pw_db) {
+			key.dptr = NULL;
+			rval = fetch_pw(key);
+		} else /* _pw_fp */
+			rval = scanpw();
+	} while (rval && _pw_flag != _PW_KEYBYNAME);
+	if (rval)
+		getpw();
+	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+}
+
+struct passwd *
+getpwnam(nam)
+	char *nam;
+{
+	register int rval;
+
+	if (!start_pw())
+		return((struct passwd *)NULL);
+	if (_pw_db) {
+		datum key;
+
+		key.dptr = nam;
+		key.dsize = strlen(nam);
+		rval = fetch_pw(key);
+	} else /* _pw_fp */
+		for (rval = 0; scanpw();)
+			if (!strcmp(nam, _pw_passwd.pw_name)) {
+				rval = 1;
+				break;
+			}
+	if (!_pw_stayopen)
+		endpwent();
+	if (rval)
+		getpw();
+	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+}
+
+struct passwd *
+getpwuid(uid)
+	int uid;
+{
+	register int rval;
+
+	if (!start_pw())
+		return((struct passwd *)NULL);
+	if (_pw_db) {
+		datum key;
+
+		key.dptr = (char *)&uid;
+		key.dsize = sizeof(uid);
+		rval = fetch_pw(key);
+	} else /* _pw_fp */
+		for (rval = 0; scanpw();)
+			if (_pw_passwd.pw_uid == uid) {
+				rval = 1;
+				break;
+			}
+	if (!_pw_stayopen)
+		endpwent();
+	if (rval)
+		getpw();
+	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+}
+
+setpwent()
+{
+	return(setpassent(0));
+}
+
+setpassent(stayopen)
+	int stayopen;
+{
+	if (!start_pw())
+		return(0);
+	_pw_stayopen = stayopen;
+	return(1);
+}
+
+void
+endpwent()
+{
+	if (_pw_db) {
+		dbm_close(_pw_db);
+		_pw_db = (DBM *)NULL;
+	} else if (_pw_fp) {
+		(void)fclose(_pw_fp);
+		_pw_fp = (FILE *)NULL;
+	}
+}
+
+void
+setpwfile(file)
+	char *file;
+{
+	_pw_file = file;
 }

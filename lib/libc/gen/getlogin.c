@@ -30,29 +30,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getlogin.c	8.1.1 (2.11BSD) 1997.9.23";
-#endif /* LIBC_SCCS and not lint */
-
-#include <sys/param.h>
-#include <pwd.h>
-#include <utmp.h>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
-
-int	_logname_valid;		/* known to setlogin() */
 
 char *
 getlogin()
 {
-	static char logname[MAXLOGNAME + 1];
+	return 0;
+}
 
-	if (_logname_valid == 0) {
-		if (_getlogin(logname, sizeof(logname) - 1) < 0)
-			return ((char *)NULL);
-		_logname_valid = 1;
-	}
-	return (*logname ? logname : (char *)NULL);
+int
+setlogin (name)
+	const char *name;
+{
 }

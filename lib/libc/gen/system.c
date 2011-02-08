@@ -30,15 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)system.c	5.10.1 (2.11BSD) 1999/10/24";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 system(command)
 	char *command;
@@ -46,7 +42,7 @@ system(command)
 	union wait pstat;
 	register int pid;
 	sigset_t omask, nmask;
-	int (*intsave)(), (*quitsave)();
+	sig_t intsave, quitsave;
 
 	if (!command)		/* just checking... */
 		return(1);

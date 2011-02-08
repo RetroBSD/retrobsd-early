@@ -4,12 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#
-
 /*
  * routines to do regular expression matching
  *
@@ -25,10 +19,10 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
  *	re_exec(s)
  *		char *s;
  *	 ... returns 1 if the string s matches the last compiled regular
- *		       expression, 
+ *		       expression,
  *		     0 if the string s failed to match the last compiled
  *		       regular expression, and
- *		    -1 if the compiled regular expression was invalid 
+ *		    -1 if the compiled regular expression was invalid
  *		       (indicating an internal error).
  *
  * The strings passed to both re_comp and re_exec may have trailing or
@@ -53,7 +47,7 @@ static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) 3/9/86";
  *	    matches that character.
  *	4.  A nonempty string s bracketed [s] (or [^s]) matches any
  *	    character in (or not in) s. In s, \ has no special meaning,
- *	    and ] may only appear as the first letter. A substring 
+ *	    and ] may only appear as the first letter. A substring
  *	    a-b, with a and b in ascending ASCII order, stands for
  *	    the inclusive range of ASCII characters.
  *	5.  A regular expression of form 1-4 followed by * matches a
@@ -220,47 +214,7 @@ re_comp(sp)
 	}
 }
 
-/* 
- * match the argument string against the compiled re
- */
-int
-re_exec(p1)
-	register char	*p1;
-{
-	register char	*p2 = expbuf;
-	register int	c;
-	int	rv;
-
-	for (c = 0; c < NBRA; c++) {
-		braslist[c] = 0;
-		braelist[c] = 0;
-	}
-	if (circf)
-		return((advance(p1, p2)));
-	/*
-	 * fast check for first character
-	 */
-	if (*p2 == CCHR) {
-		c = p2[1];
-		do {
-			if (*p1 != c)
-				continue;
-			if (rv = advance(p1, p2))
-				return(rv);
-		} while (*p1++);
-		return(0);
-	}
-	/*
-	 * regular algorithm
-	 */
-	do
-		if (rv = advance(p1, p2))
-			return(rv);
-	while (*p1++);
-	return(0);
-}
-
-/* 
+/*
  * try to match the next thing in the dfa
  */
 static	int
@@ -369,6 +323,46 @@ advance(lp, ep)
 		default:
 			return(-1);
 		}
+}
+
+/*
+ * match the argument string against the compiled re
+ */
+int
+re_exec(p1)
+	register char	*p1;
+{
+	register char	*p2 = expbuf;
+	register int	c;
+	int	rv;
+
+	for (c = 0; c < NBRA; c++) {
+		braslist[c] = 0;
+		braelist[c] = 0;
+	}
+	if (circf)
+		return((advance(p1, p2)));
+	/*
+	 * fast check for first character
+	 */
+	if (*p2 == CCHR) {
+		c = p2[1];
+		do {
+			if (*p1 != c)
+				continue;
+			if (rv = advance(p1, p2))
+				return(rv);
+		} while (*p1++);
+		return(0);
+	}
+	/*
+	 * regular algorithm
+	 */
+	do
+		if (rv = advance(p1, p2))
+			return(rv);
+	while (*p1++);
+	return(0);
 }
 
 backref(i, lp)

@@ -30,18 +30,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sysctl.c	8.2.2 (2.11BSD GTE) 1996/11/27";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <errno.h>
+#include <string.h>
 #include <paths.h>
 
 extern	int	errno;
-static 
+static
 char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
 
 
@@ -66,8 +62,8 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 
 /*
  * This idea behind this section is silly.  Other than 'bc' who cares about
- * half of these?  A 3/4 hearted attempt is made however to return numbers 
- * that are not totally bogus.  
+ * half of these?  A 3/4 hearted attempt is made however to return numbers
+ * that are not totally bogus.
  *
  * Rather than port over the raft of include files with the attendant plethora
  * of #define statements we just plug in the numbers from 4.4-Lite.

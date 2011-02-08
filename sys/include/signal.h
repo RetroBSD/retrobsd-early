@@ -39,14 +39,14 @@
 #define SIGUSR1 30	/* user defined signal 1 */
 #define SIGUSR2 31	/* user defined signal 2 */
 
-typedef	void (*sighandler_t) (int);	/* type of signal function */
+typedef	void (*sig_t) (int);	/* type of signal function */
 
-#define	SIG_ERR		(sighandler_t) -1
-#define	SIG_DFL		(sighandler_t) 0
-#define	SIG_IGN		(sighandler_t) 1
+#define	SIG_ERR		(sig_t) -1
+#define	SIG_DFL		(sig_t) 0
+#define	SIG_IGN		(sig_t) 1
 
 #ifndef KERNEL
-int	(*signal())();
+sig_t signal (int, sig_t);
 #endif
 
 typedef unsigned long sigset_t;
@@ -55,9 +55,9 @@ typedef unsigned long sigset_t;
  * Signal vector "template" used in sigaction call.
  */
 struct	sigaction {
-	sighandler_t sa_handler;	/* signal handler */
-	sigset_t sa_mask;		/* signal mask to apply */
-	int	sa_flags;		/* see signal options below */
+	sig_t	sa_handler;	/* signal handler */
+	sigset_t sa_mask;	/* signal mask to apply */
+	int	sa_flags;	/* see signal options below */
 };
 
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
@@ -88,7 +88,7 @@ struct	sigaltstack {
  * Signal vector "template" used in sigvec call.
  */
 struct	sigvec {
-	sighandler_t sv_handler;	/* signal handler */
+	sig_t	sv_handler;		/* signal handler */
 	long	sv_mask;		/* signal mask to apply */
 	int	sv_flags;		/* see signal options below */
 };
@@ -142,7 +142,7 @@ extern const char sigprop [NSIG + 1];
 /*
  * Send an interrupt to process.
  */
-void sendsig (sighandler_t p, int sig, long mask);
+void sendsig (sig_t p, int sig, long mask);
 
 #else /* KERNEL */
 

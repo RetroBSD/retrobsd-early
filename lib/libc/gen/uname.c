@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)uname.c	8.1.1 (2.11BSD GTE) 2/4/95";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <sys/utsname.h>

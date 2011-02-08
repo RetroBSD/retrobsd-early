@@ -3,13 +3,10 @@
  * This file may be freely redistributed provided that this
  * notice remains attached.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	1.1 (Berkeley) 3/25/87";
-#endif LIBC_SCCS and not lint
-
 #include "sys/param.h"
 #include "sys/time.h"
+#include "stdio.h"
+#include "string.h"
 #include "tzfile.h"
 
 char *
@@ -207,12 +204,12 @@ register char *	name;
 			tzname[1] = &s.chars[ttisp->tt_abbrind];
 #ifdef USG_COMPAT
 			daylight = 1;
-#endif /* USG_COMPAT */ 
+#endif /* USG_COMPAT */
 		} else {
 			tzname[0] = &s.chars[ttisp->tt_abbrind];
 #ifdef USG_COMPAT
 			timezone = ttisp->tt_gmtoff;
-#endif /* USG_COMPAT */ 
+#endif /* USG_COMPAT */
 		}
 	}
 	return 0;

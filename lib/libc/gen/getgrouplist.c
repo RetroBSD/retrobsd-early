@@ -31,10 +31,6 @@
  * SUCH DAMAGE.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrouplist.c	8.2.1 (2.11BSD) 1997/6/25";
-#endif /* LIBC_SCCS and not lint */
-
 /*
  * get credential
  */

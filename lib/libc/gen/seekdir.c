@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)seekdir.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <sys/param.h>
 #include <sys/dir.h>
 

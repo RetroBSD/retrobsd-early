@@ -1,7 +1,3 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpass.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <stdio.h>
 #include <signal.h>
 #include <sgtty.h>
@@ -16,8 +12,7 @@ char *prompt;
 	register c;
 	FILE *fi;
 	static char pbuf[9];
-	int (*signal())();
-	int (*sig)();
+	sig_t sig;
 
 	if ((fi = fdopen(open("/dev/tty", 2), "r")) == NULL)
 		fi = stdin;

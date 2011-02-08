@@ -3,12 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)valloc.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-char	*malloc();
+#include <stdlib.h>
 
 char *
 valloc(i)
@@ -21,11 +16,11 @@ valloc(i)
 	 * algorithm.
 	 */
 	return(malloc(i));
-#else !pdp11
+#else
 	int valsiz = getpagesize(), j;
 	char *cp = malloc(i + (valsiz-1));
 
 	j = ((int)cp + (valsiz-1)) &~ (valsiz-1);
 	return ((char *)j);
-#endif pdp11
+#endif
 }

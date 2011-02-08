@@ -30,12 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __STDC__
 #include <stdarg.h>
@@ -46,6 +42,25 @@ static char sccsid[] = "@(#)err.c	8.1.1 (2.11BSD GTE) 2/3/95";
 extern	int	errno;
 extern	char *__progname;		/* Program name, from crt0. */
 static	void	putprog(), putcolsp();
+
+void
+verr(eval, fmt, ap)
+	int eval;
+	char *fmt;
+	va_list ap;
+{
+	int sverrno;
+
+	sverrno = errno;
+	putprog();
+	if (fmt != NULL) {
+		(void)vfprintf(stderr, fmt, ap);
+		putcolsp();
+	}
+	(void)fputs(strerror(sverrno), stderr);
+	(void)fputc('\n', stderr);
+	exit(eval);
+}
 
 void
 #ifdef __STDC__
@@ -68,20 +83,14 @@ err(eval, fmt, va_alist)
 }
 
 void
-verr(eval, fmt, ap)
+verrx(eval, fmt, ap)
 	int eval;
 	char *fmt;
 	va_list ap;
 {
-	int sverrno;
-
-	sverrno = errno;
 	putprog();
-	if (fmt != NULL) {
+	if (fmt != NULL)
 		(void)vfprintf(stderr, fmt, ap);
-		putcolsp();
-	}
-	(void)fputs(strerror(sverrno), stderr);
 	(void)fputc('\n', stderr);
 	exit(eval);
 }
@@ -107,16 +116,20 @@ errx(eval, fmt, va_alist)
 }
 
 void
-verrx(eval, fmt, ap)
-	int eval;
+vwarn(fmt, ap)
 	char *fmt;
 	va_list ap;
 {
+	int sverrno;
+
+	sverrno = errno;
 	putprog();
-	if (fmt != NULL)
+	if (fmt != NULL) {
 		(void)vfprintf(stderr, fmt, ap);
+		putcolsp();
+	}
+	(void)fputs(strerror(sverrno), stderr);
 	(void)fputc('\n', stderr);
-	exit(eval);
 }
 
 void
@@ -139,19 +152,13 @@ warn(fmt, va_alist)
 }
 
 void
-vwarn(fmt, ap)
+vwarnx(fmt, ap)
 	char *fmt;
 	va_list ap;
 {
-	int sverrno;
-
-	sverrno = errno;
 	putprog();
-	if (fmt != NULL) {
+	if (fmt != NULL)
 		(void)vfprintf(stderr, fmt, ap);
-		putcolsp();
-	}
-	(void)fputs(strerror(sverrno), stderr);
 	(void)fputc('\n', stderr);
 }
 
@@ -174,17 +181,6 @@ warnx(fmt, va_alist)
 	va_end(ap);
 }
 
-void
-vwarnx(fmt, ap)
-	char *fmt;
-	va_list ap;
-{
-	putprog();
-	if (fmt != NULL)
-		(void)vfprintf(stderr, fmt, ap);
-	(void)fputc('\n', stderr);
-}
-
 /*
  * Helper routines.  Repeated constructs of the form "%s: " used up too
  * much D space.  On a pdp-11 code can be overlaid but Data space is worth
@@ -194,16 +190,14 @@ vwarnx(fmt, ap)
 
 static void
 putprog()
-	{
-
+{
 	fputs(__progname, stderr);
 	putcolsp();
-	}
+}
 
 static void
 putcolsp()
-	{
-
+{
 	fputc(':', stderr);
 	fputc(' ', stderr);
-	}
+}

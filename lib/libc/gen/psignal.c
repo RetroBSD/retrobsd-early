@@ -3,16 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)psignal.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
+#include <string.h>
+#include <signal.h>
 
 /*
  * Print the name of the signal indicated
  * along with the supplied message.
  */
-#include <signal.h>
 
 extern	char *sys_siglist[];
 

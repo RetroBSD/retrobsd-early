@@ -29,8 +29,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)strings.h	8.1 (Berkeley) 6/2/93
  */
+#include <sys/types.h>
 
-#include <string.h>
+int      bcmp(const void *, const void *, size_t);
+void     bcopy(const void *, void *, size_t);
+void     bzero(void *, size_t);
+int      ffs(int);
+char    *index(const char *, int);
+char    *rindex(const char *, int);
+int      strcasecmp(const char *, const char *);
+int      strncasecmp(const char *, const char *, size_t);

@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.4 (Berkeley) 5/19/86";
-#endif LIBC_SCCS and not lint
-
 #include <stdio.h>
 #include <strings.h>
 #include <ttyent.h>

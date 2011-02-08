@@ -6,14 +6,14 @@
  *      -----------------   Modification History   ---------------
  *      Version Date            Reason For Modification
  *      1.0     06Mar96         1. Initial release into the public domain.
-*/
+ */
 
 /*
  * syserrlst - reads an error message from _PATH_SYSERRLST to a static
  *	       buffer.
  *
  * __errlst - same as above but the caller must specify an error list file.
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,10 +30,9 @@ static	char	msgstr[64];
 char *
 syserrlst(err)
 	int	err;
-	{
-
+{
 	return(__errlst(err, _PATH_SYSERRLST));
-	}
+}
 
 /*
  * Returns NULL if an error is encountered.  It is the responsiblity of the
@@ -44,7 +43,7 @@ char *
 __errlst(err, path)
 	int	err;
 	char	*path;
-	{
+{
 	register int	f;
 	register char	*retval = NULL;
 	int	saverrno;
@@ -55,37 +54,37 @@ __errlst(err, path)
 
 	saverrno = errno;
 	f = open(path, O_RDONLY);
-	if	(f < 0 || !path)
+	if (f < 0 || !path)
 		goto oops;
 
-	if	(read(f, &ehdr, sizeof (ehdr)) != sizeof (ehdr))
+	if (read(f, &ehdr, sizeof (ehdr)) != sizeof (ehdr))
 		goto oops;
 
-	if	(err < 0 || err > ehdr.maxmsgnum || ehdr.maxmsgnum <= 0 ||
+	if (err < 0 || err > ehdr.maxmsgnum || ehdr.maxmsgnum <= 0 ||
 		 ehdr.magic != ERRMAGIC)
 		goto	oops;
 
 	off = sizeof (ehdr) + ((off_t)sizeof (struct ERRLST) * err);
-	if	(lseek(f, off, L_SET) == (off_t)-1)
+	if (lseek(f, off, L_SET) == (off_t)-1)
 		goto oops;
 
-	if	(read(f, &emsg, sizeof (emsg)) != sizeof (emsg))
+	if (read(f, &emsg, sizeof (emsg)) != sizeof (emsg))
 		goto oops;
 
-	if	(emsg.lenmsg >= sizeof (msgstr))
+	if (emsg.lenmsg >= sizeof (msgstr))
 		emsg.lenmsg = sizeof (msgstr) - 1;
-	
-	if	(lseek(f, emsg.offmsg, L_SET) == (off_t)-1)
+
+	if (lseek(f, emsg.offmsg, L_SET) == (off_t)-1)
 		goto oops;
 
-	if	(read(f, msgstr, emsg.lenmsg) != emsg.lenmsg)
+	if (read(f, msgstr, emsg.lenmsg) != emsg.lenmsg)
 		goto oops;
 
 	retval = msgstr;
 	retval[emsg.lenmsg] = '\0';
 oops:
-	if	(f >= 0)
+	if (f >= 0)
 		close(f);
 	errno = saverrno;
 	return(retval);
-	}
+}

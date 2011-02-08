@@ -30,15 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strftime.c	8.1.1 (2.11BSD) 1995/04/01";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
-#include <sys/time.h>
+#include <time.h>
 #include <tzfile.h>
 #include <string.h>
+#include <strings.h>
 
 static char *Afmt[] = {
 	"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
@@ -51,32 +47,37 @@ static char *Bfmt[] = {
 
 static size_t gsize;
 static char *pt;
-static int _add();
-static int _conv();
-static size_t _fmt();
 
-size_t
-strftime(s, maxsize, format, t)
-	char *s;
-	size_t maxsize;
-	char *format;
-	struct tm *t;
+static int
+_add(str)
+	register char *str;
 {
-
-	pt = s;
-	if ((gsize = maxsize) < 1)
-		return(0);
-	if (_fmt(format, t)) {
-		*pt = '\0';
-		return(maxsize - gsize);
+	for (;; ++pt, --gsize) {
+		if (!gsize)
+			return(0);
+		if (!(*pt = *str++))
+			return(1);
 	}
-	return(0);
+}
+
+static int
+_conv(n, digits, pad)
+	int n, digits, pad;
+{
+	static char buf[10];
+	register char *p;
+
+	for (p = buf + sizeof(buf) - 2; n > 0 && p > buf; n /= 10, --digits)
+		*p-- = n % 10 + '0';
+	while (p > buf && digits-- > 0)
+		*p-- = pad;
+	return(_add(++p));
 }
 
 static size_t
 _fmt(format, t)
-	register char *format;
-	register struct tm *t;
+	register const char *format;
+	register const struct tm *t;
 {
 	char	ch, *cp, junk[4];
 
@@ -244,28 +245,20 @@ _fmt(format, t)
 	return(gsize);
 }
 
-static int
-_conv(n, digits, pad)
-	int n, digits, pad;
+size_t
+strftime(s, maxsize, format, t)
+	char *s;
+	size_t maxsize;
+	const char *format;
+	const struct tm *t;
 {
-	static char buf[10];
-	register char *p;
 
-	for (p = buf + sizeof(buf) - 2; n > 0 && p > buf; n /= 10, --digits)
-		*p-- = n % 10 + '0';
-	while (p > buf && digits-- > 0)
-		*p-- = pad;
-	return(_add(++p));
-}
-
-static int
-_add(str)
-	register char *str;
-{
-	for (;; ++pt, --gsize) {
-		if (!gsize)
-			return(0);
-		if (!(*pt = *str++))
-			return(1);
+	pt = s;
+	if ((gsize = maxsize) < 1)
+		return(0);
+	if (_fmt(format, t)) {
+		*pt = '\0';
+		return(maxsize - gsize);
 	}
+	return(0);
 }

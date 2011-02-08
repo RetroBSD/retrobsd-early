@@ -1,7 +1,3 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.3.1.1 (Berkeley) 10/21/90";
-#endif LIBC_SCCS and not lint
-
 /*
  * This program implements the
  * Proposed Federal Information Processing
@@ -340,9 +336,9 @@ char *salt;
 			block[i] = (c>>(6-j)) & 01;
 		i++;
 	}
-	
+
 	setkey(block);
-	
+
 	for(i=0; i<66; i++)
 		block[i] = 0;
 
@@ -360,10 +356,10 @@ char *salt;
 				}
 			}
 		}
-	
+
 	for(i=0; i<25; i++)
 		encrypt(block,0);
-	
+
 	for(i=0; i<11; i++){
 		c = 0;
 		for(j=0; j<6; j++){

@@ -3,16 +3,12 @@
  * This file may be freely redistributed provided that this
  * notice remains attached.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)timezone.c	1.2 (2.11BSD) 1996/11/27";
-#endif LIBC_SCCS and not lint
-
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <strings.h>
 #include <tzfile.h>
 
 /*
@@ -76,7 +72,7 @@ static struct zone {
  * tztab --
  *	check static tables or create a new zone name; broken out so that
  *	we can make a guess as to what the zone is if the standard tables
- *	aren't in place in /usr/share/misc.  DO NOT USE THIS ROUTINE OUTSIDE 
+ *	aren't in place in /usr/share/misc.  DO NOT USE THIS ROUTINE OUTSIDE
  *	OF THE STANDARD LIBRARY.
  */
 char *
