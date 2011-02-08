@@ -30,14 +30,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	8.2.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int	opterr = 1,		/* if error message should be printed */
 	optind = 1,		/* index into parent argv vector */
@@ -59,7 +55,6 @@ getopt(nargc, nargv, ostr)
 	char **nargv;
 	char *ostr;
 {
-	extern char *__progname;
 	static char *place = EMSG;		/* option letter processing */
 	char *oli;				/* option letter list index */
 

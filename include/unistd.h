@@ -93,6 +93,9 @@ pid_t	 vfork();
 int	execl (const char *path, const char *arg0, ...);
 int	execlp (const char *file, const char *arg0, ...);
 
+extern	char	**environ;		/* Environment, from crt0. */
+extern	const char *__progname;		/* Program name, from crt0. */
+
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	opterr, optind, optopt;
 

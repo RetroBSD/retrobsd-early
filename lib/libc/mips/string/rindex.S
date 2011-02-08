@@ -1,9 +1,11 @@
+/*	$NetBSD: rindex.S,v 1.7 2003/08/07 16:42:16 agc Exp $	*/
+
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Chris Torek.
+ * Ralph Campbell.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,11 +15,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,28 +31,27 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <string.h>
 
-/*
- * Find the first occurrence of find in s.
- */
-char *
-strstr(s, find)
-	register const char *s, *find;
-{
-	register char c;
-	char	sc;
-	size_t	len;
+#include <machine/asm.h>
+__FBSDID("$FreeBSD$");
 
-	if ((c = *find++) != 0) {
-		len = strlen(find);
-		do {
-			do {
-				if ((sc = *s++) == 0)
-					return (NULL);
-			} while (sc != c);
-		} while (strncmp(s, find, len) != 0);
-		s--;
-	}
-	return ((char *)s);
-}
+#if defined(LIBC_SCCS) && !defined(lint)
+	ASMSTR("from: @(#)rindex.s	8.1 (Berkeley) 6/4/93")
+	ASMSTR("$NetBSD: rindex.S,v 1.7 2003/08/07 16:42:16 agc Exp $")
+#endif /* LIBC_SCCS and not lint */
+
+#ifdef __ABICALLS__
+	.abicalls
+#endif
+
+LEAF(rindex)
+	move		v0, zero		# default if not found
+1:
+	lbu		a3, 0(a0)		# get a byte
+	PTR_ADDU	a0, a0, 1
+	bne		a3, a1, 2f
+	PTR_SUBU	v0, a0, 1		# save address of last match
+2:
+	bne		a3, zero, 1b		# continue if not end
+	j		ra
+END(rindex)

@@ -39,7 +39,6 @@
 #include <unistd.h>
 #include <sys/uio.h>
 
-extern	char	*__progname;
 static FILE *_fs_fp;
 static struct fstab _fs_fstab;
 

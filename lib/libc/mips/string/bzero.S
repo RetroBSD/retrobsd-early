@@ -1,4 +1,4 @@
-/*	$NetBSD: byte_swap_2.S,v 1.2 2006/02/08 21:52:36 simonb Exp $	*/
+/*	$NetBSD: bzero.S,v 1.10 2009/12/14 02:53:52 matt Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -32,43 +32,70 @@
  * SUCH DAMAGE.
  */
 
-#include <mips/asm.h>
+#include <machine/asm.h>
+__FBSDID("$FreeBSD$");
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("from: @(#)htons.s	8.1 (Berkeley) 6/4/93")
-	ASMSTR("$NetBSD: byte_swap_2.S,v 1.2 2006/02/08 21:52:36 simonb Exp $")
+#if 0
+	ASMSTR("from: @(#)bzero.s	8.1 (Berkeley) 6/4/93")
+#else
+	ASMSTR("$NetBSD: bzero.S,v 1.10 2009/12/14 02:53:52 matt Exp $")
+#endif
 #endif /* LIBC_SCCS and not lint */
 
-#undef _LOCORE
 #define _LOCORE		/* XXX not really, just assembly-code source */
 #include <machine/endian.h>
 
-#if defined(_KERNEL) || defined(_STANDALONE)
-#define	BSWAP16_NAME	bswap16
-#else
 #ifdef __ABICALLS__
 	.abicalls
 #endif
-#define	BSWAP16_NAME	__bswap16
-#endif
 
-NLEAF(BSWAP16_NAME)
-#if BYTE_ORDER == LITTLE_ENDIAN
-ALEAF(htons)
-ALEAF(ntohs)
-#endif
-	srl	v0, a0, 8
-	and	v0, v0, 0xff
-	sll	v1, a0, 8
-	and	v1, v1, 0xff00
-	or	v0, v0, v1
-	j	ra
-END(BSWAP16_NAME)
+/* bzero(s1, n) */
 
-#if BYTE_ORDER == BIG_ENDIAN
-NLEAF(htons)
-ALEAF(ntohs)
-	move	v0, a0
-	j	ra
-END(htons)
+LEAF(bzero)
+	.set	noreorder
+	blt		a1, 3*SZREG, smallclr # small amount to clear?
+	PTR_SUBU	a3, zero, a0	# compute # bytes to word align address
+	and		a3, a3, SZREG-1
+	beq		a3, zero, 1f	# skip if word aligned
+#if SZREG == 4
+	PTR_SUBU	a1, a1, a3	# subtract from remaining count
+	SWHI		zero, 0(a0)	# clear 1, 2, or 3 bytes to align
+	PTR_ADDU	a0, a0, a3
 #endif
+#if SZREG == 8
+	PTR_SUBU	a1, a1, a3	# subtract from remaining count
+	PTR_ADDU	a0, a0, a3	# align dst to next word
+	sll		a3, a3, 3	# bits to bytes
+	li		a2, -1		# make a mask
+#if _BYTE_ORDER == _BIG_ENDIAN
+	REG_SRLV	a2, a2, a3	# we want to keep the MSB bytes
+#endif
+#if _BYTE_ORDER == _LITTLE_ENDIAN
+	REG_SLLV	a2, a2, a3	# we want to keep the LSB bytes
+#endif
+	nor		a2, zero, a2	# complement the mask
+	REG_L		v0, -SZREG(a0)	# load the word to partially clear
+	and		v0, v0, a2	# clear the bytes
+	REG_S		v0, -SZREG(a0)	# store it back
+#endif
+1:
+	and		v0, a1, SZREG-1	# compute number of words left
+	PTR_SUBU	a3, a1, v0
+	move		a1, v0
+	PTR_ADDU	a3, a3, a0	# compute ending address
+2:
+	PTR_ADDU	a0, a0, SZREG	# clear words
+	bne		a0, a3, 2b	#  unrolling loop doesnt help
+	REG_S		zero, -SZREG(a0) # since we are limited by memory speed
+smallclr:
+	ble		a1, zero, 2f
+	PTR_ADDU	a3, a1, a0	# compute ending address
+1:
+	PTR_ADDU	a0, a0, 1	# clear bytes
+	bne		a0, a3, 1b
+	sb		zero, -1(a0)
+2:
+	j		ra
+	nop
+END(bzero)

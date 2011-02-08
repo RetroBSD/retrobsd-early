@@ -1,4 +1,4 @@
-/*	$NetBSD: byte_swap_4.S,v 1.2 2006/02/08 21:52:36 simonb Exp $	*/
+/*	$NetBSD: index.S,v 1.8 2005/04/22 06:59:00 simonb Exp $	*/
 
 /*-
  * Copyright (c) 1991, 1993
@@ -32,47 +32,28 @@
  * SUCH DAMAGE.
  */
 
-#include <mips/asm.h>
+#include <machine/asm.h>
+__FBSDID("$FreeBSD$");
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("from: @(#)htonl.s	8.1 (Berkeley) 6/4/93")
-	ASMSTR("$NetBSD: byte_swap_4.S,v 1.2 2006/02/08 21:52:36 simonb Exp $")
+	ASMSTR("from: @(#)index.s	8.1 (Berkeley) 6/4/93")
+	ASMSTR("$NetBSD: index.S,v 1.8 2005/04/22 06:59:00 simonb Exp $")
 #endif /* LIBC_SCCS and not lint */
 
-#undef _LOCORE
-#define _LOCORE		/* XXX not really, just assembly-code source */
-#include <machine/endian.h>
-
-#if defined(_KERNEL) || defined(_STANDALONE)
-#define	BSWAP32_NAME	bswap32
-#else
 #ifdef __ABICALLS__
 	.abicalls
 #endif
-#define	BSWAP32_NAME	__bswap32
-#endif
 
-NLEAF(BSWAP32_NAME)			# a0 = 0x11223344, return 0x44332211
-#if BYTE_ORDER == LITTLE_ENDIAN
-ALEAF(htonl)				# a0 = 0x11223344, return 0x44332211
-ALEAF(ntohl)
-#endif
-	srl	v1, a0, 24		# v1 = 0x00000011
-	sll	v0, a0, 24		# v0 = 0x44000000
-	or	v0, v0, v1
-	and	v1, a0, 0xff00
-	sll	v1, v1, 8		# v1 = 0x00330000
-	or	v0, v0, v1
-	srl	v1, a0, 8
-	and	v1, v1, 0xff00		# v1 = 0x00002200
-	or	v0, v0, v1
-	j	ra
-END(BSWAP32_NAME)
-
-#if BYTE_ORDER == BIG_ENDIAN
-NLEAF(htonl)				# a0 = 0x11223344, return 0x44332211
-ALEAF(ntohl)
-	move	v0, a0
-	j	ra
-END(htonl)
-#endif
+LEAF(index)
+1:
+	lbu		a2, 0(a0)		# get a byte
+	PTR_ADDU	a0, a0, 1
+	beq		a2, a1, fnd
+	bne		a2, zero, 1b
+notfnd:
+	move		v0, zero
+	j		ra
+fnd:
+	PTR_SUBU	v0, a0, 1
+	j		ra
+END(index)

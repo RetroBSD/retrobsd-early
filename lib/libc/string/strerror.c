@@ -30,14 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strerror.c	8.1.1 (2.11BSD) 1996/3/15";
-#endif /* LIBC_SCCS and not lint */
-
 #include <string.h>
 
-char *
+const char *
 strerror(num)
 	int num;
 {
@@ -45,11 +40,12 @@ strerror(num)
 	static char ebuf[30] = UPREFIX;		/* 32-bit number + slop */
 	register unsigned int errnum;
 	register char *p, *t;
+	const char *q;
 	char tmp[20];
 
 	errnum = num;				/* convert to unsigned */
-	if (p = syserrlst(errnum))
-		return(p);
+	if (q = syserrlst(errnum))
+		return(q);
 
 	/* Do this by hand, so we don't include stdio(3). */
 	t = tmp;

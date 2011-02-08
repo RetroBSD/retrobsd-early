@@ -433,13 +433,14 @@ badarg:
 	 * Copy back arglist.
 	 */
 	ucp = -nc - NBPW;
-	ap = ucp - na*NBPW - 3*NBPW;
+	ap = ucp - na*NBPW - 2*NBPW;
 	u.u_frame [FRAME_SP] = ap;
-	*(int*) ap = na - ne;
+        u.u_frame [FRAME_R4] = na - ne;			/* $a0 := argc */
+        u.u_frame [FRAME_R5] = ap;			/* $a1 := argv */
+        u.u_frame [FRAME_R6] = ap + (na-ne+1)*NBPW;	/* $a2 := env */
 	nc = 0;
 	cc = 0;
 	for (;;) {
-		ap += NBPW;
 		if (na == ne) {
 			*(int*) ap = 0;
 			ap += NBPW;
@@ -467,6 +468,7 @@ badarg:
 		} while (error == ENOENT);
 		if (error == EFAULT)
 			panic ("exec: EFAULT");
+		ap += NBPW;
 	}
 	*(int*) ap = 0;
 	*(int*) (-NBPW) = 0;
@@ -489,7 +491,34 @@ badarg:
 	/*
 	 * Clear registers.
 	 */
-	u.u_frame [FRAME_PC] = exdata.ex_exec.a_entry & ~01;
+        u.u_frame [FRAME_R1] = 0;			/* $at */
+        u.u_frame [FRAME_R2] = 0;			/* $v0 */
+        u.u_frame [FRAME_R3] = 0;			/* $v1 */
+        u.u_frame [FRAME_R7] = 0;			/* $a3 */
+        u.u_frame [FRAME_R8] = 0;			/* $t0 */
+        u.u_frame [FRAME_R9] = 0;			/* $t1 */
+        u.u_frame [FRAME_R10] = 0;			/* $t2 */
+        u.u_frame [FRAME_R11] = 0;			/* $t3 */
+        u.u_frame [FRAME_R12] = 0;			/* $t4 */
+        u.u_frame [FRAME_R13] = 0;			/* $t5 */
+        u.u_frame [FRAME_R14] = 0;			/* $t6 */
+        u.u_frame [FRAME_R15] = 0;			/* $t7 */
+        u.u_frame [FRAME_R16] = 0;			/* $s0 */
+        u.u_frame [FRAME_R17] = 0;			/* $s1 */
+        u.u_frame [FRAME_R18] = 0;			/* $s2 */
+        u.u_frame [FRAME_R19] = 0;			/* $s3 */
+        u.u_frame [FRAME_R20] = 0;			/* $s4 */
+        u.u_frame [FRAME_R21] = 0;			/* $s5 */
+        u.u_frame [FRAME_R22] = 0;			/* $s6 */
+        u.u_frame [FRAME_R23] = 0;			/* $s7 */
+        u.u_frame [FRAME_R24] = 0;			/* $t8 */
+        u.u_frame [FRAME_R25] = 0;			/* $t9 */
+        u.u_frame [FRAME_FP] = 0;
+        u.u_frame [FRAME_RA] = 0;
+        u.u_frame [FRAME_LO] = 0;
+        u.u_frame [FRAME_HI] = 0;
+        u.u_frame [FRAME_GP] = USER_DATA_START + exdata.ex_exec.a_text;
+	u.u_frame [FRAME_PC] = exdata.ex_exec.a_entry;
 
 	/*
 	 * Remember file name for accounting.

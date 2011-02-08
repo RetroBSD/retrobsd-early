@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strpbrk.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>	/* for NULL */
@@ -44,10 +39,10 @@ static char sccsid[] = "@(#)strpbrk.c	8.1.1 (2.11BSD) 1996/1/11";
  */
 char *
 strpbrk(s1, s2)
-	register char *s1;
-	char	*s2;
+	register const char *s1;
+	const char *s2;
 {
-	register char *scanp;
+	register const char *scanp;
 	register int c;
 	int	sc;
 

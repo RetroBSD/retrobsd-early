@@ -1,9 +1,6 @@
-# Placed in the public domain - 1995/05/06
-#
-#	@(#)Makefile	1.9 (2.11BSD) 2000/2/28
-
 TOPSRC		= $(shell cd ../../../..; pwd)
 include $(TOPSRC)/target.mk
+
 ASFLAGS		= ${DEFS}
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
@@ -11,10 +8,10 @@ ASFLAGS		= ${DEFS}
 # source files associated with them.
 
 PDPSRCS		= _exit.S brk.S execl.S execle.S execv.S fork.S pipe.S ptrace.S sbrk.S \
-		  setlogin.S sigaction.S sigreturn.S vfork.S
+		  sigaction.S sigreturn.S vfork.S
 
 PDPOBJS		= _exit.o brk.o execl.o execle.o execv.o fork.o pipe.o ptrace.o sbrk.o \
-		  setlogin.o sigaction.o sigreturn.o vfork.o
+		  sigaction.o sigreturn.o vfork.o
 
 # these are generated with a second argument to SYSCALL of 'norm'.  Have to
 # split into more than one list because 'make' only permits 80 "lefts".
@@ -23,7 +20,7 @@ NORM		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o chflags.o \
 		  chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
 		  execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o fstat.o \
 		  fsync.o ftruncate.o getdtablesize.o getgroups.o getitimer.o \
-		  _getlogin.o getsockname.o \
+		  getsockname.o \
 		  getpeername.o getpriority.o getrlimit.o getrusage.o getsockopt.o \
 		  gettimeofday.o ioctl.o kill.o killpg.o link.o listen.o lstat.o mkdir.o \
 		  mknod.o mount.o open.o pselect.o quota.o read.o readlink.o readv.o \
@@ -52,9 +49,9 @@ OBJS		= ${NORM} ${LONG} ${ERROR} ${NOERROR}
 
 TAGSFILE	= tags
 
-syslib:		${OBJS}
-		@echo "building syslib"
-		@$(AR) cru syslib ${OBJS}
+sys.a:		${OBJS}
+		@echo "building sys.a"
+		@$(AR) cru sys.a ${OBJS}
 
 ${NORM}:	SYS.h #/usr/include/syscall.h
 		@echo creating $*.o
@@ -72,4 +69,4 @@ ${NOERROR}:	SYS.h #/usr/include/syscall.h
 			$(AS) ${ASFLAGS} - -c -o $*.o
 
 clean:
-		rm -f *~ *.o a.out syslib
+		rm -f *~ *.o a.out sys.a

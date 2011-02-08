@@ -3,8 +3,6 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.19.2 (2.11BSD) 1997/8/28
-#
 # Machine dependent routines are located in a subtree which parallels
 # the top directories.  This subtree is identified by the machine name.
 #
@@ -12,7 +10,7 @@
 # ``compat'' (so they all sort together).
 #
 # The C run-time startup code is always machine dependent and expected
-# to be located in ${MACHINE}/csu
+# to be located in ../startup-${MACHINE}.
 #
 # All files contain sccsid strings, but these are not compiled into
 # library objects by default, as a space-saving measure.  To produce
@@ -25,34 +23,32 @@
 # have hardware floating point.  To compile a non-separate I&D version add
 # -DNONSEPARATE.
 #
-DESTDIR		=
-INSTALL		= install -m 644
-MACHINE		= arch-mips
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
+
 DEFS		=
 ALL		= gen stdio stdlib string ${MACHINE}
-TAGSFILE	= tags
 
-libc.a:		${MACHINE}/csu ${ALL}
+libc.a:		${ALL}
 		rm -rf tmp
 		mkdir tmp
-		cd tmp; \
-			for i in ${ALL}; do ar x ../$$i/$${i}lib; done; \
-			ar cr ../libc.a `lorder *.o | tsort`
-		ar ma findiop.o libc.a exit.o
-		ar ma exit.o libc.a fakcu.o
-		ar ma fltpr.o libc.a doprnt.o
-		ar ma doprnt.o libc.a ffltpr.o
+		cd tmp; for i in ${ALL}; do $(AR) x ../$$i/$$i.a; done; \
+			$(AR) cr ../libc.a `lorder *.o | tsort`
+#		$(AR) ma findiop.o libc.a exit.o
+#		$(AR) ma exit.o libc.a fakcu.o
+#		$(AR) ma fltpr.o libc.a doprnt.o
+#		$(AR) ma doprnt.o libc.a ffltpr.o
 		rm -rf tmp
 
-${MACHINE}/csu ${ALL}: FRC
+${ALL}:		FRC
 		cd $@; make ${MFLAGS} DEFS=${DEFS}
 
 FRC:
 
 install:	libc.a
+		${INSTALLDIR} ${DESTDIR}/lib
 		${INSTALL} libc.a ${DESTDIR}/lib/libc.a
-		ranlib ${DESTDIR}/lib/libc.a
-		cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
+		$(RANLIB) ${DESTDIR}/lib/libc.a
 
 tags:
 		for i in ${ALL}; do \
@@ -60,10 +56,10 @@ tags:
 		done
 
 clean:
-		for i in ${MACHINE}/csu ${ALL}; \
+		for i in ${ALL}; \
 			do (cd $$i; make ${MFLAGS} clean); done
-		rm -rf tmp
+		rm -rf tmp *.a *~
 
 depend:
-		for i in ${MACHINE}/csu ${ALL}; \
+		for i in ${ALL}; \
 			do (cd $$i; make ${MFLAGS} DEFS=${DEFS} depend); done

@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)getsubopt.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* not lint */
-
 #include <stdlib.h>
 
 /*
@@ -79,7 +74,7 @@ getsubopt(optionp, tokens, valuep)
 			*p = '\0';
 			for (*valuep = ++p;
 			    *p && *p != ',' && *p != ' ' && *p != '\t'; ++p);
-			if (*p) 
+			if (*p)
 				*p++ = '\0';
 		} else
 			*p++ = '\0';

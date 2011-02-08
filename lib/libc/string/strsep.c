@@ -30,18 +30,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #include <sys/types.h>
 #include <string.h>
 #include <stdio.h>
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strsep.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
-
 /*
  * Get next token from string *stringp, where tokens are possibly-empty
- * strings separated by characters from delim.  
+ * strings separated by characters from delim.
  *
  * Writes NULs into the string at *stringp to end tokens.
  * delim need not remain constant from call to call.
@@ -53,10 +48,10 @@ static char sccsid[] = "@(#)strsep.c	8.1.1 (2.11BSD) 1996/1/11";
 char *
 strsep(stringp, delim)
 	register char **stringp;
-	char *delim;
+	const char *delim;
 {
 	register char *s;
-	register char *spanp;
+	register const char *spanp;
 	int c, sc;
 	char *tok;
 

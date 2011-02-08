@@ -8,8 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-
-extern char	**environ;
+#include <unistd.h>
 
 /*
  * setenv(name,value,rewrite)

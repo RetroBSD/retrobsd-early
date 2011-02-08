@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /*
  * getenv(name) --
@@ -34,7 +35,6 @@ _findenv(name, offset)
 	register char *name;
 	int	*offset;
 {
-	extern char	**environ;
 	register int	len;
 	register char	**P,
 			*C;

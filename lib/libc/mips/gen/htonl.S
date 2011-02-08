@@ -1,11 +1,9 @@
-/*	$NetBSD: membar_ops.S,v 1.3 2008/05/25 15:56:12 chs Exp $	*/
-
 /*-
- * Copyright (c) 2006, 2007 The NetBSD Foundation, Inc.
+ * Copyright (c) 1997 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by Jason R. Thorpe, and by Andrew Doran.
+ * by Neil A. Carson
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -15,7 +13,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *      
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -28,43 +33,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+//#include <machine/asm.h>
 
-#include "atomic_op_asm.h"
-
-#ifdef _KERNEL_OPT
-#include "opt_cputype.h"
-#include "opt_lockdebug.h"
-#include "opt_multiprocessor.h"
-#endif
-
-#if defined(_KERNEL)
-
-#include <machine/cpu.h>
-
-#if MIPS_HAS_LLSC != 0 && defined(MULTIPROCESSOR)
-#define	SYNC		sync
+LEAF(htonl)                            # a0 = 0x11223344, return 0x44332211
+#ifdef __MIPSEB__
+	move	v0, a0
 #else
-#define	SYNC		/* nothing */
+        srl     v1, a0, 24              # v1 = 0x00000011
+        sll     v0, a0, 24              # v0 = 0x44000000
+        or      v0, v0, v1
+        and     v1, a0, 0xff00
+        sll     v1, v1, 8               # v1 = 0x00330000
+        or      v0, v0, v1
+        srl     v1, a0, 8
+        and     v1, v1, 0xff00          # v1 = 0x00002200
+        or      v0, v0, v1
 #endif
-
-	.text
-
-LEAF(_membar_sync)
-	SYNC
-	j	ra
-	  nop
-END(_membar_sync)
-
-ATOMIC_OP_ALIAS(membar_sync,_membar_sync)
-ATOMIC_OP_ALIAS(membar_enter,_membar_sync)
-STRONG_ALIAS(_membar_enter,_membar_sync)
-ATOMIC_OP_ALIAS(membar_exit,_membar_sync)
-STRONG_ALIAS(_membar_exit,_membar_sync)
-ATOMIC_OP_ALIAS(membar_producer,_membar_sync)
-STRONG_ALIAS(_membar_producer,_membar_sync)
-ATOMIC_OP_ALIAS(membar_consumer,_membar_sync)
-STRONG_ALIAS(_membar_consumer,_membar_sync)
-
-#else /* _KERNEL */
-
-#endif /* _KERNEL */
+        j       ra
+END(htonl)

@@ -46,11 +46,9 @@ STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
 		  telldir.o time.o timezone.o ttyname.o ttyslot.o ualarm.o usleep.o \
 		  strdup.o uname.o wait.o wait3.o waitpid.o
 
-TAGSFILE	= tags
-
-genlib:		${OBJS}
-		@echo "buiding genlib"
-		@$(AR) cru genlib ${OBJS}
+gen.a:		${OBJS}
+		@echo "buiding gen.a"
+		@$(AR) cru gen.a ${OBJS}
 
 tags:
 		cwd=`pwd`; \
@@ -59,7 +57,7 @@ tags:
 		done
 
 clean:
-		rm -f genlib *.o *~ profiled/*.o tags Makefile.bak
+		rm -f gen.a *.o *~ profiled/*.o tags Makefile.bak
 
 depend:
 		for i in ${SRCS}; do \

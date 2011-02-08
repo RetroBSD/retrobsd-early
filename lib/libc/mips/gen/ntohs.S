@@ -1,8 +1,9 @@
-/*	$NetBSD: atomic_cas_up.S,v 1.2 2008/05/25 15:56:12 chs Exp $	*/
-
 /*-
- * Copyright (c) 2008 The NetBSD Foundation, Inc.
+ * Copyright (c) 1999 The NetBSD Foundation, Inc.
  * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Charles M. Hannum.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,7 +13,14 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *      
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the NetBSD
+ *	Foundation, Inc. and its contributors.
+ * 4. Neither the name of The NetBSD Foundation nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
  * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
  * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
  * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -25,26 +33,17 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+//#include <machine/asm.h>
 
-#include <sys/ras.h>
-#include "atomic_op_asm.h"
-
-	.text
-	.set	noat
-	.set	noreorder
-
-LEAF(_atomic_cas_up)
-	.hidden	_C_LABEL(_atomic_cas_up)
-RAS_START_ASM_HIDDEN(_atomic_cas)
-	lw	t0, (a0)
-	 nop
-	bne	t0, a1, 1f
- 	 nop
-	sw	a2, (a0)
-RAS_END_ASM_HIDDEN(_atomic_cas)
+LEAF(ntohs)
+#ifdef __MIPSEB__
+        move    v0, a0
+#else
+	srl	v0, a0, 8
+	and	v0, v0, 0xff
+	sll	v1, a0, 8
+	and	v1, v1, 0xff00
+	or	v0, v0, v1
+#endif
 	j	ra
-	 addu	v0, zero, a1
-1:
-	j	ra
-	 addu	v0, zero, t0
-END(_atomic_cas_up)
+END(ntohs)

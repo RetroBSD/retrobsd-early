@@ -32,6 +32,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef __STDC__
 #include <stdarg.h>
@@ -40,7 +41,6 @@
 #endif
 
 extern	int	errno;
-extern	char *__progname;		/* Program name, from crt0. */
 static	void	putprog(), putcolsp();
 
 void
@@ -186,8 +186,7 @@ warnx(fmt, va_alist)
  * much D space.  On a pdp-11 code can be overlaid but Data space is worth
  * conserving.  An extra function call or two handling an error condition is
  * a reasonable trade for 20 or 30 bytes of D space.
-*/
-
+ */
 static void
 putprog()
 {

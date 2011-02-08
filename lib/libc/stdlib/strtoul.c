@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtoul.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
-
 #include <limits.h>
 #include <ctype.h>
 #include <errno.h>

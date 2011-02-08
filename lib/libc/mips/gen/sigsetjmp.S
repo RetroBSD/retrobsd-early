@@ -1,9 +1,9 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1991, 1993, 1995,
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Chris Torek.
+ * Havard Eidnes.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -13,11 +13,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -33,28 +29,40 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <string.h>
+//#include <machine/asm.h>
+//#include <machine/regnum.h>
+//#include "SYS.h"
+
+#ifdef __ABICALLS__
+	.abicalls
+#endif
 
 /*
- * Find the first occurrence of find in s.
+ * C library -- sigsetjmp, siglongjmp
+ *
+ *	siglongjmp(a,v)
+ * will generate a "return(v)" from
+ * the last call to
+ *	sigsetjmp(a, savemask)
+ * by restoring registers from the stack,
+ * and dependent on savemask restores the
+ * signal mask.
  */
-char *
-strstr(s, find)
-	register const char *s, *find;
-{
-	register char c;
-	char	sc;
-	size_t	len;
 
-	if ((c = *find++) != 0) {
-		len = strlen(find);
-		do {
-			do {
-				if ((sc = *s++) == 0)
-					return (NULL);
-			} while (sc != c);
-		} while (strncmp(s, find, len) != 0);
-		s--;
-	}
-	return ((char *)s);
-}
+LEAF(sigsetjmp)
+	PIC_PROLOGUE(sigsetjmp)
+
+	bne	a1, 0x0, 1f			# do saving of signal mask?
+	PIC_TAILCALL(_setjmp)
+
+1:	PIC_TAILCALL(setjmp)
+END(sigsetjmp)
+
+LEAF(siglongjmp)
+	PIC_PROLOGUE(siglongjmp)
+	REG_L	t0, (_JB_MAGIC  * SZREG)(a0)
+	REG_LI	t1, _JB_MAGIC__SETJMP
+	bne	t0, t1, 1f			# setjmp or _setjmp magic?
+	PIC_TAILCALL(_longjmp)
+1:	PIC_TAILCALL(longjmp)
+END(siglongjmp)

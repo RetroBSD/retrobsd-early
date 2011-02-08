@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strspn.c	8.1.1 (2.11BSD) 1996/1/11";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <string.h>
 
@@ -43,10 +38,10 @@ static char sccsid[] = "@(#)strspn.c	8.1.1 (2.11BSD) 1996/1/11";
  */
 size_t
 strspn(s1, s2)
-	char *s1;
-	char *s2;
+	const char *s1;
+	const char *s2;
 {
-	register char *p = s1, *spanp;
+	register const char *p = s1, *spanp;
 	register char c, sc;
 
 	/*

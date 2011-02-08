@@ -56,7 +56,6 @@ static	int	LogFacility = LOG_USER;	/* default facility code */
 static	int	LogMask = 0xff;		/* mask of priorities to be logged */
 static	char	logfile[] = "/usr/adm/messages";
 
-extern	char	*__progname;		/* Program name, from crt0. */
 extern	int	errno;			/* error number */
 
 /*

@@ -3,28 +3,17 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-TOPSRC		= $(shell cd ../../..; pwd)
+TOPSRC		= $(shell cd ../../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		= -O ${DEFS}
 
-SRCS		= ${STDSRC} fgetc.c fgets.c fputc.c fputs.c gets.c puts.c
-OBJS		= ${STDOBJ} fgetc.o fgets.o fputc.o fputs.o gets.o puts.o
+SRCS		= #bcmp.S bcopy.S bzero.S ffs.S index.S memcpy.S memmove.S memset.S rindex.S strcmp.S strlen.S
+OBJS		= #bcmp.o bcopy.o bzero.o ffs.o index.o memcpy.o memmove.o memset.o rindex.o strcmp.o strlen.o
 
-STDSRC		= clrerr.c doscan.c exit.c fdopen.c filbuf.c findiop.c flsbuf.c fopen.c \
-		  fprintf.c fread.c freopen.c fseek.c ftell.c fwrite.c getchar.c getw.c \
-		  printf.c putchar.c putw.c rew.c scanf.c setbuf.c setbuffer.c setvbuf.c \
-		  sprintf.c strout.c ungetc.c vfprintf.c vprintf.c vsprintf.c
-STDOBJ		= clrerr.o doscan.o exit.o fdopen.o filbuf.o findiop.o flsbuf.o fopen.o \
-		  fprintf.o fread.o freopen.o fseek.o ftell.o fwrite.o getchar.o getw.o \
-		  printf.o putchar.o putw.o rew.o scanf.o setbuf.o setbuffer.o setvbuf.o \
-		  sprintf.o strout.o ungetc.o vfprintf.o vprintf.o vsprintf.o
-
-TAGSFILE	= tags
-
-stdio.a:	${OBJS}
-		@echo "building stdio.a"
-		@ar cru stdio.a ${OBJS}
+string.a:	${OBJS}
+		@echo "buiding string.a"
+		@$(AR) cru string.a ${OBJS}
 
 tags:
 		cwd=`pwd`; \
@@ -33,7 +22,7 @@ tags:
 		done
 
 clean:
-		rm -f stdio.a *.o *~ profiled/*.o tags Makefile.bak
+		rm -f string.a *.o *~ profiled/*.o tags Makefile.bak
 
 depend:
 		for i in ${SRCS}; do \

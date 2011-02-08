@@ -83,7 +83,6 @@ renvlook(host)
 	char *host;
 {
 	register char *cp, **env;
-	extern char **environ;
 
 	env = environ;
 	for (env = environ; *env != NULL; env++)
@@ -164,7 +163,7 @@ next:
 
 		case LOGIN:
 			if (token())
-				if (*aname == 0) { 
+				if (*aname == 0) {
 					*aname = (char *)malloc(strlen(tokval) + 1);
 					strcpy(*aname, tokval);
 				} else {
