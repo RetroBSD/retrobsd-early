@@ -70,8 +70,14 @@ FILE	*fdopen (int, const char *);
 FILE	*freopen (const char *, const char *, FILE *);
 FILE	*popen (const char *, const char *);
 long	ftell (FILE *);
+int	fputc (int, FILE *);
+int	fputs (const char *, FILE *);
+int	puts (const char *);
 char	*fgets (char *, int, FILE *);
 char	*gets (char *);
+FILE	*_findiop (void);
+size_t	fread (void *, size_t, size_t, FILE *);
+size_t	fwrite (const void *, size_t, size_t, FILE *);
 
 int	 fprintf (FILE *, const char *, ...);
 int	 printf (const char *, ...);
@@ -94,6 +100,9 @@ int	 vsnprintf (char *, size_t, const char *, va_list);
 int	 vfscanf (FILE *, const char *, va_list);
 int	 vscanf (const char *, va_list);
 int	 vsscanf (const char *, const char *, va_list);
+
+void	_dprnt (const char *, va_list, FILE *);
+int	_doscan (FILE *, const char *, va_list);
 
 #ifndef _VA_LIST_
 #undef va_list

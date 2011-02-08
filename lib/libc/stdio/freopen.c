@@ -3,19 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)freopen.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
 
 FILE *
 freopen(file, mode, iop)
-	char *file;
-	register char *mode;
+	const char *file;
+	register const char *mode;
 	register FILE *iop;
 {
 	register f, rw, oflags;

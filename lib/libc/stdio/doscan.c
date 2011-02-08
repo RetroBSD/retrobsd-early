@@ -1,9 +1,6 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)doscan.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <stdio.h>
-#include	<ctype.h>
+#include <ctype.h>
+#include <stdarg.h>
 
 #define	SPC	01
 #define	STP	02
@@ -27,81 +24,55 @@ static char _sctab[256] = {
 	0,0,0,0,0,0,0,0,
 };
 
-_doscan(iop, fmt, argp)
-FILE *iop;
-register char *fmt;
-register int **argp;
+static int
+_instr (ptr, type, len, iop, eofptr)
+	register char *ptr;
+	register FILE *iop;
+	int *eofptr;
 {
-	register int ch;
-	int nmatch, len, ch1;
-	int **ptr, fileended, size;
+	register ch;
+	register char *optr;
+	int ignstp;
 
-	nmatch = 0;
-	fileended = 0;
-	for (;;) switch (ch = *fmt++) {
-	case '\0': 
-		return (nmatch);
-	case '%': 
-		if ((ch = *fmt++) == '%')
-			goto def;
-		ptr = 0;
-		if (ch != '*')
-			ptr = argp++;
-		else
-			ch = *fmt++;
-		len = 0;
-		size = REGULAR;
-		while (isdigit(ch)) {
-			len = len*10 + ch - '0';
-			ch = *fmt++;
-		}
-		if (len == 0)
-			len = 30000;
-		if (ch=='l') {
-			size = LONG;
-			ch = *fmt++;
-		} else if (ch=='h') {
-			size = SHORT;
-			ch = *fmt++;
-		} else if (ch=='[')
-			fmt = _getccl(fmt);
-		if (isupper(ch)) {
-			ch = tolower(ch);
-			size = LONG;
-		}
-		if (ch == '\0')
-			return(-1);
-		if (_innum(ptr, ch, len, size, iop, &fileended) && ptr)
-			nmatch++;
-		if (fileended)
-			return(nmatch? nmatch: -1);
-		break;
-
-	case ' ':
-	case '\n':
-	case '\t': 
-		while ((ch1 = getc(iop))==' ' || ch1=='\t' || ch1=='\n')
-			;
-		if (ch1 != EOF)
-			ungetc(ch1, iop);
-		break;
-
-	default: 
-	def:
-		ch1 = getc(iop);
-		if (ch1 != ch) {
-			if (ch1==EOF)
-				return(-1);
-			ungetc(ch1, iop);
-			return(nmatch);
-		}
+	*eofptr = 0;
+	optr = ptr;
+	if (type=='c' && len==30000)
+		len = 1;
+	ignstp = 0;
+	if (type=='s')
+		ignstp = SPC;
+	while ((ch = getc(iop)) != EOF && _sctab[ch] & ignstp)
+		;
+	ignstp = SPC;
+	if (type=='c')
+		ignstp = 0;
+	else if (type=='[')
+		ignstp = STP;
+	while (ch!=EOF && (_sctab[ch]&ignstp)==0) {
+		if (ptr)
+			*ptr++ = ch;
+		if (--len <= 0)
+			break;
+		ch = getc(iop);
 	}
+	if (ch != EOF) {
+		if (len > 0)
+			ungetc(ch, iop);
+		*eofptr = 0;
+	} else
+		*eofptr = 1;
+	if (ptr && ptr!=optr) {
+		if (type!='c')
+			*ptr++ = '\0';
+		return(1);
+	}
+	return(0);
 }
 
-static
-_innum(ptr, type, len, size, iop, eofptr)
-int **ptr, *eofptr;
-FILE *iop;
+static int
+_innum (ptr, type, len, size, iop, eofptr)
+	int **ptr, *eofptr;
+	FILE *iop;
 {
 	extern double atof();
 	register char *np;
@@ -207,49 +178,76 @@ FILE *iop;
 	return(1);
 }
 
-static
-_instr(ptr, type, len, iop, eofptr)
-register char *ptr;
-register FILE *iop;
-int *eofptr;
+int
+_doscan (iop, fmt, argp)
+	FILE *iop;
+	register const char *fmt;
+	va_list argp;
 {
-	register ch;
-	register char *optr;
-	int ignstp;
+	register int ch;
+	int nmatch, len, ch1;
+	int **ptr, fileended, size;
 
-	*eofptr = 0;
-	optr = ptr;
-	if (type=='c' && len==30000)
-		len = 1;
-	ignstp = 0;
-	if (type=='s')
-		ignstp = SPC;
-	while ((ch = getc(iop)) != EOF && _sctab[ch] & ignstp)
-		;
-	ignstp = SPC;
-	if (type=='c')
-		ignstp = 0;
-	else if (type=='[')
-		ignstp = STP;
-	while (ch!=EOF && (_sctab[ch]&ignstp)==0) {
-		if (ptr)
-			*ptr++ = ch;
-		if (--len <= 0)
-			break;
-		ch = getc(iop);
+	nmatch = 0;
+	fileended = 0;
+	for (;;) switch (ch = *fmt++) {
+	case '\0':
+		return (nmatch);
+	case '%':
+		if ((ch = *fmt++) == '%')
+			goto def;
+		ptr = 0;
+		if (ch != '*')
+			ptr = va_arg (argp, int**);
+		else
+			ch = *fmt++;
+		len = 0;
+		size = REGULAR;
+		while (isdigit(ch)) {
+			len = len*10 + ch - '0';
+			ch = *fmt++;
+		}
+		if (len == 0)
+			len = 30000;
+		if (ch=='l') {
+			size = LONG;
+			ch = *fmt++;
+		} else if (ch=='h') {
+			size = SHORT;
+			ch = *fmt++;
+		} else if (ch=='[')
+			fmt = _getccl(fmt);
+		if (isupper(ch)) {
+			ch = tolower(ch);
+			size = LONG;
+		}
+		if (ch == '\0')
+			return(-1);
+		if (_innum(ptr, ch, len, size, iop, &fileended) && ptr)
+			nmatch++;
+		if (fileended)
+			return(nmatch? nmatch: -1);
+		break;
+
+	case ' ':
+	case '\n':
+	case '\t':
+		while ((ch1 = getc(iop))==' ' || ch1=='\t' || ch1=='\n')
+			;
+		if (ch1 != EOF)
+			ungetc(ch1, iop);
+		break;
+
+	default:
+	def:
+		ch1 = getc(iop);
+		if (ch1 != ch) {
+			if (ch1==EOF)
+				return(-1);
+			ungetc(ch1, iop);
+			return(nmatch);
+		}
 	}
-	if (ch != EOF) {
-		if (len > 0)
-			ungetc(ch, iop);
-		*eofptr = 0;
-	} else
-		*eofptr = 1;
-	if (ptr && ptr!=optr) {
-		if (type!='c')
-			*ptr++ = '\0';
-		return(1);
-	}
-	return(0);
 }
 
 static char *

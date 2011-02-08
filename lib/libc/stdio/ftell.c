@@ -1,15 +1,8 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ftell.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Return file offset.
  * Coordinates with buffering.
  */
-
-#include	<stdio.h>
-long	lseek();
-
+#include <stdio.h>
 
 long ftell(iop)
 register FILE *iop;

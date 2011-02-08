@@ -3,16 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include <stdio.h>
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fputs.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<stdio.h>
-
+int
 fputs(s, iop)
-register char *s;
-register FILE *iop;
+	register const char *s;
+	register FILE *iop;
 {
 	register r = 0;
 	register c;

@@ -14,18 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.2 (Berkeley) 6/27/88";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 int
-vfprintf(iop, fmt, ap)
+vfprintf (iop, fmt, ap)
 	FILE *iop;
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	int len;

@@ -3,15 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)filbuf.c	5.3 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<stdio.h>
-#include	<sys/types.h>
-#include	<sys/stat.h>
-char	*malloc();
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 _filbuf(iop)
 register FILE *iop;

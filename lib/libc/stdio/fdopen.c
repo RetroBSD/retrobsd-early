@@ -4,25 +4,21 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fdopen.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Unix routine to do an "fopen" on file descriptor
  * The mode has to be repeated because you can't query its
  * status
  */
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
 
+//extern FILE *_findiop (void);
+
 FILE *
 fdopen(fd, mode)
-	register char *mode;
+	register const char *mode;
 {
-	extern FILE *_findiop();
 	static int nofile = -1;
 	register FILE *iop;
 

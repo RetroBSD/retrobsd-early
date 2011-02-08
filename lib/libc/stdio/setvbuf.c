@@ -33,19 +33,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setvbuf.c	8.1.1 (2.11BSD) 1997/7/27";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
 /*
  * This has been slightly trimmed from the 4.4BSD version for use with 2.11BSD.
- * In particular 1) the flag names were changed back to the original ones 
- * since I didn't feel like porting all of 4.4's stdio package right now and 
+ * In particular 1) the flag names were changed back to the original ones
+ * since I didn't feel like porting all of 4.4's stdio package right now and
  * 2) The constant BUFSIZ is used rather than importing the "optimum buffer
  * size selection" logic from 4.4 (besides, a PDP11 can't afford more than 1kb
  * most of the time anyhow).

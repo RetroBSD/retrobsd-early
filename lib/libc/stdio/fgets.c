@@ -1,8 +1,4 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fgets.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<stdio.h>
+#include <stdio.h>
 
 char *
 fgets(s, n, iop)

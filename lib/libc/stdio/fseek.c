@@ -1,14 +1,7 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fseek.c	5.3 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Seek for standard library.  Coordinates with buffering.
  */
-
-#include	<stdio.h>
-
-long lseek();
+#include <stdio.h>
 
 fseek(iop, offset, ptrname)
 	register FILE *iop;
@@ -37,7 +30,7 @@ fseek(iop, offset, ptrname)
 				return(0);
 			}
 			resync = offset&01;
-		} else 
+		} else
 			resync = 0;
 		if (iop->_flag & _IORW) {
 			iop->_ptr = iop->_base;

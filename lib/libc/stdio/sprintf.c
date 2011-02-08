@@ -14,23 +14,21 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
-#endif /* LIBC_SCCS and not lint */
-
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdarg.h>
 
 int
-sprintf(str, fmt, args)
-	char *str, *fmt;
+sprintf (char *str, const char *fmt, ...)
 {
 	FILE _strbuf;
+	va_list args;
 
 	_strbuf._flag = _IOWRT+_IOSTRG;
 	_strbuf._ptr = str;
 	_strbuf._cnt = 32767;
-	_doprnt(fmt, &args, &_strbuf);
+	va_start (args, fmt);
+	_doprnt (fmt, args, &_strbuf);
+	va_end (args);
 	*_strbuf._ptr = 0;
-	return(_strbuf._ptr - str);
+	return _strbuf._ptr - str;
 }

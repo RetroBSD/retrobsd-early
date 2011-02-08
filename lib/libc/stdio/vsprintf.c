@@ -14,17 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vsprintf.c	5.2.1 (2.11BSD) 1995/04/02";
-#endif /* LIBC_SCCS and not lint */
-
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 int
 vsprintf(str, fmt, ap)
-	char *str, *fmt;
+	char *str;
+	const char *fmt;
 	va_list ap;
 {
 	FILE f;

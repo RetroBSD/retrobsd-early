@@ -1,7 +1,3 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getw.c	5.2.1 (2.11BSD GTE) 1/1/94";
-#endif
-
 #include <stdio.h>
 
 getw(iop)

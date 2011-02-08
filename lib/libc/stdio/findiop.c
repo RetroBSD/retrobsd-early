@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)findiop.c	5.6 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 extern int errno;
@@ -22,8 +18,6 @@ FILE _iob[NSTATIC] = {
 	{ 0, NULL, NULL, 0, _IOWRT,		1 },	/* stdout */
 	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
 };
-
-extern	char	*calloc();
 
 static	char sbuf[NSTATIC];
 char	*_smallbuf = sbuf;

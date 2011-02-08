@@ -3,18 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include <stdio.h>
+#include <strings.h>
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fwrite.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
-#include	<stdio.h>
-
-fwrite(ptr, size, count, iop)
-	register char *ptr;
-	unsigned size, count;
+size_t
+fwrite(vptr, size, count, iop)
+	const void *vptr;
+	size_t size, count;
 	register FILE *iop;
 {
+	register const char *ptr = vptr;
 	register unsigned s;
 
 	s = size * count;
