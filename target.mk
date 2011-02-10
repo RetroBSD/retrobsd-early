@@ -11,8 +11,10 @@ SIZE		= $(GCCBIN)/mipsel-elf32-size
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d
 TAGSFILE	= tags
+MANROFF		= nroff -man -h
 
 CFLAGS		= -O
 
 LDFLAGS		= -nostartfiles -T$(TOPSRC)/lib/startup-mips/elf32.ld \
-		  $(TOPSRC)/lib/startup-mips/crt0.o -L$(TOPSRC)/lib/libc -lc
+		  $(TOPSRC)/lib/startup-mips/crt0.o -L$(TOPSRC)/lib/libc
+LIBS		= -lc

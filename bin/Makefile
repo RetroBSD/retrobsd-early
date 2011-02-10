@@ -8,8 +8,8 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= #adb ar as awk chflags chpass csh diff disklabel hostname ld login \
-		  #ls make nm passwd ping sed sh stty sysctl tcsh test tp
+SUBDIR		= #ar awk chflags chpass csh diff ld login \
+		  #ls make nm passwd sed sh stty sysctl test
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -55,7 +55,7 @@ ${SUBDIR}:	FRC
 FRC:
 
 ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip:
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@ $@.c -lc
+		${CC} ${CFLAGS} ${LDFLAGS} -o $@ $@.c ${LIBS}
 		${SIZE} $@
 
 install:	${BINS}
