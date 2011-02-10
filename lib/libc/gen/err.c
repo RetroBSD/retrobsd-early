@@ -32,7 +32,9 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifdef __STDC__
 #include <stdarg.h>
@@ -40,7 +42,6 @@
 #include <varargs.h>
 #endif
 
-extern	int	errno;
 static	void	putprog(), putcolsp();
 
 void

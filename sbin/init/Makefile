@@ -1,19 +1,18 @@
 #
 # Public Domain.  1997/1/10 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD) 1997/1/10
-#
-CFLAGS		= -O
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
+
 SRCS		= init.c
 OBJS		= init.o
 MAN		= init.0
 MANSRC		= init.8
-CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -nostdinc -I../../include
 
 all:		init init.0
 
 init:		${OBJS}
-		${CC} ${CFLAGS} -o $@ ${OBJS}
+		${CC} ${LDFLAGS} -o $@ ${OBJS} -lc
 
 init.0:		${MANSRC}
 		/usr/man/manroff ${MANSRC} > ${MAN}
@@ -26,7 +25,7 @@ depend:		${SRCS}
 
 install:	init
 		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		-mv /etc/init /etc/init.old
+		#-mv /etc/init /etc/init.old
 		install -s -o root -g bin -m 700 init ${DESTDIR}/etc/init
 
 lint:		${SRCS}

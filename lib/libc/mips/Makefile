@@ -14,7 +14,7 @@ mips.a:		${ALL}
 		-mkdir tmp
 		for i in ${ALL}; do (cd tmp; $(AR) x ../$$i/$$i.a); done
 		$(AR) cr mips.a `ls tmp/*.o | sort`
-		#rm -rf tmp
+		rm -rf tmp
 
 ${ALL}:	FRC
 	cd $@; make ${MFLAGS} DEFS=${DEFS}

@@ -78,7 +78,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	u_int ds, ts, ss;
 
 	switch (ep->a_magic) {
-	case A_MAGIC1:
+	case OMAGIC:
 		lsize = (long) ep->a_data + ep->a_text;
 		ep->a_data = (u_int) lsize;
 		if (lsize != ep->a_data) {	/* check overflow */
@@ -260,12 +260,9 @@ again:
 	}
 
 	switch ((int) exdata.ex_exec.a_magic) {
-	case A_MAGIC1:
-	case A_MAGIC2:
-	case A_MAGIC3:
-	case A_MAGIC4:
-	case A_MAGIC5:
-	case A_MAGIC6:
+	case OMAGIC:
+	case NMAGIC:
+	case ZMAGIC:
 		break;
 	default:
 		if (exdata.ex_shell[0] != '#' ||

@@ -32,7 +32,7 @@ nlist(name, list)
 	NLIST *list;
 {
 	register NLIST *p, *s;
-	struct xexec ebuf;
+	struct exec ebuf;
 	FILE *fstr, *fsym;
 	NLIST nbuf;
 	off_t strings_offset, symbol_offset, symbol_size, lseek();
@@ -43,12 +43,12 @@ nlist(name, list)
 
 	if (!(fsym = fopen(name, "r")))
 		return(-1);
-	if (fread((char *)&ebuf, 1, sizeof(ebuf), fsym) < sizeof (ebuf.e) ||
-	    N_BADMAG(ebuf.e))
+	if (fread((char *)&ebuf, 1, sizeof(ebuf), fsym) != sizeof (ebuf) ||
+	    N_BADMAG(ebuf))
 		goto done1;
 
 	symbol_offset = N_SYMOFF(ebuf);
-	symbol_size = ebuf.e.a_syms;
+	symbol_size = ebuf.a_syms;
 	strings_offset = N_STROFF(ebuf);
 	if (fseek(fsym, symbol_offset, L_SET))
 		goto done1;

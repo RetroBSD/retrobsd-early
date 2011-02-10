@@ -3,21 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)strip.c	5.1.1 (2.11BSD GTE) 1/1/94";
-#endif
-
 #include <a.out.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/file.h>
 
-struct	xexec head;
+struct	exec head;
 int	status;
 
 main(argc, argv)
@@ -48,24 +40,25 @@ strip(name)
 		status = 1;
 		goto out;
 	}
-	if (read(f, (char *)&head, sizeof (head)) < 0 || N_BADMAG(head.e)) {
+	if (read(f, (char *)&head, sizeof (head)) < 0 || N_BADMAG(head)) {
 		printf("strip: %s not in a.out format\n", name);
 		status = 1;
 		goto out;
 	}
-	if ((head.e.a_syms == 0) && ((head.e.a_flag & 1) != 0))
+	if ((head.a_syms == 0) && ((head.a_flag & 1) != 0))
 		goto out;
 
-	size = N_DATOFF(head) + head.e.a_data;
-	head.e.a_syms = 0;
-	head.e.a_flag |= 1;
+	size = N_DATOFF(head) + head.a_data;
+	head.a_syms = 0;
+	head.a_flag |= 1;
 	if (ftruncate(f, size) < 0) {
-		fprintf("strip: "); perror(name);
+		fprintf(stderr, "strip: ");
+		perror(name);
 		status = 1;
 		goto out;
 	}
 	(void) lseek(f, (long)0, L_SET);
-	(void) write(f, (char *)&head.e, sizeof (head.e));
+	(void) write(f, (char *)&head, sizeof (head));
 out:
 	close(f);
 }

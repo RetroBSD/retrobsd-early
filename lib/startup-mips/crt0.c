@@ -61,7 +61,7 @@ void __start (int, char **, char **);
 
 /* The entry function. */
 void
-__start (argc, argv, env)
+_start (argc, argv, env)
 	int argc;
 	char **argv;
 	char **env;

@@ -1,7 +1,3 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)mail.c	4.33.6 (2.11BSD) 1999/10/25";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/file.h>
@@ -66,7 +62,7 @@ char **argv;
 	struct passwd *pwent;
 
 	if (!(name = getlogin()) || !*name || !(pwent = getpwnam(name)) ||
-	    getuid() != pwent->pw_uid) 
+	    getuid() != pwent->pw_uid)
 		pwent = getpwuid(getuid());
 	strncpy(my_name, pwent ? pwent->pw_name : "???", sizeof(my_name)-1);
 	if (setjmp(sjbuf))
@@ -465,7 +461,7 @@ char **argv;
 
 		case 'd':
 			break;
-		
+
 		default:
 			usage();
 		}
@@ -560,38 +556,9 @@ skip:
 
 usage()
 {
-
 	fprintf(stderr, "Usage: mail [ -f ] people . . .\n");
 	error = EX_USAGE;
 	done();
-}
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
-notifybiff(msg)
-	char *msg;
-{
-	static struct sockaddr_in addr;
-	static int f = -1;
-
-	if (addr.sin_family == 0) {
-		struct hostent *hp = gethostbyname("localhost");
-		struct servent *sp = getservbyname("biff", "udp");
-
-		if (hp && sp) {
-			addr.sin_family = hp->h_addrtype;
-			bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
-			addr.sin_port = sp->s_port;
-		}
-	}
-	if (addr.sin_family) {
-		if (f < 0)
-			f = socket(AF_INET, SOCK_DGRAM, 0);
-		if (f >= 0)
-			sendto(f, msg, strlen(msg)+1, 0, &addr, sizeof (addr));
-	}
 }
 
 sendmail(n, name, fromaddr)
@@ -646,7 +613,6 @@ sendmail(n, name, fromaddr)
 		return(0);
 	}
 	fclose(malf);
-	notifybiff(buf);
 	return(1);
 }
 
@@ -670,7 +636,6 @@ delex(i)
 
 done()
 {
-
 	unlink(lettmp);
 	exit(error);
 }
@@ -721,7 +686,6 @@ safefile(f)
 panic(msg, a1, a2, a3)
 	char *msg;
 {
-
 	fprintf(stderr, "mail: ");
 	fprintf(stderr, msg, a1, a2, a3);
 	fprintf(stderr, "\n");

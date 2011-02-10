@@ -217,21 +217,19 @@ fork1 (isvfork)
 		tablefull("proc");
 	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
-		goto out;
+		return;
 	}
 	p1 = u.u_procp;
 	if (newproc (isvfork)) {
 		/* Child */
-		u.u_rval = p1->p_pid;
+		u.u_rval = 0;
 		u.u_start = time.tv_sec;
 		bzero(&u.u_ru, sizeof(u.u_ru));
 		bzero(&u.u_cru, sizeof(u.u_cru));
 		return;
 	}
+	/* Parent */
 	u.u_rval = p2->p_pid;
-out:
-	/* Parent: skip two instructions on return */
-	u.u_frame [FRAME_PC] += NBPW * 2;
 }
 
 /*

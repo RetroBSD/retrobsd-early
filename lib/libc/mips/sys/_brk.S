@@ -5,11 +5,9 @@
  */
 #include "SYS.h"
 
-ENTRY(ptrace)
-		sw	$zero, errno		# -1 is a legitimate return
-						# value so we must clear errno
-		.set	noreorder		# so the caller may disambiguate
-		syscall	SYS_ptrace
+ENTRY(_brk)
+		.set	noreorder
+		syscall	SYS_sbrk
 		lui	$t1, %hi(errno)		# return here on error
 		sw      $t0, %lo(errno)($t1)
 		.set	reorder

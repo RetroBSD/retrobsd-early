@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)unistd.h	8.10.4 (2.11BSD) 1999/5/25
  */
 
 /*
@@ -45,7 +43,7 @@
 #include <sys/types.h>
 /* #include <sys/unistd.h> */
 
-#define	 STDIN_FILENO	0	/* standard input file descriptor */
+#define	STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
 #define	STDERR_FILENO	2	/* standard error file descriptor */
 
@@ -53,45 +51,51 @@
 #define	NULL		0	/* null pointer constant */
 #endif
 
-void	 _exit (int);
-int	 access();
-unsigned int	 alarm();
-pid_t	 fork();
-gid_t	 getegid();
-uid_t	 geteuid();
-gid_t	 getgid();
+void	_exit (int);
+int	access();
+unsigned int alarm();
+pid_t	fork();
+gid_t	getegid();
+uid_t	geteuid();
+gid_t	getgid();
 char	*getlogin();
-pid_t	 getpgrp();
-pid_t	 getpid();
-pid_t	 getppid();
-uid_t	 getuid();
-off_t	 lseek();
-ssize_t	 read();
-unsigned int	 sleep();
+pid_t	getpgrp();
+pid_t	getpid();
+pid_t	getppid();
+uid_t	getuid();
+off_t	lseek();
+ssize_t	read();
+unsigned int	sleep();
 char	*ttyname();
-ssize_t	 write();
+ssize_t	write();
 
-char	*brk();
+void	*brk (const void *addr);
+int	_brk (const void *addr);
 char	*crypt();
-void	 endusershell();
-long	 gethostid();
+void	endusershell();
+long	gethostid();
 char	*getpass();
 char	*getusershell();
 char	*getwd();
 char	*mktemp();
-void	 psignal();
+void	psignal();
 extern	char 	*sys_siglist[];
 char	*re_comp();
-char	*sbrk();
-int	 sethostid();
-void	 setusershell();
-void	 sync();
-unsigned int	 ualarm();
-void	 usleep();
-pid_t	 vfork();
+void	*sbrk (int incr);
+int	sethostid();
+void	setusershell();
+void	sync();
+unsigned int	ualarm();
+void	usleep();
+pid_t	vfork();
 
-int	execl (const char *path, const char *arg0, ...);
-int	execlp (const char *file, const char *arg0, ...);
+int	execl (const char *path, const char *arg0, ... /* NULL */);
+int	execle (const char *path, const char *arg0, ... /* NULL, char *envp[] */);
+int	execlp (const char *file, const char *arg0, ... /* NULL */);
+
+int	execv (const char *path, char *const argv[]);
+int	execve (const char *path, char *const arg0[], char *const envp[]);
+int	execvp (const char *file, char *const argv[]);
 
 extern	char	**environ;		/* Environment, from crt0. */
 extern	const char *__progname;		/* Program name, from crt0. */

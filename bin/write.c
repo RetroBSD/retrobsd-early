@@ -1,10 +1,6 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)write.c	4.13.2 1996/11/16";
-#endif
 /*
  * write to another user
  */
-
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>

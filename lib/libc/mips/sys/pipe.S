@@ -3,26 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifdef SYSLIBC_SCCS
-_sccsid: <@(#)pipe.s	2.6 (2.11BSD GTE) 1995/05/08\0>
-	.even
-#endif SYSLIBC_SCCS
-
-/*
- * XXX - this routine can't use SYSCALL!!!
- */
 #include "SYS.h"
 
 ENTRY(pipe)
-	SYS(pipe)
-	bes	1f
-	mov	r2,-(sp)
-	mov	4(sp),r2
-	mov	r0,(r2)+
-	mov	r1,(r2)
-	mov	(sp)+,r2
-	clr	r0
-	rts	pc
+		.set	noreorder
+		syscall	SYS_pipe
+		j	1f		# return here on error
+		nop
+		.set	reorder
+
+		sw	$v0, ($a0)	# return here on success
+		sw	$v1, ($a1)
+		move	$v0, $zero
+		jr	$ra
 1:
-	jmp	x_error
+		sw	$t0, errno
+		jr	$ra

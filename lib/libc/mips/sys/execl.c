@@ -3,7 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-#include "SYS.h"
+#include <unistd.h>
 
-ENTRY(_exit)
-		syscall	SYS_exit
+extern char **environ;
+
+int
+execl (const char *name, const char *arg, ...)
+{
+	return execve (name, (char *const*) &arg, environ);
+}

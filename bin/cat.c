@@ -4,22 +4,18 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)cat.c	5.2 (Berkeley) 12/6/85";
-#endif not lint
-
 /*
  * Concatenate files.
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 /* #define OPTSIZE BUFSIZ	/* define this only if not 4.2 BSD or beyond */
 
 int	bflg, eflg, nflg, sflg, tflg, uflg, vflg;
-int	spaced, col, lno, inline, ibsize, obsize;
+int	spaced, col, lno, inlin, ibsize, obsize;
 
 main(argc, argv)
 char **argv;
@@ -135,22 +131,22 @@ top:
 	if (c == EOF)
 		return;
 	if (c == '\n') {
-		if (inline == 0) {
+		if (inlin == 0) {
 			if (sflg && spaced)
 				goto top;
 			spaced = 1;
 		}
-		if (nflg && bflg==0 && inline == 0)
+		if (nflg && bflg==0 && inlin==0)
 			printf("%6d\t", lno++);
 		if (eflg)
 			putchar('$');
 		putchar('\n');
-		inline = 0;
+		inlin = 0;
 		goto top;
 	}
-	if (nflg && inline == 0)
+	if (nflg && inlin == 0)
 		printf("%6d\t", lno++);
-	inline = 1;
+	inlin = 1;
 	if (vflg) {
 		if (tflg==0 && c == '\t')
 			putchar(c);
@@ -178,7 +174,6 @@ register int fd;
 	register int	buffsize, n, nwritten, offset;
 	register char	*buff;
 	struct stat	statbuff;
-	char		*malloc();
 
 #ifndef	OPTSIZE
 	if (obsize)

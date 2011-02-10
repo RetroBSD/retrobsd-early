@@ -4,20 +4,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifdef SYSLIBC_SCCS
-_sccsid: <@(#)sigaction.s	1.0 (2.11BSD) 1997/8/23\0>
-	.even
-#endif SYSLIBC_SCCS
-
 /*
  * error = sigaction(sig, vec, ovec)
  *	int		error, sig;
  *	struct sigaction *vec, *ovec;
  *
- * Sigaction, or more apropriately, sigaction's helper function sigtramp below,
- * must be loaded in the base segment of overlaid objects.
- *
- * We pass one additional parameter to the sigaction sys call: the address of 
+ * We pass one additional parameter to the sigaction sys call: the address of
  * the "Trampoline Code", sigtramp - the code that handles saving and restoring
  * register context and so on for signals.  On the VAX-11 under BSD4.3 it isn't
  * necessary to pass this address since the trampoline code is stored in the
@@ -79,7 +71,6 @@ ENTRY(sigaction)
  */
 SIG_SC	= 6.				/ stack offset of sigcontext structure
 
-iot	= 4
 
 .globl	_sigreturn			/ sigreturn sys call
 sigtramp:
@@ -87,5 +78,7 @@ sigtramp:
 	mov	sp,r0			/ compute address of sigcontext
 	add	$SIG_SC,r0		/   (can't use "mov sp,-(sp)")
 	mov	r0,-(sp)
-	jsr	pc,_sigreturn		/   and perform a sigreturn
-	iot				/ die if the sigreturn fails ...
+
+	syscall	SYS_sigreturn		/ attempt the sigreturn
+
+	syscall	SYS_exit		/ die if the sigreturn fails ...

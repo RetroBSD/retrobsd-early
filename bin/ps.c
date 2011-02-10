@@ -289,7 +289,7 @@ char	**argv;
 			printf("%.*s", cmdwidth, " <defunct>");
 		else if (a->o_pid == 0)
 			printf("%.*s", cmdwidth, " swapper");
-		else	
+		else
 			printf(" %.*s", twidth - cmdstart - 2, cflg ?  a->o_comm : a->o_args);
 		putchar('\n');
 		}
@@ -626,7 +626,7 @@ nlist()
 	register struct nlist *nnn;
 	int	flag, nsyms;
 	struct nlist	nbuf;
-	struct xexec	hbuf;
+	struct exec	hbuf;
 	char	name[MAXSYMLEN + 2];
 	int	nllen;
 	off_t	sa, stroff;
@@ -641,12 +641,12 @@ nlist()
 		fputs("Invalid symbol table\n",stderr);
 		exit(1);
 		}
-	if	(N_BADMAG(hbuf.e))
+	if	(N_BADMAG(hbuf))
 		{
 		fprintf(stderr,"%s: bad magic number\n",nlistf);
 		exit(1);
 		}
-	nsyms = hbuf.e.a_syms / sizeof (struct nlist);
+	nsyms = hbuf.a_syms / sizeof (struct nlist);
 	if	(nsyms == 0)
 		{
 		fprintf(stderr,"%s: no symbols\n",nlistf);

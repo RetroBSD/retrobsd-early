@@ -8,8 +8,14 @@ include $(TOPSRC)/target.mk
 
 CFLAGS		= -O ${DEFS}
 
-SRCS		= #bcmp.S bcopy.S bzero.S ffs.S index.S memcpy.S memmove.S memset.S rindex.S strcmp.S strlen.S
-OBJS		= #bcmp.o bcopy.o bzero.o ffs.o index.o memcpy.o memmove.o memset.o rindex.o strcmp.o strlen.o
+#
+# Endian-independent assembly-code aliases for unaligned memory accesses.
+# Little endian.
+#
+ASFLAGS		+= -DLWHI=lwr -DLWLO=lwl -DSWHI=swr -DSWLO=swl
+
+SRCS		= bcopy.S memcpy.S memmove.S memset.S strlen.S #bcmp.S bzero.S ffs.S index.S rindex.S strcmp.S
+OBJS		= bcopy.o memcpy.o memmove.o memset.o strlen.o #bcmp.o bzero.o ffs.o index.o rindex.o strcmp.o
 
 string.a:	${OBJS}
 		@echo "buiding string.a"

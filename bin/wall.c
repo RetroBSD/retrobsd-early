@@ -4,21 +4,12 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)wall.c	5.3.2 (2.11BSD GTE) 1996/11/16";
-#endif
-
 /*
  * wall.c - Broadcast a message to all users.
  *
  * This program is not related to David Wall, whose Stanford Ph.D. thesis
  * is entitled "Mechanisms for Broadcast and Selective Broadcast".
  */
-
 #include <stdio.h>
 #include <utmp.h>
 #include <errno.h>

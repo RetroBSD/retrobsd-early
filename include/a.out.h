@@ -29,42 +29,33 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)a.out.h	5.6.1 (2.11BSD GTE) 1/6/94
  */
-
 #ifndef	_AOUT_H_
 #define	_AOUT_H_
 
 #include <sys/exec.h>
 
-#define	N_BADMAG(x) \
-	(((x).a_magic)!=A_MAGIC1 && ((x).a_magic)!=A_MAGIC2 && \
-	((x).a_magic)!=A_MAGIC3 && ((x).a_magic)!=A_MAGIC4 && \
-	((x).a_magic)!=A_MAGIC5 && ((x).a_magic)!=A_MAGIC6)
+/* Valid magic number check. */
+#define	N_BADMAG(x) 		(((x).a_magic) != NMAGIC && \
+				 ((x).a_magic) != OMAGIC)
 
-#define	N_TXTOFF(x) \
-	((x).a_magic==A_MAGIC5 || (x).a_magic==A_MAGIC6 ? \
-	sizeof(struct ovlhdr) + sizeof(struct exec) : sizeof(struct exec))
+/* Text segment offset. */
+#define	N_TXTOFF(x) 		sizeof(struct exec)
 
-/*
- * The following were added as part of the new object file format.  They
- * call functions because calculating the sums of overlay sizes was too
- * messy (and verbose) to do 'inline'.
- *
- * NOTE: if the magic number is that of an overlaid object the program
- * must pass an extended header ('xexec') as the argument.
-*/
+/* Data segment offset. */
+#define	N_DATOFF(ex) 		(N_TXTOFF(ex) + (ex).a_text)
 
-#include <sys/types.h>
+/* Text relocation table offset. */
+#define	N_TRELOFF(ex) 		(N_DATOFF(ex) + (ex).a_data)
 
-off_t	n_stroff(), n_symoff(), n_datoff(), n_dreloc(), n_treloc();
+/* Data relocation table offset. */
+#define	N_DRELOFF(ex) 		(N_TRELOFF(ex) + (ex).a_text /*trsize*/)
 
-#define	N_STROFF(e) (n_stroff(&e))
-#define	N_SYMOFF(e) (n_symoff(&e))
-#define	N_DATOFF(e) (n_datoff(&e))
-#define	N_DRELOC(e) (n_dreloc(&e))
-#define	N_TRELOC(e) (n_treloc(&e))
+/* Symbol table offset. */
+#define	N_SYMOFF(ex) 		(N_DRELOFF(ex) + (ex).a_data /*drsize*/)
+
+/* String table offset. */
+#define	N_STROFF(ex)		(N_SYMOFF(ex) + (ex).a_syms)
 
 #define	_AOUT_INCLUDE_
 #include <nlist.h>

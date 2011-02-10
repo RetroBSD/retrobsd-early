@@ -14,7 +14,7 @@ int
 execlp(name, argv)
 	const char *name, *argv;
 {
-	return(execvp(name, &argv));
+	return execvp (name, (char * const*) &argv);
 }
 
 static char *
@@ -37,12 +37,13 @@ execat(s1, s2, si)
 
 int
 execvp(name, argv)
-	const char *name, **argv;
+	const char *name;
+	char *const *argv;
 {
 	char *pathstr;
 	register char *cp;
 	char fname[128];
-	const char *newargs[256];
+	char *newargs[256];
 	int i;
 	register unsigned etxtbsy = 1;
 	register eacces = 0;

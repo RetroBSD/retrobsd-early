@@ -101,7 +101,7 @@ int	 vfscanf (FILE *, const char *, va_list);
 int	 vscanf (const char *, va_list);
 int	 vsscanf (const char *, const char *, va_list);
 
-void	_dprnt (const char *, va_list, FILE *);
+int	_doprnt (const char *, va_list, FILE *);
 int	_doscan (FILE *, const char *, va_list);
 
 #ifndef _VA_LIST_
