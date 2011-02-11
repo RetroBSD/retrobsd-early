@@ -33,17 +33,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-//#include <machine/asm.h>
 
-LEAF(htons)
+		.type	htons, @function
+htons:		.globl 	htons
+		.type	ntohs, @function
+ntohs:		.globl 	ntohs
 #ifdef __MIPSEB__
-        move    v0, a0
+		move    $v0, $a0
 #else
-	srl	v0, a0, 8
-	and	v0, v0, 0xff
-	sll	v1, a0, 8
-	and	v1, v1, 0xff00
-	or	v0, v0, v1
+		srl	$v0, $a0, 8
+		and	$v0, $v0, 0xff
+		sll	$v1, $a0, 8
+		and	$v1, $v1, 0xff00
+		or	$v0, $v0, $v1
 #endif
-	j	ra
-END(htons)
+		j	$ra

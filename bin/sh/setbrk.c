@@ -1,8 +1,3 @@
-#ifndef lint
-static char sccsid[] = "@(#)setbrk.c	4.2 8/11/83";
-#endif
-
-#
 /*
  *	UNIX shell
  *
@@ -10,12 +5,12 @@ static char sccsid[] = "@(#)setbrk.c	4.2 8/11/83";
  *	Bell Telephone Laboratories
  *
  */
+#include "defs.h"
 
-#include	"defs.h"
-
-setbrk(incr)
+int
+setbrk (incr)
 {
-	REG BYTPTR	a=sbrk(incr);
-	brkend=a+incr;
-	return(a);
+	REG BYTPTR a = sbrk (incr);
+	brkend = a + incr;
+	return (int) a;
 }

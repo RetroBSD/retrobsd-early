@@ -1,11 +1,6 @@
-/*-
- * Copyright (c) 1983, 1990, 1993
+/*
+ * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.
- * (c) UNIX System Laboratories, Inc.
- * All or some portions of this file are derived from material licensed
- * to the University of California by American Telephone and Telegraph
- * Co. or Unix System Laboratories, Inc. and are reproduced herein with
- * the permission of UNIX System Laboratories, Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,17 +29,19 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)fcntl.h	8.3.1 (2.11BSD GTE) 11/25/94
- *
- * Copied from 4.4-Lite and modified for 2.11BSD.  The modifications consisted
- * of removing: function prototypes (I don't like them, the compiler does not
- * support them, and it would mean dragging in cdefs.h to leave them in here),
- * #ifndef _POSIX_SOURCE lines (silly) and record locking related definitions
- * If anyone adds any of the above it will be easy enough to modify this file.
- * In the meantime why bog down (or blow up) cpp any further?
  */
-#include <sys/fcntl.h>
+#include <sys/param.h>
+#include <sys/sysctl.h>
 
-int open (const char *path, int oflag, ...);
-int creat (const char *path, mode_t mode);
+u_long
+sethostid(hostid)
+	u_long hostid;
+{
+	int mib[2];
+
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_HOSTID;
+	if (sysctl(mib, 2, NULL, NULL, &hostid, sizeof hostid) == -1)
+		return (-1);
+	return (0);
+}

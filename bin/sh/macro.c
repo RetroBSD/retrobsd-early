@@ -1,23 +1,17 @@
-#ifndef lint
-static char sccsid[] = "@(#)macro.c	4.3 8/11/83";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 #include	"sym.h"
 
 LOCAL CHAR	quote;	/* used locally */
 LOCAL CHAR	quoted;	/* used locally */
-
-
+LOCAL INT	getch();
+LOCAL		comsubst();
+LOCAL		flush();
 
 LOCAL STRING	copyto(endch)
 	REG CHAR	endch;
@@ -50,7 +44,7 @@ LOCAL	skipto(endch)
 	IF c!=endch THEN error(badsub) FI
 }
 
-LOCAL	getch(endch)
+LOCAL INT	getch(endch)
 	CHAR		endch;
 {
 	REG CHAR	d;
@@ -63,7 +57,7 @@ retry:
 	IF d==DOLLAR
 	THEN	REG INT	c;
 		IF (c=readc(), dolchar(c))
-		THEN	NAMPTR		n=NIL;
+		THEN	NAMPTR		n=0;
 			INT		dolg=0;
 			BOOL		bra;
 			REG STRING	argp, v;
@@ -72,7 +66,7 @@ retry:
 
 			IF bra=(c==BRACE) THEN c=readc() FI
 			IF letter(c)
-			THEN	argp=relstak();
+			THEN	argp = (STRING) relstak();
 				WHILE alphanum(c) DO pushstak(c); c=readc() OD
 				zerostak();
 				n=lookup(absstak(argp)); setstak(argp);
@@ -84,7 +78,7 @@ retry:
 				THEN	dolg=1; c='1';
 				FI
 				c -= '0';
-				v=((c==0) ? cmdadr : (c<=dolc) ? dolv[c] : (dolg=0));
+				v = ((c==0) ? cmdadr : (c<=dolc) ? dolv[c] : (STRING)(dolg=0));
 			ELIF c=='$'
 			THEN	v=pidadr;
 			ELIF c=='!'
@@ -104,13 +98,13 @@ retry:
 			FI
 			argp=0;
 			IF bra
-			THEN	IF c!='}'
-				THEN	argp=relstak();
-					IF (v==0)NEQ(setchar(c))
-					THEN	copyto('}');
-					ELSE	skipto('}');
+			THEN	IF c != '}'
+				THEN	argp = (STRING) relstak();
+					IF (v==0) NEQ (setchar(c))
+					THEN	copyto ('}');
+					ELSE	skipto ('}');
 					FI
-					argp=absstak(argp);
+					argp = absstak (argp);
 				FI
 			ELSE	peekc = c|MARK; c = 0;
 			FI

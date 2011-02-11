@@ -1,22 +1,13 @@
-#ifndef lint
-static char sccsid[] = "@(#)expand.c	4.5 8/11/83";
-#endif
-
-#
 /*
  *	UNIX shell
  *
  *	S. R. Bourne
  *	Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 #include	<sys/param.h>
 #include	<sys/stat.h>
 #include	<sys/dir.h>
-
-
 
 /* globals (file name generation)
  *
@@ -27,8 +18,7 @@ static char sccsid[] = "@(#)expand.c	4.5 8/11/83";
  *
  */
 
-PROC VOID	addg();
-
+LOCAL VOID	addg();
 
 INT	expand(as,rflg)
 	STRING		as;
@@ -188,7 +178,6 @@ LOCAL VOID	addg(as1,as2,as3)
 makearg(args)
 	REG STRING	args;
 {
-	args->argnxt=gchain;
-	gchain=args;
+	((ARGPTR)args)->argnxt = gchain;
+	gchain = (ARGPTR) args;
 }
-

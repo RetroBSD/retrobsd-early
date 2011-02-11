@@ -1,16 +1,9 @@
-#ifndef lint
-static char sccsid[] = "@(#)main.c	4.3 3/19/85";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 #include	"sym.h"
 #include	"timeout.h"
@@ -24,14 +17,12 @@ LOCAL BOOL	beenhere = FALSE;
 CHAR		tmpout[20] = "/tmp/sh-";
 FILEBLK		stdfile;
 FILE		standin = &stdfile;
+
 #ifdef stupid
 #include	<execargs.h>
 #endif
 
-PROC VOID	exfile();
-
-
-
+LOCAL VOID	exfile();
 
 main(c, v)
 	INT		c;

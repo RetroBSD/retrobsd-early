@@ -29,9 +29,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-//#include <machine/asm.h>
-//#include <machine/regnum.h>
-//#include "SYS.h"
 
 /*
  * C library -- _setjmp, _longjmp
@@ -43,71 +40,46 @@
  * by restoring registers from the stack,
  * The previous signal state is NOT restored.
  */
+		.set	noreorder
 
-	.set	noreorder
+		.type	_setjmp, @function
+_setjmp:	.globl 	_setjmp
+		.type	setjmp, @function
+setjmp:		.globl 	setjmp			# temporarily
 
-LEAF(_setjmp)
-	REG_PROLOGUE
-	REG_LI	v0, _JB_MAGIC__SETJMP
-	REG_S	v0, (_JB_MAGIC  * SZREG)(a0)
-	REG_S	ra, (_JB_REG_RA * SZREG)(a0)
-	REG_S	s0, (_JB_REG_S0 * SZREG)(a0)
-	REG_S	s1, (_JB_REG_S1 * SZREG)(a0)
-	REG_S	s2, (_JB_REG_S2 * SZREG)(a0)
-	REG_S	s3, (_JB_REG_S3 * SZREG)(a0)
-	REG_S	s4, (_JB_REG_S4 * SZREG)(a0)
-	REG_S	s5, (_JB_REG_S5 * SZREG)(a0)
-	REG_S	s6, (_JB_REG_S6 * SZREG)(a0)
-	REG_S	s7, (_JB_REG_S7 * SZREG)(a0)
-	REG_S	s8, (_JB_REG_S8 * SZREG)(a0)
-#if defined(__mips_n32) || defined(__mips_n64)
-	REG_S	gp, (_JB_REG_GP * SZREG)(a0)	# newabi gp is callee-saved
-#endif
-	REG_S	sp, (_JB_REG_SP * SZREG)(a0)
-	REG_EPILOGUE
+		sw	$s0, (0 * 4) ($a0)	# save register variables s0-s8
+		sw	$s1, (1 * 4) ($a0)
+		sw	$s2, (2 * 4) ($a0)
+		sw	$s3, (3 * 4) ($a0)
+		sw	$s4, (4 * 4) ($a0)
+		sw	$s5, (5 * 4) ($a0)
+		sw	$s6, (6 * 4) ($a0)
+		sw	$s7, (7 * 4) ($a0)
+		sw	$s8, (8 * 4) ($a0)	# frame pointer
+		sw	$ra, (9 * 4) ($a0)	# return address
+		sw	$gp, (10 * 4) ($a0)	# global data pointer
+		sw	$sp, (11 * 4) ($a0)	# stack pointer
 
-	j	ra
-	move	v0, zero
-END(_setjmp)
+		j	$ra
+		move	$v0, $zero		# return a zero for the setjmp call
 
-LEAF(_longjmp)
-	PIC_PROLOGUE(_longjmp)
-	PTR_SUBU	sp, sp, CALLFRAME_SIZ
-	SAVE_GP(CALLFRAME_GP)
+		.type	_longjmp, @function
+_longjmp:	.globl	_longjmp
+		.type	longjmp, @function
+longjmp:	.globl	longjmp				# temporarily
 
-	REG_PROLOGUE
-	REG_L		v0, (_JB_MAGIC  * SZREG)(a0)	# get magic number
-	REG_L		ra, (_JB_REG_RA * SZREG)(a0)
-	REG_LI		t0, _JB_MAGIC__SETJMP
-	bne		v0, t0, botch		# jump if error
-	PTR_ADDU	sp, sp, CALLFRAME_SIZ	# does not matter, sanity
-	REG_L		s0, (_JB_REG_S0 * SZREG)(a0)
-	REG_L		s1, (_JB_REG_S1 * SZREG)(a0)
-	REG_L		s2, (_JB_REG_S2 * SZREG)(a0)
-	REG_L		s3, (_JB_REG_S3 * SZREG)(a0)
-	REG_L		s4, (_JB_REG_S4 * SZREG)(a0)
-	REG_L		s5, (_JB_REG_S5 * SZREG)(a0)
-	REG_L		s6, (_JB_REG_S6 * SZREG)(a0)
-	REG_L		s7, (_JB_REG_S7 * SZREG)(a0)
-#if defined(__mips_n32) || defined(__mips_n64)
-	REG_L		gp, (_JB_REG_GP * SZREG)(a0)
-#endif
-	REG_L		sp, (_JB_REG_SP * SZREG)(a0)
-	REG_L		s8, (_JB_REG_S8 * SZREG)(a0)
+		lw	$s0, (0 * 4) ($a0)	# restore register variables s0-s8
+		lw	$s1, (1 * 4) ($a0)
+		lw	$s2, (2 * 4) ($a0)
+		lw	$s3, (3 * 4) ($a0)
+		lw	$s4, (4 * 4) ($a0)
+		lw	$s5, (5 * 4) ($a0)
+		lw	$s6, (6 * 4) ($a0)
+		lw	$s7, (7 * 4) ($a0)
+		lw	$s8, (8 * 4) ($a0)	# frame pointer
+		lw	$ra, (9 * 4) ($a0)	# return address
+		lw	$gp, (10 * 4) ($a0)	# global data pointer
+		lw	$sp, (11 * 4) ($a0)	# stack pointer
 
-	REG_EPILOGUE
-	move	v0, a1			# get return value in 1st arg
-	j	ra
-	nop
-
-botch:
-	/*
-	 * We know we aren't returning so we don't care about restoring
-	 * our caller's GP.
-	 */
-	PTR_LA	t9, _C_LABEL(longjmperror)
-	jalr	t9
-	nop
-
-	PIC_TAILCALL(abort)
-END(_longjmp)
+		j	$ra			# transfer back to setjmp()
+		move	$v0, $a1		# get return value in 1st arg

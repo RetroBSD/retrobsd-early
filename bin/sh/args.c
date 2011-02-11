@@ -1,19 +1,12 @@
-#ifndef lint
-static char sccsid[] = "@(#)args.c	4.4 7/31/85";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 
-PROC STRING *copyargs();
+LOCAL STRING	*copyargs();
 LOCAL DOLPTR	dolh;
 
 CHAR	flagadr[10];
@@ -26,7 +19,6 @@ INT	flagval[]  = {
 };
 
 /* ========	option handling	======== */
-
 
 INT	options(argc,argv)
 	STRING		*argv;
@@ -73,28 +65,28 @@ VOID	setargs(argi)
 	STRING		argi[];
 {
 	/* count args */
-	REG STRING	*argp=argi;
-	REG INT		argn=0;
+	REG STRING	*argp = argi;
+	REG INT		argn = 0;
 
 	WHILE Rcheat(*argp++)!=ENDARGS DO argn++ OD
 
 	/* free old ones unless on for loop chain */
-	freeargs(dolh);
-	dolh=copyargs(argi,argn);	/* sets dolv */
-	assnum(&dolladr,dolc=argn-1);
+	freeargs (dolh);
+	dolh = (DOLPTR) copyargs (argi, argn);	/* sets dolv */
+	assnum (&dolladr, dolc = argn - 1);
 }
 
-freeargs(blk)
+DOLPTR	freeargs(blk)
 	DOLPTR		blk;
 {
 	REG STRING	*argp;
-	REG DOLPTR	argr=0;
+	REG DOLPTR	argr = 0;
 	REG DOLPTR	argblk;
 
-	IF argblk=blk
+	IF argblk = blk
 	THEN	argr = argblk->dolnxt;
 		IF (--argblk->doluse)==0
-		THEN	FOR argp=argblk->dolarg; Rcheat(*argp)!=ENDARGS; argp++
+		THEN	FOR argp = (STRING*) argblk->dolarg; Rcheat(*argp) != ENDARGS; argp++
 			DO free(*argp) OD
 			free(argblk);
 		FI
@@ -105,16 +97,16 @@ freeargs(blk)
 LOCAL STRING *	copyargs(from, n)
 	STRING		from[];
 {
-	REG STRING *	np=alloc(sizeof(STRING*)*n+3*BYTESPERWORD);
-	REG STRING *	fp=from;
-	REG STRING *	pp=np;
+	REG STRING *	np = (STRING*) alloc (n*sizeof(STRING*) + 3*BYTESPERWORD);
+	REG STRING *	fp = from;
+	REG STRING *	pp = np;
 
-	np->doluse=1;	/* use count */
-	np=np->dolarg;
-	dolv=np;
+	((DOLPTR)np)->doluse = 1;	/* use count */
+	np = (STRING*) ((DOLPTR)np)->dolarg;
+	dolv = np;
 
 	WHILE n--
-	DO *np++ = make(*fp++) OD
+	DO *np++ = make (*fp++) OD
 	*np++ = ENDARGS;
 	return(pp);
 }

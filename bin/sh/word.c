@@ -1,27 +1,19 @@
-#ifndef lint
-static char sccsid[] = "@(#)word.c	4.6 10/31/85";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 #include	"sym.h"
 
-
 /* ========	character handling for command lines	========*/
-
 
 word()
 {
 	REG CHAR	c, d;
-	REG CHAR	*argp=locstak()+BYTESPERWORD;
+	REG CHAR	*argp = locstak() + BYTESPERWORD;
+	REG ARGPTR	ap;
 	INT		alpha=1;
 
 	wdnum=0; wdset=0;
@@ -50,15 +42,17 @@ word()
 				FI
 			FI
 		PER (c=nextc(0), !eofmeta(c)) DONE
-		argp=endstak(argp);
-		IF !letter(argp->argval[0]) THEN wdset=0 FI
+		ap = (ARGPTR) endstak (argp);
+		IF ! letter (ap->argval[0]) THEN wdset=0 FI
 
-		peekc=c|MARK;
-		IF argp->argval[1]==0 ANDF (d=argp->argval[0], digit(d)) ANDF (c=='>' ORF c=='<')
-		THEN	word(); wdnum=d-'0';
+		peekc = c | MARK;
+		IF ap->argval[1]==0 ANDF (d=ap->argval[0], digit(d)) ANDF (c=='>' ORF c=='<')
+		THEN	word();
+			wdnum = d - '0';
 		ELSE	/*check for reserved words*/
-			IF reserv==FALSE ORF (wdval=syslook(argp->argval,reserved))==0
-			THEN	wdarg=argp; wdval=0;
+			IF reserv == FALSE ORF (wdval = syslook (ap->argval, reserved))==0
+			THEN	wdarg = ap;
+				wdval = 0;
 			FI
 		FI
 
@@ -93,6 +87,18 @@ nextc(quote)
 	return(d);
 }
 
+LOCAL	readb()
+{
+	REG FILE	f=standin;
+	REG INT		len;
+
+	IF setjmp(INTbuf) == 0 THEN trapjmp[INTR] = 1; FI
+	REP	IF trapnote&SIGSET THEN newline(); sigchk() FI
+	PER (len=read(f->fdes,f->fbuf,f->fsiz))<0 ANDF trapnote DONE
+	trapjmp[INTR] = 0;
+	return(len);
+}
+
 readc()
 {
 	REG CHAR	c;
@@ -116,22 +122,10 @@ retry:
 		IF c==NL THEN f->flin++ FI
 	ELIF f->feof ORF f->fdes<0
 	THEN	c=EOF; f->feof++;
-	ELIF (len=readb())<=0
+	ELIF (len = readb()) <= 0
 	THEN	close(f->fdes); f->fdes = -1; c=EOF; f->feof++;
 	ELSE	f->fend = (f->fnxt = f->fbuf)+len;
 		goto retry;
 	FI
 	return(c);
-}
-
-LOCAL	readb()
-{
-	REG FILE	f=standin;
-	REG INT		len;
-
-	IF setjmp(INTbuf) == 0 THEN trapjmp[INTR] = 1; FI
-	REP	IF trapnote&SIGSET THEN newline(); sigchk() FI
-	PER (len=read(f->fdes,f->fbuf,f->fsiz))<0 ANDF trapnote DONE
-	trapjmp[INTR] = 0;
-	return(len);
 }

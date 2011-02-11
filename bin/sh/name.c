@@ -1,37 +1,29 @@
-#ifndef lint
-static char sccsid[] = "@(#)name.c	4.4 10/31/85";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 
-PROC BOOL	chkid();
+LOCAL BOOL	chkid();
+LOCAL VOID	namwalk();
 
-
-NAMNOD	ps2nod	= {	NIL,		NIL,		ps2name},
-	fngnod	= {	NIL,		NIL,		fngname},
-	pathnod = {	NIL,		NIL,		pathname},
-	ifsnod	= {	NIL,		NIL,		ifsname},
+NAMNOD	ps2nod	= {	0,		0,		ps2name},
+	fngnod	= {	0,		0,		fngname},
+	pathnod = {	0,		0,		pathname},
+	ifsnod	= {	0,		0,		ifsname},
 	ps1nod	= {	&pathnod,	&ps2nod,	ps1name},
 	homenod = {	&fngnod,	&ifsnod,	homename},
 	mailnod = {	&homenod,	&ps1nod,	mailname};
 
 NAMPTR		namep = &mailnod;
 
-
 /* ========	variable and string handling	======== */
 
 syslook(w,syswds)
 	STRING		w;
-	SYSTAB		syswds;
+	SYSNOD		syswds[];
 {
 	REG CHAR	first;
 	REG STRING	s;
@@ -79,12 +71,12 @@ VOID	setname(argi, xp)
 			*argscan++ = '=';
 			attrib(n, xp);
 			IF xp&N_ENVNAM
-			THEN	
+			THEN
 				/*
 				 * Importing IFS can be very dangerous
 				 */
 				IF !bcmp(argi, "IFS=", sizeof("IFS=") - 1)
-				THEN 
+				THEN
 					int uid;
 					IF (uid = getuid())!=geteuid() ORF !uid
 					THEN
@@ -134,7 +126,7 @@ INT	readvar(names)
 	REG CHAR	c;
 	REG INT		rc=0;
 	NAMPTR		n=lookup(*names++); /* done now to avoid storage mess */
-	STKPTR		rel=relstak();
+	int		rel = relstak();
 
 	push(f); initf(dup(0));
 	IF lseek(0,0L,1)==-1
@@ -189,12 +181,12 @@ STRING	make(v)
 NAMPTR		lookup(nam)
 	REG STRING	nam;
 {
-	REG NAMPTR	nscan=namep;
+	REG NAMPTR	nscan = namep;
 	REG NAMPTR	*prev;
 	INT		LR;
 
-	IF !chkid(nam)
-	THEN	failed(nam,notid);
+	IF ! chkid (nam)
+	THEN	failed (nam, notid);
 	FI
 	WHILE nscan
 	DO	IF (LR=cf(nam,nscan->namid))==0
@@ -207,10 +199,12 @@ NAMPTR		lookup(nam)
 	OD
 
 	/* add name node */
-	nscan=alloc(sizeof *nscan);
-	nscan->namlft=nscan->namrgt=NIL;
-	nscan->namid=make(nam);
-	nscan->namval=0; nscan->namflg=N_DEFAULT; nscan->namenv=0;
+	nscan = (NAMPTR) alloc (sizeof *nscan);
+	nscan->namlft = nscan->namrgt = 0;
+	nscan->namid = make(nam);
+	nscan->namval = 0;
+	nscan->namflg = N_DEFAULT;
+	nscan->namenv = 0;
 	return(*prev = nscan);
 }
 
@@ -234,8 +228,8 @@ LOCAL VOID (*namfn)();
 namscan(fn)
 	VOID		(*fn)();
 {
-	namfn=fn;
-	namwalk(namep);
+	namfn = fn;
+	namwalk (namep);
 }
 
 LOCAL VOID	namwalk(np)
@@ -323,14 +317,14 @@ VOID	pushnam(n)
 	FI
 }
 
-STRING	*setenv()
+STRING	*setenvir()
 {
 	REG STRING	*er;
 
-	namec=0;
-	namscan(countnam);
-	argnam = er = getstak(namec*BYTESPERWORD+BYTESPERWORD);
-	namscan(pushnam);
+	namec = 0;
+	namscan (countnam);
+	argnam = er = (STRING*) getstak (namec * BYTESPERWORD + BYTESPERWORD);
+	namscan (pushnam);
 	*argnam++ = 0;
 	return(er);
 }

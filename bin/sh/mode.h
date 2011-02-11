@@ -1,11 +1,6 @@
-/*	mode.h	4.1	82/05/07	*/
-
-#
 /*
  *	UNIX shell
  */
-
-
 #define BYTESPERWORD	(sizeof(char *))
 
 TYPE char	CHAR;
@@ -45,19 +40,14 @@ STRUCT namnod	NAMNOD;
 STRUCT namnod	*NAMPTR;
 STRUCT sysnod	SYSNOD;
 STRUCT sysnod	*SYSPTR;
-STRUCT sysnod	SYSTAB[];
-#define NIL	((char*)0)
-
 
 /* the following nonsense is required
  * because casts turn an Lvalue
  * into an Rvalue so two cheats
  * are necessary, one for each context.
  */
-union { int _cheat;};
-#define Lcheat(a)	((a)._cheat)
+#define Lcheat(a)	(*(int*)&(a))
 #define Rcheat(a)	((int)(a))
-
 
 /* address puns for storage allocation */
 UNION {
@@ -71,7 +61,7 @@ UNION {
 	BLKPTR	_blkptr;
 	NAMPTR	_namptr;
 	BYTPTR	_bytptr;
-	}	address;
+} address;
 
 
 /* for functions that do not return values */

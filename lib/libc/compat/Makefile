@@ -3,23 +3,23 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-TOPSRC		= $(shell cd ../../../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		= -O ${DEFS}
+CFLAGS		= -O ${DEFS} -Werror
 
-#
-# Endian-independent assembly-code aliases for unaligned memory accesses.
-# Little endian.
-#
-ASFLAGS		+= -DLWHI=lwr -DLWLO=lwl -DSWHI=swr -DSWLO=swl
+SRCS		= creat.c ftime.c gethostid.c gtty.c memccpy.c memchr.c memcmp.c \
+		  memcpy.c memset.c nice.c pause.c rand.c sethostid.c \
+		  setregid.c setreuid.c setrgid.c setruid.c sigcompat.c \
+		  strchr.c strrchr.c stty.c times.c tmpnam.c utime.c
+OBJS		= creat.o ftime.o gethostid.o gtty.o memccpy.o memchr.o memcmp.o \
+		  memcpy.o memset.o nice.o pause.o rand.o sethostid.o \
+		  setregid.o setreuid.o setrgid.o setruid.o sigcompat.o \
+		  strchr.o strrchr.o stty.o times.o tmpnam.o utime.o
 
-SRCS		= bcopy.S memcpy.S memmove.S memset.S strlen.S bcmp.S #bzero.S ffs.S index.S rindex.S strcmp.S
-OBJS		= bcopy.o memcpy.o memmove.o memset.o strlen.o bcmp.o #bzero.o ffs.o index.o rindex.o strcmp.o
-
-string.a:	${OBJS}
-		@echo "buiding string.a"
-		@$(AR) cru string.a ${OBJS}
+compat.a:	${OBJS}
+		@echo "buiding compat.a"
+		@$(AR) cru compat.a ${OBJS}
 
 tags:
 		cwd=`pwd`; \
@@ -28,7 +28,7 @@ tags:
 		done
 
 clean:
-		rm -f string.a *.o *~ profiled/*.o tags Makefile.bak
+		rm -f compat.a *.o *~ profiled/*.o tags Makefile.bak
 
 depend:
 		for i in ${SRCS}; do \

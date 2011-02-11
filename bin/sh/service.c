@@ -14,12 +14,14 @@ static char sccsid[] = "@(#)service.c	4.4.1 12/9/94";
 #include	"defs.h"
 #include	<fcntl.h>
 
-PROC VOID	gsort();
+LOCAL STRING	execs();
+LOCAL VOID	gsort();
+LOCAL INT	split();
 
 #define ARGMK	01
 
 INT		errno;
-STRING		sysmsg[];
+extern STRING	sysmsg[];
 INT		num_sysmsg;
 
 /* fault handling */
@@ -123,8 +125,8 @@ VOID	execa(at)
 	IF (flags&noexec)==0
 	THEN	xecmsg=notfound; path=getpath(*t);
 		namscan(exname);
-		xecenv=setenv();
-		WHILE path=execs(path,t) DONE
+		xecenv=setenvir();
+		WHILE path = execs (path, t) DONE
 		failed(*t,xecmsg);
 	FI
 }
@@ -184,7 +186,7 @@ LOCAL STRING	execs(ap,t)
 gocsh(t, cp, xecenv)
 	register char **t, *cp, **xecenv;
 {
-	char **newt[1000];
+	char *newt[1000];
 	register char **p;
 	register int i;
 
@@ -193,7 +195,7 @@ gocsh(t, cp, xecenv)
 	newt[i+1] = 0;
 	newt[0] = "/bin/csh";
 	newt[1] = cp;
-	execve("/bin/csh", newt, xecenv);
+	execve ("/bin/csh", newt, xecenv);
 }
 
 /* for processes to be waited for */
@@ -311,10 +313,12 @@ STRING	mactrim(s)
 STRING	*scan(argn)
 	INT		argn;
 {
-	REG ARGPTR	argp = Rcheat(gchain)&~ARGMK;
+	REG ARGPTR	argp = (ARGPTR) (Rcheat(gchain) & ~ARGMK);
 	REG STRING	*comargn, *comargm;
 
-	comargn=getstak(BYTESPERWORD*argn+BYTESPERWORD); comargm = comargn += argn; *comargn = ENDARGS;
+	comargn = (STRING*) getstak (BYTESPERWORD * argn + BYTESPERWORD);
+	comargm = comargn += argn;
+	*comargn = ENDARGS;
 
 	WHILE argp
 	DO	*--comargn = argp->argval;
@@ -322,16 +326,16 @@ STRING	*scan(argn)
 		THEN trim(*comargn);
 		FI
 		IF argp==0 ORF Rcheat(argp)&ARGMK
-		THEN	gsort(comargn,comargm);
+		THEN	gsort (comargn, comargm);
 			comargm = comargn;
 		FI
 		/* Lcheat(argp) &= ~ARGMK; */
-		argp = Rcheat(argp)&~ARGMK;
+		argp = (ARGPTR) (Rcheat(argp) & ~ARGMK);
 	OD
 	return(comargn);
 }
 
-LOCAL VOID	gsort(from,to)
+LOCAL VOID	gsort (from, to)
 	STRING		from[], to[];
 {
 	INT		k, m, n;
@@ -392,7 +396,7 @@ LOCAL INT	split(s)
 		ELIF c==0
 		THEN	s--;
 		FI
-		IF c=expand((argp=endstak(argp))->argval,0)
+		IF c = expand (((ARGPTR)(argp = endstak (argp)))->argval,0)
 		THEN	count += c;
 		ELSE	/* assign(&fngnod, argp->argval); */
 			makearg(argp); count++;

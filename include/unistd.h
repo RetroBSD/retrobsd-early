@@ -77,7 +77,7 @@ long	gethostid();
 char	*getpass();
 char	*getusershell();
 char	*getwd();
-char	*mktemp();
+char	*mktemp(char *template);
 void	psignal();
 extern	char 	*sys_siglist[];
 char	*re_comp();

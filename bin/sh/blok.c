@@ -1,8 +1,3 @@
-#ifndef lint
-static char sccsid[] = "@(#)blok.c	4.2 8/11/83";
-#endif
-
-#
 /*
  *	UNIX shell
  *
@@ -10,9 +5,7 @@ static char sccsid[] = "@(#)blok.c	4.2 8/11/83";
  *	Bell Telephone Laboratories
  *
  */
-
 #include	"defs.h"
-
 
 /*
  *	storage allocator
@@ -25,8 +18,6 @@ static char sccsid[] = "@(#)blok.c	4.2 8/11/83";
 POS		brkincr=BRKINCR;
 BLKPTR		blokp;			/*current search pointer*/
 BLKPTR		bloktop=BLK(end);	/*top of arena (last blok)*/
-
-
 
 ADDRESS	alloc(nbytes)
 	POS		nbytes;
@@ -61,7 +52,7 @@ VOID	addblok(reqd)
 		REG BLKPTR	blokstak;
 
 		pushstak(0);
-		rndstak=round(staktop,BYTESPERWORD);
+		rndstak=(STKPTR)round(staktop,BYTESPERWORD);
 		blokstak=BLK(stakbas)-1;
 		blokstak->word=stakbsy; stakbsy=blokstak;
 		bloktop->word=BLK(Rcheat(rndstak)|BUSY);

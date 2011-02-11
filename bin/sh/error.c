@@ -35,7 +35,7 @@ sigchk()
 failed(s1,s2)
 	STRING	s1, s2;
 {
-	prp(); prs(s1); 
+	prp(); prs(s1);
 	IF s2
 	THEN	prs(colon); prs(s2);
 	FI
@@ -45,7 +45,7 @@ failed(s1,s2)
 error(s)
 	STRING	s;
 {
-	failed(s,NIL);
+	failed (s, 0);
 }
 
 exitsh(xno)
