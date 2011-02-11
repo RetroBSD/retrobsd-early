@@ -4,14 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)ls.c	5.9.2 (2.11BSD GTE) 1996/12/23";
-#endif
-
 /*
  * ls
  *
@@ -22,8 +14,10 @@ static char sccsid[] = "@(#)ls.c	5.9.2 (2.11BSD GTE) 1996/12/23";
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sgtty.h>
-#include <strings.h>
+#include <string.h>
+//#include <strings.h>
 #include <sys/time.h>
 
 #define	kbytes(size)	(((size) + 1023) / 1024)
@@ -66,6 +60,9 @@ char	*cat(), *savestr();
 char	*fmtentry();
 char	*getname(), *getgroup();
 
+char	*flags_to_string (unsigned flags, char *def);
+unsigned string_to_flags (char **stringp, unsigned *setp, unsigned *clrp);
+
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -92,7 +89,7 @@ main(argc, argv)
 	while ((ch = getopt(argc, argv, "1ACLFRacdfgiloqrstu")) != EOF)
 		switch((char)ch) {
 /*
- * The -1, -C, and -l options override each other so shell aliasing 
+ * The -1, -C, and -l options override each other so shell aliasing
  * works right.
 */
 		case '1':
@@ -302,7 +299,7 @@ getdir(dir, pfp0, pfplast, isadir)
 	}
 	closedir(dirp);
 	*pfplast = fp;
-	return (kbytes(dbtob(nb)));
+	return (kbytes (nb * DEV_BSIZE));
 }
 
 int	stat(), lstat();
@@ -396,7 +393,7 @@ formatf(fp0, fplast)
 	if (oflg) {
 		for (fp = fp0; fp < fplast; fp++)
 		    {
-		    i = strlen(flags_to_string(fp->fflags, "-"));
+		    i = strlen (flags_to_string (fp->fflags, "-"));
 		    if (i > maxflags)
 			maxflags = i;
 		    }
@@ -555,7 +552,7 @@ fmtsize(p)
 {
 	static char sizebuf[16];
 
-	(void) sprintf(sizebuf, "%4ld ", kbytes(dbtob(p->fblks)));
+	(void) sprintf (sizebuf, "%4ld ", kbytes (p->fblks * DEV_BSIZE));
 	return (sizebuf);
 }
 
@@ -586,7 +583,7 @@ fmtlstuff(p, maxflags)
 	}
 /* get flags */
 	if (oflg)
-		(void) sprintf(fflags, "%-*s ", maxflags, 
+		(void) sprintf(fflags, "%-*s ", maxflags,
 				flags_to_string(p->fflags, "-"));
 /* get fsize */
 	if (p->ftype == 'b' || p->ftype == 'c')

@@ -1,8 +1,8 @@
-static	char *sccsid = "@(#)kill.c	4.4.1 (2.11BSD) 1996/3/21";
 /*
  * kill - send signal to process
  */
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <ctype.h>
 

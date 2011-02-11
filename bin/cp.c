@@ -4,20 +4,13 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)cp.c	4.13 (Berkeley) 10/11/85";
-#endif not lint
-
 /*
  * cp
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
@@ -26,7 +19,6 @@ static char sccsid[] = "@(#)cp.c	4.13 (Berkeley) 10/11/85";
 int	iflag;
 int	rflag;
 int	pflag;
-char	*rindex();
 
 main(argc, argv)
 	int argc;
@@ -57,12 +49,12 @@ main(argc, argv)
 		}
 		argc--; argv++;
 	}
-	if (argc < 2) 
+	if (argc < 2)
 		goto usage;
 	if (argc > 2) {
 		if (stat(argv[argc-1], &stb) < 0)
 			goto usage;
-		if ((stb.st_mode&S_IFMT) != S_IFDIR) 
+		if ((stb.st_mode&S_IFMT) != S_IFDIR)
 			goto usage;
 	}
 	rc = 0;
@@ -160,7 +152,7 @@ copy(from, to)
 	}
 	if (exists && pflag)
 		(void) fchmod(fnew, stfrom.st_mode & 07777);
-			
+
 	for (;;) {
 		n = read(fold, buf, sizeof buf);
 		if (n == 0)
@@ -174,7 +166,7 @@ copy(from, to)
 			(void) close(fold); (void) close(fnew); return (1);
 		}
 	}
-	(void) close(fold); (void) close(fnew); 
+	(void) close(fold); (void) close(fnew);
 	if (pflag)
 		return (setimes(to, &stfrom));
 	return (0);
@@ -222,7 +214,7 @@ setimes(path, statp)
 	struct stat *statp;
 {
 	struct timeval tv[2];
-	
+
 	tv[0].tv_sec = statp->st_atime;
 	tv[1].tv_sec = statp->st_mtime;
 	tv[0].tv_usec = tv[1].tv_usec = 0;
@@ -236,7 +228,6 @@ setimes(path, statp)
 Perror(s)
 	char *s;
 {
-
 	fprintf(stderr, "cp: ");
 	perror(s);
 }

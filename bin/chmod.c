@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)chmod.c	5.5.1 (2.11BSD GTE) 11/4/94";
-#endif
-
 /*
  * chmod options mode files
  * where
@@ -15,6 +11,7 @@ static char sccsid[] = "@(#)chmod.c	5.5.1 (2.11BSD GTE) 11/4/94";
  *	options are -Rf
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -184,7 +181,7 @@ newmode(nm)
 
 	ms = modestring;
 	savem = nm;
-	m = abs();
+	m = abss();
 	if (*ms == '\0')
 		return (m);
 	do {
@@ -210,7 +207,7 @@ newmode(nm)
 	return (nm);
 }
 
-abs()
+abss()
 {
 	register c, i;
 

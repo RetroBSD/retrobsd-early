@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_addr.c	5.2.1 (2.11BSD GTE) 1/1/94";
-#endif
-
 #include <sys/types.h>
 #include <ctype.h>
 #include <netinet/in.h>

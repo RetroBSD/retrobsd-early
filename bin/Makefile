@@ -8,8 +8,8 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= #ar awk chflags chpass csh diff ld login \
-		  #ls make nm passwd sed sh stty sysctl test
+SUBDIR		= sh ls stty #ar awk chflags chpass csh diff ld login \
+		  #make nm passwd sed sysctl test
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -18,9 +18,9 @@ SCRIPT		= false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD		= cat cc chgrp chmod cmp cp date dd du echo ed grep hostid \
+STD		= cat chgrp chmod cmp cp date dd du echo ed grep hostid \
 		  kill ln mkdir mt mv nice od pagesize pr \
-		  pwd rm rmail rmdir size sync tar tee time who
+		  pwd rm rmail rmdir size sync tar tee time who #cc
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -28,15 +28,15 @@ STD		= cat cc chgrp chmod cmp cp date dd du echo ed grep hostid \
 
 # Programs that must run setuid to root
 #
-#SETUID		= mail rcp su
+#SETUID		= mail su
 
 # Programs that run set-group-id operator
 #
-#OPERATOR	= df
+OPERATOR	= df
 
 # Programs that must run set-group-id kmem.
 #
-#KMEM		= ps
+KMEM		= ps
 
 # Programs that must run set-group-id tty.
 #
@@ -72,11 +72,11 @@ install:	${BINS}
 		-for i in ${TTY}; do \
 			(install -g tty -m 2751 -s $$i ${DESTDIR}/bin/$$i); done
 		-install -s -m 751 -g staff strip ${DESTDIR}/bin/xstrip
-		-mv ${DESTDIR}/bin/xstrip ${DESTDIR}/bin/strip
-		rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
+		-/bin/mv ${DESTDIR}/bin/xstrip ${DESTDIR}/bin/strip
+		/bin/rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 
 clean:
-		rm -f ${BINS} expr.c a.out core *.s *.o *~ errs
+		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *~ errs
 		for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend:		expr.c
@@ -92,7 +92,7 @@ depend:		expr.c
 		echo 'w' >>eddep
 		cp Makefile Makefile.bak
 		ed - Makefile < eddep
-		rm eddep makedep
+		/bin/rm eddep makedep
 		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 		echo '# see make depend above' >> Makefile

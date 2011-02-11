@@ -1,13 +1,9 @@
-#if	defined(DOSCCS) && !defined(lint)
-static	char *sccsid = "@(#)size.c	4.4.1 (2.11BSD GTE) 1/1/94";
-#endif
-
 /*
  * size
  */
-
-#include	<stdio.h>
-#include 	<a.out.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <a.out.h>
 
 int	header;
 

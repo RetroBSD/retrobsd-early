@@ -74,7 +74,6 @@ _innum (ptr, type, len, size, iop, eofptr)
 	int **ptr, *eofptr;
 	FILE *iop;
 {
-	extern double atof();
 	register char *np;
 	char numbuf[64];
 	register c, base;
@@ -153,7 +152,7 @@ _innum (ptr, type, len, size, iop, eofptr)
 		return(0);
 	*np++ = 0;
 	switch((scale<<4) | size) {
-
+#if HAVE_FLOAT
 	case (FLOAT<<4) | SHORT:
 	case (FLOAT<<4) | REGULAR:
 		**(float **)ptr = atof(numbuf);
@@ -162,7 +161,7 @@ _innum (ptr, type, len, size, iop, eofptr)
 	case (FLOAT<<4) | LONG:
 		**(double **)ptr = atof(numbuf);
 		break;
-
+#endif
 	case (INT<<4) | SHORT:
 		**(short **)ptr = lcval;
 		break;

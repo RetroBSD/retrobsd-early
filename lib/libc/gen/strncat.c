@@ -3,11 +3,13 @@
  * At most n characters are moved.
  * Return s1.
  */
+#include <string.h>
 
 char *
 strncat(s1, s2, n)
-register char *s1, *s2;
-register n;
+	register char *s1;
+	register const char *s2;
+	register size_t n;
 {
 	register char *os1;
 

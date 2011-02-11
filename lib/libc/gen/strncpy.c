@@ -2,10 +2,13 @@
  * Copy s2 to s1, truncating or null-padding to always copy n bytes
  * return s1
  */
+#include <string.h>
 
 char *
 strncpy(s1, s2, n)
-register char *s1, *s2;
+	register char *s1;
+	register const char *s2;
+	size_t n;
 {
 	register i;
 	register char *os1;

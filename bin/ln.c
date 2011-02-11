@@ -1,8 +1,8 @@
-static	char sccsid[] = "@(#)ln.c 4.6 11/15/85";
 /*
  * ln
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -32,7 +32,7 @@ again:
 		argv++;
 		argc--;
 	}
-	if (argc == 0) 
+	if (argc == 0)
 		goto usage;
 	else if (argc == 1) {
 		argv[argc] = ".";
@@ -41,7 +41,7 @@ again:
 	if (sflag == 0 && argc > 2) {
 		if (stat(argv[argc-1], &stb) < 0)
 			goto usage;
-		if ((stb.st_mode&S_IFMT) != S_IFDIR) 
+		if ((stb.st_mode&S_IFMT) != S_IFDIR)
 			goto usage;
 	}
 	r = 0;

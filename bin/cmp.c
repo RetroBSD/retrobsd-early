@@ -9,21 +9,11 @@
  * software without specific written prior permission. This software
  * is provided ``as is'' without express or implied warranty.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* !lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)cmp.c	4.8 (Berkeley) 12/21/87";
-#endif /* !lint */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 
@@ -40,49 +30,38 @@ static u_char	buf1[MAXBSIZE],		/* read buffers */
 		buf2[MAXBSIZE];
 static char	*file1, *file2;		/* file names */
 
-main(argc, argv)
-	int	argc;
-	char	**argv;
+/*
+ * error --
+ *	print I/O error message and die
+ */
+static
+error(filename)
+	char *filename;
 {
-	extern char	*optarg;
-	extern int	optind;
-	int	ch;
-	u_long	otoi();
+	extern int errno;
+	int sverrno;
 
-	while ((ch = getopt(argc, argv, "ls")) != EOF)
-		switch(ch) {
-		case 'l':		/* print all differences */
-			all = YES;
-			break;
-		case 's':		/* silent run */
-			silent = YES;
-			break;
-		case '?':
-		default:
-			usage();
-		}
-	argv += optind;
-	argc -= optind;
-
-	if (argc < 2 || argc > 4)
-		usage();
-
-	/* open up files; "-" is stdin */
-	file1 = argv[0];
-	if (strcmp(file1, "-") && (fd1 = open(file1, O_RDONLY, 0)) < 0)
-		error(file1);
-	file2 = argv[1];
-	if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
-		error(file2);
-
-	/* handle skip arguments */
-	if (argc > 2) {
-		skip(otoi(argv[2]), fd1, file1);
-		if (argc == 4)
-			skip(otoi(argv[3]), fd2, file2);
+	if (!silent) {
+		sverrno = errno;
+		(void)fprintf(stderr, "cmp: %s: ", filename);
+		errno = sverrno;
+		perror((char *)NULL);
 	}
-	cmp();
-	/*NOTREACHED*/
+	exit(ERR);
+}
+
+/*
+ * endoffile --
+ *	print end-of-file message and exit indicating the files were different
+ */
+static
+endoffile(filename)
+	char *filename;
+{
+	/* 32V put this message on stdout, S5 does it on stderr. */
+	if (!silent)
+		(void)fprintf(stderr, "cmp: EOF on %s\n", filename);
+	exit(DIFF);
 }
 
 /*
@@ -206,40 +185,6 @@ otoi(C)
 }
 
 /*
- * error --
- *	print I/O error message and die
- */
-static
-error(filename)
-	char *filename;
-{
-	extern int errno;
-	int sverrno;
-
-	if (!silent) {
-		sverrno = errno;
-		(void)fprintf(stderr, "cmp: %s: ", filename);
-		errno = sverrno;
-		perror((char *)NULL);
-	}
-	exit(ERR);
-}
-
-/*
- * endoffile --
- *	print end-of-file message and exit indicating the files were different
- */
-static
-endoffile(filename)
-	char *filename;
-{
-	/* 32V put this message on stdout, S5 does it on stderr. */
-	if (!silent)
-		(void)fprintf(stderr, "cmp: EOF on %s\n", filename);
-	exit(DIFF);
-}
-
-/*
  * usage --
  *	print usage and die
  */
@@ -248,4 +193,48 @@ usage()
 {
 	fputs("usage: cmp [-ls] file1 file2 [skip1] [skip2]\n", stderr);
 	exit(ERR);
+}
+
+main(argc, argv)
+	int	argc;
+	char	**argv;
+{
+	extern char	*optarg;
+	extern int	optind;
+	int	ch;
+
+	while ((ch = getopt(argc, argv, "ls")) != EOF)
+		switch(ch) {
+		case 'l':		/* print all differences */
+			all = YES;
+			break;
+		case 's':		/* silent run */
+			silent = YES;
+			break;
+		case '?':
+		default:
+			usage();
+		}
+	argv += optind;
+	argc -= optind;
+
+	if (argc < 2 || argc > 4)
+		usage();
+
+	/* open up files; "-" is stdin */
+	file1 = argv[0];
+	if (strcmp(file1, "-") && (fd1 = open(file1, O_RDONLY, 0)) < 0)
+		error(file1);
+	file2 = argv[1];
+	if ((fd2 = open(file2, O_RDONLY, 0)) < 0)
+		error(file2);
+
+	/* handle skip arguments */
+	if (argc > 2) {
+		skip(otoi(argv[2]), fd1, file1);
+		if (argc == 4)
+			skip(otoi(argv[3]), fd2, file2);
+	}
+	cmp();
+	/*NOTREACHED*/
 }

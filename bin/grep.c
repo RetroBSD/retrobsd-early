@@ -1,7 +1,3 @@
-#ifndef lint
-static char sccsid[] = "@(#)grep.c	4.6 (Berkeley) 5/14/84";
-#endif
-
 /*
  * grep -- print lines matching (or not matching) a pattern
  *
@@ -10,8 +6,8 @@ static char sccsid[] = "@(#)grep.c	4.6 (Berkeley) 5/14/84";
  *		1 - ok, but no matches
  *		2 - some error
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 
 #define	CBRA	1

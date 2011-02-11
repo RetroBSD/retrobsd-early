@@ -1,5 +1,5 @@
-static char *sccsid = "@(#)echo.c	4.2 (Berkeley) 5/27/85";
 #include <stdio.h>
+#include <stdlib.h>
 
 main(argc, argv)
 int argc;

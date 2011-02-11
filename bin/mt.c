@@ -6,19 +6,13 @@
  * Modified to handle pdp11 930707 /BQT
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)mt.c	2.2 (2.11BSD) 1999/3/20";
-#endif not lint
-
 /*
  * mt --
  *   magnetic tape manipulation program
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/mtio.h>

@@ -1,8 +1,5 @@
-#ifndef lint
-static char *sccsid = "@(#)dd.c	4.4 (Berkeley) 1/22/85";
-#endif
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 
 #define	BIG	2147483647
@@ -11,6 +8,7 @@ static char *sccsid = "@(#)dd.c	4.4 (Berkeley) 1/22/85";
 #define	SWAB	04
 #define NERR	010
 #define SYNC	020
+
 int	cflag;
 int	fflag;
 int	skip;
@@ -143,215 +141,12 @@ char	atoibm[] =
 	0356,0357,0372,0373,0374,0375,0376,0377,
 };
 
-
-main(argc, argv)
-int	argc;
-char	**argv;
+void
+term(status)
+	int status;
 {
-	int (*conv)();
-	register char *ip;
-	register c;
-	int ebcdic(), ibm(), ascii(), null(), cnull(), term(), block(), unblock();
-	int a;
-
-	conv = null;
-	for(c=1; c<argc; c++) {
-		string = argv[c];
-		if(match("ibs=")) {
-			ibs = number(BIG);
-			continue;
-		}
-		if(match("obs=")) {
-			obs = number(BIG);
-			continue;
-		}
-		if(match("cbs=")) {
-			cbs = number(BIG);
-			continue;
-		}
-		if (match("bs=")) {
-			bs = number(BIG);
-			continue;
-		}
-		if(match("if=")) {
-			ifile = string;
-			continue;
-		}
-		if(match("of=")) {
-			ofile = string;
-			continue;
-		}
-		if(match("skip=")) {
-			skip = number(BIG);
-			continue;
-		}
-		if(match("seek=")) {
-			seekn = number(BIG);
-			continue;
-		}
-		if(match("count=")) {
-			count = number(BIG);
-			continue;
-		}
-		if(match("files=")) {
-			files = number(BIG);
-			continue;
-		}
-		if(match("conv=")) {
-		cloop:
-			if(match(","))
-				goto cloop;
-			if(*string == '\0')
-				continue;
-			if(match("ebcdic")) {
-				conv = ebcdic;
-				goto cloop;
-			}
-			if(match("ibm")) {
-				conv = ibm;
-				goto cloop;
-			}
-			if(match("ascii")) {
-				conv = ascii;
-				goto cloop;
-			}
-			if(match("block")) {
-				conv = block;
-				goto cloop;
-			}
-			if(match("unblock")) {
-				conv = unblock;
-				goto cloop;
-			}
-			if(match("lcase")) {
-				cflag |= LCASE;
-				goto cloop;
-			}
-			if(match("ucase")) {
-				cflag |= UCASE;
-				goto cloop;
-			}
-			if(match("swab")) {
-				cflag |= SWAB;
-				goto cloop;
-			}
-			if(match("noerror")) {
-				cflag |= NERR;
-				goto cloop;
-			}
-			if(match("sync")) {
-				cflag |= SYNC;
-				goto cloop;
-			}
-		}
-		fprintf(stderr,"bad arg: %s\n", string);
-		exit(1);
-	}
-	if(conv == null && cflag&(LCASE|UCASE))
-		conv = cnull;
-	if (ifile)
-		ibf = open(ifile, 0);
-	else
-		ibf = dup(0);
-	if(ibf < 0) {
-		perror(ifile);
-		exit(1);
-	}
-	if (ofile)
-		obf = creat(ofile, 0666);
-	else
-		obf = dup(1);
-	if(obf < 0) {
-		fprintf(stderr,"cannot create: %s\n", ofile);
-		exit(1);
-	}
-	if (bs) {
-		ibs = obs = bs;
-		if (conv == null)
-			fflag++;
-	}
-	if(ibs == 0 || obs == 0) {
-		fprintf(stderr,"counts: cannot be zero\n");
-		exit(1);
-	}
-	ibuf = sbrk(ibs);
-	if (fflag)
-		obuf = ibuf;
-	else
-		obuf = sbrk(obs);
-	sbrk(64);	/* For good measure */
-	if(ibuf == (char *)-1 || obuf == (char *)-1) {
-		fprintf(stderr, "not enough memory\n");
-		exit(1);
-	}
-	ibc = 0;
-	obc = 0;
-	cbc = 0;
-	op = obuf;
-
-	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT, term);
-	while(skip) {
-		read(ibf, ibuf, ibs);
-		skip--;
-	}
-	while(seekn) {
-		lseek(obf, (long)obs, 1);
-		seekn--;
-	}
-
-loop:
-	if(ibc-- == 0) {
-		ibc = 0;
-		if(count==0 || nifr+nipr!=count) {
-			if(cflag&(NERR|SYNC))
-			for(ip=ibuf+ibs; ip>ibuf;)
-				*--ip = 0;
-			ibc = read(ibf, ibuf, ibs);
-		}
-		if(ibc == -1) {
-			perror("read");
-			if((cflag&NERR) == 0) {
-				flsh();
-				term(1);
-			}
-			ibc = 0;
-			for(c=0; c<ibs; c++)
-				if(ibuf[c] != 0)
-					ibc = c;
-			stats();
-		}
-		if(ibc == 0 && --files<=0) {
-			flsh();
-			term(0);
-		}
-		if(ibc != ibs) {
-			nipr++;
-			if(cflag&SYNC)
-				ibc = ibs;
-		} else
-			nifr++;
-		ip = ibuf;
-		c = ibc >> 1;
-		if(cflag&SWAB && c)
-		do {
-			a = *ip++;
-			ip[-1] = *ip;
-			*ip++ = a;
-		} while(--c);
-		ip = ibuf;
-		if (fflag) {
-			obc = ibc;
-			flsh();
-			ibc = 0;
-		}
-		goto loop;
-	}
-	c = 0;
-	c |= *ip++;
-	c &= 0377;
-	(*conv)(c);
-	goto loop;
+	stats();
+	exit(status);
 }
 
 flsh()
@@ -592,19 +387,219 @@ block(cc)
 		null(c);
 }
 
-term(status)
-int status;
-{
-
-	stats();
-	exit(status);
-}
-
 stats()
 {
-
 	fprintf(stderr,"%u+%u records in\n", nifr, nipr);
 	fprintf(stderr,"%u+%u records out\n", nofr, nopr);
 	if(ntrunc)
 		fprintf(stderr,"%u truncated records\n", ntrunc);
+}
+
+main(argc, argv)
+int	argc;
+char	**argv;
+{
+	int (*conv)();
+	register char *ip;
+	register c;
+	int a;
+
+	conv = null;
+	for(c=1; c<argc; c++) {
+		string = argv[c];
+		if(match("ibs=")) {
+			ibs = number(BIG);
+			continue;
+		}
+		if(match("obs=")) {
+			obs = number(BIG);
+			continue;
+		}
+		if(match("cbs=")) {
+			cbs = number(BIG);
+			continue;
+		}
+		if (match("bs=")) {
+			bs = number(BIG);
+			continue;
+		}
+		if(match("if=")) {
+			ifile = string;
+			continue;
+		}
+		if(match("of=")) {
+			ofile = string;
+			continue;
+		}
+		if(match("skip=")) {
+			skip = number(BIG);
+			continue;
+		}
+		if(match("seek=")) {
+			seekn = number(BIG);
+			continue;
+		}
+		if(match("count=")) {
+			count = number(BIG);
+			continue;
+		}
+		if(match("files=")) {
+			files = number(BIG);
+			continue;
+		}
+		if(match("conv=")) {
+		cloop:
+			if(match(","))
+				goto cloop;
+			if(*string == '\0')
+				continue;
+			if(match("ebcdic")) {
+				conv = ebcdic;
+				goto cloop;
+			}
+			if(match("ibm")) {
+				conv = ibm;
+				goto cloop;
+			}
+			if(match("ascii")) {
+				conv = ascii;
+				goto cloop;
+			}
+			if(match("block")) {
+				conv = block;
+				goto cloop;
+			}
+			if(match("unblock")) {
+				conv = unblock;
+				goto cloop;
+			}
+			if(match("lcase")) {
+				cflag |= LCASE;
+				goto cloop;
+			}
+			if(match("ucase")) {
+				cflag |= UCASE;
+				goto cloop;
+			}
+			if(match("swab")) {
+				cflag |= SWAB;
+				goto cloop;
+			}
+			if(match("noerror")) {
+				cflag |= NERR;
+				goto cloop;
+			}
+			if(match("sync")) {
+				cflag |= SYNC;
+				goto cloop;
+			}
+		}
+		fprintf(stderr,"bad arg: %s\n", string);
+		exit(1);
+	}
+	if(conv == null && cflag&(LCASE|UCASE))
+		conv = cnull;
+	if (ifile)
+		ibf = open(ifile, 0);
+	else
+		ibf = dup(0);
+	if(ibf < 0) {
+		perror(ifile);
+		exit(1);
+	}
+	if (ofile)
+		obf = creat(ofile, 0666);
+	else
+		obf = dup(1);
+	if(obf < 0) {
+		fprintf(stderr,"cannot create: %s\n", ofile);
+		exit(1);
+	}
+	if (bs) {
+		ibs = obs = bs;
+		if (conv == null)
+			fflag++;
+	}
+	if(ibs == 0 || obs == 0) {
+		fprintf(stderr,"counts: cannot be zero\n");
+		exit(1);
+	}
+	ibuf = sbrk(ibs);
+	if (fflag)
+		obuf = ibuf;
+	else
+		obuf = sbrk(obs);
+	sbrk(64);	/* For good measure */
+	if(ibuf == (char *)-1 || obuf == (char *)-1) {
+		fprintf(stderr, "not enough memory\n");
+		exit(1);
+	}
+	ibc = 0;
+	obc = 0;
+	cbc = 0;
+	op = obuf;
+
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		signal(SIGINT, term);
+	while(skip) {
+		read(ibf, ibuf, ibs);
+		skip--;
+	}
+	while(seekn) {
+		lseek(obf, (long)obs, 1);
+		seekn--;
+	}
+
+loop:
+	if(ibc-- == 0) {
+		ibc = 0;
+		if(count==0 || nifr+nipr!=count) {
+			if(cflag&(NERR|SYNC))
+			for(ip=ibuf+ibs; ip>ibuf;)
+				*--ip = 0;
+			ibc = read(ibf, ibuf, ibs);
+		}
+		if(ibc == -1) {
+			perror("read");
+			if((cflag&NERR) == 0) {
+				flsh();
+				term(1);
+			}
+			ibc = 0;
+			for(c=0; c<ibs; c++)
+				if(ibuf[c] != 0)
+					ibc = c;
+			stats();
+		}
+		if(ibc == 0 && --files<=0) {
+			flsh();
+			term(0);
+		}
+		if(ibc != ibs) {
+			nipr++;
+			if(cflag&SYNC)
+				ibc = ibs;
+		} else
+			nifr++;
+		ip = ibuf;
+		c = ibc >> 1;
+		if(cflag&SWAB && c)
+		do {
+			a = *ip++;
+			ip[-1] = *ip;
+			*ip++ = a;
+		} while(--c);
+		ip = ibuf;
+		if (fflag) {
+			obc = ibc;
+			flsh();
+			ibc = 0;
+		}
+		goto loop;
+	}
+	c = 0;
+	c |= *ip++;
+	c &= 0377;
+	(*conv)(c);
+	goto loop;
 }

@@ -3,18 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) 1/12/86";
-#endif not lint
-
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -33,7 +23,7 @@ main(argc, argv)
 		fputs("usage: nice [ -n ] command\n", stderr);
 		exit(1);
 	}
-	if (setpriority(PRIO_PROCESS, 0, 
+	if (setpriority(PRIO_PROCESS, 0,
 	    getpriority(PRIO_PROCESS, 0) + nicarg) < 0) {
 		perror("setpriority");
 		exit(1);

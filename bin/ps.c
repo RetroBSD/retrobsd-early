@@ -13,20 +13,25 @@
  *	ps - process status
  *	Usage:  ps [ acgklnrtuwxU# ] [ corefile [ swapfile [ system ] ] ]
  */
+#define PIC32MX
 
-#include <sys/param.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pwd.h>
 #include <a.out.h>
 #include <ctype.h>
 #include <string.h>
+#include <strings.h>
+#include <unistd.h>
+
+#include <sys/param.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <utmp.h>
-#include <OLD/psout.h>
+#include <psout.h>
 
 #define	within(x,y,z)	(((unsigned)(x) >= (y)) && ((unsigned)(x) < (z)))
 #define	round(x,y) ((long) ((((long) (x) + (long) (y) - 1L) / (long) (y)) * (long) (y)))
@@ -86,10 +91,8 @@ typedef struct wchan {
 
 	WCHAN	*wchand;
 
-extern	char	*calloc(), *malloc(), *realloc(), *ttyname();
-	char	*gettty(), *getptr(), *getchan();
-	int	pscomp(), wchancomp();
-extern	off_t	lseek();
+char	*gettty(), *getptr(), *getchan();
+int	pscomp(), wchancomp();
 
 /*
  * 256 terminals was not only wasteful but unrealistic.  For one thing
@@ -406,12 +409,11 @@ savcom(puid)
 	register struct	proc	*procp	= mproc;
 	register struct	user	*up	= &u;
 	long	txtsiz, datsiz, stksiz;
-	int	septxt;
 
 	if (procp->p_flag & SLOAD) {
-		addr = ctob((off_t) procp->p_addr);
-		daddr = ctob((off_t) procp->p_daddr);
-		saddr = ctob((off_t) procp->p_saddr);
+		addr = procp->p_addr;
+		daddr = procp->p_daddr;
+		saddr = procp->p_saddr;
 		file = mem;
 	}
 	else {
@@ -424,11 +426,10 @@ savcom(puid)
 	if (read(file, (char *) up, sizeof (u)) != sizeof (u))
 		return(0);
 
-	txtsiz = ctob(up->u_tsize);	/* set up address maps for user pcs */
-	datsiz = ctob(up->u_dsize);
-	stksiz = ctob(up->u_ssize);
-	septxt = up->u_sep;
-	datmap.b1 = (septxt ?  0 : round(txtsiz, TXTRNDSIZ));
+	txtsiz = up->u_tsize;		/* set up address maps for user pcs */
+	datsiz = up->u_dsize;
+	stksiz = up->u_ssize;
+	datmap.b1 = txtsiz;
 	datmap.e1 = datmap.b1 + datsiz;
 	datmap.f1 = daddr;
 	datmap.f2 = saddr;
@@ -446,7 +447,7 @@ savcom(puid)
 	a->o_pri = procp->p_pri;
 	a->o_nice = procp->p_nice;
 	a->o_addr0 = procp->p_addr;
-	a->o_size = ctod(procp->p_dsize + procp->p_ssize + USIZE);
+	a->o_size = (procp->p_dsize + procp->p_ssize + USIZE) / DEV_BSIZE;
 	a->o_wchan = procp->p_wchan;
 	a->o_pgrp = procp->p_pgrp;
 	strncpy(a->o_tty, tp, sizeof (a->o_tty));
@@ -896,7 +897,7 @@ register struct psout	*a;
 	int	cc, nbad, abuf [ARGLIST];
 
 	a->o_args[0] = 0;	/* in case of early return */
-	addr += ctob((off_t) mproc->p_ssize) - ARGLIST*sizeof(int);
+	addr += mproc->p_ssize - ARGLIST*sizeof(int);
 
 	/* look for sh special */
 	lseek(file, addr + ARGLIST*sizeof(int) - sizeof (char **), 0);

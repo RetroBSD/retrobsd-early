@@ -71,6 +71,9 @@
 #define USER_DATA_START		(0x7f000000 + KERNEL_DATA_SIZE)
 #define USER_DATA_END		(0x7f000000 + DATA_SIZE)
 
+#define stacktop(siz)		(USER_DATA_END)
+#define stackbas(siz)		(USER_DATA_END-(siz))
+
 /*
  * User area: a user structure, followed by the kernel
  * stack.  The number for USIZE is determined empirically.

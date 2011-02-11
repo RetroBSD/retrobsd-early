@@ -4,14 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)mv.c	5.3.1 (2.11BSD) 1996/1/5";
-#endif not lint
-
 /*
  * mv file1 file2
  */
@@ -20,6 +12,9 @@ static char sccsid[] = "@(#)mv.c	5.3.1 (2.11BSD) 1996/1/5";
 #include <sys/time.h>
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
 #include <sys/dir.h>
 #include <errno.h>
 #include <signal.h>
@@ -33,7 +28,6 @@ static char sccsid[] = "@(#)mv.c	5.3.1 (2.11BSD) 1996/1/5";
 #define	ISDEV(st) \
 	(((st).st_mode&S_IFMT) == S_IFCHR || ((st).st_mode&S_IFMT) == S_IFBLK)
 
-char	*sprintf();
 char	*dname();
 struct	stat s1, s2;
 int	iflag = 0;	/* interactive mode */
@@ -106,6 +100,21 @@ movewithshortname(src, dest)
 	}
 	sprintf(target, "%s/%s", dest, shortname);
 	return (move(src, target));
+}
+
+int
+query (char *prompt, ...)
+{
+	va_list args;
+	register int i, c;
+
+	va_start (args, prompt);
+	vfprintf(stderr, prompt, args);
+	va_end (args);
+	i = c = getchar();
+	while (c != '\n' && c != EOF)
+		c = getchar();
+	return (i == 'y');
 }
 
 move(source, target)
@@ -248,19 +257,6 @@ cleanup:
 	return (0);
 }
 
-/*VARARGS*/
-query(prompt, a1, a2)
-	char *a1;
-{
-	register int i, c;
-
-	fprintf(stderr, prompt, a1, a2);
-	i = c = getchar();
-	while (c != '\n' && c != EOF)
-		c = getchar();
-	return (i == 'y');
-}
-
 char *
 dname(name)
 	register char *name;
@@ -288,7 +284,7 @@ Perror(s)
 	char *s;
 {
 	char buf[MAXPATHLEN + 10];
-	
+
 	sprintf(buf, "mv: %s", s);
 	perror(buf);
 }

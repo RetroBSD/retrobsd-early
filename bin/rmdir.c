@@ -4,20 +4,11 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)rmdir.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 /*
  * Remove directory
  */
 #include <stdio.h>
+#include <stdlib.h>
 
 main(argc,argv)
 	int argc;

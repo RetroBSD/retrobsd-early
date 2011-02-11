@@ -27,7 +27,7 @@ TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
 DEFS		=
-ALL		= gen stdio stdlib string compat ${MACHINE}
+ALL		= gen stdio stdlib string inet compat ${MACHINE}
 
 libc.a:		${ALL}
 		rm -rf tmp

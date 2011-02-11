@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_makeaddr.c	5.1 (Berkeley) 3/11/86";
-#endif LIBC_SCCS and not lint
-
 #include <sys/types.h>
 #include <netinet/in.h>
 

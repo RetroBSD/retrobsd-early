@@ -1,16 +1,14 @@
-#ifndef lint
-static char *sccsid = "@(#)tee.c	5.4 (Berkeley) 12/14/85";
-#endif
 /*
  * tee-- pipe fitting
  */
-
+#include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 
 #define	BUFSIZ	8192
+
 int openf[20] = { 1 };
 int n = 1;
 int t = 0;
@@ -20,8 +18,12 @@ char in[BUFSIZ];
 
 char out[BUFSIZ];
 
-extern errno;
-long	lseek();
+putstr(s)
+char *s;
+{
+	while(*s)
+		write(2,s++,1);
+}
 
 main(argc,argv)
 char **argv;
@@ -56,9 +58,9 @@ char **argv;
 			if((buf.st_mode&S_IFMT)==S_IFCHR)
 				t++;
 		} else {
-			puts("tee: cannot open ");
-			puts(argv[1]);
-			puts("\n");
+			putstr("tee: cannot open ");
+			putstr(argv[1]);
+			putstr("\n");
 			n--;
 		}
 		argv++;
@@ -90,11 +92,4 @@ stash(p)
 	for(i=0; i<p; i+=d)
 		for(k=0;k<n;k++)
 			write(openf[k], out+i, d<p-i?d:p-i);
-}
-
-puts(s)
-char *s;
-{
-	while(*s)
-		write(2,s++,1);
 }

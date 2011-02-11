@@ -31,15 +31,9 @@
  * SUCH DAMAGE.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)stat_flags.c   8.1.1 (2.11BSD GTE) 12/3/94";
-#endif
-
 /*
- * Modified from the 4.4-Lite version for 2.11BSD.  Main change was to
- * use 'u_short' instead of 'u_long' for the flags word.
-*/
-
+ * Modified from the 4.4-Lite version for 2.11BSD.
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -58,8 +52,8 @@ static char sccsid[] = "@(#)stat_flags.c   8.1.1 (2.11BSD GTE) 12/3/94";
  *	are set, return the default string.
  */
 char *
-flags_to_string(flags, def)
-	register u_short flags;
+flags_to_string (flags, def)
+	register unsigned flags;
 	char *def;
 {
 	static char string[64];
@@ -83,7 +77,7 @@ flags_to_string(flags, def)
 }
 
 #define	TEST(a, b, f) {							\
-	if (!memcmp(a, b, sizeof(b))) {					\
+	if (! memcmp(a, b, sizeof(b))) {				\
 		if (clear) {						\
 			if (clrp)					\
 				*clrp |= (f);				\
@@ -99,10 +93,10 @@ flags_to_string(flags, def)
  *	success, 1 on failure.  On failure, stringp is set to point
  *	to the offending token.
  */
-u_short
-string_to_flags(stringp, setp, clrp)
+unsigned
+string_to_flags (stringp, setp, clrp)
 	char **stringp;
-	register u_short *setp, *clrp;
+	register unsigned *setp, *clrp;
 {
 	int clear;
 	char *string;

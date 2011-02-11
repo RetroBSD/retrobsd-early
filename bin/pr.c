@@ -1,12 +1,11 @@
-static char *sccsid = "@(#)pr.c	4.5 (Berkeley) 12/12/84";
-
 /*
  *   print file with headings
  *  2+head+2+page[56]+5
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -47,11 +46,19 @@ int	mode;
 char	*ttyname();
 char	*ctime();
 
+void
+onintr (sig)
+	int sig;
+{
+	if (tty)
+		chmod(tty, mode);
+	_exit(1);
+}
+
 main(argc, argv)
 char **argv;
 {
 	int nfdone;
-	int onintr();
 
 	setbuf(stdout, obuf);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -143,14 +150,6 @@ numeric(str)
 	return(1);
 }
 
-onintr()
-{
-
-	if (tty)
-		chmod(tty, mode);
-	_exit(1);
-}
-
 fixtty()
 {
 	struct stat sbuf;
@@ -168,7 +167,6 @@ print(fp, argp)
 char *fp;
 char **argp;
 {
-	extern char *sprintf();
 	struct stat sbuf;
 	register sncol;
 	register char *sheader;

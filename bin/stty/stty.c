@@ -4,23 +4,15 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)stty.c	5.4.3 (2.11BSD GTE) 1997/5/7";
-#endif
-
 /*
  * set teletype modes
  */
-
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct
 {
@@ -30,9 +22,6 @@ struct
 	"0",	B0,
 	"50",	B50,
 	"75",	B75,
-	"110",	B110,
-	"134",	B134,
-	"134.5",B134,
 	"150",	B150,
 	"200",	B200,
 	"300",	B300,
@@ -42,10 +31,10 @@ struct
 	"2400",	B2400,
 	"4800",	B4800,
 	"9600",	B9600,
-	"exta",	EXTA,
-	"19200", EXTA,
-	"extb",	EXTB,
-	"38400", EXTB,
+	"19200", B19200,
+	"38400", B38400,
+	"57600", B57600,
+	"115200", B115200,
 	0,
 };
 
@@ -116,15 +105,15 @@ struct MODES lmodes[] = {
 	};
 
 struct	MODES mmodes[] = {
-	"dcd",		TIOCM_CD, 0, 
+	"dcd",		TIOCM_CD, 0,
 	"-dcd",		0, TIOCM_CD,
-	"dsr",		TIOCM_DSR, 0, 
+	"dsr",		TIOCM_DSR, 0,
 	"-dsr",		0, TIOCM_DSR,
-	"dtr",		TIOCM_DTR, 0, 
+	"dtr",		TIOCM_DTR, 0,
 	"-dtr",		0, TIOCM_DTR,
-	"cts",		TIOCM_CTS, 0, 
+	"cts",		TIOCM_CTS, 0,
 	"-cts",		0, TIOCM_CTS,
-	"rts",		TIOCM_RTS, 0, 
+	"rts",		TIOCM_RTS, 0,
 	"-rts",		0, TIOCM_RTS,
 	0,
 };
@@ -391,9 +380,12 @@ prmodes(all)
 	int any, i;
 	register struct special *sp;
 
-	if(ldisc==NETLDISC)
+#ifdef NETLDISC
+	if (ldisc==NETLDISC)
 		fprintf(stderr, "net discipline, ");
-	else if (ldisc==NTTYDISC)
+	else
+#endif
+	if (ldisc==NTTYDISC)
 		fprintf(stderr, "new tty, ");
 	else if (ldisc == 0)
 		fprintf(stderr, "old tty, ");

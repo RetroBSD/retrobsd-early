@@ -1,5 +1,3 @@
-/*	$NetBSD: ffs.S,v 1.1 2005/12/20 19:28:49 christos Exp $	*/
-
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,27 +30,17 @@
  * SUCH DAMAGE.
  */
 
-#include <mips/asm.h>
-
-#if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("from: @(#)ffs.s	8.1 (Berkeley) 6/4/93")
-	ASMSTR("$NetBSD: ffs.S,v 1.1 2005/12/20 19:28:49 christos Exp $")
-#endif /* LIBC_SCCS and not lint */
-
-#ifdef __ABICALLS__
-	.abicalls
-#endif
-
 /* bit = ffs(value) */
 
-LEAF(ffs)
-	move	v0, zero
-	beq	a0, zero, done
+	.type	ffs, @function
+ffs:	.globl  ffs
+
+	move	$v0, $zero
+	beq	$a0, $zero, done
 1:
-	and	v1, a0, 1		# bit set?
-	addu	v0, v0, 1
-	srl	a0, a0, 1
-	beq	v1, zero, 1b		# no, continue
+	and	$v1, $a0, 1		# bit set?
+	addu	$v0, $v0, 1
+	srl	$a0, $a0, 1
+	beq	$v1, $zero, 1b		# no, continue
 done:
-	j	ra
-END(ffs)
+	j	$ra

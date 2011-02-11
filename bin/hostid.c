@@ -3,21 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-static char sccsid[] = "@(#)hostid.c	1.3 (2.11BSD GTE) 96/7/10";
-#endif
-
 #include <sys/types.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
-#include <netdb.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
+#if HAVE_NET
+#include <netdb.h>
 #include <arpa/inet.h>
+#endif
 
 main(argc, argv)
 	int argc;
@@ -34,10 +30,13 @@ main(argc, argv)
 	}
 
 	id = argv[1];
+#if HAVE_NET
 	if (hp = gethostbyname(id)) {
 		bcopy(hp->h_addr, &addr, sizeof(addr));
 		hostid = addr;
-	} else if (index(id, '.')) {
+	} else
+#endif
+	if (index(id, '.')) {
 		if ((hostid = inet_addr(id)) == -1L)
 			usage();
 	} else {
@@ -47,13 +46,13 @@ main(argc, argv)
 			usage();
 	}
 
-	if	(sethostid(hostid) < 0)
+	if (sethostid(hostid) < 0)
 		err(1, "sethostid");
 	exit(0);
 }
 
 usage()
-	{
-	errx(1,"usage: [hexnum or internet name/address]");
+{
+	errx (1,"usage: [hexnum or internet name/address]");
 /* NOTREACHED */
-	}
+}

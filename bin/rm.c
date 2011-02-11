@@ -1,10 +1,9 @@
-static char *sccsid = "@(#)rm.c	4.18 (Berkeley) 1/6/86";
-
 /*
  * rm - for ReMoving files, directories & trees.
  */
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
@@ -15,8 +14,6 @@ int	iflg;		/* -i interrogate user on each file */
 int	rflg;		/* -r recurse */
 
 int	errcode;	/* true if errors occured */
-
-char	*strcpy(), *malloc(), *realloc();
 
 main(argc, argv)
 	char *argv[];

@@ -1,11 +1,8 @@
-#ifndef lint
-static	char *sccsid = "@(#)time.c	4.5 (Berkeley) 7/1/83";
-#endif
-
 /*
  * time
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/time.h>

@@ -1,5 +1,3 @@
-/*	$NetBSD: bzero.S,v 1.10 2009/12/14 02:53:52 matt Exp $	*/
-
 /*-
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
@@ -32,70 +30,37 @@
  * SUCH DAMAGE.
  */
 
-#include <machine/asm.h>
-__FBSDID("$FreeBSD$");
-
-#if defined(LIBC_SCCS) && !defined(lint)
-#if 0
-	ASMSTR("from: @(#)bzero.s	8.1 (Berkeley) 6/4/93")
-#else
-	ASMSTR("$NetBSD: bzero.S,v 1.10 2009/12/14 02:53:52 matt Exp $")
-#endif
-#endif /* LIBC_SCCS and not lint */
-
-#define _LOCORE		/* XXX not really, just assembly-code source */
-#include <machine/endian.h>
-
-#ifdef __ABICALLS__
-	.abicalls
-#endif
-
 /* bzero(s1, n) */
 
-LEAF(bzero)
+#define SZREG 4
+
+	.type	bzero, @function
+bzero:	.globl  bzero
 	.set	noreorder
-	blt		a1, 3*SZREG, smallclr # small amount to clear?
-	PTR_SUBU	a3, zero, a0	# compute # bytes to word align address
-	and		a3, a3, SZREG-1
-	beq		a3, zero, 1f	# skip if word aligned
-#if SZREG == 4
-	PTR_SUBU	a1, a1, a3	# subtract from remaining count
-	SWHI		zero, 0(a0)	# clear 1, 2, or 3 bytes to align
-	PTR_ADDU	a0, a0, a3
-#endif
-#if SZREG == 8
-	PTR_SUBU	a1, a1, a3	# subtract from remaining count
-	PTR_ADDU	a0, a0, a3	# align dst to next word
-	sll		a3, a3, 3	# bits to bytes
-	li		a2, -1		# make a mask
-#if _BYTE_ORDER == _BIG_ENDIAN
-	REG_SRLV	a2, a2, a3	# we want to keep the MSB bytes
-#endif
-#if _BYTE_ORDER == _LITTLE_ENDIAN
-	REG_SLLV	a2, a2, a3	# we want to keep the LSB bytes
-#endif
-	nor		a2, zero, a2	# complement the mask
-	REG_L		v0, -SZREG(a0)	# load the word to partially clear
-	and		v0, v0, a2	# clear the bytes
-	REG_S		v0, -SZREG(a0)	# store it back
-#endif
+
+	blt	$a1, 3*SZREG, smallclr	# small amount to clear?
+	subu	$a3, $zero, $a0		# compute # bytes to word align address
+	and	$a3, $a3, SZREG-1
+	beq	$a3, $zero, 1f		# skip if word aligned
+	subu	$a1, $a1, $a3		# subtract from remaining count
+	SWHI	$zero, 0($a0)		# clear 1, 2, or 3 bytes to align
+	addu	$a0, $a0, $a3
 1:
-	and		v0, a1, SZREG-1	# compute number of words left
-	PTR_SUBU	a3, a1, v0
-	move		a1, v0
-	PTR_ADDU	a3, a3, a0	# compute ending address
+	and	$v0, $a1, SZREG-1	# compute number of words left
+	subu	$a3, $a1, $v0
+	move	$a1, $v0
+	addu	$a3, $a3, $a0		# compute ending address
 2:
-	PTR_ADDU	a0, a0, SZREG	# clear words
-	bne		a0, a3, 2b	#  unrolling loop doesnt help
-	REG_S		zero, -SZREG(a0) # since we are limited by memory speed
+	addu	$a0, $a0, SZREG		# clear words
+	bne	$a0, $a3, 2b		# unrolling loop doesnt help
+	sw	$zero, -SZREG($a0)	# since we are limited by memory speed
 smallclr:
-	ble		a1, zero, 2f
-	PTR_ADDU	a3, a1, a0	# compute ending address
+	ble	$a1, $zero, 2f
+	addu	$a3, $a1, $a0		# compute ending address
 1:
-	PTR_ADDU	a0, a0, 1	# clear bytes
-	bne		a0, a3, 1b
-	sb		zero, -1(a0)
+	addu	$a0, $a0, 1		# clear bytes
+	bne	$a0, $a3, 1b
+	sb	$zero, -1($a0)
 2:
-	j		ra
+	j	$ra
 	nop
-END(bzero)

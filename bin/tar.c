@@ -4,20 +4,13 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)tar.c	5.7 (Berkeley) 4/26/86";
-#endif not lint
-
 /*
  * Tape Archival Program
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
@@ -87,12 +80,6 @@ int	first;
 int	prtlinkerr;
 int	freemem = 1;
 int	nblock = 0;
-int	onintr();
-int	onquit();
-int	onhup();
-#ifdef notdef
-int	onterm();
-#endif
 
 daddr_t	low;
 daddr_t	high;
@@ -103,17 +90,40 @@ FILE	*tfile;
 char	tname[] = "/tmp/tarXXXXXX";
 char	*usefile;
 char	magtape[] = "/dev/rmt8";
-char	*malloc();
-long	time();
-off_t	lseek();
-char	*mktemp();
-char	*sprintf();
-char	*strcat();
-char	*strcpy();
-char	*rindex();
-char	*getcwd();
-char	*getwd();
-char	*getmem();
+
+void
+onintr (sig)
+	int sig;
+{
+	(void) signal(SIGINT, SIG_IGN);
+	term++;
+}
+
+void
+onquit (sig)
+	int sig;
+{
+	(void) signal(SIGQUIT, SIG_IGN);
+	term++;
+}
+
+void
+onhup (sig)
+	int sig;
+{
+	(void) signal(SIGHUP, SIG_IGN);
+	term++;
+}
+
+#ifdef notdef
+void
+onterm (sig)
+	int sig;
+{
+	(void) signal(SIGTERM, SIG_IGN);
+	term++;
+}
+#endif
 
 main(argc, argv)
 int	argc;
@@ -128,7 +138,7 @@ char	*argv[];
 	usefile =  magtape;
 	argv[argc] = 0;
 	argv++;
-	for (cp = *argv++; *cp; cp++) 
+	for (cp = *argv++; *cp; cp++)
 		switch(*cp) {
 
 		case 'f':
@@ -153,7 +163,7 @@ char	*argv[];
 		case 'p':
 			pflag++;
 			break;
-		
+
 		case 'u':
 			mktemp(tname);
 			if ((tfile = fopen(tname, "w")) == NULL) {
@@ -319,6 +329,17 @@ openmt(tape, writing)
 	return(mt);
 }
 
+char *
+getcwd(buf)
+	char *buf;
+{
+	if (getwd(buf) == NULL) {
+		fprintf(stderr, "tar: %s\n", buf);
+		exit(1);
+	}
+	return (buf);
+}
+
 dorep(argv)
 	char *argv[];
 {
@@ -448,6 +469,19 @@ passtape()
 
 	while (blocks-- > 0)
 		(void) readtbuf(&bufp, TBLOCK);
+}
+
+char *
+getmem(size)
+{
+	char *p = malloc((unsigned) size);
+
+	if (p == NULL && freemem) {
+		fprintf(stderr,
+		    "tar: out of memory, link and directory modtime info lost\n");
+		freemem = 0;
+	}
+	return (p);
 }
 
 putfile(longname, shortname, parent)
@@ -750,7 +784,7 @@ doxtract(argv)
 			register int nread;
 			char	*bufp;
 			register int nwant;
-			
+
 			nwant = NBLOCK*TBLOCK;
 			if (nwant > (blocks*TBLOCK))
 				nwant = (blocks*TBLOCK);
@@ -910,32 +944,6 @@ checkdir(name)
 	return (cp[-1]=='/');
 }
 
-onintr()
-{
-	(void) signal(SIGINT, SIG_IGN);
-	term++;
-}
-
-onquit()
-{
-	(void) signal(SIGQUIT, SIG_IGN);
-	term++;
-}
-
-onhup()
-{
-	(void) signal(SIGHUP, SIG_IGN);
-	term++;
-}
-
-#ifdef notdef
-onterm()
-{
-	(void) signal(SIGTERM, SIG_IGN);
-	term++;
-}
-#endif
-
 tomodes(sp)
 register struct stat *sp;
 {
@@ -996,8 +1004,8 @@ checkf(name, mode, howmuch)
 	int l;
 
 	if ((mode & S_IFMT) == S_IFDIR){
-		if ((strcmp(name, "SCCS")==0) || (strcmp(name, "RCS")==0)) 
-			return(0); 
+		if ((strcmp(name, "SCCS")==0) || (strcmp(name, "RCS")==0))
+			return(0);
 		return(1);
 	}
 	if ((l = strlen(name)) < 3)
@@ -1037,7 +1045,7 @@ done(n)
 	exit(n);
 }
 
-/* 
+/*
  * Do we want the next entry on the tape, i.e. is it selected?  If
  * not, skip over the entire entry.  Return -1 if reached end of tape.
  */
@@ -1223,7 +1231,7 @@ writetbuf(buffer, n)
 		n -= nblock;
 		buffer += (nblock * TBLOCK);
 	}
-		
+
 	while (n-- > 0) {
 		bcopy(buffer, (char *)&tbuf[recno++], TBLOCK);
 		buffer += TBLOCK;
@@ -1244,7 +1252,7 @@ backtape()
 	static int mtdev = 1;
 	static struct mtop mtop = {MTBSR, 1};
 	struct mtget mtget;
-	
+
 	if (mtdev == 1)
 		mtdev = ioctl(mt, MTIOCGET, (char *)&mtget);
 	if (mtdev == 0) {
@@ -1288,7 +1296,7 @@ bread(fd, buf, size)
 	static int lastread = 0;
 
 	if (!Bflag)
-		return (read(fd, buf, size)); 
+		return (read(fd, buf, size));
 
 	for (count = 0; count < size; count += lastread) {
 		lastread = read(fd, buf, size - count);
@@ -1302,20 +1310,9 @@ bread(fd, buf, size)
 	return (count);
 }
 
-char *
-getcwd(buf)
-	char *buf;
-{
-	if (getwd(buf) == NULL) {
-		fprintf(stderr, "tar: %s\n", buf);
-		exit(1);
-	}
-	return (buf);
-}
-
 getbuf()
 {
-	
+
 	if (nblock == 0) {
 		fstat(mt, &stbuf);
 		if ((stbuf.st_mode & S_IFMT) == S_IFCHR)
@@ -1345,7 +1342,7 @@ getbuf()
  * '/' in the path.  A negative mtime means no mtime.  The mtime's are
  * offset by one (first index 1, not 0) because calling this with a null
  * directory causes mtime[0] to be set.
- * 
+ *
  * This stack algorithm is not guaranteed to work for tapes created
  * with the 'r' option, but the vast majority of tapes with
  * directories are not.  This avoids saving every directory record on
@@ -1408,17 +1405,4 @@ setimes(path, mt)
 		fprintf(stderr, "tar: can't set time on %s: ", path);
 		perror("");
 	}
-}
-
-char *
-getmem(size)
-{
-	char *p = malloc((unsigned) size);
-
-	if (p == NULL && freemem) {
-		fprintf(stderr,
-		    "tar: out of memory, link and directory modtime info lost\n");
-		freemem = 0;
-	}
-	return (p);
 }

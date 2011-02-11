@@ -3,22 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)who.c	5.1.3 (2.11BSD GTE) 1997/7/29";
-#endif
-
 #include <stdio.h>
 #include <utmp.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <sys/param.h>	/* for MAXHOSTNAMELEN */
 #include <string.h>
+#include <strings.h>
 #include <time.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #define NMAX sizeof(utmp.ut_name)

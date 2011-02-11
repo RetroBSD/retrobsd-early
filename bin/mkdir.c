@@ -30,19 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)mkdir.c	5.7 (Berkeley) 5/31/90";
-#endif /* not lint */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 extern int errno;

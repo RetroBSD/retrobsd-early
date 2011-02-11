@@ -1,4 +1,3 @@
-static char *sccsid = "@(#)od.c	5.12 (Berkeley) 5/14/84";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -32,8 +31,9 @@ static char *sccsid = "@(#)od.c	5.12 (Berkeley) 5/14/84";
  * {Offset} may be HEX (0xnnn), OCTAL (0nn), or decimal (nnn.).
  * The default is octal. The same radix will be used to display the address.
  */
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define DBUF_SIZE	BUFSIZ
 #define BIG_DBUF	32
@@ -697,10 +697,10 @@ static char	_icv_buf[MAXINTLENGTH+1];
 static long	_mask = 0x7fffffff;
 
 char *
-icvt (value, radix, signed, ndigits)
+icvt (value, radix, signd, ndigits)
 long	value;
 int	radix;
-int	signed;
+int	signd;
 int	ndigits;
 {
 	register long	val = value;
@@ -720,7 +720,7 @@ int	ndigits;
 		goto done; /*return(b);*/
 	}
 
-	if (signed && (sign = (val < 0)))	/* signed conversion */
+	if (signd && (sign = (val < 0)))	/* signed conversion */
 	{
 		/*
 		 * It is necessary to do the first divide
@@ -776,7 +776,7 @@ done:
 		*--b = '-';
 
 	tmp1 = ndigits - (&_icv_buf[MAXINTLENGTH] - b);
-	tmp2 = signed? ' ':'0';
+	tmp2 = signd ? ' ' : '0';
 	while (tmp1 > 0)
 	{
 		*--b = tmp2;

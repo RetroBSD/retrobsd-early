@@ -1,7 +1,3 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] =	"@(#)rmail.c	4.8.1 (2.11BSD) 1996/10/21";
-#endif
-
 /*
 **  RMAIL -- UUCP mail server.
 **
@@ -10,9 +6,10 @@ static char sccsid[] =	"@(#)rmail.c	4.8.1 (2.11BSD) 1996/10/21";
 **	It calls sendmail giving it a -f option built from these
 **	lines.
 */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sysexits.h>
 #include <paths.h>
 
@@ -36,15 +33,14 @@ main(argc, argv)
 	register char *uf = ufrom;	/* ptr into ufrom */
 	int i;
 
-# ifdef DEBUG
+#ifdef DEBUG
 	if (argc > 1 && strcmp(argv[1], "-T") == 0)
 	{
 		Debug = TRUE;
 		argc--;
 		argv++;
 	}
-# endif DEBUG
-
+#endif
 	if (argc < 2)
 	{
 		fprintf(stderr, "Usage: rmail user ...\n");

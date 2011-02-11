@@ -4,14 +4,11 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_ntoa.c	5.2 (Berkeley) 3/9/86";
-#endif LIBC_SCCS and not lint
-
 /*
  * Convert network-format internet address
  * to base 256 d.d.d.d representation.
  */
+#include <stdio.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 

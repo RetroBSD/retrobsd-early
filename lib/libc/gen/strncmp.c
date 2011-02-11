@@ -1,12 +1,13 @@
 /*
  * Compare strings (at most n bytes):  s1>s2: >0  s1==s2: 0  s1<s2: <0
  */
+#include <string.h>
 
-strncmp(s1, s2, n)
-register char *s1, *s2;
-register n;
+int
+strncmp (s1, s2, n)
+	register const char *s1, *s2;
+	register size_t n;
 {
-
 	while (--n >= 0 && *s1 == *s2++)
 		if (*s1++ == '\0')
 			return(0);

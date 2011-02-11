@@ -1,15 +1,13 @@
-#ifndef lint
-static char sccsid[] = "@(#)ed.c	4.5.1.1 (Berkeley) 8/12/86";
-#endif
-
 /*
  * Editor
  */
-
+#include <stdlib.h>
 #include <signal.h>
 #include <sgtty.h>
 #undef CEOF
 #include <setjmp.h>
+#include <unistd.h>
+
 #define	NULL	0
 #define	FNSIZE	64
 #define	LBSIZE	512
@@ -55,9 +53,8 @@ char	*linebp;
 int	ninbuf;
 int	io;
 int	pflag;
-long	lseek();
-int	(*oldhup)();
-int	(*oldquit)();
+sig_t	oldhup;
+sig_t	oldquit;
 int	vflag	= 1;
 
 
@@ -92,23 +89,58 @@ int	*address();
 char	*getline();
 char	*getblock();
 char	*place();
-char	*mktemp();
-char	*malloc();
-char	*realloc();
 jmp_buf	savej;
+
+void
+quit (sig)
+	int sig;
+{
+	if (vflag && fchange && dol!=zero) {
+		fchange = 0;
+		error(Q);
+	}
+	unlink(tfname);
+	exit(0);
+}
+
+void
+onintr (sig)
+	int sig;
+{
+	signal(SIGINT, onintr);
+	putchr('\n');
+	lastc = '\n';
+	error(Q);
+}
+
+void
+onhup (sig)
+	int sig;
+{
+	signal(SIGINT, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
+	if (dol > zero) {
+		addr1 = zero+1;
+		addr2 = dol;
+		io = creat("ed.hup", 0666);
+		if (io > 0)
+			putfile();
+	}
+	fchange = 0;
+	quit();
+}
 
 main(argc, argv)
 char **argv;
 {
 	register char *p1, *p2;
-	extern int onintr(), quit(), onhup();
-	int (*oldintr)();
+	sig_t oldintr;
 
-	oldquit = signal(SIGQUIT, SIG_IGN);
-	oldhup = signal(SIGHUP, SIG_IGN);
-	oldintr = signal(SIGINT, SIG_IGN);
-	if ((int)signal(SIGTERM, SIG_IGN) == 0)
-		signal(SIGTERM, quit);
+	oldquit = signal (SIGQUIT, SIG_IGN);
+	oldhup = signal (SIGHUP, SIG_IGN);
+	oldintr = signal (SIGINT, SIG_IGN);
+	if ((int)signal (SIGTERM, SIG_IGN) == 0)
+		signal (SIGTERM, quit);
 	argv++;
 	while (argc > 1 && **argv=='-') {
 		switch((*argv)[1]) {
@@ -207,7 +239,7 @@ commands()
 	case 'f':
 		setnoaddr();
 		filename(c);
-		puts(savedfile);
+		putstr (savedfile);
 		continue;
 
 	case 'g':
@@ -263,7 +295,7 @@ commands()
 		nonzero();
 		a1 = addr1;
 		do {
-			puts(getline(*a1++));
+			putstr (getline(*a1++));
 		} while (a1 <= addr2);
 		dot = addr2;
 		listf = 0;
@@ -387,7 +419,7 @@ address()
 		case ' ':
 		case '\t':
 			continue;
-	
+
 		case '+':
 			minus++;
 			if (a1==0)
@@ -400,7 +432,7 @@ address()
 			if (a1==0)
 				a1 = dot;
 			continue;
-	
+
 		case '?':
 		case '/':
 			compile(c);
@@ -421,11 +453,11 @@ address()
 					error(Q);
 			}
 			break;
-	
+
 		case '$':
 			a1 = dol;
 			break;
-	
+
 		case '.':
 			a1 = dot;
 			break;
@@ -437,7 +469,7 @@ address()
 				if (names[c-'a'] == (*a1 & ~01))
 					break;
 			break;
-	
+
 		default:
 			peekc = c;
 			if (a1==0)
@@ -546,29 +578,6 @@ exfile()
 	}
 }
 
-onintr()
-{
-	signal(SIGINT, onintr);
-	putchr('\n');
-	lastc = '\n';
-	error(Q);
-}
-
-onhup()
-{
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	if (dol > zero) {
-		addr1 = zero+1;
-		addr2 = dol;
-		io = creat("ed.hup", 0666);
-		if (io > 0)
-			putfile();
-	}
-	fchange = 0;
-	quit();
-}
-
 error(s)
 char *s;
 {
@@ -577,7 +586,7 @@ char *s;
 	wrapp = 0;
 	listf = 0;
 	putchr('?');
-	puts(s);
+	putstr (s);
 	count = 0;
 	lseek(0, (long)0, 2);
 	pflag = 0;
@@ -689,7 +698,7 @@ putfile()
 			if (--nib < 0) {
 				n = fp-genbuf;
 				if(write(io, genbuf, n) != n) {
-					puts(WRERR);
+					putstr (WRERR);
 					error(Q);
 				}
 				nib = 511;
@@ -704,7 +713,7 @@ putfile()
 	} while (a1 <= addr2);
 	n = fp-genbuf;
 	if(write(io, genbuf, n) != n) {
-		puts(WRERR);
+		putstr (WRERR);
 		error(Q);
 	}
 }
@@ -744,7 +753,8 @@ int (*f)();
 
 callunix()
 {
-	register (*savint)(), pid, rpid;
+	register pid, rpid;
+	sig_t savint;
 	int retcode;
 
 	setnoaddr();
@@ -758,17 +768,7 @@ callunix()
 	while ((rpid = wait(&retcode)) != pid && rpid != -1)
 		;
 	signal(SIGINT, savint);
-	puts("!");
-}
-
-quit()
-{
-	if (vflag && fchange && dol!=zero) {
-		fchange = 0;
-		error(Q);
-	}
-	unlink(tfname);
-	exit(0);
+	putstr ("!");
 }
 
 delete()
@@ -872,7 +872,7 @@ getblock(atl, iof)
 	register bno, off;
 	register char *p1, *p2;
 	register int n;
-	
+
 	bno = (atl>>8)&0377;
 	off = (atl<<1)&0774;
 	if (bno >= 255) {
@@ -1527,7 +1527,7 @@ putd()
 	putchr(r + '0');
 }
 
-puts(sp)
+putstr (sp)
 register char *sp;
 {
 	col = 0;
@@ -1582,4 +1582,3 @@ out:
 	}
 	linp = lp;
 }
-

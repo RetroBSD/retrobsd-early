@@ -35,15 +35,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1980, 1990, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)df.c	8.7.2 (2.11BSD) 1996/1/18";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
@@ -54,6 +45,7 @@ static char sccsid[] = "@(#)df.c	8.7.2 (2.11BSD) 1996/1/18";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 int	 bread();
 char	*getmntpt();
@@ -203,7 +195,7 @@ prtstat(sfsp, maxwidth)
 		iused = inodes - sfsp->f_ffree;
 		(void)printf(" %7u %7u %5.0f%% ", iused, sfsp->f_ffree,
 		   inodes == 0 ? 100.0 : (double)iused / (double)inodes * 100.0);
-	} else 
+	} else
 		(void)printf("  ");
 	(void)printf("  %s\n", sfsp->f_mntonname);
 }
@@ -240,7 +232,7 @@ ufs_df(file, maxwidth)
 		warn("%s", file);
 		return;
 	}
-	if (bread((off_t)SBLOCK * DEV_BSIZE, &sblock, SBSIZE) == 0) {
+	if (bread((off_t)SUPERB * DEV_BSIZE, &sblock, SBSIZE) == 0) {
 		(void)close(rfd);
 		return;
 	}
