@@ -3,29 +3,24 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)main.c	5.4.1 (2.11BSD) 1996/2/3";
-#endif not lint
-
+#ifdef CROSS
+#include </usr/include/stdio.h>
+#else
+#include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fstab.h>
-#include <strings.h>
 #include "fsck.h"
-#include <stdio.h>
 
 char	*rawname(), *unrawname(), *blockcheck();
-int	catch(), catchquit(), voidquit();
 int	returntosingle;
-int	(*signal())();
 
 main(argc, argv)
 	int	argc;
@@ -169,7 +164,7 @@ checkfilesys(filesys)
 	daddr_t n_ffree, n_bfree;
 	register ino_t *zp;
 
-	devname = filesys;
+	devnam = filesys;
 	if (setup(filesys) == 0) {
 		if (preen)
 			pfatal("CAN'T CHECK FILE SYSTEM.");
@@ -246,7 +241,7 @@ checkfilesys(filesys)
 		if (zp < zlnp) {
 			printf("The following zero link count inodes remain:");
 			for (zp = zlnlist; zp < zlnp; zp++)
-				if (*zp) printf(" %ld,", *zp);
+				if (*zp) printf(" %lu,", (unsigned long) *zp);
 			printf("\n");
 		}
 	}

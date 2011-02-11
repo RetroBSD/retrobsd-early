@@ -1,18 +1,8 @@
-#define	COMPAT
-
 /*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)newfs.c	6.3 (2.11BSD) 1996/11/16";
-#endif
 
 /*
  * newfs: friendly front end to mkfs
@@ -23,6 +13,7 @@ static char sccsid[] = "@(#)newfs.c	6.3 (2.11BSD) 1996/11/16";
  *  a system without disklabels implemented in the kernel you must specify
  *  "-T diskname" (where 'diskname' is an entry in /etc/disktab).
  */
+#define	COMPAT
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -47,6 +38,41 @@ static char sccsid[] = "@(#)newfs.c	6.3 (2.11BSD) 1996/11/16";
 	struct	disklabel *getdisklabel();
 
 extern	char	*__progname;
+
+static
+usage()
+{
+	fprintf(stderr,"usage: %s [-N] [-m freelist-gap] [-s filesystem size] ",
+		__progname);
+	fprintf(stderr, "[-i bytes/inode] [-n freelist-modulus] ");
+#ifdef	COMPAT
+	fputs("[-T disk-type] ", stderr);
+#endif
+	fputs("special-device\n", stderr);
+	exit(1);
+}
+
+/*VARARGS*/
+void
+fatal(fmt, va_alist)
+	char *fmt;
+	va_dcl
+{
+	va_list ap;
+
+	va_start(ap);
+
+	if (fcntl(fileno(stderr), F_GETFL) < 0) {
+		openlog(__progname, LOG_CONS, LOG_DAEMON);
+		vsyslog(LOG_ERR, fmt, ap);
+		closelog();
+	} else {
+		vwarnx(fmt, ap);
+	}
+	va_end(ap);
+	exit(1);
+	/*NOTREACHED*/
+}
 
 main(argc, argv)
 	int	argc;
@@ -224,40 +250,4 @@ getdisklabel(s, fd)
 		fatal(lmsg, s);
 	}
 	return (&lab);
-}
-
-static
-usage()
-{
-
-	fprintf(stderr,"usage: %s [-N] [-m freelist-gap] [-s filesystem size] ",
-		__progname);
-	fprintf(stderr, "[-i bytes/inode] [-n freelist-modulus] ");
-#ifdef	COMPAT
-	fputs("[-T disk-type] ", stderr);
-#endif
-	fputs("special-device\n", stderr);
-	exit(1);
-}
-
-/*VARARGS*/
-void
-fatal(fmt, va_alist)
-	char *fmt;
-	va_dcl
-{
-	va_list ap;
-
-	va_start(ap);
-
-	if (fcntl(fileno(stderr), F_GETFL) < 0) {
-		openlog(__progname, LOG_CONS, LOG_DAEMON);
-		vsyslog(LOG_ERR, fmt, ap);
-		closelog();
-	} else {
-		vwarnx(fmt, ap);
-	}
-	va_end(ap);
-	exit(1);
-	/*NOTREACHED*/
 }

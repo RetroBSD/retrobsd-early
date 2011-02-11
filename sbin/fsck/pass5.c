@@ -3,11 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)pass5.c	5.2 (Berkeley) 3/5/86";
-#endif not lint
-
+#include <stdio.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -48,13 +45,13 @@ struct	inodesc idesc;
 		if(dupblk)
 			pwarn("%d DUP BLKS IN FREE LIST\n",dupblk);
 		if (debug)
-			printf("n_files %ld n_blks %ld n_free %ld fmax %ld fmin %ld ninode: %u\n",
-				n_files, n_blks, n_free, fmax, fmin,sblock.fs_ninode);
+			printf("n_files %ld n_blks %ld n_free %ld fsmax %ld fsmin %ld ninode: %u\n",
+				n_files, n_blks, n_free, fsmax, fsmin, sblock.fs_ninode);
 		if(fixfree == 0) {
-			if ((n_blks+n_free) != (fmax-fmin) && 
+			if ((n_blks+n_free) != (fsmax-fsmin) &&
 					dofix(&idesc, "BLK(S) MISSING"))
 				fixfree = 1;
-			else if (n_free != sblock.fs_tfree && 
+			else if (n_free != sblock.fs_tfree &&
 			   dofix(&idesc,"FREE BLK COUNT WRONG IN SUPERBLOCK")) {
 					sblock.fs_tfree = n_free;
 					sbdirty();
@@ -161,7 +158,7 @@ makefree()
 		flg[i]++;
 		i = (i + step) % cyl;
 	}
-	baseblk = (daddr_t)roundup(fmax,cyl);
+	baseblk = (daddr_t) roundup (fsmax, cyl);
 	bzero((char *)&freeblk,DEV_BSIZE);
 	freeblk.df_nfree++;
 	for( ; baseblk > 0; baseblk -= cyl)

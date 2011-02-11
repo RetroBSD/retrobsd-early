@@ -3,11 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)pass4.c	5.3 (Berkeley) 3/5/86";
-#endif not lint
-
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>

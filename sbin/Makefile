@@ -1,27 +1,23 @@
 #
 # Public domain - 1996/10/26 - sms
 #
-#	@(#)Makefile	1.3 (2.11BSD) 1999/7/21
-#
-DESTDIR=
-CFLAGS=	-O
-SEPFLAG= -i
+TOPSRC		= $(shell cd ..; pwd)
+include $(TOPSRC)/target.mk
 
-SUBDIR= XNSrouted badsect clri dcheck dmesg dump dumpfs fsck gt307 icheck \
-	ifconfig init mkfs mknod mkpasswd mount ncheck newfs \
-	quotacheck reboot restor route routed savecore \
-	shutdown slattach swapon testnet tunefs umount
+SUBDIR		= init mkfs newfs fsck #mknod mkpasswd mount \
+		  reboot shutdown swapon tunefs umount
 
-all:	${SUBDIR}
+all:		${SUBDIR}
 
-${SUBDIR}: FRC
-	cd $@; make ${MFLAGS} SEPFLAG=${SEPFLAG} all
+${SUBDIR}:	FRC
+		cd $@; make ${MFLAGS} all
 
 FRC:
 
-install: FRC
-	-for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+install:	FRC
+		-for i in ${SUBDIR}; do \
+			(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 
 clean:
-	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+		for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+		rm -f *~

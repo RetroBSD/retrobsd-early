@@ -42,10 +42,28 @@
 #include <varargs.h>
 #endif
 
-static	void	putprog(), putcolsp();
+/*
+ * Helper routines.  Repeated constructs of the form "%s: " used up too
+ * much D space.  On a pdp-11 code can be overlaid but Data space is worth
+ * conserving.  An extra function call or two handling an error condition is
+ * a reasonable trade for 20 or 30 bytes of D space.
+ */
+static void
+putprog()
+{
+	fputs (__progname, stderr);
+	putcolsp();
+}
+
+static void
+putcolsp()
+{
+	fputc (':', stderr);
+	fputc (' ', stderr);
+}
 
 void
-verr(eval, fmt, ap)
+verr (eval, fmt, ap)
 	int eval;
 	char *fmt;
 	va_list ap;
@@ -65,9 +83,9 @@ verr(eval, fmt, ap)
 
 void
 #ifdef __STDC__
-err(int eval, const char *fmt, ...)
+err (int eval, const char *fmt, ...)
 #else
-err(eval, fmt, va_alist)
+err (eval, fmt, va_alist)
 	int eval;
 	char *fmt;
 	va_dcl
@@ -84,7 +102,7 @@ err(eval, fmt, va_alist)
 }
 
 void
-verrx(eval, fmt, ap)
+verrx (eval, fmt, ap)
 	int eval;
 	char *fmt;
 	va_list ap;
@@ -98,9 +116,9 @@ verrx(eval, fmt, ap)
 
 void
 #if __STDC__
-errx(int eval, const char *fmt, ...)
+errx (int eval, const char *fmt, ...)
 #else
-errx(eval, fmt, va_alist)
+errx (eval, fmt, va_alist)
 	int eval;
 	char *fmt;
 	va_dcl
@@ -117,7 +135,7 @@ errx(eval, fmt, va_alist)
 }
 
 void
-vwarn(fmt, ap)
+vwarn (fmt, ap)
 	char *fmt;
 	va_list ap;
 {
@@ -135,7 +153,7 @@ vwarn(fmt, ap)
 
 void
 #if __STDC__
-warn(const char *fmt, ...)
+warn (const char *fmt, ...)
 #else
 warn(fmt, va_alist)
 	char *fmt;
@@ -153,7 +171,7 @@ warn(fmt, va_alist)
 }
 
 void
-vwarnx(fmt, ap)
+vwarnx (fmt, ap)
 	char *fmt;
 	va_list ap;
 {
@@ -165,7 +183,7 @@ vwarnx(fmt, ap)
 
 void
 #ifdef __STDC__
-warnx(const char *fmt, ...)
+warnx (const char *fmt, ...)
 #else
 warnx(fmt, va_alist)
 	char *fmt;
@@ -180,24 +198,4 @@ warnx(fmt, va_alist)
 #endif
 	vwarnx(fmt, ap);
 	va_end(ap);
-}
-
-/*
- * Helper routines.  Repeated constructs of the form "%s: " used up too
- * much D space.  On a pdp-11 code can be overlaid but Data space is worth
- * conserving.  An extra function call or two handling an error condition is
- * a reasonable trade for 20 or 30 bytes of D space.
- */
-static void
-putprog()
-{
-	fputs(__progname, stderr);
-	putcolsp();
-}
-
-static void
-putcolsp()
-{
-	fputc(':', stderr);
-	fputc(' ', stderr);
 }

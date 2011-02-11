@@ -3,16 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)pass2.c	5.2 (Berkeley) 3/5/86";
-#endif not lint
-
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
-#include <strings.h>
 #include "fsck.h"
 
 int	pass2check();
@@ -91,7 +88,7 @@ pass2check(idesc)
 	static DIRECT proto;
 	static char namebuf[MAXPATHLEN];
 
-	/* 
+	/*
 	 * check for "."
 	 */
 	if (idesc->id_entryno != 0)

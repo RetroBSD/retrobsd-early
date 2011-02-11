@@ -43,11 +43,15 @@ typedef	long	daddr_t;
 typedef	char *	caddr_t;
 typedef	u_int	ino_t;
 typedef	long	swblk_t;
+#ifndef _SIZE_T
 typedef	u_int	size_t;
+#endif
 typedef	int	ssize_t;
 typedef	long	time_t;
 typedef	int	dev_t;
+#ifndef _SIZE_T
 typedef	long	off_t;
+#endif
 typedef	u_int	uid_t;
 typedef	u_int	gid_t;
 typedef	int	pid_t;

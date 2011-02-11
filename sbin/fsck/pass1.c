@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-/* static char sccsid[] = "@(#)pass1.c	5.3 (Berkeley) 5/13/86"; */
-static char sccsid[] = "@(#)pass1.c	1.0 (2.11BSD) 9/13/90";
-#endif not lint
-
+#include <stdio.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -27,7 +23,7 @@ pass1()
 	/*
 	 * Set file system reserved blocks in used block map.
 	 */
-	for (j = 0; j < fmin; j++)
+	for (j = 0; j < fsmin; j++)
 		setbmap((daddr_t)j);
 	/*
 	 * Find all allocated blocks.

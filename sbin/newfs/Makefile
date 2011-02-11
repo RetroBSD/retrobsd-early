@@ -1,37 +1,38 @@
 #
 # Public Domain.  1996/11/16 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
-#
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	newfs.c
-OBJS=	newfs.o
-MAN=	newfs.0
-MANSRC=	newfs.8
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: newfs newfs.0
+SRCS		= newfs.c
+OBJS		= newfs.o
+MAN		= newfs.0
+MANSRC		= newfs.8
 
-newfs: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+all:		newfs newfs.0
 
-newfs.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+newfs:		${OBJS}
+		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
+		${SIZE} $@
+
+newfs.0:	${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} newfs tags 
+		rm -f *.o *~ ${MAN} newfs tags
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:		${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: newfs
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	install -s -o root -g bin -m 755 newfs ${DESTDIR}/sbin/newfs
+install:	newfs
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+		install -s -o root -g bin -m 755 newfs ${DESTDIR}/sbin/newfs
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:		${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:		${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

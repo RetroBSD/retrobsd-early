@@ -13,12 +13,13 @@ all:		init init.0
 
 init:		${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} -lc
+		${SIZE} $@
 
 init.0:		${MANSRC}
-		/usr/man/manroff ${MANSRC} > ${MAN}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f ${OBJS} ${MAN} init tags
+		rm -f *.o *~ ${MAN} init tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

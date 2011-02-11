@@ -3,35 +3,41 @@
 #
 #	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
 #
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	mkfs.c
-OBJS=	mkfs.o
-MAN=	mkfs.0
-MANSRC=	mkfs.8
+TOPSRC		= $(shell cd ../..; pwd)
+#include $(TOPSRC)/target.mk
+include $(TOPSRC)/cross.mk
 
-all: mkfs mkfs.0
+CFLAGS		+= -Wall
 
-mkfs: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= mkfs.c
+OBJS		= mkfs.o
+MAN		= mkfs.0
+MANSRC		= mkfs.8
 
-mkfs.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:		mkfs mkfs.0
+
+mkfs:		${OBJS}
+		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
+		${SIZE} $@
+
+mkfs.0:		${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} mkfs tags 
+		rm -f *.o *~ ${MAN} mkfs tags
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:		${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: mkfs
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	install -s -o root -g bin -m 755 mkfs ${DESTDIR}/sbin/mkfs
+install:	mkfs
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+		install -s -o root -g bin -m 755 mkfs ${DESTDIR}/sbin/mkfs
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:		${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:		${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

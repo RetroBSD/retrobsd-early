@@ -103,4 +103,17 @@ extern	const char *__progname;		/* Program name, from crt0. */
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	opterr, optind, optopt;
 
+#ifndef _VA_LIST_
+#define va_list		__builtin_va_list	/* For GCC */
+#endif
+
+void	err (int eval, const char *fmt, ...);
+void	errx (int eval, const char *fmt, ...);
+void	warn (const char *fmt, ...);
+void	warnx (const char *fmt, ...);
+void	verr (int eval, char *fmt, va_list ap);
+void	verrx (int eval, char *fmt, va_list ap);
+void	vwarn (char *fmt, va_list ap);
+void	vwarnx (char *fmt, va_list ap);
+
 #endif /* !_UNISTD_H_ */

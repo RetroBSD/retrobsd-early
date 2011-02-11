@@ -3,11 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)dir.c	5.1.1 (2.11BSD) 1996/5/8";
-#endif not lint
-
+#include <stdio.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -24,8 +22,8 @@ struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
  * 'xstr' is used to preprocess the sources.  The structure has two members
  * as 'char dot_name[2]' and 'char dotdot_name[6]' which is NOT the same as
  * 'char *'.
-*/
-struct	dirtemplate dirhead = { 0, 8, 1, {'.'}, 0, DIRBLKSIZ - 8, 2, 
+ */
+struct	dirtemplate dirhead = { 0, 8, 1, {'.'}, 0, DIRBLKSIZ - 8, 2,
 				{'.', '.' }};
 
 DIRECT	*fsck_readdir();
@@ -101,7 +99,7 @@ dirscan(idesc)
 				sbdirty();
 			}
 		}
-		if (n & STOP) 
+		if (n & STOP)
 			return (n);
 	}
 	return (idesc->id_filesize > 0 ? KEEPON : STOP);
@@ -407,7 +405,7 @@ makeentry(parent, ino, name)
 {
 	DINODE *dp;
 	struct inodesc idesc;
-	
+
 	if (parent < ROOTINO || parent >= imax || ino < ROOTINO || ino >= imax)
 		return (0);
 	bzero(&idesc, sizeof(struct inodesc));

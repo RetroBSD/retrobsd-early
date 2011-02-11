@@ -3,11 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)inode.c	5.2 (Berkeley) 7/17/85";
-#endif not lint
-
+#include <stdio.h>
+#include <strings.h>
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/inode.h>
@@ -202,7 +199,7 @@ pinode(ino)
 		printf("%u ", dp->di_uid);
 	printf("MODE=%o\n", dp->di_mode);
 	if (preen)
-		printf("%s: ", devname);
+		printf("%s: ", devnam);
 	printf("SIZE=%ld ", dp->di_size);
 	p = ctime(&dp->di_mtime);
 	printf("MTIME=%12.12s %4.4s ", p+4, p+20);

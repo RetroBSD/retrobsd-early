@@ -105,14 +105,14 @@ struct inodesc {
 
 /*
  * Linked list of duplicate blocks.
- * 
+ *
  * The list is composed of two parts. The first part of the
  * list (from duplist through the node pointed to by muldup)
- * contains a single copy of each duplicate block that has been 
+ * contains a single copy of each duplicate block that has been
  * found. The second part of the list (from muldup to the end)
  * contains duplicate blocks that have been found more than once.
  * To check if a block has been found as a duplicate it is only
- * necessary to search from duplist through muldup. To find the 
+ * necessary to search from duplist through muldup. To find the
  * total number of times that a block has been found as a duplicate
  * the entire list must be searched for occurences of the block
  * in question. The following diagram shows a sample list where
@@ -149,7 +149,7 @@ daddr_t	startib;
 
 unsigned int memsize;
 char	rawflg;
-char	*devname;
+char	*devnam;
 char	nflag;			/* assume a no response */
 char	yflag;			/* assume a yes response */
 char	sflag;			/* rebuild free list */
@@ -171,8 +171,8 @@ int	stepsize;		/* num blocks for spacing purposes */
 char	*pathp;			/* pointer to pathname position */
 char	*endpathname;
 
-daddr_t	fmin;			/* block number of the first data block */
-daddr_t	fmax;			/* number of blocks in the volume */
+daddr_t	fsmin;			/* block number of the first data block */
+daddr_t	fsmax;			/* number of blocks in the volume */
 ino_t	imax;			/* number of inodes */
 ino_t	lastino;		/* hiwater mark of inodes */
 ino_t	lfdir;			/* lost & found directory inode number */
@@ -189,7 +189,7 @@ daddr_t	n_files;		/* number of files seen */
 daddr_t	n_free;			/* number of free blocks */
 int	badblk, dupblk;
 
-#define	outrange(x)	(x < fmin || x >= fmax)
+#define	outrange(x)	(x < fsmin || x >= fsmax)
 #define	zapino(x)	(*(x) = zino)
 struct	dinode	zino;
 
@@ -214,8 +214,9 @@ struct	dinode	zino;
 #define	SKIP	02
 #define	STOP	01
 
-time_t	time();
 DINODE	*ginode();
 BUFAREA	*getblk();
 int	findino();
 daddr_t	allocblk();
+
+void	catch (int), catchquit (int), voidquit (int);

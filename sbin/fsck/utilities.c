@@ -3,20 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)utilities.c	5.2 (Berkeley) 9/10/85";
-#endif not lint
-
+#ifdef CROSS
+#include </usr/include/stdio.h>
+#else
 #include <stdio.h>
 #include <ctype.h>
+#endif
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include "fsck.h"
-
-long	lseek();
 
 ftypeok(dp)
 	DINODE *dp;
@@ -72,7 +72,7 @@ getline(fp, loc, maxlen)
 
 	p = loc;
 	lastloc = &p[maxlen-1];
-	while ((n = getc(fp)) != '\n') {
+	while ((n = fgetc(fp)) != '\n') {
 		if (n == EOF)
 			return (EOF);
 		if (!isspace(n) && p < lastloc)
@@ -136,11 +136,10 @@ rwerr(s, blk)
 
 ckfini()
 {
-
 	flush(&dfile, &fileblk);
 	flush(&dfile, &sblk);
-	if (sblk.b_bno != SBLOCK) {
-		sblk.b_bno = SBLOCK;
+	if (sblk.b_bno != SUPERB) {
+		sblk.b_bno = SUPERB;
 		sbdirty();
 		flush(&dfile, &sblk);
 	}
@@ -220,7 +219,7 @@ allocblk()
 {
 	daddr_t i;
 
-	for (i = 0; i < fmax; i++) {
+	for (i = 0; i < fsmax; i++) {
 		if (getbmap(i))
 			continue;
 		setbmap(i);
@@ -295,9 +294,9 @@ getpathname(namebuf, curdir, ino)
 	bcopy(cp, namebuf, &namebuf[MAXPATHLEN] - cp);
 }
 
-catch()
+void
+catch (sig)
 {
-
 	ckfini();
 	exit(12);
 }
@@ -307,7 +306,8 @@ catch()
  * a special exit after filesystem checks complete
  * so that reboot sequence may be interrupted.
  */
-catchquit()
+void
+catchquit (sig)
 {
 	extern returntosingle;
 
@@ -320,7 +320,8 @@ catchquit()
  * Ignore a single quit signal; wait and flush just in case.
  * Used by child processes in preen.
  */
-voidquit()
+void
+voidquit (sig)
 {
 
 	sleep(1);
@@ -385,11 +386,11 @@ pfatal(s, a1, a2, a3, a4)
 {
 
 	if (preen) {
-		printf("%s: ", devname);
+		printf("%s: ", devnam);
 		printf(s, a1, a2, a3, a4);
 		printf("\n");
 		printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n",
-			devname);
+			devnam);
 		exit(8);
 	}
 	printf(s, a1, a2, a3, a4);
@@ -403,9 +404,8 @@ pfatal(s, a1, a2, a3, a4)
 pwarn(s, a1, a2, a3, a4, a5, a6)
 	char *s;
 {
-
 	if (preen)
-		printf("%s: ", devname);
+		printf("%s: ", devnam);
 	printf(s, a1, a2, a3, a4, a5, a6);
 }
 

@@ -3,12 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)setup.c	5.3.1 (2.11BSD) 1996/2/3";
-#endif not lint
-
+#ifdef CROSS
+#include </usr/include/stdio.h>
+#else
 #include <stdio.h>
+#endif
+#include <string.h>
+#include <strings.h>
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/inode.h>
@@ -70,16 +71,16 @@ setup(dev)
 	/*
 	 * Read in the super block and its summary info.
 	 */
-	if (bread(&dfile, (char *)&sblock, SBLOCK, SBSIZE) != 0)
+	if (bread(&dfile, (char *)&sblock, SUPERB, SBSIZE) != 0)
 		return (0);
-	sblk.b_bno = SBLOCK;
+	sblk.b_bno = SUPERB;
 	sblk.b_size = SBSIZE;
 
 	imax = ((ino_t)sblock.fs_isize - (SUPERB+1)) * INOPB;
-	fmin = (daddr_t)sblock.fs_isize;	/* first data blk num */
-	fmax = sblock.fs_fsize;		/* first invalid blk num */
-	startib = fmax;
-	if(fmin >= fmax || 
+	fsmin = (daddr_t)sblock.fs_isize;	/* first data blk num */
+	fsmax = sblock.fs_fsize;		/* first invalid blk num */
+	startib = fsmax;
+	if(fsmin >= fsmax ||
 		(imax/INOPB) != ((ino_t)sblock.fs_isize-(SUPERB+1))) {
 		pfatal("Size check: fsize %ld isize %d",
 			sblock.fs_fsize,sblock.fs_isize);
@@ -92,9 +93,9 @@ setup(dev)
 	/*
 	 * allocate and initialize the necessary maps
 	 */
-	bmapsz = roundup(howmany(fmax,BITSPB),sizeof(*lncntp));
-	smapsz = roundup(howmany((long)(imax+1),STATEPB),sizeof(*lncntp));
-	lncntsz = (long)(imax+1) * sizeof(*lncntp);
+	bmapsz = roundup (howmany (fsmax, BITSPB), sizeof (*lncntp));
+	smapsz = roundup (howmany ((long) (imax+1), STATEPB), sizeof (*lncntp));
+	lncntsz = (long) (imax+1) * sizeof (*lncntp);
 	if(bmapsz > smapsz+lncntsz)
 		smapsz = bmapsz-lncntsz;
 	totsz = bmapsz+smapsz+lncntsz;
@@ -113,7 +114,7 @@ setup(dev)
 			pfatal("\nNEED SCRATCH FILE (%ld BLKS)\n",nscrblk);
 			do {
 				printf("ENTER FILENAME:  ");
-				if((n = getline(stdin, scrfile, 
+				if((n = getline(stdin, scrfile,
 						sizeof(scrfile) - 6)) == EOF)
 					errexit("\n");
 			} while(n == 0);

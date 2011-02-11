@@ -59,16 +59,68 @@ jmp_buf	sjbuf, shutpass;
 time_t	time0;
 
 void	reset();
-int	idle();
-char	*strcpy(), *strcat();
-long	lseek();
-time_t	time();
 void	setsecuritylevel();
 int	getsecuritylevel();
-int	badsys();
 extern	int errno;
 
 struct	sigvec rvec = { reset, sigmask (SIGHUP), 0 };
+
+jmp_buf	idlebuf;
+
+/*
+ * Catch a SIGSYS signal.
+ *
+ * These may arise if a system does not support sysctl.
+ * We tolerate up to 25 of these, then throw in the towel.
+ */
+void
+badsys (sig)
+	int sig;
+{
+	static int badcount = 0;
+
+	if (badcount++ < 25)
+		return;
+	syslog(LOG_EMERG, "fatal signal: %d", sig);
+	sleep(30);
+	_exit(sig);
+}
+
+void
+idlehup (sig)
+	int sig;
+{
+
+	longjmp (idlebuf, 1);
+}
+
+void
+idle (sig)
+	int sig;
+{
+	register struct tab *p;
+	register pid;
+
+	signal (SIGHUP, idlehup);
+	for (EVER) {
+		if (setjmp(idlebuf))
+			return;
+		pid = wait((int *) 0);
+		if (pid == -1) {
+			sigpause(0L);
+			continue;
+		}
+		for (ALL) {
+			/* if window system dies, mark it for restart */
+			if (p->wpid == pid)
+				p->wpid = -1;
+			if (p->pid == pid) {
+				rmut(p);
+				p->pid = -1;
+			}
+		}
+	}
+}
 
 main(argc, argv)
 	char **argv;
@@ -120,7 +172,24 @@ main(argc, argv)
 	}
 }
 
-int	shutreset();
+const char shutfailm[] = "WARNING: Something is hung (wont die); ps axl advised\n";
+
+void
+shutreset (sig)
+	int sig;
+{
+	int status;
+
+	if (fork() == 0) {
+		int ct = open(ctty, 1);
+		write(ct, shutfailm, sizeof (shutfailm));
+		sleep(5);
+		exit(1);
+	}
+	sleep(5);
+	shutend();
+	longjmp(shutpass, 1);
+}
 
 shutdown()
 {
@@ -148,23 +217,6 @@ shutdown()
 	shutend();
 }
 
-char shutfailm[] = "WARNING: Something is hung (wont die); ps axl advised\n";
-
-shutreset()
-{
-	int status;
-
-	if (fork() == 0) {
-		int ct = open(ctty, 1);
-		write(ct, shutfailm, sizeof (shutfailm));
-		sleep(5);
-		exit(1);
-	}
-	sleep(5);
-	shutend();
-	longjmp(shutpass, 1);
-}
-
 shutend()
 {
 	register i, f;
@@ -182,25 +234,6 @@ shutend()
 		close(f);
 	}
 	return (1);
-}
-
-/*
- * Catch a SIGSYS signal.
- *
- * These may arise if a system does not support sysctl.
- * We tolerate up to 25 of these, then throw in the towel.
- */
-int
-badsys(sig)
-	int sig;
-{
-	static int badcount = 0;
-
-	if (badcount++ < 25)
-		return;
-	syslog(LOG_EMERG, "fatal signal: %d", sig);
-	sleep(30);
-	_exit(sig);
 }
 
 /*
@@ -576,40 +609,6 @@ void
 reset()
 {
 	longjmp(sjbuf, 1);
-}
-
-jmp_buf	idlebuf;
-
-idlehup()
-{
-
-	longjmp(idlebuf, 1);
-}
-
-idle()
-{
-	register struct tab *p;
-	register pid;
-
-	signal(SIGHUP, idlehup);
-	for (EVER) {
-		if (setjmp(idlebuf))
-			return;
-		pid = wait((int *) 0);
-		if (pid == -1) {
-			sigpause(0L);
-			continue;
-		}
-		for (ALL) {
-			/* if window system dies, mark it for restart */
-			if (p->wpid == pid)
-				p->wpid = -1;
-			if (p->pid == pid) {
-				rmut(p);
-				p->pid = -1;
-			}
-		}
-	}
 }
 
 wterm(p)
