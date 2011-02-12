@@ -48,16 +48,16 @@ extern	struct	iob	iob[];
 
 int	fsi;
 int	fso;
-char	buf[DEV_BSIZE];
+char	buf [DEV_BSIZE];
 
 union {
 	struct fblk fb;
-	char pad1[DEV_BSIZE];
+	char pad1 [DEV_BSIZE];
 } fbuf;
 
 union {
 	struct fs fs;
-	char pad2[DEV_BSIZE];
+	char pad2 [DEV_BSIZE];
 } filsys;
 
 u_int	f_i	= 4096;		/* bytes/inode default */
@@ -109,15 +109,23 @@ makedir (protodir, entries)
 	return (DIRBLKSIZ);
 }
 
+#define off_t unsigned long long
+
 void
 rdfs (bno, bf)
 	daddr_t bno;
 	char *bf;
 {
 	int n;
+	off_t offset;
 
-	lseek(fsi, bno*DEV_BSIZE, 0);
+	offset = (off_t) bno*DEV_BSIZE;
+	if (lseek(fsi, offset, 0) != offset) {
+		printf("lseek read error: %ld\n", bno);
+		exit(1);
+	}
 	n = read(fsi, bf, DEV_BSIZE);
+printf ("read %u bytes from block %u, seek=%lu\n", n, (unsigned) bno, lseek (fsi, (off_t)0, 1));
 	if(n != DEV_BSIZE) {
 		printf("read error: %ld\n", bno);
 		exit(1);
@@ -130,9 +138,16 @@ wtfs (bno, bf)
 	char *bf;
 {
 	int n;
+	off_t offset;
 
-	lseek(fso, bno*DEV_BSIZE, 0);
+	offset = (off_t) bno*DEV_BSIZE;
+	if (lseek(fso, offset, 0) != offset) {
+		printf ("wtfs: block number %ld\n", bno);
+		perror ("lseek");
+		exit(1);
+	}
 	n = write(fso, bf, DEV_BSIZE);
+printf ("write %u bytes to block %u, seek=%lu\n", DEV_BSIZE, (unsigned) bno, lseek (fso, (off_t)0, 1));
 	if(n != DEV_BSIZE) {
 		printf("write error: %ld\n", bno);
 		exit(1);
@@ -143,7 +158,7 @@ void
 iput (ip)
 	register struct inode *ip;
 {
-	struct	dinode	buf[INOPB];
+	struct	dinode	buf [INOPB];
 	register struct dinode *dp;
 	daddr_t d;
 
@@ -242,8 +257,8 @@ void
 bflist()
 {
 	struct inode in;
-	char flg[MAXFN];
-	int adr[MAXFN];
+	char flg [MAXFN];
+	int adr [MAXFN];
 	register int i, j;
 	daddr_t f, d;
 
@@ -429,6 +444,9 @@ nolabels:
 		printf ("Can't make zero length filesystem\n");
 		return -1;
 	}
+	/* Check media: write zeroes to last block. */
+	wtfs (n-1, (char*) &filsys.fs);
+
 	filsys.fs.fs_fsize = n;
 
 	/*
@@ -458,7 +476,7 @@ nolabels:
 	filsys.fs.fs_tfree = 0;
 	filsys.fs.fs_tinode = 0;
 	bzero (buf, DEV_BSIZE);
-	for (n=2; n!=filsys.fs.fs_isize; n++) {
+	for (n=SUPERB+1; n!=filsys.fs.fs_isize; n++) {
 		wtfs (n, buf);
 		filsys.fs.fs_tinode += INOPB;
 	}
@@ -468,6 +486,8 @@ nolabels:
 	fsinit();
 
 	filsys.fs.fs_time = utime;
-	wtfs ((long) SUPERB, (char*) &filsys.fs);
+	filsys.fs.fs_magic1 = FSMAGIC1;
+	filsys.fs.fs_magic2 = FSMAGIC2;
+	wtfs (SUPERB, (char*) &filsys.fs);
 	exit(0);
 }

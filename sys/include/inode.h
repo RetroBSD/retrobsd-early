@@ -20,6 +20,14 @@
 #define	NIADDR	3			/* indirect addresses in inode */
 #define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
 
+struct icommon1 {
+	u_short	ic_mode;		/* mode and type of file */
+	u_short	ic_nlink;		/* number of links to file */
+	uid_t	ic_uid;			/* owner's user id */
+	gid_t	ic_gid;			/* owner's group id */
+	off_t	ic_size;		/* number of bytes in file */
+} i_ic1;
+
 struct icommon2 {
 	time_t	ic_atime;		/* time last accessed */
 	time_t	ic_mtime;		/* time last modified */
@@ -27,17 +35,17 @@ struct icommon2 {
 };
 
 struct inode {
-	struct	inode *i_chain[2];	/* must be first */
-	u_short	i_flag;
-	u_short	i_count;	/* reference count */
-	dev_t	i_dev;		/* device where inode resides */
-	ino_t	i_number;	/* i number, 1-to-1 with device address */
-	u_short	i_id;		/* unique identifier */
-	struct	fs *i_fs;	/* file sys associated with this inode */
+	struct inode	*i_chain[2];	/* must be first */
+	u_int		i_flag;
+	u_int		i_count;	/* reference count */
+	dev_t		i_dev;		/* device where inode resides */
+	ino_t		i_number;	/* i number, 1-to-1 with device address */
+	u_int		i_id;		/* unique identifier */
+	struct fs	*i_fs;		/* file sys associated with this inode */
 	union {
 		struct {
-			u_char	I_shlockc;	/* count of shared locks */
-			u_char	I_exlockc;	/* count of exclusive locks */
+			u_short	I_shlockc;	/* count of shared locks */
+			u_short	I_exlockc;	/* count of exclusive locks */
 		} i_l;
 		struct	proc *I_rsel;	/* pipe read select */
 	} i_un0;
@@ -56,31 +64,19 @@ struct inode {
 			 * part of the iget/iput routines works for special
 			 * files.
 			 */
-			u_short	I_dummy;
+			u_int	I_dummy;
 			dev_t	I_rdev;		/* dev type */
 		} i_d;
 	} i_un2;
 	union {
-		daddr_t	if_lastr;	/* last read (read-ahead) */
-		struct	socket *is_socket;
+		daddr_t	if_lastr;		/* last read (read-ahead) */
 		struct	{
-			struct inode  *if_freef;	/* free list forward */
-			struct inode **if_freeb;	/* free list back */
+			struct inode  *if_freef; /* free list forward */
+			struct inode **if_freeb; /* free list back */
 		} i_fr;
 	} i_un3;
-	struct icommon1 {
-		u_short	ic_mode;	/* mode and type of file */
-		u_short	ic_nlink;	/* number of links to file */
-		uid_t	ic_uid;		/* owner's user id */
-		gid_t	ic_gid;		/* owner's group id */
-		off_t	ic_size;	/* number of bytes in file */
-	} i_ic1;
-/*
- * Can't afford another 4 bytes and mapping the flags out would be prohibitively
- * expensive.  So, a 'u_short' is used for the flags - see the comments in
- * stat.h for more information.
-*/
-	u_short	i_flags;		/* user changeable flags */
+	struct icommon1 i_ic1;
+	u_int	i_flags;			/* user changeable flags */
 	struct icommon2 i_ic2;
 };
 
@@ -91,8 +87,8 @@ struct inode {
 struct dinode {
 	struct	icommon1 di_icom1;
 	daddr_t	di_addr[7];		/* 7 block addresses 4 bytes each */
-	u_short	di_reserved[5];		/* pad of 10 to make total size 64 */
-	u_short	di_flags;
+	u_int	di_reserved[1];		/* pad of 4 to make total size 64 */
+	u_int	di_flags;
 	struct	icommon2 di_icom2;
 };
 
@@ -114,7 +110,6 @@ struct dinode {
 #define	i_addr		i_un2.I_addr
 #define	i_dummy		i_un2.i_d.I_dummy
 #define	i_lastr		i_un3.if_lastr
-#define	i_socket	i_un3.is_socket
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
 #define	i_freef		i_un3.i_fr.if_freef
@@ -149,7 +144,7 @@ void cinvalall (void);
 	if (nextinodeid == 0) \
 		cinvalall();
 
-u_short	nextinodeid;		/* unique id generator */
+u_int nextinodeid;		/* unique id generator */
 
 extern struct inode inode[];	/* the inode table itself */
 struct inode *rootdir;		/* pointer to inode of root directory */

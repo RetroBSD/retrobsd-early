@@ -3,11 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-#ifdef CROSS
 #include </usr/include/stdio.h>
-#else
-#include <stdio.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -19,8 +15,20 @@
 #include <fstab.h>
 #include "fsck.h"
 
-char	*rawname(), *unrawname(), *blockcheck();
-extern	returntosingle;
+char memdata [MAXDATA];
+
+void
+usage ()
+{
+	printf ("Usage:\n");
+	printf ("    fsck [-dny] [-t filename.tmp] filesys.img\n");
+	printf ("\n");
+	printf ("Options:\n");
+	printf ("    -d       Debug mode.\n");
+	printf ("    -n       Auto answer is 'no'.\n");
+	printf ("    -y       Auto answer is 'yes'.\n");
+	printf ("    -t file  Filename for temporary data.\n");
+}
 
 main(argc, argv)
 	int	argc;
@@ -39,14 +47,9 @@ main(argc, argv)
 		switch (*++*argv) {
 
 		case 't':
-		case 'T':
 			if (**++argv == '-' || --argc <= 0)
 				errexit("Bad -t option");
 			strcpy(scrfile, *argv);
-			break;
-
-		case 'p':
-			preen++;
 			break;
 
 		case 'd':
@@ -54,13 +57,11 @@ main(argc, argv)
 			break;
 
 		case 'n':	/* default no answer flag */
-		case 'N':
 			nflag++;
 			yflag = 0;
 			break;
 
 		case 'y':	/* default yes answer flag */
-		case 'Y':
 			yflag++;
 			nflag = 0;
 			break;
@@ -69,87 +70,23 @@ main(argc, argv)
 			errexit("%c option?\n", **argv);
 		}
 	}
+	if (argc == 0) {
+		usage();
+		return 0;
+	}
 
-	/*
-	 * fsck has a problem under a 4BSD C library in that if its done
-	 * its sbrk's before it accesses FSTAB, there's no space left
-	 * for stdio.  There may be other problems like this.  Enjoy.
-	 */
-	if (!getfsent())
-		errexit("Can't open checklist file: %s\n",FSTAB);
-	setpassent(1);
-
-	memsize = sbrk(0);
-	memsize = MAXDATA - memsize - sizeof(int);
-	while (memsize >= 2 * sizeof(BUFAREA) &&
-		(membase = (char *)sbrk(memsize)) == (char *)-1)
-		memsize -= MEMUNIT;
-	if (memsize < 2 * sizeof(BUFAREA))
-		errexit("Can't get memory\n");
+	memsize = sizeof (memdata);
+	membase = memdata;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void)signal(SIGINT, catch);
 	if (preen)
 		(void)signal(SIGQUIT, catchquit);
-	if (argc) {
-		while (argc-- > 0) {
-			hotroot = 0;
-			checkfilesys(*argv++);
-		}
-		exit(0);
+	while (argc-- > 0) {
+		hotroot = 0;
+		checkfilesys(*argv++);
 	}
-	sumstatus = 0;
-	passno = 1;
-	do {
-		anygtr = 0;
-		if (setfsent() == 0)
-			errexit("Can't open %s\n", FSTAB);
-		while ((fsp = getfsent()) != 0) {
-			if (strcmp(fsp->fs_vfstype, "ufs") ||
-			    (strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RO) &&
-			    strcmp(fsp->fs_type, FSTAB_RQ)) ||
-			    fsp->fs_passno == 0)
-				continue;
-			if (preen == 0 ||
-			    passno == 1 && fsp->fs_passno == passno) {
-				name = blockcheck(fsp->fs_spec);
-				if (name != NULL)
-					checkfilesys(name);
-				else if (preen)
-					exit(8);
-			} else if (fsp->fs_passno > passno) {
-				anygtr = 1;
-			} else if (fsp->fs_passno == passno) {
-				pid = fork();
-				if (pid < 0) {
-					perror("fork");
-					exit(8);
-				}
-				if (pid == 0) {
-					(void)signal(SIGQUIT, voidquit);
-					name = blockcheck(fsp->fs_spec);
-					if (name == NULL)
-						exit(8);
-					checkfilesys(name);
-					exit(0);
-				}
-			}
-		}
-		if (preen) {
-			union wait status;
-			while (wait(&status) != -1)
-				sumstatus |= status.w_retcode;
-		}
-		passno++;
-	} while (anygtr);
-
-	if (sumstatus)
-		exit(8);
-	(void)endfsent();
-	if (returntosingle)
-		exit(2);
-	exit(0);
+	return 0;
 }
 
 checkfilesys(filesys)
@@ -257,87 +194,4 @@ checkfilesys(filesys)
 		sync();
 		exit(4);
 	}
-}
-
-char *
-blockcheck(name)
-	char *name;
-{
-	struct stat stslash, stblock, stchar;
-	char *raw;
-	int looped = 0;
-
-	hotroot = 0;
-	if (stat("/", &stslash) < 0){
-		printf("Can't stat root\n");
-		return (0);
-	}
-retry:
-	if (stat(name, &stblock) < 0){
-		printf("Can't stat %s\n", name);
-		return (0);
-	}
-	if (stblock.st_mode & S_IFBLK) {
-		raw = rawname(name);
-		if (stat(raw, &stchar) < 0){
-			printf("Can't stat %s\n", raw);
-			return (0);
-		}
-		if (stchar.st_mode & S_IFCHR) {
-			if (stslash.st_dev == stblock.st_rdev) {
-				hotroot++;
-				raw = unrawname(name);
-			}
-			return (raw);
-		} else {
-			printf("%s is not a character device\n", raw);
-			return (0);
-		}
-	} else if (stblock.st_mode & S_IFCHR) {
-		if (looped) {
-			printf("Can't make sense out of name %s\n", name);
-			return (0);
-		}
-		name = unrawname(name);
-		looped++;
-		goto retry;
-	}
-	printf("Can't make sense out of name %s\n", name);
-	return (0);
-}
-
-char *
-unrawname(cp)
-	char *cp;
-{
-	char *dp = rindex(cp, '/');
-	struct stat stb;
-
-	if (dp == 0)
-		return (cp);
-	if (stat(cp, &stb) < 0)
-		return (cp);
-	if ((stb.st_mode&S_IFMT) != S_IFCHR)
-		return (cp);
-	if (*(dp+1) != 'r')
-		return (cp);
-	(void)strcpy(dp+1, dp+2);
-	return (cp);
-}
-
-char *
-rawname(cp)
-	char *cp;
-{
-	static char rawbuf[32];
-	char *dp = rindex(cp, '/');
-
-	if (dp == 0)
-		return (0);
-	*dp = 0;
-	(void)strcpy(rawbuf, cp);
-	*dp = '/';
-	(void)strcat(rawbuf, "/r");
-	(void)strcat(rawbuf, dp+1);
-	return (rawbuf);
 }

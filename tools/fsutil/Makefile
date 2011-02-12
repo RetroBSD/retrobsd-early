@@ -2,7 +2,7 @@ CC		= gcc -g
 CFLAGS		= -O -Wall
 DESTDIR		= /usr/local
 OBJS		= fsutil.o superblock.o block.c inode.o create.o check.o file.o
-PROG		= u6-fsutil
+PROG		= fsutil
 
 # For Mac OS X
 #LIBS		= -largp
@@ -16,3 +16,11 @@ clean:
 
 $(PROG):	$(OBJS)
 		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+block.o: block.c bsdfs.h
+check.o: check.c bsdfs.h
+create.o: create.c bsdfs.h
+file.o: file.c bsdfs.h
+fsutil.o: fsutil.c bsdfs.h
+inode.o: inode.c bsdfs.h
+superblock.o: superblock.c bsdfs.h

@@ -23,14 +23,14 @@
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
 #define	NICINOD		100		/* number of superblock inodes */
-#define	NICFREE		50		/* number of superblock free blocks */
+#define	NICFREE		100		/* number of superblock free blocks */
 
 /*
  * The path name on which the file system is mounted is maintained
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in
  * the super block for this name.
  */
-#define MAXMNTLEN 12
+#define MAXMNTLEN	12
 
 /*
  * Super block for a file system.  NOTE:  The 'fs_flock' and 'fs_ilock'
@@ -39,6 +39,7 @@
  */
 struct	fs
 {
+	u_int	fs_magic1;		/* magic word */
 	u_int	fs_isize;		/* first block after i-list */
 	daddr_t	fs_fsize;		/* size in blocks of entire volume */
 	int	fs_nfree;		/* number of addresses in fs_free */
@@ -58,6 +59,7 @@ struct	fs
 	ino_t	fs_lasti;		/* start place for circular search */
 	ino_t	fs_nbehind;		/* est # free inodes before s_lasti */
 	u_int	fs_flags;		/* mount time flags */
+	u_int	fs_magic2;		/* magic word */
 /* actually longer */
 };
 
@@ -65,6 +67,9 @@ struct	fblk {
 	int	df_nfree;		/* number of addresses in df_free */
 	daddr_t	df_free [NICFREE];	/* free block list */
 };
+
+#define	FSMAGIC1	('F' | 'S'<<8 | '<'<<16 | '<'<<24)
+#define	FSMAGIC2	('>' | '>'<<8 | 'F'<<16 | 'S'<<24)
 
 /*
  * Turn file system block numbers into disk block addresses.
@@ -78,8 +83,8 @@ struct	fblk {
  *     inode number to file system block offset.
  *     inode number to file system block address.
  */
-#define	itoo(x)		((int)(((x) + 2 * INOPB - 1) % INOPB))
-#define	itod(x)		((daddr_t)((((u_int)(x) + 2 * INOPB - 1) / INOPB)))
+#define	itoo(x)		((int)(((x) + INOPB - 1) % INOPB))
+#define	itod(x)		((daddr_t)((((u_int)(x) + INOPB - 1) / INOPB)))
 
 /*
  * The following macros optimize certain frequently calculated
@@ -102,7 +107,7 @@ struct	fblk {
 /*
  * INOPB is the number of inodes in a secondary storage block.
  */
-#define INOPB	16			/* MAXBSIZE / sizeof(dinode) */
+#define INOPB		16		/* MAXBSIZE / sizeof(dinode) */
 
 /*
  * NINDIR is the number of indirects in a file system block.

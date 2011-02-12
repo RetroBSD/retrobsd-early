@@ -1,0 +1,155 @@
+/*
+ * Data structures for unix v6 filesystem.
+ *
+ * Copyright (C) 2006 Serge Vakulenko, <vak@cronyx.ru>
+ *
+ * This file is part of BKUNIX project, which is distributed
+ * under the terms of the GNU General Public License (GPL).
+ * See the accompanying file "COPYING" for more details.
+ */
+#define BSDFS_BSIZE		1024	/* block size */
+#define BSDFS_ROOT_INODE	1	/* root directory in inode 1 */
+#define BSDFS_INODES_PER_BLOCK	16	/* inodes per block */
+
+#define	NICINOD		100		/* number of superblock inodes */
+#define	NICFREE		100		/* number of superblock free blocks */
+
+/*
+ * The path name on which the file system is mounted is maintained
+ * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in
+ * the super block for this name.
+ */
+#define MAXMNTLEN	12
+
+#define	FSMAGIC1	('F' | 'S'<<8 | '<'<<16 | '<'<<24)
+#define	FSMAGIC2	('>' | '>'<<8 | 'F'<<16 | 'S'<<24)
+
+typedef struct {
+	const char	*filename;
+	int		fd;
+	unsigned long	seek;
+	int		writable;
+	int		dirty;		/* sync needed */
+	int		modified;	/* write_block was called */
+
+	unsigned 	isize;		/* size in blocks of I list */
+	unsigned 	fsize;		/* size in blocks of entire volume */
+	unsigned 	nfree;		/* number of in core free blocks (0-100) */
+	unsigned 	free [NICFREE];	/* in core free blocks */
+	unsigned 	ninode;		/* number of in core I nodes (0-100) */
+	unsigned 	inode [NICINOD]; /* in core free I nodes */
+	unsigned char	flock;		/* lock during free list manipulation */
+	unsigned char	ilock;		/* lock during I list manipulation */
+	unsigned char	fmod;		/* super block modified flag */
+	unsigned char	ronly;		/* mounted read-only flag */
+	long		time;		/* current date of last update */
+
+	unsigned	tfree;		/* total free blocks */
+	unsigned	tinode;		/* total free inodes */
+	int		step;		/* optimal step in free list pattern */
+	int		cyl;		/* number of blocks per pattern */
+	char		fsmnt [MAXMNTLEN]; /* ordinary file mounted on */
+	unsigned	lasti;		/* start place for circular search */
+	unsigned	nbehind;	/* est # free inodes before s_lasti */
+	unsigned	flags;		/* mount time flags */
+} fs_t;
+
+typedef struct {
+	fs_t		*fs;
+	unsigned short	number;
+	int		dirty;		/* save needed */
+
+	unsigned short	mode;		/* file type and access mode */
+#define	INODE_MODE_ALLOC	0100000
+#define	INODE_MODE_FMT		060000
+#define	INODE_MODE_FDIR		040000
+#define	INODE_MODE_FCHR		020000
+#define	INODE_MODE_FBLK		060000
+#define	INODE_MODE_LARG		010000
+#define	INODE_MODE_SUID		04000
+#define	INODE_MODE_SGID		02000
+#define	INODE_MODE_SVTX		01000
+#define	INODE_MODE_READ		0400
+#define	INODE_MODE_WRITE	0200
+#define	INODE_MODE_EXEC		0100
+
+	unsigned char	nlink;		/* directory entries */
+	unsigned char	uid;		/* owner */
+	unsigned long	size;		/* size */
+	unsigned short	addr [8];	/* device addresses constituting file */
+	long		atime;		/* last access time */
+	long		mtime;		/* last modification time */
+} fs_inode_t;
+
+typedef struct {
+	unsigned short	ino;
+	char		name [14+1];
+} fs_dirent_t;
+
+typedef void (*fs_directory_scanner_t) (fs_inode_t *dir,
+	fs_inode_t *file, char *dirname, char *filename, void *arg);
+
+typedef struct {
+	fs_inode_t	inode;
+	int		writable;	/* write allowed */
+	unsigned long	offset;		/* current i/o offset */
+} fs_file_t;
+
+int fs_seek (fs_t *fs, unsigned long offset);
+int fs_read8 (fs_t *fs, unsigned char *val);
+int fs_read16 (fs_t *fs, unsigned short *val);
+int fs_read32 (fs_t *fs, unsigned *val);
+int fs_write8 (fs_t *fs, unsigned char val);
+int fs_write16 (fs_t *fs, unsigned short val);
+int fs_write32 (fs_t *fs, unsigned val);
+
+int fs_read (fs_t *fs, unsigned char *data, int bytes);
+int fs_write (fs_t *fs, unsigned char *data, int bytes);
+
+int fs_open (fs_t *fs, const char *filename, int writable);
+void fs_close (fs_t *fs);
+int fs_sync (fs_t *fs, int force);
+int fs_create (fs_t *fs, const char *filename, unsigned long bytes);
+int fs_check (fs_t *fs);
+void fs_print (fs_t *fs, FILE *out);
+
+int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned short inum);
+int fs_inode_save (fs_inode_t *inode, int force);
+void fs_inode_clear (fs_inode_t *inode);
+void fs_inode_truncate (fs_inode_t *inode);
+void fs_inode_print (fs_inode_t *inode, FILE *out);
+int fs_inode_read (fs_inode_t *inode, unsigned long offset,
+	unsigned char *data, unsigned long bytes);
+int fs_inode_write (fs_inode_t *inode, unsigned long offset,
+	unsigned char *data, unsigned long bytes);
+int fs_inode_alloc (fs_t *fs, fs_inode_t *inode);
+int fs_inode_by_name (fs_t *fs, fs_inode_t *inode, char *name,
+	int op, int mode);
+
+int fs_write_block (fs_t *fs, unsigned short bnum, unsigned char *data);
+int fs_read_block (fs_t *fs, unsigned short bnum, unsigned char *data);
+int fs_block_free (fs_t *fs, unsigned int bno);
+int fs_block_alloc (fs_t *fs, unsigned int *bno);
+int fs_indirect_block_free (fs_t *fs, unsigned int bno);
+int fs_double_indirect_block_free (fs_t *fs, unsigned int bno);
+
+void fs_directory_scan (fs_inode_t *inode, char *dirname,
+	fs_directory_scanner_t scanner, void *arg);
+void fs_dirent_pack (unsigned char *data, fs_dirent_t *dirent);
+void fs_dirent_unpack (fs_dirent_t *dirent, unsigned char *data);
+
+int fs_file_create (fs_t *fs, fs_file_t *file, char *name, int mode);
+int fs_file_open (fs_t *fs, fs_file_t *file, char *name, int wflag);
+int fs_file_read (fs_file_t *file, unsigned char *data,
+	unsigned long bytes);
+int fs_file_write (fs_file_t *file, unsigned char *data,
+	unsigned long bytes);
+int fs_file_close (fs_file_t *file);
+
+/* Big endians: Motorola 68000, PowerPC, HP PA, IBM S390. */
+#if defined (__m68k__) || defined (__ppc__) || defined (__hppa__) || \
+    defined (__s390__)
+#define lsb_short(x) ((x) << 8 | (unsigned char) ((x) >> 8))
+#else
+#define lsb_short(x) (x)
+#endif

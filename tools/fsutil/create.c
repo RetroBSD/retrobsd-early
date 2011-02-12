@@ -12,107 +12,18 @@
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "u6fs.h"
+#include "bsdfs.h"
 
 extern int verbose;
 
-/*
- * get name of boot load program
- * and read onto block 0
- */
-int u6fs_install_boot (u6fs_t *fs, const char *filename,
-	const char *filename2)
+static int build_inode_list (fs_t *fs)
 {
-	int fd, fd2, n, n2;
-	unsigned char buf [512], buf2 [256];
-
-	fd = open (filename, 0);
-	if (fd < 0)
-		return 0;
-	fd2 = open (filename2, 0);
-	if (fd2 < 0) {
-		close (fd);
-		return 0;
-	}
-
-	/* Check a.out header. */
-	if (read (fd, buf, 16) != 16 || ! (buf[0] == 7 && buf[1] == 1)) {
-failed:		close (fd);
-		close (fd2);
-		return 0;
-	}
-	if (read (fd2, buf2, 16) != 16 || ! (buf2[0] == 7 && buf2[1] == 1))
-		goto failed;
-
-	/* Check .text+.data segment size. */
-	n = buf[2] + (buf[3] << 8) + buf[4] + (buf[5] << 8);
-	n2 = buf2[2] + (buf2[3] << 8) + buf2[4] + (buf2[5] << 8);
-	if (n > 128 || n2 > 384 + 256 || n2 <= 384)
-		goto failed;
-	if (verbose)
-		printf ("Boot sector size: %d + %d bytes\n", n, n2);
-
-	if (read (fd, buf, n) != n)
-		goto failed;
-	if (read (fd2, buf+128, 384) != 384)
-		goto failed;
-	if (read (fd2, buf2, n2-384) != n2-384)
-		goto failed;
-	close (fd);
-	close (fd2);
-
-	if (! u6fs_seek (fs, 0))
-		return 0;
-	if (! u6fs_write (fs, buf, 512))
-		return 0;
-	if (! u6fs_seek (fs, 256000))
-		return 0;
-	if (! u6fs_write (fs, buf2, 256))
-		return 0;
-	return 1;
-}
-
-int u6fs_install_single_boot (u6fs_t *fs, const char *filename)
-{
-	int fd, n;
-	unsigned char buf [512];
-
-	fd = open (filename, 0);
-	if (fd < 0)
-		return 0;
-
-	/* Check a.out header. */
-	if (read (fd, buf, 16) != 16 || ! (buf[0] == 7 && buf[1] == 1)) {
-failed:		close (fd);
-		return 0;
-	}
-
-	/* Check .text+.data segment size. */
-	n = buf[2] + (buf[3] << 8) + buf[4] + (buf[5] << 8);
-	if (n > 512)
-		goto failed;
-	if (verbose)
-		printf ("Boot sector size: %d bytes\n", n);
-
-	if (read (fd, buf, n) != n)
-		goto failed;
-	close (fd);
-
-	if (! u6fs_seek (fs, 0))
-		return 0;
-	if (! u6fs_write (fs, buf, 512))
-		return 0;
-	return 1;
-}
-
-static int build_inode_list (u6fs_t *fs)
-{
-	u6fs_inode_t inode;
+	fs_inode_t inode;
 	unsigned int inum, total_inodes;
 
 	total_inodes = fs->isize * 16;
 	for (inum = 1; inum <= total_inodes; inum++) {
-		if (! u6fs_inode_get (fs, &inode, inum))
+		if (! fs_inode_get (fs, &inode, inum))
 			return 0;
 		if (inode.mode == 0) {
 			fs->inode [fs->ninode++] = inum;
@@ -123,10 +34,10 @@ static int build_inode_list (u6fs_t *fs)
 	return 1;
 }
 
-static int create_root_directory (u6fs_t *fs)
+static int create_root_directory (fs_t *fs)
 {
-	u6fs_inode_t inode;
-	unsigned char buf [512];
+	fs_inode_t inode;
+	unsigned char buf [BSDFS_BSIZE];
 	unsigned int bno;
 
 	memset (&inode, 0, sizeof(inode));
@@ -146,24 +57,24 @@ static int create_root_directory (u6fs_t *fs)
 	inode.nlink = 2;
 	inode.size = 32;
 
-	if (! u6fs_block_alloc (fs, &bno))
+	if (! fs_block_alloc (fs, &bno))
 		return 0;
-	if (! u6fs_write_block (fs, bno, buf))
+	if (! fs_write_block (fs, bno, buf))
 		return 0;
 	inode.addr[0] = bno;
 
 	time (&inode.atime);
 	time (&inode.mtime);
 
-	if (! u6fs_inode_save (&inode, 1))
+	if (! fs_inode_save (&inode, 1))
 		return 0;
 	return 1;
 }
 
-int u6fs_create (u6fs_t *fs, const char *filename, unsigned long bytes)
+int fs_create (fs_t *fs, const char *filename, unsigned long bytes)
 {
 	int n;
-	unsigned char buf [512];
+	unsigned char buf [BSDFS_BSIZE];
 
 	memset (fs, 0, sizeof (*fs));
 	fs->filename = filename;
@@ -176,7 +87,7 @@ int u6fs_create (u6fs_t *fs, const char *filename, unsigned long bytes)
 
 	/* get total disk size
 	 * and inode block size */
-	fs->fsize = bytes / 512;
+	fs->fsize = bytes / BSDFS_BSIZE;
 	fs->isize = (fs->fsize / 6 + 15) / 16;
 	if (fs->isize < 1)
 		return 0;
@@ -188,17 +99,17 @@ int u6fs_create (u6fs_t *fs, const char *filename, unsigned long bytes)
 	} else
 		return 0;
 	/* build a list of free blocks */
-	u6fs_block_free (fs, 0);
+	fs_block_free (fs, 0);
 	for (n = fs->fsize - 1; n >= fs->isize + 2; n--)
-		if (! u6fs_block_free (fs, n))
+		if (! fs_block_free (fs, n))
 			return 0;
 
 	/* initialize inodes */
-	memset (buf, 0, 512);
-	if (! u6fs_seek (fs, 1024))
+	memset (buf, 0, BSDFS_BSIZE);
+	if (! fs_seek (fs, 1024))
 		return 0;
 	for (n=0; n < fs->isize; n++)
-		if (! u6fs_write (fs, buf, 512))
+		if (! fs_write (fs, buf, BSDFS_BSIZE))
 			return 0;
 
 	/* root directory */
@@ -210,5 +121,5 @@ int u6fs_create (u6fs_t *fs, const char *filename, unsigned long bytes)
 		return 0;
 
 	/* write out super block */
-	return u6fs_sync (fs, 1);
+	return fs_sync (fs, 1);
 }

@@ -5,6 +5,7 @@
  */
 #ifdef CROSS
 #include </usr/include/stdio.h>
+#define off_t unsigned long long
 #else
 #include <stdio.h>
 #include <ctype.h>
@@ -17,6 +18,8 @@
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include "fsck.h"
+
+int	returntosingle;
 
 ftypeok(dp)
 	DINODE *dp;
@@ -54,6 +57,7 @@ reply(s)
 		printf(" yes\n\n");
 		return (1);
 	}
+	fflush (stdout);
 	if (getline(stdin, line, sizeof(line)) == EOF)
 		errexit("\n");
 	printf("\n");
@@ -163,12 +167,14 @@ bread(fcp, buf, blk, size)
 	char *cp;
 	register int i, errs;
 
-	if (lseek(fcp->rfdes, blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->rfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
 		rwerr("SEEK", blk);
-	else if (read(fcp->rfdes, buf, size) == size)
+	else if (read(fcp->rfdes, buf, size) == size) {
+		/*printf(".%u ", (unsigned) blk); fflush (stdout);*/
 		return (0);
+	}
 	rwerr("READ", blk);
-	if (lseek(fcp->rfdes, blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->rfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
 		rwerr("SEEK", blk);
 	errs = 0;
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
@@ -194,14 +200,15 @@ bwrite(fcp, buf, blk, size)
 
 	if (fcp->wfdes < 0)
 		return;
-	if (lseek(fcp->wfdes, blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->wfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, size) == size) {
 		fcp->mod = 1;
+		/*printf("#%u ", (unsigned) blk); fflush (stdout);*/
 		return;
 	}
 	rwerr("WRITE", blk);
-	if (lseek(fcp->wfdes, blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->wfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
 		rwerr("SEEK", blk);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)
@@ -309,8 +316,6 @@ catch (sig)
 void
 catchquit (sig)
 {
-	extern returntosingle;
-
 	printf("returning to single-user after filesystem check\n");
 	returntosingle = 1;
 	(void)signal(SIGQUIT, SIG_DFL);
@@ -407,36 +412,6 @@ pwarn(s, a1, a2, a3, a4, a5, a6)
 	if (preen)
 		printf("%s: ", devnam);
 	printf(s, a1, a2, a3, a4, a5, a6);
-}
-
-stype(p)
-register char *p;
-{
-	if(*p == 0)
-		return;
-	if (*(p+1) == 0) {
-		if (*p == '3') {
-			cylsize = 200;
-			stepsize = 5;
-			return;
-		}
-		if (*p == '4') {
-			cylsize = 418;
-			stepsize = 9;
-			return;
-		}
-	}
-	cylsize = atoi(p);
-	while(*p && *p != ':')
-		p++;
-	if(*p)
-		p++;
-	stepsize = atoi(p);
-	if(stepsize <= 0 || stepsize > cylsize ||
-	cylsize <= 0 || cylsize > MAXCYL) {
-		printf("Invalid -s argument, defaults assumed\n");
-		cylsize = stepsize = 0;
-	}
 }
 
 dostate(ino, s,flg)

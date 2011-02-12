@@ -104,7 +104,6 @@ badblock (fp, bn)
 	register struct fs *fp;
 	daddr_t bn;
 {
-
 	if (bn < fp->fs_isize || bn >= fp->fs_fsize) {
 		printf("bad block %D, ",bn);
 		fserr(fp, "bad block");

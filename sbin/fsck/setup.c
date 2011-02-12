@@ -44,8 +44,10 @@ setup(dev)
 	else if ((statb.st_mode & S_IFMT) == S_IFCHR)
 		rawflg++;
 	else {
+#ifndef CROSS
 		if (reply("file is not a block or character device; OK") == 0)
 			return (0);
+#endif
 	}
 	if (rootdev == statb.st_rdev)
 		hotroot++;

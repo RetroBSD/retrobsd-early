@@ -239,6 +239,10 @@ found:
 	bcopy (tp->b_addr, (caddr_t)fs, sizeof(struct fs));
 	brelse (tp);
 	tp = 0;
+	if (fs->fs_magic1 != FSMAGIC1 || fs->fs_magic2 != FSMAGIC2) {
+		error = EINVAL;
+		goto out;
+	}
 	fs->fs_ronly = (ronly != 0);
 	if (ronly == 0)
 		fs->fs_fmod = 1;
