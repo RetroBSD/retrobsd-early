@@ -40,13 +40,14 @@ SRC_MFLAGS	= -k
 LIBDIR		= lib
 SRCDIR		= share bin sbin etc usr.bin usr.sbin
 
-FSUTIL		= trunk/tools/fsutil
+FSUTIL		= tools/fsutil/fsutil
+ROOTDIRS	= sbin/ bin/
 ROOTFILES	= sbin/init bin/sh
 
 root.img:	$(FSUTIL)
 		rm -f $@
 		$(FSUTIL) -n -s16777216 $@
-		$(FSUTIL) -a $@ $(ROOTFILES)
+		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
 
 all:		${LIBDIR} ${SRCDIR}
 
@@ -58,7 +59,7 @@ usr.lib ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
 $(FSUTIL):
-		cd trunk/tools; make ${MFLAGS}
+		cd tools/fsutil; make ${MFLAGS}
 
 build:		buildlib ${SRCDIR}
 

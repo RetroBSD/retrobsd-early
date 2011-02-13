@@ -11,7 +11,7 @@ CFLAGS		+= -g -Werror
 
 # The program itself
 #
-PROG		= fsck
+PROG		= ../fsck
 
 # Sources
 #

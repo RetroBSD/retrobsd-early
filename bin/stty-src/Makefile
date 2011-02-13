@@ -11,9 +11,9 @@ OBJS		= stty.o
 MAN		= stty.0
 MANSRC		= stty.1
 
-all:		stty stty.0
+all:		../stty stty.0
 
-stty:		${OBJS}
+../stty:	${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 		${SIZE} $@
 
@@ -21,14 +21,14 @@ stty.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o ${MAN} stty tags *~
+		rm -f *.o ${MAN} ../stty tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	stty
+install:	../stty
 		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-		install -s -o root -g bin -m 755 stty ${DESTDIR}/bin/stty
+		install -s -o root -g bin -m 755 ../stty ${DESTDIR}/bin/stty
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

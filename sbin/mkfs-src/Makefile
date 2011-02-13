@@ -14,9 +14,9 @@ OBJS		= mkfs.o
 MAN		= mkfs.0
 MANSRC		= mkfs.8
 
-all:		mkfs mkfs.0
+all:		../mkfs mkfs.0
 
-mkfs:		${OBJS}
+../mkfs:	${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 		${SIZE} $@
 
@@ -24,14 +24,14 @@ mkfs.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} mkfs tags
+		rm -f *.o *~ ${MAN} ../mkfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	mkfs
+install:	../mkfs
 		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		install -s -o root -g bin -m 755 mkfs ${DESTDIR}/sbin/mkfs
+		install -s -o root -g bin -m 755 ../mkfs ${DESTDIR}/sbin/mkfs
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

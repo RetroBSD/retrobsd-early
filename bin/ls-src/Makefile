@@ -8,20 +8,20 @@ CFLAGS		= -O
 SRCS		= ls.c stat_flags.c
 OBJS		= ls.o stat_flags.o
 
-all:		ls
+all:		../ls
 
-ls:		${OBJS}
+../ls:		${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 		${SIZE} $@
 
 clean:
-		rm -f *.o ls tags *~
+		rm -f *.o ../ls tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	ls
-		install -s -o root -g bin -m 755 ls ${DESTDIR}/bin/ls
+install:	../ls
+		install -s -o root -g bin -m 755 ../ls ${DESTDIR}/bin/ls
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

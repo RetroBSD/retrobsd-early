@@ -9,9 +9,9 @@ OBJS		= init.o
 MAN		= init.0
 MANSRC		= init.8
 
-all:		init init.0
+all:		../init init.0
 
-init:		${OBJS}
+../init:	${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} -lc
 		${SIZE} $@
 
@@ -19,15 +19,15 @@ init.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} init tags
+		rm -f *.o *~ ${MAN} ../init tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	init
+install:	../init
 		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 		#-mv /etc/init /etc/init.old
-		install -s -o root -g bin -m 700 init ${DESTDIR}/etc/init
+		install -s -o root -g bin -m 700 ../init ${DESTDIR}/etc/init
 
 lint:		${SRCS}
 		lint -hax ${SRCS}
