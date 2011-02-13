@@ -45,6 +45,10 @@ static struct option program_options[] = {
 
 static void print_help (char *progname)
 {
+	char *p = strrchr (progname, '/');
+	if (p)
+		progname = p+1;
+
 	printf ("%s\n", program_version);
 	printf ("This program is free software; it comes with ABSOLUTELY NO WARRANTY;\n"
 		"see the GNU General Public License for more details.\n");
@@ -128,6 +132,24 @@ void print_double_indirect_block (fs_t *fs, unsigned int bno, FILE *out)
 	}
 }
 
+void print_triple_indirect_block (fs_t *fs, unsigned int bno, FILE *out)
+{
+	unsigned short nb;
+	unsigned char data [BSDFS_BSIZE];
+	int i;
+
+	fprintf (out, " [%d]", bno);
+	if (! fs_read_block (fs, bno, data)) {
+		fprintf (stderr, "read error at block %d\n", bno);
+		return;
+	}
+	for (i=0; i<BSDFS_BSIZE-2; i+=2) {
+		nb = data [i+1] << 8 | data [i];
+		if (nb)
+			print_indirect_block (fs, nb, out);
+	}
+}
+
 void print_inode_blocks (fs_inode_t *inode, FILE *out)
 {
 	int i;
@@ -137,22 +159,19 @@ void print_inode_blocks (fs_inode_t *inode, FILE *out)
 		return;
 
 	fprintf (out, "    ");
-	if (inode->mode & INODE_MODE_LARG) {
-		for (i=0; i<7; ++i) {
-			if (inode->addr[i] == 0)
-				continue;
-			print_indirect_block (inode->fs, inode->addr[i], out);
-		}
-		if (inode->addr[7] != 0)
-			print_double_indirect_block (inode->fs,
-				inode->addr[7], out);
-	} else {
-		for (i=0; i<8; ++i) {
-			if (inode->addr[i] == 0)
-				continue;
-			fprintf (out, " %d", inode->addr[i]);
-		}
+	for (i=0; i<NDADDR; ++i) {
+		if (inode->addr[i] == 0)
+			continue;
+		fprintf (out, " %d", inode->addr[i]);
 	}
+	if (inode->addr[NDADDR] != 0)
+		print_indirect_block (inode->fs, inode->addr[NDADDR], out);
+	if (inode->addr[NDADDR+1] != 0)
+		print_double_indirect_block (inode->fs,
+			inode->addr[NDADDR+1], out);
+	if (inode->addr[NDADDR+2] != 0)
+		print_triple_indirect_block (inode->fs,
+			inode->addr[NDADDR+2], out);
 	fprintf (out, "\n");
 }
 

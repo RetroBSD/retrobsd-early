@@ -8,11 +8,27 @@
  * See the accompanying file "COPYING" for more details.
  */
 #define BSDFS_BSIZE		1024	/* block size */
-#define BSDFS_ROOT_INODE	1	/* root directory in inode 1 */
+#define BSDFS_ROOT_INODE	2	/* root directory in inode 2 */
+#define BSDFS_LOSTFOUND_INODE	3	/* lost+found directory in inode 3 */
 #define BSDFS_INODES_PER_BLOCK	16	/* inodes per block */
 
 #define	NICINOD		100		/* number of superblock inodes */
 #define	NICFREE		100		/* number of superblock free blocks */
+
+/*
+ * 28 of the di_addr address bytes are used; 7 addresses of 4
+ * bytes each: 4 direct (4Kb directly accessible) and 3 indirect.
+ */
+#define	NDADDR	4			/* direct addresses in inode */
+#define	NIADDR	3			/* indirect addresses in inode */
+#define	NADDR	(NDADDR + NIADDR)	/* total addresses in inode */
+
+/*
+ * NINDIR is the number of indirects in a file system block.
+ */
+#define	NINDIR		(DEV_BSIZE / sizeof(daddr_t))
+#define	NSHIFT		8		/* log2(NINDIR) */
+#define	NMASK		0377L		/* NINDIR - 1 */
 
 /*
  * The path name on which the file system is mounted is maintained
@@ -43,7 +59,6 @@ typedef struct {
 	unsigned char	fmod;		/* super block modified flag */
 	unsigned char	ronly;		/* mounted read-only flag */
 	long		time;		/* current date of last update */
-
 	unsigned	tfree;		/* total free blocks */
 	unsigned	tinode;		/* total free inodes */
 	int		step;		/* optimal step in free list pattern */
@@ -56,34 +71,40 @@ typedef struct {
 
 typedef struct {
 	fs_t		*fs;
-	unsigned short	number;
+	unsigned 	number;
 	int		dirty;		/* save needed */
 
 	unsigned short	mode;		/* file type and access mode */
-#define	INODE_MODE_ALLOC	0100000
-#define	INODE_MODE_FMT		060000
-#define	INODE_MODE_FDIR		040000
-#define	INODE_MODE_FCHR		020000
-#define	INODE_MODE_FBLK		060000
-#define	INODE_MODE_LARG		010000
-#define	INODE_MODE_SUID		04000
-#define	INODE_MODE_SGID		02000
-#define	INODE_MODE_SVTX		01000
-#define	INODE_MODE_READ		0400
-#define	INODE_MODE_WRITE	0200
-#define	INODE_MODE_EXEC		0100
+#define	INODE_MODE_FMT		0170000	/* type of file */
+#define	INODE_MODE_FCHR		 020000	/* character special */
+#define	INODE_MODE_FDIR		 040000	/* directory */
+#define	INODE_MODE_FBLK		 060000	/* block special */
+#define	INODE_MODE_FREG		0100000	/* regular */
+#define	INODE_MODE_FLNK		0120000	/* symbolic link */
+#define	INODE_MODE_FSOCK	0140000	/* socket */
+#define	INODE_MODE_SUID		  04000	/* set user id on execution */
+#define	INODE_MODE_SGID		  02000	/* set group id on execution */
+#define	INODE_MODE_SVTX		  01000	/* save swapped text even after use */
+#define	INODE_MODE_READ		   0400	/* read, write, execute permissions */
+#define	INODE_MODE_WRITE	   0200
+#define	INODE_MODE_EXEC		   0100
 
-	unsigned char	nlink;		/* directory entries */
-	unsigned char	uid;		/* owner */
+	unsigned short	nlink;		/* directory entries */
+	unsigned 	uid;		/* owner */
+	unsigned 	gid;		/* group */
 	unsigned long	size;		/* size */
-	unsigned short	addr [8];	/* device addresses constituting file */
-	long		atime;		/* last access time */
-	long		mtime;		/* last modification time */
+	unsigned 	addr [7];	/* device addresses constituting file */
+	unsigned	flags;		/* flags */
+	long		atime;		/* time last accessed */
+	long		mtime;		/* time last modified */
+	long		ctime;		/* time created */
 } fs_inode_t;
 
 typedef struct {
-	unsigned short	ino;
-	char		name [14+1];
+	unsigned 	ino;
+	unsigned 	reclen;
+	unsigned 	namlen;
+	char		name [63+1];
 } fs_dirent_t;
 
 typedef void (*fs_directory_scanner_t) (fs_inode_t *dir,
@@ -113,7 +134,7 @@ int fs_create (fs_t *fs, const char *filename, unsigned long bytes);
 int fs_check (fs_t *fs);
 void fs_print (fs_t *fs, FILE *out);
 
-int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned short inum);
+int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned inum);
 int fs_inode_save (fs_inode_t *inode, int force);
 void fs_inode_clear (fs_inode_t *inode);
 void fs_inode_truncate (fs_inode_t *inode);
@@ -126,12 +147,13 @@ int fs_inode_alloc (fs_t *fs, fs_inode_t *inode);
 int fs_inode_by_name (fs_t *fs, fs_inode_t *inode, char *name,
 	int op, int mode);
 
-int fs_write_block (fs_t *fs, unsigned short bnum, unsigned char *data);
-int fs_read_block (fs_t *fs, unsigned short bnum, unsigned char *data);
+int fs_write_block (fs_t *fs, unsigned bnum, unsigned char *data);
+int fs_read_block (fs_t *fs, unsigned bnum, unsigned char *data);
 int fs_block_free (fs_t *fs, unsigned int bno);
 int fs_block_alloc (fs_t *fs, unsigned int *bno);
 int fs_indirect_block_free (fs_t *fs, unsigned int bno);
 int fs_double_indirect_block_free (fs_t *fs, unsigned int bno);
+int fs_triple_indirect_block_free (fs_t *fs, unsigned int bno);
 
 void fs_directory_scan (fs_inode_t *inode, char *dirname,
 	fs_directory_scanner_t scanner, void *arg);
@@ -145,11 +167,3 @@ int fs_file_read (fs_file_t *file, unsigned char *data,
 int fs_file_write (fs_file_t *file, unsigned char *data,
 	unsigned long bytes);
 int fs_file_close (fs_file_t *file);
-
-/* Big endians: Motorola 68000, PowerPC, HP PA, IBM S390. */
-#if defined (__m68k__) || defined (__ppc__) || defined (__hppa__) || \
-    defined (__s390__)
-#define lsb_short(x) ((x) << 8 | (unsigned char) ((x) >> 8))
-#else
-#define lsb_short(x) (x)
-#endif

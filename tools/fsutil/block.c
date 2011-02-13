@@ -12,10 +12,10 @@
 
 extern int verbose;
 
-int fs_read_block (fs_t *fs, unsigned short bnum, unsigned char *data)
+int fs_read_block (fs_t *fs, unsigned bnum, unsigned char *data)
 {
 /*	printf ("read block %d\n", bnum);*/
-	if (bnum <= fs->isize + 1)
+	if (bnum < fs->isize)
 		return 0;
 	if (! fs_seek (fs, bnum * BSDFS_BSIZE))
 		return 0;
@@ -24,10 +24,10 @@ int fs_read_block (fs_t *fs, unsigned short bnum, unsigned char *data)
 	return 1;
 }
 
-int fs_write_block (fs_t *fs, unsigned short bnum, unsigned char *data)
+int fs_write_block (fs_t *fs, unsigned bnum, unsigned char *data)
 {
 /*	printf ("write block %d\n", bnum);*/
-	if (! fs->writable || bnum <= fs->isize + 1)
+	if (! fs->writable || bnum < fs->isize)
 		return 0;
 	if (! fs_seek (fs, bnum * BSDFS_BSIZE))
 		return 0;
@@ -47,9 +47,9 @@ int fs_block_free (fs_t *fs, unsigned int bno)
 
 /*	printf ("free block %d, total %d\n", bno, fs->nfree);*/
 	if (fs->nfree >= 100) {
-		buf[0] = lsb_short (fs->nfree);
+		buf[0] = fs->nfree;
 		for (i=0; i<100; i++)
-			buf[i+1] = lsb_short (fs->free[i]);
+			buf[i+1] = fs->free[i];
 		if (! fs_write_block (fs, bno, (char*) buf)) {
 			fprintf (stderr, "block_free: write error at block %d\n", bno);
 			return 0;
@@ -67,7 +67,7 @@ int fs_block_free (fs_t *fs, unsigned int bno)
  */
 int fs_indirect_block_free (fs_t *fs, unsigned int bno)
 {
-	unsigned short nb;
+	unsigned nb;
 	unsigned char data [BSDFS_BSIZE];
 	int i;
 
@@ -89,7 +89,7 @@ int fs_indirect_block_free (fs_t *fs, unsigned int bno)
  */
 int fs_double_indirect_block_free (fs_t *fs, unsigned int bno)
 {
-	unsigned short nb;
+	unsigned nb;
 	unsigned char data [BSDFS_BSIZE];
 	int i;
 
@@ -101,6 +101,28 @@ int fs_double_indirect_block_free (fs_t *fs, unsigned int bno)
 		nb = data [i+1] << 8 | data [i];
 		if (nb)
 			fs_indirect_block_free (fs, nb);
+	}
+	fs_block_free (fs, bno);
+	return 1;
+}
+
+/*
+ * Free a triple indirect block.
+ */
+int fs_triple_indirect_block_free (fs_t *fs, unsigned int bno)
+{
+	unsigned nb;
+	unsigned char data [BSDFS_BSIZE];
+	int i;
+
+	if (! fs_read_block (fs, bno, data)) {
+		fprintf (stderr, "inode_clear: read error at block %d\n", bno);
+		return 0;
+	}
+	for (i=BSDFS_BSIZE-2; i>=0; i-=2) {
+		nb = data [i+1] << 8 | data [i];
+		if (nb)
+			fs_double_indirect_block_free (fs, nb);
 	}
 	fs_block_free (fs, bno);
 	return 1;
@@ -124,9 +146,9 @@ again:
 	if (fs->nfree <= 0) {
 		if (! fs_read_block (fs, *bno, (char*) buf))
 			return 0;
-		fs->nfree = lsb_short (buf[0]);
+		fs->nfree = buf[0];
 		for (i=0; i<100; i++)
-			fs->free[i] = lsb_short (buf[i+1]);
+			fs->free[i] = buf[i+1];
 	}
 	if (*bno == 0)
 		goto again;

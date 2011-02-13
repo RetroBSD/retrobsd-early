@@ -16,42 +16,52 @@
 
 extern int verbose;
 
-int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned short inum)
+int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned inum)
 {
 	unsigned long offset;
-	int i;
+	int i, reserved;
 
 	memset (inode, 0, sizeof (*inode));
 	inode->fs = fs;
 	inode->number = inum;
 
 	/* Inodes are numbered starting from 1.
-	 * 32 bytes per inode, 16 inodes per block.
-	 * Skip first and second blocks. */
-	if (inum == 0 || inum > fs->isize*16)
+	 * 64 bytes per inode, 16 inodes per block.
+	 * Skip first block. */
+	if (inum == 0 || inum > (fs->isize-1) * BSDFS_INODES_PER_BLOCK)
 		return 0;
-	offset = (inode->number + 31) * 32;
+	offset = (inode->number + BSDFS_INODES_PER_BLOCK - 1) *
+		BSDFS_BSIZE / BSDFS_INODES_PER_BLOCK;
 
 	if (! fs_seek (fs, offset))
 		return 0;
 
 	if (! fs_read16 (fs, &inode->mode))	/* file type and access mode */
 		return 0;
-	if (! fs_read8 (fs, &inode->nlink))	/* directory entries */
+	if (! fs_read16 (fs, &inode->nlink))	/* directory entries */
 		return 0;
-	if (! fs_read8 (fs, &inode->uid))	/* owner */
+	if (! fs_read32 (fs, &inode->uid))	/* owner */
+		return 0;
+	if (! fs_read32 (fs, &inode->gid))	/* group */
 		return 0;
 	if (! fs_read32 (fs, (unsigned*) &inode->size))	/* size */
 		return 0;
 
-	for (i=0; i<8; ++i) {		/* device addresses constituting file */
-		if (! fs_read16 (fs, &inode->addr[i]))
+	for (i=0; i<NADDR; ++i) {		/* device addresses constituting file */
+		if (! fs_read32 (fs, &inode->addr[i]))
 			return 0;
 	}
+	if (! fs_read32 (fs, (unsigned*) &reserved))
+		return 0;
+	if (! fs_read32 (fs, (unsigned*) &inode->flags))
+		return 0;			/* inode flags */
 	if (! fs_read32 (fs, (unsigned*) &inode->atime))
 		return 0;			/* last access time */
 	if (! fs_read32 (fs, (unsigned*) &inode->mtime))
 		return 0;			/* last modification time */
+	if (! fs_read32 (fs, (unsigned*) &inode->ctime))
+		return 0;			/* creation time */
+/*if (inode->mode) { fs_inode_print (inode, stdout); printf ("---\n"); }*/
 	return 1;
 }
 
@@ -66,26 +76,32 @@ int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned short inum)
  */
 void fs_inode_truncate (fs_inode_t *inode)
 {
-	unsigned short *blk;
+	unsigned *blk;
 
 	if ((inode->mode & INODE_MODE_FMT) == INODE_MODE_FCHR ||
 	    (inode->mode & INODE_MODE_FMT) == INODE_MODE_FBLK)
 		return;
 
-	for (blk = &inode->addr[7]; blk >= &inode->addr[0]; --blk) {
+#define	SINGLE	4	/* index of single indirect block */
+#define	DOUBLE	5	/* index of double indirect block */
+#define	TRIPLE	6	/* index of triple indirect block */
+
+	for (blk = &inode->addr[TRIPLE]; blk >= &inode->addr[0]; --blk) {
 		if (*blk == 0)
 			continue;
 
-		if (! (inode->mode & INODE_MODE_LARG))
-			fs_block_free (inode->fs, *blk);
-		else if (blk == &inode->addr[7])
+		if (blk == &inode->addr [TRIPLE])
+			fs_triple_indirect_block_free (inode->fs, *blk);
+		else if (blk == &inode->addr [DOUBLE])
 			fs_double_indirect_block_free (inode->fs, *blk);
-		else
+		else if (blk == &inode->addr [SINGLE])
 			fs_indirect_block_free (inode->fs, *blk);
+		else
+			fs_block_free (inode->fs, *blk);
 
 		*blk = 0;
 	}
-	inode->mode &= ~INODE_MODE_LARG;
+
 	inode->size = 0;
 	inode->dirty = 1;
 }
@@ -111,9 +127,11 @@ int fs_inode_save (fs_inode_t *inode, int force)
 		return 0;
 	if (! force && ! inode->dirty)
 		return 1;
-	if (inode->number == 0 || inode->number > inode->fs->isize*16)
+	if (inode->number == 0 ||
+	    inode->number > (inode->fs->isize-1) * BSDFS_INODES_PER_BLOCK)
 		return 0;
-	offset = (inode->number + 31) * 32;
+	offset = (inode->number + BSDFS_INODES_PER_BLOCK - 1) *
+		BSDFS_BSIZE / BSDFS_INODES_PER_BLOCK;
 
 	time (&inode->atime);
 	time (&inode->mtime);
@@ -123,20 +141,26 @@ int fs_inode_save (fs_inode_t *inode, int force)
 
 	if (! fs_write16 (inode->fs, inode->mode))	/* file type and access mode */
 		return 0;
-	if (! fs_write8 (inode->fs, inode->nlink))	/* directory entries */
+	if (! fs_write16 (inode->fs, inode->nlink))	/* directory entries */
 		return 0;
-	if (! fs_write8 (inode->fs, inode->uid))	/* owner */
+	if (! fs_write32 (inode->fs, inode->uid))	/* owner */
+		return 0;
+	if (! fs_write32 (inode->fs, inode->gid))	/* group */
 		return 0;
 	if (! fs_write32 (inode->fs, inode->size))	/* size */
 		return 0;
 
-	for (i=0; i<8; ++i) {		/* device addresses constituting file */
-		if (! fs_write16 (inode->fs, inode->addr[i]))
+	for (i=0; i<NADDR; ++i) {	/* device addresses constituting file */
+		if (! fs_write32 (inode->fs, inode->addr[i]))
 			return 0;
 	}
+	if (! fs_write32 (inode->fs, 0))		/* reserved */
+		return 0;
 	if (! fs_write32 (inode->fs, inode->atime))	/* last access time */
 		return 0;
 	if (! fs_write32 (inode->fs, inode->mtime))	/* last modification time */
+		return 0;
+	if (! fs_write32 (inode->fs, inode->ctime))	/* creation time */
 		return 0;
 
 	inode->dirty = 0;
@@ -152,13 +176,14 @@ void fs_inode_print (fs_inode_t *inode, FILE *out)
 		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FDIR ? "Directory" :
 		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FCHR ? "Character device" :
 		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FBLK ? "Block device" :
-		"File");
+		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FREG ? "File" :
+		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FLNK ? "Symbolic link" :
+		(inode->mode & INODE_MODE_FMT) == INODE_MODE_FSOCK? "Socket" :
+		"Unknown");
 	fprintf (out, "       Size: %lu bytes\n", inode->size);
 	fprintf (out, "       Mode: %#o\n", inode->mode);
 
 	fprintf (out, "            ");
-	if (inode->mode & INODE_MODE_ALLOC) fprintf (out, " ALLOC");
-        if (inode->mode & INODE_MODE_LARG)  fprintf (out, " LARG");
         if (inode->mode & INODE_MODE_SUID)  fprintf (out, " SUID");
         if (inode->mode & INODE_MODE_SGID)  fprintf (out, " SGID");
         if (inode->mode & INODE_MODE_SVTX)  fprintf (out, " SVTX");
@@ -171,7 +196,7 @@ void fs_inode_print (fs_inode_t *inode, FILE *out)
 	fprintf (out, "   Owner id: %u\n", inode->uid);
 
 	fprintf (out, "     Blocks:");
-	for (i=0; i < 8; ++i) {
+	for (i=0; i<NADDR; ++i) {
 		fprintf (out, " %u", inode->addr[i]);
 	}
 	fprintf (out, "\n");
@@ -214,47 +239,58 @@ void fs_directory_scan (fs_inode_t *dir, char *dirname,
  * Return the physical block number on a device given the
  * inode and the logical block number in a file.
  */
-static unsigned short map_block (fs_inode_t *inode, unsigned short lbn)
+static unsigned map_block (fs_inode_t *inode, unsigned lbn)
 {
-	unsigned char block [BSDFS_BSIZE];
-	unsigned int nb, i;
+	unsigned block [BSDFS_BSIZE / 4];
+	unsigned int nb, i, j, sh;
 
-	if (lbn > 0x7fff) {
-		/* block number too large */
-		return 0;
-	}
-	if (! (inode->mode & INODE_MODE_LARG)) {
+	/*
+	 * Blocks 0..NADDR-4 are direct blocks.
+	 */
+	if (lbn < NADDR-3) {
 		/* small file algorithm */
-		if (lbn > 7) {
-			/* block number too large for small file */
-			return 0;
-		}
 		return inode->addr [lbn];
 	}
 
-	/* large file algorithm */
-	i = lbn >> 8;
-	if (i > 7)
-		i = 7;
-	nb = inode->addr [i];
-	if (nb == 0)
-		return 0;
-	if (! fs_read_block (inode->fs, nb, block))
-		return 0;
-
-	/* "huge" fetch of double indirect block */
-	if (i == 7) {
-		i = ((lbn >> 8) - 7) * 2;
-		nb = block [i+1] << 8 | block [i];
-		if (nb == 0)
+	/*
+	 * Addresses NADDR-3, NADDR-2, and NADDR-1
+	 * have single, double, triple indirect blocks.
+	 * The first step is to determine
+	 * how many levels of indirection.
+	 */
+	sh = 0;
+	nb = 1;
+	lbn -= NADDR-3;
+	for (j=3; ; j--) {
+		if (j == 0)
 			return 0;
-		if (! fs_read_block (inode->fs, nb, block))
-			return 0;
+		sh += NSHIFT;
+		nb <<= NSHIFT;
+		if (lbn < nb)
+			break;
+		lbn -= nb;
 	}
 
-	/* normal indirect fetch */
-	i = (lbn & 0xFF) * 2;
-	nb = block [i+1] << 8 | block [i];
+	/*
+	 * Fetch the first indirect block.
+	 */
+	nb = inode->addr [NADDR-j];
+	if (nb == 0)
+		return 0;
+
+	/*
+	 * Fetch through the indirect blocks.
+	 */
+	for(; j <= 3; j++) {
+		if (! fs_read_block (inode->fs, nb, (unsigned char*) block))
+			return 0;
+
+		sh -= NSHIFT;
+		i = (lbn >> sh) & NMASK;
+		nb = block [i];
+		if (nb == 0)
+			return 0;
+	}
 	return nb;
 }
 
@@ -263,35 +299,17 @@ static unsigned short map_block (fs_inode_t *inode, unsigned short lbn)
  * by returning the physical block number on a device given the
  * inode and the logical block number in a file.
  */
-static unsigned short map_block_write (fs_inode_t *inode, unsigned short lbn)
+static unsigned map_block_write (fs_inode_t *inode, unsigned lbn)
 {
 	unsigned char block [BSDFS_BSIZE];
-	unsigned int nb, ib, i;
+	unsigned int nb, newb, sh, i, j;
 
-	if (lbn > 0x7fff) {
-		/* block number too large */
-		return 0;
-	}
-	if (! (inode->mode & INODE_MODE_LARG)) {
+	/*
+	 * Blocks 0..NADDR-4 are direct blocks.
+	 */
+	if (lbn < NADDR-3) {
 		/* small file algorithm */
-		if (lbn > 7) {
-			/* convert small to large */
-			if (! fs_block_alloc (inode->fs, &nb))
-				return 0;
-			memset (block, 0, BSDFS_BSIZE);
-			for (i=0; i<8; i++) {
-				block[i+i] = inode->addr[i];
-				block[i+i+1] = inode->addr[i] >> 8;
-				inode->addr[i] = 0;
-			}
-			inode->addr[0] = nb;
-			if (! fs_write_block (inode->fs, nb, block))
-				return 0;
-			inode->mode |= INODE_MODE_LARG;
-			inode->dirty = 1;
-			goto large;
-		}
-		nb = inode->addr[lbn];
+		nb = inode->addr [lbn];
 		if (nb != 0) {
 /*			printf ("map logical block %d to physical %d\n", lbn, nb);*/
 			return nb;
@@ -304,57 +322,65 @@ static unsigned short map_block_write (fs_inode_t *inode, unsigned short lbn)
 		inode->dirty = 1;
 		return nb;
 	}
-large:
-	/* large file algorithm */
-	i = lbn >> 8;
-	if (i > 7)
-		i = 7;
-	ib = inode->addr[i];
-	if (ib != 0) {
-		if (! fs_read_block (inode->fs, ib, block))
+
+	/*
+	 * Addresses NADDR-3, NADDR-2, and NADDR-1
+	 * have single, double, triple indirect blocks.
+	 * The first step is to determine
+	 * how many levels of indirection.
+	 */
+	sh = 0;
+	nb = 1;
+	lbn -= NADDR-3;
+	for (j=3; ; j--) {
+		if (j == 0)
 			return 0;
-	} else {
-		if (! fs_block_alloc (inode->fs, &ib))
+		sh += NSHIFT;
+		nb <<= NSHIFT;
+		if (lbn < nb)
+			break;
+		lbn -= nb;
+	}
+
+	/*
+	 * Fetch the first indirect block.
+	 */
+	nb = inode->addr [NADDR-j];
+	if (nb == 0) {
+		if (! fs_block_alloc (inode->fs, &nb))
 			return 0;
+/*		printf ("inode %d: allocate new block %d\n", inode->number, nb);*/
 		memset (block, 0, BSDFS_BSIZE);
-		inode->addr[i] = ib;
+		if (! fs_write_block (inode->fs, nb, block))
+			return 0;
+		inode->addr [NADDR-j] = nb;
 		inode->dirty = 1;
 	}
 
-	/* "huge" fetch of double indirect block */
-	if (i == 7) {
-		i = ((lbn >> 8) - 7) * 2;
-		nb = block [i+1] << 8 | block [i];
-		if (nb != 0) {
-			if (! fs_read_block (inode->fs, nb, block))
+	/*
+	 * Fetch through the indirect blocks
+	 */
+	for(; j <= 3; j++) {
+		if (! fs_read_block (inode->fs, nb, block))
+			return 0;
+
+		sh -= NSHIFT;
+		i = (lbn >> sh) & NMASK;
+		nb = block [i];
+		if (nb == 0) {
+			/* Allocate new block. */
+			if (! fs_block_alloc (inode->fs, &newb))
 				return 0;
-		} else {
-			/* allocate new block */
-			if (! fs_block_alloc (inode->fs, &nb))
+/*			printf ("inode %d: allocate new block %d\n", inode->number, newb);*/
+			block[i] = newb;
+			if (! fs_write_block (inode->fs, nb, block))
 				return 0;
 			memset (block, 0, BSDFS_BSIZE);
-			block[i+i] = nb;
-			block[i+i+1] = nb >> 8;
-			if (! fs_write_block (inode->fs, ib, block))
+			if (! fs_write_block (inode->fs, newb, block))
 				return 0;
+			nb = newb;
 		}
-		ib = nb;
 	}
-
-	/* normal indirect fetch */
-	i = lbn & 0377;
-	nb = block [i+i+1] << 8 | block [i+i];
-	if (nb != 0)
-		return nb;
-
-	/* allocate new block */
-	if (! fs_block_alloc (inode->fs, &nb))
-		return 0;
-/*	printf ("inode %d: allocate new block %d\n", inode->number, nb);*/
-	block[i+i] = nb;
-	block[i+i+1] = nb >> 8;
-	if (! fs_write_block (inode->fs, ib, block))
-		return 0;
 	return nb;
 }
 
@@ -447,13 +473,16 @@ void fs_dirent_pack (unsigned char *data, fs_dirent_t *dirent)
  */
 void fs_dirent_unpack (fs_dirent_t *dirent, unsigned char *data)
 {
-	int i;
-
 	dirent->ino = *data++;
 	dirent->ino |= *data++ << 8;
-	for (i=0; i<14; ++i)
-		dirent->name[i] = *data++;
-	dirent->name[14] = 0;
+	dirent->ino |= *data++ << 16;
+	dirent->ino |= *data++ << 24;
+	dirent->reclen = *data++;
+	dirent->reclen |= *data++ << 8;
+	dirent->namlen = *data++;
+	dirent->namlen |= *data++ << 8;
+	memset (dirent->name, 0, sizeof (dirent->name));
+	memcpy (dirent->name, data, dirent->namlen);
 }
 
 /*
@@ -557,7 +586,8 @@ create_file:
 	}
 	inode->dirty = 1;
 	inode->mode = mode & (07777 | INODE_MODE_FMT);
-	inode->mode |= INODE_MODE_ALLOC;
+	if (inode->mode == 0)
+		inode->mode = INODE_MODE_FREG;
 	inode->nlink = 1;
 	inode->uid = 0;
 	if (! fs_inode_save (inode, 0)) {

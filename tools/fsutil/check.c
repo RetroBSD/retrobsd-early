@@ -38,46 +38,46 @@ extern int verbose;
 #define SKIP		002
 #define STOP		001
 
-#define outrange(fs,x)	((x) < (fs)->isize + 2 || (x) >= (fs)->fsize)
+#define outrange(fs,x)	((x) < (fs)->isize || (x) >= (fs)->fsize)
 
 /* block scan function, called by scan_inode for every file block */
-typedef int scanner_t (fs_inode_t *inode, unsigned short blk, void *arg);
+typedef int scanner_t (fs_inode_t *inode, unsigned blk, void *arg);
 
 static unsigned char	buf_data [BSDFS_BSIZE];	/* buffer data for scan_directory */
-static unsigned short	buf_bno;		/* buffer block number */
+static unsigned 	buf_bno;		/* buffer block number */
 static int		buf_dirty;		/* buffer data modified */
 
-static unsigned short	dup_list [DUP_LIST_SIZE]; /* dup block table */
-static unsigned short	*dup_end;		/* next entry in dup table */
-static unsigned short	*dup_multi;		/* multiple dups part of table */
+static unsigned 	dup_list [DUP_LIST_SIZE]; /* dup block table */
+static unsigned 	*dup_end;		/* next entry in dup table */
+static unsigned 	*dup_multi;		/* multiple dups part of table */
 
-static unsigned short	bad_link_list [LINK_LIST_SIZE]; /* inos with zero link cnts */
-static unsigned short	*bad_link_end;		/* next entry in table */
+static unsigned 	bad_link_list [LINK_LIST_SIZE]; /* inos with zero link cnts */
+static unsigned 	*bad_link_end;		/* next entry in table */
 
 static char		*block_map;		/* primary blk allocation map */
 static char		*free_map;		/* secondary blk allocation map */
 static char		*state_map;		/* inode state table */
-static short		*link_count;		/* link count table */
+static int		*link_count;		/* link count table */
 
 static char		pathname [256];		/* file path name for pass2 */
 static char		*pathp;			/* pointer to pathname position */
 static char		*thisname;		/* ptr to current pathname component */
 
 static char		*lost_found_name = "lost+found";
-static unsigned short	lost_found_inode;	/* lost & found directory */
+static unsigned 	lost_found_inode;	/* lost & found directory */
 
 static int		free_list_corrupted;	/* corrupted free list */
 static int		bad_blocks;		/* num of bad blks seen (per inode) */
 static int		dup_blocks;		/* num of dup blks seen (per inode) */
 
 static char		*find_inode_name;	/* searching for this name */
-static unsigned short	find_inode_result;	/* result of inode search */
-static unsigned short	lost_inode;		/* lost file to reconnect */
+static unsigned 	find_inode_result;	/* result of inode search */
+static unsigned 	lost_inode;		/* lost file to reconnect */
 
 static unsigned long	scan_filesize;		/* file size, decremented during scan */
-static unsigned short	total_files;		/* number of files seen */
+static unsigned 	total_files;		/* number of files seen */
 
-static void set_inode_state (unsigned short inum, int s)
+static void set_inode_state (unsigned inum, int s)
 {
 	unsigned int byte, shift;
 
@@ -87,7 +87,7 @@ static void set_inode_state (unsigned short inum, int s)
 	state_map [byte] |= s << shift;
 }
 
-static int inode_state (unsigned short inum)
+static int inode_state (unsigned inum)
 {
 	unsigned int byte, shift;
 
@@ -96,32 +96,32 @@ static int inode_state (unsigned short inum)
 	return (state_map [byte] >> shift) & STATE_MASK;
 }
 
-static int block_is_busy (unsigned short blk)
+static int block_is_busy (unsigned blk)
 {
 	return block_map [blk >> 3] & (1 << (blk & 7));
 }
 
-static void mark_block_busy (unsigned short blk)
+static void mark_block_busy (unsigned blk)
 {
 	block_map [blk >> 3] |= 1 << (blk & 7);
 }
 
-static void mark_block_free (unsigned short blk)
+static void mark_block_free (unsigned blk)
 {
 	block_map [blk >> 3] &= ~(1 << (blk & 7));
 }
 
-static void mark_free_list (unsigned short blk)
+static void mark_free_list (unsigned blk)
 {
 	free_map [blk >> 3] |= 1 << (blk & 7);
 }
 
-static int in_free_list (unsigned short blk)
+static int in_free_list (unsigned blk)
 {
 	return free_map [blk >> 3] & (1 << (blk & 7));
 }
 
-static void print_io_error (char *s, unsigned short blk)
+static void print_io_error (char *s, unsigned blk)
 {
 	printf ("\nCAN NOT %s: BLK %d\n", s, blk);
 }
@@ -136,7 +136,7 @@ static void buf_flush (fs_t *fs)
 	buf_dirty = 0;
 }
 
-static int buf_get (fs_t *fs, unsigned short blk)
+static int buf_get (fs_t *fs, unsigned blk)
 {
 	if (buf_bno == blk)
 		return 1;
@@ -144,7 +144,7 @@ static int buf_get (fs_t *fs, unsigned short blk)
 /*printf ("read blk %d\n", blk);*/
 	if (! fs_read_block (fs, blk, buf_data)) {
 		print_io_error ("READ", blk);
-		buf_bno = (unsigned short)-1;
+		buf_bno = (unsigned)-1;
 		return 0;
 	}
 	buf_bno = blk;
@@ -155,14 +155,14 @@ static int buf_get (fs_t *fs, unsigned short blk)
  * Scan recursively the indirect block of the inode,
  * and for every block call the given function.
  */
-static int scan_indirect_block (fs_inode_t *inode, unsigned short blk,
+static int scan_indirect_block (fs_inode_t *inode, unsigned blk,
 	int double_indirect, int flg, scanner_t *func, void *arg)
 {
-	unsigned short nb;
+	unsigned nb;
 	int ret, i;
 	unsigned char data [BSDFS_BSIZE];
 
-/*printf ("check %siblock %d: \n", double_indirect ? "double " : "", blk);*/
+/*printf ("check %siblock %d: \n", double_indirect > 1 ? "triple " : double_indirect ? "double " : "", blk);*/
 	if (flg == ADDR) {
 		ret = (*func) (inode, blk, arg);
 		if (! (ret & KEEPON))
@@ -180,7 +180,7 @@ static int scan_indirect_block (fs_inode_t *inode, unsigned short blk,
 		if (nb) {
 			if (double_indirect)
 				ret = scan_indirect_block (inode, nb,
-					0, flg, func, arg);
+					double_indirect - 1, flg, func, arg);
 			else
 				ret = (*func) (inode, nb, arg);
 
@@ -200,7 +200,7 @@ static int scan_indirect_block (fs_inode_t *inode, unsigned short blk,
  */
 static int scan_inode (fs_inode_t *inode, int flg, scanner_t *func, void *arg)
 {
-	unsigned short *ap;
+	unsigned *ap;
 	int ret;
 
 /*printf ("check inode %d: %#o\n", inode->number, inode->mode);*/
@@ -209,30 +209,31 @@ static int scan_inode (fs_inode_t *inode, int flg, scanner_t *func, void *arg)
 		return KEEPON;
 	scan_filesize = inode->size;
 
-	if (! (inode->mode & INODE_MODE_LARG)) {
-		/* Small file - up to 8 direct blocks. */
-		for (ap = inode->addr; ap < &inode->addr[8]; ap++) {
-			if (*ap) {
-				ret = (*func) (inode, *ap, arg);
-				if (ret & STOP)
-					return ret;
-			}
-		}
-		return KEEPON;
-	}
-	/* Large file - up to 7 indirect blocks and
-	 * one double indirect block. */
-	for (ap = inode->addr; ap < &inode->addr[7]; ap++) {
+	/* Check direct blocks. */
+	for (ap = inode->addr; ap < &inode->addr[NDADDR]; ap++) {
 		if (*ap) {
-			ret = scan_indirect_block (inode, *ap, 0,
-				flg, func, arg);
+			ret = (*func) (inode, *ap, arg);
 			if (ret & STOP)
-				return (ret);
+				return ret;
 		}
 	}
-	if (inode->addr[7]) {
-		/* Check the last (indirect) block. */
-		ret = scan_indirect_block (inode, inode->addr[7], 1,
+	if (inode->addr[NADDR-3]) {
+		/* Check the indirect block. */
+		ret = scan_indirect_block (inode, inode->addr[NADDR-3], 0,
+			flg, func, arg);
+		if (ret & STOP)
+			return (ret);
+	}
+	if (inode->addr[NADDR-2]) {
+		/* Check the double indirect block. */
+		ret = scan_indirect_block (inode, inode->addr[NADDR-2], 1,
+			flg, func, arg);
+		if (ret & STOP)
+			return (ret);
+	}
+	if (inode->addr[NADDR-1]) {
+		/* Check the last (triple indirect) block. */
+		ret = scan_indirect_block (inode, inode->addr[NADDR-1], 2,
 			flg, func, arg);
 		if (ret & STOP)
 			return (ret);
@@ -240,7 +241,7 @@ static int scan_inode (fs_inode_t *inode, int flg, scanner_t *func, void *arg)
 	return KEEPON;
 }
 
-static void print_block_error (char *s, unsigned short blk, unsigned short inum)
+static void print_block_error (char *s, unsigned blk, unsigned inum)
 {
 	printf ("%u %s I=%u\n", blk, s, inum);
 }
@@ -250,10 +251,10 @@ static void print_block_error (char *s, unsigned short blk, unsigned short inum)
  * Mark blocks as busy on block map.
  * If duplicates are found, put them into dup_list.
  */
-static int pass1 (fs_inode_t *inode, unsigned short blk, void *arg)
+static int pass1 (fs_inode_t *inode, unsigned blk, void *arg)
 {
-	unsigned short *dlp;
-	unsigned short *blocks = arg;
+	unsigned *dlp;
+	unsigned *blocks = arg;
 
 /*printf ("pass1 inode %d block %d: \n", inode->number, blk);*/
 	if (outrange (inode->fs, blk)) {
@@ -294,9 +295,9 @@ static int pass1 (fs_inode_t *inode, unsigned short blk, void *arg)
 	return KEEPON;
 }
 
-static int pass1b (fs_inode_t *inode, unsigned short blk, void *arg)
+static int pass1b (fs_inode_t *inode, unsigned blk, void *arg)
 {
-	unsigned short *dlp;
+	unsigned *dlp;
 
 	if (outrange (inode->fs, blk))
 		return SKIP;
@@ -316,7 +317,7 @@ static int pass1b (fs_inode_t *inode, unsigned short blk, void *arg)
  * Read directory, and for every entry call given function.
  * If function altered the contents of entry, then write it back.
  */
-static int scan_directory (fs_inode_t *inode, unsigned short blk, void *arg)
+static int scan_directory (fs_inode_t *inode, unsigned blk, void *arg)
 {
 	fs_dirent_t direntry;
 	unsigned char *dirp;
@@ -335,6 +336,8 @@ static int scan_directory (fs_inode_t *inode, unsigned short blk, void *arg)
 			return SKIP;
 		}
 		fs_dirent_unpack (&direntry, dirp);
+		if (direntry.reclen == 0)
+			break;
 
 		/* For every directory entry, call handler. */
 		n = (*func) (inode->fs, &direntry);
@@ -348,8 +351,8 @@ static int scan_directory (fs_inode_t *inode, unsigned short blk, void *arg)
 		}
 		if (n & STOP)
 			return n;
-		dirp += 16;
-		scan_filesize -= 16;
+		dirp += direntry.reclen;
+		scan_filesize -= direntry.reclen;
 	}
 	return (scan_filesize > 0) ? KEEPON : STOP;
 }
@@ -366,7 +369,7 @@ static void print_inode (fs_inode_t *inode)
 	printf ("MTIME=%12.12s %4.4s\n", p+4, p+20);
 }
 
-static void print_dir_error (fs_t *fs, unsigned short inum, char *s)
+static void print_dir_error (fs_t *fs, unsigned inum, char *s)
 {
 	fs_inode_t inode;
 
@@ -380,7 +383,7 @@ static void print_dir_error (fs_t *fs, unsigned short inum, char *s)
 		INODE_MODE_FDIR) ? "DIR" : "FILE", pathname);
 }
 
-static void scan_pass2 (fs_t *fs, unsigned short inum);
+static void scan_pass2 (fs_t *fs, unsigned inum);
 
 /*
  * Clear directory entries which refer to duplicated or unallocated inodes.
@@ -401,7 +404,7 @@ static int pass2 (fs_t *fs, fs_dirent_t *dirp)
 	pathp += strlen (pathp);
 /*printf ("%s  %d\n", pathname, inum);*/
 	n = 0;
-	if (inum > fs->isize * BSDFS_INODES_PER_BLOCK ||
+	if (inum > (fs->isize - 1) * BSDFS_INODES_PER_BLOCK ||
 	    inum < BSDFS_ROOT_INODE)
 		print_dir_error (fs, inum, "I OUT OF RANGE");
 	else {
@@ -442,7 +445,7 @@ again:		switch (inode_state (inum)) {
  * Traverse directory tree. Call pass2 for every directory entry.
  * Keep current file name in 'pathname'.
  */
-static void scan_pass2 (fs_t *fs, unsigned short inum)
+static void scan_pass2 (fs_t *fs, unsigned inum)
 {
 	fs_inode_t inode;
 	char *savname;
@@ -471,7 +474,7 @@ static int find_inode (fs_t *fs, fs_dirent_t *dirp)
 		return KEEPON;
 	if (strcmp (find_inode_name, dirp->name) == 0) {
 		if (dirp->ino >= BSDFS_ROOT_INODE &&
-		    dirp->ino <= fs->isize * BSDFS_INODES_PER_BLOCK)
+		    dirp->ino < (fs->isize-1) * BSDFS_INODES_PER_BLOCK)
 			find_inode_result = dirp->ino;
 		return STOP;
 	}
@@ -508,7 +511,7 @@ static int dotdot_to_lost_found (fs_t *fs, fs_dirent_t *dirp)
  * Return lost+found inode number.
  * TODO: create /lost+found when not available.
  */
-static unsigned short find_lost_found (fs_t *fs)
+static unsigned find_lost_found (fs_t *fs)
 {
 	fs_inode_t root;
 
@@ -586,10 +589,10 @@ static int move_to_lost_found (fs_inode_t *inode)
 /*
  * Mark the block as free. Remove it from dup list.
  */
-static int pass4 (fs_inode_t *inode, unsigned short blk, void *arg)
+static int pass4 (fs_inode_t *inode, unsigned blk, void *arg)
 {
-	unsigned short *dlp;
-	unsigned short *blocks = arg;
+	unsigned *dlp;
+	unsigned *blocks = arg;
 
 	if (outrange (inode->fs, blk))
 		return SKIP;
@@ -610,7 +613,7 @@ static int pass4 (fs_inode_t *inode, unsigned short blk, void *arg)
 /*
  * Clear the inode, mark it's blocks as free.
  */
-static void clear_inode (fs_t *fs, unsigned short inum, char *msg)
+static void clear_inode (fs_t *fs, unsigned inum, char *msg)
 {
 	fs_inode_t inode;
 
@@ -633,7 +636,7 @@ static void clear_inode (fs_t *fs, unsigned short inum, char *msg)
  * Fix the link count of the inode.
  * If no links - move it to lost+found.
  */
-static void adjust_link_count (fs_t *fs, unsigned short inum, short lcnt)
+static void adjust_link_count (fs_t *fs, unsigned inum, unsigned lcnt)
 {
 	fs_inode_t inode;
 
@@ -661,7 +664,7 @@ static void adjust_link_count (fs_t *fs, unsigned short inum, short lcnt)
  * Called from check_free_list() for every block in free list.
  * Count free blocks, detect duplicates.
  */
-static int pass5 (fs_t *fs, unsigned short blk, unsigned short *free_blocks)
+static int pass5 (fs_t *fs, unsigned blk, unsigned *free_blocks)
 {
 	if (outrange (fs, blk)) {
 		free_list_corrupted = 1;
@@ -688,7 +691,7 @@ static int pass5 (fs_t *fs, unsigned short blk, unsigned short *free_blocks)
  * Scan a free block list and return a number of free blocks.
  * If the list is corrupted, set 'free_list_corrupted' flag.
  */
-static unsigned short check_free_list (fs_t *fs)
+static unsigned check_free_list (fs_t *fs)
 {
 	unsigned *ap, *base;
 	unsigned free_blocks, nfree;
@@ -718,9 +721,9 @@ static unsigned short check_free_list (fs_t *fs)
 			print_io_error ("READ", *ap);
 			break;
 		}
-		nfree = lsb_short (data[0]);
+		nfree = data[0];
 		for (i=0; i<100; ++i)
-			list [i] = lsb_short (data[i+1]);
+			list [i] = data[i+1];
 		base = list;
 	}
 	return free_blocks;
@@ -732,7 +735,7 @@ static unsigned short check_free_list (fs_t *fs)
 static void check_free_inode_list (fs_t *fs)
 {
 	int i;
-	unsigned short inum;
+	unsigned inum;
 
 	for (i=0; i<fs->ninode; i++) {
 		inum = fs->inode[i];
@@ -752,9 +755,9 @@ static void check_free_inode_list (fs_t *fs)
 /*
  * Build a free block list from scratch.
  */
-static unsigned short make_free_list (fs_t *fs)
+static unsigned make_free_list (fs_t *fs)
 {
-	unsigned short free_blocks, n;
+	unsigned free_blocks, n;
 
 	fs->nfree = 0;
 	fs->flock = 0;
@@ -766,7 +769,7 @@ static unsigned short make_free_list (fs_t *fs)
 
 	/* Build a list of free blocks */
 	fs_block_free (fs, 0);
-	for (n = fs->fsize - 1; n >= fs->isize + 2; n--) {
+	for (n = fs->fsize - 1; n >= fs->isize; n--) {
 		if (block_is_busy (n))
 			continue;
 		++free_blocks;
@@ -785,13 +788,13 @@ int fs_check (fs_t *fs)
 {
 	fs_inode_t inode;
 	int n;
-	unsigned short inum;
-	unsigned short block_map_size;		/* number of free blocks */
-	unsigned short free_blocks;		/* number of free blocks */
-	unsigned short used_blocks;		/* number of blocks used */
-	unsigned short last_allocated_inode;	/* hiwater mark of inodes */
+	unsigned inum;
+	unsigned block_map_size;		/* number of free blocks */
+	unsigned free_blocks;			/* number of free blocks */
+	unsigned used_blocks;			/* number of blocks used */
+	unsigned last_allocated_inode;		/* hiwater mark of inodes */
 
-	if (fs->isize + 2 >= fs->fsize) {
+	if (fs->isize >= fs->fsize) {
 		printf ("Bad filesystem size: total %d blocks with %d inode blocks\n",
 			fs->fsize, fs->isize);
 		return 0;
@@ -803,14 +806,14 @@ int fs_check (fs_t *fs)
 	bad_link_end = &bad_link_list[0];
 	lost_found_inode = 0;
 	buf_dirty = 0;
-	buf_bno = (unsigned short) -1;
+	buf_bno = (unsigned) -1;
 
 	/* Allocate memory. */
 	block_map_size = (fs->fsize + 7) / 8;
 	block_map = calloc (block_map_size, sizeof (*block_map));
-	state_map = calloc ((fs->isize * BSDFS_INODES_PER_BLOCK +
+	state_map = calloc (((fs->isize-1) * BSDFS_INODES_PER_BLOCK +
 		STATES_PER_BYTE) / STATES_PER_BYTE, sizeof (*state_map));
-	link_count = calloc (fs->isize * BSDFS_INODES_PER_BLOCK + 1,
+	link_count = calloc ((fs->isize-1) * BSDFS_INODES_PER_BLOCK + 1,
 		sizeof (*link_count));
 	if (! block_map || ! state_map || ! link_count) {
 		printf ("Cannot allocate memory\n");
@@ -825,10 +828,10 @@ fatal:		if (block_map)
 
 	printf ("** Phase 1 - Check Blocks and Sizes\n");
 	last_allocated_inode = 0;
-	for (inum = 1; inum <= fs->isize * BSDFS_INODES_PER_BLOCK; inum++) {
+	for (inum = 1; inum <= (fs->isize-1) * BSDFS_INODES_PER_BLOCK; inum++) {
 		if (! fs_inode_get (fs, &inode, inum))
 			continue;
-		if (inode.mode & INODE_MODE_ALLOC) {
+		if (inode.mode & INODE_MODE_FMT) {
 /*printf ("inode %d: %#o\n", inode.number, inode.mode);*/
 			last_allocated_inode = inum;
 			total_files++;
@@ -847,7 +850,7 @@ fatal:		if (block_map)
 			n = inode_state (inum);
 			if (n == DSTATE || n == FSTATE) {
 				if ((inode.mode & INODE_MODE_FMT) == INODE_MODE_FDIR &&
-				    (inode.size % 16) != 0) {
+				    (inode.size % 4) != 0) {
 					printf ("DIRECTORY MISALIGNED I=%u\n\n",
 						inode.number);
 				}
@@ -900,7 +903,7 @@ fatal:		if (block_map)
 	printf ("** Phase 3 - Check Connectivity\n");
 	for (inum = BSDFS_ROOT_INODE; inum <= last_allocated_inode; inum++) {
 		if (inode_state (inum) == DSTATE) {
-			unsigned short ino;
+			unsigned ino;
 
 			find_inode_name = "..";
 			ino = inum;
@@ -931,7 +934,7 @@ fatal:		if (block_map)
 			if (n)
 				adjust_link_count (fs, inum, n);
 			else {
-				unsigned short *blp;
+				unsigned *blp;
 
 				for (blp = bad_link_list; blp < bad_link_end; blp++)
 					if (*blp == inum) {
@@ -969,9 +972,9 @@ fatal:		if (block_map)
 	if (dup_blocks)
 		printf ("%d DUP BLKS IN FREE LIST\n", dup_blocks);
 	if (free_list_corrupted == 0) {
-		if (used_blocks + free_blocks != fs->fsize - fs->isize - 2) {
+		if (used_blocks + free_blocks != fs->fsize - fs->isize) {
 			printf ("%d BLK(S) MISSING\n", fs->fsize -
-				fs->isize - 2 - used_blocks - free_blocks);
+				fs->isize - used_blocks - free_blocks);
 			free_list_corrupted = 1;
 		}
 	}
