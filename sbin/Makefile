@@ -4,8 +4,8 @@
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
 
-SUBDIR		= init mkfs newfs fsck #mknod mkpasswd mount \
-		  reboot shutdown swapon tunefs umount
+SUBDIR		= init-src mkfs-src newfs-src fsck-src #mknod-src mkpasswd-src mount-src \
+		  reboot-src shutdown-src swapon-src tunefs-src umount-src
 
 all:		${SUBDIR}
 

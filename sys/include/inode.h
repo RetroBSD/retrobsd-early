@@ -86,7 +86,7 @@ struct inode {
  */
 struct dinode {
 	struct	icommon1 di_icom1;
-	daddr_t	di_addr[7];		/* 7 block addresses 4 bytes each */
+	daddr_t	di_addr[NADDR];		/* 7 block addresses 4 bytes each */
 	u_int	di_reserved[1];		/* pad of 4 to make total size 64 */
 	u_int	di_flags;
 	struct	icommon2 di_icom2;

@@ -6,11 +6,11 @@ SEPFLAG= -i
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	at calendar dc diction diff3 eqn fstat f77 find graph id learn \
-	lex lint \
-	m4 neqn plot printf prof ranlib ratfor refer roff spell struct tbl \
-	mkerrlst patch \
-	renice shar tip uucp uname whereis yacc xargs xinstall
+SUBDIR=	at-src calendar-src dc-src diction-src diff3-src eqn-src fstat-src f77-src find-src graph-src id-src learn-src \
+	lex-src lint-src \
+	m4-src neqn-src plot-src printf-src prof-src ranlib-src ratfor-src refer-src roff-src spell-src struct-src tbl-src \
+	mkerrlst-src patch-src \
+	renice-src shar-src tip-src uucp-src uname-src whereis-src yacc-src xargs-src xinstall-src
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -78,4 +78,3 @@ bc egrep:
 	rm -f $@.o
 
 # DO NOT DELETE THIS LINE -- make depend uses it
-

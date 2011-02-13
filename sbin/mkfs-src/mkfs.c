@@ -142,8 +142,7 @@ wtfs (bno, bf)
 
 	offset = (off_t) bno*DEV_BSIZE;
 	if (lseek(fso, offset, 0) != offset) {
-		printf ("wtfs: block number %ld\n", bno);
-		perror ("lseek");
+		printf ("wtfs: lseek failed on block number %ld\n", bno);
 		exit(1);
 	}
 	n = write(fso, bf, DEV_BSIZE);

@@ -10,7 +10,7 @@
 #define MAXNAMLEN	63
 #endif
 
-#define DIRBLKSIZ	512
+#define DIRBLKSIZ	1024
 
 /*
  * inode numbers are ino_t rather than u_long now.  before, when v7direct

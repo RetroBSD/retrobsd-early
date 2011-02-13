@@ -10,16 +10,16 @@ OBJS		= args.o blok.o builtin.o cmd.o ctype.o error.o expand.o \
 		  fault.o io.o macro.o main.o msg.o name.o print.o service.o \
 		  setbrk.o stak.o string.o word.o xec.o
 
-all:		sh
+all:		../sh
 
-sh:		${OBJS}
+../sh:		${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 		${SIZE} $@
 
 install:	all
-		install -s sh $(DESTDIR)/bin
+		install -s ../sh $(DESTDIR)/bin
 clean:
-		rm -f sh *.o *~
+		rm -f ../sh *.o *~
 
 args.o: args.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h
 blok.o: blok.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h

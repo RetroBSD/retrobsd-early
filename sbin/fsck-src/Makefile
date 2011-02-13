@@ -4,8 +4,8 @@
 # specifies the terms and conditions for redistribution.
 #
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -g -Werror
 
@@ -23,8 +23,8 @@ SRCS		= dir.c inode.c  pass1.c pass1b.c pass2.c \
 #
 OBJS		= dir.o inode.o pass1.o pass1b.o pass2.o \
 		  pass3.o pass4.o pass5.o setup.o utilities.o
-#OBJS		+= main.o
-OBJS		+= cross.o
+OBJS		+= main.o
+#OBJS		+= cross.o
 
 # Header files
 #

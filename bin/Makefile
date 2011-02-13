@@ -8,8 +8,8 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= sh ls stty #ar awk chflags chpass csh diff ld login \
-		  #make nm passwd sed sysctl test
+SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
+		  #make-src nm-src passwd-src sed-src sysctl-src test-src
 
 # Shell scripts that need only be installed and are never removed.
 #
