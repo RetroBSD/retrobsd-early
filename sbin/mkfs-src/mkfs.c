@@ -278,11 +278,12 @@ bflist()
 	d = filsys.fs.fs_fsize-1;
 	while(d%f_n)
 		d++;
-	for(; d > 0; d -= f_n)
-	for(i=0; i<f_n; i++) {
-		f = d - adr[i];
-		if(f < filsys.fs.fs_fsize && f >= filsys.fs.fs_isize)
-			bfree(f);
+	for(; d > 0; d -= f_n) {
+		for(i=0; i<f_n; i++) {
+			f = d - adr[i];
+			if(f < filsys.fs.fs_fsize && f >= filsys.fs.fs_isize)
+				bfree(f);
+		}
 	}
 	iput(&in);
 }

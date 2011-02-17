@@ -258,11 +258,11 @@ void fs_print (fs_t *fs, FILE *out)
 	fprintf (out, "                File: %s\n", fs->filename);
 	fprintf (out, "         Volume size: %u blocks\n", fs->fsize);
 	fprintf (out, "     Inode list size: %u blocks\n", fs->isize);
-	fprintf (out, "   In-core free list: %u blocks\n", fs->nfree);
 	fprintf (out, "   Total free blocks: %u blocks\n", fs->tfree);
 	fprintf (out, "   Total free inodes: %u inodes\n", fs->tinode);
 	fprintf (out, "     Last mounted on: %.*s\n", MAXMNTLEN,
 		fs->fsmnt[0] ? fs->fsmnt : "(none)");
+	fprintf (out, "   In-core free list: %u blocks", fs->nfree);
 	if (verbose)
 	    for (i=0; i < 100 && i < fs->nfree; ++i) {
 		if (i % 10 == 0)

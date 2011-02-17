@@ -59,6 +59,8 @@ int fs_block_free (fs_t *fs, unsigned int bno)
 	fs->free [fs->nfree] = bno;
 	fs->nfree++;
 	fs->dirty = 1;
+	if (bno)			/* Count total free blocks. */
+		++fs->tfree;
 	return 1;
 }
 
@@ -139,6 +141,7 @@ again:
 	if (fs->nfree == 0)
 		return 0;
 	fs->nfree--;
+	++fs->tfree;			/* Count total free blocks. */
 	*bno = fs->free [fs->nfree];
 /*	printf ("allocate new block %d from slot %d\n", *bno, fs->nfree);*/
 	fs->free [fs->nfree] = 0;

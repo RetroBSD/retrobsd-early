@@ -34,6 +34,20 @@ static int build_inode_list (fs_t *fs)
 	return 1;
 }
 
+static int create_inode1 (fs_t *fs)
+{
+	fs_inode_t inode;
+
+	memset (&inode, 0, sizeof(inode));
+	inode.mode = INODE_MODE_FREG;
+	inode.fs = fs;
+	inode.number = 1;
+	if (! fs_inode_save (&inode, 1))
+		return 0;
+	fs->tinode--;
+	return 1;
+}
+
 static int create_root_directory (fs_t *fs)
 {
 	fs_inode_t inode;
@@ -95,6 +109,7 @@ static int create_root_directory (fs_t *fs)
 
 	if (! fs_inode_save (&inode, 1))
 		return 0;
+	fs->tinode--;
 	return 1;
 }
 
@@ -150,6 +165,7 @@ static int create_lost_found_directory (fs_t *fs)
 
 	if (! fs_inode_save (&inode, 1))
 		return 0;
+	fs->tinode--;
 	return 1;
 }
 
@@ -192,9 +208,15 @@ int fs_create (fs_t *fs, const char *filename, unsigned long bytes)
 	memset (buf, 0, BSDFS_BSIZE);
 	if (! fs_seek (fs, BSDFS_BSIZE))
 		return 0;
-	for (n=1; n < fs->isize; n++)
+	for (n=1; n < fs->isize; n++) {
 		if (! fs_write (fs, buf, BSDFS_BSIZE))
 			return 0;
+		fs->tinode += BSDFS_INODES_PER_BLOCK;
+	}
+
+	/* legacy empty inode 1 */
+	if (! create_inode1 (fs))
+		return 0;
 
 	/* lost+found directory */
 	if (! create_lost_found_directory (fs))

@@ -492,7 +492,7 @@ int main (int argc, char **argv)
 	fs_print (&fs, stdout);
 	if (verbose) {
 		printf ("--------\n");
-		if (! fs_inode_get (&fs, &inode, 1)) {
+		if (! fs_inode_get (&fs, &inode, BSDFS_ROOT_INODE)) {
 			fprintf (stderr, "%s: cannot get inode 1\n", argv[i]);
 			return -1;
 		}
