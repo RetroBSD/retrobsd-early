@@ -6,10 +6,9 @@ SEPFLAG= -i
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	dc-src fstat-src find-src id-src lex-src jove-src la-src \
-	m4-src neqn-src plot-src printf-src prof-src ranlib-src ratfor-src refer-src roff-src spell-src struct-src tbl-src \
-	mkerrlst-src patch-src \
-	renice-src shar-src tip-src uucp-src uname-src whereis-src yacc-src xargs-src xinstall-src
+SUBDIR=	dc-src ex-src find-src fstat-src id-src jove-src la-src lex-src \
+	m4-src man-src more-src pcc-src printf-src ranlib-src \
+	renice-src uname-src whereis-src xargs-src yacc-src
 
 # Shell scripts that need only be installed and are never removed.
 #
