@@ -111,9 +111,12 @@ void	err (int eval, const char *fmt, ...);
 void	errx (int eval, const char *fmt, ...);
 void	warn (const char *fmt, ...);
 void	warnx (const char *fmt, ...);
-void	verr (int eval, char *fmt, va_list ap);
-void	verrx (int eval, char *fmt, va_list ap);
-void	vwarn (char *fmt, va_list ap);
-void	vwarnx (char *fmt, va_list ap);
+void	verr (int eval, const char *fmt, va_list ap);
+void	verrx (int eval, const char *fmt, va_list ap);
+void	vwarn (const char *fmt, va_list ap);
+void	vwarnx (const char *fmt, va_list ap);
 
+#ifndef _VA_LIST_
+#undef va_list
+#endif
 #endif /* !_UNISTD_H_ */

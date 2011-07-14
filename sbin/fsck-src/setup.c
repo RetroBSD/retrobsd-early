@@ -116,7 +116,7 @@ setup(dev)
 			pfatal("\nNEED SCRATCH FILE (%ld BLKS)\n",nscrblk);
 			do {
 				printf("ENTER FILENAME:  ");
-				if((n = getline(stdin, scrfile,
+				if((n = getlin(stdin, scrfile,
 						sizeof(scrfile) - 6)) == EOF)
 					errexit("\n");
 			} while(n == 0);

@@ -46,7 +46,10 @@ typedef	long	swblk_t;
 #ifndef _SIZE_T
 typedef	u_int	size_t;
 #endif
+#ifndef __ssize_t_defined
 typedef	int	ssize_t;
+#define __ssize_t_defined
+#endif
 typedef	long	time_t;
 typedef	int	dev_t;
 #ifndef _SIZE_T

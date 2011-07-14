@@ -8,6 +8,9 @@ LIBS		= -lconfuse -lpthread -lelf
 ifneq ($(wildcard /usr/lib/librt.a),)
 LIBS		+= -lrt                             # Linux
 endif
+ifneq ($(wildcard /usr/lib/i386-linux-gnu/librt.a),)
+LIBS		+= -lrt                             # Linux
+endif
 ifneq ($(wildcard /opt/local/lib/libintl.a),)
 LIBS		+= -L/opt/local/lib -lintl          # Mac OS X
 endif

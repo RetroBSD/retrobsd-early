@@ -58,7 +58,7 @@ reply(s)
 		return (1);
 	}
 	fflush (stdout);
-	if (getline(stdin, line, sizeof(line)) == EOF)
+	if (getlin(stdin, line, sizeof(line)) == EOF)
 		errexit("\n");
 	printf("\n");
 	if (line[0] == 'y' || line[0] == 'Y')
@@ -67,7 +67,7 @@ reply(s)
 		return (0);
 }
 
-getline(fp, loc, maxlen)
+getlin(fp, loc, maxlen)
 	FILE *fp;
 	char *loc;
 {

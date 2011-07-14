@@ -4,19 +4,11 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)chown.c	5.6.1 (2.11BSD GTE) 11/4/94";
-#endif
-
 /*
  * chown [-fR] uid[.gid] file ...
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/file.h>

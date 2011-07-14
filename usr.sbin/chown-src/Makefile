@@ -1,37 +1,39 @@
 #
 # Public Domain.  1996/11/16 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
-#
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	chown.c
-OBJS=	chown.o
-MAN=	chown.0
-MANSRC=	chown.8
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: chown chown.0
+CFLAGS          = -O
+SRCS            = chown.c
+OBJS            = chown.o
+MAN             = chown.0
+MANSRC          = chown.8
 
-chown: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+all:            ../chown
 
-chown.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+../chown:       ${OBJS}
+		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
+		${SIZE} $@
+
+chown.0:        ${MANSRC}
+		/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} chown tags 
+		rm -f *.o ../chown tags *~
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: chown
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	install -s -o root -g bin -m 755 chown ${DESTDIR}/usr/sbin/chown
+install:        chown
+		install -s -o root -g bin -m 755 ../chown ${DESTDIR}/usr/sbin/chown
+#		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:           ${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

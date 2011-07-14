@@ -6,8 +6,7 @@ SEPFLAG= -i
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	at-src calendar-src dc-src diction-src diff3-src eqn-src fstat-src f77-src find-src graph-src id-src learn-src \
-	lex-src lint-src \
+SUBDIR=	dc-src fstat-src find-src id-src lex-src jove-src la-src \
 	m4-src neqn-src plot-src printf-src prof-src ranlib-src ratfor-src refer-src roff-src spell-src struct-src tbl-src \
 	mkerrlst-src patch-src \
 	renice-src shar-src tip-src uucp-src uname-src whereis-src yacc-src xargs-src xinstall-src

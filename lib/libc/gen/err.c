@@ -49,23 +49,23 @@
  * a reasonable trade for 20 or 30 bytes of D space.
  */
 static void
-putprog()
-{
-	fputs (__progname, stderr);
-	putcolsp();
-}
-
-static void
 putcolsp()
 {
 	fputc (':', stderr);
 	fputc (' ', stderr);
 }
 
+static void
+putprog()
+{
+	fputs (__progname, stderr);
+	putcolsp();
+}
+
 void
 verr (eval, fmt, ap)
 	int eval;
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	int sverrno;
@@ -87,7 +87,7 @@ err (int eval, const char *fmt, ...)
 #else
 err (eval, fmt, va_alist)
 	int eval;
-	char *fmt;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -104,7 +104,7 @@ err (eval, fmt, va_alist)
 void
 verrx (eval, fmt, ap)
 	int eval;
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	putprog();
@@ -120,7 +120,7 @@ errx (int eval, const char *fmt, ...)
 #else
 errx (eval, fmt, va_alist)
 	int eval;
-	char *fmt;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -136,7 +136,7 @@ errx (eval, fmt, va_alist)
 
 void
 vwarn (fmt, ap)
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	int sverrno;
@@ -156,7 +156,7 @@ void
 warn (const char *fmt, ...)
 #else
 warn(fmt, va_alist)
-	char *fmt;
+	const char *fmt;
 	va_dcl
 #endif
 {
@@ -172,7 +172,7 @@ warn(fmt, va_alist)
 
 void
 vwarnx (fmt, ap)
-	char *fmt;
+	const char *fmt;
 	va_list ap;
 {
 	putprog();

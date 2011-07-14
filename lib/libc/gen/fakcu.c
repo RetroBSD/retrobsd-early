@@ -2,6 +2,6 @@
  * Null cleanup routine to resolve reference in exit()
  * if not using stdio.
  */
-_cleanup()
+void __attribute__((weak)) _cleanup()
 {
 }
