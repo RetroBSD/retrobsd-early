@@ -504,21 +504,29 @@ void fs_dirent_unpack (fs_dirent_t *dirent, unsigned char *data)
  * Convert a pathname into a pointer to
  * an inode. Note that the inode is locked.
  *
- * flag = 0 if name is saught
+ * op = 0 if name is saught
  *	1 if name is to be created, mode is given
  *	2 if name is to be deleted
  *	3 if name is to be linked, mode contains inode number
  */
+#define	LOOKUP		0	/* perform name lookup only */
+#define	CREATE		1	/* setup for file creation */
+#define	DELETE		2	/* setup for file deletion */
+#define	LINK		3	/* setup for link */
+
 int fs_inode_by_name (fs_t *fs, fs_inode_t *inode, char *name,
 	int op, int mode)
 {
-	int c;
-	char *cp;
-	char dbuf [14];
-	unsigned long offset;
-	unsigned char data [16];
-	unsigned int inum;
 	fs_inode_t dir;
+	int c, namlen;
+	char *cp, dbuf [MAXNAMLEN+1];
+	unsigned long offset;
+	unsigned char fname [BSDFS_BSIZE - 12];
+	struct {
+            unsigned int inum;
+            unsigned short reclen;
+            unsigned short namlen;
+        } dirent;
 
 	/* Start from root. */
 	if (! fs_inode_get (fs, &dir, BSDFS_ROOT_INODE)) {
@@ -528,7 +536,7 @@ int fs_inode_by_name (fs_t *fs, fs_inode_t *inode, char *name,
 	c = *name++;
 	while (c == '/')
 		c = *name++;
-	if (! c && op != 0) {
+	if (! c && op != LOOKUP) {
 		/* Cannot write or delete root directory. */
 		return 0;
 	}
@@ -553,30 +561,38 @@ cloop:
 			*cp++ = c;
 		c = *name++;
 	}
+	namlen = cp - &dbuf[0];
 	while (cp < dbuf + sizeof(dbuf))
 		*cp++ = 0;
 	while (c == '/')
 		c = *name++;
 
-	/* Search a directory, 16 bytes per file */
-	for (offset = 0; dir.size - offset >= 16; offset += 16) {
-		if (! fs_inode_read (&dir, offset, data, 16)) {
+	/* Search a directory, variable record per file */
+/*TODO: find empty space, large enough to store namlen*/
+	for (offset = 0; offset < dir.size; offset += dirent.reclen) {
+		if (! fs_inode_read (&dir, offset, (unsigned char*) &dirent, sizeof(dirent))) {
 			fprintf (stderr, "inode %d: read error at offset %ld\n",
 				dir.number, offset);
 			return 0;
 		}
-		inum = data [1] << 8 | data [0];
-		if (inum == 0)
-			continue;
-		if (strncmp (dbuf, (char*) data+2, 14) == 0) {
+printf ("scan offset %lu: inum=%u, reclen=%u, namlen=%u\n", offset, dirent.inum, dirent.reclen, dirent.namlen);
+		if (dirent.inum == 0 || dirent.namlen != namlen)
+		    continue;
+		if (! fs_inode_read (&dir, offset+sizeof(dirent), fname, dirent.namlen)) {
+			fprintf (stderr, "inode %d: name read error at offset %ld\n",
+				dir.number, offset);
+			return 0;
+		}
+printf ("scan offset %lu: name='%s'\n", offset, fname);
+		if (strncmp (dbuf, (char*) fname, dirent.namlen) == 0) {
 			/* Here a component matched in a directory.
 			 * If there is more pathname, go back to
 			 * cloop, otherwise return. */
-			if (op == 2 && ! c) {
+			if (op == DELETE && ! c) {
 				goto delete_file;
 			}
-			if (! fs_inode_get (fs, &dir, inum)) {
-				fprintf (stderr, "inode_open(): cannot get inode %d\n", inum);
+			if (! fs_inode_get (fs, &dir, dirent.inum)) {
+				fprintf (stderr, "inode_open(): cannot get inode %d\n", dirent.inum);
 				return 0;
 			}
 			goto cloop;
@@ -585,9 +601,9 @@ cloop:
 	/* If at the end of the directory,
 	 * the search failed. Report what
 	 * is appropriate as per flag. */
-	if (op == 1 && ! c)
+	if (op == CREATE && ! c)
 		goto create_file;
-	if (op == 3 && ! c)
+	if (op == LINK && ! c)
 		goto create_link;
 	return 0;
 
@@ -615,7 +631,7 @@ create_file:
 	data[1] = inode->number >> 8;
 	memcpy (data+2, dbuf, 14);
 write_back:
-	if (! fs_inode_write (&dir, offset, data, 16)) {
+	if (! fs_inode_write (&dir, offset, (unsigned char*) &dirent, sizeof(dirent))) {
 		fprintf (stderr, "inode %d: write error at offset %ld\n",
 			inode->number, offset);
 		return 0;
@@ -630,8 +646,8 @@ write_back:
 	 * Delete file. Return inode of deleted file.
 	 */
 delete_file:
-	if (! fs_inode_get (fs, inode, inum)) {
-		fprintf (stderr, "%s: cannot get inode %d\n", name, inum);
+	if (! fs_inode_get (fs, inode, dirent.inum)) {
+		fprintf (stderr, "%s: cannot get inode %d\n", name, dirent.inum);
 		return 0;
 	}
 	inode->dirty = 1;
@@ -640,11 +656,11 @@ delete_file:
 		fs_inode_truncate (inode);
 		fs_inode_clear (inode);
 		if (inode->fs->ninode < 100) {
-			inode->fs->inode [inode->fs->ninode++] = inum;
+			inode->fs->inode [inode->fs->ninode++] = dirent.inum;
 			inode->fs->dirty = 1;
 		}
 	}
-	memset (data, 0, 16);
+        dirent.inum = 0;
 	goto write_back;
 
 	/*

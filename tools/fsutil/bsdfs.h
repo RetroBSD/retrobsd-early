@@ -37,6 +37,8 @@
  */
 #define MAXMNTLEN	12
 
+#define MAXNAMLEN	63
+
 #define	FSMAGIC1	('F' | 'S'<<8 | '<'<<16 | '<'<<24)
 #define	FSMAGIC2	('>' | '>'<<8 | 'F'<<16 | 'S'<<24)
 
@@ -104,7 +106,7 @@ typedef struct {
 	unsigned 	ino;
 	unsigned 	reclen;
 	unsigned 	namlen;
-	char		name [63+1];
+	char		name [MAXNAMLEN+1];
 } fs_dirent_t;
 
 typedef void (*fs_directory_scanner_t) (fs_inode_t *dir,
