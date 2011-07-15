@@ -61,8 +61,8 @@ int fs_file_write (fs_file_t *file, unsigned char *data, unsigned long bytes)
 	if (! file->writable)
 		return 0;
 	if (! fs_inode_write (&file->inode, file->offset, data, bytes)) {
-		fprintf (stderr, "inode %d: file write failed\n",
-			file->inode.number);
+		fprintf (stderr, "inode %d: error writing %lu bytes at offset %lu\n",
+			file->inode.number, bytes, file->offset);
 		return 0;
 	}
 	file->offset += bytes;

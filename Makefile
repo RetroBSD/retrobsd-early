@@ -44,7 +44,7 @@ FSUTIL		= tools/fsutil/fsutil
 ROOTDIRS	= sbin/ bin/
 ROOTFILES	= sbin/init bin/sh
 
-root.img:	$(FSUTIL)
+root.bin:	$(FSUTIL)
 		rm -f $@
 		$(FSUTIL) -n -s16777216 $@
 		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)

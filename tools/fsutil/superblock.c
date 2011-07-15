@@ -170,7 +170,7 @@ int fs_open (fs_t *fs, const char *filename, int writable)
 	}
 	if (! fs_read32 (fs, &magic))		/* flock, fmod, ilock, ronly */
 		return 0;
-	if (! fs_read32 (fs, (unsigned*) &fs->time))
+	if (! fs_read32 (fs, (unsigned*) &fs->utime))
 		return 0;			/* current date of last update */
 	if (! fs_read32 (fs, &fs->tfree))	/* total free blocks */
 		return 0;
@@ -203,7 +203,7 @@ int fs_sync (fs_t *fs, int force)
 	if (! force && ! fs->dirty)
 		return 1;
 
-	time (&fs->time);
+	time (&fs->utime);
 	if (! fs_seek (fs, 0))
 		return 0;
 
@@ -227,7 +227,7 @@ int fs_sync (fs_t *fs, int force)
 	}
 	if (! fs_write32 (fs, 0))		/* flock, fmod, ilock, ronly */
 		return 0;
-	if (! fs_write32 (fs, fs->time))	/* current date of last update */
+	if (! fs_write32 (fs, fs->utime))	/* current date of last update */
 		return 0;
 	if (! fs_write32 (fs, fs->tfree))	/* total free blocks */
 		return 0;
@@ -291,7 +291,7 @@ void fs_print (fs_t *fs, FILE *out)
 //		fprintf (out, "         Mount flags: 0x%x\n", fs->flags);
 	}
 
-	fprintf (out, "    Last update time: %s", ctime (&fs->time));
+	fprintf (out, "    Last update time: %s", ctime (&fs->utime));
 }
 
 void fs_close (fs_t *fs)

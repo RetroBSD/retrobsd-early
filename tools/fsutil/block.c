@@ -14,7 +14,8 @@ extern int verbose;
 
 int fs_read_block (fs_t *fs, unsigned bnum, unsigned char *data)
 {
-/*	printf ("read block %d\n", bnum);*/
+        if (verbose > 3)
+                printf ("read block %d\n", bnum);
 	if (bnum < fs->isize)
 		return 0;
 	if (! fs_seek (fs, bnum * BSDFS_BSIZE))
@@ -26,7 +27,8 @@ int fs_read_block (fs_t *fs, unsigned bnum, unsigned char *data)
 
 int fs_write_block (fs_t *fs, unsigned bnum, unsigned char *data)
 {
-/*	printf ("write block %d\n", bnum);*/
+        if (verbose > 3)
+                printf ("write block %d\n", bnum);
 	if (! fs->writable || bnum < fs->isize)
 		return 0;
 	if (! fs_seek (fs, bnum * BSDFS_BSIZE))
@@ -45,7 +47,8 @@ int fs_block_free (fs_t *fs, unsigned int bno)
 	int i;
 	unsigned buf [BSDFS_BSIZE / 4];
 
-/*	printf ("free block %d, total %d\n", bno, fs->nfree);*/
+        if (verbose)
+                printf ("free block %d, total %d\n", bno, fs->nfree);
 	if (fs->nfree >= 100) {
 		buf[0] = fs->nfree;
 		for (i=0; i<100; i++)
@@ -143,7 +146,8 @@ again:
 	fs->nfree--;
 	++fs->tfree;			/* Count total free blocks. */
 	*bno = fs->free [fs->nfree];
-/*	printf ("allocate new block %d from slot %d\n", *bno, fs->nfree);*/
+        if (verbose)
+                printf ("allocate new block %d from slot %d\n", *bno, fs->nfree);
 	fs->free [fs->nfree] = 0;
 	fs->dirty = 1;
 	if (fs->nfree <= 0) {

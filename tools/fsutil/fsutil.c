@@ -288,19 +288,9 @@ void add_directory (fs_t *fs, char *name)
 	}
 	fs_inode_save (&dir, 0);
 
-	/* Make link '.' */
-	strcpy (buf, name);
-	strcat (buf, "/.");
-	if (! fs_inode_by_name (fs, &dir, buf, 3, dir.number)) {
-		fprintf (stderr, "%s: dot link failed\n", name);
-		return;
-	}
-	++dir.nlink;
-	fs_inode_save (&dir, 1);
-/*printf ("*** inode %d: increment link counter to %d\n", dir.number, dir.nlink);*/
-
 	/* Make parent link '..' */
-	strcat (buf, ".");
+	strcpy (buf, name);
+	strcat (buf, "/..");
 	if (! fs_inode_by_name (fs, &dir, buf, 3, parent.number)) {
 		fprintf (stderr, "%s: dotdot link failed\n", name);
 		return;

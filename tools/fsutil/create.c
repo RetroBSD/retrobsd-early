@@ -58,6 +58,11 @@ static int create_root_directory (fs_t *fs)
 	inode.mode = INODE_MODE_FDIR | 0777;
 	inode.fs = fs;
 	inode.number = BSDFS_ROOT_INODE;
+	inode.size = BSDFS_BSIZE;
+
+	time (&inode.ctime);
+	time (&inode.atime);
+	time (&inode.mtime);
 
 	/* directory - put in extra links */
 	memset (buf, 0, sizeof(buf));
@@ -96,16 +101,12 @@ static int create_root_directory (fs_t *fs)
 	memcpy (&buf[24+8], "lost+found\0\0\0\0", 12);
 
 	inode.nlink = 3;
-	inode.size = 12+12+20;
 
 	if (! fs_block_alloc (fs, &bno))
 		return 0;
 	if (! fs_write_block (fs, bno, buf))
 		return 0;
 	inode.addr[0] = bno;
-
-	time (&inode.atime);
-	time (&inode.mtime);
 
 	if (! fs_inode_save (&inode, 1))
 		return 0;
@@ -123,6 +124,11 @@ static int create_lost_found_directory (fs_t *fs)
 	inode.mode = INODE_MODE_FDIR | 0777;
 	inode.fs = fs;
 	inode.number = BSDFS_LOSTFOUND_INODE;
+	inode.size = BSDFS_BSIZE;
+
+	time (&inode.ctime);
+	time (&inode.atime);
+	time (&inode.mtime);
 
 	/* directory - put in extra links */
 	memset (buf, 0, sizeof(buf));
@@ -152,16 +158,12 @@ static int create_lost_found_directory (fs_t *fs)
 	buf[12+11] = 0;
 
 	inode.nlink = 2;
-	inode.size = 12*12;
 
 	if (! fs_block_alloc (fs, &bno))
 		return 0;
 	if (! fs_write_block (fs, bno, buf))
 		return 0;
 	inode.addr[0] = bno;
-
-	time (&inode.atime);
-	time (&inode.mtime);
 
 	if (! fs_inode_save (&inode, 1))
 		return 0;

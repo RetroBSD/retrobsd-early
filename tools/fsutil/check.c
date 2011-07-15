@@ -992,7 +992,7 @@ fatal:		if (block_map)
 	printf ("%d files %d blocks %d free\n",
 		total_files, used_blocks, free_blocks);
 	if (fs->modified) {
-		time (&fs->time);
+		time (&fs->utime);
 		fs->dirty = 1;
 	}
 	buf_flush (fs);

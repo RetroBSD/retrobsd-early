@@ -60,7 +60,7 @@ typedef struct {
 	unsigned char	ilock;		/* lock during I list manipulation */
 	unsigned char	fmod;		/* super block modified flag */
 	unsigned char	ronly;		/* mounted read-only flag */
-	long		time;		/* current date of last update */
+	long		utime;		/* current date of last update */
 	unsigned	tfree;		/* total free blocks */
 	unsigned	tinode;		/* total free inodes */
 	int		step;		/* optimal step in free list pattern */
@@ -96,7 +96,6 @@ typedef struct {
 	unsigned 	gid;		/* group */
 	unsigned long	size;		/* size */
 	unsigned 	addr [7];	/* device addresses constituting file */
-	unsigned	flags;		/* flags */
 	long		atime;		/* time last accessed */
 	long		mtime;		/* time last modified */
 	long		ctime;		/* time created */
