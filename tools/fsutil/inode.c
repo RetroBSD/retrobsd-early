@@ -210,28 +210,37 @@ void fs_directory_scan (fs_inode_t *dir, char *dirname,
 {
 	fs_inode_t file;
 	unsigned long offset;
-	unsigned char data [17];
-	unsigned int inum;
+	unsigned char name [BSDFS_BSIZE - 12];
+	struct {
+            unsigned int inum;
+            unsigned short reclen;
+            unsigned short namlen;
+        } dirent;
 
-	/* 16 bytes per file */
-	for (offset = 0; dir->size - offset >= 16; offset += 16) {
-		if (! fs_inode_read (dir, offset, data, 16)) {
+	/* Variable record per file */
+	for (offset = 0; offset < dir->size; offset += dirent.reclen) {
+		if (! fs_inode_read (dir, offset, (unsigned char*) &dirent, sizeof(dirent))) {
 			fprintf (stderr, "%s: read error at offset %ld\n",
 				dirname[0] ? dirname : "/", offset);
 			return;
 		}
-		data [16] = 0;
-		inum = data [1] << 8 | data [0];
+/*printf ("scan offset %lu: inum=%u, reclen=%u, namlen=%u\n", offset, dirent.inum, dirent.reclen, dirent.namlen);*/
+		if (! fs_inode_read (dir, offset+sizeof(dirent), name, (dirent.namlen + 3) / 4 * 4)) {
+			fprintf (stderr, "%s: name read error at offset %ld\n",
+				dirname[0] ? dirname : "/", offset);
+			return;
+		}
+/*printf ("scan offset %lu: name='%s'\n", offset, name);*/
 
-		if (inum == 0 || (data[2]=='.' && data[3]==0) ||
-		    (data[2]=='.' && data[3]=='.' && data[4]==0))
+		if (dirent.inum == 0 || (name[0]=='.' && name[1]==0) ||
+		    (name[0]=='.' && name[1]=='.' && name[2]==0))
 			continue;
 
-		if (! fs_inode_get (dir->fs, &file, inum)) {
-			fprintf (stderr, "cannot scan inode %d\n", inum);
+		if (! fs_inode_get (dir->fs, &file, dirent.inum)) {
+			fprintf (stderr, "cannot scan inode %d\n", dirent.inum);
 			continue;
 		}
-		scanner (dir, &file, dirname, (char*) &data[2], arg);
+		scanner (dir, &file, dirname, (char*) name, arg);
 	}
 }
 
@@ -461,10 +470,16 @@ void fs_dirent_pack (unsigned char *data, fs_dirent_t *dirent)
 	int i;
 
 	*data++ = dirent->ino;
+	*data++ = dirent->ino >> 8;
 	*data++ = dirent->ino >> 16;
-	for (i=0; i<14 && dirent->name[i]; ++i)
+	*data++ = dirent->ino >> 24;
+	*data++ = dirent->reclen;
+	*data++ = dirent->reclen >> 8;
+	*data++ = dirent->namlen;
+	*data++ = dirent->namlen >> 8;
+	for (i=0; dirent->name[i]; ++i)
 		*data++ = dirent->name[i];
-	for (; i<14; ++i)
+	for (; i & 3; ++i)
 		*data++ = 0;
 }
 

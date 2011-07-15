@@ -89,8 +89,8 @@ static int create_root_directory (fs_t *fs)
 	buf[24+1] = BSDFS_LOSTFOUND_INODE >> 8;
 	buf[24+2] = BSDFS_LOSTFOUND_INODE >> 16;
 	buf[24+3] = BSDFS_LOSTFOUND_INODE >> 24;
-	buf[24+4] = 20;
-	buf[24+5] = 20 >> 8;
+	buf[24+4] = (unsigned char) (BSDFS_BSIZE - 12 - 12);
+	buf[24+5] = (BSDFS_BSIZE - 12 - 12) >> 8;
 	buf[24+6] = 10;
 	buf[24+7] = 10 >> 8;
 	memcpy (&buf[24+8], "lost+found\0\0\0\0", 12);
@@ -142,8 +142,8 @@ static int create_lost_found_directory (fs_t *fs)
 	buf[12+1] = BSDFS_ROOT_INODE >> 8;
 	buf[12+2] = BSDFS_ROOT_INODE >> 16;
 	buf[12+3] = BSDFS_ROOT_INODE >> 24;
-	buf[12+4] = 12;
-	buf[12+5] = 12 >> 8;
+	buf[12+4] = (unsigned char) (BSDFS_BSIZE - 12);
+	buf[12+5] = (BSDFS_BSIZE - 12) >> 8;
 	buf[12+6] = 2;
 	buf[12+7] = 2 >> 8;
 	buf[12+8] = '.';

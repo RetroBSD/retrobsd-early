@@ -17,6 +17,13 @@ clean:
 $(PROG):	$(OBJS)
 		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
+root.bin:       $(PROG)
+		./$(PROG) -n -s 16777216 $@
+		./$(PROG) $@
+
+swap.bin:
+		dd bs=1k count=2048 < /dev/zero > $@
+
 block.o: block.c bsdfs.h
 check.o: check.c bsdfs.h
 create.o: create.c bsdfs.h

@@ -80,20 +80,22 @@ void print_inode (fs_inode_t *inode,
 	fprintf (out, "%s/%s", dirname, filename);
 	switch (inode->mode & INODE_MODE_FMT) {
 	case INODE_MODE_FDIR:
-		fprintf (out, "/\n");
+                if (filename[0] != 0)
+                    fprintf (out, "/");
 		break;
 	case INODE_MODE_FCHR:
-		fprintf (out, " - char %d %d\n",
+		fprintf (out, " - char %d %d",
 			inode->addr[0] >> 8, inode->addr[0] & 0xff);
 		break;
 	case INODE_MODE_FBLK:
-		fprintf (out, " - block %d %d\n",
+		fprintf (out, " - block %d %d",
 			inode->addr[0] >> 8, inode->addr[0] & 0xff);
 		break;
 	default:
-		fprintf (out, " - %lu bytes\n", inode->size);
+		fprintf (out, " - %lu bytes", inode->size);
 		break;
 	}
+        fprintf (out, "\n");
 }
 
 void print_indirect_block (fs_t *fs, unsigned int bno, FILE *out)
@@ -247,7 +249,8 @@ void scanner (fs_inode_t *dir, fs_inode_t *inode,
 			printf ("--------\n");
 		}
 	}
-	if ((inode->mode & INODE_MODE_FMT) == INODE_MODE_FDIR) {
+	if ((inode->mode & INODE_MODE_FMT) == INODE_MODE_FDIR &&
+            inode->number != BSDFS_ROOT_INODE) {
 		/* Scan subdirectory. */
 		path = alloca (strlen (dirname) + strlen (filename) + 2);
 		strcpy (path, dirname);
@@ -496,11 +499,14 @@ int main (int argc, char **argv)
 			fprintf (stderr, "%s: cannot get inode 1\n", argv[i]);
 			return -1;
 		}
+                printf ("/\n");
 		if (verbose > 1) {
-			fs_inode_print (&inode, stdout);
-			printf ("--------\n");
-			printf ("/\n");
+                        /* Print a list of blocks. */
 			print_inode_blocks (&inode, stdout);
+                        if (verbose > 2) {
+                            fs_inode_print (&inode, stdout);
+                            printf ("--------\n");
+                        }
 		}
 		fs_directory_scan (&inode, "", scanner, (void*) stdout);
 	}

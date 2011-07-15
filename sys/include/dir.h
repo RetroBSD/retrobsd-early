@@ -96,10 +96,10 @@ struct dirtemplate {
 	ino_t	dot_ino;
 	u_short	dot_reclen;
 	u_short	dot_namlen;
-	char	dot_name[2];		/* must be multiple of 4 */
+	char	dot_name[4];		/* must be multiple of 4 */
 	ino_t	dotdot_ino;
 	u_short	dotdot_reclen;
 	u_short	dotdot_namlen;
-	char	dotdot_name[6];		/* ditto */
+	char	dotdot_name[4];		/* ditto */
 };
 #endif /* _DIR_ */
