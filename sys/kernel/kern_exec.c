@@ -73,20 +73,13 @@ getxfile (ip, ep, nargc, uid, gid)
 	register struct exec *ep;
 	int nargc, uid, gid;
 {
-	long lsize;
 	off_t offset;
 	u_int ds, ts, ss;
+	register u_int numc, startc;
 
-	switch (ep->a_magic) {
-	case OMAGIC:
-		lsize = (long) ep->a_data + ep->a_text;
-		ep->a_data = (u_int) lsize;
-		if (lsize != ep->a_data) {	/* check overflow */
-			u.u_error = ENOMEM;
-			return;
-		}
+	if (ep->a_magic == OMAGIC) {
+		ep->a_data += ep->a_text;
 		ep->a_text = 0;
-		break;
 	}
 
 	if (ep->a_text != 0 && (ip->i_flag & ITEXT) == 0 &&
@@ -109,12 +102,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	 * overflow of max sizes
 	 */
 	ts = ep->a_text;
-	lsize = (long) ep->a_data + ep->a_bss;
-	if (lsize != (u_int) lsize) {
-		u.u_error = ENOMEM;
-		return;
-	}
-	ds = lsize;
+	ds = ep->a_data + ep->a_bss;
 	ss = SSIZE + nargc;
 
 	if (estabur (ts, ds, ss, 0)) {
@@ -129,15 +117,13 @@ getxfile (ip, ep, nargc, uid, gid)
 	if (u.u_procp->p_flag & SVFORK)
 		endvfork();
 	expand (ds, S_DATA);
-	{
-		register u_int numc, startc;
 
-		startc = ep->a_data;		/* clear BSS only */
-		if (startc != 0)
-			startc--;
-		numc = ds - startc;
-		bzero ((void*) (u.u_procp->p_daddr + startc), numc);
-	}
+	startc = ep->a_data;		/* clear BSS only */
+	if (startc != 0)
+		startc--;
+	numc = ds - startc;
+	bzero ((void*) (u.u_procp->p_daddr + startc), numc);
+
 	expand (ss, S_STACK);
 	bzero ((void*) u.u_procp->p_saddr, ss);
 

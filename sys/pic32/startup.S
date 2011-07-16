@@ -193,7 +193,7 @@ restore_regs:
 		nop					# just to be safe
 
 #---------------------------------------
-# Icode is copied out to process 1 to exec /etc/init.
+# Icode is copied out to process 1 to exec /sbin/init.
 # If the exec fails, process 1 exits.
 #
 		.globl	icode, icodeend
@@ -208,11 +208,11 @@ icode:
 		move	$a0, $v0
 		syscall	1				# SYS_exit
 etcinit:
-		.ascii	"/etc/init\0"
+		.ascii	"/sbin/init\0"
 initflags:
 		.ascii	"-00000\0"			# decimal ASCII initflags
 argv:
-		.word	etcinit + 5 - icode + UBASE	# address of "init\0"
+		.word	etcinit + 6 - icode + UBASE	# address of "init\0"
 		.word	initflags - icode + UBASE	# init options
 		.word	0
 

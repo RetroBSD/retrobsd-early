@@ -12,14 +12,15 @@ MANSRC		= init.8
 all:		../init init.0
 
 ../init:	${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} -lc
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o init.elf ${OBJS} -lc
+		${SIZE} init.elf
+		${ELF2AOUT} init.elf $@
 
 init.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} ../init tags
+		rm -f *.o *~ *.elf ${MAN} ../init tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

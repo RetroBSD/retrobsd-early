@@ -12,9 +12,10 @@ INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d
 TAGSFILE	= tags
 MANROFF		= nroff -man -h
+ELF2AOUT	= $(TOPSRC)/tools/elf2aout/elf2aout
 
 CFLAGS		= -O
 
-LDFLAGS		= -nostartfiles -T$(TOPSRC)/lib/startup-mips/elf32.ld \
+LDFLAGS		= -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/startup-mips/elf32.ld \
 		  $(TOPSRC)/lib/startup-mips/crt0.o -L$(TOPSRC)/lib/libc
 LIBS		= -lc

@@ -13,13 +13,14 @@ OBJS		= args.o blok.o builtin.o cmd.o ctype.o error.o expand.o \
 all:		../sh
 
 ../sh:		${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o sh.elf ${OBJS} ${LIBS}
+		${SIZE} sh.elf
+		${ELF2AOUT} sh.elf $@
 
 install:	all
 		install -s ../sh $(DESTDIR)/bin
 clean:
-		rm -f ../sh *.o *~
+		rm -f ../sh *.o *~ *.elf
 
 args.o: args.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h
 blok.o: blok.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h

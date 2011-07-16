@@ -11,7 +11,7 @@ SECTIONS
   /* Read-only sections, merged into text segment: */
   PROVIDE (__executable_start = 0x7f008000); . = 0x7f008000;
   .interp         : { *(.interp) }
-  .reginfo        : { *(.reginfo) }
+  /*.reginfo        : { *(.reginfo) }*/
   .note.gnu.build-id : { *(.note.gnu.build-id) }
   .dynamic        : { *(.dynamic) }
   .hash           : { *(.hash) }
