@@ -8,6 +8,7 @@ LD		= $(GCCBIN)/mipsel-elf32-ld
 AR		= $(GCCBIN)/mipsel-elf32-ar
 RANLIB		= $(GCCBIN)/mipsel-elf32-ranlib
 SIZE		= $(GCCBIN)/mipsel-elf32-size
+OBJDUMP		= $(GCCBIN)/mipsel-elf32-objdump
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d
 TAGSFILE	= tags

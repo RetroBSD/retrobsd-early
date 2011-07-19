@@ -73,9 +73,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	register struct exec *ep;
 	int nargc, uid, gid;
 {
-	off_t offset;
 	u_int ds, ts, ss;
-	register u_int numc, startc;
 
 	if (ep->a_magic == OMAGIC) {
 		ep->a_data += ep->a_text;
@@ -119,26 +117,20 @@ printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
 		endvfork();
 	expand (ds, S_DATA);
 
-	startc = ep->a_data;		/* clear BSS only */
-	if (startc != 0)
-		startc--;
-	numc = ds - startc;
-printf ("getxfile: clear %u bytes at %08x\n", numc, u.u_procp->p_daddr + startc);
-	bzero ((void*) (u.u_procp->p_daddr + startc), numc);
-
+	/* clear BSS only */
+	if (ep->a_bss > 0) {
+printf ("getxfile: clear bss %u bytes at %08x\n", ep->a_bss, u.u_procp->p_daddr + ep->a_data);
+            bzero ((void*) (u.u_procp->p_daddr + ep->a_data), ep->a_bss);
+        }
 	expand (ss, S_STACK);
-printf ("getxfile: clear %u bytes at %08x\n", ss, u.u_procp->p_saddr);
+printf ("getxfile: clear stack %u bytes at %08x\n", ss, u.u_procp->p_saddr);
 	bzero ((void*) u.u_procp->p_saddr, ss);
 
-	/*
-	 * read in data segment
-	 */
+	/* read in data segment */
 	estabur (0, ds, 0, 0);
-	offset = sizeof(struct exec);
-	offset += ep->a_text;
 printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
-	rdwri (UIO_READ, ip, (caddr_t) USER_DATA_START, ep->a_data, offset,
-		IO_UNIT, (int*) 0);
+	rdwri (UIO_READ, ip, (caddr_t) USER_DATA_START, ep->a_data,
+                sizeof(struct exec) + ep->a_text, IO_UNIT, (int*) 0);
 
 	/*
 	 * set SUID/SGID protections, if no tracing
@@ -168,14 +160,12 @@ execv()
 void
 execve()
 {
-	int nc;
 	register char *cp;
 	register struct buf *bp;
 	struct execa *uap = (struct execa *)u.u_arg;
-	int na, ne, ucp, ap;
+	int nc, na, ne, ucp, ap, indir, uid, gid, resid, error;
 	register int cc;
 	unsigned len;
-	int indir, uid, gid;
 	char *sharg;
 	struct inode *ip;
 	memaddr bno;
@@ -186,9 +176,8 @@ execve()
 		char	ex_shell [SHSIZE];	/* #! and name of interpreter */
 		struct	exec ex_exec;
 	} exdata;
-	struct	nameidata nd;
+	struct nameidata nd;
 	register struct	nameidata *ndp = &nd;
-	int resid, error;
 
 printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
@@ -214,7 +203,6 @@ printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 			gid = ip->i_gid;
 	}
 again:
-printf ("=1=\n");
 	if (access (ip, IEXEC)) {
 printf ("execve: no IEXEC\n");
 		goto bad;
@@ -233,11 +221,6 @@ printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 	/*
 	 * Read in first few bytes of file for segment sizes, magic number:
 	 *	407 = plain executable
-	 *	410 = RO text
-	 *	411 = separated I/D
-	 *	405 = text overlay
-	 *	430 = auto-overlay (nonseparate)
-	 *	431 = auto-overlay (separate)
 	 * Also an ASCII line beginning with #! is
 	 * the file name of a ``shell'' and arguments may be prepended
 	 * to the argument list if given here.
@@ -250,7 +233,6 @@ printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
 	u.u_error = rdwri (UIO_READ, ip, (caddr_t) &exdata, sizeof(exdata),
 				(off_t) 0, IO_UNIT, &resid);
-printf ("=2=\n");
 	if (u.u_error) {
 printf ("execve: rdwri error %d\n", u.u_error);
 		goto bad;
@@ -261,6 +243,7 @@ printf ("execve: short read, resid = %d, shell=%.32s\n", resid, exdata.ex_shell)
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
+printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_exec.a_data, exdata.ex_exec.a_bss);
 
 	switch ((int) exdata.ex_exec.a_magic) {
 	case OMAGIC:
@@ -319,7 +302,6 @@ printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 		cfname [MAXCOMLEN] = '\0';
 		goto again;
 	}
-printf ("=3=\n");
 
 	/*
 	 * Collect arguments on "file" in swap space.
@@ -339,7 +321,6 @@ printf ("execve: malloc failed\n");
 	 * Copy arguments into file in argdev area.
 	 */
 	if (uap->argp) for (;;) {
-printf ("=4=\n");
 		ap = NULL;
 		sharg = NULL;
 		if (indir && na == 0) {
@@ -389,11 +370,11 @@ printf ("execve: too many args = %d\n", nc);
 			}
 			if (sharg) {
 				error = copystr (sharg, cp, (unsigned) cc, &len);
-printf ("execve arg%d: %u bytes from %08x to %08x\n", na-1, len, sharg, cp);
+printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, sharg, len, sharg, cp);
 				sharg += len;
 			} else {
 				error = copystr ((caddr_t) ap, cp, (unsigned) cc, &len);
-printf ("execve arg%d: %u bytes from %08x to %08x\n", na-1, len, ap, cp);
+printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, ap, len, ap, cp);
 				ap += len;
 			}
 			cp += len;
@@ -412,10 +393,9 @@ printf ("execve: copy arg error = %d\n", error);
 			goto badarg;
 		}
 	}
-printf ("=5=\n");
+printf ("execve: argc=%d, envc=%d, total %d bytes\n", na, ne, nc);
 	if (bp) {
 		bdwrite (bp);
-printf ("=5a=\n");
 	}
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
@@ -437,7 +417,6 @@ badarg:
 		}
 		goto bad;
 	}
-printf ("=6=\n");
 	iput(ip);
 	ip = NULL;
 
@@ -453,7 +432,6 @@ printf ("=6=\n");
 	nc = 0;
 	cc = 0;
 	for (;;) {
-printf ("=7=\n");
 		if (na == ne) {
 			*(int*) ap = 0;
 			ap += NBPW;
@@ -472,9 +450,9 @@ printf ("=7=\n");
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_addr;
 			}
-printf ("execve arg: %u bytes from %08x to %08x\n", cc, cp, ucp);
 			error = copystr (cp, (caddr_t) ucp, (unsigned) cc,
 				&len);
+printf ("execve copy '%s' %u bytes from %08x to %08x\n", cp, len, cp, ucp);
 			ucp += len;
 			cp += len;
 			nc += len;
@@ -493,7 +471,6 @@ printf ("execve arg: %u bytes from %08x to %08x\n", cc, cp, ucp);
 	}
 	execsigs (u.u_procp);
 	for (cp = u.u_pofile, cc = 0; cc <= u.u_lastfile; cc++, cp++) {
-printf ("=8=\n");
 		if (*cp & UF_EXCLOSE) {
 			(void) closef (u.u_ofile [cc]);
 			u.u_ofile [cc] = NULL;
@@ -502,7 +479,6 @@ printf ("=8=\n");
 	}
 	while (u.u_lastfile >= 0 && u.u_ofile [u.u_lastfile] == NULL)
 		u.u_lastfile--;
-printf ("=9=\n");
 
 	/*
 	 * Clear registers.
@@ -533,7 +509,7 @@ printf ("=9=\n");
         u.u_frame [FRAME_RA] = 0;
         u.u_frame [FRAME_LO] = 0;
         u.u_frame [FRAME_HI] = 0;
-        u.u_frame [FRAME_GP] = USER_DATA_START + exdata.ex_exec.a_text;
+        u.u_frame [FRAME_GP] = 0;
 	u.u_frame [FRAME_PC] = exdata.ex_exec.a_entry;
 
 	/*
@@ -543,8 +519,9 @@ printf ("=9=\n");
 		bcopy ((caddr_t) cfname, (caddr_t) u.u_comm, MAXCOMLEN);
 	else
 		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) u.u_comm, MAXCOMLEN);
-printf ("execve done: GP=%08x, PC=%08x, SP=%08x\n", u.u_frame [FRAME_GP], u.u_frame [FRAME_PC], u.u_frame [FRAME_SP]);
-printf ("             R4=%08x, R5=%08x, R6=%08x\n", u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
+printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
+    u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
+    u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
 bad:
 	if (bp) {
 		bp->b_flags |= B_AGE;

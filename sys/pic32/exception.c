@@ -172,7 +172,7 @@ printf ("*** interrupt\n");
 		/* original pc for restarting syscalls */
 		int opc = frame [FRAME_PC];		/* opc now points at syscall */
 //printf ("*** syscall: at %08x\n", opc);
-		frame [FRAME_PC] = opc + NBPW;		/* return to next instruction */
+		frame [FRAME_PC] = opc + 2*NBPW;	/* no error - skip 2 instructions */
 
 		const struct sysent *callp;
 		int code = (*(u_int*) opc >> 6) & 0377;	/* bottom 8 bits are index */
@@ -201,18 +201,17 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
 		}
-		frame [FRAME_R8] = u.u_error;			/* $t0 */
+		frame [FRAME_R8] = u.u_error;		/* $t0 */
 		switch (u.u_error) {
 		case 0:
-			/* No error - skip two instructions. */
-			frame [FRAME_PC] += 2*NBPW;
-			frame [FRAME_R2] = u.u_rval;		/* $v0 */
+			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
-			frame [FRAME_R2] = -1;			/* $v0 */
+			frame [FRAME_PC] = opc + NBPW;  /* return to next inst */
+			frame [FRAME_R2] = -1;		/* $v0 */
 		}
 		goto out;
 	}

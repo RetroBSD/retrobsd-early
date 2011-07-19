@@ -66,6 +66,8 @@ _start (argc, argv, env)
 	char **argv;
 	char **env;
 {
+        asm volatile ("la $gp, _gp");
+
 	environ = env;
 	if (argc > 0 && argv[0] != 0) {
 		const char *s;
