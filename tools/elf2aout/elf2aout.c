@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  */
 #include <sys/types.h>
-#include <elf.h>
 
 #include <err.h>
 #include <errno.h>
@@ -40,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 
 /*
  * Header prepended to each a.out file.
@@ -86,6 +86,162 @@ struct sect {
 	uint32_t vaddr;
 	uint32_t len;
 };
+
+/*
+ * Standard ELF types, structures, and macros.
+ */
+
+/* The ELF file header.  This appears at the start of every ELF file.  */
+
+#define EI_NIDENT (16)
+
+typedef struct
+{
+  unsigned char	e_ident[EI_NIDENT];	/* Magic number and other info */
+  uint16_t	e_type;			/* Object file type */
+  uint16_t	e_machine;		/* Architecture */
+  uint32_t	e_version;		/* Object file version */
+  uint32_t	e_entry;		/* Entry point virtual address */
+  uint32_t	e_phoff;		/* Program header table file offset */
+  uint32_t	e_shoff;		/* Section header table file offset */
+  uint32_t	e_flags;		/* Processor-specific flags */
+  uint16_t	e_ehsize;		/* ELF header size in bytes */
+  uint16_t	e_phentsize;		/* Program header table entry size */
+  uint16_t	e_phnum;		/* Program header table entry count */
+  uint16_t	e_shentsize;		/* Section header table entry size */
+  uint16_t	e_shnum;		/* Section header table entry count */
+  uint16_t	e_shstrndx;		/* Section header string table index */
+} Elf32_Ehdr;
+
+/* Program segment header.  */
+
+typedef struct
+{
+  uint32_t	p_type;			/* Segment type */
+  uint32_t	p_offset;		/* Segment file offset */
+  uint32_t	p_vaddr;		/* Segment virtual address */
+  uint32_t	p_paddr;		/* Segment physical address */
+  uint32_t	p_filesz;		/* Segment size in file */
+  uint32_t	p_memsz;		/* Segment size in memory */
+  uint32_t	p_flags;		/* Segment flags */
+  uint32_t	p_align;		/* Segment alignment */
+} Elf32_Phdr;
+
+/* Section header.  */
+
+typedef struct
+{
+  uint32_t	sh_name;		/* Section name (string tbl index) */
+  uint32_t	sh_type;		/* Section type */
+  uint32_t	sh_flags;		/* Section flags */
+  uint32_t	sh_addr;		/* Section virtual addr at execution */
+  uint32_t	sh_offset;		/* Section file offset */
+  uint32_t	sh_size;		/* Section size in bytes */
+  uint32_t	sh_link;		/* Link to another section */
+  uint32_t	sh_info;		/* Additional section information */
+  uint32_t	sh_addralign;		/* Section alignment */
+  uint32_t	sh_entsize;		/* Entry size if section holds table */
+} Elf32_Shdr;
+
+/* Symbol table entry.  */
+
+typedef struct
+{
+  uint32_t	st_name;		/* Symbol name (string tbl index) */
+  uint32_t	st_value;		/* Symbol value */
+  uint32_t	st_size;		/* Symbol size */
+  unsigned char	st_info;		/* Symbol type and binding */
+  unsigned char	st_other;		/* Symbol visibility */
+  uint16_t	st_shndx;		/* Section index */
+} Elf32_Sym;
+
+/* Legal values for p_type (segment type).  */
+
+#define	PT_NULL		0		/* Program header table entry unused */
+#define PT_LOAD		1		/* Loadable program segment */
+#define PT_DYNAMIC	2		/* Dynamic linking information */
+#define PT_INTERP	3		/* Program interpreter */
+#define PT_NOTE		4		/* Auxiliary information */
+#define PT_SHLIB	5		/* Reserved */
+#define PT_PHDR		6		/* Entry for header table itself */
+#define PT_TLS		7		/* Thread-local storage segment */
+#define	PT_NUM		8		/* Number of defined types */
+#define PT_LOOS		0x60000000	/* Start of OS-specific */
+#define PT_GNU_EH_FRAME	0x6474e550	/* GCC .eh_frame_hdr segment */
+#define PT_GNU_STACK	0x6474e551	/* Indicates stack executability */
+#define PT_GNU_RELRO	0x6474e552	/* Read-only after relocation */
+#define PT_LOSUNW	0x6ffffffa
+#define PT_SUNWBSS	0x6ffffffa	/* Sun Specific segment */
+#define PT_SUNWSTACK	0x6ffffffb	/* Stack segment */
+#define PT_HISUNW	0x6fffffff
+#define PT_HIOS		0x6fffffff	/* End of OS-specific */
+#define PT_LOPROC	0x70000000	/* Start of processor-specific */
+#define PT_HIPROC	0x7fffffff	/* End of processor-specific */
+
+/* Legal values for p_type field of Elf32_Phdr.  */
+
+#define PT_MIPS_REGINFO	0x70000000	/* Register usage information */
+#define PT_MIPS_RTPROC  0x70000001	/* Runtime procedure table. */
+#define PT_MIPS_OPTIONS 0x70000002
+
+/* Legal values for p_flags (segment flags).  */
+
+#define PF_X		(1 << 0)	/* Segment is executable */
+#define PF_W		(1 << 1)	/* Segment is writable */
+#define PF_R		(1 << 2)	/* Segment is readable */
+#define PF_MASKOS	0x0ff00000	/* OS-specific */
+#define PF_MASKPROC	0xf0000000	/* Processor-specific */
+
+/* How to extract and insert information held in the st_info field.  */
+
+#define ELF32_ST_BIND(val)		(((unsigned char) (val)) >> 4)
+#define ELF32_ST_TYPE(val)		((val) & 0xf)
+#define ELF32_ST_INFO(bind, type)	(((bind) << 4) + ((type) & 0xf))
+
+/* Legal values for ST_TYPE subfield of st_info (symbol type).  */
+
+#define STT_NOTYPE	0		/* Symbol type is unspecified */
+#define STT_OBJECT	1		/* Symbol is a data object */
+#define STT_FUNC	2		/* Symbol is a code object */
+#define STT_SECTION	3		/* Symbol associated with a section */
+#define STT_FILE	4		/* Symbol's name is file name */
+#define STT_COMMON	5		/* Symbol is a common data object */
+#define STT_TLS		6		/* Symbol is thread-local data object*/
+#define	STT_NUM		7		/* Number of defined types.  */
+#define STT_LOOS	10		/* Start of OS-specific */
+#define STT_GNU_IFUNC	10		/* Symbol is indirect code object */
+#define STT_HIOS	12		/* End of OS-specific */
+#define STT_LOPROC	13		/* Start of processor-specific */
+#define STT_HIPROC	15		/* End of processor-specific */
+
+/* Special section indices.  */
+
+#define SHN_UNDEF	0		/* Undefined section */
+#define SHN_LORESERVE	0xff00		/* Start of reserved indices */
+#define SHN_LOPROC	0xff00		/* Start of processor-specific */
+#define SHN_BEFORE	0xff00		/* Order section before all others
+					   (Solaris).  */
+#define SHN_AFTER	0xff01		/* Order section after all others
+					   (Solaris).  */
+#define SHN_HIPROC	0xff1f		/* End of processor-specific */
+#define SHN_LOOS	0xff20		/* Start of OS-specific */
+#define SHN_HIOS	0xff3f		/* End of OS-specific */
+#define SHN_ABS		0xfff1		/* Associated symbol is absolute */
+#define SHN_COMMON	0xfff2		/* Associated symbol is common */
+#define SHN_XINDEX	0xffff		/* Index is in extra table.  */
+#define SHN_HIRESERVE	0xffff		/* End of reserved indices */
+
+/* Legal values for ST_BIND subfield of st_info (symbol binding).  */
+
+#define STB_LOCAL	0		/* Local symbol */
+#define STB_GLOBAL	1		/* Global symbol */
+#define STB_WEAK	2		/* Weak symbol */
+#define	STB_NUM		3		/* Number of defined types.  */
+#define STB_LOOS	10		/* Start of OS-specific */
+#define STB_GNU_UNIQUE	10		/* Unique symbol.  */
+#define STB_HIOS	12		/* End of OS-specific */
+#define STB_LOPROC	13		/* Start of processor-specific */
+#define STB_HIPROC	15		/* End of processor-specific */
 
 void	combine (struct sect *, struct sect *, int);
 int	phcmp (const void *, const void *);

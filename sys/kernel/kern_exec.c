@@ -105,6 +105,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	ds = ep->a_data + ep->a_bss;
 	ss = SSIZE + nargc;
 
+printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
 	if (estabur (ts, ds, ss, 0)) {
 		return;
 	}
@@ -122,9 +123,11 @@ getxfile (ip, ep, nargc, uid, gid)
 	if (startc != 0)
 		startc--;
 	numc = ds - startc;
+printf ("getxfile: clear %u bytes at %08x\n", numc, u.u_procp->p_daddr + startc);
 	bzero ((void*) (u.u_procp->p_daddr + startc), numc);
 
 	expand (ss, S_STACK);
+printf ("getxfile: clear %u bytes at %08x\n", ss, u.u_procp->p_saddr);
 	bzero ((void*) u.u_procp->p_saddr, ss);
 
 	/*
@@ -133,7 +136,8 @@ getxfile (ip, ep, nargc, uid, gid)
 	estabur (0, ds, 0, 0);
 	offset = sizeof(struct exec);
 	offset += ep->a_text;
-	rdwri (UIO_READ, ip, (caddr_t) 0, ep->a_data, offset,
+printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
+	rdwri (UIO_READ, ip, (caddr_t) USER_DATA_START, ep->a_data, offset,
 		IO_UNIT, (int*) 0);
 
 	/*
@@ -189,14 +193,17 @@ execve()
 printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei (ndp);
-	if (ip == NULL)
+	if (ip == NULL) {
+printf ("execve: file not found\n");
 		return;
+        }
 	bno = 0;
 	bp = 0;
 	indir = 0;
 	uid = u.u_uid;
 	gid = u.u_groups[0];
 	if (ip->i_fs->fs_flags & MNT_NOEXEC) {
+printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 		u.u_error = EACCES;
 		goto bad;
 	}
@@ -207,12 +214,18 @@ printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->arg
 			gid = ip->i_gid;
 	}
 again:
-	if (access (ip, IEXEC))
+printf ("=1=\n");
+	if (access (ip, IEXEC)) {
+printf ("execve: no IEXEC\n");
 		goto bad;
-	if ((u.u_procp->p_flag & P_TRACED) && access (ip, IREAD))
+        }
+	if ((u.u_procp->p_flag & P_TRACED) && access (ip, IREAD)) {
+printf ("execve: traced, but no IREAD\n");
 		goto bad;
+        }
 	if ((ip->i_mode & IFMT) != IFREG ||
 	    (ip->i_mode & (IEXEC | (IEXEC>>3) | (IEXEC>>6))) == 0) {
+printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 		u.u_error = EACCES;
 		goto bad;
 	}
@@ -237,10 +250,14 @@ again:
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
 	u.u_error = rdwri (UIO_READ, ip, (caddr_t) &exdata, sizeof(exdata),
 				(off_t) 0, IO_UNIT, &resid);
-	if (u.u_error)
+printf ("=2=\n");
+	if (u.u_error) {
+printf ("execve: rdwri error %d\n", u.u_error);
 		goto bad;
+        }
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
+printf ("execve: short read, resid = %d, shell=%.32s\n", resid, exdata.ex_shell);
 		u.u_error = ENOEXEC;
 		goto bad;
 	}
@@ -254,6 +271,7 @@ again:
 		if (exdata.ex_shell[0] != '#' ||
 		    exdata.ex_shell[1] != '!' ||
 		    indir) {
+printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 			u.u_error = ENOEXEC;
 			goto bad;
 		}
@@ -301,6 +319,7 @@ again:
 		cfname [MAXCOMLEN] = '\0';
 		goto again;
 	}
+printf ("=3=\n");
 
 	/*
 	 * Collect arguments on "file" in swap space.
@@ -312,6 +331,7 @@ again:
 	cp = 0;
 	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
+printf ("execve: malloc failed\n");
 		swkill (u.u_procp, "exec");
 		goto bad;
 	}
@@ -319,6 +339,7 @@ again:
 	 * Copy arguments into file in argdev area.
 	 */
 	if (uap->argp) for (;;) {
+printf ("=4=\n");
 		ap = NULL;
 		sharg = NULL;
 		if (indir && na == 0) {
@@ -355,6 +376,7 @@ again:
 				 * overflow before each buffer allocation.
 				 */
 				if (nc >= NCARGS-1) {
+printf ("execve: too many args = %d\n", nc);
 					error = E2BIG;
 					break;
 				}
@@ -367,9 +389,11 @@ again:
 			}
 			if (sharg) {
 				error = copystr (sharg, cp, (unsigned) cc, &len);
+printf ("execve arg%d: %u bytes from %08x to %08x\n", na-1, len, sharg, cp);
 				sharg += len;
 			} else {
 				error = copystr ((caddr_t) ap, cp, (unsigned) cc, &len);
+printf ("execve arg%d: %u bytes from %08x to %08x\n", na-1, len, ap, cp);
 				ap += len;
 			}
 			cp += len;
@@ -377,6 +401,7 @@ again:
 			cc -= len;
 		} while (error == ENOENT);
 		if (error) {
+printf ("execve: copy arg error = %d\n", error);
 			u.u_error = error;
 			if (bp) {
 				bp->b_flags |= B_AGE;
@@ -387,13 +412,16 @@ again:
 			goto badarg;
 		}
 	}
+printf ("=5=\n");
 	if (bp) {
 		bdwrite (bp);
+printf ("=5a=\n");
 	}
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	getxfile (ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
+printf ("execve: getxfile error = %d\n", u.u_error);
 badarg:
 		for (cc = 0; cc < nc; cc += DEV_BSIZE) {
 			daddr_t blkno;
@@ -409,13 +437,14 @@ badarg:
 		}
 		goto bad;
 	}
+printf ("=6=\n");
 	iput(ip);
 	ip = NULL;
 
 	/*
 	 * Copy back arglist.
 	 */
-	ucp = -nc - NBPW;
+	ucp = USER_DATA_END - nc - NBPW;
 	ap = ucp - na*NBPW - 2*NBPW;
 	u.u_frame [FRAME_SP] = ap;
         u.u_frame [FRAME_R4] = na - ne;			/* $a0 := argc */
@@ -424,6 +453,7 @@ badarg:
 	nc = 0;
 	cc = 0;
 	for (;;) {
+printf ("=7=\n");
 		if (na == ne) {
 			*(int*) ap = 0;
 			ap += NBPW;
@@ -442,6 +472,7 @@ badarg:
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_addr;
 			}
+printf ("execve arg: %u bytes from %08x to %08x\n", cc, cp, ucp);
 			error = copystr (cp, (caddr_t) ucp, (unsigned) cc,
 				&len);
 			ucp += len;
@@ -454,7 +485,7 @@ badarg:
 		ap += NBPW;
 	}
 	*(int*) ap = 0;
-	*(int*) (-NBPW) = 0;
+	*(int*) (USER_DATA_END - NBPW) = 0;
 	if (bp) {
 		bp->b_flags |= B_AGE;
 		brelse (bp);
@@ -462,6 +493,7 @@ badarg:
 	}
 	execsigs (u.u_procp);
 	for (cp = u.u_pofile, cc = 0; cc <= u.u_lastfile; cc++, cp++) {
+printf ("=8=\n");
 		if (*cp & UF_EXCLOSE) {
 			(void) closef (u.u_ofile [cc]);
 			u.u_ofile [cc] = NULL;
@@ -470,6 +502,7 @@ badarg:
 	}
 	while (u.u_lastfile >= 0 && u.u_ofile [u.u_lastfile] == NULL)
 		u.u_lastfile--;
+printf ("=9=\n");
 
 	/*
 	 * Clear registers.
@@ -510,6 +543,8 @@ badarg:
 		bcopy ((caddr_t) cfname, (caddr_t) u.u_comm, MAXCOMLEN);
 	else
 		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) u.u_comm, MAXCOMLEN);
+printf ("execve done: GP=%08x, PC=%08x, SP=%08x\n", u.u_frame [FRAME_GP], u.u_frame [FRAME_PC], u.u_frame [FRAME_SP]);
+printf ("             R4=%08x, R5=%08x, R6=%08x\n", u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
 bad:
 	if (bp) {
 		bp->b_flags |= B_AGE;
