@@ -90,7 +90,7 @@ exception (frame)
 #endif
 	unsigned status = frame [FRAME_STATUS];
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
-//printf ("exception: cause %08x, status %08x\n", cause, status);
+printf ("exception: cause %08x, status %08x\n", cause, status);
 
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
@@ -171,8 +171,7 @@ printf ("*** interrupt\n");
 
 		/* original pc for restarting syscalls */
 		int opc = frame [FRAME_PC];		/* opc now points at syscall */
-//printf ("*** syscall: at %08x\n", opc);
-		frame [FRAME_PC] = opc + 2*NBPW;	/* no error - skip 2 instructions */
+		frame [FRAME_PC] = opc + 3*NBPW;        /* no errors - skip 2 next instructions */
 
 		const struct sysent *callp;
 		int code = (*(u_int*) opc >> 6) & 0377;	/* bottom 8 bits are index */
@@ -201,7 +200,7 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
 		}
-		frame [FRAME_R8] = u.u_error;		/* $t0 */
+		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
@@ -210,7 +209,7 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
-			frame [FRAME_PC] = opc + NBPW;  /* return to next inst */
+			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}
 		goto out;
