@@ -846,7 +846,7 @@ again:
 		if (p->p_stat == SIDL)
 			continue;
 		/*
-		 * TODO - make more efficient (see notes below).
+		 * TODO: sysctl_oproc - make more efficient (see notes below).
 		 * do by session.
 		 */
 		switch (name[0]) {

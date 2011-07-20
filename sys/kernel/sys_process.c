@@ -105,15 +105,7 @@ procxmt()
 		break;
 
 	/* write user I */
-	/* Must set up to allow writing */
 	case PT_WRITE_I:
-		if (baduaddr ((caddr_t) ipc.ip_addr))
-			goto error;
-		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 1);
-		bcopy ((caddr_t) &ipc.ip_data, (caddr_t) ipc.ip_addr, sizeof(int));
-		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 0);
-		break;
-
 	/* write user D */
 	case PT_WRITE_D:
 		if (baduaddr ((caddr_t) ipc.ip_addr))
@@ -128,13 +120,11 @@ procxmt()
 		for (i=0; i<8; i++)
 			if (p == &u.u_frame[i])
 				goto ok;
-		if (p == &u.u_frame [FRAME_STATUS]) {
-			// TODO
-			//ipc.ip_data |= PSL_USERSET;	/* user space */
-			//ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
-			goto ok;
-		}
-		goto error;
+		if (p != &u.u_frame [FRAME_STATUS])
+                        goto error;
+		// TODO: ptrace write u
+		//ipc.ip_data |= PSL_USERSET;	/* user space */
+		//ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
 ok:
 		*p = ipc.ip_data;
 		break;
@@ -142,7 +132,7 @@ ok:
 	/* set signal and continue */
 	/*  one version causes a trace-trap */
 	case PT_STEP:
-		// TODO
+		// TODO: ptrace step
 		//u.u_frame [FRAME_STATUS] |= PSL_T;
 		/* FALL THROUGH TO ... */
 	case PT_CONTINUE:

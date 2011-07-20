@@ -430,7 +430,6 @@ swtch()
 	if (u.u_procp != &proc[0]) {
 		if (setjmp (&u.u_rsave)) {
 			/* Returned from swapper to user process. */
-			sureg();
 			return;
 		}
 		/* Switch from user process to swapper. */

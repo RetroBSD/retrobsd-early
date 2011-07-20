@@ -137,7 +137,6 @@ again:
 	 * here's where it will resume.
 	 */
 	if (setjmp (&u.u_ssave)) {
-		sureg();
 		return(1);
 	}
 
@@ -183,8 +182,6 @@ again:
 		rpp->p_ssize = 0;
 		rpp->p_flag |= SVFDONE;
 		wakeup ((caddr_t) rip);
-		/* must do estabur if dsize/ssize are different */
-		estabur (u.u_tsize, u.u_dsize, u.u_ssize, 0);
 		rip->p_flag &= ~SVFPRNT;
 	}
 	return(0);

@@ -60,7 +60,7 @@ sendsig (p, sig, mask)
 		n = (caddr_t) regs [FRAME_SP] - sizeof (sf);
 
 	if (! (u.u_sigstk.ss_flags & SA_ONSTACK) &&
-	    n < (caddr_t) -u.u_ssize && ! grow ((unsigned ) n)) {
+	    n < (caddr_t) u.u_procp->p_daddr + u.u_dsize) {
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction violation to halt it in its tracks.

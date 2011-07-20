@@ -12,5 +12,5 @@
 void
 clkstart()
 {
-	/* TODO */
+	/* TODO: start hardware timer */
 }

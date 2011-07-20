@@ -15,84 +15,23 @@ sbrk()
 	struct a {
 		int nsiz;
 	};
-	register int n, d;
+	register int newsize, d;
 
-	/* set n to new data size */
-	n = ((struct a*)u.u_arg)->nsiz;
-	n -= u.u_tsize;
-	if (n < 0)
-		n = 0;
-	if (estabur (u.u_tsize, n, u.u_ssize, 0))
+	/* set newsize to new data size */
+	newsize = ((struct a*)u.u_arg)->nsiz;
+	newsize -= u.u_tsize;
+	if (newsize < 0)
+		newsize = 0;
+	if (u.u_tsize + newsize + u.u_ssize > MAXMEM) {
+		u.u_error = ENOMEM;
 		return;
-	expand (n, S_DATA);
+	}
+
+	u.u_procp->p_dsize = newsize;
+
 	/* set d to (new - old) */
-	d = n - u.u_dsize;
+	d = newsize - u.u_dsize;
 	if (d > 0)
 		bzero ((void*) (u.u_procp->p_daddr + u.u_dsize), d);
-	u.u_dsize = n;
-}
-
-/*
- * Grow the stack to include the SP.
- * Return true if successful.
- */
-int
-grow (sp)
-	register unsigned sp;
-{
-	register int si;
-
-	if (sp >= -u.u_ssize)
-		return (0);
-	si = (-sp) - u.u_ssize + SINCR;
-	/*
-	 * Round the increment back to a segment boundary if necessary.
-	 */
-	if (si <= 0)
-		return (0);
-	if (estabur (u.u_tsize, u.u_dsize, u.u_ssize + si, 0))
-		return (0);
-	/*
-	 *  expand will put the stack in the right place;
-	 *  no copy required here.
-	 */
-	expand (u.u_ssize + si, S_STACK);
-	u.u_ssize += si;
-	bzero ((void*) u.u_procp->p_saddr, si);
-	return (1);
-}
-
-/*
- * Set up software prototype segmentation registers to implement the 3
- * pseudo text, data, stack segment sizes passed as arguments.
- * The last argument determines whether the text segment is
- * read-write or read-only.
- */
-int
-estabur (nt, nd, ns, wflag)
-	u_int nt, nd, ns;
-	int wflag;
-{
-	if (nt + nd + ns > MAXMEM) {
-		u.u_error = ENOMEM;
-		return (-1);
-	}
-	/* TODO */
-	sureg();
-	return(0);
-}
-
-/*
- * Load the user hardware segmentation registers from the software prototype.
- * The software registers must have been setup prior by estabur.
- */
-void
-sureg()
-{
-	int taddr, daddr, saddr;
-
-	daddr = u.u_procp->p_daddr;
-	saddr = u.u_procp->p_saddr;
-	taddr = daddr;
-	/* TODO */
+	u.u_dsize = newsize;
 }

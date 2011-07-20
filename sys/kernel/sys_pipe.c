@@ -294,7 +294,7 @@ pipe()
 	/* Move a secondary return value to register $v1. */
 	u.u_frame [FRAME_R3] = u.u_rval;
 #else
-	TODO
+	// TODO: pipe() return value for non-MIPS architectures.
 #endif
 	u.u_rval = r;
 	wf->f_flag = FWRITE;

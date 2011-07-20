@@ -17,6 +17,8 @@ share		Shared resources.
 
 sys		Kernel sources.
 
+tools           Build tools and simulators.
+
 usr.bin		User commands.
 
 usr.sbin	System administration commands.

@@ -600,7 +600,6 @@ core()
 	if (u.u_error)
 		goto out;
 
-	estabur(0, u.u_dsize, u.u_ssize, 0);
 	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
 		IO_UNIT, (int*) 0);
 	if (u.u_error)

@@ -178,23 +178,18 @@ boot (dev, howto)
 		printf("done\n");
 	}
 	(void) splhigh();
-	if (howto & RB_HALT) {
-		printf ("halting\n");
-		for (;;) {
-			asm volatile ("wait");
-		}
-		/*NOTREACHED*/
-	}
-	if ((howto & RB_DUMP) && dumpdev != NODEV) {
-		/*
-		 * Take a dump of memory by calling (*dump)(),
-		 * which must correspond to dumpdev.
-		 * It should dump from dumplo blocks to the end
-		 * of memory or to the end of the logical device.
-		 */
-		(*dump) (dumpdev);
-	}
-	/* TODO: doboot (dev, howto); */
+	if (! (howto & RB_HALT)) {
+                if ((howto & RB_DUMP) && dumpdev != NODEV) {
+                        /*
+                         * Take a dump of memory by calling (*dump)(),
+                         * which must correspond to dumpdev.
+                         * It should dump from dumplo blocks to the end
+                         * of memory or to the end of the logical device.
+                         */
+                        (*dump) (dumpdev);
+                }
+                /* TODO: restart from dev, howto */
+        }
 	printf ("halted\n");
 	for (;;) {
 		asm volatile ("wait");
@@ -226,7 +221,7 @@ udelay (usec)
  */
 void addupc (caddr_t pc, struct uprof *pbuf, int ticks)
 {
-	/* TODO */
+	/* TODO: profiling */
 }
 
 /*

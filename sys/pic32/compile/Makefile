@@ -49,7 +49,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \
 		   ufs_bmap.o ufs_disksubr.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
-		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o vm_proc.o \
+		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.

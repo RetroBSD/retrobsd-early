@@ -155,8 +155,8 @@ exception (frame)
 	 */
 	case CA_Int:			/* Interrupt */
 	case CA_Int + USER:
-		/* TODO */
-printf ("*** interrupt\n");
+		/* TODO: interrupts */
+printf ("=== interrupt\n");
 		goto out;
 
 	/*
@@ -178,7 +178,7 @@ printf ("*** interrupt\n");
 			callp = &sysent[0];		/* indir (illegal) */
 		else
 			callp = &sysent[code];
-printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], opc);
+printf ("--- syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], opc);
 		if (callp->sy_narg) {
 			u.u_arg[0] = frame [FRAME_R4];		/* $a0 */
 			u.u_arg[1] = frame [FRAME_R5];		/* $a1 */
@@ -202,14 +202,14 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
-printf ("*** syscall returned %u\n", u.u_rval);
+printf ("    syscall returned %u\n", u.u_rval);
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
-printf ("*** syscall failed, errno %u\n", u.u_error);
+printf ("    syscall failed, errno %u\n", u.u_error);
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}

@@ -104,33 +104,32 @@ getxfile (ip, ep, nargc, uid, gid)
 	ss = SSIZE + nargc;
 
 printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
-	if (estabur (ts, ds, ss, 0)) {
+	if (ts + ds + ss > MAXMEM) {
+		u.u_error = ENOMEM;
 		return;
 	}
 
 	/*
-	 * allocate and clear core at this point, committed
-	 * to the new image
+	 * Allocate core at this point, committed to the new image.
 	 */
 	u.u_prof.pr_scale = 0;
 	if (u.u_procp->p_flag & SVFORK)
 		endvfork();
-	expand (ds, S_DATA);
+	u.u_procp->p_dsize = ds;
+	u.u_procp->p_daddr = USER_DATA_START;
+	u.u_procp->p_ssize = ss;
+	u.u_procp->p_saddr = USER_DATA_END - ss;
 
-	/* clear BSS only */
-	if (ep->a_bss > 0) {
-printf ("getxfile: clear bss %u bytes at %08x\n", ep->a_bss, u.u_procp->p_daddr + ep->a_data);
-            bzero ((void*) (u.u_procp->p_daddr + ep->a_data), ep->a_bss);
-        }
-	expand (ss, S_STACK);
-printf ("getxfile: clear stack %u bytes at %08x\n", ss, u.u_procp->p_saddr);
-	bzero ((void*) u.u_procp->p_saddr, ss);
-
-	/* read in data segment */
-	estabur (0, ds, 0, 0);
+	/* read in text and data */
 printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
 	rdwri (UIO_READ, ip, (caddr_t) USER_DATA_START, ep->a_data,
                 sizeof(struct exec) + ep->a_text, IO_UNIT, (int*) 0);
+
+	/* clear BSS and stack */
+printf ("getxfile: clear %u bytes at %08x\n",
+USER_DATA_END - USER_DATA_START - ep->a_data, USER_DATA_START + ep->a_data);
+	bzero ((void*) (USER_DATA_START + ep->a_data),
+            USER_DATA_END - USER_DATA_START - ep->a_data);
 
 	/*
 	 * set SUID/SGID protections, if no tracing
@@ -147,7 +146,6 @@ printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
-	estabur (ts, ds, ss, 0);
 }
 
 void printmem (unsigned addr, int nbytes)
