@@ -374,8 +374,12 @@ u_int fastcall mips_mts32_lw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
         bad_memory_access (cpu, vaddr);
     }
 
-    if (likely (has_set_value == FALSE))
+    if (likely (has_set_value == FALSE)) {
         data = vmtoh32 (*(m_uint32_t *) haddr);
+if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL)) == MIPS_CP0_STATUS_UM &&
+    vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+printf ("read %08x -> %08x \n", vaddr, data);
+    }
     if (likely (!exc))
         cpu->gpr[reg] = sign_extend (data, 32);
 
@@ -508,6 +512,9 @@ u_int fastcall mips_mts32_sw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
             jit_handle_self_write (cpu, vaddr);
 #endif
         *(m_uint32_t *) haddr = htovm32 (data);
+if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL)) == MIPS_CP0_STATUS_UM &&
+    vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+printf ("write %08x := %08x \n", vaddr, data);
     }
 
     return (exc);
@@ -1184,6 +1191,11 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
     case 0x01:
     case 0x02:
     case 0x03:                 /* kuseg */
+#ifdef SIM_PIC32
+        map.vaddr = vaddr & MIPS_MIN_PAGE_MASK;
+        map.paddr = map.vaddr & 0x1ffff;
+        map.mapped = FALSE;
+#else
         /* trigger TLB exception if no matching entry found */
         if (! mips64_cp0_tlb_lookup (cpu, vaddr, &map))
             goto err_tlb;
@@ -1194,11 +1206,11 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
             goto err_mod;
 
         map.mapped = TRUE;
+#endif
         entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
                                 is_fromgdb);
         if (! entry)
             goto err_undef;
-
         return (entry);
 
     case 0x04:                 /* kseg0 */
@@ -1225,6 +1237,11 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
 
     case 0x06:                 /* ksseg */
     case 0x07:                 /* kseg3 */
+#ifdef SIM_PIC32
+        map.vaddr = vaddr & MIPS_MIN_PAGE_MASK;
+        map.paddr = map.vaddr & 0x1ffff;
+        map.mapped = FALSE;
+#else
         //ASSERT(0,"not implemented upper 1G memory space \n");
         /* trigger TLB exception if no matching entry found */
         if (! mips64_cp0_tlb_lookup (cpu, vaddr, &map))
@@ -1234,29 +1251,31 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
         if ((MTS_WRITE == op_type) && ((map.dirty & 0x1) != 0x1))
             goto err_mod;
         map.mapped = TRUE;
+#endif
         entry = mips_mts32_map (cpu, op_type, &map, entry, alt_entry,
                                 is_fromgdb);
         if (! entry)
             goto err_undef;
-
         return (entry);
     }
+#ifndef SIM_PIC32
 err_mod:
     if (is_fromgdb)
         return NULL;
     mips_access_special (cpu, vaddr, MTS_ACC_M, op_code, op_type, op_size,
         data, exc);
     return NULL;
-err_undef:
-    if (is_fromgdb)
-        return NULL;
-    mips_access_special (cpu, vaddr, MTS_ACC_U, op_code, op_type, op_size,
-        data, exc);
-    return NULL;
 err_tlb:
     if (is_fromgdb)
         return NULL;
     mips_access_special (cpu, vaddr, MTS_ACC_T, op_code, op_type, op_size,
+        data, exc);
+    return NULL;
+#endif
+err_undef:
+    if (is_fromgdb)
+        return NULL;
+    mips_access_special (cpu, vaddr, MTS_ACC_U, op_code, op_type, op_size,
         data, exc);
     return NULL;
 }

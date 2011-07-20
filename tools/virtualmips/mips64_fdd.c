@@ -181,6 +181,18 @@ if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL))
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
         fflush (stdout);
+#if 0
+        m_uint32_t dummy;
+        unsigned char *p = physmem_get_hptr (cpu->vm, 0x00010000, 0, MTS_READ, &dummy);
+        if (p) {
+            unsigned nbytes;
+            for (nbytes=0x40; nbytes>0; p+=16, nbytes-=16) {
+                printf ("%08x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                    (unsigned) p, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+                    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+            }
+        }
+#endif
 }
 #endif
         res = mips64_exec_single_instruction (cpu, insn);
@@ -231,6 +243,15 @@ static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
         return (1);
     }
     cpu->is_in_bdslot = 1;
+
+#if 1
+if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL)) == MIPS_CP0_STATUS_UM) {
+        printf ("%08x:       %08x        ", cpu->pc, insn);
+        print_insn_mips (cpu->pc, insn, stdout);
+        printf ("\n");
+        fflush (stdout);
+}
+#endif
     /* Execute the instruction */
     res = mips64_exec_single_instruction (cpu, insn);
     cpu->is_in_bdslot = 0;

@@ -100,24 +100,27 @@ chroot()
  * and call the device open routine if any.
  */
 static int
-copen (mode, arg, fname)
+copen (mode, cmode, fname)
 	int mode;
-	int arg;
+	int cmode;
 	caddr_t fname;
 {
 	register struct inode *ip;
 	register struct file *fp;
 	struct	nameidata nd;
 	register struct	nameidata *ndp = &nd;
-	int indx, type, flags, cmode, error;
+	int indx, type, flags, error;
 
+printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fname);
+//void printmem (unsigned addr, int nbytes);
+//printmem (0x7f010000, 0x40);
 	fp = falloc();
 	if (fp == NULL)
 		return(u.u_error);	/* XXX */
 	flags = FFLAGS(mode);	/* convert from open to kernel flags */
 	fp->f_flag = flags & FMASK;
 	fp->f_type = DTYPE_INODE;
-	cmode = (arg & 077777) & ~ISVTX;
+	cmode &= 077777 & ~ISVTX;
 	indx = u.u_rval;
 	u.u_dupfd = -indx - 1;
 	NDINIT (ndp, LOOKUP, FOLLOW, fname);
@@ -136,6 +139,7 @@ copen (mode, arg, fname)
 	 */
 	error = vn_open(ndp, flags, cmode);
 	if (error) {
+printf ("copen errno=%d\n", error);
 		fp->f_count = 0;
 		if ((error == ENODEV || error == ENXIO) &&
 		    u.u_dupfd >= 0 &&

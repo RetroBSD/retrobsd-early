@@ -7,7 +7,7 @@ DESTDIR=
 CFLAGS=	-O
 SEPFLAG= -i
 
-SUBDIR=	adb font fontinfo learn me misc ms tmac termcap lint zoneinfo
+SUBDIR= misc
 
 all:	${SUBDIR}
 

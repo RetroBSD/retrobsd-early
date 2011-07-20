@@ -150,6 +150,16 @@ printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
 	estabur (ts, ds, ss, 0);
 }
 
+void printmem (unsigned addr, int nbytes)
+{
+        for (; nbytes>0; addr+=16, nbytes-=16) {
+                unsigned char *p = (unsigned char*) addr;
+                printf ("%08x: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                    addr, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+                    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+        }
+}
+
 void
 execv()
 {
@@ -179,7 +189,9 @@ execve()
 	struct nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
+printf ("execve (%08x, %08x, %08x)\n", uap->fname, uap->argp, uap->envp);
+printf ("       ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
+//printmem (0x7f010380, 0x40);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei (ndp);
 	if (ip == NULL) {
@@ -194,7 +206,7 @@ printf ("execve: file not found\n");
 	if (ip->i_fs->fs_flags & MNT_NOEXEC) {
 printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 		u.u_error = EACCES;
-		goto bad;
+		goto done;
 	}
 	if ((ip->i_fs->fs_flags & MNT_NOSUID) == 0) {
 		if (ip->i_mode & ISUID)
@@ -205,17 +217,17 @@ printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 again:
 	if (access (ip, IEXEC)) {
 printf ("execve: no IEXEC\n");
-		goto bad;
+		goto done;
         }
 	if ((u.u_procp->p_flag & P_TRACED) && access (ip, IREAD)) {
 printf ("execve: traced, but no IREAD\n");
-		goto bad;
+		goto done;
         }
 	if ((ip->i_mode & IFMT) != IFREG ||
 	    (ip->i_mode & (IEXEC | (IEXEC>>3) | (IEXEC>>6))) == 0) {
 printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 		u.u_error = EACCES;
-		goto bad;
+		goto done;
 	}
 
 	/*
@@ -235,13 +247,13 @@ printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 				(off_t) 0, IO_UNIT, &resid);
 	if (u.u_error) {
 printf ("execve: rdwri error %d\n", u.u_error);
-		goto bad;
+		goto done;
         }
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
 printf ("execve: short read, resid = %d, shell=%.32s\n", resid, exdata.ex_shell);
 		u.u_error = ENOEXEC;
-		goto bad;
+		goto done;
 	}
 printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_exec.a_data, exdata.ex_exec.a_bss);
 
@@ -256,7 +268,7 @@ printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_e
 		    indir) {
 printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 			u.u_error = ENOEXEC;
-			goto bad;
+			goto done;
 		}
 		/*
 		 * If setuid/gid scripts were to be disallowed this is where it would
@@ -276,7 +288,7 @@ printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 		}
 		if (*cp != '\0') {
 			u.u_error = ENOEXEC;
-			goto bad;
+			goto done;
 		}
 		cp = &exdata.ex_shell[2];
 		while (*cp == ' ')
@@ -315,7 +327,7 @@ printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 	if (bno == 0) {
 printf ("execve: malloc failed\n");
 		swkill (u.u_procp, "exec");
-		goto bad;
+		goto done;
 	}
 	/*
 	 * Copy arguments into file in argdev area.
@@ -415,7 +427,7 @@ badarg:
 				bp = 0;
 			}
 		}
-		goto bad;
+		goto done;
 	}
 	iput(ip);
 	ip = NULL;
@@ -522,7 +534,10 @@ printf ("execve copy '%s' %u bytes from %08x to %08x\n", cp, len, cp, ucp);
 printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
     u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
     u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
-bad:
+//printmem (0x7f010000, 0x40);
+//printmem (0x7f010380, 0x40);
+
+done:
 	if (bp) {
 		bp->b_flags |= B_AGE;
 		brelse (bp);

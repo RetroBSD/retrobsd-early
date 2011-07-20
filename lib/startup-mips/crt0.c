@@ -57,7 +57,7 @@ extern int main (int, char **, char **);
 char **environ;
 const char *__progname = "";
 
-void __start (int, char **, char **);
+void _start (int, char **, char **);
 
 /* The entry function. */
 void

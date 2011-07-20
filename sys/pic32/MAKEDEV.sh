@@ -9,7 +9,7 @@
 #	local	configuration specific devices
 #	fd	file descriptor driver
 # Disks:
-#	rk*	unibus rk05
+#	sd*	flash cards SecureDigital
 # Pseudo terminals:
 #	pty*	set of 16 master and slave pseudo terminals
 
@@ -44,42 +44,16 @@ fd)
 			printf("mknod fd/%d c 5 %d; ",i,i); }'`
 	;;
 
-rk*)
-	# The 2.11BSD rk driver doesn't support partitions.  We create
+sd*)
+	# The 2.11BSD sd driver doesn't support partitions.  We create
 	# a single block and charater inode pair for each unit and
-	# call it rkNh.
-	umask 2 ; unit=`expr $i : '..\(.*\)'`
-	case $i in
-	rk*) name=rk; blk=0; chr=3;;
-	esac
-	mknod ${name}${unit}h b ${blk} ${unit}
-	mknod r${name}${unit}h c ${chr} ${unit}
-	chgrp operator ${name}${unit}h r${name}${unit}h
-	chmod 640 ${name}${unit}h r${name}${unit}h
-	;;
-
-pty*)
-	class=`expr $i : 'pty\(.*\)'`
-	case $class in
-	0) offset=0 name=p;;
-	1) offset=16 name=q;;
-	2) offset=32 name=r;;
-	3) offset=48 name=s;;
-	4) offset=64 name=t;;
-	5) offset=80 name=u;;
-	*) echo bad unit for pty in: $i;;
-	esac
-	case $class in
-	0|1|2|3|4|5)
-		umask 0
-		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
-			for (i = 0; i < 16; i++)
-				printf("mknod tty%s%x c 11 %d; \
-					mknod pty%s%x c 10 %d; ", \
-					n, i, b+i, n, i, b+i); }'`
-		umask 77
-		;;
-	esac
+	# call it sdNh.
+	umask 2
+        unit=`expr $i : '..\(.*\)'`
+	mknod sd${unit}h b 0 ${unit}
+	mknod rsd${unit}h c 3 ${unit}
+	chgrp operator sd${unit}h rsd${unit}h
+	chmod 640 sd${unit}h rsd${unit}h
 	;;
 
 local)

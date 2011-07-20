@@ -42,6 +42,8 @@
 #include <sys/inode.h>
 #include <sys/stat.h>
 
+#include "systm.h"
+
 /*
  * 2.11BSD does not have "vnodes", having instead only old fashioned "inodes".
  * The routine names (i.e. vn_open) were retained since the functions them-
@@ -71,14 +73,16 @@ vn_open (ndp, fmode, cmode)
 		if ((fmode & O_EXCL) == 0)
 			ndp->ni_nameiop |= (CREATE|FOLLOW);
 		else
-			ndp->ni_nameiop= CREATE;
+			ndp->ni_nameiop = CREATE;
 		ip = namei(ndp);
 		if (ip == NULL) {
-			if (u.u_error)
+			if (u.u_error) {
 				goto retuerr;
+                        }
 			ip = maknode(cmode, ndp);
-			if (ip == NULL)
+			if (ip == NULL) {
 				goto retuerr;
+                        }
 			fmode &= ~O_TRUNC;
 		} else {
 			if (fmode & O_EXCL) {
@@ -90,8 +94,9 @@ vn_open (ndp, fmode, cmode)
 	} else {
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
 		ip = namei(ndp);
-		if (ip == NULL)
+		if (ip == NULL) {
 			goto retuerr;
+                }
 	}
 	if ((ip->i_mode & IFMT) == IFSOCK) {
 		error = EOPNOTSUPP;
@@ -113,7 +118,7 @@ vn_open (ndp, fmode, cmode)
 				error = EISDIR;
 				goto bad;
 			}
-			if (access(ip, IWRITE)) 	{
+			if (access(ip, IWRITE)) {
 				error = u.u_error;
 				goto bad;
 			}
@@ -133,8 +138,9 @@ vn_open (ndp, fmode, cmode)
 		goto lbad;
 	}
 	error = openi (ip, fmode);
-	if (error)
+	if (error) {
 		goto lbad;
+        }
 	return(0);
 
 	/*

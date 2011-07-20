@@ -90,14 +90,17 @@ exception (frame)
 #endif
 	unsigned status = frame [FRAME_STATUS];
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
-printf ("exception: cause %08x, status %08x\n", cause, status);
+//printf ("exception: cause %08x, status %08x\n", cause, status);
 
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
 
 	/* Switch to kernel mode, enable interrupts. */
-	mips_write_c0_register (C0_STATUS, status & ~ST_UM);
+	mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
+//void printmem (unsigned addr, int nbytes);
+//printmem (0x7f010380, 0x40);
+//dumpregs (frame);
 
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
@@ -113,7 +116,7 @@ printf ("exception: cause %08x, status %08x\n", cause, status);
 		splx (i);
 		panic ("unexpected exception");
 		/*NOTREACHED*/
-
+#if 0
 	case CA_IBE + USER:			/* Bus error, instruction fetch */
 	case CA_DBE + USER:			/* Bus error, load or store */
 		i = SIGBUS;
@@ -142,15 +145,11 @@ printf ("exception: cause %08x, status %08x\n", cause, status);
 		u.u_code = frame [FRAME_PC];
 		break;
 
-	/*
-	 * If the user SP is below the stack segment, grow the stack
-	 * automatically.
-	 */
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
 	case CA_AdES + USER:		/* Address error, store */
 		i = SIGSEGV;
 		break;
-
+#endif
 	/*
 	 * Hardware interrupt.
 	 */
@@ -203,12 +202,14 @@ printf ("*** syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
+printf ("*** syscall returned %u\n", u.u_rval);
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
+printf ("*** syscall failed, errno %u\n", u.u_error);
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}
@@ -232,6 +233,7 @@ out:
 	if (u.u_prof.pr_scale)
 		addupc ((caddr_t) frame [FRAME_PC],
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
+//dumpregs (frame);
 }
 
 /*

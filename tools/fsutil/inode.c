@@ -53,6 +53,8 @@ int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned inum)
 	}
 	if (! fs_read32 (fs, (unsigned*) &reserved))
 		return 0;
+	if (! fs_read32 (fs, (unsigned*) &inode->flags))
+		return 0;
 	if (! fs_read32 (fs, (unsigned*) &inode->atime))
 		return 0;			/* last access time */
 	if (! fs_read32 (fs, (unsigned*) &inode->mtime))
@@ -153,6 +155,8 @@ int fs_inode_save (fs_inode_t *inode, int force)
 			return 0;
 	}
 	if (! fs_write32 (inode->fs, 0))		/* reserved */
+		return 0;
+	if (! fs_write32 (inode->fs, inode->flags))	/* flags */
 		return 0;
 	if (! fs_write32 (inode->fs, inode->atime))	/* last access time */
 		return 0;
@@ -625,6 +629,7 @@ create_file:
 		inode->mode |= INODE_MODE_FREG;
 	inode->nlink = 1;
 	inode->uid = 0;
+	inode->flags = 0;
 	time (&inode->ctime);
         if ((inode->mode & INODE_MODE_FMT) == INODE_MODE_FDIR) {
                 /* Make link '.' */

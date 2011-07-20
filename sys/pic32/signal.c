@@ -41,10 +41,10 @@ sendsig (p, sig, mask)
 	int oonstack;
 	caddr_t n;
 
-#ifdef	DIAGNOSTIC
+//#ifdef DIAGNOSTIC
 	printf("sendsig %d to %d mask=%O action=%o\n", sig, u.u_procp->p_pid,
 		mask, p);
-#endif
+//#endif
 	regs = u.u_frame;
 	oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
 

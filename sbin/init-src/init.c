@@ -125,6 +125,19 @@ idle (sig)
 main(argc, argv)
 	char **argv;
 {
+#if 1
+        int fd = open(ctty, O_RDWR, 0);
+        if (fd < 0)
+                return 0;
+	write(fd, "init started\n", 13);
+        if (fd > 0)
+                dup2(fd, 0);
+        dup2(0, 1);
+        dup2(0, 2);
+        execl(shell, minus, (char *)0);
+        perror(shell);
+        return 0;
+#else
 	int howto, oldhowto;
 
 	time0 = time(0);
@@ -170,6 +183,7 @@ main(argc, argv)
 		merge(0);
 		multiple();
 	}
+#endif
 }
 
 const char shutfailm[] = "WARNING: Something is hung (wont die); ps axl advised\n";
@@ -306,7 +320,7 @@ single()
 			signal(SIGALRM, SIG_DFL);
 			signal(SIGTSTP, SIG_IGN);
 			fd = open(ctty, O_RDWR, 0);
-			if	(fd)
+			if (fd)
 				dup2(fd, 0);
 			dup2(0, 1);
 			dup2(0, 2);
@@ -330,7 +344,7 @@ runcom(oldhowto)
 	pid = fork();
 	if (pid == 0) {
 		f = open("/", O_RDONLY);
-		if	(f)
+		if (f)
 			dup2(f, 0);
 		dup2(0, 1);
 		dup2(0, 2);

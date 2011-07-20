@@ -96,6 +96,7 @@ typedef struct {
 	unsigned 	gid;		/* group */
 	unsigned long	size;		/* size */
 	unsigned 	addr [7];	/* device addresses constituting file */
+	unsigned 	flags;		/* user defined flags */
 	long		atime;		/* time last accessed */
 	long		mtime;		/* time last modified */
 	long		ctime;		/* time created */

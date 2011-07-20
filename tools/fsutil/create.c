@@ -59,6 +59,7 @@ static int create_root_directory (fs_t *fs)
 	inode.fs = fs;
 	inode.number = BSDFS_ROOT_INODE;
 	inode.size = BSDFS_BSIZE;
+	inode.flags = 0;
 
 	time (&inode.ctime);
 	time (&inode.atime);
@@ -125,6 +126,7 @@ static int create_lost_found_directory (fs_t *fs)
 	inode.fs = fs;
 	inode.number = BSDFS_LOSTFOUND_INODE;
 	inode.size = BSDFS_BSIZE;
+	inode.flags = 0;
 
 	time (&inode.ctime);
 	time (&inode.atime);

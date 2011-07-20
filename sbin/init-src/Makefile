@@ -8,12 +8,13 @@ SRCS		= init.c
 OBJS		= init.o
 MAN		= init.0
 MANSRC		= init.8
+CFLAGS          += -g
 
 all:		../init init.0
 
 ../init:	${OBJS}
 		${CC} ${LDFLAGS} -o init.elf ${OBJS} -lc
-		${OBJDUMP} -d init.elf > init.dis
+		${OBJDUMP} -S init.elf > init.dis
 		${SIZE} init.elf
 		${ELF2AOUT} init.elf $@
 

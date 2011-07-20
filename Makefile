@@ -41,13 +41,32 @@ LIBDIR		= lib
 SRCDIR		= share bin sbin etc usr.bin usr.sbin
 
 FSUTIL		= tools/fsutil/fsutil
-ROOTDIRS	= sbin/ bin/
+ROOTDIRS	= sbin/ bin/ dev/
 ROOTFILES	= sbin/init bin/sh
+BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
+CDEVS           = dev/console!c0:0 \
+                  dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
+                  dev/tty!c2:0 \
+                  dev/rsd0h!c3:0 dev/rsd1h!c3:1 \
+                  dev/klog!c4:0 dev/errlog!c4:1 dev/acctlog!c4:2 \
+                  dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2
+FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
+                  dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
+                  dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \
+                  dev/fd/11!c5:11 dev/fd/12!c5:12 dev/fd/13!c5:13 \
+                  dev/fd/14!c5:14 dev/fd/15!c5:15 dev/fd/16!c5:16 \
+                  dev/fd/17!c5:17 dev/fd/18!c5:18 dev/fd/19!c5:19 \
+                  dev/fd/20!c5:20 dev/fd/21!c5:21 dev/fd/22!c5:22 \
+                  dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
+                  dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
+                  dev/fd/29!c5:29
 
 root.bin:	$(FSUTIL)
 		rm -f $@
 		$(FSUTIL) -n -s16777216 $@
 		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
+		$(FSUTIL) -a $@ $(CDEVS)
+		$(FSUTIL) -a $@ $(BDEVS)
 
 all:		${LIBDIR} ${SRCDIR}
 
