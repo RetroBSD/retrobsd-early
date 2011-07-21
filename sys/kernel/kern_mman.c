@@ -13,12 +13,12 @@ void
 sbrk()
 {
 	struct a {
-		int nsiz;
+		int naddr;
 	};
 	register int newsize, d;
 
 	/* set newsize to new data size */
-	newsize = ((struct a*)u.u_arg)->nsiz;
+	newsize = ((struct a*)u.u_arg)->naddr - u.u_procp->p_daddr;
 	newsize -= u.u_tsize;
 	if (newsize < 0)
 		newsize = 0;
@@ -31,6 +31,7 @@ sbrk()
 
 	/* set d to (new - old) */
 	d = newsize - u.u_dsize;
+printf ("sbrk: new size %u bytes, incremented by %u\n", newsize, d);
 	if (d > 0)
 		bzero ((void*) (u.u_procp->p_daddr + u.u_dsize), d);
 	u.u_dsize = newsize;
