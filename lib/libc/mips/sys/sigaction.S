@@ -20,14 +20,15 @@
 #include "SYS.h"
 
 ENTRY(sigaction)
-	mov	(sp),-(sp)	/ push return address down one place
-	mov	$sigtramp,2(sp)	/   to leave a space for the address of
-	SYS(sigaction)		/   sigtramp
-	mov	(sp)+,(sp)	/ (clean up stack)
-	bcc	1f
-	jmp	x_error
-1:
-	rts	pc
+                la      $a3, sigtramp           # arg4: address of sigtramp
+
+		.set	noreorder
+		syscall	SYS_sigaction
+		lui	$t1, %hi(errno)		# return here on error
+		sw      $t0, %lo(errno)($t1)
+		.set	reorder
+
+		jr	$ra			# return here on success
 
 /*
  * sigtramp - Signal "Trampoline Code"
@@ -49,7 +50,9 @@ ENTRY(sigaction)
  * When the kernel transfers control to sigtramp the stack looks like:
  *
  *	-------------------------
- *	| sigcontext structure	| SIG_SC = sp + 6.
+ *	| sigcontext structure	| SIG_SC = sp + 16
+ *	|-----------------------|
+ *	| unused                |
  *	|-----------------------|
  *	| pointer to sigcontext	|
  *	|-----------------------|
@@ -69,16 +72,16 @@ ENTRY(sigaction)
  * Note that the stack offset SIG_SC will NOT have to be recomputed if the
  * sigcontext structure changes.
  */
-SIG_SC	= 6.				/ stack offset of sigcontext structure
-
-
-.globl	_sigreturn			/ sigreturn sys call
 sigtramp:
-	jsr	pc,(r0)			/ transfer to signal action routine
-	mov	sp,r0			/ compute address of sigcontext
-	add	$SIG_SC,r0		/   (can't use "mov sp,-(sp)")
-	mov	r0,-(sp)
+		lw      $a0, 0($sp)             # arg1: signal number
+		lw      $a1, 4($sp)             # arg2: code
+		lw      $a2, 8($sp)             # arg3: pointer to sigcontext
+                jalr    $v0, $ra                # transfer to signal action routine
 
-	syscall	SYS_sigreturn		/ attempt the sigreturn
+                move	$a0, $sp                # compute address of sigcontext
+                addiu   $a0, 16
+                syscall	SYS_sigreturn		# attempt the sigreturn
+                nop
+                nop
 
-	syscall	SYS_exit		/ die if the sigreturn fails ...
+                syscall	SYS_exit		# die if the sigreturn fails ...

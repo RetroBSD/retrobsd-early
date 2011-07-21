@@ -111,10 +111,10 @@ void
 sigaction()
 {
 	register struct a {
-		u_int	sigtramp;
 		int	signum;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
+		u_int	sigtramp;
 	} *uap = (struct a *)u.u_arg;
 	struct sigaction vec;
 	register struct sigaction *sa;

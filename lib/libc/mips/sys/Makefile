@@ -9,7 +9,7 @@ ASFLAGS		= ${DEFS}
 
 COBJS		= sbrk.o execl.o execle.o execv.o
 
-ASMOBJS		= _exit.o _brk.o pipe.o ptrace.o #sigaction.o
+ASMOBJS		= _exit.o _brk.o pipe.o ptrace.o sigaction.o
 
 SYSOBJS		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o \
 		  chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o \
@@ -23,7 +23,7 @@ SYSOBJS		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o \
 		  recv.o recvfrom.o recvmsg.o rename.o rmdir.o select.o send.o sendmsg.o \
 		  sendto.o setgroups.o setitimer.o setpgrp.o setpriority.o setquota.o \
 		  setuid.o seteuid.o setgid.o setegid.o \
-		  setrlimit.o setsockopt.o settimeofday.o shutdown.o sigaction.o \
+		  setrlimit.o setsockopt.o settimeofday.o shutdown.o \
 		  sigaltstack.o socket.o socketpair.o stat.o symlink.o \
 		  sigprocmask.o sigstack.o sigwait.o \
 		  statfs.o fstatfs.o getfsstat.o \

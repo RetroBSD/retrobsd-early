@@ -10,6 +10,70 @@
 #include "proc.h"
 #include "vm.h"
 
+/*
+ * Translate interrupt vector number to IRQ mask.
+ */
+static const unsigned mask_by_vector[] = {
+	(1 << PIC32_IRQ_CT),		/* 0  - Core Timer Interrupt */
+	(1 << PIC32_IRQ_CS0),           /* 1  - Core Software Interrupt 0 */
+	(1 << PIC32_IRQ_CS1),           /* 2  - Core Software Interrupt 1 */
+	(1 << PIC32_IRQ_INT0),          /* 3  - External Interrupt 0 */
+	(1 << PIC32_IRQ_T1),            /* 4  - Timer1 */
+	(1 << PIC32_IRQ_IC1),           /* 5  - Input Capture 1 */
+	(1 << PIC32_IRQ_OC1),           /* 6  - Output Compare 1 */
+	(1 << PIC32_IRQ_INT1),          /* 7  - External Interrupt 1 */
+	(1 << PIC32_IRQ_T2),            /* 8  - Timer2 */
+	(1 << PIC32_IRQ_IC2),           /* 9  - Input Capture 2 */
+	(1 << PIC32_IRQ_OC2),           /* 10 - Output Compare 2 */
+	(1 << PIC32_IRQ_INT2),          /* 11 - External Interrupt 2 */
+	(1 << PIC32_IRQ_T3),            /* 12 - Timer3 */
+	(1 << PIC32_IRQ_IC3),           /* 13 - Input Capture 3 */
+	(1 << PIC32_IRQ_OC3),           /* 14 - Output Compare 3 */
+	(1 << PIC32_IRQ_INT3),          /* 15 - External Interrupt 3 */
+	(1 << PIC32_IRQ_T4),            /* 16 - Timer4 */
+	(1 << PIC32_IRQ_IC4),           /* 17 - Input Capture 4 */
+	(1 << PIC32_IRQ_OC4),           /* 18 - Output Compare 4 */
+	(1 << PIC32_IRQ_INT4),          /* 19 - External Interrupt 4 */
+	(1 << PIC32_IRQ_T5),            /* 20 - Timer5 */
+	(1 << PIC32_IRQ_IC5),           /* 21 - Input Capture 5 */
+	(1 << PIC32_IRQ_OC5),           /* 22 - Output Compare 5 */
+	(1 << PIC32_IRQ_SPI1E) |        /* 23 - SPI1 */
+	(1 << PIC32_IRQ_SPI1TX) |
+	(1 << PIC32_IRQ_SPI1RX),
+	(1 << PIC32_IRQ_U1E) |          /* 24 - UART1 */
+	(1 << PIC32_IRQ_U1RX) |
+	(1 << PIC32_IRQ_U1TX),
+	(1 << PIC32_IRQ_I2C1B) |        /* 25 - I2C1 */
+	(1 << PIC32_IRQ_I2C1S) |
+	(1 << PIC32_IRQ_I2C1M),
+	(1 << (PIC32_IRQ_CN-32)),       /* 26 - Input Change Interrupt */
+	(1 << (PIC32_IRQ_AD1-32)),      /* 27 - ADC1 Convert Done */
+	(1 << (PIC32_IRQ_PMP-32)),      /* 28 - Parallel Master Port */
+	(1 << (PIC32_IRQ_CMP1-32)),     /* 29 - Comparator Interrupt */
+	(1 << (PIC32_IRQ_CMP2-32)),     /* 30 - Comparator Interrupt */
+	(1 << (PIC32_IRQ_SPI2E-32)) |   /* 31 - SPI2 */
+	(1 << (PIC32_IRQ_SPI2TX-32)) |
+	(1 << (PIC32_IRQ_SPI2RX-32)),
+	(1 << (PIC32_IRQ_U2E-32)) |     /* 32 - UART2 */
+	(1 << (PIC32_IRQ_U2RX-32)) |
+	(1 << (PIC32_IRQ_U2TX-32)),
+	(1 << (PIC32_IRQ_I2C2B-32)) |   /* 33 - I2C2 */
+	(1 << (PIC32_IRQ_I2C2S-32)) |
+	(1 << (PIC32_IRQ_I2C2M-32)),
+	(1 << (PIC32_IRQ_FSCM-32)),     /* 34 - Fail-Safe Clock Monitor */
+	(1 << (PIC32_IRQ_RTCC-32)),     /* 35 - Real-Time Clock and Calendar */
+	(1 << (PIC32_IRQ_DMA0-32)),     /* 36 - DMA Channel 0 */
+	(1 << (PIC32_IRQ_DMA1-32)),     /* 37 - DMA Channel 1 */
+	(1 << (PIC32_IRQ_DMA2-32)),     /* 38 - DMA Channel 2 */
+	(1 << (PIC32_IRQ_DMA3-32)),     /* 39 - DMA Channel 3 */
+	0,				/* 40 */
+	0,				/* 41 */
+	0,				/* 42 */
+	0,				/* 43 */
+	(1 << (PIC32_IRQ_FCE-32)),      /* 44 - Flash Control Event */
+	(1 << (PIC32_IRQ_USB-32)),      /* 45 - USB */
+};
+
 static void
 dumpregs (frame)
 	int *frame;
@@ -67,6 +131,24 @@ dumpregs (frame)
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
+static void
+print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
+{
+        void print_arg (val) {
+                if (val & 0xff000000)
+                        printf ("%08x", val);
+                else
+                        printf ("%u", val);
+        }
+
+        print_arg (arg0);
+        if (narg > 1) { printf (", "); print_arg (arg1); }
+        if (narg > 2) { printf (", "); print_arg (arg2); }
+        if (narg > 3) { printf (", "); print_arg (arg3); }
+        if (narg > 4) { printf (", "); print_arg (arg4); }
+        if (narg > 5) { printf (", "); print_arg (arg5); }
+}
+
 /*
  * User mode flag added to cause code if exception is from user space.
  */
@@ -84,6 +166,7 @@ exception (frame)
 	register int i;
 	register struct proc *p;
 	time_t syst;
+	unsigned intstat, irq;
 
 #ifdef UCB_METER
 	cnt.v_trap++;
@@ -105,6 +188,7 @@ exception (frame)
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
 	u.u_frame = frame;
+	u.u_code = frame [FRAME_PC];    /* For signal handler */
 	switch (cause) {
 
 	/*
@@ -117,14 +201,13 @@ exception (frame)
 		panic ("unexpected exception");
 		/*NOTREACHED*/
 #if 0
-	case CA_IBE + USER:			/* Bus error, instruction fetch */
-	case CA_DBE + USER:			/* Bus error, load or store */
+	case CA_IBE + USER:		/* Bus error, instruction fetch */
+	case CA_DBE + USER:		/* Bus error, load or store */
 		i = SIGBUS;
 		break;
 
 	case CA_RI + USER:		/* Reserved instruction */
 		i = SIGILL;
-		u.u_code = frame [FRAME_PC];
 		break;
 
 	case CA_Bp + USER:		/* Breakpoint */
@@ -142,7 +225,6 @@ exception (frame)
 	case CA_Ov:			/* Arithmetic overflow */
 	case CA_Ov + USER:
 		i = SIGFPE;
-		u.u_code = frame [FRAME_PC];
 		break;
 
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
@@ -155,9 +237,35 @@ exception (frame)
 	 */
 	case CA_Int:			/* Interrupt */
 	case CA_Int + USER:
-		/* TODO: interrupts */
-printf ("=== interrupt\n");
-		goto out;
+		/* Get the current irq number */
+		intstat = INTSTAT;
+		if ((intstat & PIC32_INTSTAT_SRIPL_MASK) == 0) {
+                        printf ("=== unexpected interrupt: INTSTAT %08x\n", intstat);
+			return;
+                }
+		irq = PIC32_INTSTAT_VEC (intstat);
+                printf ("=== irq %u\n", irq);
+
+		/* Disable the irq, to avoid loops */
+		if (irq < PIC32_VECT_CN)
+			IECCLR(0) = mask_by_vector [irq];
+		else
+			IECCLR(1) = mask_by_vector [irq];
+
+                // TODO: handle interrupts
+                switch (irq) {
+                case 0:                 /* Core Timer */
+                        hardclock ((caddr_t) frame [FRAME_PC], status);
+                        break;
+                case 24:                /* UART1 */
+                        cnintr (0);
+                        break;
+                default:
+                        break;
+                }
+		if ((cause & USER) && runrun)
+                        goto out;
+                return;
 
 	/*
 	 * System call.
@@ -178,7 +286,6 @@ printf ("=== interrupt\n");
 			callp = &sysent[0];		/* indir (illegal) */
 		else
 			callp = &sysent[code];
-printf ("--- syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], opc);
 		if (callp->sy_narg) {
 			u.u_arg[0] = frame [FRAME_R4];		/* $a0 */
 			u.u_arg[1] = frame [FRAME_R5];		/* $a1 */
@@ -195,6 +302,10 @@ printf ("--- syscall: %s at %08x\n", syscallnames [code >= nsysent ? 0 : code], 
 					u.u_arg[5] = *(unsigned*) addr;
 			}
 		}
+printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
+if (callp->sy_narg > 0)
+    print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1], u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
+printf (") at %08x\n", opc);
 		u.u_rval = 0;
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();

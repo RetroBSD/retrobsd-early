@@ -134,12 +134,10 @@ softclock(pc, ps)
  *	maintain date
  *	profile
  */
-/*ARGSUSED*/
 void
-hardclock(dev, sp, r1, ov, nps, r0, pc, ps)
-	dev_t dev;
-	caddr_t sp, pc;
-	int r1, ov, nps, r0, ps;
+hardclock(pc, ps)
+	caddr_t pc;
+	int ps;
 {
 	register struct callout *p1;
 	register struct proc *p;

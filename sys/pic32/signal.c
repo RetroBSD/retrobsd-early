@@ -32,6 +32,7 @@ sendsig (p, sig, mask)
 		int	sf_signum;
 		int	sf_code;
 		struct	sigcontext *sf_scp;
+		int	sf_unused;
 		struct	sigcontext sf_sc;
 	};
 	struct sigframe sf;
@@ -73,12 +74,7 @@ sendsig (p, sig, mask)
 	 * Build the argument list for the signal handler.
 	 */
 	sfp->sf_signum = sig;
-	if (sig == SIGILL || sig == SIGFPE) {
-		sfp->sf_code = u.u_code;
-		u.u_code = 0;
-	} else
-		sfp->sf_code = 0;
-
+	sfp->sf_code = u.u_code;
 	sfp->sf_scp = (struct sigcontext *)
 			(n + (u_int)&((struct sigframe *)0)->sf_sc);
 	/*
@@ -95,7 +91,7 @@ sendsig (p, sig, mask)
 
 	copyout ((caddr_t) sfp, n, sizeof (*sfp));
 
-	regs [FRAME_R2] = (int) p;
+	regs [FRAME_R2] = (int) p;              /* $v0 */
 	regs [FRAME_SP] = (int) n;
 	regs [FRAME_PC] = (int) u.u_sigtramp;
 }
@@ -128,7 +124,7 @@ sigreturn()
 		return;
 	}
 	u.u_error = EJUSTRETURN;
-	if	(scp->sc_onstack & SA_ONSTACK)
+	if (scp->sc_onstack & SA_ONSTACK)
 		u.u_sigstk.ss_flags |= SA_ONSTACK;
 	else
 		u.u_sigstk.ss_flags &= ~SA_ONSTACK;

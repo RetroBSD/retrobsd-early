@@ -235,6 +235,7 @@ int cnread (dev_t dev, struct uio *uio, int flag);
 int cnwrite (dev_t dev, struct uio *uio, int flag);
 int cnioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
 int cnselect (dev_t dev, int rw);
+void cnintr (dev_t dev);
 #ifdef TS_ISOPEN
 extern struct tty cnttys[];
 #endif

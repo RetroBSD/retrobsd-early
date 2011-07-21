@@ -14,6 +14,7 @@ all:		../sh
 
 ../sh:		${OBJS}
 		${CC} ${LDFLAGS} -o sh.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S sh.elf > sh.dis
 		${SIZE} sh.elf
 		${ELF2AOUT} sh.elf $@
 

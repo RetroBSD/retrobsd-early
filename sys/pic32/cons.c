@@ -139,23 +139,6 @@ cnselect (dev, rw)
 }
 
 /*ARGSUSED*/
-void
-cnrint (dev)
-	dev_t dev;
-{
-	register int c;
-	register struct uartreg *reg;
-	register struct tty *tp = &cnttys[minor(dev)];
-
-	reg = (struct uartreg *)tp->t_addr;
-	c = reg->rxreg;
-	if (reg->sta & PIC32_USTA_OERR)
-		reg->staclr = PIC32_USTA_OERR;
-	if (linesw[tp->t_line].l_rint)
-		(*linesw[tp->t_line].l_rint) (c, tp);
-}
-
-/*ARGSUSED*/
 int
 cnioctl (dev, cmd, addr, flag)
 	dev_t dev;
@@ -177,14 +160,28 @@ cnioctl (dev, cmd, addr, flag)
 }
 
 void
-cnxint (dev)
+cnintr (dev)
 	dev_t dev;
 {
+	register int c;
 	register struct tty *tp = &cnttys[minor(dev)];
+	register struct uartreg *reg = (struct uartreg *)tp->t_addr;
 
-	tp->t_state &= ~TS_BUSY;
-	if (linesw[tp->t_line].l_start)
-		(*linesw[tp->t_line].l_start) (tp);
+        /* Receive */
+	if (reg->sta & PIC32_USTA_URXDA) {
+                c = reg->rxreg;
+                if (linesw[tp->t_line].l_rint)
+                        (*linesw[tp->t_line].l_rint) (c, tp);
+        }
+	if (reg->sta & PIC32_USTA_OERR)
+		reg->staclr = PIC32_USTA_OERR;
+
+        /* Transmit */
+        if ((reg->sta & PIC32_USTA_TRMT) && (tp->t_state & TS_BUSY)) {
+                tp->t_state &= ~TS_BUSY;
+                if (linesw[tp->t_line].l_start)
+                        (*linesw[tp->t_line].l_start) (tp);
+        }
 }
 
 void
@@ -229,19 +226,25 @@ cnputc (c)
 	char c;
 {
 	register int timo;
-
-	timo = 30000;
+again:
 	/*
 	 * Try waiting for the console tty to come ready,
 	 * otherwise give up after a reasonable time.
 	 */
+	timo = 30000;
 	while ((U1STA & PIC32_USTA_TRMT) == 0)
 		if (--timo == 0)
 			break;
-	if (c == 0)
-		return;
+        if (cnttys[0].t_state & TS_BUSY) {
+	        cnintr (0);
+		goto again;
+        }
 	U1TXREG = c;
 	if (c == '\n')
 		cnputc('\r');
-	cnputc(0);
+
+	timo = 30000;
+	while ((U1STA & PIC32_USTA_TRMT) == 0)
+		if (--timo == 0)
+			break;
 }

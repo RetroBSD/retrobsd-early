@@ -225,9 +225,9 @@ void timeout (void (*fun) (caddr_t), caddr_t arg, int t);
 void untimeout (void (*fun) (caddr_t), caddr_t arg);
 
 /*
- * Change the size of the data+stack regions of the process.
+ * Handler for hardware clock interrupt.
  */
-void expand (int newsize, int segment);
+void hardclock (caddr_t pc, int ps);
 
 /*
  * Swap out a process.
@@ -250,21 +250,11 @@ int inferior (struct proc *p);
 int suser (void);
 
 /*
- * Set up segmentation registers to implement the pseudo text, data, stack segment sizes.
- */
-int estabur (u_int nt, u_int nd, u_int ns, int xrw);
-
-/*
  * Load from user area (probably swapped out): real uid,
  * controlling terminal device, and controlling terminal pointer.
  */
 struct tty;
 void fill_from_u (struct proc *p, uid_t *rup, struct tty **ttp, dev_t *tdp);
-
-/*
- * Load the user hardware segmentation registers from the software prototype.
- */
-void sureg (void);
 
 /*
  * Grow the stack to include the SP.

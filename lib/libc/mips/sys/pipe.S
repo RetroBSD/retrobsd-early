@@ -17,5 +17,6 @@ ENTRY(pipe)
 		move	$v0, $zero
 		jr	$ra
 1:
-		sw	$t0, errno
+		lui	$t1, %hi(errno)
+		sw      $t0, %lo(errno)($t1)
 		jr	$ra

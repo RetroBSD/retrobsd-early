@@ -187,8 +187,7 @@ execve()
 	struct nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-printf ("execve (%08x, %08x, %08x)\n", uap->fname, uap->argp, uap->envp);
-printf ("       ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
+printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
 //printmem (0x7f010380, 0x40);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei (ndp);
