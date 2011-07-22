@@ -109,7 +109,11 @@
 #define	splx(s)		mips_intr_restore (s)
 
 #define	noop()		asm volatile ("nop")
-#define	idle()		asm volatile ("wait")
+
+/*
+ * Wait for something to happen.
+ */
+void idle (void);
 
 /*
  * Microsecond delay routine.

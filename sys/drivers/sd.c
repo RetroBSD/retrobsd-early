@@ -501,9 +501,11 @@ bad:		bp->b_flags |= B_ERROR;
 		bp->b_error = EINVAL;
 		goto bad;
 	}
+#if 0
 	printf ("sd%d: %s block %u, length %u bytes, addr %p\n",
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
+#endif
 	bcount = bp->b_bcount;
 	addr = bp->b_addr;
 	blkno = bp->b_blkno;

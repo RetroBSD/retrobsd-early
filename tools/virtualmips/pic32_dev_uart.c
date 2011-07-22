@@ -82,7 +82,7 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
                 d->sta |= PIC32_USTA_URXDA;
             } else {
                 d->sta &= ~PIC32_USTA_URXDA;
-                //d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
+                d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
             }
             break;
 
@@ -100,6 +100,10 @@ void *dev_pic32_uart_access (cpu_mips_t * cpu, struct vdevice *dev,
             if (vtty_is_char_avail (d->vtty))
                 d->sta |= PIC32_USTA_URXDA;
             *data = d->sta;
+#if 0
+            printf ("<%x>", d->sta);
+            fflush (stdout);
+#endif
             break;
 
         case PIC32_U1TXREG & 0xff:              /* Transmit */

@@ -23,7 +23,7 @@
 
 int	hz = HZ;
 int	usechz = (1000000L + HZ - 1) / HZ;
-struct	timezone tz = { 11*60, 1 };
+struct	timezone tz = { 8*60, 1 };
 
 struct	namecache namecache [NNAMECACHE];
 char	bufdata [NBUF * MAXBSIZE];
@@ -87,7 +87,6 @@ startup()
 	 * Setup interrupt vector base. */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_BEV);
 	mips_write_c0_select (C0_EBASE, 1, _exception_base_);
-	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
 
 	/* Clear CAUSE register: use special interrupt vector 0x200. */
 	mips_write_c0_register (C0_CAUSE, CA_IV);
@@ -141,6 +140,25 @@ startup()
 	}
 
 	physmem = DATA_SIZE;
+}
+
+/*
+ * Sit and wait for something to happen...
+ */
+void
+idle ()
+{
+        /* Indicate that no process is running. */
+	noproc = 1;
+
+        /* Set SPL low so we can be interrupted. */
+        int x = spl0();
+
+	/* Wait for something to happen. */
+        asm volatile ("wait");
+
+	/* Restore previous SPL. */
+        splx(x);
 }
 
 void

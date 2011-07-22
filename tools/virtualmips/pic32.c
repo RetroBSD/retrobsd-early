@@ -249,6 +249,7 @@ static void pic32_parse_configure (pic32_t *pic32)
     char *start_address = 0;
     cfg_opt_t opts[] = {
         COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
+        COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("debug_level", &(vm->debug_level)),
         CFG_SIMPLE_INT ("boot_flash_size", &pic32->boot_flash_size),
         CFG_SIMPLE_INT ("boot_flash_address", &pic32->boot_flash_address),
         CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
@@ -258,8 +259,6 @@ static void pic32_parse_configure (pic32_t *pic32)
         CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
         CFG_SIMPLE_STR ("sdcard1_file_name", &pic32->sdcard1_file_name),
 
-        /*CFG_SIMPLE_STR ("cs8900_iotype", &(pic32->cs8900_iotype)), */
-        /* add other configure information here */
         CFG_END ()
     };
     cfg_t *cfg;

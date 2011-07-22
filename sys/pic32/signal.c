@@ -116,6 +116,9 @@ sigreturn()
 	register struct sigcontext *scp = &sc;
 	register int *regs = u.u_frame;
 
+//#ifdef DIAGNOSTIC
+	printf("sigreturn\n");
+//#endif
 	u.u_error = copyin ((caddr_t) ((struct a*)u.u_arg)->scp, (caddr_t) scp, sizeof (*scp));
 	if (u.u_error)
 		return;

@@ -1643,6 +1643,7 @@ static int wait_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     if (! (cpu->cp0.reg [MIPS_CP0_STATUS] & MIPS_CP0_STATUS_IE)) {
         /* Wait instruction with interrupts disabled - stop the simulator. */
+printf ("%08x: wait instruction with interrupts disabled - stop the simulator.\n", cpu->pc);
         kill (0, SIGQUIT);
     }
     usleep (1000);

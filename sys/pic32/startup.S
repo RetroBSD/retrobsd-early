@@ -51,10 +51,7 @@ _reset_vector_:	.globl	_reset_vector_
 		mfc0	$k0, $C0_STATUS
 		ori	$k0, $k0, ST_UM | ST_EXL	# Set user mode
 		mtc0	$k0, $C0_STATUS			# Put SR back
-		nop
-		nop
-
-		# Return from exception
+		ehb
 		eret					# PC <= EPC; EXL <= 0
 		nop					# just to be safe
 
@@ -144,9 +141,6 @@ restore_regs:
 		lw	$a0, (16+FRAME_HI*4) ($sp)
 		mthi	$a0
 
-		lw	$a0, (16+FRAME_PC*4) ($sp)	# K1 = EPC
-		mtc0	$a0, $C0_EPC			# put PC in EPC
-
 		.set	noat
 		lw	$1, (16+FRAME_R1*4) ($sp)	# Load general registers
 		lw	$2, (16+FRAME_R2*4) ($sp)
@@ -181,10 +175,13 @@ restore_regs:
 		lw	$31, (16+FRAME_RA*4) ($sp)
 		.set	at
 
-		lw	$k0, (16+FRAME_STATUS*4) ($sp)	# K0 = saved status, only IE bit
-		mtc0	$k0, $C0_STATUS			# put SR back
-		nop
-		nop
+		lw	$k0, (16+FRAME_STATUS*4) ($sp)	# K0 = saved status
+		ori	$k0, $k0, ST_EXL                # Set EXL
+		mtc0	$k0, $C0_STATUS			# put SR back: disable interrupts
+                ehb
+
+		lw	$k0, (16+FRAME_PC*4) ($sp)	# K0 = EPC
+		mtc0	$k0, $C0_EPC			# put PC in EPC
 
 		lw	$sp, (16+FRAME_SP*4) ($sp)	# Restore stack
 

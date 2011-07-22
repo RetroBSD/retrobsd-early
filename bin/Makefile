@@ -55,8 +55,10 @@ ${SUBDIR}:	FRC
 FRC:
 
 ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip:
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@ $@.c ${LIBS}
-		${SIZE} $@
+		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $@.c ${LIBS}
+		${OBJDUMP} -S $@.elf > $@.dis
+		${SIZE} $@.elf
+		${ELF2AOUT} $@.elf $@
 
 install:	${BINS}
 		install -s -m 751 -g staff ${STD} ${NSTD} ${DESTDIR}/bin

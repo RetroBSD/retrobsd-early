@@ -134,6 +134,8 @@ main(argc, argv)
                 dup2(fd, 0);
         dup2(0, 1);
         dup2(0, 2);
+//char c; read (0, &c, 1);
+//sleep(1);
         execl(shell, minus, (char *)0);
         perror(shell);
         return 0;

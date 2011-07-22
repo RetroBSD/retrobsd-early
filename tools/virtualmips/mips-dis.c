@@ -222,6 +222,30 @@ lookup_mips_cp0sel_name (const struct
     return NULL;
 }
 
+/*
+ * CP0 register including 'sel' code for mftc0, to be
+ * printed textually if known.  If not known, print both
+ * CP0 register name and sel numerically since CP0 register
+ * with sel 0 may have a name unrelated to register being
+ * printed.
+ */
+const char *cp0reg_name (unsigned cp0reg, unsigned sel)
+{
+    const struct mips_cp0sel_name *n;
+    static char name [32];
+
+    if (sel == 0)
+        return mips_cp0_names[cp0reg];
+
+    n = lookup_mips_cp0sel_name (mips_cp0sel_names,
+        mips_cp0sel_names_len, cp0reg, sel);
+    if (n != NULL)
+        return n->name;
+
+    sprintf (name, "CP0_R[%d,%d]", cp0reg, sel);
+    return name;
+}
+
 /* Print insn arguments for 32/64-bit code.  */
 
 static void

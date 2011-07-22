@@ -111,9 +111,7 @@ copen (mode, cmode, fname)
 	register struct	nameidata *ndp = &nd;
 	int indx, type, flags, error;
 
-printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fname);
-//void printmem (unsigned addr, int nbytes);
-//printmem (0x7f010000, 0x40);
+//printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fname);
 	fp = falloc();
 	if (fp == NULL)
 		return(u.u_error);	/* XXX */
@@ -139,7 +137,7 @@ printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fna
 	 */
 	error = vn_open(ndp, flags, cmode);
 	if (error) {
-printf ("copen errno=%d\n", error);
+//printf ("copen errno=%d\n", error);
 		fp->f_count = 0;
 		if ((error == ENODEV || error == ENXIO) &&
 		    u.u_dupfd >= 0 &&

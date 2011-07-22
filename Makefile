@@ -42,7 +42,7 @@ SRCDIR		= share bin sbin etc usr.bin usr.sbin
 
 FSUTIL		= tools/fsutil/fsutil
 ROOTDIRS	= sbin/ bin/ dev/
-ROOTFILES	= sbin/init bin/sh
+ROOTFILES	= sbin/init bin/sh bin/date bin/pwd
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \

@@ -22,6 +22,7 @@
 #include "mips64_memory.h"
 #include "mips64_cp0.h"
 #include "cpu.h"
+#include "vm.h"
 
 /* MIPS cp0 registers names */
 char *mips64_cp0_reg_names[MIPS64_CP0_REG_NR] = {
@@ -120,7 +121,6 @@ void fastcall mips64_cp0_exec_mtc0_fastcall (cpu_mips_t * cpu,
     int sel = bits (insn, 0, 2);
 
     mips64_cp0_set_reg (cpu, rd, sel, cpu->gpr[rt] & 0xffffffff);
-
 }
 
 void mips64_cp0_exec_mtc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
@@ -135,26 +135,32 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
 {
     mips_cp0_t *cp0 = &cpu->cp0;
 
+    if (cpu->vm->debug_level > 2)
+//    if (cp0_reg == 14)
+    {
+        extern const char *cp0reg_name (unsigned cp0reg, unsigned sel);
+        printf ("        %s = %08x\n", cp0reg_name (cp0_reg, sel), val);
+        fflush (stdout);
+    }
     switch (cp0_reg) {
     case MIPS_CP0_STATUS:
     case MIPS_CP0_CAUSE:
-
         cp0->reg[cp0_reg] = val;
-
         break;
+
     case MIPS_CP0_TLB_HI:
         cp0->reg[cp0_reg] = val;
-
         break;
 
     case MIPS_CP0_TLB_LO_0:
     case MIPS_CP0_TLB_LO_1:
-
         cp0->reg[cp0_reg] = val;
         break;
+
     case MIPS_CP0_PAGEMASK:
         cp0->reg[cp0_reg] = val;
         break;
+
     case MIPS_CP0_INDEX:
         cp0->reg[cp0_reg] = val;
         break;
@@ -165,16 +171,15 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
         break;
 
     case MIPS_CP0_COMPARE:
-
         //Write to compare will clear timer interrupt
         clear_timer_irq (cpu);
         cp0->reg[cp0_reg] = val;
-
         break;
+
     case MIPS_CP0_EPC:
         cp0->reg[MIPS_CP0_EPC] = val;
-
         break;
+
     case MIPS_CP0_CONFIG:
         ASSERT ((1 << sel) & (cp0->config_usable),
             "Unimplemented configure register sel 0x%x\n", sel);
@@ -190,9 +195,9 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
             cp0->config_reg[sel] = val;
 
         break;
+
     case MIPS_CP0_WIRED:
         /* read only registers */
-
         break;
 
     default:

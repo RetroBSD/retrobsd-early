@@ -7,10 +7,14 @@
 #include "machine/pic32mx.h"
 
 /*
- * Setup system timer for `hz' timer interrupts per second.
+ * Setup core timer for `hz' timer interrupts per second.
  */
 void
 clkstart()
 {
-	/* TODO: start hardware timer */
+	unsigned count = mips_read_c0_register (C0_COUNT);
+
+	mips_write_c0_register (C0_COMPARE, count + (KHZ * 1000 / HZ + 1) / 2);
+
+	IECSET(0) = 1 << PIC32_IRQ_CT;
 }

@@ -25,7 +25,7 @@ swap (blkno, coreaddr, count, rdflg)
 	register struct buf *bp;
 	int s;
 
-printf ("swap (%u, 0x%08x, %d, %d)\n", blkno, coreaddr, count, rdflg);
+//printf ("swap (%u, 0x%08x, %d, %d)\n", blkno, coreaddr, count, rdflg);
 #ifdef UCB_METER
 	if (rdflg) {
 		cnt.v_pswpin += count;

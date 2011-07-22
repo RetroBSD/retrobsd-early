@@ -131,6 +131,9 @@ dumpregs (frame)
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
+//#define TRACE_EXCEPTIONS
+
+#ifdef TRACE_EXCEPTIONS
 static void
 print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
 {
@@ -148,6 +151,7 @@ print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
         if (narg > 4) { printf (", "); print_arg (arg4); }
         if (narg > 5) { printf (", "); print_arg (arg5); }
 }
+#endif
 
 /*
  * User mode flag added to cause code if exception is from user space.
@@ -166,7 +170,7 @@ exception (frame)
 	register int i;
 	register struct proc *p;
 	time_t syst;
-	unsigned intstat, irq;
+	unsigned intstat, irq, compare;
 
 #ifdef UCB_METER
 	cnt.v_trap++;
@@ -178,12 +182,6 @@ exception (frame)
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
-
-	/* Switch to kernel mode, enable interrupts. */
-	mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
-//void printmem (unsigned addr, int nbytes);
-//printmem (0x7f010380, 0x40);
-//dumpregs (frame);
 
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
@@ -244,33 +242,48 @@ exception (frame)
 			return;
                 }
 		irq = PIC32_INTSTAT_VEC (intstat);
-                printf ("=== irq %u\n", irq);
 
-		/* Disable the irq, to avoid loops */
-		if (irq < PIC32_VECT_CN)
-			IECCLR(0) = mask_by_vector [irq];
-		else
-			IECCLR(1) = mask_by_vector [irq];
-
-                // TODO: handle interrupts
+                /* Handle the interrupt. */
                 switch (irq) {
                 case 0:                 /* Core Timer */
+                        /* Increment COMPARE register. */
+                        compare = mips_read_c0_register (C0_COMPARE);
+                        do {
+                                compare += (KHZ * 1000 / HZ + 1) / 2;
+                                mips_write_c0_register (C0_COMPARE, compare);
+                        } while ((int) (compare - mips_read_c0_register (C0_COUNT)) < 0);
+
                         hardclock ((caddr_t) frame [FRAME_PC], status);
+                        //IECSET(0) = 1 << PIC32_IRQ_CT;
                         break;
                 case 24:                /* UART1 */
+                        //printf ("=== uart1\n");
+                        IECCLR(0) = 1 << PIC32_IRQ_U1TX;
                         cnintr (0);
                         break;
                 default:
+                        /* Disable the irq, to avoid loops */
+                        printf ("=== irq %u\n", irq);
+                        if (irq < PIC32_VECT_CN)
+                                IECCLR(0) = mask_by_vector [irq];
+                        else
+                                IECCLR(1) = mask_by_vector [irq];
                         break;
                 }
-		if ((cause & USER) && runrun)
+		if ((cause & USER) && runrun) {
+		        /* Process switch: in user mode only. */
+                        /* Switch to kernel mode, enable interrupts. */
+                        mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
                         goto out;
+                }
                 return;
 
 	/*
 	 * System call.
 	 */
 	case CA_Sys + USER:		/* Syscall */
+                /* Switch to kernel mode, enable interrupts. */
+                mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
 #ifdef UCB_METER
 		cnt.v_syscall++;
 #endif
@@ -302,10 +315,13 @@ exception (frame)
 					u.u_arg[5] = *(unsigned*) addr;
 			}
 		}
-printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
-if (callp->sy_narg > 0)
-    print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1], u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
-printf (") at %08x\n", opc);
+#ifdef TRACE_EXCEPTIONS
+                printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
+                if (callp->sy_narg > 0)
+                        print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1],
+                        u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
+                printf (") at %08x\n", opc);
+#endif
 		u.u_rval = 0;
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
@@ -313,14 +329,18 @@ printf (") at %08x\n", opc);
 		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
-printf ("    syscall returned %u\n", u.u_rval);
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    syscall returned %u\n", u.u_rval);
+#endif
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
-printf ("    syscall failed, errno %u\n", u.u_error);
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    syscall failed, errno %u\n", u.u_error);
+#endif
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}
@@ -344,7 +364,6 @@ out:
 	if (u.u_prof.pr_scale)
 		addupc ((caddr_t) frame [FRAME_PC],
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
-//dumpregs (frame);
 }
 
 /*

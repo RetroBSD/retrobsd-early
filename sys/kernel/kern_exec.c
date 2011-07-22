@@ -103,7 +103,7 @@ getxfile (ip, ep, nargc, uid, gid)
 	ds = ep->a_data + ep->a_bss;
 	ss = SSIZE + nargc;
 
-printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
+//printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
 	if (ts + ds + ss > MAXMEM) {
 		u.u_error = ENOMEM;
 		return;
@@ -121,13 +121,13 @@ printf ("getxfile: size t/d/s = %u/%u/%u\n", ts, ds, ss);
 	u.u_procp->p_saddr = USER_DATA_END - ss;
 
 	/* read in text and data */
-printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
+//printf ("getxfile: read %u bytes at %08x\n", ep->a_data, USER_DATA_START);
 	rdwri (UIO_READ, ip, (caddr_t) USER_DATA_START, ep->a_data,
                 sizeof(struct exec) + ep->a_text, IO_UNIT, (int*) 0);
 
 	/* clear BSS and stack */
-printf ("getxfile: clear %u bytes at %08x\n",
-USER_DATA_END - USER_DATA_START - ep->a_data, USER_DATA_START + ep->a_data);
+//printf ("getxfile: clear %u bytes at %08x\n",
+//USER_DATA_END - USER_DATA_START - ep->a_data, USER_DATA_START + ep->a_data);
 	bzero ((void*) (USER_DATA_START + ep->a_data),
             USER_DATA_END - USER_DATA_START - ep->a_data);
 
@@ -187,12 +187,11 @@ execve()
 	struct nameidata nd;
 	register struct	nameidata *ndp = &nd;
 
-printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
-//printmem (0x7f010380, 0x40);
+//printf ("execve ('%s', ['%s', '%s', ...])\n", uap->fname, uap->argp[0], uap->argp[1]);
 	NDINIT (ndp, LOOKUP, FOLLOW, uap->fname);
 	ip = namei (ndp);
 	if (ip == NULL) {
-printf ("execve: file not found\n");
+//printf ("execve: file not found\n");
 		return;
         }
 	bno = 0;
@@ -201,7 +200,7 @@ printf ("execve: file not found\n");
 	uid = u.u_uid;
 	gid = u.u_groups[0];
 	if (ip->i_fs->fs_flags & MNT_NOEXEC) {
-printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
+//printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 		u.u_error = EACCES;
 		goto done;
 	}
@@ -213,16 +212,16 @@ printf ("execve: NOEXEC, flags=%o\n", ip->i_fs->fs_flags);
 	}
 again:
 	if (access (ip, IEXEC)) {
-printf ("execve: no IEXEC\n");
+//printf ("execve: no IEXEC\n");
 		goto done;
         }
 	if ((u.u_procp->p_flag & P_TRACED) && access (ip, IREAD)) {
-printf ("execve: traced, but no IREAD\n");
+//printf ("execve: traced, but no IREAD\n");
 		goto done;
         }
 	if ((ip->i_mode & IFMT) != IFREG ||
 	    (ip->i_mode & (IEXEC | (IEXEC>>3) | (IEXEC>>6))) == 0) {
-printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
+//printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 		u.u_error = EACCES;
 		goto done;
 	}
@@ -243,16 +242,16 @@ printf ("execve: no IEXEC, mode=%o\n", ip->i_mode);
 	u.u_error = rdwri (UIO_READ, ip, (caddr_t) &exdata, sizeof(exdata),
 				(off_t) 0, IO_UNIT, &resid);
 	if (u.u_error) {
-printf ("execve: rdwri error %d\n", u.u_error);
+//printf ("execve: rdwri error %d\n", u.u_error);
 		goto done;
         }
 	if (resid > sizeof(exdata) - sizeof(exdata.ex_exec) &&
 	    exdata.ex_shell[0] != '#') {
-printf ("execve: short read, resid = %d, shell=%.32s\n", resid, exdata.ex_shell);
+//printf ("execve: short read, resid = %d, shell=%.32s\n", resid, exdata.ex_shell);
 		u.u_error = ENOEXEC;
 		goto done;
 	}
-printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_exec.a_data, exdata.ex_exec.a_bss);
+//printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_exec.a_data, exdata.ex_exec.a_bss);
 
 	switch ((int) exdata.ex_exec.a_magic) {
 	case OMAGIC:
@@ -263,7 +262,7 @@ printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_e
 		if (exdata.ex_shell[0] != '#' ||
 		    exdata.ex_shell[1] != '!' ||
 		    indir) {
-printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
+//printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 			u.u_error = ENOEXEC;
 			goto done;
 		}
@@ -322,7 +321,7 @@ printf ("execve: bad shell=%.32s\n", exdata.ex_shell);
 	cp = 0;
 	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
-printf ("execve: malloc failed\n");
+//printf ("execve: malloc failed\n");
 		swkill (u.u_procp, "exec");
 		goto done;
 	}
@@ -366,7 +365,7 @@ printf ("execve: malloc failed\n");
 				 * overflow before each buffer allocation.
 				 */
 				if (nc >= NCARGS-1) {
-printf ("execve: too many args = %d\n", nc);
+//printf ("execve: too many args = %d\n", nc);
 					error = E2BIG;
 					break;
 				}
@@ -379,11 +378,11 @@ printf ("execve: too many args = %d\n", nc);
 			}
 			if (sharg) {
 				error = copystr (sharg, cp, (unsigned) cc, &len);
-printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, sharg, len, sharg, cp);
+//printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, sharg, len, sharg, cp);
 				sharg += len;
 			} else {
 				error = copystr ((caddr_t) ap, cp, (unsigned) cc, &len);
-printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, ap, len, ap, cp);
+//printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, ap, len, ap, cp);
 				ap += len;
 			}
 			cp += len;
@@ -391,7 +390,7 @@ printf ("execve arg%d=%s: %u bytes from %08x to %08x\n", na-1, ap, len, ap, cp);
 			cc -= len;
 		} while (error == ENOENT);
 		if (error) {
-printf ("execve: copy arg error = %d\n", error);
+//printf ("execve: copy arg error = %d\n", error);
 			u.u_error = error;
 			if (bp) {
 				bp->b_flags |= B_AGE;
@@ -402,7 +401,7 @@ printf ("execve: copy arg error = %d\n", error);
 			goto badarg;
 		}
 	}
-printf ("execve: argc=%d, envc=%d, total %d bytes\n", na, ne, nc);
+//printf ("execve: argc=%d, envc=%d, total %d bytes\n", na, ne, nc);
 	if (bp) {
 		bdwrite (bp);
 	}
@@ -410,7 +409,7 @@ printf ("execve: argc=%d, envc=%d, total %d bytes\n", na, ne, nc);
 	nc = (nc + NBPW-1) & ~(NBPW-1);
 	getxfile (ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
-printf ("execve: getxfile error = %d\n", u.u_error);
+//printf ("execve: getxfile error = %d\n", u.u_error);
 badarg:
 		for (cc = 0; cc < nc; cc += DEV_BSIZE) {
 			daddr_t blkno;
@@ -461,7 +460,7 @@ badarg:
 			}
 			error = copystr (cp, (caddr_t) ucp, (unsigned) cc,
 				&len);
-printf ("execve copy '%s' %u bytes from %08x to %08x\n", cp, len, cp, ucp);
+//printf ("execve copy '%s' %u bytes from %08x to %08x\n", cp, len, cp, ucp);
 			ucp += len;
 			cp += len;
 			nc += len;
@@ -528,11 +527,9 @@ printf ("execve copy '%s' %u bytes from %08x to %08x\n", cp, len, cp, ucp);
 		bcopy ((caddr_t) cfname, (caddr_t) u.u_comm, MAXCOMLEN);
 	else
 		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) u.u_comm, MAXCOMLEN);
-printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
-    u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
-    u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
-//printmem (0x7f010000, 0x40);
-//printmem (0x7f010380, 0x40);
+//printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
+//    u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
+//    u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
 
 done:
 	if (bp) {

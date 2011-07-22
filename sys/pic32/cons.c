@@ -225,7 +225,10 @@ void
 cnputc (c)
 	char c;
 {
-	register int timo;
+	register struct tty *tp = &cnttys[0];
+	register int s, timo;
+
+	s = spltty();
 again:
 	/*
 	 * Try waiting for the console tty to come ready,
@@ -235,8 +238,8 @@ again:
 	while ((U1STA & PIC32_USTA_TRMT) == 0)
 		if (--timo == 0)
 			break;
-        if (cnttys[0].t_state & TS_BUSY) {
-	        cnintr (0);
+        if (tp->t_state & TS_BUSY) {
+                cnintr (0);
 		goto again;
         }
 	U1TXREG = c;
@@ -247,4 +250,8 @@ again:
 	while ((U1STA & PIC32_USTA_TRMT) == 0)
 		if (--timo == 0)
 			break;
+
+        /* Clear TX interrupt. */
+	IECCLR(0) = 1 << PIC32_IRQ_U1TX;
+	splx (s);
 }

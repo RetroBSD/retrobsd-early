@@ -376,9 +376,14 @@ u_int fastcall mips_mts32_lw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
 
     if (likely (has_set_value == FALSE)) {
         data = vmtoh32 (*(m_uint32_t *) haddr);
-if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL)) == MIPS_CP0_STATUS_UM &&
-    vaddr >= 0x7f008000 && vaddr < 0x7f020000)
-printf ("read %08x -> %08x \n", vaddr, data);
+        if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+            (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
+            ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL) &&
+            vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+        {
+            /* Print memory accesses in user mode. */
+            printf ("        read %08x -> %08x \n", vaddr, data);
+        }
     }
     if (likely (!exc))
         cpu->gpr[reg] = sign_extend (data, 32);
@@ -512,11 +517,15 @@ u_int fastcall mips_mts32_sw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
             jit_handle_self_write (cpu, vaddr);
 #endif
         *(m_uint32_t *) haddr = htovm32 (data);
-if ((cpu->cp0.reg[MIPS_CP0_STATUS] & (MIPS_CP0_STATUS_UM | MIPS_CP0_STATUS_EXL)) == MIPS_CP0_STATUS_UM &&
-    vaddr >= 0x7f008000 && vaddr < 0x7f020000)
-printf ("write %08x := %08x \n", vaddr, data);
+        if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+            (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
+            ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL) &&
+            vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+        {
+            /* Print memory accesses in user mode. */
+            printf ("        write %08x := %08x \n", vaddr, data);
+        }
     }
-
     return (exc);
 }
 
