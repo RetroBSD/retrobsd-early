@@ -158,10 +158,10 @@ again:
 	rpp->p_addr = rip->p_addr;
 	rpp->p_stat = SRUN;
 	swapout (rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+	rpp->p_flag |= SSWAP;
 	rip->p_stat = SRUN;
 	u.u_procp = rip;
 
-	rpp->p_flag |= SSWAP;
 	if (isvfork) {
 		/*
 		 * Wait for the child to finish with it.
@@ -171,7 +171,7 @@ again:
 		rpp->p_flag |= SVFORK;
 		rip->p_flag |= SVFPRNT;
 		while (rpp->p_flag & SVFORK)
-			sleep ((caddr_t)rpp,PSWP+1);
+			sleep ((caddr_t)rpp, PSWP+1);
 		if ((rpp->p_flag & SLOAD) == 0)
 			panic ("newproc vfork");
 		u.u_dsize = rip->p_dsize = rpp->p_dsize;

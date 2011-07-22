@@ -176,6 +176,7 @@ main()
 			(struct inode*) 0);
 	if (! fs)
 		panic ("no root filesystem");
+	printf ("root size = %u kbytes\n", fs->fs_fsize * DEV_BSIZE / 1024);
 	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
 	mount_updname (fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;

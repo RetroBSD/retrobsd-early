@@ -91,6 +91,7 @@ sendsig (p, sig, mask)
 
 	copyout ((caddr_t) sfp, n, sizeof (*sfp));
 
+        /* TODO: call signal handler */
 	regs [FRAME_R2] = (int) p;              /* $v0 */
 	regs [FRAME_SP] = (int) n;
 	regs [FRAME_PC] = (int) u.u_sigtramp;
@@ -133,6 +134,7 @@ sigreturn()
 		u.u_sigstk.ss_flags &= ~SA_ONSTACK;
 	u.u_procp->p_sigmask = scp->sc_mask & ~sigcantmask;
 
+        /* TODO: return from signal handler */
 	regs [FRAME_SP] = scp->sc_sp;
 	regs [FRAME_FP] = scp->sc_fp;
 	regs [FRAME_R3] = scp->sc_r1;		/* $v1 */

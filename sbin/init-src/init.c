@@ -129,7 +129,7 @@ main(argc, argv)
         int fd = open(ctty, O_RDWR, 0);
         if (fd < 0)
                 return 0;
-	write(fd, "init started\n", 13);
+//	write(fd, "init started\n", 13);
         if (fd > 0)
                 dup2(fd, 0);
         dup2(0, 1);

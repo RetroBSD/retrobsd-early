@@ -338,6 +338,7 @@ ttioctl(tp, com, data, flag)
 	int s;
 	long newflags;
 
+//printf ("ttioctl (com=%08x, data=%08x, flag=%d)\n", com, data, flag);
 	/*
 	 * If the ioctl involves modification,
 	 * hang if in the background.
