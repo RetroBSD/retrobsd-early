@@ -14,14 +14,16 @@ MANSRC		= stty.1
 all:		../stty stty.0
 
 ../stty:	${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o stty.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S stty.elf > stty.dis
+		${SIZE} stty.elf
+		${ELF2AOUT} stty.elf $@
 
 stty.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o ${MAN} ../stty tags *~
+		rm -f *.o *.elf ${MAN} ../stty tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

@@ -172,13 +172,12 @@ exception (frame)
 	time_t syst;
 	unsigned intstat, irq, compare;
 
-#ifdef UCB_METER
-	cnt.v_trap++;
-#endif
 	unsigned status = frame [FRAME_STATUS];
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
 //printf ("exception: cause %08x, status %08x\n", cause, status);
-
+#ifdef UCB_METER
+	cnt.v_trap++;
+#endif
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
@@ -193,9 +192,7 @@ exception (frame)
 	 * Exception not expected.  Usually a kernel mode bus error.
 	 */
 	default:
-		i = splhigh();
 		dumpregs (frame);
-		splx (i);
 		panic ("unexpected exception");
 		/*NOTREACHED*/
 #if 0
@@ -282,11 +279,11 @@ exception (frame)
 	 * System call.
 	 */
 	case CA_Sys + USER:		/* Syscall */
-                /* Switch to kernel mode, enable interrupts. */
-                mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
 #ifdef UCB_METER
 		cnt.v_syscall++;
 #endif
+                /* Switch to kernel mode, enable interrupts. */
+                mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
 		u.u_error = 0;
 
 		/* original pc for restarting syscalls */

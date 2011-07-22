@@ -50,7 +50,7 @@ typedef struct {
 	int		dirty;		/* sync needed */
 	int		modified;	/* write_block was called */
 
-	unsigned 	isize;		/* size in blocks of I list */
+	unsigned 	isize;		/* size in blocks of superblock + I list */
 	unsigned 	fsize;		/* size in blocks of entire volume */
 	unsigned 	nfree;		/* number of in core free blocks (0-100) */
 	unsigned 	free [NICFREE];	/* in core free blocks */

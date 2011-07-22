@@ -323,9 +323,9 @@ card_size (unit, nbytes)
  * Return nonzero if successful.
  */
 int
-card_read (unit, bno, data)
+card_read (unit, bno, data, bcount)
 	int unit;
-	unsigned bno;
+	unsigned bno, bcount;
 	char *data;
 {
 	int reply, i;
@@ -352,14 +352,14 @@ card_read (unit, bno, data)
 	}
 
 	/* Read data. */
-	i = DEV_BSIZE;
-	do {
+	if (bcount > DEV_BSIZE)
+                bcount = DEV_BSIZE;
+	while (bcount-- > 0)
 		*data++ = spi_io (0xFF);
-	} while (--i > 0);
 
 	/* Ignore CRC. */
-	spi_io (0xFF);
-	spi_io (0xFF);
+        /* spi_io (0xFF); */
+        /* spi_io (0xFF); */
 
 	/* Disable the card. */
 	spi_select (unit, 0);
@@ -513,7 +513,7 @@ bad:		bp->b_flags |= B_ERROR;
 next:
 	for (retry=0; retry<3; retry++) {
 		if (bp->b_flags & B_READ) {
-			if (card_read (unit, blkno, addr)) {
+			if (card_read (unit, blkno, addr, bcount)) {
 ok:				if (bcount <= DEV_BSIZE)
 					goto done;
 				bcount -= DEV_BSIZE;

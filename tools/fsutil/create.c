@@ -21,7 +21,7 @@ static int build_inode_list (fs_t *fs)
 	fs_inode_t inode;
 	unsigned int inum, total_inodes;
 
-	total_inodes = (fs->isize - 1) * 16;
+	total_inodes = (fs->isize - 1) * BSDFS_INODES_PER_BLOCK;
 	for (inum = 1; inum <= total_inodes; inum++) {
 		if (! fs_inode_get (fs, &inode, inum))
 			return 0;

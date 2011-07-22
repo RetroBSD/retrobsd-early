@@ -12,14 +12,16 @@ MANSRC		= newfs.8
 all:		../newfs newfs.0
 
 ../newfs:	${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o newfs.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S newfs.elf > newfs.dis
+		${SIZE} newfs.elf
+		${ELF2AOUT} newfs.elf $@
 
 newfs.0:	${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} ../newfs tags
+		rm -f *.o *.elf *~ ${MAN} ../newfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

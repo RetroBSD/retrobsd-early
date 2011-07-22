@@ -30,7 +30,7 @@ statfs1 (mp, sbp)
 	sfsp->f_blocks = fs->fs_fsize - fs->fs_isize;
 	sfsp->f_bfree = fs->fs_tfree;
 	sfsp->f_bavail = fs->fs_tfree;
-	sfsp->f_files = (fs->fs_isize - 2) * INOPB;
+	sfsp->f_files = (fs->fs_isize - 1) * INOPB;
 	sfsp->f_ffree = fs->fs_tinode;
 
 	bcopy (mp->m_mnton, sfsp->f_mntonname, MNAMELEN);

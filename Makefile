@@ -42,7 +42,14 @@ SRCDIR		= share bin sbin etc usr.bin usr.sbin
 
 FSUTIL		= tools/fsutil/fsutil
 ROOTDIRS	= sbin/ bin/ dev/
-ROOTFILES	= sbin/init bin/sh bin/date bin/pwd
+ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs \
+                  bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
+                  bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
+                  bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
+                  bin/mt bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
+                  bin/pwd bin/rm bin/rmail bin/rmdir bin/sh bin/size \
+                  bin/strip bin/stty bin/sync bin/tar bin/tee bin/time \
+                  bin/true bin/who
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
@@ -61,7 +68,7 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-root.bin:	$(FSUTIL)
+root.bin:	$(FSUTIL) $(ROOTFILES)
 		rm -f $@
 		$(FSUTIL) -n -s16777216 $@
 		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)

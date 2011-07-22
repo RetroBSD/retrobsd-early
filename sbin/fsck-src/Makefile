@@ -4,8 +4,12 @@
 # specifies the terms and conditions for redistribution.
 #
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+
+include $(TOPSRC)/target.mk
+OBJS		= main.o
+
+#include $(TOPSRC)/cross.mk
+#OBJS		= cross.o
 
 CFLAGS		+= -g -Werror
 
@@ -21,10 +25,8 @@ SRCS		= dir.c inode.c  pass1.c pass1b.c pass2.c \
 
 # Objects
 #
-OBJS		= dir.o inode.o pass1.o pass1b.o pass2.o \
+OBJS		+= dir.o inode.o pass1.o pass1b.o pass2.o \
 		  pass3.o pass4.o pass5.o setup.o utilities.o
-#OBJS		+= main.o
-OBJS		+= cross.o
 
 # Header files
 #
@@ -33,14 +35,16 @@ HDRS		= fsck.h
 all:		${PROG}
 
 ${PROG}:	${OBJS} ${HDRS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o fsck.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S fsck.elf > fsck.dis
+		${SIZE} fsck.elf
+		${ELF2AOUT} fsck.elf $@
 
 install:	${PROG}
 		install -s ${PROG} ${DESTDIR}/sbin/${PROG}
 
 clean:
-		rm -f *.o *~ a.out core ${PROG}
+		rm -f *.o *~ *.elf a.out core ${PROG}
 
 lint:
 		lint ${INCPATH} ${SRCS}

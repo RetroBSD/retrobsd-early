@@ -148,10 +148,10 @@ long
 fsbtoblk(num, fsbs, bs)
 	long	num;
 	register int	fsbs, bs;
-	{
+{
 	return((fsbs != 0 && fsbs < bs) ?
 		num / (bs / fsbs) : (num) * (fsbs / bs));
-	}
+}
 
 /*
  * Print out status about a filesystem.
@@ -188,13 +188,13 @@ prtstat(sfsp, maxwidth)
 	    fsbtoblk(sfsp->f_blocks, sfsp->f_bsize, blocksize),
 	    fsbtoblk(used, sfsp->f_bsize, blocksize),
 	    fsbtoblk(sfsp->f_bavail, sfsp->f_bsize, blocksize));
-	(void)printf(" %5.0f%%",
-	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
+	(void)printf(" %5lu%%",
+	    availblks == 0 ? 100 : (unsigned long)used * 100 / availblks);
 	if (iflag) {
 		inodes = sfsp->f_files;
 		iused = inodes - sfsp->f_ffree;
-		(void)printf(" %7u %7u %5.0f%% ", iused, sfsp->f_ffree,
-		   inodes == 0 ? 100.0 : (double)iused / (double)inodes * 100.0);
+		(void)printf(" %7u %7u %5u%% ", iused, sfsp->f_ffree,
+		   inodes == 0 ? 100 : iused * 100 / inodes);
 	} else
 		(void)printf("  ");
 	(void)printf("  %s\n", sfsp->f_mntonname);

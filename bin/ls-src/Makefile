@@ -11,11 +11,13 @@ OBJS		= ls.o stat_flags.o
 all:		../ls
 
 ../ls:		${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o ls.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S ls.elf > ls.dis
+		${SIZE} ls.elf
+		${ELF2AOUT} ls.elf $@
 
 clean:
-		rm -f *.o ../ls tags *~
+		rm -f *.o *.elf ../ls tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

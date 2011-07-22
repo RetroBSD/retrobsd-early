@@ -794,6 +794,7 @@ int fs_inode_alloc (fs_t *fs, fs_inode_t *inode)
 		}
 		ino = fs->inode[--fs->ninode];
 		fs->dirty = 1;
+		fs->tinode--;
 		if (! fs_inode_get (fs, inode, ino)) {
 			fprintf (stderr, "inode_alloc: cannot get inode %d\n", ino);
 			return 0;

@@ -144,7 +144,7 @@ again:
 	if (fs->nfree == 0)
 		return 0;
 	fs->nfree--;
-	++fs->tfree;			/* Count total free blocks. */
+	--fs->tfree;			/* Count total free blocks. */
 	*bno = fs->free [fs->nfree];
         if (verbose)
                 printf ("allocate new block %d from slot %d\n", *bno, fs->nfree);

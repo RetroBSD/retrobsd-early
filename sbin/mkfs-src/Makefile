@@ -4,8 +4,8 @@
 #	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
 #
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -Wall
 
@@ -17,14 +17,16 @@ MANSRC		= mkfs.8
 all:		../mkfs mkfs.0
 
 ../mkfs:	${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o mkfs.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S mkfs.elf > mkfs.dis
+		${SIZE} mkfs.elf
+		${ELF2AOUT} mkfs.elf $@
 
 mkfs.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} ../mkfs tags
+		rm -f *.o *.elf *~ ${MAN} ../mkfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

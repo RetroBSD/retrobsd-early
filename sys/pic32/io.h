@@ -116,14 +116,14 @@ void *mips_get_stack_pointer ()
 #define mips_write_c0_register(reg, value)			\
 	do {							\
 	asm volatile (						\
-	"mtc0	%z0, $%1 \n	nop \n	nop \n	nop"		\
+	"mtc0	%z0, $%1 \n	ehb"                            \
 	: : "r" ((unsigned int) (value)), "K" (reg));		\
 	} while (0)
 
 #define mips_write_c0_select(reg, sel, value)			\
 do {								\
 	asm volatile (						\
-	"mtc0	%z0, $%1, %2 \n	nop \n	nop \n	nop"		\
+	"mtc0	%z0, $%1, %2 \n	ehb"                            \
 	: : "r" ((unsigned int) (value)), "K" (reg), "K" (sel));\
 } while (0)
 

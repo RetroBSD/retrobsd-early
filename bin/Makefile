@@ -45,7 +45,7 @@ KMEM		= ps
 # 'strip' is handled specially because 'install -s' now uses 'strip' and
 # thus we can't do a 'install -s strip /bin/strip' without an error.
 #
-BINS		= ${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${TTY} strip
+BINS		= ${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${TTY} ${SCRIPT} strip
 
 all:		${SUBDIR} ${BINS}
 
@@ -59,6 +59,9 @@ ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip:
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
 		${ELF2AOUT} $@.elf $@
+
+${SCRIPT}:
+		install -c $@.sh $@
 
 install:	${BINS}
 		install -s -m 751 -g staff ${STD} ${NSTD} ${DESTDIR}/bin
