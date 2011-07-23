@@ -251,7 +251,7 @@ static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
         ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL))
     {
         /* Print instructions in user mode. */
-        printf ("%08x:       %08x        ", cpu->pc, insn);
+        printf ("%08x:       %08x        ", cpu->pc + 4, insn);
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
         fflush (stdout);

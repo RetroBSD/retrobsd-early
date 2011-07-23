@@ -12,10 +12,9 @@
 H		= ../../include
 M		= ..
 S		= ../../kernel
-D		= ../../drivers
 
-vpath %.c $(M):$(S):$(D)
-vpath %.S $(M):$(S):$(D)
+vpath %.c $(M):$(S)
+vpath %.S $(M):$(S)
 
 # Kernel options.
 DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
@@ -79,7 +78,7 @@ unix:		$(KERNOBJ) using-bootloader.ld
 		$(OBJDUMP) -d -S $@ > $@.dis
 		$(OBJCOPY) -O binary $@ $@.bin
 
-vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c $(D)/*.[ch]
+vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh newvers.sh
 		$(CC) -c vers.c
 

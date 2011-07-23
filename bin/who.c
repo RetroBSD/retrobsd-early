@@ -46,7 +46,7 @@ main(argc, argv)
 		}
 	}
 	if ((fi = fopen(s, "r")) == NULL) {
-		fprintf(stderr, "who: cannot open %s", s);
+		fprintf(stderr, "who: cannot open %s\n", s);
 		exit(1);
 	}
 	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {

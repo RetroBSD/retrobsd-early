@@ -123,7 +123,7 @@ physio(strat, bp, dev, rw, uio)
 	int error = 0, s, nb, ts, c, allocbuf = 0;
 	register struct iovec *iov;
 
-	if (!bp) {
+	if (! bp) {
 		allocbuf++;
 		bp = geteblk();
 	}
@@ -155,7 +155,7 @@ physio(strat, bp, dev, rw, uio)
 			error = EFAULT;
 			break;
 		}
-		if (!allocbuf) {
+		if (! allocbuf) {
 			s = splbio();
 			while (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;

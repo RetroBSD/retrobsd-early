@@ -40,6 +40,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <getopt.h>
 
 /*
  * Header prepended to each a.out file.
@@ -264,6 +265,7 @@ main(int argc, char **argv)
 	struct exec aex;
 	int     infile, outfile;
 	uint32_t cur_vma = UINT32_MAX;
+	int     verbose = 0;
 	int     symflag = 0;
 
 	strtabix = symtabix = 0;
@@ -271,28 +273,39 @@ main(int argc, char **argv)
 	text.vaddr = data.vaddr = bss.vaddr = 0;
 
 	/* Check args... */
-	if (argc < 3 || argc > 4) {
-usage:
-		fprintf(stderr,
-		    "usage: elf2aout <elf executable> <a.out executable> [-s]\n");
-		exit(1);
+	for (;;) {
+		switch (getopt (argc, argv, "sv")) {
+		case EOF:
+			break;
+		case 'v':
+			++verbose;
+			continue;
+		case 's':
+			++symflag;
+			continue;
+		default:
+usage:                  fprintf(stderr,
+                            "usage: elf2aout [-v] [-s] <elf executable> <a.out executable>\n");
+                        exit(1);
+		}
+		break;
 	}
-	if (argc == 4) {
-		if (strcmp(argv[3], "-s"))
-			goto usage;
-		symflag = 1;
-	}
+	argc -= optind;
+	argv += optind;
+	if (argc != 2)
+		goto usage;
+
 	/* Try the input file... */
-	if ((infile = open(argv[1], O_RDONLY)) < 0) {
+	if ((infile = open(argv[0], O_RDONLY)) < 0) {
 		fprintf(stderr, "Can't open %s for read: %s\n",
-		    argv[1], strerror(errno));
+		    argv[0], strerror(errno));
 		exit(1);
 	}
 	/* Read the header, which is at the beginning of the file... */
 	i = read(infile, &ex, sizeof ex);
 	if (i != sizeof ex) {
 		fprintf(stderr, "ex: %s: %s.\n",
-		    argv[1], i ? strerror(errno) : "End of file reached");
+		    argv[0], i ? strerror(errno) : "End of file reached");
 		exit(1);
 	}
 	/* Read the program headers... */
@@ -378,13 +391,15 @@ usage:
 		if (ph[i].p_vaddr < cur_vma)
 			cur_vma = ph[i].p_vaddr;
 	}
+        if (! symflag) {
+                /* Sections must be in order to be converted... */
+                if (text.vaddr > data.vaddr || data.vaddr > bss.vaddr ||
+                    text.vaddr + text.len > data.vaddr || data.vaddr + data.len > bss.vaddr) {
+                        fprintf(stderr, "Sections ordering prevents a.out conversion.\n");
+                        exit(1);
+                }
+        }
 
-	/* Sections must be in order to be converted... */
-	if (text.vaddr > data.vaddr || data.vaddr > bss.vaddr ||
-	    text.vaddr + text.len > data.vaddr || data.vaddr + data.len > bss.vaddr) {
-		fprintf(stderr, "Sections ordering prevents a.out conversion.\n");
-		exit(1);
-	}
 	/* If there's a data section but no text section, then the loader
 	 * combined everything into one section.   That needs to be the text
 	 * section, so just make the data section zero length following text. */
@@ -402,35 +417,40 @@ usage:
 
 	/* We now have enough information to cons up an a.out header... */
 	aex.a_magic = OMAGIC;
-	aex.a_text = text.len;
-	aex.a_data = data.len;
-	aex.a_bss = bss.len;
-	aex.a_entry = ex.e_entry;
-#if 0
-	aex.a_syms = (sizeof(struct nlist) * (symtabix != -1 ?
-                sh[symtabix].sh_size / sizeof(Elf32_Sym) : 0));
-#else
-	aex.a_syms = 0;
-#endif
+        if (! symflag) {
+                aex.a_text = text.len;
+                aex.a_data = data.len;
+                aex.a_bss = bss.len;
+                aex.a_entry = ex.e_entry;
+                aex.a_syms = 0;
+        } else {
+                aex.a_text = 0;
+                aex.a_data = 0;
+                aex.a_bss = 0;
+                aex.a_entry = 0;
+                aex.a_syms = (sizeof(struct nlist) * (symtabix != -1 ?
+                        sh[symtabix].sh_size / sizeof(Elf32_Sym) : 0));
+        }
 	aex.a_unused = 0;
 	aex.a_flag = 1;
-#if 0
-printf ("magic: %#o\n", aex.a_magic);
-printf (" text: %#x\n", aex.a_text);
-printf (" data: %#x\n", aex.a_data);
-printf ("  bss: %#x\n", aex.a_bss);
-printf ("entry: %#x\n", aex.a_entry);
-printf (" syms: %u\n", aex.a_syms);
-printf (" flag: %u\n", aex.a_flag);
-#endif
+	if (verbose) {
+                printf ("magic: %#o\n", aex.a_magic);
+                printf (" text: %#x\n", aex.a_text);
+                printf (" data: %#x\n", aex.a_data);
+                printf ("  bss: %#x\n", aex.a_bss);
+                printf ("entry: %#x\n", aex.a_entry);
+                printf (" syms: %u\n", aex.a_syms);
+                printf (" flag: %u\n", aex.a_flag);
+        }
+
 	/* Make the output file... */
-	if ((outfile = open(argv[2], O_WRONLY | O_CREAT, 0777)) < 0) {
-		fprintf(stderr, "Unable to create %s: %s\n", argv[2], strerror(errno));
+	if ((outfile = open(argv[1], O_WRONLY | O_CREAT, 0777)) < 0) {
+		fprintf(stderr, "Unable to create %s: %s\n", argv[1], strerror(errno));
 		exit(1);
 	}
 	/* Truncate file... */
 	if (ftruncate(outfile, 0)) {
-		warn("ftruncate %s", argv[2]);
+		warn("ftruncate %s", argv[1]);
 	}
 	/* Write the header... */
 	i = write(outfile, &aex, sizeof aex);
@@ -438,44 +458,45 @@ printf (" flag: %u\n", aex.a_flag);
 		perror("aex: write");
 		exit(1);
 	}
-	/* Copy the loadable sections.   Zero-fill any gaps less than 64k;
-	 * complain about any zero-filling, and die if we're asked to
-	 * zero-fill more than 64k. */
-	for (i = 0; i < ex.e_phnum; i++) {
-		/* Unprocessable sections were handled above, so just verify
-		 * that the section can be loaded before copying. */
-		if (ph[i].p_type == PT_LOAD && ph[i].p_filesz) {
-			if (cur_vma != ph[i].p_vaddr) {
-				uint32_t gap = ph[i].p_vaddr - cur_vma;
-				char    obuf[1024];
-				if (gap > 65536)
-					errx(1, "Intersegment gap (%ld bytes) too large.", (long) gap);
+        if (! symflag) {
+                /* Copy the loadable sections.   Zero-fill any gaps less than 64k;
+                 * complain about any zero-filling, and die if we're asked to
+                 * zero-fill more than 64k. */
+                for (i = 0; i < ex.e_phnum; i++) {
+                        /* Unprocessable sections were handled above, so just verify
+                         * that the section can be loaded before copying. */
+                        if (ph[i].p_type == PT_LOAD && ph[i].p_filesz) {
+                                if (cur_vma != ph[i].p_vaddr) {
+                                        uint32_t gap = ph[i].p_vaddr - cur_vma;
+                                        char    obuf[1024];
+                                        if (gap > 65536)
+                                                errx(1, "Intersegment gap (%ld bytes) too large.", (long) gap);
 #ifdef DEBUG
-				warnx("Warning: %ld byte intersegment gap.",
-				    (long)gap);
+                                        warnx("Warning: %ld byte intersegment gap.",
+                                            (long)gap);
 #endif
-				memset(obuf, 0, sizeof obuf);
-				while (gap) {
-					int     count = write(outfile, obuf, (gap > sizeof obuf
-						? sizeof obuf : gap));
-					if (count < 0) {
-						fprintf(stderr, "Error writing gap: %s\n",
-						    strerror(errno));
-						exit(1);
-					}
-					gap -= count;
-				}
-			}
-			copy(outfile, infile, ph[i].p_offset, ph[i].p_filesz);
-			cur_vma = ph[i].p_vaddr + ph[i].p_filesz;
-		}
-	}
-#if 0
-	/* Copy and translate the symbol table... */
-	translate_syms(outfile, infile,
-	    sh[symtabix].sh_offset, sh[symtabix].sh_size,
-	    sh[strtabix].sh_offset, sh[strtabix].sh_size);
-#endif
+                                        memset(obuf, 0, sizeof obuf);
+                                        while (gap) {
+                                                int     count = write(outfile, obuf, (gap > sizeof obuf
+                                                        ? sizeof obuf : gap));
+                                                if (count < 0) {
+                                                        fprintf(stderr, "Error writing gap: %s\n",
+                                                            strerror(errno));
+                                                        exit(1);
+                                                }
+                                                gap -= count;
+                                        }
+                                }
+                                copy(outfile, infile, ph[i].p_offset, ph[i].p_filesz);
+                                cur_vma = ph[i].p_vaddr + ph[i].p_filesz;
+                        }
+                }
+        } else {
+                /* Copy and translate the symbol table... */
+                translate_syms(outfile, infile,
+                        sh[symtabix].sh_offset, sh[symtabix].sh_size,
+                        sh[strtabix].sh_offset, sh[strtabix].sh_size);
+        }
 	/* Looks like we won... */
 	return 0;
 }
@@ -563,11 +584,10 @@ translate_syms(int out, int in, off_t symoff, off_t symsize,
 
 			else if (inbuf[i].st_shndx == SHN_ABS)
 				outbuf[i].n_type = N_ABS;
-#if 0
-			else if (inbuf[i].st_shndx == SHN_COMMON ||
-                                 inbuf[i].st_shndx == SHN_MIPS_ACOMMON)
-				outbuf[i].n_type = N_COMM;
-#endif
+
+			else if (inbuf[i].st_shndx == SHN_COMMON)
+				outbuf[i].n_type = N_ABS /*N_COMM*/;
+
 			else
 				outbuf[i].n_type = symTypeTable[inbuf[i].st_shndx];
 

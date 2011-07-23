@@ -145,9 +145,9 @@ char	**argv;
 		twidth = ws.ws_col;
 
 	argc--, argv++;
-	if (argc > 0)	{
-		ap	= argv [0];
-		while (*ap) switch (*ap++)	{
+	if (argc > 0) {
+		ap = argv [0];
+		while (*ap) switch (*ap++) {
 		case '-':
 			break;
 
@@ -231,26 +231,28 @@ char	**argv;
 
 	openfiles(argc, argv);
 	getkvars(argc, argv);
-	lseek(kmem,(off_t)nl[X_PROC].n_value,0);
+	lseek(kmem, (off_t)nl[X_PROC].n_value, 0);
 	uid = getuid();
 	euid = geteuid();
 	mytty = ttyname(0);
 	if (!strncmp(mytty,"/dev/",5)) mytty += 5;
 	if (!strncmp(mytty,"tty",3)) mytty += 3;
 	printhdr();
-	for (i = 0; i < nproc; i += 8)	{
+	for (i = 0; i < nproc; i += 8) {
 		j = nproc - i;
 		if (j > 8)
 			j = 8;
 		j *= sizeof (struct proc);
 		if ((nread = read(kmem, (char *) proc, j)) != j) {
-			cantread("proc table", kmemf);
+                        fprintf(stderr, "ps: error reading proc table from %s\n", kmemf);
 			if (nread == -1)
 				break;
-			}
-		for (j = nread / sizeof (struct proc) - 1; j >= 0; j--)	{
+		}
+printf ("i=%u, nproc=%u, j=%u, nread=%u\n", i, nproc, j, nread);
+		for (j = nread / sizeof (struct proc) - 1; j >= 0; j--) {
 			mproc	= &proc[j];
 			procp	= mproc;
+printf ("j=%u, pid=%u\n", j, procp->p_pid);
 			/* skip processes that don't exist */
 			if (procp->p_stat == 0)
 				continue;
@@ -268,8 +270,10 @@ char	**argv;
 				continue;
 			if (savcom(puid))
 				npr++;
+printf ("npr = %u\n", npr);
 		}
 	}
+printf ("npr = %u\n", npr);
 	fixup(npr);
 	for (i = 0; i < npr; i++) {
 		register int	cmdwidth = twidth - cmdstart - 2;
@@ -279,13 +283,13 @@ char	**argv;
 			if (write(1, (char *) a, sizeof (*a)) != sizeof (*a))
 				perror("write");
 			continue;
-			}
-		else	if (lflg)
-				lpr(a);
-			else	if (uflg)
-					upr(a);
-				else
-					spr(a);
+		} else if (lflg)
+			lpr(a);
+		else if (uflg)
+			upr(a);
+		else
+			spr(a);
+
 		if (cmdwidth < 0)
 			cmdwidth = 80 - cmdstart - 2;
 		if (a->o_stat == SZOMB)
@@ -295,7 +299,7 @@ char	**argv;
 		else
 			printf(" %.*s", twidth - cmdstart - 2, cflg ?  a->o_comm : a->o_args);
 		putchar('\n');
-		}
+	}
 	exit(!npr);
 }
 
@@ -400,6 +404,10 @@ maybetty(cp)
 		dp->ttyd = -1;
 }
 
+/*
+ * Save command data to outargs[].
+ * Return 1 on success.
+ */
 savcom(puid)
 {
 	char	*tp;
@@ -415,11 +423,10 @@ savcom(puid)
 		daddr = procp->p_daddr;
 		saddr = procp->p_saddr;
 		file = mem;
-	}
-	else {
-		addr = (off_t)procp->p_addr << 9;
-		daddr = (off_t)procp->p_daddr << 9;
-		saddr = (off_t)procp->p_saddr << 9;
+	} else {
+		addr = (off_t)procp->p_addr * DEV_BSIZE;
+		daddr = (off_t)procp->p_daddr * DEV_BSIZE;
+		saddr = (off_t)procp->p_saddr * DEV_BSIZE;
 		file = swap;
 	}
 	lseek(file, addr, 0);
@@ -436,8 +443,9 @@ savcom(puid)
 	datmap.b2 = stackbas(stksiz);
 	datmap.e2 = stacktop(stksiz);
 	tp = gettty();
-	if ((tptr && strncmp(tptr,tp,2)) || (strncmp(mytty, tp, 2) && !aflg))
-		return(0);
+//	if ((tptr && strncmp(tptr, tp, 2) != 0) ||
+//          (! aflg && strncmp(mytty, tp, 2) != 0))
+//		return(0);
 	a = &outargs[npr];		/* saving com starts here */
 	a->o_uid = puid;
 	a->o_pid = procp->p_pid;
@@ -464,11 +472,14 @@ savcom(puid)
 	a->o_sigs = (int)up->u_signal[SIGINT] + (int)up->u_signal[SIGQUIT];
 	a->o_uname[0] = 0;
 	strncpy(a->o_comm, up->u_comm, MAXCOMLEN);
-
+printf ("pid=%u, comm=%s\n", a->o_pid, a->o_comm);
 	if (cflg)
 		return (1);
-	else
-		return(getcmd(a,saddr));
+	else {
+//		return getcmd(a, saddr);
+		getcmd(a, saddr);
+		return 1;
+        }
 }
 
 char *
@@ -572,30 +583,25 @@ register char	*adr;
 addchan(name, caddr)
 	char	*name;
 	unsigned caddr;
-	{
+{
 	static	int	left = 0;
 	register WCHAN	*wp;
 
-	if 	(left == 0)
-		{
-		if	(wchand)
-			{
+	if (left == 0) {
+		if (wchand) {
 			left = 50;
 			wchand = (WCHAN *)realloc(wchand, (nchans + left) *
 						sizeof (struct wchan));
-			}
-		else
-			{
+		} else {
 			left = 300;
 			wchand = (WCHAN *)malloc(left * sizeof (struct wchan));
-			}
-		if	(!wchand)
-			{
+		}
+		if (! wchand) {
 			fprintf(stderr, "ps: out of wait channel memory\n");
 			nflg++;
 			return;
-			}
 		}
+	}
 	wp = &wchand[nchans++];
 	left--;
 	strncpy(wp->cname, name, NNAMESIZ - 1);
@@ -611,17 +617,18 @@ register unsigned int chan;
 	register char	*prevsym;
 
 	prevsym	= "";
-	if (chan)
-		for (i = 0; i < nchans; i++)	{
+	if (chan) {
+		for (i = 0; i < nchans; i++) {
 			if (wchand[i].caddr > chan)
 				return (prevsym);
 			prevsym = wchand[i].cname;
-			}
+		}
+        }
 	return(prevsym);
 }
 
 nlist()
-	{
+{
 	register FILE	*nlistf_fp;
 	FILE	*strfp;
 	register struct nlist *nnn;
@@ -634,32 +641,28 @@ nlist()
 
 	bzero(name, sizeof (name));
 	nllen = sizeof(nl) / sizeof(struct nlist);
-	if	(!(nlistf_fp = fopen(nlistf,"r")))
+	if (!(nlistf_fp = fopen(nlistf,"r")))
 		perrexit(nlistf);
 	strfp = fopen(nlistf, "r");
-	if	(fread(&hbuf,sizeof(hbuf),1,nlistf_fp) != 1)
-		{
+	if (fread(&hbuf,sizeof(hbuf),1,nlistf_fp) != 1) {
 		fputs("Invalid symbol table\n",stderr);
 		exit(1);
-		}
-	if	(N_BADMAG(hbuf))
-		{
+	}
+	if (N_BADMAG(hbuf)) {
 		fprintf(stderr,"%s: bad magic number\n",nlistf);
 		exit(1);
-		}
+	}
 	nsyms = hbuf.a_syms / sizeof (struct nlist);
-	if	(nsyms == 0)
-		{
+	if (nsyms == 0) {
 		fprintf(stderr,"%s: no symbols\n",nlistf);
 		exit(1);
-		}
+	}
 	sa = N_SYMOFF(hbuf);
 	stroff = N_STROFF(hbuf);
 	fseek(nlistf_fp, sa, L_SET);
 
 	addchan("u", 0140000);		/* XXX - see comment below */
-	while	(nsyms--)
-		{
+	while (nsyms--) {
 		fread(&nbuf,sizeof(nbuf),1,nlistf_fp);
 		if	((nbuf.n_type & N_EXT) == 0)
 			continue;
@@ -679,33 +682,30 @@ nlist()
  * The reason behind this is to avoid matching on absolute symbols created
  * during the unix/netnix cross binding.
 */
-		if	(!(flag == N_DATA || flag == N_BSS))
+		if (! (flag == N_DATA || flag == N_BSS))
 			continue;
-		if	(!nflg)
+		if (! nflg)
 			addchan(name + 1, nbuf.n_value);
-		if	(nllen)
-			{
-			for	(nnn = nl; nnn->n_un.n_name; nnn++)
-				{
-				if	(!strcmp(nnn->n_un.n_name, name))
-					{
+		if (nllen) {
+			for (nnn = nl; nnn->n_un.n_name; nnn++) {
+				if (! strcmp(nnn->n_un.n_name, name)) {
 					nnn->n_value = nbuf.n_value;
 					nnn->n_type = nbuf.n_type;
 					nnn->n_ovly = nbuf.n_ovly;
 					--nllen;
-					break;
-					}
+                                        break;
 				}
 			}
 		}
+	}
 	fclose(nlistf_fp);
 	fclose(strfp);
-	if	(!nflg)
+	if (!nflg)
 		qsort(wchand,nchans,sizeof(WCHAN),wchancomp);
-	}
+}
 
 perrexit(msg)
-char	*msg;
+char *msg;
 {
 	perror(msg);
 	exit(1);
@@ -816,8 +816,12 @@ char	**argv;
 
 	/* find number of procs */
 	if (nl[X_NPROC].n_value) {
-		lseek(kmem,(off_t)nl[X_NPROC].n_value,0);
+printf ("seek kmem to address %08x: ", nl[X_NPROC].n_value);
+		int ret = lseek(kmem, (off_t)nl[X_NPROC].n_value, 0);
+printf ("returned %d\n", ret);
+
 		if (read(kmem,(char *)&nproc,sizeof(nproc)) != sizeof(nproc)) {
+printf ("kmem error: reading nproc at %08x\n", nl[X_NPROC].n_value);
 			perror(kmemf);
 			exit(1);
 		}
@@ -833,8 +837,9 @@ char	**argv;
 	}
 
 	/* find value of hz */
-	lseek(kmem,(off_t)nl[X_HZ].n_value,0);
-	read(kmem,(char *)&hz,sizeof(hz));
+	lseek(kmem, (off_t)nl[X_HZ].n_value, 0);
+	read(kmem, (char *)&hz, sizeof(hz));
+printf ("hz = %d\n", hz);
 }
 
 
@@ -885,7 +890,7 @@ struct psout	*a;
 	printf(tm < 10 ? "0%ld" : "%ld",tm);
 }
 
-getcmd(a,addr)
+getcmd(a, addr)
 off_t	addr;
 register struct psout	*a;
 {
@@ -902,8 +907,8 @@ register struct psout	*a;
 	/* look for sh special */
 	lseek(file, addr + ARGLIST*sizeof(int) - sizeof (char **), 0);
 	if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
-		return (1);
-	if (ap)	{
+		return (0);
+	if (ap) {
 		char	b[82];
 		char	*bp	= b;
 		while ((cp = getptr(ap++)) && cp && (bp < b+sizeof (a->o_args)) ) {
@@ -912,60 +917,60 @@ register struct psout	*a;
 				if (c<' ' || c > '~') {
 					if (nbad++ > 3)
 						break;
-					continue;
-					}
-				*bp++ = c;
+                                        continue;
 				}
-			*bp++ = ' ';
+				*bp++ = c;
 			}
+			*bp++ = ' ';
+		}
 		*bp++ = 0;
 		(void)strcpy(a->o_args, b);
 		return(1);
-		}
+	}
 
 	lseek(file, addr, 0);
 	if (read(file, (char *) abuf, sizeof (abuf)) != sizeof (abuf))
-		return (1);
+		return (0);
 	abuf[ARGLIST-1]	= 0;
-	for (ip = &abuf[ARGLIST-2]; ip > abuf;)	{
-		if (*--ip == -1 || *ip == 0)	{
+	for (ip = &abuf[ARGLIST-2]; ip > abuf;) {
+		if (*--ip == -1 || *ip == 0) {
 			cp = (char *) (ip + 1);
 			if (*cp == '\0')
 				cp++;
 			nbad = 0;
-			for (cp1 = cp; cp1 < (char *) &abuf[ARGLIST]; cp1++)	{
+			for (cp1 = cp; cp1 < (char *) &abuf[ARGLIST]; cp1++) {
 				cc = *cp1 & 0177;
 				if (cc == 0)
 					*cp1 = ' ';
-				else if (cc < ' ' || cc > 0176)	{
-					if (++nbad >= 5)	{
+				else if (cc < ' ' || cc > 0176) {
+					if (++nbad >= 5) {
 						*cp1++	= ' ';
 						break;
-						}
+					}
 					*cp1 = '?';
-				} else if (cc == '=')	{
+				} else if (cc == '=') {
 					*cp1 = '\0';
 					while (cp1 > cp && *--cp1 != ' ')
 						*cp1 = '\0';
 					break;
-					}
 				}
+			}
 			while (*--cp1 == ' ')
 				*cp1 = 0;
 			(void)strcpy(a->o_args, cp);
 garbage:
 			cp = a->o_args;
-			if (cp[0] == '-' && cp[1] <= ' ' || cp[0] == '?' || cp[0] <= ' ')	{
+			if (cp[0] == '-' && cp[1] <= ' ' || cp[0] == '?' || cp[0] <= ' ') {
 				strcat(cp, " (");
 				strcat(cp, u.u_comm);
 				strcat(cp, ")");
-				}
+			}
 			cp[63] = 0;	/* max room in psout is 64 chars */
 			if (xflg || gflg || tptr || cp[0] != '-')
 				return(1);
 			return(0);
-			}
 		}
+	}
 	goto garbage;
 }
 
@@ -986,11 +991,4 @@ printhdr()
 		cmdstr = " CMD";
 	printf("%s\n", cmdstr);
 	fflush(stdout);
-}
-
-cantread(what, fromwhat)
-	char *what, *fromwhat;
-{
-
-	fprintf(stderr, "ps: error reading %s from %s\n", what, fromwhat);
 }

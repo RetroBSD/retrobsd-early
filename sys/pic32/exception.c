@@ -131,7 +131,7 @@ dumpregs (frame)
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
-//#define TRACE_EXCEPTIONS
+#define TRACE_EXCEPTIONS
 
 #ifdef TRACE_EXCEPTIONS
 static void
@@ -172,6 +172,12 @@ exception (frame)
 	time_t syst;
 	unsigned intstat, irq, compare;
 
+        if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
+		dumpregs (frame);
+		panic ("stack overflow");
+		/*NOTREACHED*/
+        }
+
 	unsigned status = frame [FRAME_STATUS];
 	unsigned cause = mips_read_c0_register (C0_CAUSE);
 //printf ("exception: cause %08x, status %08x\n", cause, status);
@@ -184,8 +190,6 @@ exception (frame)
 
 	syst = u.u_ru.ru_stime;
 	p = u.u_procp;
-	u.u_frame = frame;
-	u.u_code = frame [FRAME_PC];    /* For signal handler */
 	switch (cause) {
 
 	/*
@@ -235,7 +239,7 @@ exception (frame)
 		/* Get the current irq number */
 		intstat = INTSTAT;
 		if ((intstat & PIC32_INTSTAT_SRIPL_MASK) == 0) {
-                        printf ("=== unexpected interrupt: INTSTAT %08x\n", intstat);
+                        //printf ("=== unexpected interrupt: INTSTAT %08x\n", intstat);
 			return;
                 }
 		irq = PIC32_INTSTAT_VEC (intstat);
@@ -285,6 +289,8 @@ exception (frame)
                 /* Switch to kernel mode, enable interrupts. */
                 mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
 		u.u_error = 0;
+                u.u_frame = frame;
+                u.u_code = frame [FRAME_PC];            /* For signal handler */
 
 		/* original pc for restarting syscalls */
 		int opc = frame [FRAME_PC];		/* opc now points at syscall */
@@ -297,10 +303,10 @@ exception (frame)
 		else
 			callp = &sysent[code];
 		if (callp->sy_narg) {
-			u.u_arg[0] = frame [FRAME_R4];		/* $a0 */
-			u.u_arg[1] = frame [FRAME_R5];		/* $a1 */
-			u.u_arg[2] = frame [FRAME_R6];		/* $a2 */
-			u.u_arg[3] = frame [FRAME_R7];		/* $a3 */
+			u.u_arg[0] = frame [FRAME_R4];	/* $a0 */
+			u.u_arg[1] = frame [FRAME_R5];	/* $a1 */
+			u.u_arg[2] = frame [FRAME_R6];	/* $a2 */
+			u.u_arg[3] = frame [FRAME_R7];	/* $a3 */
 			if (callp->sy_narg > 4) {
 				unsigned addr = (frame [FRAME_SP] + 16) & ~3;
 				if (! baduaddr ((caddr_t) addr))

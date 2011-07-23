@@ -21,10 +21,8 @@ mmrw (dev, uio, flag)
 	register struct iovec *iov;
 	int error = 0;
 	register u_int c;
-	char zero[1024];
 
-	if (minor(dev) == 3)
-		bzero(zero, sizeof (zero));
+//printf ("mmrw (dev=%u, len=%u, flag=%d)\n", dev, uio->uio_iov->iov_len, flag);
 	while (uio->uio_resid && error == 0) {
 		iov = uio->uio_iov;
 		if (iov->iov_len == 0) {
@@ -51,8 +49,12 @@ mmrw (dev, uio, flag)
 		case 3:		/* minor device 3 is ZERO (/dev/zero) */
 			if (uio->uio_rw == UIO_WRITE)
 				return(EIO);
-			c = MIN(iov->iov_len, sizeof (zero));
-			error = uiomove(zero, c, uio);
+                        c = iov->iov_len;
+                        bzero (iov->iov_base, c);
+                        iov->iov_base += c;
+                        iov->iov_len -= c;
+                        uio->uio_offset += c;
+                        uio->uio_resid -= c;
 			break;
 		default:
 			return(EINVAL);

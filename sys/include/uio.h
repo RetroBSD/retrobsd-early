@@ -32,7 +32,7 @@
  *
  * Copied from 4.4-Lite and modified for 2.11BSD.  Modifications were removal
  * of prototypes, limits for dynamic allocation of iovec structs and changing
- * uio_resid to u_short from int.
+ * uio_resid to u_int from int.
  */
 
 #ifndef _SYS_UIO_H_
@@ -53,7 +53,7 @@ struct uio {
 	struct	iovec *uio_iov;
 	int	uio_iovcnt;
 	off_t	uio_offset;
-	u_short	uio_resid;
+	u_int	uio_resid;
 	enum	uio_rw uio_rw;
 };
 

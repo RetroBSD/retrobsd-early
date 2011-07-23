@@ -54,7 +54,7 @@ BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
                   dev/tty!c2:0 \
-                  dev/rsd0h!c3:0 dev/rsd1h!c3:1 \
+                  dev/rsd0h!c3:0 dev/rsd1h!c3:1 dev/swap!c3:1 \
                   dev/klog!c4:0 dev/errlog!c4:1 dev/acctlog!c4:2 \
                   dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
@@ -68,10 +68,11 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-root.bin:	$(FSUTIL) $(ROOTFILES)
+root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
+		tools/elf2aout/elf2aout -s sys/pic32/compile/unix unix
 		rm -f $@
 		$(FSUTIL) -n -s16777216 $@
-		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
+		$(FSUTIL) -a $@ unix $(ROOTDIRS) $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 

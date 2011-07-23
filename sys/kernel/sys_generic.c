@@ -32,7 +32,7 @@ rwuio (uio)
 		u.u_error = EBADF;
 		return;
 	}
-	total =(off_t)0;
+	total = 0;
 	uio->uio_resid = 0;
 	for (iov = uio->uio_iov, i = 0; i < uio->uio_iovcnt; i++, iov++)
 		total += iov->iov_len;

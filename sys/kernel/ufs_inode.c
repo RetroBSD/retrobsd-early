@@ -363,10 +363,9 @@ trsingle (ip, bp, last, aflags)
 	daddr_t last;
 	int aflags;
 {
-	register daddr_t *bstart, *bstop;
-	daddr_t blarray[NINDIR];
+	register const daddr_t *bstart, *bstop;
+	const daddr_t *blarray = (const daddr_t*) bp->b_addr;
 
-	bcopy (bp->b_addr, blarray, NINDIR * sizeof(daddr_t));
 	bstart = &blarray[NINDIR - 1];
 	bstop = &blarray[last];
 	for (; bstart > bstop; --bstart)

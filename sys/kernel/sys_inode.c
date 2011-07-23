@@ -166,9 +166,9 @@ rwip (ip, uio, ioflag)
 	int error = 0;
 	int flags;
 
-	if (uio->uio_offset < 0)
-		return (EINVAL);
-	type = ip->i_mode&IFMT;
+	//if (uio->uio_offset < 0)
+		//return (EINVAL);
+	type = ip->i_mode & IFMT;
 	/*
 	 * The write case below checks that i/o is done synchronously to directories
 	 * and that i/o to append only files takes place at the end of file.

@@ -325,7 +325,7 @@ void add_device (fs_t *fs, char *name, char *spec)
 		fprintf (stderr, "%s: device inode create failed\n", name);
 		return;
 	}
-	dev.addr[0] = majr << 8 | minr;
+	dev.addr[1] = majr << 8 | minr;
 	fs_inode_save (&dev, 1);
 }
 

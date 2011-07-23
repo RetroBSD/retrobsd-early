@@ -523,10 +523,8 @@ badarg:
 	/*
 	 * Remember file name for accounting.
 	 */
-	if (indir)
-		bcopy ((caddr_t) cfname, (caddr_t) u.u_comm, MAXCOMLEN);
-	else
-		bcopy ((caddr_t) ndp->ni_dent.d_name, (caddr_t) u.u_comm, MAXCOMLEN);
+	bcopy ((caddr_t) (indir ? cfname : ndp->ni_dent.d_name),
+                (caddr_t) u.u_comm, MAXCOMLEN);
 //printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
 //    u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
 //    u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);

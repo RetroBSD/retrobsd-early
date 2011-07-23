@@ -6,6 +6,8 @@
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
 
+CFLAGS += -g
+
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \

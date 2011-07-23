@@ -24,6 +24,7 @@
 int	hz = HZ;
 int	usechz = (1000000L + HZ - 1) / HZ;
 struct	timezone tz = { 8*60, 1 };
+int     nproc = NPROC;
 
 struct	namecache namecache [NNAMECACHE];
 char	bufdata [NBUF * MAXBSIZE];
