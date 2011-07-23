@@ -46,22 +46,22 @@
  * Header prepended to each a.out file.
  */
 struct	exec {
-	unsigned int	a_magic;	/* magic number */
-#define OMAGIC		0407            /* old impure format */
+	unsigned a_magic;	/* magic number */
+#define OMAGIC      0407        /* old impure format */
 
-        unsigned int	a_text;		/* size of text segment */
-        unsigned int	a_data;		/* size of initialized data */
-        unsigned int	a_bss;		/* size of uninitialized data */
-        unsigned int	a_syms;		/* size of symbol table */
-        unsigned int	a_entry; 	/* entry point */
-        unsigned int	a_unused;	/* not used */
-        unsigned int	a_flag; 	/* relocation info stripped */
+        unsigned a_text;	/* size of text segment */
+        unsigned a_data;	/* size of initialized data */
+        unsigned a_bss;		/* size of uninitialized data */
+        unsigned a_syms;	/* size of symbol table */
+        unsigned a_entry; 	/* entry point */
+        unsigned a_unused;	/* not used */
+        unsigned a_flag; 	/* relocation info stripped */
 };
 
 struct	nlist {
 	union {
 		char *n_name;	/* In memory address of symbol name */
-		off_t n_strx;	/* String table offset (file) */
+		unsigned n_strx; /* String table offset (file) */
 	} n_un;
 	u_char	n_type;		/* Type of symbol - see below */
 	char	n_ovly;		/* Overlay number */
@@ -596,7 +596,7 @@ translate_syms(int out, int in, off_t symoff, off_t symsize,
 
 			/* Symbol values in executables should be compatible. */
 			outbuf[i].n_value = inbuf[i].st_value;
-/*printf (" %s = %#x\n", oldstrings + inbuf[i].st_name, inbuf[i].st_value);*/
+printf (" %s = %#x\n", oldstrings + inbuf[i].st_name, inbuf[i].st_value);
 		}
 		/* Write out the symbols... */
 		if ((i = write(out, outbuf, cur * sizeof(struct nlist)))

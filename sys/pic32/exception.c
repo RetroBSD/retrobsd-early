@@ -131,7 +131,7 @@ dumpregs (frame)
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
-#define TRACE_EXCEPTIONS
+//#define TRACE_EXCEPTIONS
 
 #ifdef TRACE_EXCEPTIONS
 static void

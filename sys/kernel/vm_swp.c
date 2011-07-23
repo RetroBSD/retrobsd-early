@@ -120,7 +120,7 @@ physio(strat, bp, dev, rw, uio)
 	int rw;
 	register struct uio *uio;
 {
-	int error = 0, s, nb, ts, c, allocbuf = 0;
+	int error = 0, s, c, allocbuf = 0;
 	register struct iovec *iov;
 
 	if (! bp) {
@@ -134,24 +134,14 @@ physio(strat, bp, dev, rw, uio)
 			error = EFAULT;
 			break;
 		}
-		ts = (u.u_tsize + 127) & ~0177;
-		nb = ((int)iov->iov_base >> 6) & 01777;
-		/*
-		 * Check overlap with text. (ts and nb now
-		 * in 64-byte clicks)
-		 */
-		if (nb < ts) {
-			error = EFAULT;
-			break;
-		}
 		/*
 		 * Check that transfer is either entirely in the
 		 * data or in the stack: that is, either
 		 * the end is in the data or the start is in the stack
 		 * (remember wraparound was already checked).
 		 */
-		if (((((int)iov->iov_base + iov->iov_len) >> 6) & 01777) >=
-			ts + u.u_dsize && nb < 1024 - u.u_ssize) {
+		if (baduaddr (iov->iov_base) ||
+                    baduaddr (iov->iov_base + iov->iov_len - 1)) {
 			error = EFAULT;
 			break;
 		}
@@ -165,11 +155,9 @@ physio(strat, bp, dev, rw, uio)
 		}
 		bp->b_error = 0;
 		while (iov->iov_len) {
-			bp->b_flags = B_BUSY|B_PHYS|B_INVAL|rw;
+			bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rw;
 			bp->b_dev = dev;
-			nb = ((int)iov->iov_base >> 6) & 01777;
-			ts = nb;
-			bp->b_addr = (caddr_t) ((ts << 6) + ((int)iov->iov_base & 077));
+			bp->b_addr = iov->iov_base;
 			bp->b_blkno = uio->uio_offset >> DEV_BSHIFT;
 			bp->b_bcount = iov->iov_len;
 			c = bp->b_bcount;
@@ -189,7 +177,7 @@ physio(strat, bp, dev, rw, uio)
 			if (bp->b_resid || (bp->b_flags & B_ERROR))
 				break;
 		}
-		bp->b_flags &= ~(B_BUSY|B_WANTED);
+		bp->b_flags &= ~(B_BUSY | B_WANTED);
 		error = geterror(bp);
 		/* temp kludge for tape drives */
 		if (bp->b_resid || error)

@@ -36,7 +36,7 @@
 #define	within(x,y,z)	(((unsigned)(x) >= (y)) && ((unsigned)(x) < (z)))
 #define	round(x,y) ((long) ((((long) (x) + (long) (y) - 1L) / (long) (y)) * (long) (y)))
 
-	struct	nlist nl[4];
+struct	nlist nl[4];
 #define	X_PROC		0
 #define X_NPROC		1
 #define	X_HZ		2
@@ -50,36 +50,36 @@
 #define	NNAMESIZ	8
 #define	MAXSYMLEN	32
 
-	struct	proc *mproc, proc[8];
-	struct	user	u;
-	int	hz;
-	int	chkpid	= 0;
-	char	aflg;	/* -a: all processes, not just mine */
-	char	cflg;	/* -c: not complete listing of args, just comm. */
-	char	gflg;	/* -g: complete listing including group headers, etc */
-	char	kflg;	/* -k: read from core file instead of real memory */
-	char	lflg;	/* -l: long listing form */
-	char	nflg;	/* -n: numeric wchans */
-	char	rflg;	/* -r: raw output in style <psout.h> */
-	char	uflg;	/* -u: user name */
-	char	wflg;	/* -w[w]: wide terminal */
-	char	xflg;	/* -x: ALL processes, even those without ttys */
-	char	Uflg;	/* -U: update the private list */
-	char	*tptr, *mytty;
-	char	*uname;
-	int	file;
-	int	nproc;
-	int	nchans;
-	int	nttys;
-	char	*psdb	= "/var/run/psdatabase";
-	int	npr;			/* number of processes found so far */
-	int	twidth;			/* terminal width */
-	int	cmdstart;		/* start position for command field */
-	char	*memf;			/* name of kernel memory file */
-	char	*kmemf = "/dev/kmem";	/* name of physical memory file */
-	char	*swapf;			/* name of swap file to use */
-	char	*nlistf;		/* name of symbol table file to use */
-	int	kmem, mem, swap;
+struct	proc *mproc, proc[8];
+struct	user	u;
+int	hz;
+int	chkpid	= 0;
+char	aflg;	/* -a: all processes, not just mine */
+char	cflg;	/* -c: not complete listing of args, just comm. */
+char	gflg;	/* -g: complete listing including group headers, etc */
+char	kflg;	/* -k: read from core file instead of real memory */
+char	lflg;	/* -l: long listing form */
+char	nflg;	/* -n: numeric wchans */
+char	rflg;	/* -r: raw output in style <psout.h> */
+char	uflg;	/* -u: user name */
+char	wflg;	/* -w[w]: wide terminal */
+char	xflg;	/* -x: ALL processes, even those without ttys */
+char	Uflg;	/* -U: update the private list */
+char	*tptr, *mytty;
+char	*uname;
+int	file;
+int	nproc;
+int	nchans;
+int	nttys;
+char	*psdb	= "/var/run/psdatabase";
+int	npr;			/* number of processes found so far */
+int	twidth;			/* terminal width */
+int	cmdstart;		/* start position for command field */
+char	*memf;			/* name of kernel memory file */
+char	*kmemf = "/dev/kmem";	/* name of physical memory file */
+char	*swapf;			/* name of swap file to use */
+char	*nlistf;		/* name of symbol table file to use */
+int	kmem, mem, swap;
 
 /*
  *	Structure for the unix wchan table
@@ -87,9 +87,9 @@
 typedef struct wchan {
 	char	cname[NNAMESIZ];
 	unsigned	caddr;
-	} WCHAN;
+} WCHAN;
 
-	WCHAN	*wchand;
+WCHAN	*wchand;
 
 char	*gettty(), *getptr(), *getchan();
 int	pscomp(), wchancomp();
@@ -109,16 +109,17 @@ struct	ttys {
 	char	name[14];	/* MAXNAMLEN uses too much memory,  besides */
 				/* device names tend to be very short */
 	dev_t	ttyd;
-	} allttys[MAXTTYS];
+
+} allttys[MAXTTYS];
 
 struct	map {
 	off_t	b1, e1; off_t	f1;
 	off_t	b2, e2; off_t	f2;
-	};
+};
 
-	struct	winsize ws;
-	struct	map datmap;
-	struct	psout *outargs;		/* info for first npr processes */
+struct	winsize ws;
+struct	map datmap;
+struct	psout *outargs;		/* info for first npr processes */
 
 main (argc, argv)
 char	**argv;
@@ -128,18 +129,18 @@ char	**argv;
 	char	*ap;
 	register struct	proc	*procp;
 
-/*
- * Can't initialize unions and we need the macros from a.out.h, so the
- * namelist is set up at run time.
-*/
+        /*
+         * Can't initialize unions and we need the macros from a.out.h,
+         * so the namelist is set up at run time.
+         */
 	nl[X_PROC].n_un.n_name = "_proc";
 	nl[X_NPROC].n_un.n_name = "_nproc";
 	nl[X_HZ].n_un.n_name = "_hz";
 
-	if	((ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 &&
-		 ioctl(fileno(stderr), TIOCGWINSZ, &ws) != -1 &&
-		 ioctl(fileno(stdin), TIOCGWINSZ, &ws) != -1) ||
-		 ws.ws_col == 0)
+	if ((ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 &&
+	     ioctl(fileno(stderr), TIOCGWINSZ, &ws) != -1 &&
+	     ioctl(fileno(stdin), TIOCGWINSZ, &ws) != -1) ||
+	     ws.ws_col == 0)
 	 	twidth = 80;
 	else
 		twidth = ws.ws_col;
@@ -248,11 +249,9 @@ char	**argv;
 			if (nread == -1)
 				break;
 		}
-printf ("i=%u, nproc=%u, j=%u, nread=%u\n", i, nproc, j, nread);
 		for (j = nread / sizeof (struct proc) - 1; j >= 0; j--) {
 			mproc	= &proc[j];
 			procp	= mproc;
-printf ("j=%u, pid=%u\n", j, procp->p_pid);
 			/* skip processes that don't exist */
 			if (procp->p_stat == 0)
 				continue;
@@ -270,10 +269,8 @@ printf ("j=%u, pid=%u\n", j, procp->p_pid);
 				continue;
 			if (savcom(puid))
 				npr++;
-printf ("npr = %u\n", npr);
 		}
 	}
-printf ("npr = %u\n", npr);
 	fixup(npr);
 	for (i = 0; i < npr; i++) {
 		register int	cmdwidth = twidth - cmdstart - 2;
@@ -472,14 +469,10 @@ savcom(puid)
 	a->o_sigs = (int)up->u_signal[SIGINT] + (int)up->u_signal[SIGQUIT];
 	a->o_uname[0] = 0;
 	strncpy(a->o_comm, up->u_comm, MAXCOMLEN);
-printf ("pid=%u, comm=%s\n", a->o_pid, a->o_comm);
 	if (cflg)
 		return (1);
-	else {
-//		return getcmd(a, saddr);
-		getcmd(a, saddr);
-		return 1;
-        }
+	else
+		return getcmd(a, saddr);
 }
 
 char *
@@ -607,7 +600,7 @@ addchan(name, caddr)
 	strncpy(wp->cname, name, NNAMESIZ - 1);
 	wp->cname[NNAMESIZ-1] = '\0';
 	wp->caddr = caddr;
-	}
+}
 
 char	*
 getchan(chan)
@@ -661,28 +654,24 @@ nlist()
 	stroff = N_STROFF(hbuf);
 	fseek(nlistf_fp, sa, L_SET);
 
-	addchan("u", 0140000);		/* XXX - see comment below */
 	while (nsyms--) {
-		fread(&nbuf,sizeof(nbuf),1,nlistf_fp);
-		if	((nbuf.n_type & N_EXT) == 0)
+		fread(&nbuf, sizeof(nbuf), 1, nlistf_fp);
+		if ((nbuf.n_type & N_EXT) == 0)
 			continue;
 		flag = nbuf.n_type & N_TYPE;
 /*
  * Now read the symbol string.  Can't rely on having enough memory to
  * hold the entire string table, so we do a seek+read for each name.  Luckily
  * this is only done for global symbols, which cuts down the work done.
-*/
+ */
 		fseek(strfp, nbuf.n_un.n_strx + stroff, L_SET);
 		fread(name, MAXSYMLEN, 1, strfp);
 
-/*
- * Skip over anything which isn't an external data or bss symbol.
- * Advantage was taken of the facts that 1) 'ps' is highly machine
- * dependent and 2) _u on a pdp-11 is not likely to change _ever_.
- * The reason behind this is to avoid matching on absolute symbols created
- * during the unix/netnix cross binding.
-*/
-		if (! (flag == N_DATA || flag == N_BSS))
+                /*
+                 * Skip over anything which isn't an external data or
+                 * bss or absolute symbol.
+                 */
+		if (! (flag == N_DATA || flag == N_BSS || flag == N_ABS))
 			continue;
 		if (! nflg)
 			addchan(name + 1, nbuf.n_value);
@@ -701,7 +690,7 @@ nlist()
 	fclose(nlistf_fp);
 	fclose(strfp);
 	if (!nflg)
-		qsort(wchand,nchans,sizeof(WCHAN),wchancomp);
+		qsort(wchand, nchans, sizeof(WCHAN), wchancomp);
 }
 
 perrexit(msg)
@@ -791,7 +780,7 @@ char	**argv;
 {
 	struct	stat	st;
 
-	nlistf = argc > 3 ?  argv[3] : "/unix";
+	nlistf = argc > 3 ? argv[3] : "/unix";
 	if (Uflg) {
 		nlist();
 		getdev();
@@ -816,17 +805,13 @@ char	**argv;
 
 	/* find number of procs */
 	if (nl[X_NPROC].n_value) {
-printf ("seek kmem to address %08x: ", nl[X_NPROC].n_value);
 		int ret = lseek(kmem, (off_t)nl[X_NPROC].n_value, 0);
-printf ("returned %d\n", ret);
 
 		if (read(kmem,(char *)&nproc,sizeof(nproc)) != sizeof(nproc)) {
-printf ("kmem error: reading nproc at %08x\n", nl[X_NPROC].n_value);
 			perror(kmemf);
 			exit(1);
 		}
-	}
-	else {
+	} else {
 		fputs("nproc not in namelist\n",stderr);
 		exit(1);
 	}
@@ -839,7 +824,6 @@ printf ("kmem error: reading nproc at %08x\n", nl[X_NPROC].n_value);
 	/* find value of hz */
 	lseek(kmem, (off_t)nl[X_HZ].n_value, 0);
 	read(kmem, (char *)&hz, sizeof(hz));
-printf ("hz = %d\n", hz);
 }
 
 
@@ -907,7 +891,7 @@ register struct psout	*a;
 	/* look for sh special */
 	lseek(file, addr + ARGLIST*sizeof(int) - sizeof (char **), 0);
 	if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
-		return (0);
+		return (1);
 	if (ap) {
 		char	b[82];
 		char	*bp	= b;
@@ -930,7 +914,7 @@ register struct psout	*a;
 
 	lseek(file, addr, 0);
 	if (read(file, (char *) abuf, sizeof (abuf)) != sizeof (abuf))
-		return (0);
+		return (1);
 	abuf[ARGLIST-1]	= 0;
 	for (ip = &abuf[ARGLIST-2]; ip > abuf;) {
 		if (*--ip == -1 || *ip == 0) {
