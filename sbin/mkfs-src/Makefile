@@ -26,7 +26,7 @@ mkfs.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf *~ ${MAN} ../mkfs tags
+		rm -f *.o *.elf *.dis *~ ${MAN} ../mkfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

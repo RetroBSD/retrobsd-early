@@ -19,7 +19,7 @@ swapon.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} swapon tags 
+	rm -f *.o *.elf *.dis ${MAN} swapon tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

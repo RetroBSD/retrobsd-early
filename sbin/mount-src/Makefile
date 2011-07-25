@@ -22,7 +22,7 @@ mount.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} mount tags 
+	rm -f *.o *.elf *.dis ${MAN} mount tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

@@ -17,7 +17,7 @@ all:		../ls
 		${ELF2AOUT} ls.elf $@
 
 clean:
-		rm -f *.o *.elf ../ls tags *~
+		rm -f *.o *.elf *.dis ../ls tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

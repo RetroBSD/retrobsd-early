@@ -19,7 +19,7 @@ shutdown.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} shutdown tags 
+	rm -f *.o *.elf *.dis ${MAN} shutdown tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

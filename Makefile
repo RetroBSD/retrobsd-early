@@ -38,11 +38,11 @@ SRC_MFLAGS	= -k
 # lint(1) need their data files, etc installed first.
 
 LIBDIR		= lib
-SRCDIR		= share bin sbin etc usr.bin usr.sbin
+SRCDIR		= tools sys etc share bin sbin usr.bin usr.sbin
 
 FSUTIL		= tools/fsutil/fsutil
 ROOTDIRS	= sbin/ bin/ dev/
-ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs \
+ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot \
                   bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
                   bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
                   bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
@@ -68,6 +68,15 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
+all:		${LIBDIR} ${SRCDIR} root.bin swap.bin
+
+lib:		FRC
+		cd lib/startup-mips; make ${MFLAGS}
+		cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
+
+usr.lib ${SRCDIR}: FRC
+		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
+
 root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
 		tools/elf2aout/elf2aout -s sys/pic32/compile/unix unix
 		rm -f $@
@@ -76,14 +85,8 @@ root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 
-all:		${LIBDIR} ${SRCDIR}
-
-lib:		FRC
-		cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
-		cd lib; make ${MFLAGS} ccom cpp c2
-
-usr.lib ${SRCDIR}: FRC
-		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
+swap.bin:
+		dd bs=1k count=2048 < /dev/zero > $@
 
 $(FSUTIL):
 		cd tools/fsutil; make ${MFLAGS}
@@ -145,5 +148,5 @@ tags:
 		sort -u +0 -1 -o tags tags
 
 clean:
-		rm -f a.out core *.s *.o
+		rm -f a.out core unix root.bin swap.bin *.s *.o *~
 		for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done

@@ -30,7 +30,7 @@ mkpasswd: ${OBJS}
 	${CC} ${SEPFLAG} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
-	rm -f ${OBJS} ${MAN} core mkpasswd
+	rm -f *.o *.elf *.dis ${MAN} core mkpasswd
 
 depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}

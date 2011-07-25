@@ -44,7 +44,7 @@ install:	${PROG}
 		install -s ${PROG} ${DESTDIR}/sbin/${PROG}
 
 clean:
-		rm -f *.o *~ *.elf a.out core ${PROG}
+		rm -f *.o *~ *.elf *.dis a.out core ${PROG}
 
 lint:
 		lint ${INCPATH} ${SRCS}

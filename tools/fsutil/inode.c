@@ -1,9 +1,9 @@
 /*
- * Inode routines for unix v6 filesystem.
+ * Inode routines for 2.xBSD filesystem.
  *
- * Copyright (C) 2006 Serge Vakulenko, <vak@cronyx.ru>
+ * Copyright (C) 2006-2011 Serge Vakulenko, <serge@vak.ru>
  *
- * This file is part of BKUNIX project, which is distributed
+ * This file is part of RetroBSD project, which is distributed
  * under the terms of the GNU General Public License (GPL).
  * See the accompanying file "COPYING" for more details.
  */

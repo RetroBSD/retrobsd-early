@@ -89,7 +89,7 @@ static char *vm_build_filename (vm_instance_t * vm, char *name)
      * break; */
     //    case 0:
     //    default:
-    filename = dyn_sprintf ("%s_%s_%s", machine, vm->name, name);
+    filename = dyn_sprintf ("%s-%s", vm->name, name);
     //      break;
     //}
 

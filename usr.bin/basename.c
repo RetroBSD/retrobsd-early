@@ -1,6 +1,5 @@
-static char *sccsid = "@(#)basename.c	4.2 (Berkeley) 10/20/82";
-
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 main(argc, argv)
 char **argv;
@@ -18,7 +17,7 @@ char **argv;
 			p2 = p1;
 	}
 	if (argc>2) {
-		for(p3=argv[2]; *p3; p3++) 
+		for(p3=argv[2]; *p3; p3++)
 			;
 		while(p1>p2 && p3>argv[2])
 			if(*--p3 != *--p1)
@@ -26,6 +25,6 @@ char **argv;
 		*p1 = '\0';
 	}
 output:
-	puts(p2, stdout);
+	puts(p2);
 	exit(0);
 }

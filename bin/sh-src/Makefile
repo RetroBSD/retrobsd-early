@@ -1,8 +1,6 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		= -O -Werror
-
 SRCS		= args.c blok.c builtin.c cmd.c ctype.c error.c expand.c \
 		  fault.c io.c macro.c main.c msg.c name.c print.c service.c \
 		  setbrk.c stak.c string.c word.c xec.c
@@ -21,7 +19,7 @@ all:		../sh
 install:	all
 		install -s ../sh $(DESTDIR)/bin
 clean:
-		rm -f ../sh *.o *~ *.elf
+		rm -f ../sh *.o *~ *.elf *.dis
 
 args.o: args.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h
 blok.o: blok.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h

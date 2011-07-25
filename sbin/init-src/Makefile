@@ -1,6 +1,3 @@
-#
-# Public Domain.  1997/1/10 - Steven Schultz
-#
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
@@ -8,7 +5,6 @@ SRCS		= init.c
 OBJS		= init.o
 MAN		= init.0
 MANSRC		= init.8
-CFLAGS          += -g
 
 all:		../init init.0
 
@@ -22,7 +18,7 @@ init.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ *.elf ${MAN} ../init tags
+		rm -f *.o *~ *.elf *.dis ${MAN} ../init tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

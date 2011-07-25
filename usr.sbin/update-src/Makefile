@@ -10,17 +10,19 @@ OBJS		= update.o
 MAN		= update.0
 MANSRC		= update.8
 
-all:		update update.0
+all:		../update update.0
 
-update:		${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+../update:	${OBJS}
+		${CC} ${LDFLAGS} -o update.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S update.elf > update.dis
+		${SIZE} update.elf
+		${ELF2AOUT} update.elf $@
 
 update.0:	${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ ${MAN} update tags
+		rm -f *.o *~ ${MAN} ../update update.elf update.dis tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

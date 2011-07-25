@@ -19,7 +19,7 @@ tunefs.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} tunefs tags 
+	rm -f *.o *.elf *.dis ${MAN} tunefs tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

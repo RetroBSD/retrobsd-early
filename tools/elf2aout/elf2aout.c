@@ -596,7 +596,6 @@ translate_syms(int out, int in, off_t symoff, off_t symsize,
 
 			/* Symbol values in executables should be compatible. */
 			outbuf[i].n_value = inbuf[i].st_value;
-printf (" %s = %#x\n", oldstrings + inbuf[i].st_name, inbuf[i].st_value);
 		}
 		/* Write out the symbols... */
 		if ((i = write(out, outbuf, cur * sizeof(struct nlist)))

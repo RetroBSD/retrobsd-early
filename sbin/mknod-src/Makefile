@@ -19,7 +19,7 @@ mknod.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} mknod tags 
+	rm -f *.o *.elf *.dis ${MAN} mknod tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

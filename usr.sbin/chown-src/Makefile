@@ -1,6 +1,3 @@
-#
-# Public Domain.  1996/11/16 - Steven Schultz
-#
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
@@ -13,14 +10,16 @@ MANSRC          = chown.8
 all:            ../chown
 
 ../chown:       ${OBJS}
-		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
-		${SIZE} $@
+		${CC} ${LDFLAGS} -o chown.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S chown.elf > chown.dis
+		${SIZE} chown.elf
+		${ELF2AOUT} chown.elf $@
 
 chown.0:        ${MANSRC}
 		/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o ../chown tags *~
+		rm -f *.o ../chown chown.elf chown.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

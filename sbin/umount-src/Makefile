@@ -19,7 +19,7 @@ umount.0: ${MANSRC}
 	/usr/man/manroff ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} umount tags 
+	rm -f *.o *.elf *.dis ${MAN} umount tags
 
 depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}

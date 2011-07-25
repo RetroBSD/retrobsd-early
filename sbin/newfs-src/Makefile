@@ -21,7 +21,7 @@ newfs.0:	${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf *~ ${MAN} ../newfs tags
+		rm -f *.o *.elf *.dis *~ ${MAN} ../newfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

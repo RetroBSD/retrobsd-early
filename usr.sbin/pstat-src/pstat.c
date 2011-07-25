@@ -1,29 +1,17 @@
 /*
+ * Print system stuff
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)pstat.c	5.8.6 (2.11BSD) 1999/9/13";
-#endif
-
-/*
- * Print system stuff
- */
-
+#define	PIC32MX
 #include <sys/param.h>
 #define	KERNEL
-#include <sys/localopts.h>
 #include <sys/file.h>
 #include <sys/user.h>
 #undef	KERNEL
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/inode.h>
 #include <sys/map.h>
 #include <sys/ioctl.h>
@@ -32,10 +20,11 @@ static char sccsid[] = "@(#)pstat.c	5.8.6 (2.11BSD) 1999/9/13";
 #include <sys/vm.h>
 #include <nlist.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 char	*fcore	= "/dev/kmem";
 char	*fmem	= "/dev/mem";
-char	*fnlist	= "/vmunix";
+char	*fnlist	= "/unix";
 int	fc, fm;
 
 struct nlist nl[] = {
@@ -203,7 +192,6 @@ char **argv;
 
 usage()
 {
-
 	printf("usage: pstat -[aixptfs] [-u [ubase]] [system] [core]\n");
 }
 
@@ -525,7 +513,7 @@ dousr()
 	lseek(fm, ubase << 6, 0);
 	read(fm, &U, sizeof(U));
 	printf("pcb\t%.1o\n", U.u_pcb.pcb_sigc);
-	printf("fps\t%.1o %g %g %g %g %g %g\n", U.u_fps.u_fpsr, 
+	printf("fps\t%.1o %g %g %g %g %g %g\n", U.u_fps.u_fpsr,
 		U.u_fps.u_fpregs[0], U.u_fps.u_fpregs[1], U.u_fps.u_fpregs[2],
 		U.u_fps.u_fpregs[3], U.u_fps.u_fpregs[4], U.u_fps.u_fpregs[5]);
 	printf("fpsaved\t%d\n", U.u_fpsaved);
@@ -581,7 +569,7 @@ dousr()
 		}
 	if	(i%8) printf("\n");
 	printf("sep\t%d\n", U.u_sep);
-	printf("ovdata\t%d %d %.1o %d\n", U.u_ovdata.uo_curov, 
+	printf("ovdata\t%d %d %.1o %d\n", U.u_ovdata.uo_curov,
 		U.u_ovdata.uo_ovbase, U.u_ovdata.uo_dbase, U.u_ovdata.uo_nseg);
 	printf("ov_offst");
 	for	(i = 0; i < NOVL; i++)
@@ -673,7 +661,7 @@ dousr()
 	printf("\n");
 	printf("quota\t%.1o\n", U.u_quota);
 	printf("ncache\t%ld %u %d,%d\n", U.u_ncache.nc_prevoffset,
-		U.u_ncache.nc_inumber, major(U.u_ncache.nc_dev),	
+		U.u_ncache.nc_inumber, major(U.u_ncache.nc_dev),
 		minor(U.u_ncache.nc_dev));
 	printf("login\t%*s\n", MAXLOGNAME, U.u_login);
 }

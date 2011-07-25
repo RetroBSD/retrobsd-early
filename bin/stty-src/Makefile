@@ -23,7 +23,7 @@ stty.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../stty tags *~
+		rm -f *.o *.elf ${MAN} ../stty *.elf *.dis tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

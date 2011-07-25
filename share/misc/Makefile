@@ -6,8 +6,9 @@
 #  Makefile for misc data files (lib.b from 'bc', usw.)
 #
 
-SRCS= eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
-	vlpmacs mkproto.data
+SRCS=
+# eign lib.b Mail.help Mail.tildehelp units gprof.callg gprof.flat \
+# vlpmacs mkproto.data
 
 all:	${SRCS}
 
@@ -17,3 +18,4 @@ install:${SRCS}
 	install -c -m 444 ${SRCS} ${DESTDIR}/usr/share/misc
 
 clean:
+	rm -f *~

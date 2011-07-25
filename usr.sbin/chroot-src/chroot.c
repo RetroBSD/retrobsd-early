@@ -14,26 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)chroot.c	5.4 (Berkeley) 3/5/89";
-#endif /* not lint */
-
 #include <stdio.h>
-#include "pathnames.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <paths.h>
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno;
-	char *shell, *getenv(), *strerror();
+        char *shell;
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: chroot newroot [command]\n");

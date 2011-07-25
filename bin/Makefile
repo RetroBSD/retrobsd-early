@@ -6,8 +6,6 @@
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS += -g
-
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
@@ -83,7 +81,7 @@ install:	${BINS}
 		/bin/rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 
 clean:
-		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *~ errs
+		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *.dis *.elf *~ errs
 		for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend:		expr.c

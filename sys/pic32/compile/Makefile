@@ -61,7 +61,7 @@ all:		.deps sys machine unix
 		$(SIZE) unix
 
 clean:
-		rm -rf unix core mklog *.o assym.h vers.c genassym .deps unix.dis unix.map
+		rm -rf unix core mklog *.o assym.h vers.c genassym .deps unix.bin unix.dis unix.map
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:

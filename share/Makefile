@@ -5,14 +5,13 @@
 #
 DESTDIR=
 CFLAGS=	-O
-SEPFLAG= -i
 
 SUBDIR= misc
 
 all:	${SUBDIR}
 
 ${SUBDIR}: FRC
-	cd $@; make ${MFLAGS} SEPFLAG=${SEPFLAG}
+	cd $@; make ${MFLAGS}
 
 FRC:
 
@@ -21,4 +20,5 @@ install: FRC
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 
 clean:
+	rm -f *~
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
