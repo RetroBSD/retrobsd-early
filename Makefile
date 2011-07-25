@@ -38,12 +38,12 @@ SRC_MFLAGS	= -k
 # lint(1) need their data files, etc installed first.
 
 LIBDIR		= lib
-SRCDIR		= tools sys etc share bin sbin usr.bin usr.sbin
+SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
 ROOTDIRS	= sbin/ bin/ dev/
 ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot \
-                  bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
+                  bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
                   bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
                   bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
                   bin/mt bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
@@ -74,7 +74,7 @@ lib:		FRC
 		cd lib/startup-mips; make ${MFLAGS}
 		cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
 
-usr.lib ${SRCDIR}: FRC
+${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
 root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
@@ -122,10 +122,6 @@ buildlib: FRC
 		cd lib/cpp; make ${MFLAGS} DESTDIR=${DESTDIR} install
 		cd lib/c2; make ${MFLAGS} DESTDIR=${DESTDIR} install
 		@echo
-		@echo compiling usr.lib
-		cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS}
-		@echo installing /usr/lib
-		cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install
 
 FRC:
 
@@ -142,7 +138,7 @@ installsrc:
 		done
 
 tags:
-		for i in include lib usr.lib; do \
+		for i in include lib; do \
 			(cd $$i; make ${MFLAGS} TAGSFILE=../tags tags); \
 		done
 		sort -u +0 -1 -o tags tags

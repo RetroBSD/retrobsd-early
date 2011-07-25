@@ -10,21 +10,28 @@ include $(TOPSRC)/target.mk
 #
 SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
 		  #make-src nm-src passwd-src sed-src sysctl-src test-src
+                  #dc-src ex-src find-src fstat-src id-src jove-src la-src lex-src \
+                  #m4-src man-src more-src pcc-src printf-src ranlib-src \
+                  #renice-src uname-src whereis-src xargs-src yacc-src
 
 # Shell scripts that need only be installed and are never removed.
 #
 SCRIPT		= false true
+                  #lorder mkdep nohup
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD		= cat chgrp chmod cmp cp date dd du echo ed grep hostid \
+STD		= basename cat chgrp chmod cmp cp date dd du echo ed grep hostid \
 		  kill ln mkdir mt mv nice od pagesize pr \
 		  pwd rm rmail rmdir size sync tar tee time who #cc
+                  #cal cb checkeq col comm crypt deroff fgrep file join look \
+                  #mesg ptx rev sleep sort spline split sum tabs tc tk touch tr \
+                  #tsort tty uniq units
 
 # C programs that live in the current directory and need explicit make lines.
 #
-#NSTD		= expr
+#NSTD		= expr bc egrep
 
 # Programs that must run setuid to root
 #
@@ -36,7 +43,7 @@ OPERATOR	= df
 
 # Programs that must run set-group-id kmem.
 #
-KMEM		= ps
+KMEM		= ps #iostat
 
 # Programs that must run set-group-id tty.
 #
@@ -81,7 +88,7 @@ install:	${BINS}
 		/bin/rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 
 clean:
-		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *.dis *.elf *~ errs
+		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *.dis *.elf *~ y.tab.c errs
 		for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
 depend:		expr.c
@@ -106,5 +113,12 @@ depend:		expr.c
 
 expr:		expr.o
 		${CC} ${CFLAGS} -o expr expr.o
+
+bc egrep:
+		${YACC} ${YFLAGS} $@.y
+		${CC} -c ${CFLAGS} y.tab.c
+		mv y.tab.o $@.o
+		${CC} -o $@ $@.o
+		rm -f $@.o
 
 # DO NOT DELETE THIS LINE -- make depend uses it
