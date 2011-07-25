@@ -244,8 +244,8 @@ args:
 		}
 		if (eq("dec")){
 			mode.sg_erase = 0177;
-			mode.sg_kill = CTRL(u);
-			tc.t_intrc = CTRL(c);
+			mode.sg_kill = CTRL('u');
+			tc.t_intrc = CTRL('c');
 			ldisc = NTTYDISC;
 			lmode &= ~LPRTERA;
 			lmode |= LCRTBS|LCTLECH|LDECCTQ;

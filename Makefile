@@ -46,7 +46,7 @@ ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot \
                   bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
                   bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
                   bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
-                  bin/mt bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
+                  bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
                   bin/pwd bin/rm bin/rmail bin/rmdir bin/sh bin/size \
                   bin/strip bin/stty bin/sync bin/tar bin/tee bin/time \
                   bin/true bin/who
