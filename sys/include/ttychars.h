@@ -29,24 +29,24 @@ struct ttychars {
 	char	tc_lnextc;	/* literal next character */
 };
 
-#define	CTRL(c)	('c'&037)
-#define	_POSIX_VDISABLE	((unsigned char)'\377')
-#define	CCEQ(val,c)	(c == val ? val != _POSIX_VDISABLE : 0)
+#define	CTRL(c)         (c & 037)
+#define	_POSIX_VDISABLE ((unsigned char)'\377')
+#define	CCEQ(val,c)     (c == val ? val != _POSIX_VDISABLE : 0)
 
 /* default special characters */
-#define	CERASE	0177
-#define	CKILL	CTRL(u)
-#define	CINTR	CTRL(c)
-#define	CQUIT	034		/* FS, ^\ */
-#define	CSTART	CTRL(q)
-#define	CSTOP	CTRL(s)
-#define	CEOF	CTRL(d)
+#define	CERASE	CTRL('h')
+#define	CKILL	CTRL('u')
+#define	CINTR	CTRL('c')
+#define	CQUIT	CTRL('\\')
+#define	CSTART	CTRL('q')
+#define	CSTOP	CTRL('s')
+#define	CEOF	CTRL('d')
 #define	CEOT	CEOF
 #define	CBRK	_POSIX_VDISABLE
-#define	CSUSP	CTRL(z)
-#define	CDSUSP	CTRL(y)
-#define	CRPRNT	CTRL(r)
-#define	CFLUSH	CTRL(o)
-#define	CWERASE	CTRL(w)
-#define	CLNEXT	CTRL(v)
+#define	CSUSP	CTRL('z')
+#define	CDSUSP	CTRL('y')
+#define	CRPRNT	CTRL('r')
+#define	CFLUSH	CTRL('o')
+#define	CWERASE	CTRL('w')
+#define	CLNEXT	CTRL('v')
 #endif /* _TTYCHARS_ */

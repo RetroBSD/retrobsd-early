@@ -39,7 +39,6 @@
 #define _EOF	(T_EOF)
 #define _EOR	(T_EOR)
 #define _BAR	(T_DIP)
-#define _HAT	(T_MET)
 #define _BRA	(T_MET)
 #define _KET	(T_MET)
 #define _SQB	(T_FNG)

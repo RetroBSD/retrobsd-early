@@ -27,13 +27,11 @@ typedef unsigned long	u_long;		/* see this! unsigned longs at last! */
 typedef	unsigned short	ushort;		/* sys III compat */
 
 #ifdef pdp11
-typedef	struct	_physadr { short r[1]; } *physadr;
 typedef	struct	label_t	{
 	int	val[7];			/* regs 2-7 and super SP */
 } label_t;
 #endif
 #ifdef PIC32MX
-typedef	unsigned physadr;
 typedef	struct	label_t	{
 	unsigned val[12];		/* regs S0-S8, RA, GP and SP */
 } label_t;

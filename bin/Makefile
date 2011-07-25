@@ -23,7 +23,7 @@ SCRIPT		= false true
 # explicit make lines.
 #
 STD		= basename cat chgrp chmod cmp cp date dd du echo ed grep hostid \
-		  kill ln mkdir mt mv nice od pagesize pr \
+		  kill ln mkdir mv nice od pagesize pr \
 		  pwd rm rmail rmdir size sync tar tee time who #cc
                   #cal cb checkeq col comm crypt deroff fgrep file join look \
                   #mesg ptx rev sleep sort spline split sum tabs tc tk touch tr \

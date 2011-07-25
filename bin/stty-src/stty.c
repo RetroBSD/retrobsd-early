@@ -149,7 +149,7 @@ struct	special {
 };
 
 char	*arg;
-	char	*Nfmt = "%-8s";
+char	*Nfmt = "%-8s";
 
 main(argc, argv)
 	int	argc;
@@ -163,27 +163,26 @@ main(argc, argv)
 	setbuf(stderr, obuf);
 
 	opterr = 0;
-	while	(optind < argc && strspn(argv[optind], "-aef") == strlen(argv[optind]) &&
+	while (optind < argc && strspn(argv[optind], "-aef") == strlen(argv[optind]) &&
 		   (ch = getopt(argc, argv, "aef:")) != EOF)
-		{
-		switch	(ch)
-			{
-			case	'e':
-			case	'a':
-				fmt = 2;
-				break;
-			case	'f':
-				i = open(optarg, O_RDONLY|O_NONBLOCK);
-				if	(i < 0)
-					err(1, "%s", optarg);
-				if	(dup2(i, 1) < 0)
-					err(1, "dup2(%d,1)", i);
-				break;
-			case	'?':
-			default:
-				goto args;
-			}
-		}
+        {
+		switch (ch) {
+                case 'e':
+                case 'a':
+                        fmt = 2;
+                        break;
+                case 'f':
+                        i = open(optarg, O_RDONLY|O_NONBLOCK);
+                        if (i < 0)
+                                err(1, "%s", optarg);
+                        if (dup2(i, 1) < 0)
+                                err(1, "dup2(%d,1)", i);
+                        break;
+                case '?':
+                default:
+                        goto args;
+                }
+        }
 args:
 	argc -= optind;
 	argv += optind;
@@ -194,13 +193,12 @@ args:
 	ioctl(1, TIOCLGET, &lmode);
 	ioctl(1, TIOCGLTC, &ltc);
 	ioctl(1, TIOCGWINSZ, &win);
-	if	(ioctl(1, TIOCMGET, &mstate) < 0)
-		{
-		if	(errno == ENOTTY)
+	if (ioctl(1, TIOCMGET, &mstate) < 0) {
+		if (errno == ENOTTY)
 			mstate = -1;
 		else
 			warn("TIOCMGET");
-		}
+	}
 	nmstate = mstate;
 
 	if (argc == 0) {
@@ -264,21 +262,18 @@ args:
 				arg2 = *argv++;
 				if (strcmp(arg2, "undef") == 0)
 					*sp->cp = 0377;
-				else if (*arg2 == '^')
-					{
+				else if (*arg2 == '^') {
 					arg2++;
 					*sp->cp = (*arg2 == '?') ?
 					    0177 : *arg2 & 037;
-					}
-				else
+                                } else
 					*sp->cp = *arg2;
 				goto cont;
 			}
-		if	(eq("flushout"))
-			{
+		if (eq("flushout")) {
 			ioctl(1, TIOCFLUSH, &zero);
 			continue;
-			}
+		}
 		if (eq("hup")) {
 			ioctl(1, TIOCHPCL, NULL);
 			continue;
@@ -311,33 +306,27 @@ args:
 			printf("unknown\n");
 			exit(1);
 		}
-		for	(i = 0; modes[i].string; i++)
-			{
-			if	(eq(modes[i].string))
-				{
+		for (i = 0; modes[i].string; i++) {
+			if (eq(modes[i].string)) {
 				mode.sg_flags &= ~modes[i].reset;
 				mode.sg_flags |= modes[i].set;
-				goto cont;
-				}
+                                goto cont;
 			}
-		for	(i = 0; lmodes[i].string; i++)
-			{
-			if	(eq(lmodes[i].string))
-				{
+		}
+		for (i = 0; lmodes[i].string; i++) {
+			if (eq(lmodes[i].string)) {
 				lmode &= ~lmodes[i].reset;
 				lmode |= lmodes[i].set;
 				goto cont;
-				}
 			}
-		for	(i = 0; mmodes[i].string; i++)
-			{
-			if	(eq(mmodes[i].string))
-				{
+		}
+		for (i = 0; mmodes[i].string; i++) {
+			if (eq(mmodes[i].string)) {
 				nmstate &= ~mmodes[i].reset;
 				nmstate |= mmodes[i].set;
 				goto cont;
-				}
 			}
+		}
 		if(arg)
 			fprintf(stderr,"unknown mode: %s\n", arg);
 cont:
@@ -349,28 +338,26 @@ done:
 	ioctl(1, TIOCSLTC, &ltc);
 	ioctl(1, TIOCLSET, &lmode);
 	ioctl(1, TIOCSWINSZ, &win);
-	if	(mstate != -1 && nmstate != mstate)
-		{
-		if	(ioctl(1, TIOCMSET, &nmstate) < 0)
+	if (mstate != -1 && nmstate != mstate) {
+		if (ioctl(1, TIOCMSET, &nmstate) < 0)
 			warn("TIOCMSET");
-		}
+	}
 }
 
 eq(string)
 char *string;
 {
-
-	if	(!arg)
+	if (!arg)
 		return(0);
-	if	(strcmp(arg, string))
+	if (strcmp(arg, string))
 		return(0);
 	arg = 0;
 	return(1);
 }
 
 #define	lpit(what,str) \
-	if (all || (lmode&what)) { \
-		fprintf(stderr,str+((lmode&what)!=0)); any++; \
+	if (all || (lmode & what)) { \
+		fprintf(stderr, str + ((lmode & what) != 0)); any++; \
 	}
 
 prmodes(all)
@@ -391,48 +378,49 @@ prmodes(all)
 		fprintf(stderr, "old tty, ");
 	else
 		fprintf(stderr, "discipline %d, ");
+
 	if(mode.sg_ispeed != mode.sg_ospeed) {
 		fprintf(stderr,"input speed %u baud", speed[mode.sg_ispeed]);
 		fprintf(stderr,"output speed %u baud", speed[mode.sg_ospeed]);
 	} else
 		fprintf(stderr,"speed %u baud",  speed[mode.sg_ispeed]);
+
 	if (all)
 		fprintf(stderr, ", %d rows, %d columns", win.ws_row, win.ws_col);
+
 	fprintf(stderr, all ? "\n" : "; ");
 	m = mode.sg_flags;
 	if (all) {
 		if(m & EVENP)	fprintf(stderr,"even ");
 		if(m & ODDP)	fprintf(stderr,"odd ");
 	}
-	if	(all || m&RAW)
-		fprintf(stderr,"-raw "+((m&RAW)!=0));
-	if	(all || (m&CRMOD)==0)
-		fprintf(stderr,"-nl "+((m&CRMOD)==0));
-	if	(all || (m&ECHO)==0)
-		fprintf(stderr,"-echo "+((m&ECHO)!=0));
-	if	(all || (m&TANDEM))
-		fprintf(stderr,"-tandem "+((m&TANDEM)!=0));
-	fprintf(stderr,"-tabs "+((m&XTABS)!=XTABS));
-	if	(all || (m&CBREAK))
-		fprintf(stderr,"-cbreak "+((m&CBREAK)!=0));
+	if (all || m & RAW)
+		fprintf(stderr, "-raw " + ((m & RAW) != 0));
+	if (all || (m & CRMOD) == 0)
+		fprintf(stderr, "-nl " + ((m & CRMOD) == 0));
+	if (all || (m & ECHO) == 0)
+		fprintf(stderr, "-echo " + ((m & ECHO) != 0));
+	if (all || (m & TANDEM))
+		fprintf(stderr, "-tandem " + ((m & TANDEM) != 0));
+	fprintf(stderr, "-tabs "+((m & XTABS) != XTABS));
+	if (all || (m & CBREAK))
+		fprintf(stderr, "-cbreak " + ((m & CBREAK) != 0));
 	lpit(LRTSCTS, "-rtscts ");
-	if	(all)
-		{
+	if (all) {
 		fputc('\n', stderr);
-		if	(mstate != -1)
-			{
+		if (mstate != -1) {
 			fprintf(stderr, "modem control: ");
-			fprintf(stderr,"-dcd "+((mstate & TIOCM_CD)!=0));
-			fprintf(stderr,"-dsr "+((mstate & TIOCM_DSR)!=0));
-			fprintf(stderr,"-dtr "+((mstate & TIOCM_DTR)!=0));
-			fprintf(stderr,"-cts "+((mstate & TIOCM_CTS)!=0));
-			fprintf(stderr,"-rts "+((mstate & TIOCM_RTS)!=0));
-			fputc('\n', stderr);
-			}
+			fprintf(stderr, "-dcd " + ((mstate & TIOCM_CD) != 0));
+			fprintf(stderr, "-dsr " + ((mstate & TIOCM_DSR) != 0));
+			fprintf(stderr, "-dtr " + ((mstate & TIOCM_DTR) != 0));
+			fprintf(stderr, "-cts " + ((mstate & TIOCM_CTS) != 0));
+			fprintf(stderr, "-rts " + ((mstate & TIOCM_RTS) != 0));
+                        fputc('\n', stderr);
 		}
+	}
 	if (ldisc == NTTYDISC) {
-		int newcrt = (lmode&(LCTLECH|LCRTBS)) == (LCTLECH|LCRTBS) &&
-		    (lmode&(LCRTERA|LCRTKIL)) ==
+		int newcrt = (lmode & (LCTLECH|LCRTBS)) == (LCTLECH|LCRTBS) &&
+		    (lmode & (LCRTERA|LCRTKIL)) ==
 		      ((mode.sg_ospeed > B300) ? LCRTERA|LCRTKIL : 0);
 		int nothing = 1;
 		if (newcrt) {
@@ -473,16 +461,16 @@ prmodes(all)
 		fputc('\n', stderr);
 
 	if (all) {
-		for	(i = 0, sp = special; i < 9; i++, sp++)
+		for (i = 0, sp = special; i < 9; i++, sp++)
 			fprintf(stderr, Nfmt, sp->name);
 		fputc('\n', stderr);
-		for	(i = 0, sp = special; i < 9; i++, sp++)
+		for (i = 0, sp = special; i < 9; i++, sp++)
 			pit(sp);
 		fputc('\n', stderr);
-		for	(i = 9, sp = &special[9]; sp->name; i++, sp++)
+		for (i = 9, sp = &special[9]; sp->name; i++, sp++)
 			fprintf(stderr, Nfmt, sp->name);
 		fputc('\n', stderr);
-		for	(i = 9, sp = &special[9]; sp->name; i++, sp++)
+		for (i = 9, sp = &special[9]; sp->name; i++, sp++)
 			pit(sp);
 		fputc('\n', stderr);
 	}
@@ -490,32 +478,28 @@ prmodes(all)
 
 pit(sp)
 	struct special *sp;
-	{
+{
 	register int	c = *sp->cp & 0xff;
 	char	junk[6];
 	register char *p = junk;
 
-	if	(c == 0xff)
-		{
+	if (c == 0xff) {
 		fprintf(stderr, Nfmt, "<undef>");
 		return;
-		}
-	if	(c & 0200)
-		{
+	}
+	if (c & 0200) {
 		*p++ = 'M';
 		*p++ = '-';
 		c &= ~ 0200;
-		}
-	if	(c == 0177)
-		{
+	}
+	if (c == 0177) {
 		*p++ = '^';
 		*p++ = '?';
-		}
-	else if (c < ' ')
-		{
+	}
+	else if (c < ' ') {
 		*p++ = '^';
 		*p++ = c += '@';
-		}
+	}
 	*p++ = '\0';
 	fprintf(stderr, Nfmt, junk);
-	}
+}

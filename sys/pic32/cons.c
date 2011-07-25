@@ -66,7 +66,7 @@ cnopen (dev, flag, mode)
 		}
 		ttychars(tp);
 		tp->t_state = TS_ISOPEN | TS_CARR_ON;
-		tp->t_flags = ECHO | XTABS | CRMOD;
+		tp->t_flags = ECHO | XTABS | CRMOD | CRTBS | CRTERA | CTLECH | CRTKIL;
 	}
 	if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
 		return (EBUSY);

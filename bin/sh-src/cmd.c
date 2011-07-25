@@ -120,7 +120,7 @@ LOCAL TREPTR	list(flg)
 /*
  * term
  *	item
- *	item |^ term
+ *	item | term
  */
 
 LOCAL TREPTR	term(flg)
@@ -133,7 +133,7 @@ LOCAL TREPTR	term(flg)
 	ELSE	word();
 	FI
 
-	IF (t=item(TRUE)) ANDF (wdval=='^' ORF wdval=='|')
+	IF (t=item(TRUE)) ANDF (wdval=='|')
 	THEN	return(makelist(TFIL, makefork(FPOU,t), makefork(FPIN|FPCL,term(NLFLG))));
 	ELSE	return(t);
 	FI
