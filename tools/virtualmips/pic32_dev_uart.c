@@ -21,7 +21,7 @@
 #include "vp_timer.h"
 
 #define UART_REG_SIZE     0x50
-#define UART_TIME_OUT     25
+#define UART_TIME_OUT     1
 
 struct pic32_uart_data {
     struct vdevice  *dev;
