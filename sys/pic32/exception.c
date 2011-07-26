@@ -10,6 +10,8 @@
 #include "proc.h"
 #include "vm.h"
 
+//#define TRACE_EXCEPTIONS
+
 /*
  * Translate interrupt vector number to IRQ mask.
  */
@@ -130,8 +132,6 @@ dumpregs (frame)
 		frame [FRAME_R7], frame [FRAME_R15],
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
-
-//#define TRACE_EXCEPTIONS
 
 #ifdef TRACE_EXCEPTIONS
 static void

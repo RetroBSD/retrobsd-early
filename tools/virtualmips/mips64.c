@@ -70,8 +70,17 @@ int mips64_cca_cached (m_uint8_t val)
 /* Set a register */
 void mips64_reg_set (cpu_mips_t * cpu, u_int reg, m_reg_t val)
 {
-    if (reg < MIPS64_GPR_NR)
-        cpu->gpr[reg] = val;
+    if (reg == 0 || reg >= MIPS64_GPR_NR)
+        return;
+    cpu->gpr[reg] = val;
+
+    if (cpu->vm->debug_level > 2 || (cpu->vm->debug_level > 1 &&
+        (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
+        ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL)))
+    {
+        /* Print GPR values in user mode. */
+        printf ("        GPR[%d] := %08x \n", reg, val);
+    }
 }
 
 /*get register value giving index. For GDB*/
@@ -334,6 +343,10 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
     cp0->reg[MIPS_CP0_STATUS] &= ~MIPS_CP0_STATUS_ERL;
 
 #if SIM_PIC32
+    if (cpu->vm->debug_level > 2) {
+        printf ("        exception %u at %08x\n", exc_code, cpu->pc);
+    }
+
     /* TODO */
     new_pc = 0x9d005200;
 #else
@@ -374,7 +387,6 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
 
     /* Clear the pending IRQ flag */
     cpu->irq_pending = 0;
-
 }
 
 /* Execute fpu instruction */

@@ -175,9 +175,9 @@ start_cpu:
                 continue;
             }
         }
-        if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+        if (cpu->vm->debug_level > 2 || (cpu->vm->debug_level > 1 &&
             (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
-            ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL))
+            ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL)))
         {
             /* Print instructions in user mode. */
             printf ("%08x:       %08x        ", cpu->pc, insn);
@@ -246,9 +246,9 @@ static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
     }
     cpu->is_in_bdslot = 1;
 
-    if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+    if (cpu->vm->debug_level > 2 || (cpu->vm->debug_level > 1 &&
         (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
-        ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL))
+        ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL)))
     {
         /* Print instructions in user mode. */
         printf ("%08x:       %08x        ", cpu->pc + 4, insn);

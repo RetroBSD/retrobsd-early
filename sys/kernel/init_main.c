@@ -99,9 +99,6 @@ main()
 	register struct proc *p;
 	register int i;
 	register struct fs *fs;
-	daddr_t swsize;
-	struct partinfo dpart;
-	int (*ioctl) (dev_t, u_int, caddr_t, int);
 
 	startup();
 	printf ("\n%s", version);
@@ -142,34 +139,6 @@ main()
 	nchinit();
 	clkstart();
 
-	/*
-	 * Now we find out how much swap space is available.
-	 * We toss away/ignore 1 sector of swap space (because a 0 value
-	 * can not be placed in a resource map).
-	 */
-	printf ("swap dev  = (%d,%d)\n", major(swapdev), minor(swapdev));
-	if ((*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK) != 0)
-		panic ("cannot open swapdev");
-	swsize = (*bdevsw[major(swapdev)].d_psize) (swapdev);
-	printf ("swap size = %u kbytes\n", swsize * DEV_BSIZE / 1024);
-	if (swsize <= 0)
-		panic ("zero swap size");	/* don't want to panic, but what ? */
-
-	/*
-	 * Next we make sure that we do not swap on a partition unless it is of
-	 * type FS_SWAP.  If the driver does not have an ioctl entry point or if
-	 * retrieving the partition information fails then the driver does not
-	 * support labels and we proceed normally, otherwise the partition must be
-	 * a swap partition (so that we do not swap on top of a filesystem by mistake).
-	 */
-	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
-	if (ioctl && (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD) == 0) {
-		if (dpart.part->p_fstype != FS_SWAP)
-			panic ("invalid swap partition");
-	}
-	nswap = swsize;
-	mfree (swapmap, --nswap, 1);
-
 	/* Mount a root filesystem. */
 	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
 	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
@@ -181,7 +150,45 @@ main()
 	mount_updname (fs, "/", "root", 1, 4);
 	time.tv_sec = fs->fs_time;
 	boottime = time;
+#if 0
+	/*
+	 * Now we find out how much swap space is available.
+	 * We toss away/ignore 1 sector of swap space (because a 0 value
+	 * can not be placed in a resource map).
+	 */
+	printf ("swap dev  = (%d,%d)\n", major(swapdev), minor(swapdev));
+	if ((*bdevsw[major(swapdev)].d_open) (swapdev, FREAD | FWRITE, S_IFBLK) != 0)
+		panic ("cannot open swapdev");
+	nswap = (*bdevsw[major(swapdev)].d_psize) (swapdev);
+	printf ("swap size = %u kbytes\n", nswap * DEV_BSIZE / 1024);
+	if (nswap <= 0)
+		panic ("zero swap size");	/* don't want to panic, but what ? */
 
+	/*
+	 * Next we make sure that we do not swap on a partition unless it is of
+	 * type FS_SWAP.  If the driver does not have an ioctl entry point or if
+	 * retrieving the partition information fails then the driver does not
+	 * support labels and we proceed normally, otherwise the partition must be
+	 * a swap partition (so that we do not swap on top of a filesystem by mistake).
+	 */
+	struct partinfo dpart;
+	int (*ioctl) (dev_t, u_int, caddr_t, int);
+
+	ioctl = cdevsw[blktochr(swapdev)].d_ioctl;
+	if (ioctl && (*ioctl) (swapdev, DIOCGPART, (caddr_t) &dpart, FREAD) == 0) {
+		if (dpart.part->p_fstype != FS_SWAP)
+			panic ("invalid swap partition");
+	}
+	mfree (swapmap, --nswap, 1);
+#else
+        /* Find a swap file. */
+        swapdev = rootdev;
+	nswap = fs->fs_swapsz;
+	printf ("swap size = %u kbytes\n", nswap * DEV_BSIZE / 1024);
+	if (nswap <= 0)
+		panic ("zero swap size");	/* don't want to panic, but what ? */
+	mfree (swapmap, nswap, fs->fs_isize);
+#endif
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu (0);
 

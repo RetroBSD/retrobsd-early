@@ -80,7 +80,7 @@ ${SRCDIR}: FRC
 root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
 		tools/elf2aout/elf2aout -s sys/pic32/compile/unix unix
 		rm -f $@
-		$(FSUTIL) -n -s16777216 $@
+		$(FSUTIL) -n16384 -s2048 $@
 		$(FSUTIL) -a $@ unix $(ROOTDIRS) $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)

@@ -100,17 +100,16 @@ void fastcall mips64_cp0_exec_mfc0_fastcall (cpu_mips_t * cpu,
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
     int sel = bits (insn, 0, 2);
-    cpu->gpr[rt] = sign_extend (mips64_cp0_get_reg_fast (cpu, rd, sel), 32);
 
+    cpu->reg_set (cpu, rt, sign_extend (mips64_cp0_get_reg_fast (cpu, rd, sel), 32));
 }
 
 /* MFC0 */
 void mips64_cp0_exec_mfc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
     u_int sel)
 {
-    cpu->gpr[gp_reg] =
-        sign_extend (mips64_cp0_get_reg_fast (cpu, cp0_reg, sel), 32);
-
+    cpu->reg_set (cpu, gp_reg,
+        sign_extend (mips64_cp0_get_reg_fast (cpu, cp0_reg, sel), 32));
 }
 
 void fastcall mips64_cp0_exec_mtc0_fastcall (cpu_mips_t * cpu,

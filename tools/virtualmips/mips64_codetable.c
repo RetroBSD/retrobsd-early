@@ -25,7 +25,7 @@ static int add_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* TODO: Exception handling */
     res = (m_uint32_t) cpu->gpr[rs] + (m_uint32_t) cpu->gpr[rt];
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -38,7 +38,7 @@ static int addi_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* TODO: Exception handling */
     res = (m_uint32_t) cpu->gpr[rs] + val;
-    cpu->gpr[rt] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rt, sign_extend (res, 32));
     return (0);
 }
 
@@ -50,8 +50,7 @@ static int addiu_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res, val = sign_extend (imm, 16);
 
     res = (m_uint32_t) cpu->gpr[rs] + val;
-    cpu->gpr[rt] = sign_extend (res, 32);
-
+    cpu->reg_set (cpu, rt, sign_extend (res, 32));
     return (0);
 }
 
@@ -63,7 +62,7 @@ static int addu_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res;
 
     res = (m_uint32_t) cpu->gpr[rs] + (m_uint32_t) cpu->gpr[rt];
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -73,9 +72,8 @@ static int and_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
 
-    cpu->gpr[rd] = cpu->gpr[rs] & cpu->gpr[rt];
+    cpu->reg_set (cpu, rd, cpu->gpr[rs] & cpu->gpr[rt]);
     return (0);
-
 }
 
 static int andi_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -84,7 +82,7 @@ static int andi_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int imm = bits (insn, 0, 15);
 
-    cpu->gpr[rt] = cpu->gpr[rs] & imm;
+    cpu->reg_set (cpu, rt, cpu->gpr[rs] & imm);
     return (0);
 }
 
@@ -183,7 +181,7 @@ static int bgezal_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc = (cpu->pc + 4) + sign_extend (offset << 2, 18);
 
     /* set the return address (instruction after the delay slot) */
-    cpu->gpr[MIPS_GPR_RA] = cpu->pc + 8;
+    cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
     /* take the branch if gpr[rs] >= 0 */
     res = ((m_ireg_t) cpu->gpr[rs] >= 0);
@@ -212,7 +210,7 @@ static int bgezall_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc = (cpu->pc + 4) + sign_extend (offset << 2, 18);
 
     /* set the return address (instruction after the delay slot) */
-    cpu->gpr[MIPS_GPR_RA] = cpu->pc + 8;
+    cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
     /* take the branch if gpr[rs] >= 0 */
     res = ((m_ireg_t) cpu->gpr[rs] >= 0);
@@ -387,7 +385,7 @@ static int bltzal_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc = (cpu->pc + 4) + sign_extend (offset << 2, 18);
 
     /* set the return address (instruction after the delay slot) */
-    cpu->gpr[MIPS_GPR_RA] = cpu->pc + 8;
+    cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
     /* take the branch if gpr[rs] < 0 */
     res = ((m_ireg_t) cpu->gpr[rs] < 0);
@@ -416,7 +414,7 @@ static int bltzall_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc = (cpu->pc + 4) + sign_extend (offset << 2, 18);
 
     /* set the return address (instruction after the delay slot) */
-    cpu->gpr[MIPS_GPR_RA] = cpu->pc + 8;
+    cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
     /* take the branch if gpr[rs] < 0 */
     res = ((m_ireg_t) cpu->gpr[rs] < 0);
@@ -541,9 +539,8 @@ static int clz_op (cpu_mips_t * cpu, mips_insn_t insn)
             break;
         }
     }
-    cpu->gpr[rd] = val;
+    cpu->reg_set (cpu, rd, val);
     return (0);
-
 }
 
 static int cop0_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -745,7 +742,7 @@ static int jal_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc |= instr_index << 2;
 
     /* set the return address (instruction after the delay slot) */
-    cpu->gpr[MIPS_GPR_RA] = cpu->pc + 8;
+    cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
     int ins_res = mips64_exec_bdslot (cpu);
     if (likely (!ins_res))
@@ -761,7 +758,7 @@ static int jalr_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_va_t new_pc;
 
     /* set the return pc (instruction after the delay slot) in GPR[rd] */
-    cpu->gpr[rd] = cpu->pc + 8;
+    cpu->reg_set (cpu, rd, cpu->pc + 8);
 
     /* get the new pc */
     new_pc = cpu->gpr[rs];
@@ -868,7 +865,7 @@ static int lui_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int imm = bits (insn, 0, 15);
 
-    cpu->gpr[rt] = sign_extend (imm, 16) << 16;
+    cpu->reg_set (cpu, rt, sign_extend (imm, 16) << 16);
     return (0);
 }
 
@@ -941,18 +938,18 @@ static int bshfl_op (cpu_mips_t * cpu, mips_insn_t insn)
     switch (sa) {
     case 0x02:
         /* wsbh - word swap bytes within halfwords */
-        cpu->gpr[rd] = bits (cpu->gpr[rt], 16, 23) << 24 |
+        cpu->reg_set (cpu, rd, bits (cpu->gpr[rt], 16, 23) << 24 |
                        bits (cpu->gpr[rt], 24, 31) << 16 |
                        bits (cpu->gpr[rt], 0,  7)  << 8 |
-                       bits (cpu->gpr[rt], 8, 15);
+                       bits (cpu->gpr[rt], 8, 15));
         return (0);
     case 0x10:
         /* seb - sign extend byte */
-        cpu->gpr[rd] = sign_extend (cpu->gpr[rt], 8);
+        cpu->reg_set (cpu, rd, sign_extend (cpu->gpr[rt], 8));
         return (0);
     case 0x18:
         /* seh - sign extend halfword */
-        cpu->gpr[rd] = sign_extend (cpu->gpr[rt], 16);
+        cpu->reg_set (cpu, rd, sign_extend (cpu->gpr[rt], 16));
         return (0);
     }
     return unknown_op (cpu, insn);
@@ -966,7 +963,7 @@ static int ext_op (cpu_mips_t * cpu, mips_insn_t insn)
     int lsb = bits (insn, 6, 10);
 
     /* Extract bit field */
-    cpu->gpr[rt] = (cpu->gpr[rs] >> lsb) & (~0U >> (31 - msbd));
+    cpu->reg_set (cpu, rt, (cpu->gpr[rs] >> lsb) & (~0U >> (31 - msbd)));
     return (0);
 }
 
@@ -1044,7 +1041,7 @@ static int mfhi_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
 
     if (rd)
-        cpu->gpr[rd] = cpu->hi;
+        cpu->reg_set (cpu, rd, cpu->hi);
     return (0);
 }
 
@@ -1053,7 +1050,7 @@ static int mflo_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
 
     if (rd)
-        cpu->gpr[rd] = cpu->lo;
+        cpu->reg_set (cpu, rd, cpu->lo);
     return (0);
 }
 
@@ -1069,7 +1066,7 @@ static int movz_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
 
     if ((cpu->gpr[rt]) == 0)
-        cpu->gpr[rd] = sign_extend (cpu->gpr[rs], 32);
+        cpu->reg_set (cpu, rd, sign_extend (cpu->gpr[rs], 32));
     return (0);
 }
 
@@ -1081,7 +1078,7 @@ static int movn_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     // printf("pc %x rs %x rd %x rt %x\n",cpu->pc,rs,rd,rt);
     if ((cpu->gpr[rt]) != 0)
-        cpu->gpr[rd] = sign_extend (cpu->gpr[rs], 32);
+        cpu->reg_set (cpu, rd, sign_extend (cpu->gpr[rs], 32));
     return (0);
 }
 
@@ -1163,7 +1160,7 @@ static int mul_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* note: after this instruction, HI/LO regs are undefined */
     val = (m_int32_t) cpu->gpr[rs] * (m_int32_t) cpu->gpr[rt];
-    cpu->gpr[rd] = sign_extend (val, 32);
+    cpu->reg_set (cpu, rd, sign_extend (val, 32));
     return (0);
 }
 
@@ -1200,7 +1197,7 @@ static int nor_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
 
-    cpu->gpr[rd] = ~(cpu->gpr[rs] | cpu->gpr[rt]);
+    cpu->reg_set (cpu, rd, ~(cpu->gpr[rs] | cpu->gpr[rt]));
     return (0);
 }
 
@@ -1210,7 +1207,7 @@ static int or_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
 
-    cpu->gpr[rd] = cpu->gpr[rs] | cpu->gpr[rt];
+    cpu->reg_set (cpu, rd, cpu->gpr[rs] | cpu->gpr[rt]);
     return (0);
 }
 
@@ -1220,7 +1217,7 @@ static int ori_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int imm = bits (insn, 0, 15);
 
-    cpu->gpr[rt] = cpu->gpr[rs] | imm;
+    cpu->reg_set (cpu, rt, cpu->gpr[rs] | imm);
     return (0);
 }
 
@@ -1298,7 +1295,7 @@ static int sll_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res;
 
     res = (m_uint32_t) cpu->gpr[rt] << sa;
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1310,7 +1307,7 @@ static int sllv_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res;
 
     res = (m_uint32_t) cpu->gpr[rt] << (cpu->gpr[rs] & 0x1f);
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1321,10 +1318,9 @@ static int slt_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
 
     if ((m_ireg_t) cpu->gpr[rs] < (m_ireg_t) cpu->gpr[rt])
-        cpu->gpr[rd] = 1;
+        cpu->reg_set (cpu, rd, 1);
     else
-        cpu->gpr[rd] = 0;
-
+        cpu->reg_set (cpu, rd, 0);
     return (0);
 }
 
@@ -1336,10 +1332,9 @@ static int slti_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_ireg_t val = sign_extend (imm, 16);
 
     if ((m_ireg_t) cpu->gpr[rs] < val)
-        cpu->gpr[rt] = 1;
+        cpu->reg_set (cpu, rt, 1);
     else
-        cpu->gpr[rt] = 0;
-
+        cpu->reg_set (cpu, rt, 0);
     return (0);
 }
 
@@ -1351,10 +1346,9 @@ static int sltiu_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_reg_t val = sign_extend (imm, 16);
 
     if (cpu->gpr[rs] < val)
-        cpu->gpr[rt] = 1;
+        cpu->reg_set (cpu, rt, 1);
     else
-        cpu->gpr[rt] = 0;
-
+        cpu->reg_set (cpu, rt, 0);
     return (0);
 }
 
@@ -1365,10 +1359,9 @@ static int sltu_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
 
     if (cpu->gpr[rs] < cpu->gpr[rt])
-        cpu->gpr[rd] = 1;
+        cpu->reg_set (cpu, rd, 1);
     else
-        cpu->gpr[rd] = 0;
-
+        cpu->reg_set (cpu, rd, 0);
     return (0);
 }
 
@@ -1386,7 +1379,7 @@ static int sra_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_int32_t res;
 
     res = (m_int32_t) cpu->gpr[rt] >> sa;
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1398,7 +1391,7 @@ static int srav_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_int32_t res;
 
     res = (m_int32_t) cpu->gpr[rt] >> (cpu->gpr[rs] & 0x1f);
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1410,7 +1403,7 @@ static int srl_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res;
 
     res = (m_uint32_t) cpu->gpr[rt] >> sa;
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1422,7 +1415,7 @@ static int srlv_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_uint32_t res;
 
     res = (m_uint32_t) cpu->gpr[rt] >> (cpu->gpr[rs] & 0x1f);
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1435,7 +1428,7 @@ static int sub_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* TODO: Exception handling */
     res = (m_uint32_t) cpu->gpr[rs] - (m_uint32_t) cpu->gpr[rt];
-    cpu->gpr[rd] = sign_extend (res, 32);
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1446,8 +1439,7 @@ static int subu_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
     m_uint32_t res;
     res = (m_uint32_t) cpu->gpr[rs] - (m_uint32_t) cpu->gpr[rt];
-    cpu->gpr[rd] = sign_extend (res, 32);
-
+    cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
 
@@ -1540,7 +1532,7 @@ static int mfmc0_op (cpu_mips_t * cpu, mips_insn_t insn)
     if (rd != 12)
         return unknown_op (cpu, insn);
 
-    cpu->gpr[rt] = cpu->cp0.reg [MIPS_CP0_STATUS];
+    cpu->reg_set (cpu, rt, cpu->cp0.reg [MIPS_CP0_STATUS]);
     if (func & 0x20) {
         /* ei - enable interrupts */
         cpu->cp0.reg [MIPS_CP0_STATUS] |= MIPS_CP0_STATUS_IE;
@@ -1656,7 +1648,7 @@ static int xor_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
 
-    cpu->gpr[rd] = cpu->gpr[rs] ^ cpu->gpr[rt];
+    cpu->reg_set (cpu, rd, cpu->gpr[rs] ^ cpu->gpr[rt]);
     return (0);
 }
 
@@ -1666,9 +1658,8 @@ static int xori_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int imm = bits (insn, 0, 15);
 
-    cpu->gpr[rt] = cpu->gpr[rs] ^ imm;
+    cpu->reg_set (cpu, rt, cpu->gpr[rs] ^ imm);
     return (0);
-
 }
 
 static int undef_op (cpu_mips_t * cpu, mips_insn_t insn)

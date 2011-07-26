@@ -18,8 +18,9 @@ $(PROG):	$(OBJS)
 		$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 root.bin:       $(PROG)
-		./$(PROG) -n -s 16777216 $@
-		./$(PROG) $@
+		./$(PROG) -n16384 -s2048 $@
+		./$(PROG) -v $@
+		./$(PROG) -c $@
 
 swap.bin:
 		dd bs=1k count=2048 < /dev/zero > $@

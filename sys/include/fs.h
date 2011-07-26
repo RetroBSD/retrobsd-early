@@ -42,6 +42,7 @@ struct	fs
 	u_int	fs_magic1;		/* magic word */
 	u_int	fs_isize;		/* first block after i-list */
 	daddr_t	fs_fsize;		/* size in blocks of entire volume */
+	u_int	fs_swapsz;		/* size in blocks of swap area */
 	int	fs_nfree;		/* number of addresses in fs_free */
 	daddr_t	fs_free [NICFREE];	/* free block list */
 	int	fs_ninode;		/* number of inodes in fs_inode */

@@ -285,7 +285,7 @@ u_int fastcall mips_mts32_lb (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = *(m_uint8_t *) haddr;
     if (likely (!exc))
-        cpu->gpr[reg] = sign_extend (data, 8);
+        cpu->reg_set (cpu, reg, sign_extend (data, 8));
     return (exc);
 }
 
@@ -308,7 +308,7 @@ u_int fastcall mips_mts32_lbu (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = *(m_uint8_t *) haddr;
     if (likely (!exc))
-        cpu->gpr[reg] = data & 0xff;
+        cpu->reg_set (cpu, reg, data & 0xff);
     return (exc);
 }
 
@@ -331,7 +331,7 @@ u_int fastcall mips_mts32_lh (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = vmtoh16 (*(m_uint16_t *) haddr);
     if (likely (!exc))
-        cpu->gpr[reg] = sign_extend (data, 16);
+        cpu->reg_set (cpu, reg, sign_extend (data, 16));
     return (exc);
 }
 
@@ -354,7 +354,7 @@ u_int fastcall mips_mts32_lhu (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = vmtoh16 (*(m_uint16_t *) haddr);
     if (likely (!exc))
-        cpu->gpr[reg] = data & 0xffff;
+        cpu->reg_set (cpu, reg, data & 0xffff);
     return (exc);
 }
 
@@ -376,18 +376,18 @@ u_int fastcall mips_mts32_lw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
 
     if (likely (has_set_value == FALSE)) {
         data = vmtoh32 (*(m_uint32_t *) haddr);
-        if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+    }
+    if (likely (!exc)) {
+        if (cpu->vm->debug_level > 2 || (cpu->vm->debug_level > 1 &&
             (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
             ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL) &&
-            vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+            vaddr >= 0x7f008000 && vaddr < 0x7f020000))
         {
             /* Print memory accesses in user mode. */
             printf ("        read %08x -> %08x \n", vaddr, data);
         }
+        cpu->reg_set (cpu, reg, sign_extend (data, 32));
     }
-    if (likely (!exc))
-        cpu->gpr[reg] = sign_extend (data, 32);
-
     return (exc);
 }
 
@@ -410,7 +410,7 @@ u_int fastcall mips_mts32_lwu (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = vmtoh32 (*(m_uint32_t *) haddr);
     if (likely (!exc))
-        cpu->gpr[reg] = data & 0xffffffff;
+        cpu->reg_set (cpu, reg, data & 0xffffffff);
     return (exc);
 }
 
@@ -433,7 +433,7 @@ u_int fastcall mips_mts32_ld (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     if (likely (has_set_value == FALSE))
         data = vmtoh64 (*(m_uint64_t *) haddr);
     if (likely (!exc))
-        cpu->gpr[reg] = data;
+        cpu->reg_set (cpu, reg, data);
     return (exc);
 }
 
@@ -517,10 +517,10 @@ u_int fastcall mips_mts32_sw (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
             jit_handle_self_write (cpu, vaddr);
 #endif
         *(m_uint32_t *) haddr = htovm32 (data);
-        if (cpu->vm->debug_level > 2 || cpu->vm->debug_level > 1 &&
+        if (cpu->vm->debug_level > 2 || (cpu->vm->debug_level > 1 &&
             (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM) &&
             ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL) &&
-            vaddr >= 0x7f008000 && vaddr < 0x7f020000)
+            vaddr >= 0x7f008000 && vaddr < 0x7f020000))
         {
             /* Print memory accesses in user mode. */
             printf ("        write %08x := %08x \n", vaddr, data);
@@ -622,8 +622,7 @@ u_int fastcall mips_mts32_lwl (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
         data &= mask2;
         cpu->gpr[reg] &= ~mask2;
         cpu->gpr[reg] |= data;
-        cpu->gpr[reg] = sign_extend (cpu->gpr[reg], 32);
-
+        cpu->reg_set (cpu, reg, sign_extend (cpu->gpr[reg], 32));
     }
     return 0;
 }
@@ -694,8 +693,7 @@ u_int fastcall mips_mts32_lwr (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
         data &= mask1;
         cpu->gpr[reg] &= ~mask1;
         cpu->gpr[reg] |= data;
-        cpu->gpr[reg] = sign_extend (cpu->gpr[reg], 32);
-
+        cpu->reg_set (cpu, reg, sign_extend (cpu->gpr[reg], 32));
     }
     return 0;
 }
@@ -1013,10 +1011,9 @@ u_int fastcall mips_mts32_ll (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
         data = vmtoh32 (*(m_uint32_t *) haddr);
 
     if (likely (!exc)) {
-        cpu->gpr[reg] = sign_extend (data, 32);
+        cpu->reg_set (cpu, reg, sign_extend (data, 32));
         cpu->ll_bit = 1;
     }
-
     return (exc);
 }
 
@@ -1043,7 +1040,7 @@ u_int fastcall mips_mts32_sc (cpu_mips_t * cpu, m_va_t vaddr, u_int reg)
     }
 
     if (likely (!exc))
-        cpu->gpr[reg] = cpu->ll_bit;
+        cpu->reg_set (cpu, reg, cpu->ll_bit);
     return (exc);
 }
 

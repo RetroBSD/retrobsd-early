@@ -531,6 +531,13 @@ ok:				if (bcount <= DEV_BSIZE)
 		(bp->b_flags & B_READ) ? "reading" : "writing", blkno);
 	bp->b_flags |= B_ERROR;
 done:
+#if 0
+	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
+		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],
+                (unsigned char) bp->b_addr[2], (unsigned char) bp->b_addr[3],
+                (unsigned char) bp->b_addr[bp->b_bcount-2],
+                (unsigned char) bp->b_addr[bp->b_bcount-1]);
+#endif
 	iodone (bp);
 	splx (s);
 }

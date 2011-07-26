@@ -22,7 +22,8 @@ int add;
 int newfs;
 int check;
 int fix;
-unsigned long bytes;
+unsigned kbytes;
+unsigned swap_kbytes;
 
 static const char *program_version =
 	"BSD 2.x file system utility, version 1.0\n"
@@ -38,8 +39,8 @@ static struct option program_options[] = {
 	{ "extract",	no_argument,		0,	'x' },
 	{ "check",	no_argument,		0,	'c' },
 	{ "fix",	no_argument,		0,	'f' },
-	{ "new",	no_argument,		0,	'n' },
-	{ "size",	required_argument,	0,	's' },
+	{ "new",	required_argument,	0,	'n' },
+	{ "swap",	required_argument,	0,	's' },
 	{ 0 }
 };
 
@@ -54,19 +55,19 @@ static void print_help (char *progname)
 		"see the GNU General Public License for more details.\n");
 	printf ("\n");
 	printf ("Usage:\n");
-	printf ("  %s filesys.img\n", progname);
-	printf ("  %s --add filesys.img files...\n", progname);
-	printf ("  %s --extract filesys.img\n", progname);
-	printf ("  %s --check [--fix] filesys.img\n", progname);
-	printf ("  %s --new --size=bytes filesys.img\n", progname);
+	printf ("  %s [--verbose] filesys.bin\n", progname);
+	printf ("  %s --add filesys.bin files...\n", progname);
+	printf ("  %s --extract filesys.bin\n", progname);
+	printf ("  %s --check [--fix] filesys.bin\n", progname);
+	printf ("  %s --new=kbytes [--swap=kbytes] filesys.bin\n", progname);
 	printf ("\n");
 	printf ("Options:\n");
 	printf ("  -a, --add          Add files to filesystem.\n");
 	printf ("  -x, --extract      Extract all files.\n");
 	printf ("  -c, --check        Check filesystem, use -c -f to fix.\n");
 	printf ("  -f, --fix          Fix bugs in filesystem.\n");
-	printf ("  -n, --new          Create new filesystem, -s required.\n");
-	printf ("  -s NUM, --size=NUM Size in bytes for created filesystem.\n");
+	printf ("  -n NUM, --new=NUM  Create new filesystem, size in kbytes.\n");
+	printf ("  -s NUM, --swap=NUM Size of swap area in kbytes.\n");
 	printf ("  -v, --verbose      Print verbose information.\n");
 	printf ("  -V, --version      Print version information and then exit.\n");
 	printf ("  -h, --help         Print this message.\n");
@@ -388,7 +389,7 @@ int main (int argc, char **argv)
 	fs_inode_t inode;
 
 	for (;;) {
-		key = getopt_long (argc, argv, "vaxncfs:",
+		key = getopt_long (argc, argv, "vaxn:cfs:",
 			program_options, 0);
 		if (key == -1)
 			break;
@@ -404,6 +405,7 @@ int main (int argc, char **argv)
 			break;
 		case 'n':
 			++newfs;
+			kbytes = strtol (optarg, 0, 0);
 			break;
 		case 'c':
 			++check;
@@ -412,7 +414,7 @@ int main (int argc, char **argv)
 			++fix;
 			break;
 		case 's':
-			bytes = strtol (optarg, 0, 0);
+			swap_kbytes = strtol (optarg, 0, 0);
 			break;
 		case 'V':
 			printf ("%s\n", program_version);
@@ -428,18 +430,18 @@ int main (int argc, char **argv)
 	i = optind;
 	if ((! add && i != argc-1) || (add && i >= argc-1) ||
 	    (extract + newfs + check + add > 1) ||
-	    (newfs && bytes < BSDFS_BSIZE * 10)) {
+	    (newfs && kbytes < BSDFS_BSIZE * 10 / 1024)) {
 		print_help (argv[0]);
 		return -1;
 	}
 
 	if (newfs) {
 		/* Create new filesystem. */
-		if (! fs_create (&fs, argv[i], bytes)) {
+		if (! fs_create (&fs, argv[i], kbytes, swap_kbytes)) {
 			fprintf (stderr, "%s: cannot create filesystem\n", argv[i]);
 			return -1;
 		}
-		printf ("Created filesystem %s - %ld bytes\n", argv[i], bytes);
+		printf ("Created filesystem %s - %u kbytes\n", argv[i], kbytes);
 		fs_close (&fs);
 		return 0;
 	}

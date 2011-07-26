@@ -10,6 +10,7 @@
 #define BSDFS_BSIZE		1024	/* block size */
 #define BSDFS_ROOT_INODE	2	/* root directory in inode 2 */
 #define BSDFS_LOSTFOUND_INODE	3	/* lost+found directory in inode 3 */
+#define BSDFS_SWAP_INODE	4	/* swap file in inode 4 */
 #define BSDFS_INODES_PER_BLOCK	16	/* inodes per block */
 
 #define	NICINOD		100		/* number of superblock inodes */
@@ -52,6 +53,7 @@ typedef struct {
 
 	unsigned 	isize;		/* size in blocks of superblock + I list */
 	unsigned 	fsize;		/* size in blocks of entire volume */
+	unsigned 	swapsz;		/* size in blocks of swap area */
 	unsigned 	nfree;		/* number of in core free blocks (0-100) */
 	unsigned 	free [NICFREE];	/* in core free blocks */
 	unsigned 	ninode;		/* number of in core I nodes (0-100) */
@@ -97,6 +99,21 @@ typedef struct {
 	unsigned long	size;		/* size */
 	unsigned 	addr [7];	/* device addresses constituting file */
 	unsigned 	flags;		/* user defined flags */
+/*
+ * Super-user and owner changeable flags.
+ */
+#define	UF_SETTABLE	0x00ff		/* mask of owner changeable flags */
+#define	UF_NODUMP	0x0001		/* do not dump file */
+#define	UF_IMMUTABLE	0x0002		/* file may not be changed */
+#define	UF_APPEND	0x0004		/* writes to file may only append */
+/*
+ * Super-user changeable flags.
+ */
+#define	SF_SETTABLE	0xff00		/* mask of superuser changeable flags */
+#define	SF_ARCHIVED	0x0100		/* file is archived */
+#define	SF_IMMUTABLE	0x0200		/* file may not be changed */
+#define	SF_APPEND	0x0400		/* writes to file may only append */
+
 	long		atime;		/* time last accessed */
 	long		mtime;		/* time last modified */
 	long		ctime;		/* time created */
@@ -132,7 +149,8 @@ int fs_write (fs_t *fs, unsigned char *data, int bytes);
 int fs_open (fs_t *fs, const char *filename, int writable);
 void fs_close (fs_t *fs);
 int fs_sync (fs_t *fs, int force);
-int fs_create (fs_t *fs, const char *filename, unsigned long bytes);
+int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
+        unsigned swap_kbytes);
 int fs_check (fs_t *fs);
 void fs_print (fs_t *fs, FILE *out);
 

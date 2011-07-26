@@ -47,7 +47,7 @@ int fs_block_free (fs_t *fs, unsigned int bno)
 	int i;
 	unsigned buf [BSDFS_BSIZE / 4];
 
-        if (verbose)
+        if (verbose > 1)
                 printf ("free block %d, total %d\n", bno, fs->nfree);
 	if (fs->nfree >= 100) {
 		buf[0] = fs->nfree;
