@@ -23,7 +23,8 @@ CFLAGS		+= -O
 CFLAGS		+= -DSIM_PIC32
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
-              pic32_dev_spi.o pic32_dev_gpio.o dev_sdcard.o
+              pic32_dev_spi.o pic32_dev_gpio.o dev_sdcard.o \
+              pic32_dev_bmxcon.o
 
 # Ingenic JZ4740.
 #CFLAGS		+= -DSIM_PAVO -D_USE_FDD_

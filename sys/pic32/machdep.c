@@ -106,6 +106,12 @@ startup()
 	U1STASET = PIC32_USTA_URXEN |		/* Receiver Enable */
 		   PIC32_USTA_UTXEN;		/* Transmit Enable */
 
+	/* Setup memory. */
+        BMXPUPBA = 256 << 10;                   /* Kernel Flash memory size */
+        BMXDKPBA = 32 << 10;                    /* Kernel RAM size */
+        BMXDUDBA = BMXDKPBA;                    /* No executable RAM in kernel */
+        BMXDUPBA = BMXDUDBA;                    /* All user RAM is executable */
+
 	/*
 	 * Setup interrupt controller.
 	 */
@@ -140,7 +146,8 @@ startup()
 		*dest++ = 0;
 	}
 
-	physmem = DATA_SIZE;
+        /* Get total RAM size. */
+	physmem = BMXDRMSZ;
 }
 
 /*
@@ -368,6 +375,7 @@ bcopy (const void *src0, void *dst0, size_t nbytes)
 	unsigned *aligned_dst;
 	const unsigned *aligned_src;
 
+//printf ("bcopy (%08x, %08x, %d)\n", src0, dst0, nbytes);
 	/* If the size is small, or either SRC or DST is unaligned,
 	 * then punt into the byte copy loop.  This should be rare.  */
 	if (nbytes >= 4*sizeof(unsigned) &&

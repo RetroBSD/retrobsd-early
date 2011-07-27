@@ -177,7 +177,7 @@ main()
                 p->p_daddr = USER_DATA_START;
                 p->p_ssize = 1024;              /* one kbyte of stack */
                 p->p_saddr = USER_DATA_END - 1024;
-		copyout ((caddr_t) icode, (caddr_t) USER_DATA_START, icodeend - icode);
+		bcopy ((caddr_t) icode, (caddr_t) USER_DATA_START, icodeend - icode);
 		/*
 		 * return goes to location 0 of user init code
 		 * just copied out.

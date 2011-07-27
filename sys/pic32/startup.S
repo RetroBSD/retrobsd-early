@@ -44,8 +44,45 @@
 		.type	_reset_vector_, @function
 _reset_vector_:	.globl	_reset_vector_
 
+		.set	noat
+		move    $1, $zero                       # Clear all regs
+		move    $2, $zero
+		move    $3, $zero
+		move    $4, $zero
+		move    $5, $zero
+		move    $6, $zero
+		move    $7, $zero
+		move    $8, $zero
+		move    $9, $zero
+		move    $10, $zero
+		move    $11, $zero
+		move    $12, $zero
+		move    $13, $zero
+		move    $14, $zero
+		move    $15, $zero
+		move    $16, $zero
+		move    $17, $zero
+		move    $18, $zero
+		move    $19, $zero
+		move    $20, $zero
+		move    $21, $zero
+		move    $22, $zero
+		move    $23, $zero
+		move    $24, $zero
+		move    $25, $zero
+		move    $26, $zero
+		move    $27, $zero
+		move    $28, $zero
+		move    $29, $zero
+		move    $30, $zero
+		move    $31, $zero
+		mtlo	$zero
+		mthi	$zero
+		.set	at
+
 		la	$sp, u_end - 16			# Stack at end of U area
-		jal	main				# Jump to main()
+                la      $a0, main
+		jalr	$a0				# Jump to main()
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
 
 		mfc0	$k0, $C0_STATUS
@@ -186,6 +223,7 @@ restore_regs:
 		lw	$sp, (16+FRAME_SP*4) ($sp)	# Restore stack
 
 		# Return from exception
+		ehb
 		eret					# PC <= EPC; EXL <= 0
 		nop					# just to be safe
 

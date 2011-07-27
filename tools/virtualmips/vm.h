@@ -71,6 +71,7 @@ struct vm_instance {
 
     FILE *lock_fd, *log_fd;     /* Lock/Log file descriptors */
     int debug_level;            /* Debugging Level */
+    u_int trace_address;        /* Trace this address */
     int jit_use;                /* CPUs use JIT */
 
     /* Basic hardware: system CPU */

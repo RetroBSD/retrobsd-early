@@ -59,10 +59,10 @@
  * On PIC32, there are total 512 kbytes of flash and 128 kbytes of RAM.
  * We reserve for kernel 192 kbytes of flash and 32 kbytes of RAM.
  */
-#define FLASH_SIZE		(512*1024)
-#define DATA_SIZE		(128*1024)
+#define FLASH_SIZE              (512*1024)
+#define DATA_SIZE               (128*1024)
 
-#define KERNEL_FLASH_SIZE	(128*1024)
+#define KERNEL_FLASH_SIZE	(192*1024)
 #define KERNEL_DATA_SIZE	(32*1024)
 
 #define USER_FLASH_START	(0x1d000000 + KERNEL_FLASH_SIZE)

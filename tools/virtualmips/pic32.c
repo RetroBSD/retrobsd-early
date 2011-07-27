@@ -141,6 +141,8 @@ static int pic32_init_platform (pic32_t *pic32)
         return (-1);
     if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
         return (-1);
+    if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
+        return (-1);
     if (dev_pic32_spi_init (vm, "PIC32 SPI1", PIC32_SPI1CON,
             PIC32_IRQ_SPI1E) == -1)
         return (-1);
@@ -247,6 +249,7 @@ static void pic32_parse_configure (pic32_t *pic32)
 {
     vm_instance_t *vm = pic32->vm;
     char *start_address = 0;
+    char *trace_address = 0;
     cfg_opt_t opts[] = {
         COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
         COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("debug_level", &(vm->debug_level)),
@@ -254,6 +257,7 @@ static void pic32_parse_configure (pic32_t *pic32)
         CFG_SIMPLE_INT ("boot_flash_address", &pic32->boot_flash_address),
         CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
         CFG_SIMPLE_STR ("start_address", &start_address),
+        CFG_SIMPLE_STR ("trace_address", &trace_address),
         CFG_SIMPLE_INT ("sdcard0_size", &pic32->sdcard0_size),
         CFG_SIMPLE_INT ("sdcard1_size", &pic32->sdcard1_size),
         CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
@@ -268,6 +272,8 @@ static void pic32_parse_configure (pic32_t *pic32)
     cfg_free (cfg);
     if (start_address)
         pic32->start_address = strtoul (start_address, 0, 0);
+    if (trace_address)
+        vm->trace_address = strtoul (trace_address, 0, 0);
 
     VALID_COMMON_CONFIG_OPTION;
 
@@ -295,6 +301,8 @@ static void pic32_parse_configure (pic32_t *pic32)
         printf ("sdcard1_file_name: %s\n", pic32->sdcard1_file_name);
     }
     printf ("start_address: 0x%x\n", pic32->start_address);
+    if (vm->trace_address != 0)
+        printf ("trace_address: 0x%x\n", vm->trace_address);
 }
 
 /*

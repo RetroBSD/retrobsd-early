@@ -705,6 +705,18 @@
 #define PIC32_SPISTAT_SPIBUSY	0x00000800      /* SPI is busy */
 
 /*--------------------------------------
+ * Bus matrix control registers.
+ */
+#define BMXCON          PIC32_R (0x82000)       /* Memory configuration */
+#define BMXDKPBA        PIC32_R (0x82010)       /* Data RAM kernel program base address */
+#define BMXDUDBA        PIC32_R (0x82020)       /* Data RAM user data base address */
+#define BMXDUPBA        PIC32_R (0x82030)       /* Data RAM user program base address */
+#define BMXDRMSZ        PIC32_R (0x82040)       /* Data RAM size */
+#define BMXPUPBA        PIC32_R (0x82050)       /* Program Flash user program base address */
+#define BMXPFMSZ        PIC32_R (0x82060)       /* Program Flash size */
+#define BMXBOOTSZ       PIC32_R (0x82070)       /* Boot Flash size */
+
+/*--------------------------------------
  * Interrupt controller registers.
  */
 #define INTCON		PIC32_R (0x81000)	/* Interrupt Control */

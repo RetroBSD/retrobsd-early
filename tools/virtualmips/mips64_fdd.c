@@ -128,6 +128,30 @@ void fastcall mips64_exec_single_step (cpu_mips_t * cpu,
         cpu->pc += 4;
 }
 
+static void dumpregs (cpu_mips_t *cpu, mips_insn_t insn)
+{
+    printf ("*** %08x: %08x ", cpu->pc, insn);
+    print_insn_mips (cpu->pc, insn, stdout);
+    printf ("\n");
+	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
+		cpu->gpr[8], cpu->gpr[16], cpu->gpr[24], cpu->lo);
+	printf ("at = %8x   t1 = %8x   s1 = %8x   t9 = %8x   hi = %8x\n",
+		cpu->gpr[1], cpu->gpr[9], cpu->gpr[17], cpu->gpr[25], cpu->hi);
+	printf ("v0 = %8x   t2 = %8x   s2 = %8x               status = %8x\n",
+		cpu->gpr[2], cpu->gpr[10], cpu->gpr[18], cpu->cp0.reg[MIPS_CP0_STATUS]);
+	printf ("v1 = %8x   t3 = %8x   s3 = %8x\n",
+		cpu->gpr[3], cpu->gpr[11], cpu->gpr[19]);
+	printf ("a0 = %8x   t4 = %8x   s4 = %8x   gp = %8x   pc = %8x\n",
+		cpu->gpr[4], cpu->gpr[12], cpu->gpr[20], cpu->gpr[28], cpu->pc);
+	printf ("a1 = %8x   t5 = %8x   s5 = %8x   sp = %8x\n",
+		cpu->gpr[5], cpu->gpr[13], cpu->gpr[21], cpu->gpr[29]);
+	printf ("a2 = %8x   t6 = %8x   s6 = %8x   fp = %8x\n",
+		cpu->gpr[6], cpu->gpr[14], cpu->gpr[22], cpu->gpr[30]);
+	printf ("a3 = %8x   t7 = %8x   s7 = %8x   ra = %8x\n",
+		cpu->gpr[7], cpu->gpr[15], cpu->gpr[23], cpu->gpr[31]);
+}
+
+
 /*
  * MIPS64 fetch->decode->dispatch main loop
  */
@@ -161,6 +185,11 @@ start_cpu:
         }
         /* Fetch  the instruction */
         res = mips64_fetch_instruction (cpu, cpu->pc, &insn);
+
+        if (cpu->vm->trace_address == cpu->pc) {
+            /* Trace address. */
+            dumpregs (cpu, insn);
+        }
 
         if (unlikely (res == 1)) {
             /*exception when fetching instruction */

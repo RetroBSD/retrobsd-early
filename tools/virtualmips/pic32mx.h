@@ -16,6 +16,11 @@
 #define _IO_PIC32MX_H
 
 /*--------------------------------------
+ * Peripheral registers.
+ */
+#define PIC32_R(a)              (0x1F800000 + (a))
+
+/*--------------------------------------
  * Interrupt controller registers.
  */
 #define PIC32_INTCON	PIC32_R (0x81000)           /* Interrupt Control */
@@ -176,40 +181,47 @@
 #define PIC32_VECT_USB      45  /* USB */
 
 /*--------------------------------------
- * Peripheral registers.
+ * Bus matrix control registers.
  */
-#define PIC32_R(a)              (0x1F800000 + (a))
+#define PIC32_BMXCON    PIC32_R (0x82000) /* Memory configuration */
+#define PIC32_BMXDKPBA  PIC32_R (0x82010) /* Data RAM kernel program base address */
+#define PIC32_BMXDUDBA  PIC32_R (0x82020) /* Data RAM user data base address */
+#define PIC32_BMXDUPBA  PIC32_R (0x82030) /* Data RAM user program base address */
+#define PIC32_BMXDRMSZ  PIC32_R (0x82040) /* Data RAM size */
+#define PIC32_BMXPUPBA  PIC32_R (0x82050) /* Program Flash user program base address */
+#define PIC32_BMXPFMSZ  PIC32_R (0x82060) /* Program Flash size */
+#define PIC32_BMXBOOTSZ PIC32_R (0x82070) /* Boot Flash size */
 
 /*--------------------------------------
  * UART registers.
  */
-#define PIC32_U1MODE            PIC32_R (0x6000)        /* Mode */
+#define PIC32_U1MODE            PIC32_R (0x6000) /* Mode */
 #define PIC32_U1MODECLR         PIC32_R (0x6004)
 #define PIC32_U1MODESET         PIC32_R (0x6008)
 #define PIC32_U1MODEINV         PIC32_R (0x600C)
-#define PIC32_U1STA             PIC32_R (0x6010)        /* Status and control */
+#define PIC32_U1STA             PIC32_R (0x6010) /* Status and control */
 #define PIC32_U1STACLR          PIC32_R (0x6014)
 #define PIC32_U1STASET          PIC32_R (0x6018)
 #define PIC32_U1STAINV          PIC32_R (0x601C)
-#define PIC32_U1TXREG           PIC32_R (0x6020)        /* Transmit */
-#define PIC32_U1RXREG           PIC32_R (0x6030)        /* Receive */
-#define PIC32_U1BRG             PIC32_R (0x6040)        /* Baud rate */
+#define PIC32_U1TXREG           PIC32_R (0x6020) /* Transmit */
+#define PIC32_U1RXREG           PIC32_R (0x6030) /* Receive */
+#define PIC32_U1BRG             PIC32_R (0x6040) /* Baud rate */
 #define PIC32_U1BRGCLR          PIC32_R (0x6044)
 #define PIC32_U1BRGSET          PIC32_R (0x6048)
 #define PIC32_U1BRGINV          PIC32_R (0x604C)
 
 #ifdef PIC32MX4
-#define PIC32_U2MODE            PIC32_R (0x6200)        /* Mode */
+#define PIC32_U2MODE            PIC32_R (0x6200) /* Mode */
 #define PIC32_U2MODECLR         PIC32_R (0x6204)
 #define PIC32_U2MODESET         PIC32_R (0x6208)
 #define PIC32_U2MODEINV         PIC32_R (0x620C)
-#define PIC32_U2STA             PIC32_R (0x6210)        /* Status and control */
+#define PIC32_U2STA             PIC32_R (0x6210) /* Status and control */
 #define PIC32_U2STACLR          PIC32_R (0x6214)
 #define PIC32_U2STASET          PIC32_R (0x6218)
 #define PIC32_U2STAINV          PIC32_R (0x621C)
-#define PIC32_U2TXREG           PIC32_R (0x6220)        /* Transmit */
-#define PIC32_U2RXREG           PIC32_R (0x6230)        /* Receive */
-#define PIC32_U2BRG             PIC32_R (0x6240)        /* Baud rate */
+#define PIC32_U2TXREG           PIC32_R (0x6220) /* Transmit */
+#define PIC32_U2RXREG           PIC32_R (0x6230) /* Receive */
+#define PIC32_U2BRG             PIC32_R (0x6240) /* Baud rate */
 #define PIC32_U2BRGCLR          PIC32_R (0x6244)
 #define PIC32_U2BRGSET          PIC32_R (0x6248)
 #define PIC32_U2BRGINV          PIC32_R (0x624C)
