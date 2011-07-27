@@ -31,54 +31,50 @@
 #include "map.h"
 
 /*
- * Two SD/MMC disks on SPI2.
+ * Two SD/MMC disks on SPI1.
  * Signals:
- *	G6 - SCK2
- *	G7 - SDI2
- *	G8 - SDO2
- *	C1 - /CS0
- *	C2 - CD0
- *	C3 - WE0
- *	E5 - /CS1
- *	E6 - CD1
- *	E7 - WE1
+ *	D0  - SDO1
+ *	D10 - SCK1
+ *	C4  - SDI1
+ *	A9  - /CS0
+ *	A10 - /CS1
+ *	G7  - CD0
+ *	G6  - WE0
+ *	G9  - CD1
+ *	G8  - WE1
  */
-#define SDADDR		(struct sdreg*) &SPI2CON
+#define SDADDR		((struct sdreg*) &SPI1CON)
 #define NSD		2
-#define	SLOW		250
-#define	FAST		20000
+#define SECTSIZE	512
+#define SLOW		250     /* 250 kHz */
+#define FAST		20000   /* 20 MHz */
 
-#define PIN_CS0		1	/* port C */
-#define PIN_CD0		2	/* port C */
-#define PIN_WE0		3	/* port C */
-#define PIN_CS1		5	/* port E */
-#define PIN_CD1		6	/* port E */
-#define PIN_WE1		7	/* port E */
-
-/*
- * Number of blocks per drive: assume 16 Mbytes.
- */
-#define	NSDBLK		(16*1024*1024/DEV_BSIZE)
+#define PIN_CS0		9	/* port A9 */
+#define PIN_CS1		10	/* port A10 */
+#define PIN_CD0		7	/* port G7 */
+#define PIN_WE0		6	/* port G6 */
+#define PIN_CD1		9	/* port G9 */
+#define PIN_WE1		8	/* port G8 */
 
 /*
  * Definitions for MMC/SDC commands.
  */
-#define CMD_GO_IDLE		0		/* CMD0 */
-#define CMD_SEND_OP_MMC		1		/* CMD1 (MMC) */
-#define	CMD_SEND_OP_SDC		(0x80+41)	/* ACMD41 (SDC) */
+#define CMD_GO_IDLE		0	/* CMD0 */
+#define CMD_SEND_OP_MMC		1	/* CMD1 (MMC) */
 #define CMD_SEND_IF		8
 #define CMD_SEND_CSD		9
 #define CMD_SEND_CID		10
 #define CMD_STOP		12
-#define CMD_STATUS_SDC 		(0x80+13)	/* ACMD13 (SDC) */
+#define CMD_STATUS_SDC 		13	/* ACMD13 (SDC) */
 #define CMD_SET_BLEN		16
 #define CMD_READ_SINGLE		17
 #define CMD_READ_MULTIPLE	18
-#define CMD_SET_BCOUNT		23		/* (MMC) */
-#define	CMD_SET_WBECNT		(0x80+23)	/* ACMD23 (SDC) */
+#define CMD_SET_BCOUNT		23	/* (MMC) */
+#define	CMD_SET_WBECNT		23      /* ACMD23 (SDC) */
 #define CMD_WRITE_SINGLE	24
 #define CMD_WRITE_MULTIPLE	25
-#define CMD_APP			55
+#define	CMD_SEND_OP_SDC		41      /* ACMD41 (SDC) */
+#define CMD_APP			55      /* CMD55 */
 #define CMD_READ_OCR		58
 
 /*
@@ -103,23 +99,6 @@ struct sdreg {
         volatile unsigned brginv;
 };
 
-static inline void
-spi_select (unit, on)
-	int unit, on;
-{
-	if (unit == 0) {
-		if (on)
-			PORTCCLR = 1 << PIN_CS0;
-		else
-			PORTCSET = 1 << PIN_CS0;
-	} else {
-		if (on)
-			PORTECLR = 1 << PIN_CS1;
-		else
-			PORTESET = 1 << PIN_CS1;
-	}
-}
-
 /*
  * Send one byte of data and receive one back at the same time.
  */
@@ -128,11 +107,27 @@ spi_io (byte)
 	unsigned byte;
 {
 	register struct	sdreg *reg = SDADDR;
+        register int count;
 
-	reg->buf = byte;
-	while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
-		continue;
-	return reg->buf;
+	reg->buf = (unsigned char) byte;
+	for (count=0; count<1000; count++)
+                if (reg->stat & PIC32_SPISTAT_SPIRBF)
+                        return (unsigned char) reg->buf;
+        return 0xFF;
+}
+
+static inline void
+spi_select (unit, on)
+	int unit, on;
+{
+	if (on) {
+		PORTACLR = (unit == 0) ? 1 << PIN_CS0 : 1 << PIN_CS1;
+	} else {
+                PORTASET = (unit == 0) ? 1 << PIN_CS0 : 1 << PIN_CS1;
+
+                /* Need additional SPI clocks after deselect */
+                spi_io (0xFF);
+	}
 }
 
 /*
@@ -144,9 +139,9 @@ card_detect (unit)
 	int unit;
 {
 	if (unit == 0) {
-		return ! (PORTC & (1 << PIN_CD0));
+		return ! (PORTG & (1 << PIN_CD0));
 	} else {
-		return ! (PORTE & (1 << PIN_CD1));
+		return ! (PORTG & (1 << PIN_CD1));
 	}
 }
 
@@ -159,9 +154,9 @@ card_writable (unit)
 	int unit;
 {
 	if (unit == 0) {
-		return ! (PORTC & (1 << PIN_WE0));
+		return ! (PORTG & (1 << PIN_WE0));
 	} else {
-		return ! (PORTE & (1 << PIN_WE1));
+		return ! (PORTG & (1 << PIN_WE1));
 	}
 }
 
@@ -195,21 +190,20 @@ card_cmd (cmd, addr)
 	spi_io (addr >> 8);
 	spi_io (addr);
 
-	/* Send cmd checksum. */
-	if (cmd == CMD_GO_IDLE)
-		spi_io (0x95);
-	else if (cmd == CMD_SEND_IF)
-		spi_io (0x87);
-	else
-		spi_io (0x01);
+	/* Send cmd checksum for CMD_GO_IDLE.
+         * For all other commands, CRC is ignored. */
+        if (cmd == CMD_GO_IDLE)
+                spi_io (0x95);
+        else
+                spi_io (0xFF);
 
-	/* Wait for a response, allow for up to 8 bytes delay. */
-	for (i=0; i<8; i++) {
+	/* Wait for a response. */
+	for (i=0; i<200; i++) {
 		reply = spi_io (0xFF);
-		if (reply != 0xFF)
-			return reply;
+		if (! (reply & 0x80))
+		        break;
 	}
-	return 0xFF;
+	return reply;
 }
 
 /*
@@ -233,31 +227,27 @@ card_init (unit)
 	spi_select (unit, 1);
 	reply = card_cmd (CMD_GO_IDLE, 0);
 	spi_select (unit, 0);
+//printf ("card_init: GO_IDLE reply = %d\n", reply);
 	if (reply != 1) {
 		/* It must return Idle. */
+printf ("card_init: bad GO_IDLE reply = %d\n", reply);
 		return 0;
 	}
 
 	/* Send repeatedly SEND_OP until Idle terminates. */
 	for (i=0; ; i++) {
-		if (i >= 3 /*10000*/) {
-			/* Init timed out. */
-			return 0;
-		}
 		spi_select (unit, 1);
+		card_cmd (CMD_APP, 0);
 		reply = card_cmd (CMD_SEND_OP_SDC, 0);
 		spi_select (unit, 0);
-		if (reply <= 1)
+//printf ("card_init: SEND_OP reply = %d\n", reply);
+		if (reply == 0)
 			break;
-	}
-
-	/* Set block length. */
-	spi_select (unit, 1);
-	reply = card_cmd (CMD_SET_BLEN, DEV_BSIZE);
-	spi_select (unit, 0);
-	if (reply != 0) {
-		/* Bad block size. */
-		return 0;
+		if (i >= 10000) {
+			/* Init timed out. */
+printf ("card_init: SEND_OP timed out, reply = %d\n", reply);
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -323,18 +313,23 @@ card_size (unit, nbytes)
  * Return nonzero if successful.
  */
 int
-card_read (unit, bno, data, bcount)
+card_read (unit, offset, data, bcount)
 	int unit;
-	unsigned bno, bcount;
+	unsigned offset, bcount;
 	char *data;
 {
 	int reply, i;
-
+#if 0
+	printf ("sd%d: read block %u, length %u bytes, addr %p\n",
+		unit, offset/DEV_BSIZE, bcount, data);
+#endif
+again:
 	/* Send READ command. */
 	spi_select (unit, 1);
-	reply = card_cmd (CMD_READ_SINGLE, bno * DEV_BSIZE);
+	reply = card_cmd (CMD_READ_SINGLE, offset);
 	if (reply != 0) {
 		/* Command rejected. */
+printf ("card_read: bad READ_SINGLE reply = %d, offset = %08x\n", reply, offset);
 		spi_select (unit, 0);
 		return 0;
 	}
@@ -343,18 +338,19 @@ card_read (unit, bno, data, bcount)
 	for (i=0; ; i++) {
 		if (i >= 25000) {
 			/* Command timed out. */
+printf ("card_read: READ_SINGLE timed out, reply = %d\n", reply);
 			spi_select (unit, 0);
 			return 0;
 		}
 		reply = spi_io (0xFF);
 		if (reply == 0xFE)
 			break;
+if (reply != 0xFF) printf ("card_read: READ_SINGLE reply = %d\n", reply);
 	}
 
 	/* Read data. */
-	if (bcount > DEV_BSIZE)
-                bcount = DEV_BSIZE;
-	while (bcount-- > 0)
+        i = (bcount < SECTSIZE) ? bcount : SECTSIZE;
+	while (i-- > 0)
 		*data++ = spi_io (0xFF);
 
 	/* Ignore CRC. */
@@ -363,6 +359,12 @@ card_read (unit, bno, data, bcount)
 
 	/* Disable the card. */
 	spi_select (unit, 0);
+
+        if (bcount > SECTSIZE) {
+                bcount -= SECTSIZE;
+                offset += SECTSIZE;
+                goto again;
+        }
 	return 1;
 }
 
@@ -371,20 +373,24 @@ card_read (unit, bno, data, bcount)
  * Return nonzero if successful.
  */
 int
-card_write (unit, bno, data)
+card_write (unit, offset, data, bcount)
 	int unit;
-	unsigned bno;
+	unsigned offset, bcount;
 	char *data;
 {
 	unsigned reply, i;
-
+#if 0
+	printf ("sd%d: write block %u, length %u bytes, addr %p\n",
+		unit, offset/DEV_BSIZE, bcount, data);
+#endif
+again:
 	/* Check Write Protect. */
 	if (! card_writable (unit))
 		return 0;
 
 	/* Send WRITE command. */
 	spi_select (unit, 1);
-	reply = card_cmd (CMD_WRITE_SINGLE, bno * DEV_BSIZE);
+	reply = card_cmd (CMD_WRITE_SINGLE, offset);
 	if (reply != 0) {
 		/* Command rejected. */
 		spi_select (unit, 0);
@@ -393,7 +399,7 @@ card_write (unit, bno, data)
 
 	/* Send data. */
 	spi_io (0xFE);
-	for (i=0; i<DEV_BSIZE; i++)
+	for (i=0; i<SECTSIZE; i++)
 		spi_io (*data++);
 
 	/* Send dummy CRC. */
@@ -422,6 +428,12 @@ card_write (unit, bno, data)
 
 	/* Disable the card. */
 	spi_select (unit, 0);
+
+        if (bcount > SECTSIZE) {
+                bcount -= SECTSIZE;
+                offset += SECTSIZE;
+                goto again;
+        }
 	return 1;
 }
 
@@ -439,14 +451,14 @@ sdopen (dev, flag, mode)
 	if (! (reg->con & PIC32_SPICON_MSTEN)) {
 		/* Initialize hardware. */
 		spi_select (0, 0);		// initially keep the SD card disabled
-		TRISCCLR = 1 << PIN_CS0;	// make Card select an output pin
-		TRISECLR = 1 << PIN_CS1;
-
-		reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
-			   PIC32_SPICON_ON;
+		TRISACLR = 1 << PIN_CS0;	// make Card select an output pin
+		TRISACLR = 1 << PIN_CS1;
 	}
-	/* Slow speed: max 40 kbit/sec. */
-	reg->brg = (KHZ / SLOW + 1) / 2 - 1;
+        /* Slow speed: max 40 kbit/sec. */
+	reg->stat = 0;
+        reg->brg = (KHZ / SLOW + 1) / 2 - 1;
+	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
+                PIC32_SPICON_ON;
 
 	if (! card_detect (unit)) {
 		/* No card present. */
@@ -460,7 +472,10 @@ printf ("sd%d: init failed\n", unit);
 	}
 
 	/* Fast speed: up to 25 Mbit/sec allowed. */
+	reg->stat = 0;
 	reg->brg = (KHZ / FAST + 1) / 2 - 1;
+	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
+                PIC32_SPICON_ON;
 	return 0;
 }
 
@@ -487,50 +502,39 @@ sdstrategy (bp)
 	register struct buf *bp;
 {
 	int s, unit, retry;
-	unsigned bcount, blkno;
-	char *addr;
 
 	unit = minor (bp->b_dev);
 	if (unit >= NSD) {
 		bp->b_error = ENXIO;
-bad:		bp->b_flags |= B_ERROR;
+		bp->b_flags |= B_ERROR;
 		iodone (bp);
 		return;
-	}
-	if (bp->b_blkno >= NSDBLK) {
-		bp->b_error = EINVAL;
-		goto bad;
 	}
 #if 0
 	printf ("sd%d: %s block %u, length %u bytes, addr %p\n",
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
 #endif
-	bcount = bp->b_bcount;
-	addr = bp->b_addr;
-	blkno = bp->b_blkno;
-	s = splbio();
-next:
-	for (retry=0; retry<3; retry++) {
-		if (bp->b_flags & B_READ) {
-			if (card_read (unit, blkno, addr, bcount)) {
-ok:				if (bcount <= DEV_BSIZE)
-					goto done;
-				bcount -= DEV_BSIZE;
-				addr += DEV_BSIZE;
-				blkno++;
-				goto next;
-			}
-		} else {
-			if (card_write (unit, blkno, addr)) {
-				goto ok;
-			}
+        s = splbio();
+	for (retry=0; ; retry++) {
+	        if (retry >= 3) {
+                        bp->b_flags |= B_ERROR;
+                        break;
 		}
+		if (bp->b_flags & B_READ) {
+			if (card_read (unit, bp->b_blkno*DEV_BSIZE,
+                            bp->b_addr, bp->b_bcount))
+                                break;
+		} else {
+			if (card_write (unit, bp->b_blkno*DEV_BSIZE,
+                            bp->b_addr, bp->b_bcount))
+                                break;
+		}
+                printf ("sd%d: hard error, %s block %u\n", unit,
+                        (bp->b_flags & B_READ) ? "reading" : "writing",
+                        bp->b_blkno);
 	}
-	printf ("sd%d: hard error, %s block %u\n", unit,
-		(bp->b_flags & B_READ) ? "reading" : "writing", blkno);
-	bp->b_flags |= B_ERROR;
-done:
+        splx (s);
 #if 0
 	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
 		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],
@@ -539,5 +543,4 @@ done:
                 (unsigned char) bp->b_addr[bp->b_bcount-1]);
 #endif
 	iodone (bp);
-	splx (s);
 }

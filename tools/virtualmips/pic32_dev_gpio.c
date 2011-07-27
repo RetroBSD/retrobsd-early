@@ -1,12 +1,12 @@
 /*
  * GPIO emulation for PIC32.
  * Two SD/MMC disks connected to signals:
- *	C1 - /CS0
- *	C2 - CD0
- *	C3 - WE0
- *	E5 - /CS1
- *	E6 - CD1
- *	E7 - WE1
+ *	A9  - /CS0
+ *	G7  - CD0
+ *	G6  - WE0
+ *	A10 - /CS1
+ *	G9  - CD1
+ *	G8  - WE1
  *
  * Copyright (C) 2011 Serge Vakulenko <serge@vak.ru>
  *
@@ -29,12 +29,12 @@
 
 #define GPIO_REG_SIZE   0x1F0
 
-#define MASKC_CS0       (1 << 1)
-#define MASKC_CD0       (1 << 2)
-#define MASKC_WE0       (1 << 3)
-#define MASKE_CS1       (1 << 5)
-#define MASKE_CD1       (1 << 6)
-#define MASKE_WE1       (1 << 7)
+#define MASKA_CS0       (1 << 9)
+#define MASKG_CD0       (1 << 7)
+#define MASKG_WE0       (1 << 6)
+#define MASKA_CS1       (1 << 10)
+#define MASKG_CD1       (1 << 9)
+#define MASKG_WE1       (1 << 8)
 
 struct pic32_gpio_data {
     struct vdevice  *dev;
@@ -113,9 +113,11 @@ void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
     struct pic32_gpio_data *d = dev->priv_data;
 
     if (offset >= GPIO_REG_SIZE) {
+        printf ("gpio: overhit\n");
         *data = 0;
         return NULL;
     }
+    //printf ("gpio: %s offset %#x\n", (op_type == MTS_READ) ? "read" : "write", offset);
     if (op_type == MTS_READ)
         *data = 0;
     switch (offset & 0x1f0) {
@@ -143,6 +145,18 @@ void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
             *data = d->lat_a;
         } else {
 lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
+
+            /* Control SD card 0. */
+            if (d->lat_a & MASKA_CS0)
+                dev_sdcard_select (cpu, 0, 0);
+            else
+                dev_sdcard_select (cpu, 0, 1);
+
+            /* Control SD card 1. */
+            if (d->lat_a & MASKA_CS1)
+                dev_sdcard_select (cpu, 1, 0);
+            else
+                dev_sdcard_select (cpu, 1, 1);
         }
         break;
 
@@ -202,16 +216,6 @@ lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
 
     case PIC32_PORTC & 0x1f0:             /* Port C: read inputs, write outputs */
         if (op_type == MTS_READ) {
-            /* Poll SD card 0 status. */
-            if (dev_sdcard_detect (cpu, 0))
-                d->port_c &= ~MASKC_CD0;
-            else
-                d->port_c |= MASKC_CD0;
-            if (dev_sdcard_writable (cpu, 0))
-                d->port_c &= ~MASKC_WE0;
-            else
-                d->port_c |= MASKC_WE0;
-
             *data = d->port_c;
         } else {
             goto lat_c;
@@ -223,12 +227,6 @@ lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
             *data = d->lat_c;
         } else {
 lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
-
-            /* Control SD card 0. */
-            if (d->lat_c & MASKC_CS0)
-                dev_sdcard_select (cpu, 0, 0);
-            else
-                dev_sdcard_select (cpu, 0, 1);
         }
         break;
 
@@ -288,16 +286,6 @@ lat_d:      d->lat_d = write_op (d->lat_d, *data, offset);
 
     case PIC32_PORTE & 0x1f0:             /* Port E: read inputs, write outputs */
         if (op_type == MTS_READ) {
-            /* Poll SD card 1 status. */
-            if (dev_sdcard_detect (cpu, 1))
-                d->port_e &= ~MASKE_CD1;
-            else
-                d->port_e |= MASKE_CD1;
-            if (dev_sdcard_writable (cpu, 1))
-                d->port_e &= ~MASKE_WE1;
-            else
-                d->port_e |= MASKE_WE1;
-
             *data = d->port_e;
         } else {
             goto lat_e;
@@ -309,12 +297,6 @@ lat_d:      d->lat_d = write_op (d->lat_d, *data, offset);
             *data = d->lat_e;
         } else {
 lat_e:      d->lat_e = write_op (d->lat_e, *data, offset);
-
-            /* Control SD card 1. */
-            if (d->lat_e & MASKE_CS1)
-                dev_sdcard_select (cpu, 1, 0);
-            else
-                dev_sdcard_select (cpu, 1, 1);
         }
         break;
 
@@ -374,6 +356,26 @@ lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
 
     case PIC32_PORTG & 0x1f0:             /* Port G: read inputs, write outputs */
         if (op_type == MTS_READ) {
+            /* Poll SD card 0 status. */
+            if (dev_sdcard_detect (cpu, 0))
+                d->port_g &= ~MASKG_CD0;
+            else
+                d->port_g |= MASKG_CD0;
+            if (dev_sdcard_writable (cpu, 0))
+                d->port_g &= ~MASKG_WE0;
+            else
+                d->port_g |= MASKG_WE0;
+
+            /* Poll SD card 1 status. */
+            if (dev_sdcard_detect (cpu, 1))
+                d->port_g &= ~MASKG_CD1;
+            else
+                d->port_g |= MASKG_CD1;
+            if (dev_sdcard_writable (cpu, 1))
+                d->port_g &= ~MASKG_WE1;
+            else
+                d->port_g |= MASKG_WE1;
+
             *data = d->port_g;
         } else {
             goto lat_g;

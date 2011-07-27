@@ -629,6 +629,7 @@
 /*--------------------------------------
  * SPI registers.
  */
+#if 0
 #define SPI1CON		PIC32_R (0x5800) /* Control */
 #define SPI1CONCLR	PIC32_R (0x5804)
 #define SPI1CONSET	PIC32_R (0x5808)
@@ -642,6 +643,21 @@
 #define SPI1BRGCLR	PIC32_R (0x5834)
 #define SPI1BRGSET	PIC32_R (0x5838)
 #define SPI1BRGINV	PIC32_R (0x583C)
+#else
+#define SPI1CON		PIC32_R (0x5E00) /* Control */
+#define SPI1CONCLR	PIC32_R (0x5E04)
+#define SPI1CONSET	PIC32_R (0x5E08)
+#define SPI1CONINV	PIC32_R (0x5E0C)
+#define SPI1STAT	PIC32_R (0x5E10) /* Status */
+#define SPI1STATCLR	PIC32_R (0x5E14)
+#define SPI1STATSET	PIC32_R (0x5E18)
+#define SPI1STATINV	PIC32_R (0x5E1C)
+#define SPI1BUF		PIC32_R (0x5E20) /* Transmit and receive buffer */
+#define SPI1BRG		PIC32_R (0x5E30) /* Baud rate generator */
+#define SPI1BRGCLR	PIC32_R (0x5E34)
+#define SPI1BRGSET	PIC32_R (0x5E38)
+#define SPI1BRGINV	PIC32_R (0x5E3C)
+#endif
 
 #define SPI2CON		PIC32_R (0x5A00) /* Control */
 #define SPI2CONCLR	PIC32_R (0x5A04)

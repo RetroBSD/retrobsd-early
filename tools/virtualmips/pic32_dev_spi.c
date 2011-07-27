@@ -1,6 +1,6 @@
 /*
  * SPI emulation for PIC32.
- * Two SD/MMC disks attached to SPI2.
+ * Two SD/MMC disks attached to SPI1.
  *
  * Copyright (C) 2011 Serge Vakulenko <serge@vak.ru>
  *
@@ -23,13 +23,6 @@
 #include "dev_sdcard.h"
 
 #define SPI_REG_SIZE    0x40
-
-#define PINC_CS0        1
-#define PINC_CD0        2
-#define PINC_WE0        3
-#define PINE_CS1        5
-#define PINE_CD1        6
-#define PINE_WE1        7
 
 struct pic32_spi_data {
     struct vdevice  *dev;
@@ -120,7 +113,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
             }
         } else {
             d->buf = *data;
-            if (dev->phys_addr == PIC32_SPI2CON)
+            if (dev->phys_addr == PIC32_SPI1CON)
                 d->buf = dev_sdcard_io (cpu, d->buf);
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;

@@ -23,17 +23,20 @@
 #include "dev_sdcard.h"
 
 //#define TRACE       printf
+#ifndef TRACE
 #define TRACE(...)  /*empty*/
+#endif
 
 /*
  * Definitions for MMC/SDC commands.
  */
 #define CMD_GO_IDLE         (0x40+0)    /* CMD0 */
-#define	CMD_SEND_OP_SDC		(0xC0+41)   /* ACMD41 (SDC) */
+#define	CMD_SEND_OP_SDC		(0x40+41)   /* ACMD41 (SDC) */
 #define CMD_SET_BLEN		(0x40+16)
 #define CMD_SEND_CSD		(0x40+9)
 #define CMD_READ_SINGLE		(0x40+17)
 #define CMD_WRITE_SINGLE	(0x40+24)
+#define CMD_APP             (0x40+55)   /* CMD55 */
 
 static void sdcard_read_data (int fd, unsigned offset,
     unsigned char *buf, unsigned blen)
@@ -161,6 +164,15 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             if (d->count == 7)
                 reply = 0x01;
             break;
+        case CMD_APP:                   /* CMD55: application prefix */
+            if (d->count >= 7)
+                break;
+            d->buf [d->count++] = data;
+            if (d->count == 7) {
+                reply = 0;
+                d->count = 0;
+            }
+            break;
         case CMD_SEND_OP_SDC:           /* ACMD41: initialization */
             if (d->count >= 7)
                 break;
@@ -240,7 +252,7 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
                 offset = d->buf[1] << 24 | d->buf[2] << 16 |
                     d->buf[3] << 8 | d->buf[4];
                 TRACE ("sdcard%d: write offset %u\n", d->unit, offset);
-            } else if (d->count == 7+1024+2+2) {
+            } else if (d->count == 7 + d->blen + 2 + 2) {
                 if (d->buf[7] == 0xFE) {
                     /* Accept data */
                     reply = 0x05;
@@ -264,6 +276,6 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             break;
         }
     }
-    //TRACE ("sdcard%d: send %02x, reply %02x\n", d->unit, data, reply);
+    TRACE ("sdcard%d: send %02x, reply %02x\n", d->unit, data, reply);
     return reply;
 }

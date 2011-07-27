@@ -77,6 +77,12 @@ unix:		$(KERNOBJ) using-bootloader.ld
 		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o unix
 		$(OBJDUMP) -d -S $@ > $@.dis
 		$(OBJCOPY) -O binary $@ $@.bin
+		$(OBJCOPY) -O srec $@ $@.srec
+		$(OBJCOPY) -O ihex $@.srec $@.hex
+		chmod -x $@.srec
+
+load:           unix
+		ubw32 -write unix.hex -reset
 
 vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh newvers.sh
