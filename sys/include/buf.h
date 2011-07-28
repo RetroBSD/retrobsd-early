@@ -225,6 +225,3 @@ int geterror (struct buf *bp);
 	(bp)->b_flags |= B_BUSY; \
 	splx(x); \
 }
-
-#define	iodone	biodone
-#define	iowait	biowait

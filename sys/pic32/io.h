@@ -134,8 +134,8 @@ do {								\
 static int inline __attribute__ ((always_inline))
 mips_intr_disable ()
 {
-	int status = mips_read_c0_register (C0_STATUS);
-	asm volatile ("di");
+	int status;
+	asm volatile ("di	%0" : "=r" (status));
 	return status;
 }
 
@@ -154,8 +154,8 @@ mips_intr_restore (int x)
 static int inline __attribute__ ((always_inline))
 mips_intr_enable ()
 {
-	int status = mips_read_c0_register (C0_STATUS);
-	asm volatile ("ei");
+	int status;
+	asm volatile ("ei	%0" : "=r" (status));
 	return status;
 }
 

@@ -351,10 +351,10 @@ biowait(bp)
 	register int s;
 
 	s = splbio();
-	while ((bp->b_flags&B_DONE)==0)
+	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, PRIBIO);
 	splx(s);
-	if (!u.u_error)				/* XXX */
+	if (! u.u_error)			/* XXX */
 		u.u_error = geterror(bp);
 }
 
@@ -366,7 +366,6 @@ void
 biodone(bp)
 	register struct buf *bp;
 {
-
 	if (bp->b_flags & B_DONE)
 		panic("dup biodone");
 	bp->b_flags |= B_DONE;
@@ -428,17 +427,18 @@ bflush(dev)
 
 loop:
 	s = splbio();
-	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++)
-	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
-		if ((bp->b_flags & B_DELWRI) == 0)
-			continue;
-		if (dev == bp->b_dev) {
-			bp->b_flags |= B_ASYNC;
-			notavail(bp);
-			bwrite(bp);
-			splx(s);
-			goto loop;
-		}
+	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++) {
+                for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
+                        if ((bp->b_flags & B_DELWRI) == 0)
+                                continue;
+                        if (dev == bp->b_dev) {
+                                bp->b_flags |= B_ASYNC;
+                                notavail(bp);
+                                bwrite(bp);
+                                splx(s);
+                                goto loop;
+                        }
+                }
 	}
 	splx(s);
 }

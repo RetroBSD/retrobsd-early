@@ -14,7 +14,6 @@
 #include "namei.h"
 #include "proc.h"
 
-struct	buf *blkatoff();
 int	dirchk = 0;
 
 /*
@@ -46,6 +45,41 @@ dirbad (ip, offset, how)
 {
 	printf ("%s: bad dir I=%u off %ld: %s\n",
 		ip->i_fs->fs_fsmnt, ip->i_number, offset, how);
+}
+
+/*
+ * Return buffer with contents of block "offset"
+ * from the beginning of directory "ip".  If "res"
+ * is non-zero, fill it in with a pointer to the
+ * remaining space in the directory.
+ */
+static struct buf *
+blkatoff(ip, offset, res)
+	struct inode *ip;
+	off_t offset;
+	char **res;
+{
+	daddr_t lbn = lblkno(offset);
+	register struct buf *bp;
+	daddr_t bn;
+	char *junk;
+
+	bn = bmap(ip, lbn, B_READ, 0);
+	if (u.u_error)
+		return (0);
+	if (bn == (daddr_t)-1) {
+		dirbad(ip, offset, "hole in dir");
+		return (0);
+	}
+	bp = bread(ip->i_dev, bn);
+	if (bp->b_flags & B_ERROR) {
+		brelse(bp);
+		return (0);
+	}
+	junk = (caddr_t) bp->b_addr;
+	if (res)
+		*res = junk + (u_int)blkoff(offset);
+	return (bp);
 }
 
 /*
@@ -253,13 +287,13 @@ dirloop2:
 	 * which is a way of talking about a directory,
 	 * e.g. like "/." or ".".
 	 */
-	 if (ndp->ni_dent.d_name[0] == '\0') {
+	if (ndp->ni_dent.d_name[0] == '\0') {
 		if (flag != LOOKUP || lockparent) {
 			u.u_error = EISDIR;
 			goto bad;
 		}
 		goto retDP;
-	}
+         }
 
 	/*
 	 * We now have a segment name to search for, and a directory to search.
@@ -1027,41 +1061,6 @@ dirrewrite(dp, ip, ndp)
 			(int) DIRSIZ(&ndp->ni_dent), ndp->ni_offset,
 			IO_UNIT | IO_SYNC, (int*) 0);
 	iput(dp);
-}
-
-/*
- * Return buffer with contents of block "offset"
- * from the beginning of directory "ip".  If "res"
- * is non-zero, fill it in with a pointer to the
- * remaining space in the directory.
- */
-struct buf *
-blkatoff(ip, offset, res)
-	struct inode *ip;
-	off_t offset;
-	char **res;
-{
-	daddr_t lbn = lblkno(offset);
-	register struct buf *bp;
-	daddr_t bn;
-	char *junk;
-
-	bn = bmap(ip, lbn, B_READ, 0);
-	if (u.u_error)
-		return (0);
-	if (bn == (daddr_t)-1) {
-		dirbad(ip, offset, "hole in dir");
-		return (0);
-	}
-	bp = bread(ip->i_dev, bn);
-	if (bp->b_flags & B_ERROR) {
-		brelse(bp);
-		return (0);
-	}
-	junk = (caddr_t) bp->b_addr;
-	if (res)
-		*res = junk + (u_int)blkoff(offset);
-	return (bp);
 }
 
 /*

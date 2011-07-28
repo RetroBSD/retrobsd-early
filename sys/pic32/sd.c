@@ -38,10 +38,6 @@
  *	C4  - SDI1
  *	A9  - /CS0
  *	A10 - /CS1
- *	G7  - CD0
- *	G6  - WE0
- *	G9  - CD1
- *	G8  - WE1
  */
 #define SDADDR		((struct sdreg*) &SPI1CON)
 #define NSD		2
@@ -51,10 +47,6 @@
 
 #define PIN_CS0		9	/* port A9 */
 #define PIN_CS1		10	/* port A10 */
-#define PIN_CD0		7	/* port G7 */
-#define PIN_WE0		6	/* port G6 */
-#define PIN_CD1		9	/* port G9 */
-#define PIN_WE1		8	/* port G8 */
 
 /*
  * Definitions for MMC/SDC commands.
@@ -131,36 +123,6 @@ spi_select (unit, on)
 }
 
 /*
- * SD card connector detection switch.
- * Returns nonzero if the card is present.
- */
-static int
-card_detect (unit)
-	int unit;
-{
-	if (unit == 0) {
-		return ! (PORTG & (1 << PIN_CD0));
-	} else {
-		return ! (PORTG & (1 << PIN_CD1));
-	}
-}
-
-/*
- * SD card write protect detection switch.
- * Returns nonzero if the card is writable.
- */
-static int
-card_writable (unit)
-	int unit;
-{
-	if (unit == 0) {
-		return ! (PORTG & (1 << PIN_WE0));
-	} else {
-		return ! (PORTG & (1 << PIN_WE1));
-	}
-}
-
-/*
  * Send a command and address to SD media.
  * Return response:
  *   FF - timeout
@@ -227,10 +189,9 @@ card_init (unit)
 	spi_select (unit, 1);
 	reply = card_cmd (CMD_GO_IDLE, 0);
 	spi_select (unit, 0);
-//printf ("card_init: GO_IDLE reply = %d\n", reply);
 	if (reply != 1) {
 		/* It must return Idle. */
-printf ("card_init: bad GO_IDLE reply = %d\n", reply);
+//printf ("sd%d: bad GO_IDLE reply = %d\n", unit, reply);
 		return 0;
 	}
 
@@ -240,12 +201,11 @@ printf ("card_init: bad GO_IDLE reply = %d\n", reply);
 		card_cmd (CMD_APP, 0);
 		reply = card_cmd (CMD_SEND_OP_SDC, 0);
 		spi_select (unit, 0);
-//printf ("card_init: SEND_OP reply = %d\n", reply);
 		if (reply == 0)
 			break;
 		if (i >= 10000) {
 			/* Init timed out. */
-printf ("card_init: SEND_OP timed out, reply = %d\n", reply);
+//printf ("card_init: SEND_OP timed out, reply = %d\n", reply);
 			return 0;
 		}
 	}
@@ -384,10 +344,6 @@ card_write (unit, offset, data, bcount)
 		unit, offset/DEV_BSIZE, bcount, data);
 #endif
 again:
-	/* Check Write Protect. */
-	if (! card_writable (unit))
-		return 0;
-
 	/* Send WRITE command. */
 	spi_select (unit, 1);
 	reply = card_cmd (CMD_WRITE_SINGLE, offset);
@@ -460,14 +416,9 @@ sdopen (dev, flag, mode)
 	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                 PIC32_SPICON_ON;
 
-	if (! card_detect (unit)) {
-		/* No card present. */
-printf ("sd%d: no SD/MMC card present\n", unit);
-		return ENODEV;
-	}
 	if (! card_init (unit)) {
 		/* Initialization failed. */
-printf ("sd%d: init failed\n", unit);
+                printf ("sd%d: no SD/MMC card detected\n", unit);
 		return ENODEV;
 	}
 
@@ -504,18 +455,19 @@ sdstrategy (bp)
 	int s, unit, retry;
 
 	unit = minor (bp->b_dev);
-	if (unit >= NSD) {
-		bp->b_error = ENXIO;
-		bp->b_flags |= B_ERROR;
-		iodone (bp);
-		return;
-	}
 #if 0
 	printf ("sd%d: %s block %u, length %u bytes, addr %p\n",
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
 #endif
         s = splbio();
+	if (unit >= NSD) {
+		bp->b_error = ENXIO;
+		bp->b_flags |= B_ERROR;
+		biodone (bp);
+                splx (s);
+		return;
+	}
 	for (retry=0; ; retry++) {
 	        if (retry >= 3) {
                         bp->b_flags |= B_ERROR;
@@ -534,7 +486,11 @@ sdstrategy (bp)
                         (bp->b_flags & B_READ) ? "reading" : "writing",
                         bp->b_blkno);
 	}
+//printf ("+\n");
+	biodone (bp);
+//printf ("*\n");
         splx (s);
+//printf (".\n");
 #if 0
 	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
 		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],
@@ -542,5 +498,4 @@ sdstrategy (bp)
                 (unsigned char) bp->b_addr[bp->b_bcount-2],
                 (unsigned char) bp->b_addr[bp->b_bcount-1]);
 #endif
-	iodone (bp);
 }

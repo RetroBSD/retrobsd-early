@@ -525,11 +525,10 @@ badarg:
 	 */
 	bcopy ((caddr_t) (indir ? cfname : ndp->ni_dent.d_name),
                 (caddr_t) u.u_comm, MAXCOMLEN);
+done:
 //printf ("execve done: PC=%08x, SP=%08x, R4=%08x, R5=%08x, R6=%08x\n",
 //    u.u_frame [FRAME_PC], u.u_frame [FRAME_SP],
 //    u.u_frame [FRAME_R4], u.u_frame [FRAME_R5], u.u_frame [FRAME_R6]);
-
-done:
 	if (bp) {
 		bp->b_flags |= B_AGE;
 		brelse (bp);
