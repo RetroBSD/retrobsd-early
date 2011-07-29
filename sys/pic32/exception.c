@@ -175,6 +175,7 @@ exception (frame)
 	time_t syst;
 	unsigned intstat, irq, compare;
 
+        led_control (LED_KERNEL, 1);
         if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
 		dumpregs (frame);
 		panic ("stack overflow");
@@ -243,7 +244,7 @@ exception (frame)
 		intstat = INTSTAT;
 		if ((intstat & PIC32_INTSTAT_SRIPL_MASK) == 0) {
                         //printf ("=== unexpected interrupt: INTSTAT %08x\n", intstat);
-			return;
+			goto ret;
                 }
 		irq = PIC32_INTSTAT_VEC (intstat);
 
@@ -282,7 +283,7 @@ exception (frame)
                         mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
                         goto out;
                 }
-                return;
+                goto ret;
 
 	/*
 	 * System call.
@@ -372,6 +373,8 @@ out:
 	if (u.u_prof.pr_scale)
 		addupc ((caddr_t) frame [FRAME_PC],
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
+ret:
+        led_control (LED_KERNEL, 0);
 }
 
 /*

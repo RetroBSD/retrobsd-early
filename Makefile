@@ -68,9 +68,9 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-all:		${LIBDIR} ${SRCDIR} root.bin unix.srec
+all:		${LIBDIR} ${SRCDIR} root.bin unix.hex
 
-unix.srec:      sys/pic32/compile/unix.srec
+unix.hex:       sys/pic32/compile/unix.hex
 		cp -p $? $@
 
 lib:		FRC
@@ -80,8 +80,8 @@ lib:		FRC
 ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
-root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
-		tools/elf2aout/elf2aout -s sys/pic32/compile/unix unix
+root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ROOTFILES)
+		tools/elf2aout/elf2aout -s sys/pic32/compile/unix.elf unix
 		rm -f $@
 		$(FSUTIL) -n16384 -s2048 $@
 		$(FSUTIL) -a $@ unix $(ROOTDIRS) $(ROOTFILES)

@@ -1110,7 +1110,7 @@ ttyinput (c, tp)
 	 * From here on down cooked mode character
 	 * processing takes place.
 	 */
-	if (CCEQ(tp->t_erase, c)) {
+	if (CCEQ(tp->t_erase, c) || CCEQ(CTRL('h'), c)) {
 		if (tp->t_rawq.c_cc)
 			ttyrub(unputc(&tp->t_rawq), tp);
 		goto endcase;

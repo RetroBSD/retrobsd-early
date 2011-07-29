@@ -30,7 +30,7 @@
 /*
  * Clock ticks per second.
  */
-#define	HZ		10
+#define	HZ		20
 
 /*
  * System parameter formulae.
@@ -124,6 +124,16 @@ void udelay (unsigned usec);
  * Setup system timer for `hz' timer interrupts per second.
  */
 void clkstart (void);
+
+/*
+ * Control LEDs, installed on the board.
+ */
+#define LED_TTY         8
+#define LED_AUX         4
+#define LED_DISK        2
+#define LED_KERNEL      1
+
+void led_control (int mask, int on);
 
 #endif
 

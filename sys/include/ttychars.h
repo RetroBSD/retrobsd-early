@@ -34,7 +34,7 @@ struct ttychars {
 #define	CCEQ(val,c)     (c == val ? val != _POSIX_VDISABLE : 0)
 
 /* default special characters */
-#define	CERASE	CTRL('h')
+#define	CERASE	0177
 #define	CKILL	CTRL('u')
 #define	CINTR	CTRL('c')
 #define	CQUIT	CTRL('\\')

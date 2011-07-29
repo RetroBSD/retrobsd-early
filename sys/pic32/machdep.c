@@ -129,6 +129,11 @@ startup()
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
 
+        /* UBW32 board: LEDs on PORTE[0:3].
+	 * Configure LED pins as output high. */
+	PORTESET = 0x0f;
+	TRISECLR = 0x0f;
+
 	/* Enable interrupts.  */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
 
@@ -248,6 +253,30 @@ udelay (usec)
 		if ((int) (now - final) >= 0)
 			break;
 	}
+}
+
+/*
+ * Control LEDs, installed on the board.
+ */
+void led_control (int mask, int on)
+{
+        /* UBW32 board: LEDs on PORTE[0:3]. */
+        if (mask & LED_KERNEL) {        /* LED3 on PE0: yellow */
+                if (on) PORTECLR = 1 << 0;
+                else    PORTESET = 1 << 0;
+        }
+        if (mask & LED_DISK) {          /* LED2 on PE1: red */
+                if (on) PORTECLR = 1 << 1;
+                else    PORTESET = 1 << 1;
+        }
+        if (mask & LED_AUX) {           /* LED1 on PE2: white */
+                if (on) PORTECLR = 1 << 2;
+                else    PORTESET = 1 << 2;
+        }
+        if (mask & LED_TTY) {           /* LED USB on PE3: green */
+                if (on) PORTECLR = 1 << 3;
+                else    PORTESET = 1 << 3;
+        }
 }
 
 /*

@@ -57,11 +57,11 @@ KERNOBJ		+= sd.o
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
 
-all:		.deps sys machine unix
-		$(SIZE) unix
+all:		.deps sys machine unix.elf
+		$(SIZE) unix.elf
 
 clean:
-		rm -rf unix core mklog *.o assym.h vers.c genassym .deps unix.bin unix.dis unix.map
+		rm -rf .deps *.o *.elf *.bin *.dis *.map *.hex *.srec core mklog assym.h vers.c genassym
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:
@@ -73,15 +73,16 @@ sys:
 machine:
 		ln -s .. $@
 
-unix:		$(KERNOBJ) using-bootloader.ld
-		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o unix
-		$(OBJDUMP) -d -S $@ > $@.dis
-		$(OBJCOPY) -O binary $@ $@.bin
-		$(OBJCOPY) -O srec $@ $@.srec
-		$(OBJCOPY) -O ihex $@.srec $@.hex
-		chmod -x $@.srec
+unix.elf:	$(KERNOBJ) using-bootloader.ld
+		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o $@
+		chmod -x $@
+		$(OBJDUMP) -d -S $@ > unix.dis
+		$(OBJCOPY) -O binary $@ unix.bin
+		$(OBJCOPY) -O srec $@ unix.srec
+		$(OBJCOPY) -O ihex unix.srec unix.hex
+		chmod -x $@ unix.bin unix.srec
 
-load:           unix
+load:           unix.elf
 		ubw32 -write unix.hex -reset
 
 vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c

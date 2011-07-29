@@ -465,6 +465,7 @@ sdstrategy (bp)
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
 #endif
+        led_control (LED_DISK, 1);
         s = splbio();
 	if (unit >= NSD) {
 		bp->b_error = ENXIO;
@@ -493,6 +494,7 @@ sdstrategy (bp)
 	}
 	biodone (bp);
         splx (s);
+        led_control (LED_DISK, 0);
 #if 0
 	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
 		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],

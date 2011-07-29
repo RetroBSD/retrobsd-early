@@ -849,9 +849,10 @@ register struct psout *a;
 {
 	static char	clist[] = "0SWRIZT";
 
-	printf("%3o %c%6u%6u%6u%4d%4d%4d%7o%4d",
-0377 & a->o_flag,clist[a->o_stat],a->o_uid,a->o_pid,
-a->o_ppid,a->o_cpu & 0377,a->o_pri,a->o_nice,a->o_addr0,a->o_size);
+	printf("%3o %c%6u%6u%6u%4d%4d%4d%#7x%4d",
+                0377 & a->o_flag, clist[a->o_stat], a->o_uid, a->o_pid,
+                a->o_ppid, a->o_cpu & 0377, a->o_pri, a->o_nice,
+                a->o_addr0, a->o_size);
 	if (nflg)
 		if (a->o_wchan)
 			printf("%*.*o",NNAMESIZ, NNAMESIZ, a->o_wchan);

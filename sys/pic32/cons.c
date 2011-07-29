@@ -186,6 +186,7 @@ cnintr (dev)
 
         /* Transmit */
         if (reg->sta & PIC32_USTA_TRMT) {
+                led_control (LED_TTY, 0);
                 IECCLR(0) = 1 << PIC32_IRQ_U1TX;
                 IFSCLR(0) = 1 << PIC32_IRQ_U1TX;
                 if (tp->t_state & TS_BUSY) {
@@ -210,6 +211,7 @@ out:		/* Disable transmit_interrupt. */
 			IECCLR(0) = 1 << PIC32_IRQ_U1TX;
 		else
 			IECCLR(1) = 1 << (PIC32_IRQ_U2TX-32);
+                led_control (LED_TTY, 0);
 		splx (s);
 		return;
 	}
@@ -227,6 +229,7 @@ out:		/* Disable transmit_interrupt. */
 		IECSET(0) = 1 << PIC32_IRQ_U1TX;
 	else
 		IECSET(1) = 1 << (PIC32_IRQ_U2TX-32);
+        led_control (LED_TTY, 1);
 	splx (s);
 }
 
@@ -254,6 +257,7 @@ again:
                 cnintr (0);
 		goto again;
         }
+        led_control (LED_TTY, 1);
 	U1TXREG = c;
 	if (c == '\n')
 		cnputc('\r');
@@ -265,5 +269,6 @@ again:
 
         /* Clear TX interrupt. */
 	IECCLR(0) = 1 << PIC32_IRQ_U1TX;
+        led_control (LED_TTY, 0);
 	splx (s);
 }
