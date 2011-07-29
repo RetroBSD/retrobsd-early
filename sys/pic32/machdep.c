@@ -82,12 +82,16 @@ void
 startup()
 {
 	extern void _etext(), _exception_base_();
-	extern unsigned __data_start, _edata, _end;
+	extern unsigned __data_start, _edata;
 
 	/* Initialize STATUS register: master interrupt disable.
 	 * Setup interrupt vector base. */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_BEV);
 	mips_write_c0_select (C0_EBASE, 1, _exception_base_);
+	mips_write_c0_register (C0_STATUS, ST_CU0);
+
+	/* Set vector spacing: not used really, but must be nonzero. */
+	mips_write_c0_select (C0_INTCTL, 1, 32);
 
 	/* Clear CAUSE register: use special interrupt vector 0x200. */
 	mips_write_c0_register (C0_CAUSE, CA_IV);
@@ -128,6 +132,9 @@ startup()
 	/* Enable interrupts.  */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
 
+	/* Initialize .data + .bss segments by zeroes. */
+        bzero (&__data_start, KERNEL_DATA_SIZE - 96);
+
 	/* Copy the .data image from flash to ram.
 	 * Linker places it at the end of .text segment. */
 	unsigned *src = (unsigned*) &_etext;
@@ -137,15 +144,16 @@ startup()
 		/*printf ("copy %08x from (%08x) to (%08x)\n", *src, src, dest);*/
 		*dest++ = *src++;
 	}
-
+#if 0
 	/* Initialize .bss segment by zeroes. */
+	extern _end;
 	dest = &_edata;
 	limit = &_end;
 	while (dest < limit) {
 		/*printf ("clear (%08x)\n", dest);*/
 		*dest++ = 0;
 	}
-
+#endif
         /* Get total RAM size. */
 	physmem = BMXDRMSZ;
 }

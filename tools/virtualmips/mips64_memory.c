@@ -1198,6 +1198,8 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
     case 0x02:
     case 0x03:                 /* kuseg */
 #ifdef SIM_PIC32
+        if (vaddr == 0)
+            goto err_undef;
         map.vaddr = vaddr & MIPS_MIN_PAGE_MASK;
         map.paddr = map.vaddr & 0x1ffff;
         map.mapped = FALSE;

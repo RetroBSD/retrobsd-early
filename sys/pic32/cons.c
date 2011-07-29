@@ -41,6 +41,11 @@ struct uartreg {
 
 struct tty cnttys [NKL];
 
+static unsigned speed_bps [NSPEEDS] = {
+    0,      50,     75,     150,    200,    300,    600,    1200,
+    1800,   2400,   4800,   9600,   19200,  38400,  57600,  115200,
+};
+
 void cnstart (struct tty *tp);
 
 /*ARGSUSED*/
@@ -52,6 +57,7 @@ cnopen (dev, flag, mode)
 	register struct tty *tp;
 	register int d;
 
+//printf ("cnopen (dev=%#x, flag=%d, mode=%d)\n", dev, flag, mode);
 	d = minor(dev);
 	tp = &cnttys[d];
 	if (d==0 && ! tp->t_addr)
@@ -71,8 +77,9 @@ cnopen (dev, flag, mode)
 	if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
 		return (EBUSY);
 
-	reg->brg = PIC32_BRG_BAUD (KHZ * 1000, tp->t_ospeed);
+//printf ("cnopen: tp->t_ospeed = %d\n", speed_bps [tp->t_ospeed]);
 	reg->sta = 0;
+	reg->brg = PIC32_BRG_BAUD (KHZ * 1000, speed_bps [tp->t_ospeed]);
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR | PIC32_UMODE_ON;
 	reg->staset = PIC32_USTA_URXEN | PIC32_USTA_UTXEN;
 
@@ -168,6 +175,7 @@ cnintr (dev)
 	register struct uartreg *reg = (struct uartreg *)tp->t_addr;
 
         /* Receive */
+        IFSCLR(0) = (1 << PIC32_IRQ_U1RX) | (1 << PIC32_IRQ_U1E);
 	if (reg->sta & PIC32_USTA_URXDA) {
                 c = reg->rxreg;
                 if (linesw[tp->t_line].l_rint)
@@ -177,10 +185,14 @@ cnintr (dev)
 		reg->staclr = PIC32_USTA_OERR;
 
         /* Transmit */
-        if ((reg->sta & PIC32_USTA_TRMT) && (tp->t_state & TS_BUSY)) {
-                tp->t_state &= ~TS_BUSY;
-                if (linesw[tp->t_line].l_start)
-                        (*linesw[tp->t_line].l_start) (tp);
+        if (reg->sta & PIC32_USTA_TRMT) {
+                IECCLR(0) = 1 << PIC32_IRQ_U1TX;
+                IFSCLR(0) = 1 << PIC32_IRQ_U1TX;
+                if (tp->t_state & TS_BUSY) {
+                        tp->t_state &= ~TS_BUSY;
+                        if (linesw[tp->t_line].l_start)
+                                (*linesw[tp->t_line].l_start) (tp);
+                }
         }
 }
 

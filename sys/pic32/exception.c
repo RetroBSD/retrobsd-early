@@ -104,9 +104,12 @@ dumpregs (frame)
 	else
 		printf ("%d\n", cause >> 2 & 31);
 
-	printf ("*** badvaddr = 0x%08x\n",
-		mips_read_c0_register (C0_BADVADDR));
-
+	switch (cause & CA_EXC_CODE) {
+	case CA_AdEL:
+	case CA_AdES:
+                printf ("*** badvaddr = 0x%08x\n",
+                        mips_read_c0_register (C0_BADVADDR));
+        }
 	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
 		frame [FRAME_R8], frame [FRAME_R16],
 		frame [FRAME_R24], frame [FRAME_LO]);
@@ -255,20 +258,22 @@ exception (frame)
                         } while ((int) (compare - mips_read_c0_register (C0_COUNT)) < 0);
 
                         hardclock ((caddr_t) frame [FRAME_PC], status);
-                        //IECSET(0) = 1 << PIC32_IRQ_CT;
+                        IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         break;
                 case 24:                /* UART1 */
                         //printf ("=== uart1\n");
-                        IECCLR(0) = 1 << PIC32_IRQ_U1TX;
                         cnintr (0);
                         break;
                 default:
                         /* Disable the irq, to avoid loops */
                         printf ("=== irq %u\n", irq);
-                        if (irq < PIC32_VECT_CN)
+                        if (irq < PIC32_VECT_CN) {
                                 IECCLR(0) = mask_by_vector [irq];
-                        else
+                                IFSCLR(0) = mask_by_vector [irq];
+                        } else {
                                 IECCLR(1) = mask_by_vector [irq];
+                                IFSCLR(1) = mask_by_vector [irq];
+                        }
                         break;
                 }
 		if ((cause & USER) && runrun) {

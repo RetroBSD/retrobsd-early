@@ -113,8 +113,10 @@ copen (mode, cmode, fname)
 
 //printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fname);
 	fp = falloc();
-	if (fp == NULL)
+	if (fp == NULL) {
+//printf ("copen: falloc failed, errno=%d\n", u.u_error);
 		return(u.u_error);	/* XXX */
+        }
 	flags = FFLAGS(mode);	/* convert from open to kernel flags */
 	fp->f_flag = flags & FMASK;
 	fp->f_type = DTYPE_INODE;
@@ -137,7 +139,7 @@ copen (mode, cmode, fname)
 	 */
 	error = vn_open(ndp, flags, cmode);
 	if (error) {
-//printf ("copen errno=%d\n", error);
+//printf ("copen: vn_open failed, errno=%d\n", error);
 		fp->f_count = 0;
 		if ((error == ENODEV || error == ENXIO) &&
 		    u.u_dupfd >= 0 &&
@@ -162,10 +164,12 @@ copen (mode, cmode, fname)
 			type |= LOCK_NB;
 		error = ino_lock(fp, type);
 		if (error) {
+//printf ("copen: ino_lock failed, errno=%d\n", error);
 			closef(fp);
 			u.u_ofile[indx] = NULL;
 		}
 	}
+//printf ("copen returned errno=%d\n", error);
 	return(error);
 }
 

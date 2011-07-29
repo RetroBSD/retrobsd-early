@@ -132,6 +132,7 @@ int mips64_reset (cpu_mips_t * cpu)
 {
     cpu->cp0.reg[MIPS_CP0_STATUS] = MIPS_CP0_STATUS_BEV;
     cpu->cp0.reg[MIPS_CP0_CAUSE] = 0;
+    cpu->cp0.ebase_reg = 0x80000000;
 
     /* Clear the complete TLB */
     memset (&cpu->cp0.tlb, 0, MIPS64_TLB_MAX_ENTRIES * sizeof (tlb_entry_t));
@@ -342,14 +343,9 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
     /*TODO: RESET SOFT RESET AND NMI EXCEPTION */
     cp0->reg[MIPS_CP0_STATUS] &= ~MIPS_CP0_STATUS_ERL;
 
-#if SIM_PIC32
     if (cpu->vm->debug_level > 2) {
         printf ("        exception %u at %08x\n", exc_code, cpu->pc);
     }
-
-    /* TODO */
-    new_pc = 0x9d005200;
-#else
     if (cp0->reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_BEV) {
         if ((exc_code == MIPS_CP0_CAUSE_TLB_LOAD)
             || (exc_code == MIPS_CP0_CAUSE_TLB_SAVE)) {
@@ -367,6 +363,10 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
             new_pc = 0xffffffffbfc00380ULL;
 
     } else {
+#if SIM_PIC32
+        /* TODO */
+        new_pc = cp0->ebase_reg + 0x200;
+#else
         if ((exc_code == MIPS_CP0_CAUSE_TLB_LOAD)
             || (exc_code == MIPS_CP0_CAUSE_TLB_SAVE)) {
             if (cp0->reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL)
@@ -380,8 +380,8 @@ void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot)
                 new_pc = 0xffffffff80000180ULL;
         } else
             new_pc = 0xffffffff80000180ULL;
-    }
 #endif
+    }
 
     cpu->pc = (m_va_t) new_pc;
 

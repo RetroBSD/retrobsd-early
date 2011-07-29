@@ -111,10 +111,7 @@ _exception_vector_: .globl _exception_vector_
 		# Exception in user mode: switch stack.
 		#
 user_exception:
-		la	$sp, u_end-FRAME_WORDS*4-16	# Stack at end of U area
-		j	save_regs
-		nop
-
+		la	$sp, u_end                      # Stack at end of U area
 kernel_exception:
 		addi    $sp, -16-FRAME_WORDS*4		# Allocate space for registers
 save_regs:

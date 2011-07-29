@@ -79,12 +79,36 @@ static inline m_cp0_reg_t mips64_cp0_get_reg_fast (cpu_mips_t * cpu,
     case MIPS_CP0_RANDOM:
         return (mips64_cp0_get_random_reg (cpu));
     case MIPS_CP0_CONFIG:
-        ASSERT ((1 << sel) & (cp0->config_usable),
-            "Unimplemented configure register sel 0x%x\n", sel);
+        if (! ((1 << sel) & cp0->config_usable)) {
+unimpl:     fprintf (stderr,
+                "Reading unimplemented CP0 register %s\n",
+                cp0reg_name (cp0_reg, sel));
+            return 0;
+        }
         return cp0->config_reg[sel];
+
     case MIPS_CP0_STATUS:
+        switch (sel) {
+        case 0:                         /* Status */
+            return cp0->reg[cp0_reg];
+        case 1:                         /* IntCtl */
+            return cp0->intctl_reg;
+        }
+        goto unimpl;
+
+    case MIPS_CP0_PRID:
+        switch (sel) {
+        case 0:                         /* PRId */
+            return cp0->reg[cp0_reg];
+        case 1:                         /* EBase */
+            return cp0->ebase_reg;
+        }
+        goto unimpl;
+
     default:
-        return (cp0->reg[cp0_reg]);
+        if (sel != 0)
+            goto unimpl;
+        return cp0->reg[cp0_reg];
     }
 }
 
@@ -134,72 +158,75 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
 {
     mips_cp0_t *cp0 = &cpu->cp0;
 
-    if (cpu->vm->debug_level > 2)
-//    if (cp0_reg == 14)
-    {
+    if (cpu->vm->debug_level > 2) {
         extern const char *cp0reg_name (unsigned cp0reg, unsigned sel);
         printf ("        %s = %08x\n", cp0reg_name (cp0_reg, sel), val);
         fflush (stdout);
     }
     switch (cp0_reg) {
     case MIPS_CP0_STATUS:
-    case MIPS_CP0_CAUSE:
-        cp0->reg[cp0_reg] = val;
+        switch (sel) {
+        case 0:                         /* Status */
+            cp0->reg[cp0_reg] = val;
+            break;
+        case 1:                         /* IntCtl */
+            cp0->intctl_reg = val;
+            break;
+        default:
+            goto unimpl;
+        }
         break;
 
-    case MIPS_CP0_TLB_HI:
-        cp0->reg[cp0_reg] = val;
-        break;
-
-    case MIPS_CP0_TLB_LO_0:
-    case MIPS_CP0_TLB_LO_1:
-        cp0->reg[cp0_reg] = val;
-        break;
-
-    case MIPS_CP0_PAGEMASK:
-        cp0->reg[cp0_reg] = val;
-        break;
-
-    case MIPS_CP0_INDEX:
-        cp0->reg[cp0_reg] = val;
+    case MIPS_CP0_PRID:
+        switch (sel) {
+        case 0:                         /* PRId */
+            /* read only register */
+            break;
+        case 1:                         /* EBase */
+            cp0->ebase_reg = (val & 0x3ffff000) | 0x80000000;
+            break;
+        default:
+            goto unimpl;
+        }
         break;
 
     case MIPS_CP0_RANDOM:
-    case MIPS_CP0_PRID:
+    case MIPS_CP0_WIRED:
         /* read only registers */
+        if (sel != 0)
+            goto unimpl;
         break;
 
     case MIPS_CP0_COMPARE:
-        //Write to compare will clear timer interrupt
+        // Write to compare will clear timer interrupt
+        if (sel != 0)
+            goto unimpl;
         clear_timer_irq (cpu);
         cp0->reg[cp0_reg] = val;
         break;
 
-    case MIPS_CP0_EPC:
-        cp0->reg[MIPS_CP0_EPC] = val;
-        break;
-
     case MIPS_CP0_CONFIG:
-        ASSERT ((1 << sel) & (cp0->config_usable),
-            "Unimplemented configure register sel 0x%x\n", sel);
-        ASSERT (((sel != 1) && (sel != 2)
-                && (sel != 3)),
-            "Writing to read only configure register sel 0x%x\n", sel);
+        if (! ((1 << sel) & cp0->config_usable))
+            goto unimpl;
+        if (sel != 1 && sel != 2 && sel != 3)
+            fprintf (stderr,
+                "Writing to read only configure register sel %u\n", sel);
         if (sel == 0) {
-            /*only bit 0:2 is writable */
-            val &= 0x3;
+            /* only bits 0:2 are writable */
+            val &= 3;
             cp0->config_reg[sel] &= 0xfffffffc;
             cp0->config_reg[sel] += val;
         } else
             cp0->config_reg[sel] = val;
-
-        break;
-
-    case MIPS_CP0_WIRED:
-        /* read only registers */
         break;
 
     default:
+        if (sel != 0) {
+unimpl:     fprintf (stderr,
+                "Writing to unimplemented CP0 register %s\n",
+                cp0reg_name (cp0_reg, sel));
+            break;
+        }
         cp0->reg[cp0_reg] = val;
     }
 }

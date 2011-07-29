@@ -27,10 +27,8 @@ ADDRESS	alloc(nbytes)
 	LOOP	INT		c=0;
 		REG BLKPTR	p = blokp;
 		REG BLKPTR	q;
-		REP	IF !busy(p)
-			THEN	WHILE !busy(q = p->word)
-                                DO
-                                        IF q == 0 THEN break FI
+		REP	IF p!=0 ANDF !busy(p)
+			THEN	WHILE (q = p->word)!=0 ANDF !busy(q) DO
                                         p->word = q->word
                                 OD
 				IF ADR(q)-ADR(p) >= rbytes
@@ -42,7 +40,8 @@ ADDRESS	alloc(nbytes)
 					return(ADR(p+1));
 				FI
 			FI
-			q = p; p = BLK(Rcheat(p->word)&~BUSY);
+			q = p;
+                        IF p!=0 THEN p = BLK(Rcheat(p->word) & ~BUSY) FI
 		PER	p>q ORF (c++)==0 DONE
 		addblok(rbytes);
 	POOL

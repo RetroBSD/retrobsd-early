@@ -68,7 +68,7 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-all:		${LIBDIR} ${SRCDIR} root.bin unix.srec #swap.bin
+all:		${LIBDIR} ${SRCDIR} root.bin unix.srec
 
 unix.srec:      sys/pic32/compile/unix.srec
 		cp -p $? $@
@@ -88,8 +88,8 @@ root.bin:	$(FSUTIL) sys/pic32/compile/unix $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 
-swap.bin:
-		dd bs=1k count=2048 < /dev/zero > $@
+sdcard:         root.bin
+		sudo dd if=root.bin of=/dev/sdb
 
 $(FSUTIL):
 		cd tools/fsutil; make ${MFLAGS}

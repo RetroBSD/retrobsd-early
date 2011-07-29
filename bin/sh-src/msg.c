@@ -49,7 +49,7 @@ MSG	ps2name		= "PS2";
 /* string constants */
 MSG	nullstr		= "";
 MSG	sptbnl		= " \t\n";
-MSG	defpath		= ":/bin:/usr/bin";
+MSG	defpath		= ":/bin:/sbin";
 MSG	colon		= ": ";
 MSG	minus		= "-";
 MSG	endoffile	= "end of file";

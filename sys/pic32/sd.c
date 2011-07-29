@@ -305,17 +305,19 @@ printf ("card_read: READ_SINGLE timed out, reply = %d\n", reply);
 		reply = spi_io (0xFF);
 		if (reply == 0xFE)
 			break;
-if (reply != 0xFF) printf ("card_read: READ_SINGLE reply = %d\n", reply);
+//if (reply != 0xFF) printf ("card_read: READ_SINGLE reply = %d\n", reply);
 	}
 
 	/* Read data. */
-        i = (bcount < SECTSIZE) ? bcount : SECTSIZE;
-	while (i-- > 0)
-		*data++ = spi_io (0xFF);
-
+	for (i=0; i<SECTSIZE; i++) {
+                if (i < bcount)
+                        *data++ = spi_io (0xFF);
+                else
+                        spi_io (0xFF);
+        }
 	/* Ignore CRC. */
-        /* spi_io (0xFF); */
-        /* spi_io (0xFF); */
+        spi_io (0xFF);
+        spi_io (0xFF);
 
 	/* Disable the card. */
 	spi_select (unit, 0);
@@ -355,9 +357,12 @@ again:
 
 	/* Send data. */
 	spi_io (0xFE);
-	for (i=0; i<SECTSIZE; i++)
-		spi_io (*data++);
-
+	for (i=0; i<SECTSIZE; i++) {
+	        if (i < bcount)
+                        spi_io (*data++);
+                else
+                        spi_io (0xFF);
+        }
 	/* Send dummy CRC. */
 	spi_io (0xFF);
 	spi_io (0xFF);
@@ -486,11 +491,8 @@ sdstrategy (bp)
                         (bp->b_flags & B_READ) ? "reading" : "writing",
                         bp->b_blkno);
 	}
-//printf ("+\n");
 	biodone (bp);
-//printf ("*\n");
         splx (s);
-//printf (".\n");
 #if 0
 	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
 		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],

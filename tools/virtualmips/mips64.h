@@ -283,6 +283,7 @@ enum {
     MIPS_KSEG1,
     MIPS_KSEG2,
 };
+
 /* Memory operations */
 enum {
     MIPS_MEMOP_LOOKUP = 0,
@@ -350,6 +351,8 @@ typedef struct {
     m_cp0_reg_t reg[MIPS64_CP0_REG_NR];
     /*because configure has sel 0-7, seperate it to reg */
     m_cp0_reg_t config_reg[MIPS64_CP0_CONFIG_REG_NR];
+    m_cp0_reg_t intctl_reg;
+    m_cp0_reg_t ebase_reg;
     m_uint8_t config_usable;    /*if configure register sel N is useable, set the bit in config_usable to 1 */
 
     tlb_entry_t tlb[MIPS64_TLB_MAX_ENTRIES];
@@ -486,5 +489,7 @@ void clear_timer_irq (cpu_mips_t *cpu);
 
 /* Print the mips instruction at address MEMADDR in debugged memory. */
 int print_insn_mips (unsigned memaddr, unsigned long int word, FILE *stream);
+
+const char *cp0reg_name (unsigned cp0reg, unsigned sel);
 
 #endif

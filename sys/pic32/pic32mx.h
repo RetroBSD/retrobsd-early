@@ -32,6 +32,7 @@
 #define C0_COUNT	9	/* Processor cycle count */
 #define C0_COMPARE	11	/* Timer interrupt control */
 #define C0_STATUS	12	/* Processor status and control */
+#define C0_INTCTL	12	/* Select 1: interrupt control */
 #define C0_CAUSE	13	/* Cause of last exception */
 #define C0_EPC		14	/* Program counter at last exception */
 #define C0_PRID		15	/* Processor identification (read only) */
