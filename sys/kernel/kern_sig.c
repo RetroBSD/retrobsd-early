@@ -287,7 +287,7 @@ psignal(p, sig)
 		 * so it can discover the signal in issignal() and stop
 		 * for the parent.
 		 */
-		if (p->p_flag& P_TRACED)
+		if (p->p_flag & P_TRACED)
 			goto run;
 
 		/*

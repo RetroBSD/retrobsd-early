@@ -50,11 +50,7 @@ ENTRY(sigaction)
  * When the kernel transfers control to sigtramp the stack looks like:
  *
  *	-------------------------
- *	| sigcontext structure	| SIG_SC = sp + 16
- *	|-----------------------|
- *	| unused                |
- *	|-----------------------|
- *	| pointer to sigcontext	|
+ *	| sigcontext structure	| SIG_SC = sp + 8
  *	|-----------------------|
  *	| code			|
  *	|-----------------------|
@@ -75,11 +71,11 @@ ENTRY(sigaction)
 sigtramp:
 		lw      $a0, 0($sp)             # arg1: signal number
 		lw      $a1, 4($sp)             # arg2: code
-		lw      $a2, 8($sp)             # arg3: pointer to sigcontext
+                addiu   $a2, $sp, 8             # arg3: address of sigcontext
                 jalr    $v0, $ra                # transfer to signal action routine
 
-                move	$a0, $sp                # compute address of sigcontext
-                addiu   $a0, 16
+                move	$a0, $sp
+                addiu   $a0, $sp, 8             # compute address of sigcontext
                 syscall	SYS_sigreturn		# attempt the sigreturn
                 nop
                 nop
