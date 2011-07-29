@@ -31,31 +31,43 @@
  * SUCH DAMAGE.
  */
 #include <string.h>
+#include <sys/sysctl.h>
+#include <machine/cpu.h>
 
 const char *
-strerror(num)
-	int num;
+strerror(errnum)
+	register int errnum;
 {
-#define	UPREFIX	"Unknown error: "
-	static char ebuf[30] = UPREFIX;		/* 32-bit number + slop */
-	register unsigned int errnum;
-	register char *p, *t;
-	const char *q;
-	char tmp[20];
+        static char msgstr[64];
+	int mib[3];
+	size_t size;
 
-	errnum = num;				/* convert to unsigned */
-	if (q = syserrlst(errnum))
-		return(q);
+        /* Read an error message from kernel to a static buffer. */
+	mib[0] = CTL_MACHDEP;
+	mib[1] = CPU_ERRMSG;
+	mib[2] = errnum;
+	size = sizeof (msgstr);
+	if (sysctl(mib, 3, msgstr, &size, NULL, 0) == -1) {
+                /* Do this by hand, so we don't include stdio(3). */
+                static const char unknown[] = "Unknown error: ";
+                register char *p, *t;
+                const char *q;
+                char tmp[20];
 
-	/* Do this by hand, so we don't include stdio(3). */
-	t = tmp;
-	do {
-		*t++ = '0' + (errnum % 10);
-	} while (errnum /= 10);
-	for (p = ebuf + sizeof(UPREFIX) - 1;;) {
-		*p++ = *--t;
-		if (t <= tmp)
-			break;
-	}
-	return(ebuf);
+                t = tmp;
+                do {
+                        *t++ = '0' + ((unsigned)errnum % 10);
+                        errnum = (unsigned)errnum / 10;
+                } while (errnum != 0);
+
+                p = msgstr;
+                for (q=unknown; *q; q++) {
+                        *p++ = *q;
+                }
+                do {
+                        *p++ = *--t;
+                } while (t > tmp);
+                *p = 0;
+        }
+	return msgstr;
 }

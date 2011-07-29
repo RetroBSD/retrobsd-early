@@ -25,7 +25,7 @@ STDSRC		= abort.c alarm.c atoi.c atol.c calloc.c closedir.c crypt.c \
 		  setenv.c siglist.c signal.c siginterrupt.c \
 		  sigsetops.c \
 		  sleep.c strcasecmp.c strftime.c swab.c sysctl.c syslog.c system.c \
-		  strcat.c strncat.c strcpy.c strncpy.c strncmp.c syserrlst.c \
+		  strcat.c strncat.c strcpy.c strncpy.c strncmp.c \
 		  telldir.c time.c timezone.c ttyname.c ttyslot.c ualarm.c usleep.c \
 		  strdup.c uname.c wait.c wait3.c waitpid.c
 STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
@@ -42,7 +42,7 @@ STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
 		  setenv.o siglist.o signal.o siginterrupt.o \
 		  sigsetops.o \
 		  sleep.o strcasecmp.o strftime.o swab.o sysctl.o syslog.o system.o \
-		  strcat.o strncat.o strcpy.o strncpy.o strncmp.o syserrlst.o \
+		  strcat.o strncat.o strcpy.o strncpy.o strncmp.o \
 		  telldir.o time.o timezone.o ttyname.o ttyslot.o ualarm.o usleep.o \
 		  strdup.o uname.o wait.o wait3.o waitpid.o
 

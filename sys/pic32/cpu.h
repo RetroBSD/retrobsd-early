@@ -8,7 +8,8 @@
  * CTL_MACHDEP definitions.
  */
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
-#define	CPU_MAXID		2	/* number of valid machdep ids */
+#define	CPU_ERRMSG		2	/* get error message by errno */
+#define	CPU_MAXID		3	/* number of valid machdep ids */
 
 #ifndef	KERNEL
 #define CTL_MACHDEP_NAMES { \
