@@ -52,9 +52,13 @@ ENTRY(sigaction)
  *	-------------------------
  *	| sigcontext structure	| SIG_SC = sp + 8
  *	|-----------------------|
- *	| code			|
+ *	| unused		|
  *	|-----------------------|
- *sp ->	| signal number		|
+ *	| $a2: ptr to sigcontext|
+ *	|-----------------------|
+ *	| $a1: code		|
+ *	|-----------------------|
+ *sp ->	| $a0: signal number	|
  *	-------------------------
  *
  * The important features of this as far as sigtramp is concerned are:
@@ -69,15 +73,5 @@ ENTRY(sigaction)
  * sigcontext structure changes.
  */
 sigtramp:
-		lw      $a0, 0($sp)             # arg1: signal number
-		lw      $a1, 4($sp)             # arg2: code
-                addiu   $a2, $sp, 8             # arg3: address of sigcontext
-                jalr    $v0, $ra                # transfer to signal action routine
-
-                move	$a0, $sp
-                addiu   $a0, $sp, 8             # compute address of sigcontext
                 syscall	SYS_sigreturn		# attempt the sigreturn
-                nop
-                nop
-
                 syscall	SYS_exit		# die if the sigreturn fails ...

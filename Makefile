@@ -41,6 +41,7 @@ LIBDIR		= lib
 SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
+UBW32		= tools/ubw32/ubw32
 ROOTDIRS	= sbin/ bin/ dev/
 ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot \
                   bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
@@ -72,6 +73,9 @@ all:		${LIBDIR} ${SRCDIR} root.bin unix.hex
 
 unix.hex:       sys/pic32/compile/unix.hex
 		cp -p $? $@
+
+load:           unix.hex $(UBW32)
+		$(UBW32) -write unix.hex -reset
 
 lib:		FRC
 		cd lib/startup-mips; make ${MFLAGS}

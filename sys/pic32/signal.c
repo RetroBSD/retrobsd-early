@@ -29,18 +29,17 @@ sendsig (p, sig, mask)
 	long mask;
 {
 	struct sigframe {
-		int	sf_signum;
-		int	sf_code;
+		int	sf_space [4];
 		struct	sigcontext sf_sc;
 	};
 	register int *regs = u.u_frame;
 	register struct sigframe *sfp;
 	int oonstack;
 
-//#ifdef DIAGNOSTIC
-	printf("sendsig %d to pid %d, mask=%#x, tramp=%#x\n", sig, u.u_procp->p_pid,
-		mask, p);
-//#endif
+#ifdef DIAGNOSTIC
+	printf("sendsig %d to pid %d, mask=%#x, handler=%#x, tramp=%#x\n", sig, u.u_procp->p_pid,
+		mask, p, u.u_sigtramp);
+#endif
 	oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
 
 	/*
@@ -56,21 +55,18 @@ sendsig (p, sig, mask)
 		sfp = (struct sigframe*) regs [FRAME_SP];
 
         sfp--;
-	if (! (u.u_sigstk.ss_flags & SA_ONSTACK) &&
-	    (caddr_t) sfp < (caddr_t) u.u_procp->p_daddr + u.u_dsize) {
-		/*
-		 * Process has trashed its stack; give it an illegal
-		 * instruction violation to halt it in its tracks.
-		 */
-		fatalsig(SIGILL);
-		return;
-	}
-
-	/*
-	 * Build the argument list for the signal handler.
-	 */
-	sfp->sf_signum = sig;
-	sfp->sf_code = u.u_code;
+	if (! (u.u_sigstk.ss_flags & SA_ONSTACK)) {
+                if ((caddr_t) sfp < (caddr_t) u.u_procp->p_daddr + u.u_dsize) {
+                        /*
+                         * Process has trashed its stack; give it an illegal
+                         * instruction violation to halt it in its tracks.
+                         */
+                        fatalsig(SIGILL);
+                        return;
+                }
+                if (u.u_procp->p_ssize < USER_DATA_END - (unsigned) sfp)
+                        u.u_procp->p_ssize = USER_DATA_END - (unsigned) sfp;
+        }
 
 	/*
 	 * Build the signal context to be used by sigreturn.
@@ -111,9 +107,12 @@ sendsig (p, sig, mask)
         sfp->sf_sc.sc_pc  = regs [FRAME_PC];
 
         /* Call signal handler */
-	regs [FRAME_R2] = (int) p;              /* $v0 */
+	regs [FRAME_R4] = sig;                  /* $a0 - signal number */
+	regs [FRAME_R5] = u.u_code;             /* $a1 - code */
+	regs [FRAME_R6] = (int) &sfp->sf_sc;    /* $a2 - address of sigcontext */
+	regs [FRAME_RA] = (int) u.u_sigtramp;   /* $ra - sigtramp */
 	regs [FRAME_SP] = (int) sfp;
-	regs [FRAME_PC] = (int) u.u_sigtramp;
+	regs [FRAME_PC] = (int) p;
 }
 
 /*
@@ -129,15 +128,13 @@ sendsig (p, sig, mask)
 void
 sigreturn()
 {
-	struct a {
-		struct sigcontext *scp;
-	};
 	register int *regs = u.u_frame;
-	register struct sigcontext *scp = ((struct a*)u.u_arg)->scp;
+	register struct sigcontext *scp =
+                (struct sigcontext*) (regs [FRAME_SP] + 16);
 
-//#ifdef DIAGNOSTIC
+#ifdef DIAGNOSTIC
 	printf("sigreturn %p\n", scp);
-//#endif
+#endif
 	if (baduaddr ((caddr_t) scp) ||
             baduaddr ((caddr_t) scp + sizeof(*scp))) {
 		u.u_error = EFAULT;
