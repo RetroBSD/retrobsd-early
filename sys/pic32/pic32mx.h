@@ -33,11 +33,16 @@
 #define C0_COMPARE	11	/* Timer interrupt control */
 #define C0_STATUS	12	/* Processor status and control */
 #define C0_INTCTL	12	/* Select 1: interrupt control */
+#define C0_SRSCTL	12	/* Select 2: GPR shadow set control */
+#define C0_SRSMAP	12	/* Select 3: vector to shadow set mapping */
 #define C0_CAUSE	13	/* Cause of last exception */
 #define C0_EPC		14	/* Program counter at last exception */
 #define C0_PRID		15	/* Processor identification (read only) */
 #define C0_EBASE	15	/* Select 1: exception base address */
 #define C0_CONFIG	16	/* Configuration */
+#define C0_CONFIG1	16	/* Select 1: configuration 1 */
+#define C0_CONFIG2	16	/* Select 2: configuration 2 */
+#define C0_CONFIG3	16	/* Select 3: configuration 3 */
 #define C0_DEBUG	23	/* Debug control and status */
 #define C0_DEPC		24	/* Program counter at last debug exception */
 #define C0_ERROREPC	30	/* Program counter at last error */
