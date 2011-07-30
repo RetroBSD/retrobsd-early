@@ -12,21 +12,6 @@
 #include "ptrace.h"
 
 /*
- * Tracing variables.
- * Used to pass trace command from
- * parent to child being traced.
- * This data base cannot be
- * shared and is locked
- * per user.
- */
-struct {
-	int	ip_lock;
-	int	ip_req;
-	int	*ip_addr;
-	int	ip_data;
-} ipc;
-
-/*
  * sys-trace system call.
  */
 void

@@ -29,10 +29,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)nlist.h	5.6.1 (2.11BSD GTE) 1/15/94
  */
-
 #ifndef	_NLIST_H_
 #define	_NLIST_H_
 #include <sys/types.h>
@@ -41,25 +38,10 @@
  * Symbol table entry format.  The #ifdef's are so that programs including
  * nlist.h can initialize nlist structures statically.
  */
-
-struct	oldnlist {		/* XXX - compatibility/conversion aid */
-	char	n_name[8];	/* symbol name */
-	int	n_type;		/* type flag */
-unsigned int	n_value;	/* value */
-};
-
 struct	nlist {
-#ifdef	_AOUT_INCLUDE_
-	union {
-		char *n_name;	/* In memory address of symbol name */
-		off_t n_strx;	/* String table offset (file) */
-	} n_un;
-#else
-	char	*n_name;	/* symbol name (in memory) */
-	char	*n_filler;	/* need to pad out to the union's size */
-#endif
-	u_char	n_type;		/* Type of symbol - see below */
-	char	n_ovly;		/* Overlay number */
+	char    *n_name;	/* In memory address of symbol name,
+	                           or string table offset (file) */
+	u_int	n_type;		/* Type of symbol - see below */
 	u_int	n_value;	/* Symbol value */
 };
 
@@ -78,4 +60,15 @@ struct	nlist {
 #define	N_TYPE	0x1f		/* mask for all the type bits */
 
 #define	N_FORMAT	"%06o"	/* namelist value format; XXX */
+
+/*
+ * Get symbols from a file.
+ */
+int nlist (char *name, struct nlist *list);
+
+/*
+ * Get kernel symbols.
+ */
+int knlist (struct nlist *list);
+
 #endif	/* !_NLIST_H_ */

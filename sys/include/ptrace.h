@@ -20,4 +20,23 @@
 #define PT_KILL		8	/* kill the child process */
 #define PT_STEP		9	/* single step the child */
 
+/*
+ * Tracing variables.
+ * Used to pass trace command from
+ * parent to child being traced.
+ * This data base cannot be
+ * shared and is locked
+ * per user.
+ */
+struct ipc {
+	int	ip_lock;
+	int	ip_req;
+	int	*ip_addr;
+	int	ip_data;
+};
+
+#ifdef KERNEL
+struct ipc ipc;
+#endif
+
 #endif

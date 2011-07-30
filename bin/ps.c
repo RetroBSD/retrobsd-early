@@ -36,10 +36,22 @@
 #define	within(x,y,z)	(((unsigned)(x) >= (y)) && ((unsigned)(x) < (z)))
 #define	round(x,y) ((long) ((((long) (x) + (long) (y) - 1L) / (long) (y)) * (long) (y)))
 
-struct	nlist nl[4];
+struct	nlist nl[] = {
 #define	X_PROC		0
+	{ "_proc" },
 #define X_NPROC		1
+	{ "_nproc" },
 #define	X_HZ		2
+	{ "_hz" },
+	{ "_ipc" },
+	{ "_lbolt" },
+	{ "_memlock" },
+	{ "_runin" },
+	{ "_runout" },
+	{ "_selwait" },
+	{ "_u" },
+	{ "" },
+};
 
 /*
  * This is no longer the size of a symbol's name, symbols can be much
@@ -64,21 +76,18 @@ char	rflg;	/* -r: raw output in style <psout.h> */
 char	uflg;	/* -u: user name */
 char	wflg;	/* -w[w]: wide terminal */
 char	xflg;	/* -x: ALL processes, even those without ttys */
-char	Uflg;	/* -U: update the private list */
 char	*tptr, *mytty;
 char	*uname;
 int	file;
 int	nproc;
 int	nchans;
 int	nttys;
-char	*psdb	= "/var/run/psdatabase";
 int	npr;			/* number of processes found so far */
 int	twidth;			/* terminal width */
 int	cmdstart;		/* start position for command field */
 char	*memf;			/* name of kernel memory file */
 char	*kmemf = "/dev/kmem";	/* name of physical memory file */
 char	*swapf;			/* name of swap file to use */
-char	*nlistf;		/* name of symbol table file to use */
 int	kmem, mem, swap;
 
 /*
@@ -128,14 +137,6 @@ char	**argv;
 	register int i, j;
 	char	*ap;
 	register struct	proc	*procp;
-
-        /*
-         * Can't initialize unions and we need the macros from a.out.h,
-         * so the namelist is set up at run time.
-         */
-	nl[X_PROC].n_un.n_name = "_proc";
-	nl[X_NPROC].n_un.n_name = "_nproc";
-	nl[X_HZ].n_un.n_name = "_hz";
 
 	if ((ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 &&
 	     ioctl(fileno(stderr), TIOCGWINSZ, &ws) != -1 &&
@@ -201,10 +202,6 @@ char	**argv;
 
 		case 'u':
 			uflg	= 1;
-			break;
-
-		case 'U':
-			Uflg++;
 			break;
 
 		case 'w':
@@ -389,16 +386,7 @@ maybetty(cp)
 	}
 	dp = &allttys[nttys++];
 	(void)strcpy(dp->name, cp);
-	if (Uflg) {
-		if (stat(dp->name, &stb) == 0 &&
-		   (stb.st_mode&S_IFMT)==S_IFCHR)
-			dp->ttyd = stb.st_rdev;
-		else {
-			nttys--;
-			return;
-		}
-	} else
-		dp->ttyd = -1;
+	dp->ttyd = -1;
 }
 
 /*
@@ -620,137 +608,11 @@ register unsigned int chan;
 	return(prevsym);
 }
 
-nlist()
-{
-	register FILE	*nlistf_fp;
-	FILE	*strfp;
-	register struct nlist *nnn;
-	int	flag, nsyms;
-	struct nlist	nbuf;
-	struct exec	hbuf;
-	char	name[MAXSYMLEN + 2];
-	int	nllen;
-	off_t	sa, stroff;
-
-	bzero(name, sizeof (name));
-	nllen = sizeof(nl) / sizeof(struct nlist);
-	if (!(nlistf_fp = fopen(nlistf,"r")))
-		perrexit(nlistf);
-	strfp = fopen(nlistf, "r");
-	if (fread(&hbuf,sizeof(hbuf),1,nlistf_fp) != 1) {
-		fputs("Invalid symbol table\n",stderr);
-		exit(1);
-	}
-	if (N_BADMAG(hbuf)) {
-		fprintf(stderr,"%s: bad magic number\n",nlistf);
-		exit(1);
-	}
-	nsyms = hbuf.a_syms / sizeof (struct nlist);
-	if (nsyms == 0) {
-		fprintf(stderr,"%s: no symbols\n",nlistf);
-		exit(1);
-	}
-	sa = N_SYMOFF(hbuf);
-	stroff = N_STROFF(hbuf);
-	fseek(nlistf_fp, sa, L_SET);
-
-	while (nsyms--) {
-		fread(&nbuf, sizeof(nbuf), 1, nlistf_fp);
-		if ((nbuf.n_type & N_EXT) == 0)
-			continue;
-		flag = nbuf.n_type & N_TYPE;
-/*
- * Now read the symbol string.  Can't rely on having enough memory to
- * hold the entire string table, so we do a seek+read for each name.  Luckily
- * this is only done for global symbols, which cuts down the work done.
- */
-		fseek(strfp, nbuf.n_un.n_strx + stroff, L_SET);
-		fread(name, MAXSYMLEN, 1, strfp);
-
-                /*
-                 * Skip over anything which isn't an external data or
-                 * bss or absolute symbol.
-                 */
-		if (! (flag == N_DATA || flag == N_BSS || flag == N_ABS))
-			continue;
-		if (! nflg)
-			addchan(name + 1, nbuf.n_value);
-		if (nllen) {
-			for (nnn = nl; nnn->n_un.n_name; nnn++) {
-				if (! strcmp(nnn->n_un.n_name, name)) {
-					nnn->n_value = nbuf.n_value;
-					nnn->n_type = nbuf.n_type;
-					nnn->n_ovly = nbuf.n_ovly;
-					--nllen;
-                                        break;
-				}
-			}
-		}
-	}
-	fclose(nlistf_fp);
-	fclose(strfp);
-	if (!nflg)
-		qsort(wchand, nchans, sizeof(WCHAN), wchancomp);
-}
-
 perrexit(msg)
 char *msg;
 {
 	perror(msg);
 	exit(1);
-}
-
-writepsdb()
-{
-	register FILE	*fp;
-	int	nllen;
-
-	setuid(getuid());
-	if (!(fp = fopen (psdb, "w")))
-		perrexit(psdb);
-	else
-		fchmod(fileno(fp),0644);
-	nllen = sizeof(nl) / sizeof(struct nlist);
-	fwrite(nlistf,strlen(nlistf) + 1,1,fp);
-	fwrite((char *)&nllen,sizeof(nllen),1,fp);
-	fwrite((char *)&nttys,sizeof(nttys),1,fp);
-	fwrite((char *)&nchans,sizeof(nchans),1,fp);
-	fwrite((char *)nl,sizeof(struct nlist),nllen,fp);
-	fwrite((char *)allttys,sizeof(struct ttys),nttys,fp);
-	fwrite((char *)wchand,sizeof(WCHAN),nchans,fp);
-	fclose(fp);
-}
-
-char	*
-readpsdb()
-{
-	register int	i;
-	register FILE	*fp;
-	register WCHAN	*ccc;
-	static	char	unamebuf[MAXPATHLEN + 1];
-	char	*p = unamebuf;
-	int	nllen;
-
-	if ((fp = fopen(psdb, "r")) == NULL)
-		perrexit(psdb);
-
-	while ((*p= getc(fp)) != '\0')
-		p++;
-	fread(&nllen, sizeof nllen, 1, fp);
-	fread(&nttys, sizeof nttys, 1, fp);
-	fread(&nchans, sizeof nchans, 1, fp);
-	fread(nl, sizeof (struct nlist), nllen, fp);
-	fread(allttys, sizeof (struct ttys), nttys, fp);
-	if (!nflg)
-		if (!(wchand = (WCHAN *)calloc(nchans, sizeof(WCHAN)))) {
-			fputs("Too many symbols\n",stderr);
-			exit(1);
-		}
-		else for (i = 0, ccc = wchand; i < nchans; i++) {
-			fread((char *) ccc, sizeof(WCHAN), 1, fp);
-			ccc++;
-		}
-	return(unamebuf);
 }
 
 openfiles(argc, argv)
@@ -780,28 +642,16 @@ char	**argv;
 {
 	struct	stat	st;
 
-	nlistf = argc > 3 ? argv[3] : "/unix";
-	if (Uflg) {
-		nlist();
-		getdev();
-		writepsdb();
-		exit(0);
-	}
-	else if (stat(psdb, &st) == 0) {
-		uname = readpsdb();
-		if (strcmp(uname,nlistf)) {
-			/*
-			 * Let addchan() do the work.
-			 */
-			nchans = 0;
-			free((char *)wchand);
-			nlist();
-		}
-	}
-	else {
-		nlist();
-		getdev();
-	}
+	knlist(nl);
+	if (! nflg) {
+                int i;
+                for (i=0; i<sizeof(nl)/sizeof(*nl); i++) {
+                        if (nl[i].n_value != 0)
+                                addchan(nl[i].n_name + 1, nl[i].n_value);
+                }
+		qsort(wchand, nchans, sizeof(WCHAN), wchancomp);
+        }
+	getdev();
 
 	/* find number of procs */
 	if (nl[X_NPROC].n_value) {

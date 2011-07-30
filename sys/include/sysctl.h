@@ -294,6 +294,15 @@ struct	kinfo_file {
 #define	CTL_DEBUG_VALUE		1	/* int: variable value */
 #define	CTL_DEBUG_MAXID		20
 
+/*
+ * Locking and stats
+ */
+struct sysctl_lock {
+	int	sl_lock;
+	int	sl_want;
+	int	sl_locked;
+};
+
 #ifdef	KERNEL
 
 #ifdef	DEBUG
@@ -318,6 +327,8 @@ extern struct ctldebug debug5, debug6, debug7, debug8, debug9;
 extern struct ctldebug debug10, debug11, debug12, debug13, debug14;
 extern struct ctldebug debug15, debug16, debug17, debug18, debug19;
 #endif	/* DEBUG */
+
+struct sysctl_lock memlock;
 
 /*
  * Internal sysctl function calling convention:

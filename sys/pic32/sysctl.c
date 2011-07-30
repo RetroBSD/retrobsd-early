@@ -14,7 +14,16 @@
 #include "cpu.h"
 #include "tty.h"
 #include "systm.h"
+#include "dk.h"
+#include "vmsystm.h"
+#include "ptrace.h"
+#include "namei.h"
+#include "vmmeter.h"
+#include "map.h"
 
+/*
+ * Errno messages.
+ */
 static const char *errlist[] = {
 	"Undefined error: 0",			/*  0 - ENOERROR */
 	"Operation not permitted",		/*  1 - EPERM */
@@ -118,6 +127,57 @@ static const char *errlist[] = {
 };
 
 /*
+ * Kernel symbol name list.
+ */
+static const struct {
+        const char *name;
+        int addr;
+} nlist[] = {
+        { "_boottime",      (int) &boottime     },  /* vmstat */
+        { "_cnttys",        (int) &cnttys       },  /* pstat */
+        { "_cp_time",       (int) &cp_time      },  /* iostat  vmstat */
+        { "_dk_busy",       (int) &dk_busy      },  /* iostat */
+        { "_dk_name",       (int) &dk_name      },  /* iostat  vmstat */
+        { "_dk_ndrive",     (int) &dk_ndrive    },  /* iostat  vmstat */
+        { "_dk_seek",       (int) &dk_seek      },  /* iostat */
+        { "_dk_time",       (int) &dk_time      },  /* iostat */
+        { "_dk_unit",       (int) &dk_unit      },  /* iostat  vmstat */
+        { "_dk_wds",        (int) &dk_wds       },  /* iostat */
+        { "_dk_wps",        (int) &dk_wps       },  /* iostat */
+        { "_dk_xfer",       (int) &dk_xfer      },  /* iostat  vmstat */
+        { "_file",          (int) &file         },  /* pstat */
+        { "_forkstat",      (int) &forkstat     },  /* vmstat */
+        { "_freemem",       (int) &freemem      },  /* vmstat */
+        { "_hz",            (int) &hz           },  /* ps */
+        { "_inode",         (int) &inode        },  /* pstat */
+        { "_ipc",           (int) &ipc          },  /* ps */
+        { "_lbolt",         (int) &lbolt        },  /* ps */
+        { "_memlock",       (int) &memlock      },  /* ps */
+        { "_nchstats",      (int) &nchstats     },  /* vmstat */
+        { "_ncn",           (int) &ncn          },  /* pstat */
+        { "_nproc",         (int) &nproc        },  /* ps      pstat */
+        { "_nswap",         (int) &nswap        },  /* pstat */
+        { "_proc",          (int) &proc         },  /* ps      pstat */
+        { "_runin",         (int) &runin        },  /* ps */
+        { "_runout",        (int) &runout       },  /* ps */
+        { "_selwait",       (int) &selwait      },  /* ps */
+        { "_swapmap",       (int) &swapmap      },  /* pstat */
+        { "_tk_nin",        (int) &tk_nin       },  /* iostat */
+        { "_tk_nout",       (int) &tk_nout      },  /* iostat */
+        { "_total",         (int) &total        },  /* vmstat */
+        { "_u",             (int) &u            },  /* ps */
+#if NPTY > 0
+        { "_npty",          (int) &npty         },  /* pstat */
+        { "_pt_tty",        (int) &pt_tty       },  /* pstat */
+#endif
+#ifdef UCB_METER
+        { "_rate",          (int) &rate         },  /* vmstat */
+        { "_sum",           (int) &sum          },  /* vmstat */
+#endif
+        { 0, 0 },
+};
+
+/*
  * ucall allows user level code to call various kernel functions.
  * Autoconfig uses it to call the probe and attach routines of the
  * various device drivers.
@@ -190,6 +250,7 @@ cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 	void *newp;
 	size_t newlen;
 {
+        int i;
 
 	switch (name[0]) {
 	case CPU_CONSDEV:
@@ -210,7 +271,6 @@ cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 			return sysctl_int (oldp, oldlenp, newp,
 				newlen, &tmscpprintf);
 		default:
-			return EOPNOTSUPP;
 		}
 #endif
 	case CPU_ERRMSG:
@@ -222,6 +282,17 @@ cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 		return sysctl_string(oldp, oldlenp, 0, 0,
                         (char*) errlist[name[1]],
                         1 + strlen(errlist[name[1]]));
+
+	case CPU_NLIST:
+		for (i=0; nlist[i].name; i++) {
+		        if (strncmp (newp, nlist[i].name, newlen) == 0) {
+			        int addr = nlist[i].addr;
+                                return sysctl_int (oldp, oldlenp, 0, 0, &addr);
+			}
+		}
+printf ("symbol %s not found\n", newp);
+		return EOPNOTSUPP;
+
 	default:
 		return EOPNOTSUPP;
 	}

@@ -35,7 +35,6 @@ union nchash {
 #define	nch_back	nch_chain[1]
 
 struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
-struct	nchstats nchstats;		/* cache effectiveness statistics */
 
 static void
 dirbad (ip, offset, how)

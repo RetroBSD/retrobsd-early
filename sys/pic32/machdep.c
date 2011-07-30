@@ -396,6 +396,21 @@ void remque (void *element)
 	e->q_next->q_prev = e->q_prev;
 }
 
+/*
+ * Compare strings.
+ */
+int strncmp (const char *s1, const char *s2, size_t n)
+{
+        register int ret, tmp;
+
+        if (n == 0)
+                return 0;
+        do {
+                ret = *s1++ - (tmp = *s2++);
+        } while ((ret == 0) && (tmp != 0) && --n);
+        return ret;
+}
+
 /* Nonzero if pointer is not aligned on a "sz" boundary.  */
 #define UNALIGNED(p, sz)	((unsigned) (p) & ((sz) - 1))
 

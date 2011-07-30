@@ -82,7 +82,7 @@ main(argc, argv)
 	long t;
 	char *arg, **cp, name[6], buf[BUFSIZ];
 
-	nlist("/vmunix", nl);
+	knlist(nl);
 	if(nl[X_DK_BUSY].n_type == 0) {
 		printf("dk_busy not found in /vmunix namelist\n");
 		exit(1);

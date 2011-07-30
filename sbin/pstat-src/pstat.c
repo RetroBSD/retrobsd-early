@@ -24,54 +24,29 @@
 
 char	*fcore	= "/dev/kmem";
 char	*fmem	= "/dev/mem";
-char	*fnlist	= "/unix";
 int	fc, fm;
 
 struct nlist nl[] = {
 #define	SINODE	0
 	{ "_inode" },
-#define	STEXT	1
-	{ "_text" },
 #define	SPROC	2
 	{ "_proc" },
-#define	SDZ	3
-	{ "_dz_tty" },
-#define	SNDZ	4
-	{ "_dz_cnt" },
 #define	SKL	5
-	{ "_cons" },
+	{ "_cnttys" },
 #define	SFIL	6
 	{ "_file" },
 #define	SNSWAP	7
 	{ "_nswap" },
 #define	SNKL	8
-	{ "_nkl11" },
+	{ "_ncn" },
 #define	SWAPMAP	9
 	{ "_swapmap" },
-#define	SDH	10
-	{ "_dh11" },
-#define	SNDH	11
-	{ "_ndh11" },
 #define	SNPROC	12
 	{ "_nproc" },
-#define	SNTEXT	13
-	{ "_ntext" },
-#define	SNFILE	14
-	{ "_nfile" },
-#define	SNINODE	15
-	{ "_ninode" },
 #define	SPTY	16
 	{ "_pt_tty" },
 #define	SNPTY	17
 	{ "_npty" },
-#define	SDHU	18
-	{ "_dhu_tty" },
-#define	SNDHU	19
-	{ "_ndhu" },
-#define	SDHV	20
-	{ "_dhv_tty" },
-#define	SNDHV	21
-	{ "_ndhv" },
 	{ "" }
 };
 
@@ -150,8 +125,8 @@ char **argv;
 			exit(1);
 		}
 	}
-	if (argc>1) {
-		fcore = fmem = argv[1];
+	if (argc>0) {
+		fcore = fmem = argv[0];
 		kflg++;
 	}
 	if ((fc = open(fcore, 0)) < 0) {
@@ -162,9 +137,7 @@ char **argv;
 		printf("Can't find %s\n", fmem);
 		exit(1);
 	}
-	if (argc>0)
-		fnlist = argv[0];
-	nlist(fnlist, nl);
+	nlist(nl);
 	if (nl[0].n_type == 0) {
 		printf("no namelist, n_type: %d n_value: %o n_name: %s\n", nl[0].n_type, nl[0].n_value, nl[0].n_name);
 		exit(1);
@@ -192,7 +165,7 @@ char **argv;
 
 usage()
 {
-	printf("usage: pstat -[aixptfs] [-u [ubase]] [system] [core]\n");
+	printf("usage: pstat -[aixptfs] [-u [ubase]] [core]\n");
 }
 
 doinode()
@@ -200,33 +173,27 @@ doinode()
 	register struct inode *ip;
 	struct inode *xinode;
 	register int nin;
-	u_int ninode, ainode;
+	u_int ainode;
 
 	nin = 0;
-	ninode = getw((off_t)nl[SNINODE].n_value);
-	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
+	xinode = (struct inode *)calloc(NINODE, sizeof (struct inode));
 	ainode = nl[SINODE].n_value;
-	if (ninode < 0 || ninode > 10000) {
-		fprintf(stderr, "number of inodes is preposterous (%d)\n",
-			ninode);
-		return;
-	}
 	if (xinode == NULL) {
 		fprintf(stderr, "can't allocate memory for inode table\n");
 		return;
 	}
 	lseek(fc, (off_t)ainode, 0);
-	read(fc, xinode, ninode * sizeof(struct inode));
-	for (ip = xinode; ip < &xinode[ninode]; ip++)
+	read(fc, xinode, NINODE * sizeof(struct inode));
+	for (ip = xinode; ip < &xinode[NINODE]; ip++)
 		if (ip->i_count)
 			nin++;
 	if (totflg) {
-		printf("%3d/%3d inodes\n", nin, ninode);
+		printf("%3d/%3d inodes\n", nin, NINODE);
 		return;
 	}
-	printf("%d/%d active inodes\n", nin, ninode);
+	printf("%d/%d active inodes\n", nin, NINODE);
 printf("   LOC      FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/DEV FS\n");
-	for (ip = xinode; ip < &xinode[ninode]; ip++) {
+	for (ip = xinode; ip < &xinode[NINODE]; ip++) {
 		if (ip->i_count == 0)
 			continue;
 		printf("%7.1o ", ainode + (ip - xinode)*sizeof (*ip));
@@ -281,64 +248,6 @@ putf(v, n)
 		printf("%c", n);
 	else
 		printf(" ");
-}
-
-dotext()
-{
-	register struct text *xp;
-	int ntext;
-	struct text *xtext;
-	u_int ntx, ntxca, atext;
-
-	ntx = ntxca = 0;
-	ntext = getw((off_t)nl[SNTEXT].n_value);
-	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	atext = nl[STEXT].n_value;
-	if (ntext < 0 || ntext > 10000) {
-		fprintf(stderr, "number of texts is preposterous (%d)\n",
-			ntext);
-		return;
-	}
-	if (xtext == NULL) {
-		fprintf(stderr, "can't allocate memory for text table\n");
-		return;
-	}
-	lseek(fc, (off_t)atext, 0);
-	read(fc, xtext, ntext * sizeof (struct text));
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_iptr != NULL)
-			ntxca++;
-		if (xp->x_count != 0)
-			ntx++;
-	}
-	if (totflg) {
-		printf("%3d/%3d texts active, %3d used\n", ntx, ntext, ntxca);
-		return;
-	}
-	printf("%d/%d active texts, %d used\n", ntx, ntext, ntxca);
-	printf("\
-   LOC   FLAGS   DADDR   CADDR    SIZE   IPTR   CNT CCNT   FORW     BACK\n");
-	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_iptr == NULL)
-			continue;
-		printf("%7.1o ", atext + (xp - xtext)*sizeof (*xp));
-		putf((long)xp->x_flag&XPAGI, 'P');
-		putf((long)xp->x_flag&XTRC, 'T');
-		putf((long)xp->x_flag&XWRIT, 'W');
-		putf((long)xp->x_flag&XLOAD, 'L');
-		putf((long)xp->x_flag&XLOCK, 'K');
-		putf((long)xp->x_flag&XWANT, 'w');
-		putf((long)xp->x_flag&XUNUSED, 'u');
-		printf("%7.1o ", xp->x_daddr);
-		printf("%7.1o ", xp->x_caddr);
-		printf("%7.1o ", xp->x_size);
-		printf("%7.1o", xp->x_iptr);
-		printf("%4u ", xp->x_count);
-		printf("%4u ", xp->x_ccount);
-		printf("%7.1o ", xp->x_forw);
-		printf("%7.1o\n", xp->x_back);
-	}
-	free(xtext);
 }
 
 doproc()
@@ -414,15 +323,7 @@ dotty()
 		printf("pstat: out of memory\n");
 		return;
 	}
-	dottytype("kl", SKL, SNKL);
-	if (nl[SNDZ].n_type != 0)
-		dottytype("dz", SDZ, SNDZ);
-	if (nl[SNDH].n_type != 0)
-		dottytype("dh", SDH, SNDH);
-	if (nl[SNDHU].n_type != 0)
-		dottytype("dhu", SDHU, SNDHU);
-	if (nl[SNDHV].n_type != 0)
-		dottytype("dhv", SDHV, SNDHV);
+	dottytype("cn", SKL, SNKL);
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
 }
@@ -679,7 +580,6 @@ char *s;
 
 dofile()
 {
-	int nfile;
 	struct file *xfile;
 	register struct file *fp;
 	register nf;
@@ -687,31 +587,25 @@ dofile()
 	static char *dtypes[] = { "???", "inode", "socket", "pipe" };
 
 	nf = 0;
-	nfile = getw((off_t)nl[SNFILE].n_value);
-	xfile = (struct file *)calloc(nfile, sizeof (struct file));
-	if (nfile < 0 || nfile > 10000) {
-		fprintf(stderr, "number of files is preposterous (%d)\n",
-			nfile);
-		return;
-	}
+	xfile = (struct file *)calloc(NFILE, sizeof (struct file));
 	if (xfile == NULL) {
 		fprintf(stderr, "can't allocate memory for file table\n");
 		return;
 	}
 	afile = nl[SFIL].n_value;
 	lseek(fc, (off_t)afile, 0);
-	read(fc, xfile, nfile * sizeof (struct file));
-	for (fp=xfile; fp < &xfile[nfile]; fp++)
+	read(fc, xfile, NFILE * sizeof (struct file));
+	for (fp=xfile; fp < &xfile[NFILE]; fp++)
 		if (fp->f_count)
 			nf++;
 	if (totflg) {
-		printf("%3d/%3d files\n", nf, nfile);
+		printf("%3d/%3d files\n", nf, NFILE);
 		return;
 	}
-	printf("%d/%d open files\n", nf, nfile);
+	printf("%d/%d open files\n", nf, NFILE);
 	printf("   LOC   TYPE   FLG        CNT  MSG   DATA    OFFSET\n");
 	loc = afile;
-	for	(fp=xfile; fp < &xfile[nfile]; fp++, loc += sizeof (*fp))
+	for	(fp=xfile; fp < &xfile[NFILE]; fp++, loc += sizeof (*fp))
 		{
 		if (fp->f_count==0)
 			continue;

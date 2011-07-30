@@ -9,7 +9,8 @@
  */
 #define	CPU_CONSDEV		1	/* dev_t: console terminal device */
 #define	CPU_ERRMSG		2	/* get error message by errno */
-#define	CPU_MAXID		3	/* number of valid machdep ids */
+#define	CPU_NLIST		3	/* get name address */
+#define	CPU_MAXID		4	/* number of valid machdep ids */
 
 #ifndef	KERNEL
 #define CTL_MACHDEP_NAMES { \

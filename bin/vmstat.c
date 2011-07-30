@@ -36,42 +36,20 @@ struct nlist nl[] = {
 	{ "_rate" },
 #define X_TOTAL		2
 	{ "_total" },
-#define	X_DEFICIT	3
-	{ "_deficit" },
 #define	X_FORKSTAT	4
 	{ "_forkstat" },
 #define X_SUM		5
 	{ "_sum" },
-#define	X_FIRSTFREE	6
-	{ "_firstfree" },
-#define	X_MAXFREE	7
-	{ "_maxfree" },
 #define	X_BOOTTIME	8
 	{ "_boottime" },
 #define	X_DKXFER	9
 	{ "_dk_xfer" },
-#define X_REC		10
-	{ "_rectime" },
-#define X_PGIN		11
-	{ "_pgintime" },
 #define X_HZ		12
 	{ "_hz" },
-#define X_PHZ		13
-	{ "_phz" },
 #define X_NCHSTATS	14
 	{ "_nchstats" },
-#define	X_INTRNAMES	15
-	{ "_intrnames" },
-#define	X_EINTRNAMES	16
-	{ "_eintrnames" },
-#define	X_INTRCNT	17
-	{ "_intrcnt" },
-#define	X_EINTRCNT	18
-	{ "_eintrcnt" },
 #define	X_DK_NDRIVE	19
 	{ "_dk_ndrive" },
-#define	X_XSTATS	20
-	{ "_xstats" },
 #ifdef pdp11
 #define	X_DK_NAME	21
 	{ "_dk_name" },
@@ -91,7 +69,6 @@ struct nlist nl[] = {
 #ifdef pdp11
 char	**dk_name;
 int	*dk_unit;
-struct	xstats	pxstats, cxstats;
 size_t	pfree;
 int	flag29;
 #endif
@@ -105,13 +82,11 @@ char	*defdrives[] = { "rp0", 0 };
 char	*defdrives[] = { "hp0", "hp1", "hp2",  0 };
 #endif
 double	stat1();
-int	firstfree, maxfree;
 int	hz;
-int	phz;
 int	HZ;
 
 #if defined(vax) ||  defined(pdp11)
-#define	INTS(x)	((x) - (hz + phz) < 0 ? 0 : (x) - (hz + phz))
+#define	INTS(x)	((x) - (hz) < 0 ? 0 : (x) - (hz))
 #endif
 
 struct {
@@ -141,7 +116,6 @@ struct	vmsum osum;
 #else
 struct	vmmeter osum;
 #endif
-int	deficit;
 double	etime;
 int 	mf;
 time_t	now, boottime;
@@ -159,7 +133,7 @@ main(argc, argv)
 	long nintv, t;
 	char *arg, **cp, buf[BUFSIZ];
 
-	nlist("/vmunix", nl);
+	knlist(nl);
 	if(nl[0].n_type == 0) {
 		fprintf(stderr, "no /vmunix namelist\n");
 		exit(1);
@@ -190,7 +164,7 @@ main(argc, argv)
 		case 'f':
 			doforkst();
 			exit(0);
-		
+
 		case 's':
 			dosum();
 			exit(0);
@@ -210,21 +184,11 @@ main(argc, argv)
 			exit(1);
 		}
 	}
-#ifndef pdp11
-	lseek(mf, (long)nl[X_FIRSTFREE].n_value, L_SET);
-	read(mf, &firstfree, sizeof firstfree);
-	lseek(mf, (long)nl[X_MAXFREE].n_value, L_SET);
-	read(mf, &maxfree, sizeof maxfree);
-#endif
 	lseek(mf, (long)nl[X_BOOTTIME].n_value, L_SET);
 	read(mf, &boottime, sizeof boottime);
 	lseek(mf, (long)nl[X_HZ].n_value, L_SET);
 	read(mf, &hz, sizeof hz);
-	if (nl[X_PHZ].n_value != 0) {
-		lseek(mf, (long)nl[X_PHZ].n_value, L_SET);
-		read(mf, &phz, sizeof phz);
-	}
-	HZ = phz ? phz : hz;
+	HZ = hz;
 	if (nl[X_DK_NDRIVE].n_value == 0) {
 		fprintf(stderr, "dk_ndrive undefined in system\n");
 		exit(1);
@@ -293,11 +257,6 @@ main(argc, argv)
 		dr_select[i] = 1;
 		ndrives++;
 	}
-#ifdef pdp11
-	/* handle initial retrieval of the xstats structure */
-	lseek(mf, (long)nl[X_XSTATS].n_value, L_SET);
-	read(mf, &cxstats, sizeof(cxstats));
-#endif
 	if (argc > 1)
 		iter = atoi(argv[1]);
 	signal(SIGCONT, printhdr);
@@ -333,9 +292,6 @@ loop:
 		lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 		read(mf, &sum, sizeof sum);
 	}
-	pxstats = cxstats;
-	lseek(mf, (long)nl[X_XSTATS].n_value, L_SET);
-	read(mf, &cxstats, sizeof(cxstats));
 	lseek(mf, (long)nl[X_FREEMEM].n_value, L_SET);
 	read(mf, &pfree, sizeof(pfree));
 #else
@@ -350,8 +306,6 @@ loop:
 	osum = sum;
 	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 	read(mf, &sum, sizeof sum);
-	lseek(mf, (long)nl[X_DEFICIT].n_value, L_SET);
-	read(mf, &deficit, sizeof deficit);
 	etime = 0;
 	for (i=0; i < dk_ndrive; i++) {
 		t = s.xfer[i];
@@ -386,13 +340,7 @@ loop:
 	if (flag29)
 		printf("%4D%3D  ", rate.v_swpin / nintv, rate.v_swpout / nintv);
 	else {
-		printf("%4D",
-		    (cxstats.alloc_inuse - pxstats.alloc_inuse) / iter);
-		printf("%3D",
-		    (cxstats.alloc_cachehit - pxstats.alloc_cachehit) / iter);
-		printf("%4D%4D", rate.v_pgin / nintv, rate.v_pgout / nintv);
-		printf("%4D", (cxstats.free - pxstats.free) / iter);
-		printf("%4D", (cxstats.free_cache - pxstats.free_cache) / iter);
+                // TODO
 		printf("%4D", rate.v_ovly / nintv);
 	}
 #else
@@ -472,7 +420,7 @@ printhdr()
 #endif
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			printf("%c%c ", dr_name[i][0], dr_name[i][2]);	
+			printf("%c%c ", dr_name[i][0], dr_name[i][2]);
 #ifdef pdp11
 	if (flag29)
 	    printf(" pd  in  sy  tr  ov  cs us ni sy id\n");
@@ -484,28 +432,13 @@ printhdr()
 
 dotimes()
 {
-#ifdef pdp11
 	printf("page in/out/reclamation is not applicable to 2.11BSD\n");
-#else
-	lseek(mf, (long)nl[X_REC].n_value, L_SET);
-	read(mf, &s.rectime, sizeof s.rectime);
-	lseek(mf, (long)nl[X_PGIN].n_value, L_SET);
-	read(mf, &s.pgintime, sizeof s.pgintime);
-	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
-	read(mf, &sum, sizeof sum);
-	printf("%d reclaims, %d total time (usec)\n", sum.v_pgrec, s.rectime);
-	printf("average: %d usec / reclaim\n", s.rectime/sum.v_pgrec);
-	printf("\n");
-	printf("%d page ins, %d total time (msec)\n",sum.v_pgin, s.pgintime/10);
-	printf("average: %8.1f msec / page in\n", s.pgintime/(sum.v_pgin*10.0));
-#endif
 }
 
 dosum()
 {
 	struct nchstats nchstats;
 	long nchtotal;
-	struct xstats  xstats;
 
 	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 	read(mf, &sum, sizeof sum);
@@ -560,15 +493,6 @@ dosum()
 	    nchstats.ncs_pass2 * 100 / nz(nchtotal));
 	printf("%9s badhits %D, falsehits %D, toolong %D\n", "",
 	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
-	lseek(mf, (long)nl[X_XSTATS].n_value, 0);
-	read(mf, &xstats, sizeof xstats);
-	printf("%9D total calls to xalloc (cache hits %D%%)\n",
-	    xstats.alloc, xstats.alloc_cachehit * 100 / nz(xstats.alloc));
-	printf("%9s sticky %ld flushed %ld unused %ld\n", "",
-	    xstats.alloc_inuse, xstats.alloc_cacheflush, xstats.alloc_unused);
-	printf("%9D total calls to xfree", xstats.free);
-	printf(" (sticky %D cached %D swapped %D)\n",
-	    xstats.free_inuse, xstats.free_cache, xstats.free_cacheswap);
 }
 
 #ifdef pdp11
@@ -616,36 +540,7 @@ stat1(row)
 dointr(nintv)
 	long nintv;
 {
-#ifdef pdp11
 	printf("Device interrupt statistics are not applicable to 2.11BSD\n");
-#else
-	int nintr, inttotal;
-	long *intrcnt;
-	char *intrname, *malloc();
-
-	nintr = (nl[X_EINTRCNT].n_value - nl[X_INTRCNT].n_value) / sizeof(long);
-	intrcnt = (long *) malloc(nl[X_EINTRCNT].n_value -
-		nl[X_INTRCNT].n_value);
-	intrname = malloc(nl[X_EINTRNAMES].n_value - nl[X_INTRNAMES].n_value);
-	if (intrcnt == NULL || intrname == NULL) {
-		fprintf(stderr, "vmstat: out of memory\n");
-		exit(9);
-	}
-	lseek(mf, (long)nl[X_INTRCNT].n_value, L_SET);
-	read(mf, intrcnt, nintr * sizeof (long));
-	lseek(mf, (long)nl[X_INTRNAMES].n_value, L_SET);
-	read(mf, intrname, nl[X_EINTRNAMES].n_value - nl[X_INTRNAMES].n_value);
-	printf("interrupt      total      rate\n");
-	inttotal = 0;
-	while (nintr--) {
-		if (*intrcnt)
-			printf("%-12s %8ld %8ld\n", intrname,
-			    *intrcnt, *intrcnt / nintv);
-		intrname += strlen(intrname) + 1;
-		inttotal += *intrcnt++;
-	}
-	printf("Total        %8ld %8ld\n", inttotal, inttotal / nintv);
-#endif
 }
 
 #define steal(where, var) \

@@ -23,9 +23,8 @@
 #include <string.h>
 
 typedef struct nlist NLIST;
-#define	_strx	n_un.n_strx
-#define	_name	n_un.n_name
-#define	ISVALID(p)	(p->_name && p->_name[0])
+
+#define	ISVALID(p)	(p->n_name && p->n_name[0])
 
 nlist(name, list)
 	char *name;
@@ -35,7 +34,7 @@ nlist(name, list)
 	struct exec ebuf;
 	FILE *fstr, *fsym;
 	NLIST nbuf;
-	off_t strings_offset, symbol_offset, symbol_size, lseek();
+	off_t strings_offset, symbol_offset, symbol_size;
 	int entries, len, maxlen;
 	char sbuf[128];
 
@@ -65,9 +64,8 @@ nlist(name, list)
 	 */
 	for (p = list, entries = maxlen = 0; ISVALID(p); ++p, ++entries) {
 		p->n_type = 0;
-		p->n_ovly = 0;
 		p->n_value = 0;
-		if ((len = strlen(p->_name)) > maxlen)
+		if ((len = strlen(p->n_name)) > maxlen)
 			maxlen = len;
 	}
 	if (++maxlen > sizeof(sbuf)) {		/* for the NULL */
@@ -79,16 +77,15 @@ nlist(name, list)
 	for (s = &nbuf; symbol_size; symbol_size -= sizeof(NLIST)) {
 		if (fread((char *)s, sizeof(NLIST), 1, fsym) != 1)
 			goto done2;
-		if (!s->_strx)
+		if (! s->n_name)
 			continue;
-		if (fseek(fstr, strings_offset + s->_strx, L_SET))
+		if (fseek(fstr, strings_offset + (unsigned) s->n_name, L_SET))
 			goto done2;
 		(void)fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
 		for (p = list; ISVALID(p); p++)
-			if (!strcmp(p->_name, sbuf)) {
+			if (!strcmp(p->n_name, sbuf)) {
 				p->n_value = s->n_value;
 				p->n_type = s->n_type;
-				p->n_ovly = s->n_ovly;
 				if (!--entries)
 					goto done2;
 			}

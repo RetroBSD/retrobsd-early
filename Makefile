@@ -85,10 +85,9 @@ ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
 root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ROOTFILES)
-		tools/elf2aout/elf2aout -s sys/pic32/compile/unix.elf unix
 		rm -f $@
 		$(FSUTIL) -n16384 -s2048 $@
-		$(FSUTIL) -a $@ unix $(ROOTDIRS) $(ROOTFILES)
+		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 
@@ -151,5 +150,5 @@ tags:
 		sort -u +0 -1 -o tags tags
 
 clean:
-		rm -f a.out core unix root.bin swap.bin *.s *.o *~
+		rm -f a.out core root.bin swap.bin *.s *.o *~
 		for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done

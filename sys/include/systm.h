@@ -102,6 +102,7 @@ void cnputc (char c);
 void tablefull (char *tab);		/* warn that a system table is full */
 int baduaddr (caddr_t addr);		/* detect bad user address */
 
+int strncmp (const char *s1, const char *s2, size_t n);
 void bzero (void *s, size_t nbytes);
 void bcopy (const void *src, void *dest, size_t nbytes);
 int bcmp (const void *a, const void *b, size_t nbytes);
@@ -229,6 +230,7 @@ int sdopen (dev_t dev, int flag, int mode);
 void sdstrategy (struct buf *bp);
 daddr_t sdsize (dev_t dev);
 
+int ncn;
 int cnopen (dev_t dev, int flag, int mode);
 int cnclose (dev_t dev, int flag, int mode);
 int cnread (dev_t dev, struct uio *uio, int flag);

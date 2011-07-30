@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)fstat.c	5.11.1 (2.11BSD GTE) 12/31/93";
 #endif
 
 /*
- *  fstat 
+ *  fstat
  */
 #include <sys/param.h>
 #include <sys/user.h>
@@ -173,7 +173,7 @@ main(argc, argv)
 
 	openfiles();
 
-	if (nlist(N_UNIX, nl) == -1 || !nl[0].n_type) {
+	if (knlist(nl) == -1 || !nl[0].n_type) {
 		fprintf(stderr, "%s: No namelist\n", N_UNIX);
 		exit(1);
 	}
@@ -489,7 +489,7 @@ socktrans(sock)
 		printf("* (%s %s %x", dname, stypename[so.so_type],
 		    so.so_state);
 
-	/* 
+	/*
 	 * protocol specific formatting
 	 *
 	 * Try to find interesting things to print.  For tcp, the interesting

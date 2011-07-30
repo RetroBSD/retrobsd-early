@@ -152,7 +152,9 @@ vmmeter()
 
 	ave(avefree, freemem, 5);
 	ave(avefree30, freemem, 30);
-	cp = &cnt.v_first; rp = &rate.v_first; sp = &sum.v_first;
+	cp = &cnt.v_first;
+        rp = &rate.v_first;
+        sp = &sum.v_first;
 	while (cp <= &cnt.v_last) {
 		ave(*rp, *cp, 5);
 		*sp += *cp;

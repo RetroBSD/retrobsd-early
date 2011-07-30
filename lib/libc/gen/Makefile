@@ -18,7 +18,7 @@ STDSRC		= abort.c alarm.c atoi.c atol.c calloc.c closedir.c crypt.c \
 		  getgrouplist.c gethostname.c getpagesize.c \
 		  getpass.c getpwent.c getloadavg.c getmntinfo.c \
 		  getttyent.c getttynam.c getusershell.c getwd.c \
-		  initgroups.c isatty.c malloc.c mktemp.c ndbm.c nlist.c \
+		  initgroups.c isatty.c malloc.c mktemp.c ndbm.c nlist.c knlist.c \
 		  opendir.c perror.c popen.c psignal.c qsort.c random.c readdir.c \
 		  regex.c scandir.c seekdir.c \
 		  setmode.c sethostname.c \
@@ -35,7 +35,7 @@ STDOBJ		= abort.o alarm.o atoi.o atol.o calloc.o closedir.o crypt.o \
 		  getgrouplist.o gethostname.o getpagesize.o \
 		  getpass.o getpwent.o getloadavg.o getmntinfo.o \
 		  getttyent.o getttynam.o getusershell.o getwd.o \
-		  initgroups.o isatty.o malloc.o mktemp.o ndbm.o nlist.o \
+		  initgroups.o isatty.o malloc.o mktemp.o ndbm.o nlist.o knlist.o \
 		  opendir.o perror.o popen.o psignal.o qsort.o random.o readdir.o \
 		  regex.o scandir.o seekdir.o \
 		  setmode.o sethostname.o \

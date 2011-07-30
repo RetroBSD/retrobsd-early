@@ -39,6 +39,7 @@ struct uartreg {
         volatile unsigned brginv;
 };
 
+int ncn = NKL;
 struct tty cnttys [NKL];
 
 static unsigned speed_bps [NSPEEDS] = {

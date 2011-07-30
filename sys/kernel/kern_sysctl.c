@@ -63,15 +63,6 @@ sysctlfn net_sysctl;
 #endif
 sysctlfn cpu_sysctl;
 
-/*
- * Locking and stats
- */
-static struct sysctl_lock {
-	int	sl_lock;
-	int	sl_want;
-	int	sl_locked;
-} memlock;
-
 struct sysctl_args {
 	int	*name;
 	u_int	namelen;
