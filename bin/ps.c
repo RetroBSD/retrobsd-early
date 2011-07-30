@@ -11,7 +11,7 @@
  *	1/7/93 - Heavily revised when the symbol table format changed - sms
  *
  *	ps - process status
- *	Usage:  ps [ acgklnrtuwxU# ] [ corefile [ swapfile [ system ] ] ]
+ *	Usage:  ps [ acgklnrtuwxU# ] [ corefile [ swapfile ] ]
  */
 #define PIC32MX
 
@@ -327,58 +327,14 @@ maybetty(cp)
 	register struct ttys *dp;
 	struct stat stb;
 
+        /* Allow only terminal devices. */
 	switch (cp[0]) {
-
 	case 'c':
-		if (!strcmp(cp, "console"))
+		if (strcmp(cp, "console") == 0)
 			break;
-		/* cu[la]? are possible!?! don't rule them out */
-		break;
-
-	case 'd':
-		if (!strcmp(cp, "drum"))
-			return;
-		break;
-
-	case 'f':
-		if (!strcmp(cp, "floppy"))
-			return;
-		break;
-
-	case 'k':
-		if (!strcmp(cp, "kUmem") || !strcmp(cp, "kmem"))
-			return;
-		if (!strcmp(cp, "klog"))
-			return;
-		break;
-
-	case 'r':
-#define is(a,b) cp[1] == 'a' && cp[2] == 'b'
-		if (is(h,p) || is(r,a) || is(u,p) || is(h,k) || is(x,p)
-		    || is(r,b) || is(r,l) || is(m,t)) {
-			if (isdigit(cp[3]))
-				return;
-		}
-		break;
-
-	case 'm':
-		if (!strcmp("mem", cp))
-			return;
-		if (cp[1] == 't')
-			return;
-		break;
-
-	case 'n':
-		if (!strcmp(cp, "null"))
-			return;
-		if (!strncmp(cp, "nrmt", 4))
-			return;
-		break;
-
-	case 'p':
-		if (cp[1] == 't' && cp[2] == 'y')
-			return;
-		break;
+                return;
+        default:
+                return;
 	}
 	if (nttys >= MAXTTYS) {
 		fprintf(stderr, "ps: tty table overflow\n");
@@ -386,7 +342,12 @@ maybetty(cp)
 	}
 	dp = &allttys[nttys++];
 	(void)strcpy(dp->name, cp);
-	dp->ttyd = -1;
+
+        if (stat(dp->name, &stb) == 0 &&
+           (stb.st_mode & S_IFMT) == S_IFCHR)
+                dp->ttyd = stb.st_rdev;
+        else
+                dp->ttyd = -1;
 }
 
 /*
@@ -469,14 +430,16 @@ gettty()
 	register int tty_step;
 	register char *p;
 
-	if (u.u_ttyp)
-		for (tty_step = 0;tty_step < nttys;++tty_step)
+	if (u.u_ttyp) {
+		for (tty_step = 0; tty_step < nttys; ++tty_step) {
 			if (allttys[tty_step].ttyd == u.u_ttyd) {
 				p = allttys[tty_step].name;
-				if (!strncmp(p,"tty",3))
+				if (strncmp(p, "tty", 3) == 0)
 					p += 3;
 				return(p);
 			}
+                }
+        }
 	return("?");
 }
 
