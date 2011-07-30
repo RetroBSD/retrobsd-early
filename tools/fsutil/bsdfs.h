@@ -102,17 +102,17 @@ typedef struct {
 /*
  * Super-user and owner changeable flags.
  */
-#define	UF_SETTABLE	0x00ff		/* mask of owner changeable flags */
-#define	UF_NODUMP	0x0001		/* do not dump file */
-#define	UF_IMMUTABLE	0x0002		/* file may not be changed */
-#define	UF_APPEND	0x0004		/* writes to file may only append */
+#define	USER_SETTABLE	0x00ff		/* mask of owner changeable flags */
+#define	USER_NODUMP	0x0001		/* do not dump file */
+#define	USER_IMMUTABLE	0x0002		/* file may not be changed */
+#define	USER_APPEND	0x0004		/* writes to file may only append */
 /*
  * Super-user changeable flags.
  */
-#define	SF_SETTABLE	0xff00		/* mask of superuser changeable flags */
-#define	SF_ARCHIVED	0x0100		/* file is archived */
-#define	SF_IMMUTABLE	0x0200		/* file may not be changed */
-#define	SF_APPEND	0x0400		/* writes to file may only append */
+#define	SYS_SETTABLE	0xff00		/* mask of superuser changeable flags */
+#define	SYS_ARCHIVED	0x0100		/* file is archived */
+#define	SYS_IMMUTABLE	0x0200		/* file may not be changed */
+#define	SYS_APPEND	0x0400		/* writes to file may only append */
 
 	long		atime;		/* time last accessed */
 	long		mtime;		/* time last modified */

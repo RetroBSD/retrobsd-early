@@ -13,7 +13,7 @@ ENTRY(pipe)
 		.set	reorder
 
 		sw	$v0, ($a0)	# return here on success
-		sw	$v1, ($a1)
+		sw	$v1, 4($a0)
 		move	$v0, $zero
 		jr	$ra
 1:

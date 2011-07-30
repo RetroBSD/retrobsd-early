@@ -291,7 +291,7 @@ static int create_swap_file (fs_t *fs)
 	inode.fs = fs;
 	inode.number = BSDFS_SWAP_INODE;
 	inode.size = fs->swapsz * BSDFS_BSIZE;
-	inode.flags = SF_IMMUTABLE | UF_IMMUTABLE | UF_NODUMP;
+	inode.flags = SYS_IMMUTABLE | USER_IMMUTABLE | USER_NODUMP;
 	inode.nlink = 1;
 	inode.dirty = 1;
 

@@ -203,35 +203,42 @@ exception (frame)
 		dumpregs (frame);
 		panic ("unexpected exception");
 		/*NOTREACHED*/
-#if 0
+#if 1
 	case CA_IBE + USER:		/* Bus error, instruction fetch */
 	case CA_DBE + USER:		/* Bus error, load or store */
+printf ("=== pid %u at %p: bus error\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGBUS;
 		break;
 
 	case CA_RI + USER:		/* Reserved instruction */
+printf ("=== pid %u at %p: invalid instruction\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGILL;
 		break;
 
 	case CA_Bp + USER:		/* Breakpoint */
+printf ("=== pid %u at %p: breakpoint\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGTRAP;
 		break;
 
 	case CA_Tr + USER:		/* Trap */
+printf ("=== pid %u at %p: trap\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGIOT;
 		break;
 
 	case CA_CPU + USER:		/* Coprocessor unusable */
+printf ("=== pid %u at %p: fpu instruction\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGEMT;
 		break;
 
 	case CA_Ov:			/* Arithmetic overflow */
 	case CA_Ov + USER:
+printf ("=== pid %u at %p: arith overflow\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGFPE;
 		break;
 
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
 	case CA_AdES + USER:		/* Address error, store */
+printf ("=== pid %u at %p: segmentation violation\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGSEGV;
 		break;
 #endif
