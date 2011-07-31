@@ -5,7 +5,8 @@
  */
 #include <stdio.h>
 
-main()
+int main()
 {
 	printf("%d\n", getpagesize());
+        return 0;
 }

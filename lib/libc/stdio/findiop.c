@@ -115,7 +115,7 @@ _fwalk(function)
 	}
 }
 
-_cleanup()
+void _cleanup()
 {
 	extern int fclose();
 
