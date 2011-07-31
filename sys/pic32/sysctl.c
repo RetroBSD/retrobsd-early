@@ -234,6 +234,7 @@ lock()
 void
 fetchi()
 {
+        /* TODO: check address and root privileges */
 	u.u_rval = *(unsigned*) u.u_arg;
 }
 

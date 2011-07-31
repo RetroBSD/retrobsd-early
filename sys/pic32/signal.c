@@ -12,6 +12,8 @@
 #include "map.h"
 #include "syslog.h"
 
+//#define DIAGNOSTIC
+
 /*
  * Send an interrupt to process.
  *
@@ -61,6 +63,7 @@ sendsig (p, sig, mask)
                          * Process has trashed its stack; give it an illegal
                          * instruction violation to halt it in its tracks.
                          */
+printf("sendsig trashed stack, end at %p\n", u.u_procp->p_daddr + u.u_dsize);
                         fatalsig(SIGILL);
                         return;
                 }

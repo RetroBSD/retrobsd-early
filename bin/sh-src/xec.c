@@ -263,7 +263,8 @@ execute(argt, execflg, pf1, pf2)
 				/* except for those `lost' by trap   */
 				oldsigs();
 				IF treeflgs&FINT
-				THEN	signal(INTR,1); signal(QUIT,1);
+				THEN	signal(INTR, SIG_IGN);
+                                        signal(QUIT, SIG_IGN);
 				FI
 
 				/* pipe in or out */

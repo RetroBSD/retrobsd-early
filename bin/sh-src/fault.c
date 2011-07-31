@@ -14,10 +14,11 @@ BOOL		trapjmp[MAXTRAP];
 /* ========	fault handling routines	   ======== */
 
 
-VOID	fault(sig)
+void	fault(sig)
 	REG INT		sig;
 {
 	REG INT		flag;
+        sigset_t        set;
 
 	IF sig==MEMF
 	THEN	IF setbrk(brkincr) == -1
@@ -31,6 +32,9 @@ VOID	fault(sig)
 		trapnote |= flag;
 		trapflg[sig] |= flag;
 	FI
+        sigemptyset(&set);
+        sigaddset(&set, sig);
+        sigprocmask(SIG_UNBLOCK, &set, NULL);
 	IF trapjmp[sig] ANDF sig==INTR
 	THEN
 		trapjmp[sig] = 0;
@@ -50,10 +54,12 @@ ignsig(n)
 {
 	REG INT		s, i;
 
-	IF (s=signal(i=n,1)&01)==0
+	i = n;
+	s = (int) signal(i, SIG_IGN);
+	IF (s & 1)==0
 	THEN	trapflg[i] |= SIGMOD;
 	FI
-	return(s);
+	return s;
 }
 
 getsig(n)
@@ -61,7 +67,7 @@ getsig(n)
 	REG INT		i;
 
 	IF trapflg[i=n]&SIGMOD ORF ignsig(i)==0
-	THEN	signal(i,fault);
+	THEN	signal(i, fault);
 	FI
 }
 

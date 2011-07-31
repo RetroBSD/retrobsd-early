@@ -236,7 +236,7 @@ psignal(p, sig)
 		 * then we forget about it immediately.
 		 */
 		if (p->p_sigignore & mask)
-			return;
+                        return;
 		if (p->p_sigmask & mask)
 			action = SIG_HOLD;
 		else if (p->p_sigcatch & mask)
@@ -259,7 +259,7 @@ psignal(p, sig)
 		 * here if the action is default; don't stop the process
 		 * below if sleeping, and don't clear any pending SIGCONT.
 		 */
-		if (prop & SA_TTYSTOP && (p->p_pptr == &proc[1]) &&
+		if ((prop & SA_TTYSTOP) && (p->p_pptr == &proc[1]) &&
 		    action == SIG_DFL)
 			return;
 		p->p_sig &= ~contsigmask;

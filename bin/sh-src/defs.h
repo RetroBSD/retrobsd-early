@@ -3,6 +3,7 @@
  */
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 
 /* error exits from various parts of shell */
 #define ERROR	1
@@ -238,7 +239,7 @@ POS		brkincr;
 #define SIGSET	4
 #define SIGMOD	8
 
-VOID		fault();
+void		fault();
 BOOL		trapnote;
 extern STRING	trapcom[];
 extern BOOL	trapflg[];
