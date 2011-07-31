@@ -176,6 +176,7 @@ exception (frame)
 
         led_control (LED_KERNEL, 1);
         if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
+printf ("\nkernel stack = %p", frame);
 		dumpregs (frame);
 		panic ("stack overflow");
 		/*NOTREACHED*/

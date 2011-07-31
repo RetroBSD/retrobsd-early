@@ -86,9 +86,7 @@
  * systems.
  */
 #define	USIZE		3072
-
 #define	SSIZE		2048		/* initial stack size (bytes) */
-#define	SINCR		2048		/* increment of stack (bytes) */
 
 #ifdef KERNEL
 #include "machine/io.h"

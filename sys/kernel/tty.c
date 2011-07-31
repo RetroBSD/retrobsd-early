@@ -887,7 +887,7 @@ ttyrub(c, tp)
 		 */
 		if (c == ('\t' | 0200) || c == ('\n' | 0200))
 			ttyrubo (tp, 2);
-		else switch (partab[c&=0177]&0177) {
+		else switch (partab [c &= 0177] & 0177) {
 
 		case ORDINARY:
 			ttyrubo(tp, 1);
@@ -1281,7 +1281,7 @@ ttyoutput(c, tp)
 		return (c);
 
 	col = tp->t_col;
-	switch (partab[c]&077) {
+	switch (partab[c] & 077) {
 
 	case ORDINARY:
 		col++;
@@ -1490,17 +1490,17 @@ ttycheckoutq (tp, wait)
  * characters left in str.
  */
 static int
-scanc (size, str, table, mask)
-	unsigned size, mask;
-	const char *str, *table;
+scanc (size, str)
+	unsigned size;
+	const char *str;
 {
-	if (size == 0)
+	if (size == 0 || str == 0)
 		return 0;
 	do {
-		if (table [(u_char) *str++] & mask)
-			break;
-	} while (--size != 0);
-	return size;
+		if (partab [(u_char) *str++] & 077)
+			return size;
+	} while (--size > 0);
+	return 0;
 }
 
 /*
@@ -1521,6 +1521,7 @@ ttwrite (tp, uio, flag)
 	cnt = uio->uio_resid;
 	error = 0;
 	cc = 0;
+	cp = 0;
 loop:
 	s = spltty();
 	if (! (tp->t_state & TS_CARR_ON)) {
@@ -1534,6 +1535,7 @@ loop:
 		} else {
 			/* Sleep awaiting carrier. */
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			splx(s);
 			goto loop;
 		}
 	}
@@ -1557,7 +1559,6 @@ loop:
 	 * mark, sleep on overflow awaiting device aid
 	 * in acquiring new space.
 	 */
-	cp = 0;
 	while (uio->uio_resid || cc > 0) {
 		if (tp->t_flags & FLUSHO) {
 			uio->uio_resid = 0;
@@ -1568,7 +1569,7 @@ loop:
 		/*
 		 * Grab a hunk of data from the user, unless we have some
 		 * leftover from last time.
-		*/
+		 */
 		if (cc == 0) {
 			cc = MIN(uio->uio_resid, OBUFSIZ);
 			cp = obuf;
@@ -1591,8 +1592,7 @@ loop:
 			if (tp->t_flags & (RAW|LITOUT))
 				ce = cc;
 			else {
-				ce = cc - scanc((unsigned)cc, (caddr_t)cp,
-				   (caddr_t)partab, 077);
+				ce = cc - scanc((unsigned)cc, (caddr_t)cp);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
