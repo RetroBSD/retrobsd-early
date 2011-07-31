@@ -33,7 +33,7 @@
  * are encoded in the lower byte of the trap instruction -- see trap.c.
  */
 const struct sysent sysent[] = {
-	{ 1, nosys },			/*   0 = indir or out-of-range */
+	{ 1, nosys },			/*   0 = out-of-range */
 	{ 1, rexit },			/*   1 = exit */
 	{ 0, fork },			/*   2 = fork */
 	{ 3, read },			/*   3 = read */

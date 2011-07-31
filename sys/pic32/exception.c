@@ -171,9 +171,8 @@ exception (frame)
 	int *frame;
 {
 	register int i;
-	register struct proc *p;
 	time_t syst;
-	unsigned intstat, irq, compare;
+	unsigned c, irq, status, cause;
 
         led_control (LED_KERNEL, 1);
         if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
@@ -181,19 +180,17 @@ exception (frame)
 		panic ("stack overflow");
 		/*NOTREACHED*/
         }
-
-	unsigned status = frame [FRAME_STATUS];
-	unsigned cause = mips_read_c0_register (C0_CAUSE);
-//printf ("exception: cause %08x, status %08x\n", cause, status);
 #ifdef UCB_METER
 	cnt.v_trap++;
 #endif
+	status = frame [FRAME_STATUS];
+	cause = mips_read_c0_register (C0_CAUSE);
+//printf ("exception: cause %08x, status %08x\n", cause, status);
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
 
 	syst = u.u_ru.ru_stime;
-	p = u.u_procp;
 	switch (cause) {
 
 	/*
@@ -238,7 +235,7 @@ printf ("=== pid %u at %p: arith overflow\n", u.u_procp->p_pid, frame [FRAME_PC]
 
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
 	case CA_AdES + USER:		/* Address error, store */
-printf ("=== pid %u at %p: segmentation violation\n", u.u_procp->p_pid, frame [FRAME_PC]);
+printf ("=== pid %u at %p: bad memory reference\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGSEGV;
 		break;
 #endif
@@ -248,25 +245,25 @@ printf ("=== pid %u at %p: segmentation violation\n", u.u_procp->p_pid, frame [F
 	case CA_Int:			/* Interrupt */
 	case CA_Int + USER:
 		/* Get the current irq number */
-		intstat = INTSTAT;
-		if ((intstat & PIC32_INTSTAT_SRIPL_MASK) == 0) {
-                        //printf ("=== unexpected interrupt: INTSTAT %08x\n", intstat);
+		c = INTSTAT;
+		if ((c & PIC32_INTSTAT_SRIPL_MASK) == 0) {
+                        //printf ("=== unexpected interrupt: INTSTAT %08x\n", c);
 			goto ret;
                 }
-		irq = PIC32_INTSTAT_VEC (intstat);
+		irq = PIC32_INTSTAT_VEC (c);
 
                 /* Handle the interrupt. */
                 switch (irq) {
                 case 0:                 /* Core Timer */
                         /* Increment COMPARE register. */
-                        compare = mips_read_c0_register (C0_COMPARE);
+                        c = mips_read_c0_register (C0_COMPARE);
                         do {
-                                compare += (KHZ * 1000 / HZ + 1) / 2;
-                                mips_write_c0_register (C0_COMPARE, compare);
-                        } while ((int) (compare - mips_read_c0_register (C0_COUNT)) < 0);
+                                c += (KHZ * 1000 / HZ + 1) / 2;
+                                mips_write_c0_register (C0_COMPARE, c);
+                        } while ((int) (c - mips_read_c0_register (C0_COUNT)) < 0);
 
-                        hardclock ((caddr_t) frame [FRAME_PC], status);
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
+                        hardclock ((caddr_t) frame [FRAME_PC], status);
                         break;
                 case 24:                /* UART1 */
                         //printf ("=== uart1\n");
@@ -305,16 +302,15 @@ printf ("=== pid %u at %p: segmentation violation\n", u.u_procp->p_pid, frame [F
                 u.u_frame = frame;
                 u.u_code = frame [FRAME_PC];            /* For signal handler */
 
-		/* original pc for restarting syscalls */
+		/* Original pc for restarting syscalls */
 		int opc = frame [FRAME_PC];		/* opc now points at syscall */
 		frame [FRAME_PC] = opc + 3*NBPW;        /* no errors - skip 2 next instructions */
 
-		const struct sysent *callp;
+		const struct sysent *callp = &sysent[0];
 		int code = (*(u_int*) opc >> 6) & 0377;	/* bottom 8 bits are index */
-		if (code >= nsysent)
-			callp = &sysent[0];		/* indir (illegal) */
-		else
-			callp = &sysent[code];
+		if (code < nsysent)
+			callp += code;
+
 		if (callp->sy_narg) {
 			u.u_arg[0] = frame [FRAME_R4];	/* $a0 */
 			u.u_arg[1] = frame [FRAME_R5];	/* $a1 */
@@ -362,16 +358,16 @@ printf ("=== pid %u at %p: segmentation violation\n", u.u_procp->p_pid, frame [F
 		}
 		goto out;
 	}
-	psignal (p, i);
+	psignal (u.u_procp, i);
 out:
 	/* Process all received signals. */
 	for (;;) {
-		i = CURSIG (p);
+		i = CURSIG (u.u_procp);
 		if (i <= 0)
 			break;
 		postsig (i);
 	}
-	curpri = setpri(p);
+	curpri = setpri (u.u_procp);
 	if (runrun) {
 		setrq (u.u_procp);
 		u.u_ru.ru_nivcsw++;
