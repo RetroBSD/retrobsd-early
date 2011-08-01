@@ -6,7 +6,7 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		= -O ${DEFS}
+CFLAGS		+= ${DEFS}
 
 SRCS		= ${STDSRC} fgetc.c fgets.c fputc.c fputs.c gets.c puts.c
 OBJS		= ${STDOBJ} fgetc.o fgets.o fputc.o fputs.o gets.o puts.o

@@ -8,7 +8,7 @@
 
 SRCS=	ns_addr.c ns_ntoa.c
 OBJS=	ns_addr.o ns_ntoa.o
-CFLAGS=	-O ${DEFS}
+CFLAGS+= ${DEFS}
 TAGSFILE=tags
 
 .c.o:

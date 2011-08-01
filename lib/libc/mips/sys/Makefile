@@ -1,7 +1,7 @@
 TOPSRC		= $(shell cd ../../../..; pwd)
 include $(TOPSRC)/target.mk
 
-ASFLAGS		= ${DEFS}
+ASFLAGS		+= ${DEFS}
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
 # rest of the system calls are generated with printf(1) and do not have

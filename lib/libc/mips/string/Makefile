@@ -6,7 +6,7 @@
 TOPSRC		= $(shell cd ../../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		= -O ${DEFS}
+CFLAGS		+= ${DEFS}
 
 #
 # Endian-independent assembly-code aliases for unaligned memory accesses.

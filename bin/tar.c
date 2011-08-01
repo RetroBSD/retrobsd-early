@@ -430,7 +430,6 @@ getdir()
 {
 	register struct stat *sp;
 	int i;
-
 top:
 	readtape((char *)&dblock);
 	if (dblock.dbuf.name[0] == '\0')

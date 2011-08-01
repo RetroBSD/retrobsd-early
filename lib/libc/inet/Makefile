@@ -11,7 +11,7 @@ SRCS		= inet_addr.c inet_network.c inet_netof.c \
 OBJS		= inet_addr.o inet_network.o inet_netof.o \
 		  inet_ntoa.o inet_lnaof.o inet_maddr.o
 
-CFLAGS		= -O ${DEFS} -Werror
+CFLAGS		+= ${DEFS}
 
 inet.a: ${OBJS}
 		@echo "building inet.a"

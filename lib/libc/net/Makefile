@@ -22,7 +22,7 @@ OBJS=	getnbyaddr.o getnbyname.o getnent.o getpent.o getpname.o	\
 	rcmd.o res_comp.o res_debug.o res_init.o res_mkquery.o		\
 	res_query.o res_send.o rexec.o ruserpass.o
 
-CFLAGS=	-O ${DEFS}
+CFLAGS+= ${DEFS}
 TAGSFILE=tags
 
 .c.o:

@@ -71,7 +71,7 @@ _instr (ptr, type, len, iop, eofptr)
 
 static int
 _innum (ptr, type, len, size, iop, eofptr)
-	int **ptr, *eofptr;
+	int *ptr, *eofptr;
 	FILE *iop;
 {
 	register char *np;
@@ -81,7 +81,7 @@ _innum (ptr, type, len, size, iop, eofptr)
 	long lcval;
 
 	if (type=='c' || type=='s' || type=='[')
-		return(_instr(ptr? *(char **)ptr: (char *)NULL, type, len, iop, eofptr));
+		return(_instr((char*)ptr, type, len, iop, eofptr));
 	lcval = 0;
 	ndigit = 0;
 	scale = INT;
@@ -155,23 +155,23 @@ _innum (ptr, type, len, size, iop, eofptr)
 #if HAVE_FLOAT
 	case (FLOAT<<4) | SHORT:
 	case (FLOAT<<4) | REGULAR:
-		**(float **)ptr = atof(numbuf);
+		*(float*)ptr = atof(numbuf);
 		break;
 
 	case (FLOAT<<4) | LONG:
-		**(double **)ptr = atof(numbuf);
+		*(double*)ptr = atof(numbuf);
 		break;
 #endif
 	case (INT<<4) | SHORT:
-		**(short **)ptr = lcval;
+		*(short*)ptr = lcval;
 		break;
 
 	case (INT<<4) | REGULAR:
-		**(int **)ptr = lcval;
+		*(int*)ptr = lcval;
 		break;
 
 	case (INT<<4) | LONG:
-		**(long **)ptr = lcval;
+		*(long*)ptr = lcval;
 		break;
 	}
 	return(1);
@@ -185,7 +185,7 @@ _doscan (iop, fmt, argp)
 {
 	register int ch;
 	int nmatch, len, ch1;
-	int **ptr, fileended, size;
+	int *ptr, fileended, size;
 
 	nmatch = 0;
 	fileended = 0;
@@ -195,11 +195,11 @@ _doscan (iop, fmt, argp)
 	case '%':
 		if ((ch = *fmt++) == '%')
 			goto def;
-		ptr = 0;
-		if (ch != '*')
-			ptr = va_arg (argp, int**);
-		else
+		if (ch == '*') {
+                        ptr = 0;
 			ch = *fmt++;
+		} else
+			ptr = va_arg (argp, int*);
 		len = 0;
 		size = REGULAR;
 		while (isdigit(ch)) {
