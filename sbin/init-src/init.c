@@ -21,8 +21,6 @@
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	CMDSIZ	200	/* max string length for getty or window command*/
-#define	ALL	p = itab; p ; p = p->next
-#define	EVER	;;
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
@@ -67,6 +65,27 @@ struct	sigvec rvec = { reset, sigmask (SIGHUP), 0 };
 
 jmp_buf	idlebuf;
 
+#if 1
+#include <stdarg.h>
+
+void mylog (const char *fmt, ...)
+{
+	va_list ap;
+	char buf [200];
+	int out;
+
+	va_start (ap, fmt);
+	vsprintf (buf, fmt, ap);
+	va_end (ap);
+        out = open (ctty, O_RDWR, 0);
+        if (out >= 0) {
+                write (out, buf, strlen(buf));
+                write (out, "\n", 1);
+                close (out);
+        }
+}
+#endif
+
 /*
  * Catch a SIGSYS signal.
  *
@@ -102,7 +121,7 @@ idle (sig)
 	register pid;
 
 	signal (SIGHUP, idlehup);
-	for (EVER) {
+	for (;;) {
 		if (setjmp(idlebuf))
 			return;
 		pid = wait((int *) 0);
@@ -110,7 +129,7 @@ idle (sig)
 			sigpause(0L);
 			continue;
 		}
-		for (ALL) {
+		for (p=itab; p; p=p->next) {
 			/* if window system dies, mark it for restart */
 			if (p->wpid == pid)
 				p->wpid = -1;
@@ -126,16 +145,15 @@ main(argc, argv)
 	char **argv;
 {
 #if 1
+        /* Trivial init: just start shell. */
         int fd = open(ctty, O_RDWR, 0);
         if (fd < 0)
                 return 0;
-//	write(fd, "init started\n", 13);
+	write(fd, "init: starting /bin/sh\n", 23);
         if (fd > 0)
                 dup2(fd, 0);
         dup2(0, 1);
         dup2(0, 2);
-//char c; read (0, &c, 1);
-//sleep(1);
         execl(shell, minus, (char *)0);
         perror(shell);
         return 0;
@@ -165,6 +183,7 @@ main(argc, argv)
 		exit(1);
 
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
+mylog("init: starting");
 
 	signal(SIGSYS, badsys);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
@@ -173,7 +192,7 @@ main(argc, argv)
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	(void) setjmp(sjbuf);
-	for (EVER) {
+	for (;;) {
 		oldhowto = howto;
 		howto = RB_SINGLE;
 		if (setjmp(shutpass) == 0)
@@ -199,10 +218,10 @@ shutreset (sig)
 	if (fork() == 0) {
 		int ct = open(ctty, 1);
 		write(ct, shutfailm, sizeof (shutfailm));
-		sleep(5);
+		sleep(1);
 		exit(1);
 	}
-	sleep(5);
+	sleep(1);
 	shutend();
 	longjmp(shutpass, 1);
 }
@@ -223,7 +242,7 @@ shutdown()
 	itab = (struct tab *)0;
 	signal(SIGALRM, shutreset);
 	(void) kill(-1, SIGTERM);	/* one chance to catch it */
-	sleep(5);
+	sleep(1);
 	alarm(30);
 	for (i = 0; i < 5; i++)
 		kill(-1, SIGKILL);
@@ -343,10 +362,11 @@ runcom(oldhowto)
 	int status;
 	char *arg1, *arg2;
 
+mylog("start %s", runc);
 	pid = fork();
 	if (pid == 0) {
-		f = open("/", O_RDONLY);
-		if (f)
+		f = open("/", O_RDONLY, 0);
+		if (f > 0)
 			dup2(f, 0);
 		dup2(0, 1);
 		dup2(0, 2);
@@ -399,12 +419,14 @@ multiple()
 		setsecuritylevel(1);
 
 	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
-	for (EVER) {
+	for (;;) {
+mylog("waiting for child termination");
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
+mylog("child pid %d terminated", pid);
 		omask = sigblock(sigmask(SIGHUP));
-		for (ALL) {
+		for (p=itab; p; p=p->next) {
 			/* must restart window system BEFORE emulator */
 			if (p->wpid == pid || p->wpid == -1)
 				wstart(p);
@@ -435,13 +457,17 @@ void merge(int signum)
 	register struct ttyent *t;
 	register struct tab *p1;
 
-	for (ALL)
+	for (p=itab; p; p=p->next)
 		p->xflag = 0;
 	setttyent();
 	while (t = getttyent()) {
-		if ((t->ty_status & TTY_ON) == 0)
+mylog("ty_name %s, ty_getty = %s, ty_type = %s, ty_status = %#x, ty_comment = %s",
+t->ty_name, t->ty_getty, t->ty_type, t->ty_status, t->ty_comment);
+		if ((t->ty_status & TTY_ON) == 0) {
+mylog("ty_status OFF");
 			continue;
-		for (ALL) {
+}
+		for (p=itab; p; p=p->next) {
 			if (SCMPN(p->line, t->ty_name))
 				continue;
 			p->xflag |= FOUND;
@@ -450,7 +476,7 @@ void merge(int signum)
 				SCPYN(p->comn, t->ty_getty);
 			}
 			if (SCMPN(p->wcmd, t->ty_window ? t->ty_window : "")) {
-				p->xflag |= WCHANGE|CHANGE;
+				p->xflag |= WCHANGE | CHANGE;
 				SCPYN(p->wcmd, t->ty_window);
 			}
 			goto contin1;
@@ -461,6 +487,7 @@ void merge(int signum)
 		 */
 		p1 = (struct tab *)calloc(1, sizeof(*p1));
 		if (!p1) {
+mylog("no space for '%s' !?!", t->ty_name);
 			syslog(LOG_ERR, "no space for '%s' !?!", t->ty_name);
 			goto contin1;
 		}
@@ -482,13 +509,16 @@ void merge(int signum)
 			p->xflag |= WCHANGE;
 			SCPYN(p->wcmd, t->ty_window);
 		}
+mylog("new itab entry");
 	contin1:
 		;
 	}
 	endttyent();
 	p1 = (struct tab *)0;
-	for (ALL) {
-		if ((p->xflag&FOUND) == 0) {
+mylog("done ttyent");
+	for (p=itab; p; p=p->next) {
+mylog("p->comm = %s, p->line = %s", p->comn, p->line);
+		if ((p->xflag & FOUND) == 0) {
 			term(p);
 			wterm(p);
 			if (p1)
@@ -499,11 +529,11 @@ void merge(int signum)
 			p = p1 ? p1 : itab;
 		} else {
 			/* window system should be started first */
-			if (p->xflag&WCHANGE) {
+			if (p->xflag & WCHANGE) {
 				wterm(p);
 				wstart(p);
 			}
-			if (p->xflag&CHANGE) {
+			if (p->xflag & CHANGE) {
 				term(p);
 				dfork(p);
 			}
@@ -632,8 +662,8 @@ wterm(p)
 {
 	if (p->wpid != 0) {
 		kill(p->wpid, SIGKILL);
+                p->wpid = 0;
 	}
-	p->wpid = 0;
 }
 
 wstart(p)
@@ -690,7 +720,7 @@ execit(s, arg)
 	 */
 	for (i = 1; i < NARGS - 2; i++) {
 		argv[i] = ap;
-		for (EVER) {
+		for (;;) {
 			if ((c = *sp++) == '\0' || ap >= &args[ARGLEN-1]) {
 				*ap = '\0';
 				goto done;

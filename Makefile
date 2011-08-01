@@ -42,15 +42,17 @@ SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
 UBW32		= tools/ubw32/ubw32
-ROOTDIRS	= sbin/ bin/ dev/
-ROOTFILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot \
-                  bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
+ROOTDIRS	= sbin/ bin/ dev/ etc/
+SBIN_FILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot
+ETC_FILES	= etc/rc etc/rc.local etc/ttys
+BIN_FILES	= bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
                   bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
                   bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
                   bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
                   bin/pwd bin/rm bin/rmail bin/rmdir bin/sh bin/size \
                   bin/strip bin/stty bin/sync bin/tar bin/tee bin/time \
                   bin/true bin/who
+ROOTFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES)
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \

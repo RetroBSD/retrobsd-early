@@ -8,7 +8,7 @@
 #include <ttyent.h>
 
 static char TTYFILE[] = "/etc/ttys";
-static char zapchar;
+static int zapchar;
 static FILE *tf = NULL;
 #define LINE 256
 static char line[LINE];

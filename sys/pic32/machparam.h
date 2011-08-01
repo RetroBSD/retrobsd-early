@@ -42,7 +42,7 @@
 #define NFILE		24
 #define NNAMECACHE	(NINODE * 11/10)
 #define NCALL		(16 + 2 * MAXUSERS)
-#define NCLIST		(20 + 8 * MAXUSERS)
+#define NCLIST		32                      /* number or CBSIZE blocks */
 #define SMAPSIZ		((9 * NPROC) / 10)	/* size of swap allocation map */
 
 /*
