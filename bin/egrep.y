@@ -13,8 +13,8 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)egrep.y	4.4 (Berkeley) 5/29/85";
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -105,7 +105,7 @@ r:	r OR r
 		={ $$ = unary(QUEST, $1); }
 	| '(' r ')'
 		={ $$ = $2; }
-	| error 
+	| error
 	;
 
 %%
@@ -131,7 +131,7 @@ yylex() {
 		case '.': return (DOT);
 		case '\0': return (0);
 		case '\n': return (OR);
-		case '[': 
+		case '[':
 			x = CCL;
 			cclcnt = 0;
 			count = nxtchar++;

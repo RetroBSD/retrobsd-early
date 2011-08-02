@@ -2,6 +2,19 @@
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
+# TODO:
+# head.c
+# iostat.c
+# mail.c
+# su.c
+# tail.c
+# vmstat.c
+# w.c
+# wall.c
+# wc.c
+# whereis.c
+# whois.c
+# write.c
 #
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
@@ -10,16 +23,16 @@ CFLAGS          += -Werror
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
+SUBDIR		= dc-src ls-src sh-src stty-src
+                  #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
 		  #make-src nm-src passwd-src sed-src sysctl-src test-src
-                  #dc-src ex-src find-src fstat-src id-src jove-src la-src lex-src \
+                  #ex-src find-src fstat-src id-src jove-src la-src lex-src \
                   #m4-src man-src more-src pcc-src printf-src ranlib-src \
                   #renice-src uname-src whereis-src xargs-src yacc-src
 
 # Shell scripts that need only be installed and are never removed.
 #
-SCRIPT		= false true
-                  #lorder mkdep nohup
+SCRIPT		= false nohup true #lorder mkdep
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
@@ -28,15 +41,14 @@ STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
 		  echo ed fgrep file grep hostid join kill ln mesg mkdir mv \
                   nice od pagesize pr pwd rev rm rmail rmdir size sleep sort \
                   split sum sync tar tee time touch tr tsort tty uniq who
-                  #cc
 
 # C programs that live in the current directory and need explicit make lines.
 #
-#NSTD		= expr bc egrep
+NSTD		= bc expr egrep
 
 # Programs that must run setuid to root
 #
-#SETUID		= mail su
+SETUID		= #mail su
 
 # Programs that run set-group-id operator
 #
@@ -48,7 +60,7 @@ KMEM		= ps #iostat
 
 # Programs that must run set-group-id tty.
 #
-#TTY		= wall write
+TTY		= #wall write
 
 # 'strip' is handled specially because 'install -s' now uses 'strip' and
 # thus we can't do a 'install -s strip /bin/strip' without an error.
@@ -112,14 +124,11 @@ depend:		expr.c
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
-expr:		expr.o
-		${CC} ${CFLAGS} -o expr expr.o
-
-bc egrep:
+bc egrep expr:
 		${YACC} ${YFLAGS} $@.y
-		${CC} -c ${CFLAGS} y.tab.c
-		mv y.tab.o $@.o
-		${CC} -o $@ $@.o
-		rm -f $@.o
+		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf y.tab.c ${LIBS}
+		${OBJDUMP} -S $@.elf > $@.dis
+		${SIZE} $@.elf
+		${ELF2AOUT} $@.elf $@
 
 # DO NOT DELETE THIS LINE -- make depend uses it

@@ -19,35 +19,39 @@
 
 expression:	expr NOARG = {
 			printf("%s\n", $1);
-			exit((!strcmp($1,"0")||!strcmp($1,"\0"))? 1: 0);
+			exit((! strcmp((char*) $1, "0") ||
+                              ! strcmp((char*) $1, "\0")) ? 1 : 0);
 			}
 	;
 
 
-expr:	'(' expr ')' = { $$ = $2; }
-	| expr OR expr   = { $$ = conj(OR, $1, $3); }
-	| expr AND expr   = { $$ = conj(AND, $1, $3); }
-	| expr EQ expr   = { $$ = rel(EQ, $1, $3); }
-	| expr GT expr   = { $$ = rel(GT, $1, $3); }
-	| expr GEQ expr   = { $$ = rel(GEQ, $1, $3); }
-	| expr LT expr   = { $$ = rel(LT, $1, $3); }
-	| expr LEQ expr   = { $$ = rel(LEQ, $1, $3); }
-	| expr NEQ expr   = { $$ = rel(NEQ, $1, $3); }
-	| expr ADD expr   = { $$ = arith(ADD, $1, $3); }
-	| expr SUBT expr   = { $$ = arith(SUBT, $1, $3); }
-	| expr MULT expr   = { $$ = arith(MULT, $1, $3); }
-	| expr DIV expr   = { $$ = arith(DIV, $1, $3); }
-	| expr REM expr   = { $$ = arith(REM, $1, $3); }
-	| expr MCH expr	 = { $$ = match($1, $3); }
-	| MATCH expr expr = { $$ = match($2, $3); }
-	| SUBSTR expr expr expr = { $$ = substr($2, $3, $4); }
-	| LENGTH expr       = { $$ = length($2); }
-	| INDEX expr expr = { $$ = index($2, $3); }
+expr:	'(' expr ')'            = { $$ = (int) $2; }
+	| expr OR expr          = { $$ = (int) conju(OR, $1, $3); }
+	| expr AND expr         = { $$ = (int) conju(AND, $1, $3); }
+	| expr EQ expr          = { $$ = (int) rel(EQ, $1, $3); }
+	| expr GT expr          = { $$ = (int) rel(GT, $1, $3); }
+	| expr GEQ expr         = { $$ = (int) rel(GEQ, $1, $3); }
+	| expr LT expr          = { $$ = (int) rel(LT, $1, $3); }
+	| expr LEQ expr         = { $$ = (int) rel(LEQ, $1, $3); }
+	| expr NEQ expr         = { $$ = (int) rel(NEQ, $1, $3); }
+	| expr ADD expr         = { $$ = (int) arith(ADD, $1, $3); }
+	| expr SUBT expr        = { $$ = (int) arith(SUBT, $1, $3); }
+	| expr MULT expr        = { $$ = (int) arith(MULT, $1, $3); }
+	| expr DIV expr         = { $$ = (int) arith(DIV, $1, $3); }
+	| expr REM expr         = { $$ = (int) arith(REM, $1, $3); }
+	| expr MCH expr	        = { $$ = (int) match($1, $3); }
+	| MATCH expr expr       = { $$ = (int) match($2, $3); }
+	| SUBSTR expr expr expr = { $$ = (int) substr($2, $3, $4); }
+	| LENGTH expr           = { $$ = (int) length($2); }
+	| INDEX expr expr       = { $$ = (int) cindex($2, $3); }
 	| A_STRING
 	;
 %%
 /*	expression command */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define ESIZE	256
 #define error(c)	errxx(c)
 #define EQL(x,y) !strcmp(x,y)
@@ -57,7 +61,6 @@ int	Ac;
 int	Argi;
 
 char Mstring[1][128];
-char *malloc();
 extern int nbra;
 
 main(argc, argv) char **argv; {
@@ -73,7 +76,9 @@ char *operators[] = { "|", "&", "+", "-", "*", "/", "%", ":",
 int op[] = { OR, AND, ADD,  SUBT, MULT, DIV, REM, MCH,
 	EQ, EQ, LT, LEQ, GT, GEQ, NEQ,
 	MATCH, SUBSTR, LENGTH, INDEX };
-yylex() {
+
+yylex()
+{
 	register char *p;
 	register i;
 
@@ -86,12 +91,12 @@ yylex() {
 	for(i = 0; *operators[i]; ++i)
 		if(EQL(operators[i], p))
 			return op[i];
-
-	yylval = p;
+	yylval = (int) p;
 	return A_STRING;
 }
 
-char *rel(op, r1, r2) register char *r1, *r2; {
+char *rel(op, r1, r2) register char *r1, *r2;
+{
 	register long i;
 
 	if(ematch(r1, "-*[0-9]*$") && ematch(r2, "[0-9]*$"))
@@ -109,7 +114,8 @@ char *rel(op, r1, r2) register char *r1, *r2; {
 	return i? "1": "0";
 }
 
-char *arith(op, r1, r2) char *r1, *r2; {
+char *arith(op, r1, r2) char *r1, *r2;
+{
 	long i1, i2;
 	register char *rv;
 
@@ -129,7 +135,9 @@ char *arith(op, r1, r2) char *r1, *r2; {
 	sprintf(rv, "%D", i1);
 	return rv;
 }
-char *conj(op, r1, r2) char *r1, *r2; {
+
+char *conju(op, r1, r2) char *r1, *r2;
+{
 	register char *rv;
 
 	switch(op) {
@@ -159,7 +167,8 @@ char *conj(op, r1, r2) char *r1, *r2; {
 	return rv;
 }
 
-char *substr(v, s, w) char *v, *s, *w; {
+char *substr(v, s, w) char *v, *s, *w;
+{
 register si, wi;
 register char *res;
 
@@ -175,7 +184,8 @@ register char *res;
 	return res;
 }
 
-char *length(s) register char *s; {
+char *length(s) register char *s;
+{
 	register i = 0;
 	register char *rv;
 
@@ -186,7 +196,8 @@ char *length(s) register char *s; {
 	return rv;
 }
 
-char *index(s, t) char *s, *t; {
+char *cindex(s, t) char *s, *t;
+{
 	register i, j;
 	register char *rv;
 
@@ -548,7 +559,7 @@ register char *lp, *ep;
 			if(*lp++ != c)
 				return(0);
 		curlp = lp;
-		while(size--) 
+		while(size--)
 			if(*lp++ != c)
 				break;
 		if(size < 0)
@@ -657,13 +668,13 @@ register	count;
 	if(a == b) /* should have been caught in compile() */
 		error(51);
 	while(count--)
-		if(*a++ != *b++)	return(0);
+		if(*a++ != *b++)
+                        return(0);
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.4 (Berkeley) 5/21/84";
 yyerror(s)
-
+char *s;
 {
 	fprintf(stderr, "%s\n", s);
 	exit(2);

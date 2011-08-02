@@ -1,5 +1,3 @@
-/*	dc.h	1.3	86/04/26	*/
-
 #define FATAL 0
 #define NFATAL 1
 #define BLK sizeof(struct blk)
@@ -52,7 +50,7 @@ struct blk {
 	char	*last;
 };
 struct	blk *hfree;
-struct	blk *getwd();
+struct	blk *getpwd();
 struct	blk *lookwd();
 struct	blk *getdec();
 struct	blk *morehd();
@@ -81,8 +79,8 @@ struct	blk *pop(),*readin(),*add0(),*mult();
 struct	blk *scalint();
 struct	blk *removc();
 struct	blk *add(),*div(),*removr();
-struct	blk *exp();
-struct	blk *sqrt();
+struct	blk *expr();
+struct	blk *sqrtv();
 struct	blk *salloc(),*copy();
 struct	blk *scale();
 int	neg;
@@ -108,11 +106,7 @@ int	fw,fw1,ll;
 int	(*outdit)();
 int	bigot(),hexot();
 int	logo;
-int	log10;
+int	log10v;
 int	count;
 char	*pp;
-int	(*signal())();
-int	onintr();
-char	*malloc();
 char	*nalloc();
-char	*realloc();

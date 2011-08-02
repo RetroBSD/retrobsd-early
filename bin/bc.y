@@ -1,5 +1,4 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.3.1 (2.11BSD) 1996/10/23";
 	int *getout();
 %}
 %right '='
@@ -17,6 +16,10 @@ static	char *sccsid = "@(#)bc.y	4.3.1 (2.11BSD) 1996/10/23";
 
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+
 FILE *in;
 char cary[1000], *cp = { cary };
 char string[1000], *str = {string};
@@ -34,7 +37,7 @@ char *numb[15] = {
 int *pre, *post;
 %}
 %%
-start	: 
+start	:
 	|  start stat tail
 		= output( $2 );
 	|  start def dargs ')' '{' dlist slist '}'
@@ -50,9 +53,9 @@ dlist	:  tail
 	| dlist _AUTO dlets tail
 	;
 
-stat	:  e 
+stat	:  e
 		={ bundle(2, $1, "ps." ); }
-	| 
+	|
 		={ bundle(1, "" ); }
 	|  QSTR
 		={ bundle(3,"[",$1,"]P");}
@@ -109,17 +112,17 @@ stat	:  e
 	;
 
 EQOP	:  EQPL
-		={ $$ = "+"; }
+		={ $$ = (int) "+"; }
 	|  EQMI
-		={ $$ = "-"; }
+		={ $$ = (int) "-"; }
 	|  EQMUL
-		={ $$ = "*"; }
+		={ $$ = (int) "*"; }
 	|  EQDIV
-		={ $$ = "/"; }
+		={ $$ = (int) "/"; }
 	|  EQREM
-		={ $$ = "%%"; }
+		={ $$ = (int) "%%"; }
 	|  EQEXP
-		={ $$ = "^"; }
+		={ $$ = (int) "^"; }
 	;
 
 fprefix	:  _FOR '(' e ';'
@@ -225,7 +228,7 @@ e	:  e '+' e
 	|  cons DOT
 		={ bundle(3, " ", $1, "." ); }
 	|  DOT
-		={ $$ = "l."; }
+		={ $$ = (int) "l."; }
 	|  LETTER
 		= { bundle(2, "l", $1 ); }
 	|  LETTER '=' e
@@ -282,15 +285,15 @@ cons	:  constant
 
 constant:
 	  '_'
-		={ $$ = cp; *cp++ = '_'; }
+		={ $$ = (int) cp; *cp++ = '_'; }
 	|  DIGIT
-		={ $$ = cp; *cp++ = $1; }
+		={ $$ = (int) cp; *cp++ = $1; }
 	|  constant DIGIT
 		={ *cp++ = $2; }
 	;
 
 CRS	:
-		={ $$ = cp; *cp++ = crs++; *cp++ = '\0';
+		={ $$ = (int) cp; *cp++ = crs++; *cp++ = '\0';
 			if(crs == '[')crs+=3;
 			if(crs == 'a')crs='{';
 			if(crs >= 0241){yyerror("program too big");
@@ -300,9 +303,9 @@ CRS	:
 	;
 
 def	:  _DEFINE LETTER '('
-		={	$$ = getf($2);
-			pre = "";
-			post = "";
+		={	$$ = (int) getf($2);
+			pre = (int*) "";
+			post = (int*) "";
 			lev = 1;
 			bstack[bindx=0] = 0;
 			}
@@ -322,7 +325,7 @@ dlets	:  lora
 	;
 lora	:  LETTER
 	|  LETTER '[' ']'
-		={ $$ = geta($1); }
+		={ $$ = (int) geta($1); }
 	;
 
 %%
@@ -385,7 +388,7 @@ restart:
 
 		/* usual case; just one single letter */
 
-		yylval = letr[c-'a'];
+		yylval = (int) letr[c-'a'];
 		return( LETTER );
 	}
 	if( c>= '0' && c <= '9' || c>= 'A' && c<= 'F' ){
@@ -429,8 +432,8 @@ restart:
 		return( cpeek( '=', EQREM, '%' ) );
 	case '^':
 		return( cpeek( '=', EQEXP, '^' ) );
-	case '"':	
-		 yylval = str;
+	case '"':
+		 yylval = (int) str;
 		 while((c=getch()) != '"'){*str++ = c;
 			if(str >= &string[999]){yyerror("string space exceeded");
 			getout();
@@ -481,23 +484,23 @@ bundle(a){
 	p = &a;
 	i = *p++;
 	q = b_sp_nxt;
-	if( bdebug ) printf("bundle %d elements at %o\n",i,  q );
+	if (bdebug) printf("bundle %d elements at %p\n", i, q);
 	while(i-- > 0){
 		if( b_sp_nxt >= & b_space[b_sp_max] ) yyerror( "bundling space exceeded" );
 		* b_sp_nxt++ = *p++;
 	}
 	* b_sp_nxt++ = 0;
-	yyval = q;
-	return( q );
+	yyval = (int) q;
+	return( (int) q );
 }
 
 routput(p) int *p; {
-	if( bdebug ) printf("routput(%o)\n", p );
+	if( bdebug ) printf("routput(%p)\n", p );
 	if( p >= &b_space[0] && p < &b_space[b_sp_max]){
 		/* part of a bundle */
 		while( *p != 0 ) routput( *p++ );
 	}
-	else printf( p );	 /* character string */
+	else printf( "%s", (char*) p );	 /* character string */
 }
 
 output( p ) int *p; {
@@ -532,20 +535,20 @@ pp( s ) char *s; {
 	/* puts the relevant stuff on pre and post for the letter s */
 
 	bundle(3, "S", s, pre );
-	pre = yyval;
+	pre = (int*) yyval;
 	bundle(4, post, "L", s, "s." );
-	post = yyval;
+	post = (int*) yyval;
 }
 
 tp( s ) char *s; { /* same as pp, but for temps */
 	bundle(3, "0S", s, pre );
-	pre = yyval;
+	pre = (int*) yyval;
 	bundle(4, post, "L", s, "s." );
-	post = yyval;
+	post = (int*) yyval;
 }
 
 yyinit(argc,argv) int argc; char *argv[];{
-	signal( 2, (int(*)())1 );	/* ignore all interrupts */
+	signal( 2, SIG_IGN );	/* ignore all interrupts */
 	sargv=argv;
 	sargc= -- argc;
 	if(sargc == 0)in=stdin;
@@ -560,16 +563,17 @@ yyinit(argc,argv) int argc; char *argv[];{
 int *getout(){
 	printf("q");
 	fflush(stdout);
-	exit();
+	exit(0);
 }
 
 int *
 getf(p) char *p;{
-	return(&funtab[2*(*p -0141)]);
+	return (int*) &funtab[2 * (*p - 0141)];
 }
+
 int *
 geta(p) char *p;{
-	return(&atab[2*(*p - 0141)]);
+	return (int*) &atab[2 * (*p - 0141)];
 }
 
 main(argc, argv)
@@ -577,17 +581,16 @@ char **argv;
 {
 	int p[2];
 
-
 	if (argc > 1 && *argv[1] == '-') {
 		if((argv[1][1] == 'd')||(argv[1][1] == 'c')){
 			yyinit(--argc, ++argv);
 			yyparse();
-			exit();
+			exit(0);
 		}
 		if(argv[1][1] != 'l'){
 			printf("unrecognizable argument\n");
 			fflush(stdout);
-			exit();
+			exit(0);
 		}
 		argv[1] = "/usr/share/misc/lib.b";
 	}
@@ -599,12 +602,12 @@ char **argv;
 		close(p[1]);
 		yyinit(argc, argv);
 		yyparse();
-		exit();
+		exit(0);
 	}
 	close(0);
 	dup(p[0]);
 	close(p[0]);
 	close(p[1]);
-	execl("/bin/dc", "dc", "-", 0);
-	execl("/usr/bin/dc", "dc", "-", 0);
+	execl("/bin/dc", "dc", "-", (char*) 0);
+	execl("/usr/bin/dc", "dc", "-", (char*) 0);
 }

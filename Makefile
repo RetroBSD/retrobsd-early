@@ -45,11 +45,11 @@ UBW32		= tools/ubw32/ubw32
 ROOTDIRS	= sbin/ bin/ dev/ etc/ tmp/
 SBIN_FILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot
 ETC_FILES	= etc/rc etc/rc.local etc/ttys
-BIN_FILES	= bin/basename bin/cal bin/cat bin/cb bin/chgrp bin/chmod \
-                  bin/cmp bin/col bin/comm bin/cp bin/date bin/dd bin/df \
-                  bin/du bin/echo bin/ed bin/false bin/fgrep bin/file \
+BIN_FILES	= bin/basename bin/bc bin/cal bin/cat bin/cb bin/chgrp bin/chmod \
+                  bin/cmp bin/col bin/comm bin/cp bin/date bin/dc bin/dd bin/df \
+                  bin/du bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep bin/file \
                   bin/grep bin/hostid bin/join bin/kill bin/ln bin/ls \
-                  bin/mesg bin/mkdir bin/mv bin/nice bin/od bin/pagesize \
+                  bin/mesg bin/mkdir bin/mv bin/nice bin/nohup bin/od bin/pagesize \
                   bin/pr bin/ps bin/pwd bin/rev bin/rm bin/rmail bin/rmdir \
                   bin/sh bin/size bin/sleep bin/sort bin/split bin/strip \
                   bin/stty bin/sum bin/sync bin/tar bin/tee bin/time \

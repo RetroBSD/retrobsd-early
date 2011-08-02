@@ -1,9 +1,7 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)dc.c	4.3.1	(2.11BSD)	2000/2/12";
-#endif
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 #include "dc.h"
 
 main(argc,argv)
@@ -13,7 +11,9 @@ char *argv[];
 	init(argc,argv);
 	commnds();
 }
-commnds(){
+
+commnds()
+{
 	register int c;
 	register struct blk *p,*q;
 	long l;
@@ -118,7 +118,7 @@ casediv:
 				savk = k;
 			}
 			arg1 = add0(p,n);
-			arg2 = sqrt(arg1);
+			arg2 = sqrtv(arg1);
 			sputc(arg2,savk);
 			pushp(arg2);
 			continue;
@@ -137,7 +137,7 @@ casediv:
 				error("exp too big\n");
 			}
 			savk = sunputc(arg2);
-			p = exp(arg2,arg1);
+			p = expr(arg2,arg1);
 			release(arg2);
 			rewind(arg1);
 			c = sgetc(arg1);
@@ -241,7 +241,7 @@ casediv:
 					while(sfbeg(q) == 0)l = l*100+sbackc(q);
 				}
 			}
-			logo = log2(l);
+			logo = log2v(l);
 			obase = l;
 			release(basptr);
 			if(sign == 1)obase = -l;
@@ -415,7 +415,8 @@ sempty:
 				p = sptr->val;
 				if(c >= ARRAYST){
 					rewind(p);
-					while(sfeof(p) == 0)release(getwd(p));
+					while (sfeof(p) == 0)
+                                            release(getpwd(p));
 				}
 				release(p);
 			}
@@ -444,7 +445,7 @@ sempty:
 			if(c >= ARRAYST){
 				rewind(p);
 				while(sfeof(p) == 0){
-					q = getwd(p);
+					q = getpwd(p);
 					if(q != 0)release(q);
 				}
 			}
@@ -516,7 +517,7 @@ sempty:
 				p = sptr->val;
 				if(length(p)-PTRSZ >= c*PTRSZ){
 					seekc(p,c*PTRSZ);
-					s = getwd(p);
+					s = getpwd(p);
 					if(s != 0){
 						q = copy(s,length(s));
 						pushp(q);
@@ -566,18 +567,19 @@ execute:
 			*readptr = p;
 			continue;
 		case '!':
-			if(command() == 1)goto execute;
+			if(command() == 1) goto execute;
 			continue;
 		case '<':
 		case '>':
 		case '=':
-			if(cond(c) == 1)goto execute;
+			if(cond(c) == 1) goto execute;
 			continue;
 		default:
 			printf("%o is unimplemented\n",c);
 		}
 	}
 }
+
 struct blk *
 div(ddivd,ddivr)
 struct blk *ddivd,*ddivr;
@@ -592,7 +594,8 @@ struct blk *ddivd,*ddivr;
 	p = salloc(0);
 	if(length(ddivr) == 0){
 		pushp(ddivr);
-		errorrt("divide by 0\n");
+		printf("divide by 0\n");
+                goto ddone;
 	}
 	divsign = remsign = 0;
 	divr = ddivr;
@@ -699,7 +702,9 @@ ddone:
 	rem = divd;
 	return(p);
 }
-dscale(){
+
+dscale()
+{
 	register struct blk *dd,*dr;
 	register struct blk *r;
 	int c;
@@ -715,7 +720,8 @@ dscale(){
 	if(sfbeg(dr) == 1 || (sfbeg(dr) == 0 && sbackc(dr) == 0)){
 		sputc(dr,skr);
 		pushp(dr);
-		errorrt("divide by 0\n");
+		printf("divide by 0\n");
+                return(1);
 	}
 	c = k-skd+skr;
 	if(c < 0)r = removr(dd,-c);
@@ -728,6 +734,7 @@ dscale(){
 	savk = k;
 	return(0);
 }
+
 struct blk *
 removr(p,n)
 struct blk *p;
@@ -757,8 +764,9 @@ struct blk *p;
 	irem = q;
 	return(r);
 }
+
 struct blk *
-sqrt(p)
+sqrtv(p)
 struct blk *p;
 {
 	struct blk *t;
@@ -808,8 +816,9 @@ struct blk *p;
 	release(p);
 	return(r);
 }
+
 struct blk *
-exp(base,ex)
+expr(base,ex)
 struct blk *base,*ex;
 {
 	register struct blk *r,*e,*p;
@@ -863,6 +872,18 @@ edone:
 	release(e);
 	return(r);
 }
+
+void onintr(sig)
+{
+	signal(SIGINT,onintr);
+	while(readptr != &readstk[0]){
+		if(*readptr != 0){release(*readptr);}
+		readptr--;
+	}
+	curfile = stdin;
+	commnds();
+}
+
 init(argc,argv)
 int argc;
 char *argv[];
@@ -870,7 +891,7 @@ char *argv[];
 	register struct sym *sp;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT,onintr);
+		signal(SIGINT, onintr);
 	setbuf(stdout,(char *)NULL);
 	svargc = --argc;
 	svargv = argv;
@@ -887,13 +908,13 @@ char *argv[];
 	else if((curfile = fopen(svargv[1],"r")) == NULL){
 		printf("can't open file %s\n",svargv[1]);
 		exit(1);
-		}
+	}
 	scalptr = salloc(1);
 	sputc(scalptr,0);
 	basptr = salloc(1);
 	sputc(basptr,10);
 	obase=10;
-	log10=log2(10L);
+	log10v=log2v(10L);
 	ll=70;
 	fw=1;
 	fw1=0;
@@ -921,16 +942,7 @@ char *argv[];
 	sfree = &symlst[0];
 	return;
 }
-onintr(){
 
-	signal(SIGINT,onintr);
-	while(readptr != &readstk[0]){
-		if(*readptr != 0){release(*readptr);}
-		readptr--;
-	}
-	curfile = stdin;
-	commnds();
-}
 pushp(p)
 struct blk *p;
 {
@@ -942,16 +954,20 @@ struct blk *p;
 	*++stkptr = p;
 	return;
 }
+
 struct blk *
-pop(){
+pop()
+{
 	if(stkptr == stack){
 		stkerr=1;
 		return(0);
 	}
 	return(*stkptr--);
 }
+
 struct blk *
-readin(){
+readin()
+{
 	register struct blk *p,*q;
 	int dp,dpct;
 	register int c;
@@ -998,6 +1014,7 @@ gotnum:
 		return(q);
 	}
 }
+
 struct blk *
 add0(p,ct)
 int ct;
@@ -1023,6 +1040,7 @@ struct blk *p;
 	}
 	return(q);
 }
+
 struct blk *
 mult(p,q)
 struct blk *p,*q;
@@ -1079,6 +1097,7 @@ struct blk *p,*q;
 	if(mq != q)release(mq);
 	return(mr);
 }
+
 chsign(p)
 struct blk *p;
 {
@@ -1113,7 +1132,9 @@ struct blk *p;
 	}
 	return;
 }
-readc(){
+
+readc()
+{
 loop:
 	if((readptr != &readstk[0]) && (*readptr != 0)){
 		if(sfeof(*readptr) == 0)return(lastchar = sgetc(*readptr));
@@ -1135,6 +1156,7 @@ loop:
 	}
 	exit(0);
 }
+
 unreadc(c)
 char c;
 {
@@ -1145,6 +1167,7 @@ char c;
 	else ungetc(c,curfile);
 	return;
 }
+
 binop(c)
 char c;
 {
@@ -1167,6 +1190,7 @@ char c;
 	pushp(r);
 	return;
 }
+
 print(hptr)
 struct blk *hptr;
 {
@@ -1212,7 +1236,7 @@ struct blk *hptr;
 		return;
 	}
 	create(strptr);
-	dig = log10*sc;
+	dig = log10v * sc;
 	dout = ((dig/10) + dig) /logo;
 	dec = getdec(p,sc);
 	p = removc(p,sc);
@@ -1279,6 +1303,7 @@ struct blk *p;
 	}
 	return(q);
 }
+
 tenot(p,sc)
 struct blk *p;
 {
@@ -1328,6 +1353,7 @@ struct blk *p;
 	release(p);
 	return;
 }
+
 oneot(p,sc,ch)
 struct blk *p;
 char ch;
@@ -1347,6 +1373,7 @@ char ch;
 	printf("\n");
 	return;
 }
+
 hexot(p,flg)
 struct blk *p;
 {
@@ -1366,6 +1393,7 @@ struct blk *p;
 	sputc(strptr,c<10?c+'0':c-10+'A');
 	return;
 }
+
 bigot(p,flg)
 struct blk *p;
 {
@@ -1417,6 +1445,7 @@ struct blk *p;
 	sputc(strptr,' ');
 	return;
 }
+
 struct blk *
 add(a1,a2)
 struct blk *a1,*a2;
@@ -1464,7 +1493,9 @@ struct blk *a1,*a2;
 	}
 	return(p);
 }
-eqk(){
+
+eqk()
+{
 	register struct blk *p,*q;
 	register int skp;
 	int skq;
@@ -1493,6 +1524,7 @@ eqk(){
 	arg2=q;
 	return(0);
 }
+
 struct blk *
 removc(p,n)
 struct blk *p;
@@ -1515,6 +1547,7 @@ struct blk *p;
 	release(p);
 	return(q);
 }
+
 struct blk *
 scalint(p)
 struct blk *p;
@@ -1524,6 +1557,7 @@ struct blk *p;
 	p = removc(p,n);
 	return(p);
 }
+
 struct blk *
 scale(p,n)
 struct blk *p;
@@ -1533,7 +1567,7 @@ struct blk *p;
 	t = add0(p,n);
 	q = salloc(1);
 	sputc(q,n);
-	s = exp(inbas,q);
+	s = expr(inbas,q);
 	release(q);
 	q = div(t,s);
 	release(t);
@@ -1542,7 +1576,9 @@ struct blk *p;
 	sputc(q,n);
 	return(q);
 }
-subt(){
+
+subt()
+{
 	arg1=pop();
 	EMPTYS;
 	savk = sunputc(arg1);
@@ -1553,10 +1589,13 @@ subt(){
 	binop('+');
 	return(0);
 }
-command(){
+
+command()
+{
 	int c;
 	char line[100],*sl;
-	register (*savint)(),pid,rpid;
+	register void (*savint)(int);
+        register int pid, rpid;
 	int retcode;
 
 	switch(c = readc()){
@@ -1577,11 +1616,12 @@ command(){
 		}
 		savint = signal(SIGINT, SIG_IGN);
 		while((rpid = wait(&retcode)) != pid && rpid != -1);
-		signal(SIGINT,savint);
+		signal(SIGINT, savint);
 		printf("!\n");
 		return(0);
 	}
 }
+
 cond(c)
 char c;
 {
@@ -1623,7 +1663,9 @@ char c;
 	load();
 	return(1);
 }
-load(){
+
+load()
+{
 	register int c;
 	register struct blk *p,*q;
 	struct blk *t,*s;
@@ -1635,7 +1677,7 @@ load(){
 			q = salloc(length(p));
 			rewind(p);
 			while(sfeof(p) == 0){
-				s = getwd(p);
+				s = getpwd(p);
 				if(s == 0){putwd(q, (struct blk *)NULL);}
 				else{
 					t = copy(s,length(s));
@@ -1656,7 +1698,8 @@ load(){
 	}
 	return;
 }
-log2(n)
+
+log2v(n)
 long n;
 {
 	register int i;
@@ -1691,8 +1734,10 @@ int size;
 	hdr->last = ptr+size;
 	return(hdr);
 }
+
 struct blk *
-morehd(){
+morehd()
+{
 	register struct blk *h,*kk;
 	headmor++;
 	nbytes += HEADSZ;
@@ -1707,6 +1752,7 @@ morehd(){
 	(--h)->rd=0;
 	return(hfree);
 }
+
 /*
 sunputc(hptr)
 struct blk *hptr;
@@ -1716,6 +1762,7 @@ struct blk *hptr;
 	return(*hptr->wt);
 }
 */
+
 struct blk *
 copy(hptr,size)
 struct blk *hptr;
@@ -1745,6 +1792,7 @@ int size;
 	while(ptr<hdr->last)*ptr++ = '\0';
 	return(hdr);
 }
+
 sdump(s1,hptr)
 char *s1;
 struct blk *hptr;
@@ -1755,6 +1803,7 @@ struct blk *hptr;
 	while(p < hptr->wt)printf("%d ",*p++);
 	printf("\n");
 }
+
 seekc(hptr,n)
 struct blk *hptr;
 {
@@ -1778,6 +1827,7 @@ struct blk *hptr;
 	if(nn>hptr->wt)hptr->wt = nn;
 	return;
 }
+
 salterwd(hptr,n)
 struct wblk *hptr;
 struct blk *n;
@@ -1787,6 +1837,7 @@ struct blk *n;
 	if(hptr->rdw > hptr->wtw)hptr->wtw = hptr->rdw;
 	return;
 }
+
 more(hptr)
 struct blk *hptr;
 {
@@ -1808,6 +1859,7 @@ struct blk *hptr;
 	hptr->last = p+size;
 	return;
 }
+
 ospace(s)
 char *s;
 {
@@ -1817,6 +1869,7 @@ char *s;
 	sdump("stk",*stkptr);
 	abort();
 }
+
 garbage(s)
 char *s;
 {
@@ -1846,7 +1899,7 @@ char *s;
 					p = tmps->val;
 					rewind(p);
 					ct = 0;
-					while((q = getwd(p)) != NULL){
+					while((q = getpwd(p)) != NULL){
 						ct++;
 						if(q != 0){
 							if(((int)q->beg & 01) != 0){
@@ -1863,6 +1916,7 @@ printf("tmps %o p %o\n",tmps,p);
 		}
 	}
 }
+
 redef(p)
 struct blk *p;
 {
@@ -1893,7 +1947,7 @@ register struct blk *p;
 }
 
 struct blk *
-getwd(p)
+getpwd(p)
 struct blk *p;
 {
 	register struct wblk *wp;
@@ -1926,13 +1980,14 @@ struct blk *p;
 		return(NULL);
 	return(*wp->rdw);
 }
+
 char *
 nalloc(p,nbytes)
 register char *p;
 unsigned nbytes;
 {
-	char *malloc();
 	register char *q, *r;
+
 	q = r = malloc(nbytes);
 	if(q==0)
 		return(0);

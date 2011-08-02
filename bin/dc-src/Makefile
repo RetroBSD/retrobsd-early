@@ -1,18 +1,19 @@
-#
-#	@(#)Makefile	1.4	(Berkeley)	83/06/30
-#
-DESTDIR=
-SRCS=	dc.c dc.h
-CFLAGS=	-O
-SEPFLAG= -i
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: dc
+SRCS            = dc.c dc.h
+OBJS            = dc.o
 
-dc:	dc.c dc.h
-	${CC} ${CFLAGS} ${SEPFLAG} dc.c -o dc
+all:            ../dc
 
-install: dc
-	install -s dc ${DESTDIR}/usr/bin/dc
+../dc:          ${OBJS}
+		${CC} ${LDFLAGS} -o dc.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S dc.elf > dc.dis
+		${SIZE} dc.elf
+		${ELF2AOUT} dc.elf $@
+
+install:        ../dc
+		install -s dc ${DESTDIR}/usr/bin/dc
 
 clean:
-	rm -f *.o dc a.out errs core
+		rm -f *.o *.elf ${MAN} ../dc *.elf *.dis tags *~
