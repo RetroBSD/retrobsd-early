@@ -1,19 +1,12 @@
 /*
+ * C shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.lex.c	5.4 (Berkeley) 3/29/86";
-#endif
-
 #include "sh.h"
 #include <sgtty.h>
-
-/*
- * C shell
- */
 
 /*
  * These lexical routines read input and form lists of words.
@@ -343,7 +336,7 @@ getdol()
 		special++, *np++ = c, c = getC(DOEXCL);
 	*np++ = c;
 	switch (c) {
-	
+
 	case '<':
 	case '$':
 		if (special)
@@ -1230,7 +1223,7 @@ again:
 					goto again;
 				}
 				if (c > 0)
-					copy(fbuf[buf] + off, ttyline, c);
+					memcpy(fbuf[buf] + off, ttyline, c);
 				numleft = 0;
 			} else
 				c = read(SHIN, fbuf[buf] + off, roomleft);

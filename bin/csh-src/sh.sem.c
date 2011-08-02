@@ -1,21 +1,27 @@
 /*
+ * C shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.sem.c	5.4.1 (2.11BSD GTE) 12/9/94";
-#endif
-
 #include "sh.h"
 #include "sh.proc.h"
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-/*
- * C shell
- */
+#ifdef VFORK
+void vffree(int sig)
+{
+	register char **v;
+
+	if (v = gargv)
+		gargv = 0, blkfree(v);
+	if (v = pargv)
+		pargv = 0, blkfree(v);
+	_exit(1);
+}
+#endif
 
 /*VARARGS 1*/
 execute(t, wanttty, pipein, pipeout)
@@ -119,12 +125,11 @@ execute(t, wanttty, pipein, pipeout)
 			{ forked++; pid = pfork(t, wanttty); }
 #ifdef VFORK
 		    else {
-			int vffree();
 			int ochild, osetintr, ohaderr, odidfds;
 			int oSHIN, oSHOUT, oSHDIAG, oOLDSTD, otpgrp;
 			long omask;
 
-			/* 
+			/*
 			 * Prepare for the vfork by saving everything
 			 * that the child corrupts before it exec's.
 			 * Note that in some signal implementations
@@ -313,19 +318,6 @@ execute(t, wanttty, pipein, pipeout)
 	if (didfds && !(t->t_dflg & FREDO))
 		donefds();
 }
-
-#ifdef VFORK
-vffree()
-{
-	register char **v;
-
-	if (v = gargv)
-		gargv = 0, blkfree(v);
-	if (v = pargv)
-		pargv = 0, blkfree(v);
-	_exit(1);
-}
-#endif
 
 /*
  * Perform io redirection.

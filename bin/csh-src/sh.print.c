@@ -1,19 +1,12 @@
 /*
+ * C Shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.print.c	5.2 (Berkeley) 6/6/85";
-#endif
-
 #include "sh.h"
 #include <sys/ioctl.h>
-
-/*
- * C Shell
- */
 
 psecs(l)
 	long l;
@@ -45,10 +38,9 @@ p2dig(i)
 char	linbuf[128];
 char	*linp = linbuf;
 
-putchar(c)
+void putchr(c)
 	register int c;
 {
-
 	if ((c & QUOTE) == 0 && (c == 0177 || c < ' ' && c != '\t' && c != '\n')) {
 		putchar('^');
 		if (c == 0177)

@@ -1,7 +1,9 @@
-static	char *sccsid = "@(#)sort.c	4.11 (Berkeley) 6/3/86";
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -9,7 +11,7 @@ static	char *sccsid = "@(#)sort.c	4.11 (Berkeley) 6/3/86";
 #define	N	7
 #define	C	20
 #ifndef pdp11
-#define	MEM	(128*2048)
+#define	MEM	(32*2048)
 #else
 #define	MEM	(16*2048)
 #endif
@@ -31,7 +33,7 @@ char	*tspace;
 int	cmp(), cmpa();
 int	(*compare)() = cmpa;
 char	*eol();
-int	term();
+void	term(int);
 int 	mflg;
 int	cflg;
 int	uflg;
@@ -171,8 +173,6 @@ struct field proto = {
 int	nfields;
 int 	error = 1;
 char	*setfil();
-char	*sbrk();
-char	*brk();
 
 #define	blank(c)	((c) == ' ' || (c) == '\t')
 
@@ -275,9 +275,9 @@ char **argv;
 		signal(SIGHUP, term);
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, term);
-	signal(SIGPIPE,term);
+	signal(SIGPIPE, term);
 	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
-		signal(SIGTERM,term);
+		signal(SIGTERM, term);
 	nfiles = eargc;
 	if(!mflg && !cflg) {
 		sort();
@@ -295,7 +295,7 @@ char **argv;
 		merge(a, nfiles);
 	}
 	error = 0;
-	term();
+	term(0);
 }
 
 sort()
@@ -352,7 +352,7 @@ sort()
 			--lines;
 			text -= len;
 		}
-		qsort((char **)lspace, lp);
+		qusort((char **)lspace, lp);
 		if(done == 0 || nfiles != eargc)
 			newfile();
 		else
@@ -364,7 +364,7 @@ sort()
 				fputs(cp, os);
 			if (ferror(os)) {
 				error = 1;
-				term();
+				term(0);
 			}
 		}
 		fclose(os);
@@ -403,7 +403,7 @@ merge(a,b)
 
 	do {
 		i = j;
-		qsort((char **)ibuf, (char **)(ibuf+i));
+		qusort((char **)ibuf, (char **)(ibuf+i));
 		l = 0;
 		while(i--) {
 			cp = ibuf[i]->l;
@@ -429,7 +429,7 @@ merge(a,b)
 			fputs(cp, os);
 			if (ferror(os)) {
 				error = 1;
-				term();
+				term(0);
 			}
 		}
 		if(muflg){
@@ -482,7 +482,7 @@ char *s, *t;
 	for(u=t; *u!='\n';u++) ;
 	*u = 0;
 	diag(s,t);
-	term();
+	term(0);
 }
 
 newfile()
@@ -492,7 +492,7 @@ newfile()
 	f = setfil(nfiles);
 	if((os=fopen(f, "w")) == NULL) {
 		diag("can't create ",f);
-		term();
+		term(0);
 	}
 	nfiles++;
 }
@@ -518,7 +518,7 @@ oldfile()
 	if(outfil) {
 		if((os=fopen(outfil, "w")) == NULL) {
 			diag("can't create ",outfil);
-			term();
+			term(0);
 		}
 	} else
 		os = stdout;
@@ -545,9 +545,8 @@ safeoutfil()
 cant(f)
 char *f;
 {
-
 	perror(f);
-	term();
+	term(0);
 }
 
 diag(s,t)
@@ -559,7 +558,8 @@ char *s, *t;
 	fputs("\n",stderr);
 }
 
-term()
+void term(sig)
+int sig;
 {
 	register i;
 
@@ -656,7 +656,7 @@ char *i, *j;
 		}
 		code = fp->code;
 		ignore = fp->ignore;
-loop: 
+loop:
 		while(ignore[*pa])
 			pa++;
 		while(ignore[*pb])
@@ -728,7 +728,7 @@ char *pp;
 		if(*p != '\n')
 			p++;
 		else goto ret;
-	} 
+	}
 ret:
 	return(p);
 }
@@ -831,7 +831,7 @@ char **ppa;
 #define qsexc(p,q) t= *p;*p= *q;*q=t
 #define qstexc(p,q,r) t= *p;*p= *r;*r= *q;*q=t
 
-qsort(a,l)
+qusort(a,l)
 char **a, **l;
 {
 	register char **i, **j;
@@ -840,8 +840,6 @@ char **a, **l;
 	int c;
 	char *t;
 	unsigned n;
-
-
 
 start:
 	if((n=l-a) <= 1)
@@ -895,10 +893,10 @@ loop:
 			if(uflg)
 				for(k=lp+1; k<=hp;) **k++ = '\0';
 			if(lp-a >= l-hp) {
-				qsort(hp+1, l);
+				qusort(hp+1, l);
 				l = lp;
 			} else {
-				qsort(a, lp);
+				qusort(a, lp);
 				a = hp+1;
 			}
 			goto start;
@@ -910,4 +908,3 @@ loop:
 		j = --hp;
 	}
 }
-

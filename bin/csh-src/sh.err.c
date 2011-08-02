@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.err.c	5.3 (Berkeley) 5/13/86";
-#endif
-
 #include "sh.h"
 #include <sys/ioctl.h>
 
@@ -58,7 +53,7 @@ error(s, arg)
 		printf(s, arg), printf(".\n");
 
 	didfds = 0;		/* Forget about 0,1,2 */
-	if ((ep = err) && errspl) {
+	if ((ep = parserr) && errspl) {
 		errspl = 0;
 		xfree(ep);
 	}
@@ -117,29 +112,27 @@ bferr(cp)
 
 /*
  * The parser and scanner set up errors for later by calling seterr,
- * which sets the variable err as a side effect; later to be tested,
+ * which sets the variable parserr as a side effect; later to be tested,
  * e.g. in process.
  */
 seterr(s)
 	char *s;
 {
-
-	if (err == 0)
-		err = s, errspl = 0;
+	if (parserr == 0)
+		parserr = s, errspl = 0;
 }
 
-/* Set err to a splice of cp and dp, to be freed later in error() */
+/* Set parserr to a splice of cp and dp, to be freed later in error() */
 seterr2(cp, dp)
 	char *cp, *dp;
 {
-
-	if (err)
+	if (parserr)
 		return;
-	err = strspl(cp, dp);
+	parserr = strspl(cp, dp);
 	errspl++;
 }
 
-/* Set err to a splice of cp with a string form of character d */
+/* Set parserr to a splice of cp with a string form of character d */
 seterrc(cp, d)
 	char *cp, d;
 {

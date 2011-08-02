@@ -1,23 +1,25 @@
-static char *sccsid = "@(#)tsort.c	4.2 (Berkeley) 10/20/82";
-/*	topological sort
+/*
+ *	topological sort
  *	input is sequence of pairs of items (blank-free strings)
  *	nonidentical pair is a directed edge in graph
  *	identical pair merely indicates presence of node
  *	output is ordered list of items consistent with
  *	the partial ordering specified by the graph
-*/
+ */
 #include <stdio.h>
+#include <stdlib.h>
 
 /*	the nodelist always has an empty element at the end to
  *	make it easy to grow in natural order
- *	states of the "live" field:*/
+ *	states of the "live" field:
+ */
 #define DEAD 0	/* already printed*/
 #define LIVE 1	/* not yet printed*/
 #define VISITED 2	/*used only in findloop()*/
 
 /*	a predecessor list tells all the immediate
  *	predecessors of a given node
-*/
+ */
 struct predlist {
 	struct predlist *nextpred;
 	struct nodelist *pred;
@@ -30,15 +32,14 @@ struct nodelist {
 	int live;
 } firstnode = {NULL, NULL, NULL, DEAD};
 
-struct nodelist *index();
+struct nodelist *nindex();
 struct nodelist *findloop();
 struct nodelist *mark();
-char *malloc();
 char *empty = "";
 
 /*	the first for loop reads in the graph,
  *	the second prints out the ordering
-*/
+ */
 main(argc,argv)
 char **argv;
 {
@@ -58,9 +59,9 @@ char **argv;
 			break;
 		if(x!=2)
 			error("odd data",empty);
-		i = index(precedes);
-		j = index(follows);
-		if(i==j||present(i,j)) 
+		i = nindex(precedes);
+		j = nindex(follows);
+		if(i==j||present(i,j))
 			continue;
 		t = (struct predlist *)malloc(sizeof(struct predlist));
 		t->nextpred = j->inedges;
@@ -86,7 +87,7 @@ char **argv;
 }
 
 /*	is i present on j's predecessor list?
-*/
+ */
 present(i,j)
 struct nodelist *i, *j;
 {
@@ -98,7 +99,7 @@ struct nodelist *i, *j;
 }
 
 /*	is there any live predecessor for i?
-*/
+ */
 anypred(i)
 struct nodelist *i;
 {
@@ -110,9 +111,9 @@ struct nodelist *i;
 }
 
 /*	turn a string into a node pointer
-*/
+ */
 struct nodelist *
-index(s)
+nindex(s)
 register char *s;
 {
 	register struct nodelist *i;
@@ -161,7 +162,7 @@ char *s,*t;
 
 /*	given that there is a cycle, find some
  *	node in it
-*/
+ */
 struct nodelist *
 findloop()
 {
@@ -183,7 +184,7 @@ findloop()
  *	to find some element of a cycle;
  *	VISITED is a temporary state recording the
  *	visits of the search
-*/
+ */
 struct nodelist *
 mark(i)
 register struct nodelist *i;

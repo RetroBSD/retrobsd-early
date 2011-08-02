@@ -1,23 +1,16 @@
 /*
+ * C Shell - functions that manage processes, handling hanging, termination
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.proc.c	5.5.1 (2.11BSD) 1996/3/20";
-#endif
-
 #include "sh.h"
 #include "sh.dir.h"
 #include "sh.proc.h"
 #include <string.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
-
-/*
- * C Shell - functions that manage processes, handling hanging, termination
- */
 
 #define BIGINDEX	9	/* largest desirable job index */
 
@@ -28,7 +21,7 @@ static char *sccsid = "@(#)sh.proc.c	5.5.1 (2.11BSD) 1996/3/20";
  *	childs status.  Top level routines (like pwait) must be sure
  *	to mask interrupts when playing with the proclist data structures!
  */
-pchild()
+void pchild(int sig)
 {
 	register struct process *pp;
 	register struct process	*fp;
@@ -387,7 +380,7 @@ palloc(pid, t)
 				pp->p_index = i;
 				if (i > pmaxindex)
 					pmaxindex = i;
-				break;			
+				break;
 			tryagain:;
 			}
 		}
@@ -542,7 +535,7 @@ pprint(pp, flag)
 		pp->p_flags |= PTIME;
 	}
 	tp = pp;
-	status = reason = -1; 
+	status = reason = -1;
 	jobflags = 0;
 	do {
 		jobflags |= pp->p_flags;
@@ -817,7 +810,7 @@ pkill(v, signum)
 {
 	register struct process *pp, *np;
 	register int jobflags = 0;
-	int pid, err = 0;
+	int pid, parserr = 0;
 	long omask;
 	char *cp;
 
@@ -840,14 +833,14 @@ pkill(v, signum)
 			case SIGTTOU:
 				if ((jobflags & PRUNNING) == 0) {
 					printf("%s: Already stopped\n", cp);
-					err++;
+					parserr++;
 					goto cont;
 				}
 			}
 			if (killpg(pp->p_jobid, signum) < 0) {
 				printf("%s: ", cp);
-				printf("%s\n", syserrlst(errno));
-				err++;
+				printf("%s\n", strerror(errno));
+				parserr++;
 			}
 			if (signum == SIGTERM || signum == SIGHUP)
 				(void) killpg(pp->p_jobid, SIGCONT);
@@ -857,8 +850,8 @@ pkill(v, signum)
 			pid = atoi(cp);
 			if (kill(pid, signum) < 0) {
 				printf("%d: ", pid);
-				printf("%s\n", syserrlst(errno));
-				err++;
+				printf("%s\n", strerror(errno));
+				parserr++;
 				goto cont;
 			}
 			if (signum == SIGTERM || signum == SIGHUP)
@@ -869,7 +862,7 @@ cont:
 		v++;
 	}
 	(void) sigsetmask(omask);
-	if (err)
+	if (parserr)
 		error(NOSTR);
 }
 

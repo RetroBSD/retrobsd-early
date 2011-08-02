@@ -1,6 +1,5 @@
-#ifndef lint
-static char sccsid[] = "@(#)cal.c	4.3 (Berkeley) 83/08/11";
-#endif
+#include <stdio.h>
+#include <stdlib.h>
 
 char	dayw[] = {
 	" S  M Tu  W Th  F  S"
@@ -11,6 +10,7 @@ char	*smon[]= {
 	"September", "October", "November", "December",
 };
 char	string[432];
+
 main(argc, argv)
 char *argv[];
 {

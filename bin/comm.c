@@ -1,6 +1,8 @@
-static char *sccsid = "@(#)comm.c	4.2 (Berkeley) 4/29/83";
 #include <stdio.h>
+#include <stdlib.h>
+
 #define LB 256
+
 int	one;
 int	two;
 int	three;

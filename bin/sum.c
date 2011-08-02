@@ -1,9 +1,8 @@
-static char *sccsid = "@(#)sum.c	4.1 (Berkeley) 10/1/80";
 /*
  * Sum bytes in file mod 2^16
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 
 main(argc,argv)
 char **argv;

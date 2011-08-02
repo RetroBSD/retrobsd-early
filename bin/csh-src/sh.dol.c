@@ -306,7 +306,7 @@ Dgetdol()
 	else if (c == '?')
 		bitset++, c = DgetC(0);		/* $? tests existence */
 	switch (c) {
-	
+
 	case '$':
 		if (dimen || bitset)
 			goto syntax;		/* No $?$, $#$ */
@@ -604,7 +604,7 @@ heredoc(term)
 				if (--lcnt < 0) {
 					setname("<<");
 					error("Line overflow");
-				} 
+				}
 			}
 		}
 		*lbp = 0;
@@ -613,7 +613,8 @@ heredoc(term)
 		 * Compare to terminator -- before expansion
 		 */
 		if (eq(lbuf, term)) {
-			(void) write(0, obuf, BUFSIZ - ocnt);
+			if (write(0, obuf, BUFSIZ - ocnt) < 0)
+			        ;
 			(void) lseek(0, (off_t)0, 0);
 			return;
 		}
@@ -626,7 +627,8 @@ heredoc(term)
 			for (lbp = lbuf; c = *lbp++;) {
 				*obp++ = c;
 				if (--ocnt == 0) {
-					(void) write(0, obuf, BUFSIZ);
+					if (write(0, obuf, BUFSIZ) < 0)
+					        ;
 					obp = obuf; ocnt = BUFSIZ;
 				}
 			}
@@ -688,13 +690,15 @@ heredoc(term)
 			for (mbp = *vp; *mbp; mbp++) {
 				*obp++ = *mbp & TRIM;
 				if (--ocnt == 0) {
-					(void) write(0, obuf, BUFSIZ);
+					if (write(0, obuf, BUFSIZ) < 0)
+                                                ;
 					obp = obuf; ocnt = BUFSIZ;
 				}
 			}
 			*obp++ = '\n';
 			if (--ocnt == 0) {
-				(void) write(0, obuf, BUFSIZ);
+				if (write(0, obuf, BUFSIZ) < 0)
+				        ;
 				obp = obuf; ocnt = BUFSIZ;
 			}
 		}

@@ -1,11 +1,6 @@
 /*
  * From the 4.4-Lite2 CD's csh sources and modified appropriately.
 */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.exec2.c	1.0 (2.11BSD) 1996/9/20";
-#endif
-
 #include "sh.h"
 #include <string.h>
 #include <sys/file.h>
@@ -14,51 +9,6 @@ static char *sccsid = "@(#)sh.exec2.c	1.0 (2.11BSD) 1996/9/20";
 #include "sh.exec.h"
 
 extern	char	*justabs[];	/* in sh.exec.c */
-
-static int
-iscommand(name)
-    char   *name;
-{
-    register char **pv;
-    register char *sav;
-    register struct varent *v;
-    bool slash = any(name, '/');
-    int hashval = 0, hashval1, i;
-
-    v = adrof("path");
-    if (v == 0 || v->vec[0] == 0 || slash)
-	pv = justabs;
-    else
-	pv = v->vec;
-    sav = strspl("/", name);	/* / command name for postpending */
-    if (havhash)
-	hashval = hashname(name);
-    i = 0;
-    do {
-	if (!slash && pv[0][0] == '/' && havhash) {
-	    hashval1 = hash(hashval, i);
-	    if (!bit(xhash, hashval1))
-		goto cont;
-	}
-	if (pv[0][0] == 0 || eq(pv[0], ".")) {	/* don't make ./xxx */
-	    if (executable(NULL, name, 0)) {
-		xfree(sav);
-		return i + 1;
-	    }
-	}
-	else {
-	    if (executable(*pv, sav, 0)) {
-		xfree(sav);
-		return i + 1;
-	    }
-	}
-cont:
-	pv++;
-	i++;
-    } while (*pv);
-    xfree(sav);
-    return 0;
-}
 
 /* Also by:
  *  Andreas Luik <luik@isaak.isa.de>
@@ -109,45 +59,50 @@ executable(dir, name, dir_ok)
 	      access(strname, X_OK) == 0) ||
 	     (dir_ok && S_ISDIR(stbuf.st_mode))));
 }
-/* The dowhich() is by:
- *  Andreas Luik <luik@isaak.isa.de>
- *  I S A  GmbH - Informationssysteme fuer computerintegrierte Automatisierung
- *  Azenberstr. 35
- *  D-7000 Stuttgart 1
- *  West-Germany
- * Thanks!!
- */
-/*ARGSUSED*/
-void
-dowhich(v, c)
-    register char **v;
-    struct command *c;
+
+static int
+iscommand(name)
+    char   *name;
 {
-    struct wordent lex[3];
-    struct varent *vp;
+    register char **pv;
+    register char *sav;
+    register struct varent *v;
+    bool slash = any(name, '/');
+    int hashval = 0, hashval1, i;
 
-    lex[0].next = &lex[1];
-    lex[1].next = &lex[2];
-    lex[2].next = &lex[0];
-
-    lex[0].prev = &lex[2];
-    lex[1].prev = &lex[0];
-    lex[2].prev = &lex[1];
-
-    lex[0].word = "";
-    lex[2].word = "\n";
-
-    while (*++v) {
-	if ((vp = adrof1(*v, &aliases)) != NULL) {
-	    (void) printf("%s: \t aliased to ", *v);
-	    blkpr(vp->vec);
-	    (void) putchar('\n');
+    v = adrof("path");
+    if (v == 0 || v->vec[0] == 0 || slash)
+	pv = justabs;
+    else
+	pv = v->vec;
+    sav = strspl("/", name);	/* / command name for postpending */
+    if (havhash)
+	hashval = hashname(name);
+    i = 0;
+    do {
+	if (!slash && pv[0][0] == '/' && havhash) {
+	    hashval1 = hash(hashval, i);
+	    if (!bit(xhash, hashval1))
+		goto cont;
+	}
+	if (pv[0][0] == 0 || eq(pv[0], ".")) {	/* don't make ./xxx */
+	    if (executable(NULL, name, 0)) {
+		xfree(sav);
+		return i + 1;
+	    }
 	}
 	else {
-	    lex[1].word = *v;
-	    tellmewhat(lex);
+	    if (executable(*pv, sav, 0)) {
+		xfree(sav);
+		return i + 1;
+	    }
 	}
-    }
+cont:
+	pv++;
+	i++;
+    } while (*pv);
+    xfree(sav);
+    return 0;
 }
 
 static void
@@ -245,4 +200,45 @@ tellmewhat(lex)
     }
     sp->word = s0;		/* we save and then restore this */
     xfree(cmd);
+}
+
+/* The dowhich() is by:
+ *  Andreas Luik <luik@isaak.isa.de>
+ *  I S A  GmbH - Informationssysteme fuer computerintegrierte Automatisierung
+ *  Azenberstr. 35
+ *  D-7000 Stuttgart 1
+ *  West-Germany
+ * Thanks!!
+ */
+/*ARGSUSED*/
+void
+dowhich(v, c)
+    register char **v;
+    struct command *c;
+{
+    struct wordent lex[3];
+    struct varent *vp;
+
+    lex[0].next = &lex[1];
+    lex[1].next = &lex[2];
+    lex[2].next = &lex[0];
+
+    lex[0].prev = &lex[2];
+    lex[1].prev = &lex[0];
+    lex[2].prev = &lex[1];
+
+    lex[0].word = "";
+    lex[2].word = "\n";
+
+    while (*++v) {
+	if ((vp = adrof1(*v, &aliases)) != NULL) {
+	    (void) printf("%s: \t aliased to ", *v);
+	    blkpr(vp->vec);
+	    (void) putchar('\n');
+	}
+	else {
+	    lex[1].word = *v;
+	    tellmewhat(lex);
+	}
+    }
 }

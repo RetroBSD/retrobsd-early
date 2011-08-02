@@ -1,19 +1,12 @@
 /*
+ * C Shell - directory management
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.dir.c	5.3 (Berkeley) 6/11/85";
-#endif
-
 #include "sh.h"
 #include "sh.dir.h"
-
-/*
- * C Shell - directory management
- */
 
 struct	directory *dfind();
 char	*dfollow();
@@ -37,7 +30,8 @@ dinit(hp)
 	else {
 		cp = getwd(path);
 		if (cp == NULL) {
-			(void) write(2, path, strlen(path));
+			if (write(2, path, strlen(path)) < 0)
+			        ;
 			exit(1);
 		}
 	}

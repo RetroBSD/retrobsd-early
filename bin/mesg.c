@@ -1,4 +1,3 @@
-static char *sccsid = "@(#)mesg.c	4.3 (Berkeley) 3/13/86";
 /*
  * mesg -- set current tty to accept or
  *	forbid write permission.
@@ -7,8 +6,8 @@ static char *sccsid = "@(#)mesg.c	4.3 (Berkeley) 3/13/86";
  *		y allow messages
  *		n forbid messages
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

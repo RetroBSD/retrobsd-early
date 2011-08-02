@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.func.c	5.3 (Berkeley) 5/13/86";
-#endif
-
 #include "sh.h"
 #include <sys/ioctl.h>
 
@@ -77,7 +72,6 @@ func(t, bp)
 
 dolabel()
 {
-
 }
 
 doonintr(v)
@@ -108,7 +102,6 @@ doonintr(v)
 
 donohup()
 {
-
 	if (intty)
 		bferr("Can't from terminal");
 	if (setintr == 0) {
@@ -121,13 +114,11 @@ donohup()
 
 dozip()
 {
-
 	;
 }
 
 prvars()
 {
-
 	plist(&shvhed);
 }
 
@@ -157,7 +148,6 @@ doalias(v)
 unalias(v)
 	char **v;
 {
-
 	unset1(v, &aliases);
 }
 
@@ -171,11 +161,10 @@ dologout()
 dologin(v)
 	char **v;
 {
-
 	islogin();
 	rechist();
 	(void) signal(SIGTERM, parterm);
-	execl("/bin/login", "login", v[1], 0);
+	execl("/bin/login", "login", v[1], (char*)0);
 	untty();
 	exit(1);
 }
@@ -184,12 +173,11 @@ dologin(v)
 donewgrp(v)
 	char **v;
 {
-
 	if (chkstop == 0 && setintr)
 		panystop(0);
 	(void) signal(SIGTERM, parterm);
-	execl("/bin/newgrp", "newgrp", v[1], 0);
-	execl("/usr/bin/newgrp", "newgrp", v[1], 0);
+	execl("/bin/newgrp", "newgrp", v[1], (char*)0);
+	execl("/usr/bin/newgrp", "newgrp", v[1], (char*)0);
 	untty();
 	exit(1);
 }
@@ -197,7 +185,6 @@ donewgrp(v)
 
 islogin()
 {
-
 	if (chkstop == 0 && setintr)
 		panystop(0);
 	if (loginsh)
@@ -213,7 +200,7 @@ doif(v, kp)
 	register char **vv;
 
 	v++;
-	i = exp(&v);
+	i = expr(&v);
 	vv = v;
 	if (*vv == NOSTR)
 		bferr("Empty if");
@@ -329,7 +316,7 @@ doexit(v)
 	 */
 	v++;
 	if (*v) {
-		set("status", putn(exp(&v)));
+		set("status", putn(expr(&v)));
 		if (*v)
 			bferr("Expression syntax");
 	}
@@ -389,7 +376,7 @@ dowhile(v)
 	if (intty && !again)
 		status = !exp0(&v, 1);
 	else
-		status = !exp(&v);
+		status = !expr(&v);
 	if (*v)
 		bferr("Expression syntax");
 	if (!again) {
@@ -782,7 +769,7 @@ dosetenv(v)
 	}
 	if ((lp = *v++) == 0)
 		lp = "";
-	setenv(vp, lp = globone(lp));
+	setenvv(vp, lp = globone(lp));
 	if (eq(vp, "PATH")) {
 		importpath(lp);
 		dohash();
@@ -793,14 +780,13 @@ dosetenv(v)
 dounsetenv(v)
 	register char **v;
 {
-
 	v++;
 	do
-		unsetenv(*v++);
+		unsetenvv(*v++);
 	while (*v);
 }
 
-setenv(name, val)
+setenvv(name, val)
 	char *name, *val;
 {
 	register char **ep = environ;
@@ -822,10 +808,10 @@ setenv(name, val)
 	blk[0] = strspl(name, "="); blk[1] = 0;
 	environ = blkspl(environ, blk);
 	xfree((char *)oep);
-	setenv(name, val);
+	setenvv(name, val);
 }
 
-unsetenv(name)
+unsetenvv(name)
 	char *name;
 {
 	register char **ep = environ;
@@ -1034,7 +1020,7 @@ dounlimit(v)
 	register char **v;
 {
 	register struct limits *lp;
-	int err = 0;
+	int parserr = 0;
 	char hard = 0;
 
 	v++;
@@ -1045,8 +1031,8 @@ dounlimit(v)
 	if (*v == 0) {
 		for (lp = limits; lp->limconst >= 0; lp++)
 			if (setlim(lp, hard, (long)RLIM_INFINITY) < 0)
-				err++;
-		if (err)
+				parserr++;
+		if (parserr)
 			error(NOSTR);
 		return;
 	}
@@ -1079,12 +1065,12 @@ setlim(lp, hard, limit)
 	}
 	return (0);
 }
-#endif !NOLIMITS
+#endif /* !NOLIMITS */
 
 dosuspend()
 {
 	int ldisc, ctpgrp;
-	int (*old)();
+	void (*old)(int);
 
 	if (loginsh)
 		error("Can't suspend a login shell (yet)");

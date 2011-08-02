@@ -1,12 +1,14 @@
-static char *sccsid = "@(#)col.c	4.2 (Berkeley) 5/15/84";
-# include <stdio.h>
-# define PL 256
-# define ESC '\033'
-# define RLF '\013'
-# define SI '\017'
-# define SO '\016'
-# define GREEK 0200
-# define LINELN 800
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define PL 256
+#define ESC '\033'
+#define RLF '\013'
+#define SI '\017'
+#define SO '\016'
+#define GREEK 0200
+#define LINELN 800
 
 char *page[PL];
 char lbuff [LINELN], *line;
@@ -205,8 +207,6 @@ outc (c)
 
 store (lno)
 {
-	char *malloc();
-
 	lno %= PL;
 	if (page[lno] != 0)
 		free (page[lno]);

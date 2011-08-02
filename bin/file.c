@@ -1,13 +1,10 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char sccsid[] = "@(#)file.c	4.12.3 (2.11BSD) 1997/7/29";
-#endif
 /*
  * file - determine type of file
  */
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <a.out.h>
 #include <errno.h>
@@ -46,7 +43,7 @@ char **argv;
 		fprintf(stderr, "usage: %s file ...\n", argv[0]);
 		exit(3);
 	}
-		
+
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='f') {
 		if ((fl = fopen(argv[2], "r")) == NULL) {
 			perror(argv[2]);
@@ -142,18 +139,6 @@ char *file;
 		printf("separate ");
 		goto exec;
 
-	case A_MAGIC4:
-		printf("replacement text ");
-		goto exec;
-
-	case A_MAGIC5:
-		printf("overlaid pure ");
-		goto exec;
-
-	case A_MAGIC6:
-		printf("overlaid separate ");
-		goto exec;
-
 	case 0407:
 exec:
 		if (mbuf.st_mode & S_ISUID)
@@ -213,7 +198,7 @@ exec:
 		j = i;
 		while(buf[i++] != '\n'){
 			if(i - j > 255){
-				printf("data\n"); 
+				printf("data\n");
 				return;
 			}
 			if(i >= in)goto notc;
@@ -231,8 +216,8 @@ check:
 		if(buf[i] <= 0)
 			goto notas;
 		if(buf[i] == ';'){
-			i++; 
-			goto check; 
+			i++;
+			goto check;
 		}
 		if(buf[i++] == '\n')
 			if(nl++ > 6)goto notc;
@@ -266,7 +251,7 @@ notfort:
 	if(buf[i] == '.'){
 		i++;
 		if(lookup(as) == 1){
-			printf("assembler program text"); 
+			printf("assembler program text");
 			goto outa;
 		}
 		else if(buf[j] == '\n' && isalpha(buf[j+2])){
@@ -283,8 +268,8 @@ notfort:
 		if(buf[i] == '.'){
 			i++;
 			if(lookup(as) == 1){
-				printf("assembler program text"); 
-				goto outa; 
+				printf("assembler program text");
+				goto outa;
 			}
 			else if(buf[j] == '\n' && isalpha(buf[j+2])){
 				printf("roff, nroff, or eqn input text");
@@ -299,7 +284,7 @@ notas:
 		if (buf[0]=='\100' && buf[1]=='\357')
 			printf("troff (CAT) output\n");
 		else
-			printf("data\n"); 
+			printf("data\n");
 		return;
 	}
 	if (mbuf.st_mode&((S_IEXEC)|(S_IEXEC>>3)|(S_IEXEC>>6))) {
@@ -361,6 +346,7 @@ int n;
 	}
 	return(1);
 }
+
 lookup(tab)
 char *tab[];
 {
@@ -379,7 +365,9 @@ char *tab[];
 	}
 	return(0);
 }
-ccom(){
+
+ccom()
+{
 	char cc;
 	while((cc = buf[i]) == ' ' || cc == '\t' || cc == '\n')if(i++ >= in)return(0);
 	if(buf[i] == '/' && buf[i+1] == '*'){
@@ -394,7 +382,9 @@ ccom(){
 	if(buf[i] == '\n')if(ccom() == 0)return(0);
 	return(1);
 }
-ascom(){
+
+ascom()
+{
 	while(buf[i] == '/'){
 		i++;
 		while(buf[i++] != '\n')if(i >= in)return(0);
@@ -406,7 +396,7 @@ ascom(){
 english (bp, n)
 char *bp;
 {
-# define NASC 128
+#define NASC 128
 	int ct[NASC], j, vow, freq, rare;
 	int badpun = 0, punct = 0;
 	if (n<50) return(0); /* no point in statistics on squibs */
@@ -418,12 +408,12 @@ char *bp;
 			ct[bp[j]|040]++;
 		switch (bp[j])
 		{
-		case '.': 
-		case ',': 
-		case ')': 
+		case '.':
+		case ',':
+		case ')':
 		case '%':
-		case ';': 
-		case ':': 
+		case ';':
+		case ':':
 		case '?':
 			punct++;
 			if ( j < n-1 &&

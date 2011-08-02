@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.file.c	5.6 (Berkeley) 5/18/86";
-#endif
-
 #ifdef FILEC
 /*
  * Tenex style file name recognition, .. and more.
@@ -349,6 +345,89 @@ free_items(items)
 }
 
 /*
+ * Object: extend what user typed up to an ambiguity.
+ * Algorithm:
+ * On first match, copy full entry (assume it'll be the only match)
+ * On subsequent matches, shorten extended_name to the first
+ * character mismatch between extended_name and entry.
+ * If we shorten it back to the prefix length, stop searching.
+ */
+static
+recognize(extended_name, entry, name_length, numitems)
+	char *extended_name, *entry;
+{
+
+	if (numitems == 1)			/* 1st match */
+		copyn(extended_name, entry, MAXNAMLEN);
+	else {					/* 2nd & subsequent matches */
+		register char *x, *ent;
+		register int len = 0;
+
+		x = extended_name;
+		for (ent = entry; *x && *x == *ent++; x++, len++)
+			;
+		*x = '\0';			/* Shorten at 1st char diff */
+		if (len == name_length)		/* Ambiguous to prefix? */
+			return (-1);		/* So stop now and save time */
+	}
+	return (0);
+}
+
+/*
+ * Return true if check matches initial chars in template.
+ * This differs from PWB imatch in that if check is null
+ * it matches anything.
+ */
+static
+is_prefix(check, template)
+	register char *check, *template;
+{
+
+	do
+		if (*check == 0)
+			return (TRUE);
+	while (*check++ == *template++);
+	return (FALSE);
+}
+
+/*
+ *  Return true if the chars in template appear at the
+ *  end of check, I.e., are it's suffix.
+ */
+static
+is_suffix(check, template)
+	char *check, *template;
+{
+	register char *c, *t;
+
+	for (c = check; *c++;)
+		;
+	for (t = template; *t++;)
+		;
+	for (;;) {
+		if (t == template)
+			return 1;
+		if (c == check || *--t != *--c)
+			return 0;
+	}
+}
+
+static
+ignored(entry)
+	register char *entry;
+{
+	struct varent *vp;
+	register char **cp;
+
+	if ((vp = adrof("fignore")) == NULL || (cp = vp->vec) == NULL)
+		return (FALSE);
+	for (; *cp != NULL; cp++)
+		if (is_suffix(entry, *cp))
+			return (TRUE);
+	return (FALSE);
+}
+
+/*
  * Perform a RECOGNIZE or LIST command on string "word".
  */
 static
@@ -447,74 +526,6 @@ again:	/* search for matches */
 	return (0);
 }
 
-/*
- * Object: extend what user typed up to an ambiguity.
- * Algorithm:
- * On first match, copy full entry (assume it'll be the only match) 
- * On subsequent matches, shorten extended_name to the first
- * character mismatch between extended_name and entry.
- * If we shorten it back to the prefix length, stop searching.
- */
-static
-recognize(extended_name, entry, name_length, numitems)
-	char *extended_name, *entry;
-{
-
-	if (numitems == 1)			/* 1st match */
-		copyn(extended_name, entry, MAXNAMLEN);
-	else {					/* 2nd & subsequent matches */
-		register char *x, *ent;
-		register int len = 0;
-
-		x = extended_name;
-		for (ent = entry; *x && *x == *ent++; x++, len++)
-			;
-		*x = '\0';			/* Shorten at 1st char diff */
-		if (len == name_length)		/* Ambiguous to prefix? */
-			return (-1);		/* So stop now and save time */
-	}
-	return (0);
-}
-
-/*
- * Return true if check matches initial chars in template.
- * This differs from PWB imatch in that if check is null
- * it matches anything.
- */
-static
-is_prefix(check, template)
-	register char *check, *template;
-{
-
-	do
-		if (*check == 0)
-			return (TRUE);
-	while (*check++ == *template++);
-	return (FALSE);
-}
-
-/*
- *  Return true if the chars in template appear at the
- *  end of check, I.e., are it's suffix.
- */
-static
-is_suffix(check, template)
-	char *check, *template;
-{
-	register char *c, *t;
-
-	for (c = check; *c++;)
-		;
-	for (t = template; *t++;)
-		;
-	for (;;) {
-		if (t == template)
-			return 1;
-		if (c == check || *--t != *--c)
-			return 0;
-	}
-}
-
 tenex(inputline, inputline_size)
 	char *inputline;
 	int inputline_size;
@@ -578,19 +589,4 @@ tenex(inputline, inputline_size)
 	setup_tty(OFF);
 	return (num_read);
 }
-
-static
-ignored(entry)
-	register char *entry;
-{
-	struct varent *vp;
-	register char **cp;
-
-	if ((vp = adrof("fignore")) == NULL || (cp = vp->vec) == NULL)
-		return (FALSE);
-	for (; *cp != NULL; cp++)
-		if (is_suffix(entry, *cp))
-			return (TRUE);
-	return (FALSE);
-}
-#endif FILEC
+#endif /* FILEC */

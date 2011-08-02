@@ -45,13 +45,15 @@ UBW32		= tools/ubw32/ubw32
 ROOTDIRS	= sbin/ bin/ dev/ etc/ tmp/
 SBIN_FILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot
 ETC_FILES	= etc/rc etc/rc.local etc/ttys
-BIN_FILES	= bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \
-                  bin/date bin/dd bin/df bin/du bin/echo bin/ed bin/false \
-                  bin/grep bin/hostid bin/kill bin/ln bin/ls bin/mkdir \
-                  bin/mv bin/nice bin/od bin/pagesize bin/pr bin/ps \
-                  bin/pwd bin/rm bin/rmail bin/rmdir bin/sh bin/size \
-                  bin/strip bin/stty bin/sync bin/tar bin/tee bin/time \
-                  bin/true bin/who
+BIN_FILES	= bin/basename bin/cal bin/cat bin/cb bin/chgrp bin/chmod \
+                  bin/cmp bin/col bin/comm bin/cp bin/date bin/dd bin/df \
+                  bin/du bin/echo bin/ed bin/false bin/fgrep bin/file \
+                  bin/grep bin/hostid bin/join bin/kill bin/ln bin/ls \
+                  bin/mesg bin/mkdir bin/mv bin/nice bin/od bin/pagesize \
+                  bin/pr bin/ps bin/pwd bin/rev bin/rm bin/rmail bin/rmdir \
+                  bin/sh bin/size bin/sleep bin/sort bin/split bin/strip \
+                  bin/stty bin/sum bin/sync bin/tar bin/tee bin/time \
+                  bin/touch bin/tr bin/tsort bin/true bin/tty bin/uniq bin/who
 ROOTFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES)
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
@@ -92,6 +94,7 @@ root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ROOTFILES)
 		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
+#		$(FSUTIL) -a $@ $(FDDEVS)
 
 sdcard:         root.bin
 		sudo dd if=root.bin of=/dev/sdb

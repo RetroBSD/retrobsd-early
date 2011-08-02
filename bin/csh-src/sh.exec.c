@@ -23,14 +23,14 @@ static char *sccsid = "@(#)sh.exec.c	5.2.2 (2.11BSD) 1996/9/20";
  * If there is no search path then we execute only full path names.
  */
 
-/* 
+/*
  * As we search for the command we note the first non-trivial error
  * message for presentation to the user.  This allows us often
  * to show that a file has the wrong mode/no access when the file
  * is not in the last component of the search path, so we must
  * go on after first detecting the error.
  */
-char	*exerr;			/* Execution error message */
+const char *exerr;		/* Execution error message */
 char	*expath;		/* Path for exerr */
 
 #include "sh.exec.h"
@@ -56,7 +56,8 @@ doexec(t)
 	 */
 	dp = globone(t->t_dcom[0]);
 	sav = t->t_dcom[0];
-	exerr = 0; expath = t->t_dcom[0] = dp;
+	exerr = 0;
+        expath = t->t_dcom[0] = dp;
 	xfree(sav);
 	v = adrof("path");
 	if (v == 0 && expath[0] != '/')
@@ -154,7 +155,6 @@ cont:
 
 pexerr()
 {
-
 	/* Couldn't find the damn thing */
 	setname(expath);
 	/* xfree(expath); */
@@ -218,7 +218,7 @@ texec(f, t)
 
 	default:
 		if (exerr == 0) {
-			exerr = syserrlst(errno);
+			exerr = strerror(errno);
 			expath = savestr(f);
 		}
 	}
@@ -253,7 +253,7 @@ xechoit(t)
 }
 
 /*VARARGS0*//*ARGSUSED*/
-dohash()
+int dohash()
 {
 	struct stat stb;
 	DIR *dirp;
@@ -268,17 +268,24 @@ dohash()
 	for (cnt = 0; cnt < sizeof xhash; cnt++)
 		xhash[cnt] = 0;
 	if (v == 0)
-		return;
+		return 0;
 	for (pv = v->vec; *pv; pv++, i++) {
 		if (pv[0][0] != '/')
 			continue;
-		dirp = opendir(*pv);
-		if (dirp == NULL)
-			continue;
-		if (fstat(dirp->dd_fd, &stb) < 0 || !S_ISDIR(stb.st_mode)) {
-			closedir(dirp);
+printf ("dohash: %s\n", *pv);
+		if (stat(*pv, &stb) < 0) {
+printf ("    ---cannot stat dir %s: %s\n", *pv, strerror(errno));
 			continue;
 		}
+                if (! S_ISDIR(stb.st_mode)) {
+printf ("    ---not a directory %s, mode = %#o\n", *pv, stb.st_mode);
+			continue;
+                }
+		dirp = opendir(*pv);
+		if (dirp == NULL) {
+printf ("    ---cannot open dir %s\n", *pv);
+			continue;
+                }
 		while ((dp = readdir(dirp)) != NULL) {
 			if (dp->d_ino == 0)
 				continue;
@@ -290,7 +297,9 @@ dohash()
 			bis(xhash, hashval);
 		}
 		closedir(dirp);
+printf ("    ---done %s\n", *pv);
 	}
+	return 0;
 }
 
 dounhash()

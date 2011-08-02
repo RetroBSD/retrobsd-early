@@ -1,7 +1,9 @@
-static char *sccsid = "@(#)tr.c	4.2 (Berkeley) 4/22/85";
+/*
+ * tr - transliterate data stream
+ */
 #include <stdio.h>
+#include <stdlib.h>
 
-/* tr - transliterate data stream */
 int	dflag	= 0;
 int	sflag	= 0;
 int	cflag = 0;

@@ -5,7 +5,6 @@
  *
  *	@(#)sh.h	5.3.2 (2.11BSD GTE) 1996/9/20
  */
-
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/param.h>
@@ -13,6 +12,9 @@
 #include <sys/signal.h>
 #include <errno.h>
 #include <setjmp.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include "sh.local.h"
 #include "sh.char.h"
 
@@ -26,9 +28,11 @@
  * April, 1980
  */
 
-typedef	char	bool;
+typedef	int	bool;
 
 #define	eq(a, b)	(strcmp(a, b) == 0)
+
+#define printf          shprintf
 
 /*
  * Global flags
@@ -60,7 +64,7 @@ char	*arginp;		/* Argument input for sh -c and internal `xx` */
 int	onelflg;		/* 2 -> need line for -t, 1 -> exit on read */
 char	*file;			/* Name of shell file for $0 */
 
-char	*err;			/* Error message from scanner/parser */
+char	*parserr;		/* Error message from scanner/parser */
 int	errno;			/* Error from C library routines */
 char	*shtemp;		/* Temp name for << shell files in /tmp */
 struct	timeval time0;		/* Time at which the shell started */
@@ -82,18 +86,19 @@ int	oldisc;			/* Initial line discipline or -1 */
  * These are declared here because they want to be
  * initialized in sh.init.c (to allow them to be made readonly)
  */
-
 struct	biltins {
 	char	*bname;
 	int	(*bfunct)();
-	short	minargs, maxargs;
-} bfunc[];
+	int	minargs, maxargs;
+};
+extern struct biltins bfunc[];
 extern int nbfunc;
 
 struct srch {
 	char	*s_name;
-	short	s_value;
-} srchn[];
+	int	s_value;
+};
+extern struct srch srchn[];
 extern int nsrchn;
 
 /*
@@ -104,10 +109,10 @@ extern int nsrchn;
  * The desired initial values for these descriptors are defined in
  * sh.local.h.
  */
-short	SHIN;			/* Current shell input (script) */
-short	SHOUT;			/* Shell output */
-short	SHDIAG;			/* Diagnostic output... shell errs go here */
-short	OLDSTD;			/* Old standard input (def for cmds) */
+int	SHIN;			/* Current shell input (script) */
+int	SHOUT;			/* Shell output */
+int	SHDIAG;			/* Diagnostic output... shell errs go here */
+int	OLDSTD;			/* Old standard input (def for cmds) */
 
 /*
  * Error control
@@ -122,12 +127,12 @@ jmp_buf	reslab;
 #define	setexit()	((void) setjmp(reslab))
 #define	reset()		longjmp(reslab, 0)
 	/* Should use structure assignment here */
-#define	getexit(a)	copy((char *)(a), (char *)reslab, sizeof reslab)
-#define	resexit(a)	copy((char *)reslab, ((char *)(a)), sizeof reslab)
+#define	getexit(a)	memcpy((char *)(a), (char *)reslab, sizeof reslab)
+#define	resexit(a)	memcpy((char *)reslab, ((char *)(a)), sizeof reslab)
 
 char	*gointr;		/* Label for an onintr transfer */
-int	(*parintr)();		/* Parents interrupt catch */
-int	(*parterm)();		/* Parents terminate catch */
+void	(*parintr)(int);	/* Parents interrupt catch */
+void	(*parterm)(int);	/* Parents terminate catch */
 
 /*
  * Lexical definitions.
@@ -150,7 +155,7 @@ struct	Bin {
 	off_t	Bfseekp;		/* Seek pointer */
 	off_t	Bfbobp;			/* Seekp of beginning of buffers */
 	off_t	Bfeobp;			/* Seekp of end of buffers */
-	short	Bfblocks;		/* Number of buffer blocks */
+	int	Bfblocks;		/* Number of buffer blocks */
 	char	**Bfbuf;		/* The array of buffer blocks */
 } B;
 
@@ -219,8 +224,8 @@ char	*lap;
  * as needed during the semantics/exeuction pass (sh.sem.c).
  */
 struct	command {
-	short	t_dtyp;				/* Type of node */
-	short	t_dflg;				/* Flags, e.g. FAND|... */
+	int	t_dtyp;				/* Type of node */
+	int	t_dflg;				/* Flags, e.g. FAND|... */
 	union {
 		char	*T_dlef;		/* Input redirect word */
 		struct	command *T_dcar;	/* Left part of list/pipe */
@@ -235,7 +240,7 @@ struct	command {
 #define	t_dcdr	R.T_dcdr
 	char	**t_dcom;			/* Command/argument vector */
 	struct	command *t_dspr;		/* Pointer to ()'d subtree */
-	short	t_nice;
+	int	t_nice;
 };
 
 #define	TCOM	1		/* t_dcom <t_dlef >t_drit	*/
@@ -328,7 +333,7 @@ char	**alvec;			/* The (remnants of) alias vector */
 /*
  * Filename/command name expansion variables
  */
-short	gflag;				/* After tglob -> is globbing needed? */
+int	gflag;				/* After tglob -> is globbing needed? */
 
 /*
  * A reasonable limit on number of arguments would seem to be
@@ -344,16 +349,16 @@ short	gflag;				/* After tglob -> is globbing needed? */
  * Variables for filename expansion
  */
 char	**gargv;			/* Pointer to the (stack) arglist */
-short	gargc;				/* Number args in gargv */
-short	gnleft;
+int	gargc;				/* Number args in gargv */
+int	gnleft;
 
 /*
  * Variables for command expansion.
  */
 char	**pargv;			/* Pointer to the argv list space */
 char	*pargs;				/* Pointer to start current word */
-short	pargc;				/* Count of arguments in pargv */
-short	pnleft;				/* Number of chars left in pargs */
+int	pargc;				/* Count of arguments in pargv */
+int	pnleft;				/* Number of chars left in pargs */
 char	*pargcp;			/* Current index into pargs */
 
 /*
@@ -398,8 +403,6 @@ char	**blkcat();
 char	**blkcpy();
 char	**blkend();
 char	**blkspl();
-char	*calloc();
-char	*malloc();
 char	*cname();
 char	**copyblk();
 char	**dobackp();
@@ -426,9 +429,9 @@ char	*index();
 struct	biltins *isbfunc();
 off_t	lseek();
 char	*operate();
-int	phup();
-int	pintr();
-int	pchild();
+void	pchild(int);
+void    pintr(int);
+int     printf(const char *format, ...);
 char	*putn();
 char	*rindex();
 char	**saveblk();
@@ -472,4 +475,5 @@ char	*evalp;
 struct	mesg {
 	char	*iname;		/* name from /usr/include */
 	char	*pname;		/* print name */
-} mesg[];
+};
+extern struct mesg mesg[];

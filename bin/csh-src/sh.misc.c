@@ -1,18 +1,11 @@
 /*
+ * C Shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.misc.c	5.3 (Berkeley) 3/29/86";
-#endif
-
 #include "sh.h"
-
-/*
- * C Shell
- */
 
 any(c, s)
 	register int c;
@@ -59,6 +52,7 @@ savestr(s)
 	return (n);
 }
 
+#if 0
 char *
 calloc(i, j)
 	register unsigned i;
@@ -71,6 +65,7 @@ calloc(i, j)
 	bzero(cp, (int)i);
 	return (cp);
 }
+#endif
 
 nomem(i)
 	unsigned i;
@@ -103,7 +98,7 @@ blkend(up)
 		up++;
 	return (up);
 }
- 
+
 blkpr(av)
 	register char **av;
 {

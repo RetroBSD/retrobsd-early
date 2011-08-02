@@ -1,6 +1,3 @@
-#if	defined(DOSCCS) && !defined(lint)
-static char *sccsid = "@(#)fgrep.c	4.3.1 (2.11BSD) 1/1/94";
-#endif
 /*
  * fgrep -- print all lines containing any of a set of keywords
  *
@@ -9,8 +6,8 @@ static char *sccsid = "@(#)fgrep.c	4.3.1 (2.11BSD) 1/1/94";
  *		1 - ok, but no matches
  *		2 - some error
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -20,8 +17,10 @@ static char *sccsid = "@(#)fgrep.c	4.3.1 (2.11BSD) 1/1/94";
 #else
 #define BLKSIZE 8192
 #endif
+
 #define	MAXSIZ 6000
 #define QSIZE 400
+
 struct words {
 	char 	inp;
 	char	out;
@@ -125,8 +124,9 @@ out:
 	exit(retcode != 0 ? retcode : nsucc == 0);
 }
 
-# define ccomp(a,b) (yflag ? lca(a)==lca(b) : a==b)
-# define lca(x) (isupper(x) ? tolower(x) : x)
+#define ccomp(a,b) (yflag ? lca(a)==lca(b) : a==b)
+#define lca(x) (isupper(x) ? tolower(x) : x)
+
 execute(file)
 char *file;
 {

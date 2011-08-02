@@ -1,9 +1,9 @@
-static char *sccsid = "@(#)tty.c	4.1 (Berkeley) 10/1/80";
 /*
  * Type tty name
  */
-
-char	*ttyname();
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 main(argc, argv)
 char **argv;

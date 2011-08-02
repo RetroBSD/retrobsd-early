@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.exp.c	5.3 (Berkeley) 6/23/85";
-#endif
-
 #include "sh.h"
 
 /*
@@ -31,7 +26,7 @@ static char *sccsid = "@(#)sh.exp.c	5.3 (Berkeley) 6/23/85";
 #define EQMATCH 7
 #define NOTEQMATCH 8
 
-exp(vp)
+expr(vp)
 	register char ***vp;
 {
 
@@ -43,7 +38,7 @@ exp0(vp, ignore)
 	bool ignore;
 {
 	register int p1 = exp1(vp, ignore);
-	
+
 #ifdef EDEBUG
 	etraci("exp0 p1", p1, vp);
 #endif
@@ -63,7 +58,7 @@ exp0(vp, ignore)
 exp1(vp, ignore)
 	register char ***vp;
 {
-	register int p1 = exp2(vp, ignore);
+	register int p1 = expr2(vp, ignore);
 
 #ifdef EDEBUG
 	etraci("exp1 p1", p1, vp);
@@ -81,7 +76,7 @@ exp1(vp, ignore)
 	return (p1);
 }
 
-exp2(vp, ignore)
+expr2(vp, ignore)
 	register char ***vp;
 	bool ignore;
 {
@@ -94,7 +89,7 @@ exp2(vp, ignore)
 		register int p2;
 
 		(*vp)++;
-		p2 = exp2(vp, ignore);
+		p2 = expr2(vp, ignore);
 #ifdef EDEBUG
 		etraci("exp3 p2", p2, vp);
 #endif
@@ -492,7 +487,7 @@ evalav(v)
 	register struct wordent *hp = &paraml;
 	struct command *t;
 	register struct wordent *wdp = hp;
-	
+
 	set("status", "0");
 	hp->prev = hp->next = hp;
 	hp->word = "";
@@ -508,8 +503,8 @@ evalav(v)
 	hp->prev = wdp;
 	alias(&paraml);
 	t = syntax(paraml.next, &paraml, 0);
-	if (err)
-		error(err);
+	if (parserr)
+		error(parserr);
 	execute(t, -1);
 	freelex(&paraml), freesyn(t);
 }

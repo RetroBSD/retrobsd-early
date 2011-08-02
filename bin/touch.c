@@ -1,15 +1,11 @@
-#ifndef lint
-static	char sccsid[] = "@(#)touch.c	4.3 (Berkeley) 8/11/83";
-#endif
-
 /*
  *	attempt to set the modify date of a file to the current date.
  *	if the file exists, read and write its first character.
  *	if the file doesn't exist, create it, unless -c option prevents it.
  *	if the file is read-only, -f forces chmod'ing and touch'ing.
  */
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 

@@ -1,5 +1,5 @@
-static char *sccsid = "@(#)cb.c	4.3 (Berkeley) 2/17/86";
 #include <stdio.h>
+
 int	slevel[10];
 int	clevel	= 0;
 int	spflg[20][10];
@@ -38,8 +38,33 @@ int	tabs	= 0;
 int	lastchar;
 int	c;
 int	getstr();
-main(argc,argv) int argc;
-char argv[];
+
+putstr()
+{
+	if(j > 0){
+		if(sflg != 0){
+			ptabs();
+			sflg = 0;
+			if(aflg == 1){
+				aflg = 0;
+				if(tabs > 0)printf("    ");
+			}
+		}
+		string[j] = '\0';
+		printf("%s",string);
+		j = 0;
+	}
+	else{
+		if(sflg != 0){
+			sflg = 0;
+			aflg = 0;
+		}
+	}
+}
+
+main(argc, argv)
+    int argc;
+    char argv[];
 {
 	while((c = getch()) != EOF){
 		switch(c){
@@ -48,7 +73,7 @@ char argv[];
 			if(lookup(welse) == 1){
 				gotelse();
 				if(sflg == 0 || j > 0)string[j++] = c;
-				puts();
+				putstr();
 				sflg = 0;
 				continue;
 			}
@@ -56,7 +81,7 @@ char argv[];
 			continue;
 		case '\n':
 			if((eflg = lookup(welse)) == 1)gotelse();
-			puts();
+			putstr();
 			printf("\n");
 			sflg = 1;
 			if(eflg == 1){
@@ -78,9 +103,9 @@ char argv[];
 				tabs--;
 			}
 			string[j++] = c;
-			puts();
+			putstr();
 			getnl();
-			puts();
+			putstr();
 			printf("\n");
 			tabs++;
 			sflg = 1;
@@ -98,7 +123,7 @@ char argv[];
 				tabs -= pflg[level];
 				pflg[level] = 0;
 			}
-			puts();
+			putstr();
 			tabs--;
 			ptabs();
 			if((peek = getch()) == ';'){
@@ -107,7 +132,7 @@ char argv[];
 			}
 			else printf("%c",c);
 			getnl();
-			puts();
+			putstr();
 			printf("\n");
 			sflg = 1;
 			if(clevel < slevel[level])if(level > 0)level--;
@@ -126,7 +151,7 @@ char argv[];
 					string[j++] = getch();
 				}
 				if(cc == '\n'){
-					puts();
+					putstr();
 					sflg = 1;
 				}
 			}
@@ -138,13 +163,13 @@ char argv[];
 			continue;
 		case ';':
 			string[j++] = c;
-			puts();
+			putstr();
 			if(pflg[level] > 0 && ind[level] == 0){
 				tabs -= pflg[level];
 				pflg[level] = 0;
 			}
 			getnl();
-			puts();
+			putstr();
 			printf("\n");
 			sflg = 1;
 			if(iflev > 0)
@@ -169,11 +194,11 @@ char argv[];
 			}
 			if(lookup(wds) == 0){
 				sflg = 0;
-				puts();
+				putstr();
 			}
 			else{
 				tabs--;
-				puts();
+				putstr();
 				tabs++;
 			}
 			if((peek = getch()) == ';'){
@@ -181,7 +206,7 @@ char argv[];
 				peek = -1;
 			}
 			getnl();
-			puts();
+			putstr();
 			printf("\n");
 			sflg = 1;
 			continue;
@@ -195,7 +220,7 @@ char argv[];
 		case ')':
 			paren--;
 			string[j++] = c;
-			puts();
+			putstr();
 			if(getnl() == 1){
 				peek = '\n';
 				if(paren != 0)aflg = 1;
@@ -211,7 +236,7 @@ char argv[];
 			while((cc = getch()) != '\n')string[j++] = cc;
 			string[j++] = cc;
 			sflg = 0;
-			puts();
+			putstr();
 			sflg = 1;
 			continue;
 		case '(':
@@ -229,7 +254,7 @@ cont:
 					goto cont;
 				}
 				paren--;
-				puts();
+				putstr();
 				if(getnl() == 1){
 					peek = '\n';
 					pflg[level]++;
@@ -239,7 +264,7 @@ cont:
 				continue;
 			}
 			if(lookup(wif) == 1){
-				puts();
+				putstr();
 				stabs[clevel][iflev] = tabs;
 				spflg[clevel][iflev] = pflg[level];
 				sind[clevel][iflev] = ind[level];
@@ -253,39 +278,23 @@ cont:
 		}
 	}
 }
-ptabs(){
+
+ptabs()
+{
 	int i;
 	for(i=0; i < tabs; i++)printf("\t");
 }
-getch(){
+
+getch()
+{
 	if(peek < 0 && lastchar != ' ' && lastchar != '\t')pchar = lastchar;
 	lastchar = (peek<0) ? getc(stdin):peek;
 	peek = -1;
 	return(lastchar);
 }
-puts(){
-	if(j > 0){
-		if(sflg != 0){
-			ptabs();
-			sflg = 0;
-			if(aflg == 1){
-				aflg = 0;
-				if(tabs > 0)printf("    ");
-			}
-		}
-		string[j] = '\0';
-		printf("%s",string);
-		j = 0;
-	}
-	else{
-		if(sflg != 0){
-			sflg = 0;
-			aflg = 0;
-		}
-	}
-}
+
 lookup(tab)
-char *tab[];
+    char *tab[];
 {
 	char r;
 	int l,kk,k,i;
@@ -299,7 +308,9 @@ char *tab[];
 	}
 	return(0);
 }
-getstr(){
+
+getstr()
+{
 	char ch;
 beg:
 	if((ch = string[j++] = getch()) == '\\'){
@@ -311,19 +322,23 @@ beg:
 		goto beg;
 	}
 	if(ch == '\n'){
-		puts();
+		putstr();
 		aflg = 1;
 		goto beg;
 	}
 	else return(ch);
 }
-gotelse(){
+
+gotelse()
+{
 	tabs = stabs[clevel][iflev];
 	pflg[level] = spflg[clevel][iflev];
 	ind[level] = sind[clevel][iflev];
 	ifflg = 1;
 }
-getnl(){
+
+getnl()
+{
 	while((peek = getch()) == '\t' || peek == ' '){
 		string[j++] = peek;
 		peek = -1;
@@ -344,7 +359,9 @@ getnl(){
 	}
 	return(0);
 }
-comment(){
+
+comment()
+{
 	int i = j;
 
 	while ((c = getch()) != EOF) {
@@ -355,7 +372,7 @@ comment(){
 				return;
 			break;
 		case '\n':
-			puts();
+			putstr();
 			sflg = 1;
 			break;
 		}

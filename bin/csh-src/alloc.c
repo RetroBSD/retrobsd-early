@@ -4,25 +4,24 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-/* From "@(#)malloc.c	5.5 (Berkeley) 2/25/86"; */
-static char *sccsid = "@(#)alloc.c	5.3 (Berkeley) 3/29/86";
-#endif
-
 /*
  * malloc.c (Caltech) 2/21/82
  * Chris Kingsley, kingsley@cit-20.
  *
- * This is a very fast storage allocator.  It allocates blocks of a small 
+ * This is a very fast storage allocator.  It allocates blocks of a small
  * number of different sizes, and keeps free lists of each size.  Blocks that
- * don't exactly fit are passed up to the next larger size.  In this 
+ * don't exactly fit are passed up to the next larger size.  In this
  * implementation, the available sizes are 2^n-4 (or 2^n-10) bytes long.
  * This is designed for use in a virtual memory environment.
  */
-
 #include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
 
+#ifndef	NULL
 #define	NULL 0
+#endif
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -90,9 +89,9 @@ botch(s)
 #define	ASSERT(p)
 #endif
 
-char *
+void *
 malloc(nbytes)
-	unsigned nbytes;
+	size_t nbytes;
 {
   	register union overhead *op;
   	register int bucket;
@@ -214,16 +213,16 @@ morecore(bucket)
   	}
 }
 
-free(cp)
-	char *cp;
-{   
+void free(cp)
+	void *cp;
+{
   	register int size;
 	register union overhead *op;
 
   	if (cp == NULL)
   		return;
 	op = (union overhead *)((caddr_t)cp - sizeof (union overhead));
-	/* 
+	/*
 	 * The following botch is because csh tries to free a free block
 	 * when processing the =~ or !~ operators. -- layer@ucbmonet
 	*/
@@ -245,6 +244,30 @@ free(cp)
 }
 
 /*
+ * Search ``srchlen'' elements of each free list for a block whose
+ * header starts at ``freep''.  If srchlen is -1 search the whole list.
+ * Return bucket number, or -1 if not found.
+ */
+static
+findbucket(freep, srchlen)
+	union overhead *freep;
+	int srchlen;
+{
+	register union overhead *p;
+	register int i, j;
+
+	for (i = 0; i < NBUCKETS; i++) {
+		j = 0;
+		for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
+			if (p == freep)
+				return (i);
+			j++;
+		}
+	}
+	return (-1);
+}
+
+/*
  * When a program attempts "storage compaction" as mentioned in the
  * old malloc man page, it realloc's an already freed block.  Usually
  * this is the last block it freed; occasionally it might be farther
@@ -257,11 +280,11 @@ free(cp)
  */
 int realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
 
-char *
+void *
 realloc(cp, nbytes)
-	char *cp; 
-	unsigned nbytes;
-{   
+	void *cp;
+	size_t nbytes;
+{
   	register u_int onb, i;
 	union overhead *op;
   	char *res;
@@ -323,32 +346,8 @@ realloc(cp, nbytes)
 }
 
 /*
- * Search ``srchlen'' elements of each free list for a block whose
- * header starts at ``freep''.  If srchlen is -1 search the whole list.
- * Return bucket number, or -1 if not found.
- */
-static
-findbucket(freep, srchlen)
-	union overhead *freep;
-	int srchlen;
-{
-	register union overhead *p;
-	register int i, j;
-
-	for (i = 0; i < NBUCKETS; i++) {
-		j = 0;
-		for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
-			if (p == freep)
-				return (i);
-			j++;
-		}
-	}
-	return (-1);
-}
-
-/*
  * mstats - print out statistics about malloc
- * 
+ *
  * Prints two lines of numbers, one showing the length of the free list
  * for each size category, the second showing the number of mallocs -
  * frees for each size category.

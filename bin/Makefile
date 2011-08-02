@@ -6,6 +6,8 @@
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
 
+CFLAGS          += -Werror
+
 # Programs that live in subdirectories, and have makefiles of their own.
 #
 SUBDIR		= sh-src ls-src stty-src #ar-src awk-src chflags-src chpass-src csh-src diff-src ld-src login-src \
@@ -22,12 +24,11 @@ SCRIPT		= false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD		= basename cat chgrp chmod cmp cp date dd du echo ed grep hostid \
-		  kill ln mkdir mv nice od pagesize pr \
-		  pwd rm rmail rmdir size sync tar tee time who #cc
-                  #cal cb checkeq col comm crypt deroff fgrep file join look \
-                  #mesg ptx rev sleep sort spline split sum tabs tc tk touch tr \
-                  #tsort tty uniq units
+STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
+		  echo ed fgrep file grep hostid join kill ln mesg mkdir mv \
+                  nice od pagesize pr pwd rev rm rmail rmdir size sleep sort \
+                  split sum sync tar tee time touch tr tsort tty uniq who
+                  #cc
 
 # C programs that live in the current directory and need explicit make lines.
 #

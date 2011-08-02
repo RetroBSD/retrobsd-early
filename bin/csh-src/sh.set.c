@@ -1,18 +1,11 @@
 /*
+ * C Shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.set.c	5.2 (Berkeley) 6/6/85";
-#endif
-
 #include "sh.h"
-
-/*
- * C Shell
- */
 
 doset(v)
 	register char **v;
@@ -82,11 +75,11 @@ setsyn:
 			HIST = *p++;
 			HISTSUB = *p;
 		} else if (eq(vp, "user"))
-			setenv("USER", value(vp));
+			setenvv("USER", value(vp));
 		else if (eq(vp, "term"))
-			setenv("TERM", value(vp));
+			setenvv("TERM", value(vp));
 		else if (eq(vp, "home"))
-			setenv("HOME", value(vp));
+			setenvv("HOME", value(vp));
 #ifdef FILEC
 		else if (eq(vp, "filec"))
 			filec = 1;
@@ -99,7 +92,6 @@ getinx(cp, ip)
 	register char *cp;
 	register int *ip;
 {
-
 	*ip = 0;
 	*cp++ = 0;
 	while (*cp && digit(*cp))
@@ -229,7 +221,7 @@ xset(cp, vp)
 		xfree(**vp);
 		**vp = dp;
 	}
-	return (putn(exp(vp)));
+	return (putn(expr(vp)));
 }
 
 char *
@@ -253,14 +245,14 @@ operate(op, vp, p)
 	}
 	*v++ = p;
 	*v++ = 0;
-	i = exp(&vecp);
+	i = expr(&vecp);
 	if (*vecp)
 		bferr("Expression syntax");
 	return (putn(i));
 }
 
 static	char *putp;
- 
+
 char *
 putn(n)
 	register int n;
@@ -275,14 +267,12 @@ putn(n)
 	if (sizeof (int) == 2 && n == -32768) {
 		*putp++ = '3';
 		n = 2768;
-#ifdef pdp11
-	}
-#else
-	} else if (sizeof (int) == 4 && n == -2147483648) {
+#ifndef pdp11
+	} else if (sizeof (int) == 4 && n == -2147483648U) {
 		*putp++ = '2';
 		n = 147483648;
-	}
 #endif
+	}
 	putn1(n);
 	*putp = 0;
 	return (savestr(number));
@@ -554,7 +544,7 @@ char **val;
 				break;
 			(void) strcat(exppath, ":");
 		}
-	setenv("PATH", exppath);
+	setenvv("PATH", exppath);
 }
 
 	/* macros to do single rotations on node p */
@@ -680,7 +670,7 @@ plist(p)
 		if (p->v_parent == 0)		/* is it the header? */
 			return;
 		len = blklen(p->vec);
-		printf(p->v_name);
+		printf("%s", p->v_name);
 		putchar('\t');
 		if (len != 1)
 			putchar('(');

@@ -1,9 +1,10 @@
-static char *sccsid = "@(#)uniq.c	4.1 (Berkeley) 10/1/80";
 /*
  * Deal with duplicated lines in a file
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
+
 int	fields;
 int	letters;
 int	linec;
@@ -127,10 +128,10 @@ register char *s;
 	while(nf++ < fields) {
 		while(*s == ' ' || *s == '\t')
 			s++;
-		while( !(*s == ' ' || *s == '\t' || *s == 0) ) 
+		while( !(*s == ' ' || *s == '\t' || *s == 0) )
 			s++;
 	}
-	while(nl++ < letters && *s != 0) 
+	while(nl++ < letters && *s != 0)
 			s++;
 	return(s);
 }

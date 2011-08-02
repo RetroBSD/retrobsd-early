@@ -12,10 +12,11 @@
 #
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
-CFLAGS          += -DTELL -DVFORK -DFILEC
+CFLAGS          += -DTELL -DVFORK -DFILEC -DNOLIMITS -Os #-Werror -g
 
-OBJS            = alloc11.o doprnt11.o printf.o sh.char.o sh.dir.o sh.dol.o \
+OBJS            = alloc.o printf.o sh.char.o sh.dir.o sh.dol.o \
                   sh.err.o sh.exp.o sh.file.o sh.func.o sh.glob.o sh.hist.o \
                   sh.init.o sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.proc.o sh.sem.o \
                   sh.set.o sh.o sh.exec.o sh.time.o sh.exec2.o

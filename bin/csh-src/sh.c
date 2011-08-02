@@ -1,16 +1,4 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley Software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.c	5.3 (Berkeley) 3/29/86";
-#endif
-
-#include "sh.h"
-#include <sys/ioctl.h>
-/*
  * C Shell
  *
  * Bill Joy, UC Berkeley, California, USA
@@ -18,7 +6,13 @@ static char *sccsid = "@(#)sh.c	5.3 (Berkeley) 3/29/86";
  *
  * Jim Kulp, IIASA, Laxenburg, Austria
  * April 1980
+ *
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley Software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
+#include "sh.h"
+#include <sys/ioctl.h>
 
 char	*pathlist[] =	{ ".", "/usr/ucb", "/bin", "/usr/bin", 0 };
 char	*dumphist[] =	{ "history", "-h", 0, 0 };
@@ -38,7 +32,28 @@ bool	enterhist = 0;
 extern	gid_t getegid(), getgid();
 extern	uid_t geteuid(), getuid();
 
-main(c, av)
+/*
+ * in the event of a HUP we want to save the history
+ */
+void phup(int sig)
+{
+	rechist();
+	exit(1);
+}
+
+/*
+ * Catch an interrupt, e.g. during lexical input.
+ * If we are an interactive shell, we reset the interrupt catch
+ * immediately.  In any case we drain the shell output,
+ * and finally go through the normal error mechanism, which
+ * gets a chance to make the shell go away.
+ */
+void pintr(int sig)
+{
+	pintr1(1);
+}
+
+int main(c, av)
 	int c;
 	char **av;
 {
@@ -279,17 +294,17 @@ retry:
 			    tpgrp != -1) {
 				int ldisc;
 				if (tpgrp != shpgrp) {
-					int (*old)() = signal(SIGTTIN, SIG_DFL);
+					void (*old)(int) = signal(SIGTTIN, SIG_DFL);
 					(void) kill(0, SIGTTIN);
 					(void) signal(SIGTTIN, old);
 					goto retry;
 				}
-				if (ioctl(f, TIOCGETD, (char *)&oldisc) != 0) 
+				if (ioctl(f, TIOCGETD, (char *)&oldisc) != 0)
 					goto notty;
 				if (oldisc != NTTYDISC) {
 #ifdef DEBUG
 					printf("Switching to new tty driver...\n");
-#endif DEBUG
+#endif
 					ldisc = NTTYDISC;
 					(void) ioctl(f, TIOCSETD,
 						(char *)&ldisc);
@@ -369,7 +384,7 @@ untty()
 		if (oldisc != -1 && oldisc != NTTYDISC) {
 #ifdef DEBUG
 			printf("\nReverting to old tty driver...\n");
-#endif DEBUG
+#endif
 			(void) ioctl(FSHTTY, TIOCSETD, (char *)&oldisc);
 		}
 	}
@@ -491,7 +506,7 @@ srcunit(unit, onlyown, hflg)
 	reenter++;
 	if (reenter == 1) {
 		/* Setup the new values of the state stuff saved above */
-		copy((char *)&saveB, (char *)&B, sizeof saveB);
+		memcpy((char *)&saveB, (char *)&B, sizeof saveB);
 		fbuf = (char **) 0;
 		fseekp = feobp = fblocks = 0;
 		oSHIN = SHIN, SHIN = unit, arginp = 0, onelflg = 0;
@@ -523,7 +538,7 @@ srcunit(unit, onlyown, hflg)
 		xfree((char *)fbuf);
 
 		/* Reset input arena */
-		copy((char *)&B, (char *)&saveB, sizeof B);
+		memcpy((char *)&B, (char *)&saveB, sizeof B);
 
 		(void) close(SHIN), SHIN = oSHIN;
 		arginp = oarginp, onelflg = oonelflg;
@@ -601,27 +616,7 @@ exitstat()
 	exit(getn(value("status")));
 }
 
-/*
- * in the event of a HUP we want to save the history
- */
-phup()
-{
-	rechist();
-	exit(1);
-}
-
 char	*jobargv[2] = { "jobs", 0 };
-/*
- * Catch an interrupt, e.g. during lexical input.
- * If we are an interactive shell, we reset the interrupt catch
- * immediately.  In any case we drain the shell output,
- * and finally go through the normal error mechanism, which
- * gets a chance to make the shell go away.
- */
-pintr()
-{
-	pintr1(1);
-}
 
 pintr1(wantnl)
 	bool wantnl;
@@ -739,13 +734,13 @@ process(catch)
 			if (fseekp == feobp)
 				printprompt();
 		}
-		err = 0;
+		parserr = 0;
 
 		/*
 		 * Echo not only on VERBOSE, but also with history expansion.
 		 * If there is a lexical error then we forego history echo.
 		 */
-		if (lex(&paraml) && !err && intty ||
+		if (lex(&paraml) && !parserr && intty ||
 		    adrof("verbose")) {
 			haderr = 1;
 			prlex(&paraml);
@@ -759,7 +754,7 @@ process(catch)
 			(void) sigblock(sigmask(SIGINT));
 
 		/*
-		 * Save input text on the history list if 
+		 * Save input text on the history list if
 		 * reading in old history, or it
 		 * is from the terminal at the top level and not
 		 * in a loop.
@@ -771,8 +766,8 @@ process(catch)
 		 * Print lexical error messages, except when sourcing
 		 * history lists.
 		 */
-		if (!enterhist && err)
-			error(err);
+		if (!enterhist && parserr)
+			error(parserr);
 
 		/*
 		 * If had a history command :p modifier then
@@ -787,8 +782,8 @@ process(catch)
 		 * Parse the words of the input into a parse tree.
 		 */
 		t = syntax(paraml.next, &paraml, 0);
-		if (err)
-			error(err);
+		if (parserr)
+			error(parserr);
 
 		/*
 		 * Execute the parse tree
@@ -895,7 +890,6 @@ gethdir(home)
  */
 initdesc()
 {
-
 	didfds = 0;			/* 0, 1, 2 aren't set up */
 	(void) ioctl(SHIN = dcopy(0, FSHIN), FIOCLEX, (char *)0);
 	(void) ioctl(SHOUT = dcopy(1, FSHOUT), FIOCLEX, (char *)0);
@@ -905,13 +899,12 @@ initdesc()
 }
 
 #ifdef PROF
-done(i)
+void done(i)
 #else
-exit(i)
+void exit(i)
 #endif
 	int i;
 {
-
 	untty();
 	_exit(i);
 }
@@ -930,7 +923,7 @@ printprompt()
 				putchar(*cp | QUOTE);
 			}
 	} else
-		/* 
+		/*
 		 * Prompt for forward reading loop
 		 * body content.
 		 */

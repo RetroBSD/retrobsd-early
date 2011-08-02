@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.glob.c	5.4.1 (2.11BSD) 1996/9/20";
-#endif
-
 #include "sh.h"
 #include <sys/dir.h>
 
@@ -187,7 +182,7 @@ matchdir(pattern)
 			return;
 		goto patherr2;
 	}
-	if (fstat(dirp->dd_fd, &stb) < 0)
+	if (fstat(dirfd(dirp), &stb) < 0)
 		goto patherr1;
 	if (!S_ISDIR(stb.st_mode)) {
 		errno = ENOTDIR;
@@ -657,12 +652,12 @@ backeval(cp, literal)
 		while (*cp)
 			*cp++ &= TRIM;
 		(void) lex(&paraml);
-		if (err)
-			error(err);
+		if (parserr)
+			error(parserr);
 		alias(&paraml);
 		t = syntax(paraml.next, &paraml, 0);
-		if (err)
-			error(err);
+		if (parserr)
+			error(parserr);
 		if (t)
 			t->t_dflg |= FPAR;
 		(void) signal(SIGTSTP, SIG_IGN);

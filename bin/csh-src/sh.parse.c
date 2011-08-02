@@ -1,18 +1,11 @@
 /*
+ * C shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.parse.c	5.3 (Berkeley) 5/13/86";
-#endif
-
 #include "sh.h"
-
-/*
- * C shell
- */
 
 /*
  * Perform aliasing on the word list lex
@@ -118,9 +111,9 @@ asyn3(p1, p2)
 	redid = lex(&alout);
 	alhistp = alhistt = 0;
 	alvec = 0;
-	if (err) {
+	if (parserr) {
 		freelex(&alout);
-		error(err);
+		error(parserr);
 	}
 	if (p1->word[0] && eq(p1->word, alout.next->word)) {
 		char *cp = alout.next->word;
@@ -579,7 +572,7 @@ savep:
 		default:
 			if (l != 0 && !specp)
 				continue;
-			if (err == 0)
+			if (parserr == 0)
 				av[n] = savestr(p->word);
 			n++;
 			continue;

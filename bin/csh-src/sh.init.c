@@ -1,18 +1,11 @@
 /*
+ * C shell
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char *sccsid = "@(#)sh.init.c	5.2.1 (2.11BSD) 1996/9/20";
-#endif
-
 #include "sh.local.h"
-
-/*
- * C shell
- */
 
 extern	int doalias();
 extern	int dobg();
@@ -31,7 +24,7 @@ extern	int dofg();
 extern	int doforeach();
 extern	int doglob();
 extern	int dogoto();
-extern	int dohash();
+extern  int dohash();
 extern	int dohist();
 extern	int doif();
 extern	int dojobs();
@@ -215,7 +208,7 @@ struct	mesg {
 } mesg[] = {
 	0,	0,
 	"HUP",	"Hangup",
-	"INT",	"Interrupt",	
+	"INT",	"Interrupt",
 	"QUIT",	"Quit",
 	"ILL",	"Illegal instruction",
 	"TRAP",	"Trace/BPT trap",

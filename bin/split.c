@@ -1,5 +1,5 @@
-static char *sccsid = "@(#)split.c	4.2 (Berkeley) 4/29/83";
 #include <stdio.h>
+#include <stdlib.h>
 
 unsigned count = 1000;
 int	fnumber;
@@ -18,11 +18,11 @@ char *argv[];
 	for(i=1; i<argc; i++)
 		if(argv[i][0] == '-')
 			switch(argv[i][1]) {
-		
+
 			case '\0':
 				iflg = 1;
 				continue;
-		
+
 			case '0':
 			case '1':
 			case '2':
