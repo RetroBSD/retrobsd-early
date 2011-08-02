@@ -27,7 +27,20 @@
 
 void bad_memory_access (cpu_mips_t * cpu, m_va_t vaddr)
 {
-    printf ("cpu->pc  %x vaddr %x\n", cpu->pc, vaddr);
+    mips_insn_t insn;
+
+    printf ("*** %08x: bad memory reference\n", vaddr);
+    if (mips64_fetch_instruction (cpu, cpu->pc, &insn) == 0) {
+        printf ("*** %08x: %08x ", cpu->pc, insn);
+        print_insn_mips (cpu->pc, insn, stdout);
+        printf ("\n");
+    }
+    if (mips64_fetch_instruction (cpu, cpu->pc + 4, &insn) == 0) {
+        printf ("*** %08x: %08x ", cpu->pc + 4, insn);
+        print_insn_mips (cpu->pc, insn, stdout);
+        printf ("\n");
+    }
+    dumpregs (cpu);
     if (cpu->vm->mipsy_debug_mode)
         bad_memory_access_gdb (cpu->vm);
     else
@@ -102,12 +115,6 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
 #endif
 
 #define MTS_ADDR_SIZE      32
-
-/* Forward declarations */
-static void *mips_mts32_access (cpu_mips_t * cpu, m_va_t vaddr,
-    u_int op_code, u_int op_size,
-    u_int op_type, m_reg_t * data, u_int * exc, m_uint8_t * has_set_value,
-    u_int is_fromgdb);
 
 static int mips_mts32_translate (cpu_mips_t * cpu, m_va_t vaddr,
     m_uint32_t * phys_page);
@@ -1306,7 +1313,7 @@ static forced_inline int mips_mts32_check_tlbcache (cpu_mips_t * cpu,
 }
 
 /* MTS32 access */
-static void *mips_mts32_access (cpu_mips_t * cpu, m_va_t vaddr,
+void *mips_mts32_access (cpu_mips_t * cpu, m_va_t vaddr,
     u_int op_code, u_int op_size, u_int op_type, m_reg_t * data,
     u_int * exc, m_uint8_t * has_set_value, u_int is_fromgdb)
 {

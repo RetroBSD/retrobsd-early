@@ -42,7 +42,7 @@ SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
 UBW32		= tools/ubw32/ubw32
-ROOTDIRS	= sbin/ bin/ dev/ etc/
+ROOTDIRS	= sbin/ bin/ dev/ etc/ tmp/
 SBIN_FILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot
 ETC_FILES	= etc/rc etc/rc.local etc/ttys
 BIN_FILES	= bin/basename bin/cat bin/chgrp bin/chmod bin/cmp bin/cp \

@@ -168,6 +168,10 @@ char **argv;
 	}
 	zero = (int *)malloc(nlall*sizeof(int));
 	tfname = mktemp("/tmp/eXXXXX");
+        if (! tfname) {
+                putstr ("ed: cannot create /tmp/file");
+                exit(-1);
+        }
 	init();
 	if (((int)oldintr&01) == 0)
 		signal(SIGINT, onintr);
@@ -868,7 +872,6 @@ putline()
 char *
 getblock(atl, iof)
 {
-	extern read(), write();
 	register bno, off;
 	register char *p1, *p2;
 	register int n;

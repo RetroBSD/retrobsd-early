@@ -712,6 +712,19 @@ static int dsra32_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int eret_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
+#if 1
+    if (cpu->trace_syscall &&
+        (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM)) {
+        unsigned uerror = cpu->gpr[8];
+        cpu->trace_syscall = 0;
+        if (uerror == 0)
+            printf ("    syscall returned %u\n", cpu->gpr[2]);
+        else if (uerror == -1)
+            printf ("    syscall restarted\n");
+        else
+            printf ("    syscall failed, errno %u\n", uerror);
+    }
+#endif
     mips64_exec_eret (cpu);
     return (1);
 }

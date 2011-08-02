@@ -70,7 +70,7 @@ static int forced_inline mips64_exec_memop2 (cpu_mips_t * cpu, int memop,
 }
 
 /* Fetch an instruction */
-static forced_inline int mips64_fetch_instruction (cpu_mips_t * cpu,
+int mips64_fetch_instruction (cpu_mips_t * cpu,
     m_va_t pc, mips_insn_t * insn)
 {
     m_va_t exec_page;
@@ -128,11 +128,8 @@ void fastcall mips64_exec_single_step (cpu_mips_t * cpu,
         cpu->pc += 4;
 }
 
-static void dumpregs (cpu_mips_t *cpu, mips_insn_t insn)
+void dumpregs (cpu_mips_t *cpu)
 {
-    printf ("*** %08x: %08x ", cpu->pc, insn);
-    print_insn_mips (cpu->pc, insn, stdout);
-    printf ("\n");
 	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
 		cpu->gpr[8], cpu->gpr[16], cpu->gpr[24], cpu->lo);
 	printf ("at = %8x   t1 = %8x   s1 = %8x   t9 = %8x   hi = %8x\n",
@@ -188,7 +185,10 @@ start_cpu:
 
         if (cpu->vm->trace_address == cpu->pc) {
             /* Trace address. */
-            dumpregs (cpu, insn);
+            printf ("*** %08x: %08x ", cpu->pc, insn);
+            print_insn_mips (cpu->pc, insn, stdout);
+            printf ("\n");
+            dumpregs (cpu);
         }
 
         if (unlikely (res == 1)) {

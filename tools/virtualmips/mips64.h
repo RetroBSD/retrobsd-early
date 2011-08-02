@@ -427,6 +427,7 @@ struct cpu_mips {
     u_int addr_mode;
 
     int is_in_bdslot;
+    int trace_syscall;
 
     /* Current exec page (non-JIT) info */
     m_va_t njm_exec_page;
@@ -491,5 +492,12 @@ void clear_timer_irq (cpu_mips_t *cpu);
 int print_insn_mips (unsigned memaddr, unsigned long int word, FILE *stream);
 
 const char *cp0reg_name (unsigned cp0reg, unsigned sel);
+
+int mips64_fetch_instruction (cpu_mips_t * cpu,
+    m_va_t pc, mips_insn_t * insn);
+void *mips_mts32_access (cpu_mips_t * cpu, m_va_t vaddr,
+    u_int op_code, u_int op_size,
+    u_int op_type, m_reg_t * data, u_int * exc, m_uint8_t * has_set_value,
+    u_int is_fromgdb);
 
 #endif

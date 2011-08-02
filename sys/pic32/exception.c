@@ -10,8 +10,6 @@
 #include "proc.h"
 #include "vm.h"
 
-//#define TRACE_EXCEPTIONS
-
 /*
  * Translate interrupt vector number to IRQ mask.
  */
@@ -136,26 +134,6 @@ dumpregs (frame)
 		frame [FRAME_R23], frame [FRAME_RA]);
 }
 
-#ifdef TRACE_EXCEPTIONS
-static void
-print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
-{
-        void print_arg (val) {
-                if (val & 0xff000000)
-                        printf ("%08x", val);
-                else
-                        printf ("%u", val);
-        }
-
-        print_arg (arg0);
-        if (narg > 1) { printf (", "); print_arg (arg1); }
-        if (narg > 2) { printf (", "); print_arg (arg2); }
-        if (narg > 3) { printf (", "); print_arg (arg3); }
-        if (narg > 4) { printf (", "); print_arg (arg4); }
-        if (narg > 5) { printf (", "); print_arg (arg5); }
-}
-#endif
-
 /*
  * User mode flag added to cause code if exception is from user space.
  */
@@ -186,7 +164,6 @@ printf ("\nkernel stack = %p", frame);
 #endif
 	status = frame [FRAME_STATUS];
 	cause = mips_read_c0_register (C0_CAUSE);
-//printf ("exception: cause %08x, status %08x\n", cause, status);
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
@@ -204,39 +181,32 @@ printf ("\nkernel stack = %p", frame);
 #if 1
 	case CA_IBE + USER:		/* Bus error, instruction fetch */
 	case CA_DBE + USER:		/* Bus error, load or store */
-printf ("*** pid %u at %p: bus error\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGBUS;
 		break;
 
 	case CA_RI + USER:		/* Reserved instruction */
-printf ("*** pid %u at %p: invalid instruction\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGILL;
 		break;
 
 	case CA_Bp + USER:		/* Breakpoint */
-printf ("*** pid %u at %p: breakpoint\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGTRAP;
 		break;
 
 	case CA_Tr + USER:		/* Trap */
-printf ("*** pid %u at %p: trap\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGIOT;
 		break;
 
 	case CA_CPU + USER:		/* Coprocessor unusable */
-printf ("*** pid %u at %p: fpu instruction\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGEMT;
 		break;
 
 	case CA_Ov:			/* Arithmetic overflow */
 	case CA_Ov + USER:
-printf ("*** pid %u at %p: arith overflow\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGFPE;
 		break;
 
 	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
 	case CA_AdES + USER:		/* Address error, store */
-printf ("*** pid %u at %p: bad memory reference\n", u.u_procp->p_pid, frame [FRAME_PC]);
 		i = SIGSEGV;
 		break;
 #endif
@@ -328,13 +298,6 @@ printf ("*** pid %u at %p: bad memory reference\n", u.u_procp->p_pid, frame [FRA
 					u.u_arg[5] = *(unsigned*) addr;
 			}
 		}
-#ifdef TRACE_EXCEPTIONS
-                printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
-                if (callp->sy_narg > 0)
-                        print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1],
-                        u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
-                printf (") at %08x\n", opc);
-#endif
 		u.u_rval = 0;
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
@@ -342,18 +305,12 @@ printf ("*** pid %u at %p: bad memory reference\n", u.u_procp->p_pid, frame [FRA
 		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
-#ifdef TRACE_EXCEPTIONS
-                        printf ("    syscall returned %u\n", u.u_rval);
-#endif
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
-#ifdef TRACE_EXCEPTIONS
-                        printf ("    syscall failed, errno %u\n", u.u_error);
-#endif
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}
