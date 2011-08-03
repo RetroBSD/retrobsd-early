@@ -261,7 +261,7 @@ udelay (usec)
 void led_control (int mask, int on)
 {
         /* UBW32 board: LEDs on PORTE[0:3]. */
-        if (mask & LED_KERNEL) {        /* LED3 on PE0: yellow */
+        if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
                 if (on) PORTECLR = 1 << 0;
                 else    PORTESET = 1 << 0;
         }
@@ -269,7 +269,7 @@ void led_control (int mask, int on)
                 if (on) PORTECLR = 1 << 1;
                 else    PORTESET = 1 << 1;
         }
-        if (mask & LED_AUX) {           /* LED1 on PE2: white */
+        if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
                 if (on) PORTECLR = 1 << 2;
                 else    PORTESET = 1 << 2;
         }
