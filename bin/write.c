@@ -25,9 +25,21 @@ char	histty[32];
 char	ttybuf[32];
 char	*histtya;
 int	logcnt;
-int	eof();
-int	timout();
 FILE	*tf;
+
+void timout(sig)
+        int sig;
+{
+	fprintf(stderr, "write: Timeout opening their tty\n");
+	exit(1);
+}
+
+void eof(sig)
+        int sig;
+{
+	fprintf(tf, "EOF\r\n");
+	exit(0);
+}
 
 main(argc, argv)
 	int argc;
@@ -70,7 +82,7 @@ main(argc, argv)
 		if (!suser)
 			exit(1);
 	}
-	mytty = rindex(mytty, '/') + 1;
+	mytty = strrchr(mytty, '/') + 1;
 	if (histtya) {
 		strcpy(histty, "/dev/");
 		strcat(histty, histtya);
@@ -191,20 +203,6 @@ cont:
 	}
 }
 
-timout()
-{
-
-	fprintf(stderr, "write: Timeout opening their tty\n");
-	exit(1);
-}
-
-eof()
-{
-
-	fprintf(tf, "EOF\r\n");
-	exit(0);
-}
-
 ex(bp)
 	char *bp;
 {
@@ -219,7 +217,7 @@ ex(bp)
 	if (i == 0) {
 		fclose(tf);		/* Close his terminal */
 		setgid(getgid());	/* Give up effective group privs */
-		sigs((int (*)())0);
+		sigs((sig_t) 0);
 		execl(getenv("SHELL") ?
 		    getenv("SHELL") : "/bin/sh", "sh", "-c", bp+1, 0);
 		exit(0);
@@ -232,7 +230,7 @@ out:
 }
 
 sigs(sig)
-	int (*sig)();
+	sig_t sig;
 {
 	register i;
 

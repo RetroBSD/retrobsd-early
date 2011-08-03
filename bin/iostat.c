@@ -1,11 +1,9 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char *sccsid = "@(#)iostat.c	4.16 (2.11BSD) 1996/1/8";
-#endif
-
 /*
  * iostat
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <nlist.h>
 #include <signal.h>
@@ -70,7 +68,24 @@ int	mf;
 int	hz;
 double	etime;
 int	tohdr = 1;
-int	printhdr();
+
+void printhdr(sig)
+        int sig;
+{
+	register int i;
+
+	printf("      tty");
+	for (i = 0; i < dk_ndrive; i++)
+		if (dr_select[i])
+			printf("          %3.3s ", dr_name[i]);
+	printf("         cpu\n");
+	printf(" tin tout");
+	for (i = 0; i < dk_ndrive; i++)
+		if (dr_select[i])
+			printf(" bps tps msps ");
+	printf(" us ni sy id\n");
+	tohdr = 19;
+}
 
 main(argc, argv)
 	char *argv[];
@@ -219,23 +234,6 @@ contin:
 		sleep(atoi(argv[0]));
 		goto loop;
 	}
-}
-
-printhdr()
-{
-	register int i;
-
-	printf("      tty");
-	for (i = 0; i < dk_ndrive; i++)
-		if (dr_select[i])
-			printf("          %3.3s ", dr_name[i]);
-	printf("         cpu\n");
-	printf(" tin tout");
-	for (i = 0; i < dk_ndrive; i++)
-		if (dr_select[i])
-			printf(" bps tps msps ");
-	printf(" us ni sy id\n");
-	tohdr = 19;
 }
 
 stats(dn)

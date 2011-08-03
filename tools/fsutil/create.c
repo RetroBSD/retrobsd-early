@@ -17,7 +17,7 @@
 
 extern int verbose;
 
-static int build_inode_list (fs_t *fs)
+int inode_build_list (fs_t *fs)
 {
 	fs_inode_t inode;
 	unsigned int inum, total_inodes;
@@ -375,7 +375,7 @@ int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
 		return 0;
 
 	/* build a list of free inodes */
-	if (! build_inode_list (fs))
+	if (! inode_build_list (fs))
 		return 0;
 
 	/* write out super block */

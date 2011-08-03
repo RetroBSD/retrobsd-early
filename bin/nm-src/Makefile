@@ -1,17 +1,24 @@
-SRCS=	nm.c
-OBJS=	nm.o
-CFLAGS=	-O -I../ar
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all:	nm
+CFLAGS		+= -Werror -I../ar-src
 
-nm: ${OBJS}
-	cc -z -o nm ${OBJS}
+SRCS		= nm.c
+OBJS		= nm.o
 
-install:
-	install -c -s -o bin -g bin -m 755 nm ${DESTDIR}/bin/nm
+all:            ../nm
 
-lint:
-	lint -havx -I../ar ${SRCS}
+../nm:          ${OBJS}
+		${CC} ${LDFLAGS} -o nm.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S nm.elf > nm.dis
+		${SIZE} nm.elf
+		${ELF2AOUT} nm.elf $@
 
 clean:
-	rm -f *.o *.0 nm
+		rm -f *.o *.elf ${MAN} ../nm *.elf *.dis tags *~
+
+install:
+		install -c -s -o bin -g bin -m 755 nm ${DESTDIR}/bin/nm
+
+lint:
+		lint -havx -I../ar ${SRCS}

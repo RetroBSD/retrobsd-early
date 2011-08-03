@@ -13,19 +13,37 @@
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)utmp.h	5.6.1 (2.11BSD) 1996/11/27
  */
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <strings.h>
+#include <utmp.h>
 
-#define	_PATH_UTMP	"/var/run/utmp"
-#define	_PATH_WTMP	"/var/adm/wtmp"
+typedef struct utmp UTMP;
 
-#define	UT_NAMESIZE	15
-#define	UT_LINESIZE	8
-#define	UT_HOSTSIZE	16
-struct utmp {
-	char	ut_line[UT_LINESIZE];
-	char	ut_name[UT_NAMESIZE];
-	char	ut_host[UT_HOSTSIZE];
-	long	ut_time;
-};
+logout(line)
+	register char *line;
+{
+	register int fd;
+	UTMP ut;
+	int rval;
+	off_t lseek();
+	time_t time();
+
+	if ((fd = open(_PATH_UTMP, O_RDWR)) < 0)
+		return(0);
+	rval = 0;
+	while (read(fd, (char *)&ut, sizeof(UTMP)) == sizeof(UTMP)) {
+		if (!ut.ut_name[0] || strncmp(ut.ut_line, line, UT_LINESIZE))
+			continue;
+		bzero(ut.ut_name, UT_NAMESIZE);
+		bzero(ut.ut_host, UT_HOSTSIZE);
+		(void)time(&ut.ut_time);
+		(void)lseek(fd, -(long)sizeof(UTMP), L_INCR);
+		(void)write(fd, (char *)&ut, sizeof(UTMP));
+		rval = 1;
+	}
+	(void)close(fd);
+	return(rval);
+}

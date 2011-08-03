@@ -1,17 +1,11 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)init.c	5.2.2 (2.11BSD GTE) 1997/3/28";
-#endif
-
-/*
  * Getty table initializations.
  *
  * Melbourne getty.
+ *
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 #include <sgtty.h>
 #include "gettytab.h"

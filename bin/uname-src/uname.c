@@ -30,19 +30,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)uname.c	8.1.1 (2.11BSD GTE) 2/4/95";
-#endif /* not lint */
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
-
-#include <stdio.h>
 
 extern	int	optind;
 

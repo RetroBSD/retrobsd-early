@@ -14,19 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)field.c	5.8 (Berkeley) 3/16/89";
-#endif /* not lint */
-
 #include <sys/param.h>
+#include <machine/limits.h>
 #include <pwd.h>
 #include <grp.h>
+#include <string.h>
 #include <strings.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <chpass.h>
-#include "pathnames.h"
+#include <paths.h>
+#include "chpass.h"
 
 /* ARGSUSED */
 p_login(p, pw, ep)
@@ -71,7 +68,7 @@ p_passwd(p, pw, ep)
 		(void)fprintf(stderr, "chpass: can't save password entry.\n");
 		return(1);
 	}
-	
+
 	return(0);
 }
 
@@ -145,7 +142,7 @@ p_class(p, pw, ep)
 		(void)fprintf(stderr, "chpass: can't save entry.\n");
 		return(1);
 	}
-	
+
 	return(0);
 }
 

@@ -77,6 +77,7 @@ void	exit (int);
 void	free (void *);
 char	*getenv();
 void	*malloc (size_t);
+char	*mktemp (char *template);
 void	qsort();
 int	rand();
 void	*realloc();
@@ -94,10 +95,6 @@ void	*alloca();
 int	daemon();
 char	*devname();
 int	getloadavg();
-
-extern char *optarg;			/* getopt(3) external variables */
-extern int opterr, optind, optopt;
-int	getopt();
 
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	getsubopt();

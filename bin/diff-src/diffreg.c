@@ -1,11 +1,7 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char sccsid[] = "@(#)diffreg.c 4.16.1 (2.11BSD) 1/1/94";
-#endif
-
-#include "diff.h"
 /*
  * diff - compare two files.
  */
+#include "diff.h"
 
 /*
  *	Uses an algorithm due to Harold Stone, which finds
@@ -22,7 +18,7 @@ static	char sccsid[] = "@(#)diffreg.c 4.16.1 (2.11BSD) 1/1/94";
  *	on the hash (called ``value''). In particular, this
  *	collects the equivalence classes in file1 together.
  *	Subroutine equiv replaces the value of each line in
- *	file0 by the index of the first element of its 
+ *	file0 by the index of the first element of its
  *	matching equivalence in (the reordered) file1.
  *	To save space equiv squeezes file1 into a single
  *	array member in which the equivalence classes
@@ -37,15 +33,15 @@ static	char sccsid[] = "@(#)diffreg.c 4.16.1 (2.11BSD) 1/1/94";
  *	of "k-candidates". At step i a k-candidate is a matched
  *	pair of lines x,y (x in file0 y in file1) such that
  *	there is a common subsequence of length k
- *	between the first i lines of file0 and the first y 
+ *	between the first i lines of file0 and the first y
  *	lines of file1, but there is no such subsequence for
  *	any smaller y. x is the earliest possible mate to y
  *	that occurs in such a subsequence.
  *
  *	Whenever any of the members of the equivalence class of
- *	lines in file1 matable to a line in file0 has serial number 
- *	less than the y of some k-candidate, that k-candidate 
- *	with the smallest such y is replaced. The new 
+ *	lines in file1 matable to a line in file0 has serial number
+ *	less than the y of some k-candidate, that k-candidate
+ *	with the smallest such y is replaced. The new
  *	k-candidate is chained (via pred) to the current
  *	k-1 candidate so that the actual subsequence can
  *	be recovered. When a member has serial number greater
@@ -67,13 +63,12 @@ static	char sccsid[] = "@(#)diffreg.c 4.16.1 (2.11BSD) 1/1/94";
  *	The core requirements for problems larger than somewhat
  *	are (in words) 2*length(file0) + length(file1) +
  *	3*(number of k-candidates installed),  typically about
- *	6n words for files of length n. 
+ *	6n words for files of length n.
  */
 
 #define	prints(s)	fputs(s,stdout)
 
 FILE	*input[2];
-FILE	*fopen();
 
 struct cand {
 	int	x;
@@ -96,13 +91,13 @@ int	clen = 0;
 int	*J;		/* will be overlaid on class */
 long	*ixold;		/* will be overlaid on klist */
 long	*ixnew;		/* will be overlaid on file[1] */
-char	*chrtran;	/* translation table for case-folding */
+const char *chrtran;	/* translation table for case-folding */
 
 /* chrtran points to one of 2 translation tables:
  *	cup2low if folding upper to lower case
  *	clow2low if not folding case
  */
-char	clow2low[256] = {
+const char clow2low[256] = {
 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
 0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
 0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
@@ -121,7 +116,7 @@ char	clow2low[256] = {
 0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
 };
 
-char	cup2low[256] = {
+const char cup2low[256] = {
 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
 0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
 0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
@@ -151,52 +146,52 @@ diffreg()
 		execv(diffh, diffargv);
 		fprintf(stderr, "diff: ");
 		perror(diffh);
-		done();
+		done(0);
 	}
-	chrtran = (iflag? cup2low : clow2low);
+	chrtran = (iflag ? cup2low : clow2low);
 	if ((stb1.st_mode & S_IFMT) == S_IFDIR) {
 		file1 = splice(file1, file2);
 		if (stat(file1, &stb1) < 0) {
 			fprintf(stderr, "diff: ");
 			perror(file1);
-			done();
+			done(0);
 		}
 	} else if ((stb2.st_mode & S_IFMT) == S_IFDIR) {
 		file2 = splice(file2, file1);
 		if (stat(file2, &stb2) < 0) {
 			fprintf(stderr, "diff: ");
 			perror(file2);
-			done();
+			done(0);
 		}
 	} else if (!strcmp(file1, "-")) {
 		if (!strcmp(file2, "-")) {
 			fprintf(stderr, "diff: can't specify - -\n");
-			done();
+			done(0);
 		}
 		file1 = copytemp();
 		if (stat(file1, &stb1) < 0) {
 			fprintf(stderr, "diff: ");
 			perror(file1);
-			done();
+			done(0);
 		}
 	} else if (!strcmp(file2, "-")) {
 		file2 = copytemp();
 		if (stat(file2, &stb2) < 0) {
 			fprintf(stderr, "diff: ");
 			perror(file2);
-			done();
+			done(0);
 		}
 	}
 	if ((f1 = fopen(file1, "r")) == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(file1);
-		done();
+		done(0);
 	}
 	if ((f2 = fopen(file2, "r")) == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(file2);
 		fclose(f1);
-		done();
+		done(0);
 	}
 	if (stb1.st_size != stb2.st_size)
 		goto notsame;
@@ -224,7 +219,7 @@ notsame:
 		printf("Binary files %s and %s differ\n", file1, file2);
 		fclose(f1);
 		fclose(f2);
-		done();
+		done(0);
 	}
 	prepare(0, f1);
 	prepare(1, f2);
@@ -261,7 +256,7 @@ notsame:
 same:
 	if (opt == D_CONTEXT && anychange == 0)
 		printf("No differences encountered\n");
-	done();
+	done(0);
 }
 
 char *
@@ -270,22 +265,22 @@ copytemp()
 	char buf[BUFSIZ];
 	register int i, f;
 
-	signal(SIGHUP,done);
-	signal(SIGINT,done);
-	signal(SIGPIPE,done);
-	signal(SIGTERM,done);
+	signal(SIGHUP, done);
+	signal(SIGINT, done);
+	signal(SIGPIPE, done);
+	signal(SIGTERM, done);
 	tempfile = mktemp("/tmp/dXXXXX");
-	f = creat(tempfile,0600);
+	f = creat(tempfile, 0600);
 	if (f < 0) {
 		fprintf(stderr, "diff: ");
 		perror(tempfile);
-		done();
+		done(0);
 	}
-	while ((i = read(0,buf,BUFSIZ)) > 0)
-		if (write(f,buf,i) != i) {
+	while ((i = read(0, buf, BUFSIZ)) > 0)
+		if (write(f, buf, i) != i) {
 			fprintf(stderr, "diff: ");
 			perror(tempfile);
-			done();
+			done(0);
 		}
 	close(f);
 	return (tempfile);
@@ -300,9 +295,9 @@ splice(dir, file)
 
 	if (!strcmp(file, "-")) {
 		fprintf(stderr, "diff: can't specify - with other arg directory\n");
-		done();
+		done(0);
 	}
-	tail = rindex(file, '/');
+	tail = strrchr(file, '/');
 	if (tail == 0)
 		tail = file;
 	else
@@ -436,7 +431,7 @@ int *c;
 	j = k+1;
 	while (1) {
 		l = i + j;
-		if ((l >>= 1) <= i) 
+		if ((l >>= 1) <= i)
 			break;
 		t = clist[c[l]].y;
 		if(t > y)
@@ -475,11 +470,11 @@ check()
 
 	if ((input[0] = fopen(file1,"r")) == NULL) {
 		perror(file1);
-		done();
+		done(0);
 	}
 	if ((input[1] = fopen(file2,"r")) == NULL) {
 		perror(file2);
-		done();
+		done(0);
 	}
 	j = 1;
 	ixold[0] = ixnew[0] = 0;
@@ -709,7 +704,7 @@ change(a,b,c,d)
 			stat(file2, &stbuf);
 			printf("%s", ctime(&stbuf.st_mtime));
 
-			context_vec_start = (struct context_vec *) 
+			context_vec_start = (struct context_vec *)
 						malloc(MAX_CONTEXT *
 						   sizeof(struct context_vec));
 			context_vec_end = context_vec_start + MAX_CONTEXT;
@@ -867,7 +862,7 @@ char *s;
 /*
  * hashing has the effect of
  * arranging line in 7-bit bytes and then
- * summing 1-s complement in 16-bit hunks 
+ * summing 1-s complement in 16-bit hunks
  */
 readhash(f)
 register FILE *f;
@@ -992,7 +987,7 @@ dump_context_vec()
 			do_output++;
 			break;
 		}
-	
+
 	if ( do_output ) {
 		while (cvp <= context_vec_ptr) {
 			a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;
@@ -1026,7 +1021,7 @@ dump_context_vec()
 			do_output++;
 			break;
 		}
-	
+
 	if (do_output) {
 		while (cvp <= context_vec_ptr) {
 			a = cvp->a; b = cvp->b; c = cvp->c; d = cvp->d;

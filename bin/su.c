@@ -3,16 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)su.c	5.4.1 (2.11BSD) 1997/10/2";
-#endif
-
 #include <stdio.h>
+#include <string.h>
 #include <pwd.h>
 #include <grp.h>
 #include <syslog.h>

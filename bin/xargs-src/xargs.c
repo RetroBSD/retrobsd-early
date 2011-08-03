@@ -33,27 +33,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(DOSCCS) && !defined(lint)
-static char copyright[] =
-"@(#) Copyright (c) 1990, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif
-
-#if defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)xargs.c	8.1 (Berkeley) 6/6/93";
-#endif
-
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdio.h>
-#include "pathnames.h"
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <paths.h>
 
-extern int errno;
-extern char *optarg;
-extern int optind;
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
 /*
  * This is defined for pdp11s.  ARG_MAX is usually defined in
@@ -68,9 +63,76 @@ extern int optind;
 
 int tflag, rval;
 
-void err();
-void run();
-void usage();
+void
+#if __STDC__
+fatal(const char *fmt, ...)
+#else
+fatal(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "xargs: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
+}
+
+void
+run(argv)
+	char **argv;
+{
+	int noinvoke;
+	register char **p;
+	pid_t pid;
+	int status;
+
+	if (tflag) {
+		(void)fprintf(stderr, "%s", *argv);
+		for (p = argv + 1; *p; ++p)
+			(void)fprintf(stderr, " %s", *p);
+		(void)fprintf(stderr, "\n");
+		(void)fflush(stderr);
+	}
+	noinvoke = 0;
+	switch(pid = vfork()) {
+	case -1:
+		fatal("vfork: %s", strerror(errno));
+	case 0:
+		execvp(argv[0], argv);
+		(void)fprintf(stderr,
+		    "xargs: %s: %s\n", argv[0], strerror(errno));
+		noinvoke = 1;
+		_exit(1);
+	}
+	pid = waitpid(pid, &status, 0);
+	if (pid == -1)
+		fatal("waitpid: %s", strerror(errno));
+	/* If we couldn't invoke the utility, exit 127. */
+	if (noinvoke)
+		exit(127);
+	/* If utility signaled or exited with a value of 255, exit 1-125. */
+	if (WIFSIGNALED(status) || WEXITSTATUS(status) == 255)
+		exit(1);
+	if (WEXITSTATUS(status))
+		rval = 1;
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr,
+"usage: xargs [-t] [-n number [-x]] [-s size] [utility [argument ...]]\n");
+	exit(1);
+}
 
 main(argc, argv)
 	int argc;
@@ -102,7 +164,7 @@ main(argc, argv)
 		case 'n':
 			nflag = 1;
 			if ((nargs = atoi(optarg)) <= 0)
-				err("illegal argument count");
+				fatal("illegal argument count");
 			break;
 		case 's':
 			nline = atoi(optarg);
@@ -130,7 +192,7 @@ main(argc, argv)
 	 */
 	if (!(av = bxp =
 	    (char **)malloc((u_int)(1 + argc + nargs + 1) * sizeof(char **))))
-		err("%s", strerror(errno));
+		fatal("%s", strerror(errno));
 
 	/*
 	 * Use the user's name for the utility as argv[0], just like the
@@ -163,13 +225,13 @@ main(argc, argv)
 	 */
 	nline -= cnt;
 	if (nline <= 0)
-		err("insufficient space for command");
+		fatal("insufficient space for command");
 
 	if (!(bbp = (char *)malloc((u_int)nline + 1)))
-		err("%s", strerror(errno));
+		fatal("%s", strerror(errno));
 	ebp = (argp = p = bbp) + nline - 1;
 
-	for (insingle = indouble = 0;;)
+	for (insingle = indouble = 0;;) {
 		switch(ch = getchar()) {
 		case EOF:
 			/* No arguments since last exec. */
@@ -196,7 +258,7 @@ main(argc, argv)
 
 			/* Quotes do not escape newlines. */
 arg1:			if (insingle || indouble)
-				 err("unterminated quote");
+				 fatal("unterminated quote");
 
 arg2:			*p = '\0';
 			*xp++ = argp;
@@ -208,7 +270,7 @@ arg2:			*p = '\0';
 			 */
 			if (xp == exp || p == ebp || ch == EOF) {
 				if (xflag && xp != exp && p == ebp)
-					err("insufficient space for arguments");
+					fatal("insufficient space for arguments");
 				*xp = NULL;
 				run(av);
 				if (ch == EOF)
@@ -232,7 +294,7 @@ arg2:			*p = '\0';
 		case '\\':
 			/* Backslash escapes anything, is escaped by quotes. */
 			if (!insingle && !indouble && (ch = getchar()) == EOF)
-				err("backslash at EOF");
+				fatal("backslash at EOF");
 			/* FALLTHROUGH */
 		default:
 addch:			if (p < ebp) {
@@ -242,10 +304,10 @@ addch:			if (p < ebp) {
 
 			/* If only one argument, not enough buffer space. */
 			if (bxp == xp)
-				err("insufficient space for argument");
+				fatal("insufficient space for argument");
 			/* Didn't hit argument limit, so if xflag object. */
 			if (xflag)
-				err("insufficient space for arguments");
+				fatal("insufficient space for arguments");
 
 			*xp = NULL;
 			run(av);
@@ -256,82 +318,6 @@ addch:			if (p < ebp) {
 			*p++ = ch;
 			break;
 		}
-	/* NOTREACHED */
-}
-
-void
-run(argv)
-	char **argv;
-{
-	int noinvoke;
-	register char **p;
-	pid_t pid;
-	union wait status;
-
-	if (tflag) {
-		(void)fprintf(stderr, "%s", *argv);
-		for (p = argv + 1; *p; ++p)
-			(void)fprintf(stderr, " %s", *p);
-		(void)fprintf(stderr, "\n");
-		(void)fflush(stderr);
-	}
-	noinvoke = 0;
-	switch(pid = vfork()) {
-	case -1:
-		err("vfork: %s", strerror(errno));
-	case 0:
-		execvp(argv[0], argv);
-		(void)fprintf(stderr,
-		    "xargs: %s: %s\n", argv[0], strerror(errno));
-		noinvoke = 1;
-		_exit(1);
-	}
-	pid = waitpid(pid, &status, 0);
-	if (pid == -1)
-		err("waitpid: %s", strerror(errno));
-	/* If we couldn't invoke the utility, exit 127. */
-	if (noinvoke)
-		exit(127);
-	/* If utility signaled or exited with a value of 255, exit 1-125. */
-	if (WIFSIGNALED(status) || WEXITSTATUS(status) == 255)
-		exit(1);
-	if (WEXITSTATUS(status))
-		rval = 1;
-}
-
-void
-usage()
-{
-	(void)fprintf(stderr,
-"usage: xargs [-t] [-n number [-x]] [-s size] [utility [argument ...]]\n");
-	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "xargs: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
+        }
 	/* NOTREACHED */
 }

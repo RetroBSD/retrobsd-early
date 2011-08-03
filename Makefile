@@ -42,19 +42,31 @@ SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
 UBW32		= tools/ubw32/ubw32
-ROOTDIRS	= sbin/ bin/ dev/ etc/ tmp/
-SBIN_FILES	= sbin/init sbin/fsck sbin/mkfs sbin/newfs sbin/reboot
+
+SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/getty sbin/init \
+                  sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount sbin/newfs \
+                  sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
+                  sbin/update sbin/vipw
 ETC_FILES	= etc/rc etc/rc.local etc/ttys
-BIN_FILES	= bin/basename bin/bc bin/cal bin/cat bin/cb bin/chgrp bin/chmod \
-                  bin/cmp bin/col bin/comm bin/cp bin/date bin/dc bin/dd bin/df \
-                  bin/du bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep bin/file \
-                  bin/grep bin/hostid bin/join bin/kill bin/ln bin/ls \
-                  bin/mesg bin/mkdir bin/mv bin/nice bin/nohup bin/od bin/pagesize \
-                  bin/pr bin/ps bin/pwd bin/rev bin/rm bin/rmail bin/rmdir \
-                  bin/sh bin/size bin/sleep bin/sort bin/split bin/strip \
-                  bin/stty bin/sum bin/sync bin/tar bin/tee bin/time \
-                  bin/touch bin/tr bin/tsort bin/true bin/tty bin/uniq bin/who
-ROOTFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES)
+BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
+                  bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
+                  bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/du \
+                  bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
+                  bin/file bin/grep bin/groups bin/head bin/hostid bin/id \
+                  bin/iostat bin/join bin/kill bin/la bin/ln bin/ls bin/login \
+                  bin/mail bin/man bin/mesg bin/mkdir bin/more bin/mv \
+                  bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
+                  bin/pr bin/printf bin/ps bin/pwd bin/renice bin/rev bin/rm \
+                  bin/rmail bin/rmdir bin/sed bin/sh bin/size bin/sleep \
+                  bin/sort bin/split bin/strip bin/stty bin/su bin/sum \
+                  bin/sync bin/sysctl bin/tail bin/tar bin/tee bin/test \
+                  bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
+                  bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
+                  bin/whereis bin/who bin/whoami bin/write bin/xargs
+LIBEXEC_FILES	= libexec/diffh
+ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES)
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/
+
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
@@ -88,10 +100,10 @@ lib:		FRC
 ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
-root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ROOTFILES)
+root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ALLFILES)
 		rm -f $@
 		$(FSUTIL) -n16384 -s2048 $@
-		$(FSUTIL) -a $@ $(ROOTDIRS) $(ROOTFILES)
+		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)

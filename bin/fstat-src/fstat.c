@@ -1,4 +1,6 @@
 /*
+ * fstat
+ *
  * Copyright (c) 1987 Regents of the University of California.
  * All rights reserved.
  *
@@ -9,54 +11,34 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)fstat.c	5.11.1 (2.11BSD GTE) 12/31/93";
-#endif
-
-/*
- *  fstat
- */
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/text.h>
 #include <sys/stat.h>
 #include <sys/inode.h>
+#if 0
 #include <sys/socket.h>
 #include <sys/socketvar.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
+#include <net/route.h>
+#include <netinet/in_pcb.h>
+#endif
 #include <sys/vmmac.h>
 #define	KERNEL
 #include <sys/file.h>
 #undef	KERNEL
-#include <net/route.h>
 #include <netinet/in.h>
-#include <netinet/in_pcb.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <nlist.h>
 #include <pwd.h>
 
-#ifdef	ULTRIX
-		/* UFS -> GFS */
-#    define	inode	gnode
-#    define	x_iptr	x_gptr
-#    define	i_dev	g_dev
-#    define	i_number g_number
-#    define	i_mode	g_mode
-#    define	i_size	g_size
-#endif
-
 #define	N_KMEM	"/dev/kmem"
 #define	N_MEM	"/dev/mem"
-#define	N_SWAP	"/dev/drum"
+#define	N_SWAP	"/dev/swap"
 #define	N_UNIX	"/vmunix"
 
 #define	TEXT	-2
@@ -700,11 +682,7 @@ static long
 lgetw(loc)
 	off_t loc;
 {
-#ifdef pdp11
-	u_short word;
-#else
-	long word;
-#endif
+	u_int word;
 
 	(void)lseek(kmem, (off_t)loc, L_SET);
 	if (read(kmem, (char *)&word, sizeof(word)) != sizeof(word))

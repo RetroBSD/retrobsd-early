@@ -14,20 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980, 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)mkpasswd.c	5.4.1 (2.11BSD) 1996/1/12";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <ndbm.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <stdlib.h>
 
@@ -37,6 +29,52 @@ static off_t offset;
 
 #define	MAXLINELENGTH	256
 static char line[MAXLINELENGTH];
+
+/* from libc/gen/getpwent.c */
+
+static
+scanpw()
+{
+	register char *cp;
+	char	*bp;
+
+	for (;;) {
+		offset = ftell(_pw_fp);
+		if (!(fgets(line, sizeof(line), _pw_fp)))
+			return(0);
+		bp = line;
+		/* skip lines that are too big */
+		if (!(cp = index(line, '\n'))) {
+			int ch;
+
+			while ((ch = getc(_pw_fp)) != '\n' && ch != EOF)
+				;
+			continue;
+		}
+		*cp = '\0';
+		_pw_passwd.pw_name = strsep(&bp, ":");
+		_pw_passwd.pw_passwd = strsep(&bp, ":");
+		offset += _pw_passwd.pw_passwd - line;
+		if (!(cp = strsep(&bp, ":")))
+			continue;
+		_pw_passwd.pw_uid = atoi(cp);
+		if (!(cp = strsep(&bp, ":")))
+			continue;
+		_pw_passwd.pw_gid = atoi(cp);
+		_pw_passwd.pw_class = strsep(&bp, ":");
+		if (!(cp = strsep(&bp, ":")))
+			continue;
+		_pw_passwd.pw_change = atol(cp);
+		if (!(cp = strsep(&bp, ":")))
+			continue;
+		_pw_passwd.pw_expire = atol(cp);
+		_pw_passwd.pw_gecos = strsep(&bp, ":");
+		_pw_passwd.pw_dir = strsep(&bp, ":");
+		_pw_passwd.pw_shell = strsep(&bp, ":");
+		return(1);
+	}
+	/* NOTREACHED */
+}
 
 /*
  * Mkpasswd does two things -- use the ``arg'' file to create ``arg''.{pag,dir}
@@ -48,7 +86,6 @@ static char line[MAXLINELENGTH];
  * required the addition of a flag field to the dbm database to distinguish
  * between a record keyed by name, and one keyed by uid.
  */
-
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -182,50 +219,4 @@ usage()
 {
 	(void)fprintf(stderr, "usage: mkpasswd [-p] passwd_file\n");
 	exit(1);
-}
-
-/* from libc/gen/getpwent.c */
-
-static
-scanpw()
-{
-	register char *cp;
-	char	*bp;
-
-	for (;;) {
-		offset = ftell(_pw_fp);
-		if (!(fgets(line, sizeof(line), _pw_fp)))
-			return(0);
-		bp = line;
-		/* skip lines that are too big */
-		if (!(cp = index(line, '\n'))) {
-			int ch;
-
-			while ((ch = getc(_pw_fp)) != '\n' && ch != EOF)
-				;
-			continue;
-		}
-		*cp = '\0';
-		_pw_passwd.pw_name = strsep(&bp, ":");
-		_pw_passwd.pw_passwd = strsep(&bp, ":");
-		offset += _pw_passwd.pw_passwd - line;
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_change = atol(cp);
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_expire = atol(cp);
-		_pw_passwd.pw_gecos = strsep(&bp, ":");
-		_pw_passwd.pw_dir = strsep(&bp, ":");
-		_pw_passwd.pw_shell = strsep(&bp, ":");
-		return(1);
-	}
-	/* NOTREACHED */
 }

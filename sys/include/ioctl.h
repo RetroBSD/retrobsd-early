@@ -210,7 +210,6 @@ struct ttysize {
 #define TIOCUCNTL	_IOW(t, 102, int)	/* pty: set/clr usr cntl mode */
 #define 	UIOCCMD(n)	_IO(u, n)		/* usr cntl op "n" */
 
-#define OTTYDISC	0		/* old, v7 std tty driver */
 #define NTTYDISC	0		/* new tty discipline */
 
 #define FIOCLEX		_IO(f, 1)		/* set exclusive use on fd */

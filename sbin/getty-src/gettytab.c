@@ -3,20 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)gettytab.c	5.1 (Berkeley) 4/29/85";
-#endif not lint
-
+#include <string.h>
 #include <ctype.h>
 
 #define	TABBUFSIZ	512
 
 static	char *tbuf;
 int	hopcount;	/* detect infinite loops in termcap, init 0 */
-char	*skip();
 char	*getstr();
-char	*decode();
 
 /*
  * Get an entry for terminal name in buffer bp,
@@ -230,35 +224,6 @@ getflag(id)
 }
 
 /*
- * Get a string valued option.
- * These are given as
- *	cl=^Z
- * Much decoding is done on the strings, and the strings are
- * placed in area, which is a ref parameter which is updated.
- * No checking on area overflow.
- */
-char *
-getstr(id, area)
-	char *id, **area;
-{
-	register char *bp = tbuf;
-
-	for (;;) {
-		bp = skip(bp);
-		if (!*bp)
-			return (0);
-		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
-			continue;
-		if (*bp == '@')
-			return(0);
-		if (*bp != '=')
-			continue;
-		bp++;
-		return (decode(bp, area));
-	}
-}
-
-/*
  * Tdecode does the grung work to decode the
  * string capability escapes.
  */
@@ -305,4 +270,33 @@ nextc:
 	str = *area;
 	*area = cp;
 	return (str);
+}
+
+/*
+ * Get a string valued option.
+ * These are given as
+ *	cl=^Z
+ * Much decoding is done on the strings, and the strings are
+ * placed in area, which is a ref parameter which is updated.
+ * No checking on area overflow.
+ */
+char *
+getstr(id, area)
+	char *id, **area;
+{
+	register char *bp = tbuf;
+
+	for (;;) {
+		bp = skip(bp);
+		if (!*bp)
+			return (0);
+		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
+			continue;
+		if (*bp == '@')
+			return(0);
+		if (*bp != '=')
+			continue;
+		bp++;
+		return (decode(bp, area));
+	}
 }

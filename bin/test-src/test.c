@@ -32,20 +32,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	test.c,v 1.9 1994/11/05 20:48:06 ache Exp
  */
-
-#if defined(DOSCCS) & !defined(lint)
-static char copyright[] =
-"@(#) Copyright (c) 1992, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-#endif /* not lint */
-
-#if	defined(DOSCCS) & !defined(lint)
-static char sccsid[] = "@(#)test.c	8.3.1 (2.11BSD) 1995/03/13";
-#endif /* not lint */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/param.h>
@@ -53,6 +40,7 @@ static char sccsid[] = "@(#)test.c	8.3.1 (2.11BSD) 1995/03/13";
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "operators.h"
@@ -97,217 +85,6 @@ extern char andor_op[][4];
 extern int op_priority[];
 extern int op_argflag[];
 extern long atol();
-
-main(argc, argv)
-	int argc;
-	char *argv[];
-{
-
-	struct operator opstack[STACKSIZE];
-	register struct operator *opsp;
-	struct value valstack[STACKSIZE + 1];
-	register struct value *valsp;
-	struct filestat fs;
-	char  c, **ap, *opname, *p;
-	int binary, nest, op, pri, ret_val, skipping;
-
-	if ((p = argv[0]) == NULL)
-		errx(2, "test: argc is zero");
-
-	if (*p != '\0' && p[strlen(p) - 1] == '[') {
-		if (strcmp(argv[--argc], "]"))
-			errx(2, "missing ]");
-		argv[argc] = NULL;
-	}
-	ap = argv + 1;
-	fs.name = NULL;
-
-	/*
-	 * Test(1) implements an inherently ambiguous grammer.  In order to
-	 * assure some degree of consistency, we special case the POSIX 1003.2
-	 * requirements to assure correct evaluation for POSIX scripts.  The
-	 * following special cases comply with POSIX P1003.2/D11.2 Section
-	 * 4.62.4.
-	 */
-	switch(argc - 1) {
-	case 0:				/* % test */
-		return (1);
-		break;
-	case 1:				/* % test arg */
-		return (argv[1] == NULL || *argv[1] == '\0') ? 1 : 0;
-		break;
-	case 2:				/* % test op arg */
-		opname = argv[1];
-		if (IS_BANG(opname))
-			return (*argv[2] == '\0') ? 0 : 1;
-		else {
-			ret_val = posix_unary_op(&argv[1]);
-			if (ret_val >= 0)
-				return (ret_val);
-		}
-		break;
-	case 3:				/* % test arg1 op arg2 */
-		if (IS_BANG(argv[1])) {
-			ret_val = posix_unary_op(&argv[1]);
-			if (ret_val >= 0)
-				return (!ret_val);
-		} else {
-			ret_val = posix_binary_op(&argv[1]);
-			if (ret_val >= 0)
-				return (ret_val);
-		}
-		break;
-	case 4:				/* % test ! arg1 op arg2 */
-		if (IS_BANG(argv[1]) && lookup_op(argv[3], andor_op) < 0 ) {
-			ret_val = posix_binary_op(&argv[2]);
-			if (ret_val >= 0)
-				return (!ret_val);
-		}
-		break;
-	default:
-		break;
-	}
-
-	/*
-	 * We use operator precedence parsing, evaluating the expression as
-	 * we parse it.  Parentheses are handled by bumping up the priority
-	 * of operators using the variable "nest."  We use the variable
-	 * "skipping" to turn off evaluation temporarily for the short
-	 * circuit boolean operators.  (It is important do the short circuit
-	 * evaluation because under NFS a stat operation can take infinitely
-	 * long.)
-	 */
-	opsp = opstack + STACKSIZE;
-	valsp = valstack;
-	nest = skipping = 0;
-	if (*ap == NULL) {
-		valstack[0].type = BOOLEAN;
-		valstack[0].u.num = 0;
-		goto done;
-	}
-	for (;;) {
-		opname = *ap++;
-		if (opname == NULL)
-			syntax();
-		if (opname[0] == '(' && opname[1] == '\0') {
-			nest += NESTINCR;
-			continue;
-		} else if (*ap && (op = lookup_op(opname, unary_op)) >= 0) {
-			if (opsp == &opstack[0])
-				overflow();
-			--opsp;
-			opsp->op = op;
-			opsp->pri = op_priority[op] + nest;
-			continue;
-		} else {
-			valsp->type = STRING;
-			valsp->u.string = opname;
-			valsp++;
-		}
-		for (;;) {
-			opname = *ap++;
-			if (opname == NULL) {
-				if (nest != 0)
-					syntax();
-				pri = 0;
-				break;
-			}
-			if (opname[0] != ')' || opname[1] != '\0') {
-				if ((op = lookup_op(opname, binary_op)) < 0)
-					syntax();
-				op += FIRST_BINARY_OP;
-				pri = op_priority[op] + nest;
-				break;
-			}
-			if ((nest -= NESTINCR) < 0)
-				syntax();
-		}
-		while (opsp < &opstack[STACKSIZE] && opsp->pri >= pri) {
-			binary = opsp->op;
-			for (;;) {
-				valsp--;
-				c = op_argflag[opsp->op];
-				if (c == OP_INT) {
-					if (valsp->type == STRING)
-						get_int(valsp->u.string,
-						    &valsp->u.num);
-					valsp->type = INTEGER;
-				} else if (c >= OP_STRING) {	
-					            /* OP_STRING or OP_FILE */
-					if (valsp->type == INTEGER) {
-						if ((p = (char *)malloc(32)) == NULL)
-							err(2, NULL);
-#ifdef SHELL
-						fmtstr(p, 32, "%d", 
-						    valsp->u.num);
-#else
-						(void)sprintf(p,
-						    "%d", valsp->u.num);
-#endif
-						valsp->u.string = p;
-					} else if (valsp->type == BOOLEAN) {
-						if (valsp->u.num)
-							valsp->u.string = 
-						            "true";
-						else
-							valsp->u.string = "";
-					}
-					valsp->type = STRING;
-					if (c == OP_FILE && (fs.name == NULL ||
-					    strcmp(fs.name, valsp->u.string))) {
-						fs.name = valsp->u.string;
-						fs.rcode = 
-						    stat(valsp->u.string, 
-                                                    &fs.stat);
-					}
-				}
-				if (binary < FIRST_BINARY_OP)
-					break;
-				binary = 0;
-			}
-			if (!skipping)
-				expr_operator(opsp->op, valsp, &fs);
-			else if (opsp->op == AND1 || opsp->op == OR1)
-				skipping--;
-			valsp++;		/* push value */
-			opsp++;			/* pop operator */
-		}
-		if (opname == NULL)
-			break;
-		if (opsp == &opstack[0])
-			overflow();
-		if (op == AND1 || op == AND2) {
-			op = AND1;
-			if (skipping || expr_is_false(valsp - 1))
-				skipping++;
-		}
-		if (op == OR1 || op == OR2) {
-			op = OR1;
-			if (skipping || !expr_is_false(valsp - 1))
-				skipping++;
-		}
-		opsp--;
-		opsp->op = op;
-		opsp->pri = pri;
-	}
-done:	return (expr_is_false(&valstack[0]));
-}
-
-int
-expr_is_false(val)
-	register struct value *val;
-{
-
-	if (val->type == STRING) {
-		if (val->u.string[0] == '\0')
-			return (1);
-	} else {		/* INTEGER or BOOLEAN */
-		if (val->u.num == 0)
-			return (1);
-	}
-	return (0);
-}
-
 
 /*
  * Execute an operator.  Op is the operator.  Sp is the stack pointer;
@@ -467,6 +244,251 @@ filebit:	if (fs->stat.st_mode & i && fs->rcode >= 0)
 	}
 }
 
+/*
+ * Integer type checking.
+ */
+void
+get_int(v, lp)
+	register char *v;
+	long *lp;
+{
+
+	for (; *v && isspace(*v); ++v);
+
+	if(!*v) {
+		*lp = 0;
+		return;
+	}
+
+	if (isdigit(*v) || ((*v == '-' || *v == '+') && isdigit(*(v+1)))) {
+		*lp = atol(v);
+		return;
+	}
+	errx(2, "%s: expected integer", v);
+}
+
+void
+syntax()
+{
+	err(2, "syntax error");
+}
+
+void
+overflow()
+{
+	err(2, "expression is too complex");
+}
+
+main(argc, argv)
+	int argc;
+	char *argv[];
+{
+
+	struct operator opstack[STACKSIZE];
+	register struct operator *opsp;
+	struct value valstack[STACKSIZE + 1];
+	register struct value *valsp;
+	struct filestat fs;
+	char  c, **ap, *opname, *p;
+	int binary, nest, op, pri, ret_val, skipping;
+
+	if ((p = argv[0]) == NULL)
+		errx(2, "test: argc is zero");
+
+	if (*p != '\0' && p[strlen(p) - 1] == '[') {
+		if (strcmp(argv[--argc], "]"))
+			errx(2, "missing ]");
+		argv[argc] = NULL;
+	}
+	ap = argv + 1;
+	fs.name = NULL;
+
+	/*
+	 * Test(1) implements an inherently ambiguous grammer.  In order to
+	 * assure some degree of consistency, we special case the POSIX 1003.2
+	 * requirements to assure correct evaluation for POSIX scripts.  The
+	 * following special cases comply with POSIX P1003.2/D11.2 Section
+	 * 4.62.4.
+	 */
+	switch(argc - 1) {
+	case 0:				/* % test */
+		return (1);
+		break;
+	case 1:				/* % test arg */
+		return (argv[1] == NULL || *argv[1] == '\0') ? 1 : 0;
+		break;
+	case 2:				/* % test op arg */
+		opname = argv[1];
+		if (IS_BANG(opname))
+			return (*argv[2] == '\0') ? 0 : 1;
+		else {
+			ret_val = posix_unary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (ret_val);
+		}
+		break;
+	case 3:				/* % test arg1 op arg2 */
+		if (IS_BANG(argv[1])) {
+			ret_val = posix_unary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (!ret_val);
+		} else {
+			ret_val = posix_binary_op(&argv[1]);
+			if (ret_val >= 0)
+				return (ret_val);
+		}
+		break;
+	case 4:				/* % test ! arg1 op arg2 */
+		if (IS_BANG(argv[1]) && lookup_op(argv[3], andor_op) < 0 ) {
+			ret_val = posix_binary_op(&argv[2]);
+			if (ret_val >= 0)
+				return (!ret_val);
+		}
+		break;
+	default:
+		break;
+	}
+
+	/*
+	 * We use operator precedence parsing, evaluating the expression as
+	 * we parse it.  Parentheses are handled by bumping up the priority
+	 * of operators using the variable "nest."  We use the variable
+	 * "skipping" to turn off evaluation temporarily for the short
+	 * circuit boolean operators.  (It is important do the short circuit
+	 * evaluation because under NFS a stat operation can take infinitely
+	 * long.)
+	 */
+	opsp = opstack + STACKSIZE;
+	valsp = valstack;
+	nest = skipping = 0;
+	if (*ap == NULL) {
+		valstack[0].type = BOOLEAN;
+		valstack[0].u.num = 0;
+		goto done;
+	}
+	for (;;) {
+		opname = *ap++;
+		if (opname == NULL)
+			syntax();
+		if (opname[0] == '(' && opname[1] == '\0') {
+			nest += NESTINCR;
+			continue;
+		} else if (*ap && (op = lookup_op(opname, unary_op)) >= 0) {
+			if (opsp == &opstack[0])
+				overflow();
+			--opsp;
+			opsp->op = op;
+			opsp->pri = op_priority[op] + nest;
+			continue;
+		} else {
+			valsp->type = STRING;
+			valsp->u.string = opname;
+			valsp++;
+		}
+		for (;;) {
+			opname = *ap++;
+			if (opname == NULL) {
+				if (nest != 0)
+					syntax();
+				pri = 0;
+				break;
+			}
+			if (opname[0] != ')' || opname[1] != '\0') {
+				if ((op = lookup_op(opname, binary_op)) < 0)
+					syntax();
+				op += FIRST_BINARY_OP;
+				pri = op_priority[op] + nest;
+				break;
+			}
+			if ((nest -= NESTINCR) < 0)
+				syntax();
+		}
+		while (opsp < &opstack[STACKSIZE] && opsp->pri >= pri) {
+			binary = opsp->op;
+			for (;;) {
+				valsp--;
+				c = op_argflag[opsp->op];
+				if (c == OP_INT) {
+					if (valsp->type == STRING)
+						get_int(valsp->u.string,
+						    &valsp->u.num);
+					valsp->type = INTEGER;
+				} else if (c >= OP_STRING) {
+					            /* OP_STRING or OP_FILE */
+					if (valsp->type == INTEGER) {
+						if ((p = (char *)malloc(32)) == NULL)
+							err(2, NULL);
+#ifdef SHELL
+						fmtstr(p, 32, "%d",
+						    valsp->u.num);
+#else
+						(void)sprintf(p,
+						    "%d", valsp->u.num);
+#endif
+						valsp->u.string = p;
+					} else if (valsp->type == BOOLEAN) {
+						if (valsp->u.num)
+							valsp->u.string =
+						            "true";
+						else
+							valsp->u.string = "";
+					}
+					valsp->type = STRING;
+					if (c == OP_FILE && (fs.name == NULL ||
+					    strcmp(fs.name, valsp->u.string))) {
+						fs.name = valsp->u.string;
+						fs.rcode =
+						    stat(valsp->u.string,
+                                                    &fs.stat);
+					}
+				}
+				if (binary < FIRST_BINARY_OP)
+					break;
+				binary = 0;
+			}
+			if (!skipping)
+				expr_operator(opsp->op, valsp, &fs);
+			else if (opsp->op == AND1 || opsp->op == OR1)
+				skipping--;
+			valsp++;		/* push value */
+			opsp++;			/* pop operator */
+		}
+		if (opname == NULL)
+			break;
+		if (opsp == &opstack[0])
+			overflow();
+		if (op == AND1 || op == AND2) {
+			op = AND1;
+			if (skipping || expr_is_false(valsp - 1))
+				skipping++;
+		}
+		if (op == OR1 || op == OR2) {
+			op = OR1;
+			if (skipping || !expr_is_false(valsp - 1))
+				skipping++;
+		}
+		opsp--;
+		opsp->op = op;
+		opsp->pri = pri;
+	}
+done:	return (expr_is_false(&valstack[0]));
+}
+
+int
+expr_is_false(val)
+	register struct value *val;
+{
+
+	if (val->type == STRING) {
+		if (val->u.string[0] == '\0')
+			return (1);
+	} else {		/* INTEGER or BOOLEAN */
+		if (val->u.num == 0)
+			return (1);
+	}
+	return (0);
+}
+
 int
 lookup_op(name, table)
 	char *name;
@@ -481,7 +503,7 @@ lookup_op(name, table)
 	for(i = 0; strcmp((char *)(tp + i),"ZZZ") ; i=i+4){
 		if ((char)(tp + i)[1] == c && !strcmp((char *)(tp + i), name))
 			return (i/4);
-		} 
+		}
 	return (-1);
 }
 
@@ -533,41 +555,4 @@ posix_binary_op(argv)
 	}
 	expr_operator(op, v, NULL);
 	return (v[0].u.num == 0);
-}
-
-/*
- * Integer type checking.
- */
-void
-get_int(v, lp)
-	register char *v;
-	long *lp;
-{
-
-	for (; *v && isspace(*v); ++v);
-
-	if(!*v) {
-		*lp = 0;
-		return;
-	}
-
-	if (isdigit(*v) || ((*v == '-' || *v == '+') && isdigit(*(v+1)))) {
-		*lp = atol(v);
-		return;
-	}
-	errx(2, "%s: expected integer", v);
-}
-
-void
-syntax()
-{
-
-	err(2, "syntax error");
-}
-
-void
-overflow()
-{
-
-	err(2, "expression is too complex");
 }

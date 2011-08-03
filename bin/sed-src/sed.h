@@ -1,5 +1,3 @@
-/*	sed.h	4.1	85/04/05	*/
-
 /*
  * sed -- stream  editor
  */

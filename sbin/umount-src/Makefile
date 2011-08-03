@@ -1,37 +1,42 @@
 #
 # Public Domain.  1996/1/15 - Steven Schultz
 #
-#	@(#)Makefile	1.1 (2.11BSD GTE) 1996/11/16
-#
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	umount.c
-OBJS=	umount.o
-MAN=	umount.0
-MANSRC=	umount.8
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: umount umount.0
+CFLAGS		+= -Werror
 
-umount: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= umount.c
+OBJS		= umount.o
+MAN		= umount.0
+MANSRC		= umount.8
 
-umount.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:            ../umount umount.0
+
+../umount:      ${OBJS}
+		${CC} ${LDFLAGS} -o umount.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S umount.elf > umount.dis
+		${SIZE} umount.elf
+		${ELF2AOUT} umount.elf $@
+
+umount.0:       ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f *.o *.elf *.dis ${MAN} umount tags
+		rm -f *.o *.elf ${MAN} ../umount *.elf *.dis tags *~
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: all
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	install -s -o root -g bin -m 755 umount ${DESTDIR}/sbin/umount
+install:        all
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+		install -s -o root -g bin -m 755 umount ${DESTDIR}/sbin/umount
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:           ${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

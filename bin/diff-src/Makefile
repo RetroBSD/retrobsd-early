@@ -1,27 +1,33 @@
-#	@(#)Makefile	4.1.1	1996/10/21
-#
-DIFF=	/bin/diff
-DIFFH=	/usr/libexec/diffh
-PR=	/bin/pr
-CFLAGS=	-O -DDIFF='"${DIFF}"' -DDIFFH='"${DIFFH}"' -DPR='"${PR}"'
-SEPFLAG=-i
-DESTDIR=
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-SRCS=	diff.c diffdir.c diffreg.c
-HDRS=	diff.h
-OBJS=	diff.o diffdir.o diffreg.o
+CFLAGS		+= -Werror
 
-all: diff diffh
+SRCS		= diff.c diffdir.c diffreg.c
+OBJS		= diff.o diffdir.o diffreg.o
 
-diff: ${OBJS}
-	cc ${CFLAGS} -o diff ${OBJS} ${SEPFLAG} ${LDFLAGS}
+DIFF            = /bin/diff
+DIFFH           = /libexec/diffh
+PR              = /bin/pr
+CFLAGS          += -DDIFF='"${DIFF}"' -DDIFFH='"${DIFFH}"' -DPR='"${PR}"'
 
-diffh: diffh.o
-	cc -o diffh diffh.o ${SEPFLAG} ${LDFLAGS}
+all:            ../diff ../../libexec/diffh
+
+../diff:        ${OBJS}
+		${CC} ${LDFLAGS} -o diff.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S diff.elf > diff.dis
+		${SIZE} diff.elf
+		${ELF2AOUT} diff.elf $@
+
+../../libexec/diffh: diffh.o
+		${CC} ${LDFLAGS} -o diffh.elf $< ${LIBS}
+		${OBJDUMP} -S diffh.elf > diffh.dis
+		${SIZE} diffh.elf
+		${ELF2AOUT} diffh.elf $@
 
 clean:
-	rm -f diff diffh ${OBJS} diffh.o
+		rm -f *.o *.elf ${MAN} ../diff ../../libexec/diffh *.elf *.dis tags *~
 
-install: all
-	install -s diff ${DESTDIR}/bin/diff
-	install -s diffh ${DESTDIR}/usr/libexec/diffh
+install:        all
+		install -s diff ${DESTDIR}/bin/diff
+		install -s ../../libexec/diffh ${DESTDIR}/usr/libexec/diffh

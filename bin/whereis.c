@@ -3,69 +3,53 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)whereis.c	5.1.1 (2.11BSD) 1996/10/23";
-#endif
-
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 static char *bindirs[] = {
 	"/etc",
 	"/bin",
 	"/sbin",
-	"/usr/bin",
-	"/usr/sbin",
-	"/usr/games",
-	"/usr/ucb",
-	"/usr/libexec",
-	"/usr/local",
-	"/usr/local/bin",
-	"/usr/new",
+	"/games",
+	"/libexec",
+	"/local",
+	"/local/bin",
+	"/new",
 	0
 };
 static char *mandirs[] = {
-	"/usr/man/man1",
-	"/usr/man/man2",
-	"/usr/man/man3",
-	"/usr/man/man4",
-	"/usr/man/man5",
-	"/usr/man/man6",
-	"/usr/man/man7",
-	"/usr/man/man8",
-	"/usr/man/manl",
-	"/usr/man/mann",
-	"/usr/man/mano",
+	"/man/man1",
+	"/man/man2",
+	"/man/man3",
+	"/man/man4",
+	"/man/man5",
+	"/man/man6",
+	"/man/man7",
+	"/man/man8",
+	"/man/manl",
+	"/man/mann",
+	"/man/mano",
 	0
 };
 static char *srcdirs[]  = {
-	"/usr/src/bin",
-	"/usr/src/sbin",
-	"/usr/src/usr.bin",
-	"/usr/src/usr.sbin",
-	"/usr/src/etc",
-	"/usr/src/ucb",
-	"/usr/src/games",
-	"/usr/src/usr.lib",
-	"/usr/src/lib",
-	"/usr/src/libexec",
-	"/usr/src/local",
-	"/usr/src/new",
-	"/usr/src/include",
-	"/usr/src/lib/libc/gen",
-	"/usr/src/lib/libc/stdio",
-	"/usr/src/lib/libc/sys",
-	"/usr/src/lib/libc/net/inet",
-	"/usr/src/lib/libc/net/misc",
-	"/usr/src/ucb/pascal",
-	"/usr/src/ucb/pascal/utilities",
+	"/src/bin",
+	"/src/sbin",
+	"/src/etc",
+	"/src/games",
+	"/src/lib",
+	"/src/libexec",
+	"/src/local",
+	"/src/new",
+	"/src/include",
+	"/src/lib/libc/gen",
+	"/src/lib/libc/stdio",
+	"/src/lib/libc/sys",
+	"/src/lib/libc/net/inet",
+	"/src/lib/libc/net/misc",
 	0
 };
 

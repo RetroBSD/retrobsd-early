@@ -1,14 +1,11 @@
 /*
+ * Getty description definitions.
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)gettytab.h	5.2.2 (2.11BSD GTE) 1997/3/28
  */
 
-/*
- * Getty description definitions.
- */
 struct	gettystrs {
 	char	*field;		/* name to lookup in gettytab */
 	char	*defalt;	/* value we find by looking in defaults */

@@ -1,6 +1,3 @@
-#if	!defined(lint) && !defined(DOSCCS)
-static	char sccsid[] = "@(#)nm.c 2.11BSD 1/22/94";
-#endif
 /*
  * nm - print name list. string table version
  */
@@ -8,11 +5,14 @@ static	char sccsid[] = "@(#)nm.c 2.11BSD 1/22/94";
 #include <sys/dir.h>
 #include <ar.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <a.out.h>
 #include <sys/file.h>
-#include "archive.h"
 #include <string.h>
+#include <strings.h>
+
+#include "archive.h"
 
 	CHDR	chdr;
 
@@ -23,13 +23,10 @@ static	char sccsid[] = "@(#)nm.c 2.11BSD 1/22/94";
 	char	*strp;
 	union {
 		char	mag_armag[SARMAG+1];
-		struct	xexec mag_exp;
+		struct	exec mag_exp;
 	} mag_un;
 
 	off_t	off, skip();
-extern	off_t	ftell();
-extern	char	*malloc();
-extern	long	strtol();
 	int	compare(), narg, errs;
 
 main(argc, argv)
@@ -101,7 +98,7 @@ namelist()
 		archive++;
 		off = SARMAG;
 	}
-	else if (N_BADMAG(mag_un.mag_exp.e)) {
+	else if (N_BADMAG(mag_un.mag_exp)) {
 		error(0, "bad format");
 		goto out;
 	}
@@ -120,13 +117,13 @@ namelist()
 		struct	nlist sym;
 
 		curpos = ftell(fi);
-		fread((char *)&mag_un.mag_exp, 1, sizeof(struct xexec), fi);
-		if (N_BADMAG(mag_un.mag_exp.e))
+		fread((char *)&mag_un.mag_exp, 1, sizeof(struct exec), fi);
+		if (N_BADMAG(mag_un.mag_exp))
 			continue;
 
 		o = N_SYMOFF(mag_un.mag_exp);
 		fseek(fi, curpos + o, L_SET);
-		n = mag_un.mag_exp.e.a_syms / sizeof(struct nlist);
+		n = mag_un.mag_exp.a_syms / sizeof(struct nlist);
 		if (n == 0) {
 			error(0, "no name list");
 			continue;
@@ -137,7 +134,7 @@ namelist()
 			free(strp), strp = 0;
 		while (--n >= 0) {
 			fread((char *)&sym, 1, sizeof(sym), fi);
-			if (sym.n_un.n_strx == 0)
+			if ((int)sym.n_name == 0)
 				continue;
 			if (gflg && (sym.n_type & N_EXT) == 0)
 				continue;
@@ -151,10 +148,10 @@ namelist()
 		if (symp == 0)
 			error(1, "out of memory");
 		i = 0;
-		n = mag_un.mag_exp.e.a_syms / sizeof(struct nlist);
+		n = mag_un.mag_exp.a_syms / sizeof(struct nlist);
 		while (--n >= 0) {
 			fread((char *)&sym, 1, sizeof(sym), fi);
-			if (sym.n_un.n_strx == 0)
+			if ((int)sym.n_name == 0)
 				continue;
 			if (gflg && (sym.n_type & N_EXT) == 0)
 				continue;
@@ -172,7 +169,7 @@ namelist()
 		if (fread(strp+sizeof(strsiz),(int)strsiz-sizeof(strsiz),1,fi) != 1)
 			error(1, "error reading strings");
 		for (n = 0; n < i; n++)
-			symp[n].n_un.n_name = strp + (int)symp[n].n_un.n_strx;
+			symp[n].n_name = strp + (int)symp[n].n_name;
 
 		if (pflg==0)
 			qsort(symp, i, sizeof(struct nlist), compare);
@@ -240,11 +237,7 @@ psyms(symp, nsyms)
 				printf(N_FORMAT, symp[n].n_value);
 			printf(" %c ", c);
 		}
-		if (symp[n].n_ovly)
-			printf("%s %d\n", symp[n].n_un.n_name,
-				symp[n].n_ovly & 0xff);
-		else
-			printf("%s\n", symp[n].n_un.n_name);
+		printf("%s\n", symp[n].n_name);
 	}
 }
 
@@ -258,17 +251,17 @@ register struct nlist *p1, *p2;
 		if (p1->n_value < p2->n_value)
 			return(-rflg);
 	}
-	return (rflg * strcmp(p1->n_un.n_name, p2->n_un.n_name));
+	return (rflg * strcmp(p1->n_name, p2->n_name));
 }
 
 nextel(af)
 FILE *af;
 {
-	
+
 	fseek(af, off, L_SET);
 	if (get_arobj(af) < 0)
 		return(0);
-	off += (sizeof (struct ar_hdr) + chdr.size + 
+	off += (sizeof (struct ar_hdr) + chdr.size +
 		(chdr.size + chdr.lname & 1));
 	return(1);
 }
@@ -306,7 +299,7 @@ static char hb[sizeof(HDR) + 1];	/* real header */
 }
 
 /*
- *	read the archive header for this member.  Use a file pointer 
+ *	read the archive header for this member.  Use a file pointer
  *	rather than a file descriptor.
  */
 get_arobj(fp)

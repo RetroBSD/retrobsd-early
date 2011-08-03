@@ -6,9 +6,9 @@
  *	-----------------   Modification History   ---------------
  *      Version Date            Reason For Modification
  *      1.0     03Dec94         1. Initial release into the public domain.
-*/
-
+ */
 #include <stdio.h>
+#include <stdlib.h>
 #include <varargs.h>
 #include <sys/types.h>
 #include <fcntl.h>

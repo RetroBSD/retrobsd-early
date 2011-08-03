@@ -18,6 +18,6 @@ ELF2AOUT	= $(TOPSRC)/tools/elf2aout/elf2aout
 
 CFLAGS		= -O -g
 
-LDFLAGS		= -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/startup-mips/elf32.ld \
-		  $(TOPSRC)/lib/startup-mips/crt0.o -L$(TOPSRC)/lib/libc
+LDFLAGS		= -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/elf32-mips.ld \
+		  $(TOPSRC)/lib/crt0.o -L$(TOPSRC)/lib
 LIBS		= -lc

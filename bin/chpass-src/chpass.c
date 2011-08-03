@@ -14,15 +14,6 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -33,9 +24,11 @@ static char sccsid[] = "@(#)chpass.c	5.10.1 (2.11BSD) 1996/1/12";
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <chpass.h>
+#include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include "chpass.h"
 
 char e1[] = ": ";
 char e2[] = ":,";

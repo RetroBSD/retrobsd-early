@@ -1,40 +1,41 @@
-#	@(#)Makefile	4.3.1	(2.11BSD)	1996/10/23
-#
-DESTDIR=
-CFLAGS=	-O
-SEPFLAG= -i
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-# The programs themselves
-#
-PROG=	find
-LIBS=	bigram code
+CFLAGS		+= -Werror
 
-# Sources
-#
-SRCS=	find.c bigram.c code.c
+SRCS            = find.c bigram.c code.c
 
-all: ${PROG} ${LIBS}
+all:            ../find ../../libexec/bigram ../../libexec/code
 
-find: find.o
-	cc ${SEPFLAG} ${CFLAGS} -o find find.o
+../find:        find.o
+		${CC} ${LDFLAGS} -o find.elf $< ${LIBS}
+		${OBJDUMP} -S find.elf > find.dis
+		${SIZE} find.elf
+		${ELF2AOUT} find.elf $@
 
-bigram: bigram.o
-	cc ${SEPFLAG} ${CFLAGS} -o bigram bigram.o
+../../libexec/bigram: bigram.o
+		${CC} ${LDFLAGS} -o bigram.elf $< ${LIBS}
+		${OBJDUMP} -S bigram.elf > bigram.dis
+		${SIZE} bigram.elf
+		${ELF2AOUT} bigram.elf $@
 
-code: code.o
-	cc ${SEPFLAG} ${CFLAGS} -o code code.o
-
-install: ${PROG} ${LIBS}
-	install -s -m 755 ${PROG} ${DESTDIR}/usr/bin/${PROG}
-	-mkdir ${DESTDIR}/var/db ${DESTDIR}/usr/libexec/find
-	chmod 755 ${DESTDIR}/usr/libexec/find ${DESTDIR}/var/db
-	install -s -m 755 bigram ${DESTDIR}/usr/libexec/find/bigram
-	install -s -m 755 code ${DESTDIR}/usr/libexec/find/code
-	install -c -m 755 updatedb.csh ${DESTDIR}/usr/libexec/find/updatedb
+../../libexec/code: code.o
+		${CC} ${LDFLAGS} -o code.elf $< ${LIBS}
+		${OBJDUMP} -S code.elf > code.dis
+		${SIZE} code.elf
+		${ELF2AOUT} code.elf $@
 
 clean:
-	rm -f *.o a.out core ${LIBS} ${PROG}
+		rm -f *.o *.elf ../find ../../libexec/bigram ../../libexec/code *.elf *.dis tags *~
+
+install:        ${PROG} ${LIBS}
+		install -s -m 755 ${PROG} ${DESTDIR}/usr/bin/${PROG}
+		-mkdir ${DESTDIR}/var/db ${DESTDIR}/usr/libexec/find
+		chmod 755 ${DESTDIR}/usr/libexec/find ${DESTDIR}/var/db
+		install -s -m 755 bigram ${DESTDIR}/usr/libexec/find/bigram
+		install -s -m 755 code ${DESTDIR}/usr/libexec/find/code
+		install -c -m 755 updatedb.csh ${DESTDIR}/usr/libexec/find/updatedb
 
 depend:
-	chmod u+w Makefile
-	mkdep ${CFLAGS} ${SRCS}
+		chmod u+w Makefile
+		mkdep ${CFLAGS} ${SRCS}

@@ -1,10 +1,9 @@
-/*	diff.h	4.7	85/08/16	*/
-
 /*
  * diff - common declarations
  */
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
@@ -77,9 +76,9 @@ char	**diffargv;		/* option list to pass to recursive diffs */
 char	*file1, *file2, *efile1, *efile2;
 struct	stat stb1, stb2;
 
-char	*malloc(), *talloc(), *ralloc();
+char	*talloc(), *ralloc();
 char	*savestr(), *splice(), *splicen();
-char	*mktemp(), *copytemp(), *rindex();
-int	done();
+char	*copytemp();
+void	done(int);
 
 extern	char diffh[], diff[], pr[];

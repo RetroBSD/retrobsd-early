@@ -30,15 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1980, 1989, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)umount.c	8.3.1 (2.11BSD) 1996/1/16";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
@@ -140,7 +131,7 @@ umountall()
 		if (!selected(type))
 			continue;
 
-		/* 
+		/*
 		 * We want to unmount the file systems in the reverse order
 		 * that they were mounted.  So, we save off the file name
 		 * in some allocated memory, and then call recursively.

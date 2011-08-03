@@ -1,37 +1,42 @@
 #
 # Public Domain.  1995/05/02 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD GTE) 1995/05/02
-#
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	printf.c
-OBJS=	printf.o
-MAN=	printf.0
-MANSRC=	printf.1
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: printf printf.0
+CFLAGS		+= -Werror -DNOFPU
 
-printf: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= printf.c
+OBJS		= printf.o
+MAN		= printf.0
+MANSRC		= printf.1
 
-printf.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:            ../printf printf.0
+
+../printf:      ${OBJS}
+		${CC} ${LDFLAGS} -o printf.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S printf.elf > printf.dis
+		${SIZE} printf.elf
+		${ELF2AOUT} printf.elf $@
+
+printf.0:       ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} printf tags 
+		rm -f *.o *.elf ${MAN} ../printf *.elf *.dis tags *~
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: all
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	install -s -o root -g bin -m 755 printf ${DESTDIR}/usr/bin/printf
+install:        all
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+		install -s -o root -g bin -m 755 printf ${DESTDIR}/usr/bin/printf
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:           ${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

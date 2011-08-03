@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)get_date.c	5.1.1 (2.11BSD GTE) 12/9/94";
-#endif
-
 #include <stdio.h>
 #include <sys/time.h>
 
@@ -44,7 +39,7 @@ get_date(datebuffer)
 		realhour = realhour - 12;
 		zone = PM;
 	}
-	
+
 	/* format is '8:10pm on Sunday, 16 Sept 1973' */
 
 	sprintf(datebuffer, "%d:%02d%s on %s, %d %s %d",

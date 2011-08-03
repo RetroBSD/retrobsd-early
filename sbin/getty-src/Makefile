@@ -3,24 +3,26 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1.2 (2.11BSD) 1997/4/28
-#
-DESTDIR=
-CFLAGS=	-O
-SEPFLAG=-i
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-OBJS=	main.o init.o subr.o gettytab.o get_date.o
+CFLAGS		+= -Werror
 
-all:	getty
+OBJS		= main.o init.o subr.o gettytab.o get_date.o
 
-getty:	${OBJS}
-	${CC} ${SEPFLAG} -o getty ${OBJS}
+all:            ../getty
 
-install: all
-	install -s -m 555 -o bin -g bin getty ${DESTDIR}/usr/libexec/getty
+../getty:       ${OBJS}
+		${CC} ${LDFLAGS} -o getty.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S getty.elf > getty.dis
+		${SIZE} getty.elf
+		${ELF2AOUT} getty.elf $@
 
 clean:
-	rm -f getty ${OBJS} a.out core errs
+		rm -f *.o *.elf ${MAN} ../getty *.elf *.dis tags *~
+
+install:        all
+		install -s -m 555 -o bin -g bin getty ${DESTDIR}/usr/libexec/getty
 
 main.o: gettytab.h
 init.o: gettytab.h

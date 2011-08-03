@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -12,16 +12,30 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)pathnames.h	5.3 (Berkeley) 5/9/89
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
+#include <sys/types.h>
+#include <sys/file.h>
+#include <utmp.h>
+#include <stdio.h>
 #include <paths.h>
 
-#define	_PATH_DEFPATH	"/bin:/usr/ucb:/usr/bin:/usr/games:"
-#define	_PATH_HUSHLOGIN	".hushlogin"
-#define	_PATH_LASTLOG	"/usr/adm/lastlog"
-#define	_PATH_MAILDIR	"/usr/spool/mail"
-#define	_PATH_MOTDFILE	"/etc/motd"
-#define	_PATH_NOLOGIN	"/etc/nologin"
+void
+login(ut)
+	struct utmp *ut;
+{
+	register int fd;
+	int tty;
+	off_t lseek();
+
+	tty = ttyslot();
+	if (tty > 0 && (fd = open(_PATH_UTMP, O_WRONLY, 0)) >= 0) {
+		(void)lseek(fd, (long)(tty * sizeof(struct utmp)), L_SET);
+		(void)write(fd, (char *)ut, sizeof(struct utmp));
+		(void)close(fd);
+	}
+	if ((fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) >= 0) {
+		(void)write(fd, (char *)ut, sizeof(struct utmp));
+		(void)close(fd);
+	}
+}

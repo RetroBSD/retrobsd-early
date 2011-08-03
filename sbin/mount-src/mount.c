@@ -30,15 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1980, 1989, 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)mount.c	8.19.4 (2.11BSD) 1997/6/29";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
@@ -216,7 +207,7 @@ main(argc, argv)
 		/*
 		 * If -t flag has not been specified, and spec contains either
 		 * a ':' or a '@' then assume that an NFS filesystem is being
-		 * specified ala Sun.  Since 2BSD does not support nfs an 
+		 * specified ala Sun.  Since 2BSD does not support nfs an
 		 * error is declared here rather than from mountfs().
 		 */
 		if (vfslist == NULL && strpbrk(argv[0], ":@") != NULL)
@@ -247,7 +238,7 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 	struct statfs sf;
 	pid_t pid;
 	int argc, i;
-	union	wait status;
+	int status;
 	char *optbuf, execname[MAXPATHLEN + 1];
 
 	if (options == NULL) {
@@ -323,7 +314,7 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 			if (WEXITSTATUS(status) != 0)
 				return (WEXITSTATUS(status));
 		} else if (WIFSIGNALED(status)) {
-			warnx("%s: %s", name, sys_siglist[status.w_termsig]);
+			warnx("%s: %s", name, sys_siglist[WTERMSIG(status)]);
 			return (1);
 		}
 

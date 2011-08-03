@@ -1,23 +1,15 @@
 /*
+ * getty -- adapt to terminal speed on dialup, and call login
+ *
+ * Melbourne getty, June 83, kre.
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)main.c	5.5.1 (2.11BSD GTE) 12/9/94";
-#endif
-
-/*
- * getty -- adapt to terminal speed on dialup, and call login
- *
- * Melbourne getty, June 83, kre.
- */
-
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <sgtty.h>
 #include <signal.h>
 #include <ctype.h>
@@ -88,9 +80,9 @@ char partab[] = {
 
 jmp_buf timeout;
 
-dingdong()
+void dingdong(sig)
+        int sig;
 {
-
 	alarm(0);
 	signal(SIGALRM, SIG_DFL);
 	longjmp(timeout, 1);
@@ -98,9 +90,9 @@ dingdong()
 
 jmp_buf	intrupt;
 
-interrupt()
+void interrupt(sig)
+        int sig;
 {
-
 	signal(SIGINT, interrupt);
 	longjmp(intrupt, 1);
 }
@@ -125,7 +117,7 @@ main(argc, argv)
 	 * The following is a work around for vhangup interactions
 	 * which cause great problems getting window systems started.
 	 * If the tty line is "-", we do the old style getty presuming
-	 * that the file descriptors are already set up for us. 
+	 * that the file descriptors are already set up for us.
 	 * J. Gettys - MIT Project Athena.
 	 */
 	if (argc <= 2 || strcmp(argv[2], "-") == 0)
@@ -241,6 +233,13 @@ main(argc, argv)
 	}
 }
 
+void putstr(s)
+	register const char *s;
+{
+	while (*s)
+		putchr(*s++);
+}
+
 getname()
 {
 	register char *np;
@@ -290,7 +289,7 @@ getname()
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
-					puts("\b \b");
+					putstr("\b \b");
 				else
 					putchr(cs);
 			}
@@ -302,7 +301,7 @@ getname()
 				putchr('\n');
 			/* this is the way they do it down under ... */
 			else if (np > name)
-				puts("                                     \r");
+				putstr("                                     \r");
 			prompt();
 			np = name;
 			continue;
@@ -342,8 +341,8 @@ putpad(s)
 			s += 2;
 		}
 	}
+	putstr(s);
 
-	puts(s);
 	/*
 	 * If no delay needed, or output speed is
 	 * not comprehensible, then don't try to delay.
@@ -365,14 +364,6 @@ putpad(s)
 	pad += mspc10 / 2;
 	for (pad /= mspc10; pad > 0; pad--)
 		putchr(*PC);
-}
-
-puts(s)
-	register char *s;
-{
-
-	while (*s)
-		putchr(*s++);
 }
 
 char	outbuf[OBUFSIZ];
@@ -428,18 +419,18 @@ putf(cp)
 			ttyn = ttyname(0);
 			slash = rindex(ttyn, '/');
 			if (slash == (char *) 0)
-				puts(ttyn);
+				putstr(ttyn);
 			else
-				puts(&slash[1]);
+				putstr(&slash[1]);
 			break;
 
 		case 'h':
-			puts(editedhost);
+			putstr(editedhost);
 			break;
 
 		case 'd':
 			get_date(datebuffer);
-			puts(datebuffer);
+			putstr(datebuffer);
 			break;
 
 		case '%':

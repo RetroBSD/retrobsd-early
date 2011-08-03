@@ -166,6 +166,7 @@ int fs_inode_write (fs_inode_t *inode, unsigned long offset,
 int fs_inode_alloc (fs_t *fs, fs_inode_t *inode);
 int fs_inode_by_name (fs_t *fs, fs_inode_t *inode, char *name,
 	int op, int mode);
+int inode_build_list (fs_t *fs);
 
 int fs_write_block (fs_t *fs, unsigned bnum, unsigned char *data);
 int fs_read_block (fs_t *fs, unsigned bnum, unsigned char *data);

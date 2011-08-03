@@ -661,16 +661,27 @@ create_file:
         if (verbose > 2)
                 printf ("*** create file '%.*s', inode %d\n", namlen, namptr, inode->number);
         reclen = dirent.reclen - 8 - (dirent.namlen + 4) / 4 * 4;
-        dirent.reclen -= reclen;
-        if (verbose > 2)
-                printf ("*** previous entry %u-%u-%u at offset %lu\n", dirent.inum, dirent.reclen, dirent.namlen, last_offset);
-	if (! fs_inode_write (&dir, last_offset, (unsigned char*) &dirent, sizeof(dirent))) {
-		fprintf (stderr, "inode %d: write error at offset %ld\n",
-			dir.number, last_offset);
-		return 0;
-	}
+        c = 8 + (namlen + 4) / 4 * 4;
+        if (reclen >= c) {
+                /* Enough space */
+                dirent.reclen -= reclen;
+                if (verbose > 2)
+                        printf ("*** previous entry %u-%u-%u at offset %lu\n",
+                                dirent.inum, dirent.reclen, dirent.namlen, last_offset);
+                if (! fs_inode_write (&dir, last_offset, (unsigned char*) &dirent, sizeof(dirent))) {
+                        fprintf (stderr, "inode %d: write error at offset %ld\n",
+                                dir.number, last_offset);
+                        return 0;
+                }
+        } else {
+                /* No space, extend directory. */
+                if (verbose > 2)
+                        printf ("*** extend dir, previous entry %u-%u-%u at offset %lu\n",
+                                dirent.inum, dirent.reclen, dirent.namlen, last_offset);
+                reclen = BSDFS_BSIZE;
+        }
         offset = last_offset + dirent.reclen;
-	dirent.inum = inode->number;
+        dirent.inum = inode->number;
         dirent.reclen = reclen;
         dirent.namlen = namlen;
         if (verbose > 2)
@@ -687,6 +698,8 @@ create_file:
 			dir.number, offset+sizeof(dirent));
 		return 0;
 	}
+	/* Align directory size. */
+	dir.size = (dir.size + BSDFS_BSIZE - 1) / BSDFS_BSIZE * BSDFS_BSIZE;
 	if (! fs_inode_save (&dir, 0)) {
 		fprintf (stderr, "%s: cannot save directory inode\n", name);
 		return 0;
@@ -790,7 +803,15 @@ int fs_inode_alloc (fs_t *fs, fs_inode_t *inode)
 
 	for (;;) {
 		if (fs->ninode <= 0) {
-			return 0;
+                        /* Build a list of free inodes. */
+                        if (! inode_build_list (fs)) {
+                                fprintf (stderr, "inode_alloc: cannot build inode list\n");
+                                return 0;
+                        }
+                        if (fs->ninode <= 0) {
+                                fprintf (stderr, "inode_alloc: out of in-core inodes\n");
+                                return 0;
+                        }
 		}
 		ino = fs->inode[--fs->ninode];
 		fs->dirty = 1;

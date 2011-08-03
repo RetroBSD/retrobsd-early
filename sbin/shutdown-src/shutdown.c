@@ -1,17 +1,15 @@
 /*
+ * shutdown when [messages]
+ *
+ * allow super users to tell users and remind users
+ * of imminent shutdown of unix
+ * and shut it down automatically
+ * and even reboot or halt the machine if they desire
+ *
  * Copyright (c) 1983,1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1983,1986 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
-#endif
-
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
@@ -27,15 +25,6 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
 #include <sys/param.h>
 #include <sys/syslog.h>
 
-/*
- *	shutdown when [messages]
- *
- *	allow super users to tell users and remind users
- *	of imminent shutdown of unix
- *	and shut it down automatically
- *	and even reboot or halt the machine if they desire
- */
-
 #define	REBOOT	"/sbin/reboot"
 #define	HALT	"/sbin/halt"
 #define MAXINTS 20
@@ -48,7 +37,6 @@ static char sccsid[] = "@(#)shutdown.c	5.6.3 (2.11BSD GTE) 1997/10/3";
 
 char	hostname[MAXHOSTNAMELEN];
 
-int	timeout();
 time_t	getsdt();
 
 struct	utmp utmp;
@@ -93,6 +81,49 @@ struct interval {
 };
 
 char *shutter;
+
+void finish(sig)
+        int sig;
+{
+	(void) signal(SIGTERM, SIG_IGN);
+	(void) unlink(nologin);
+	exit(0);
+}
+
+void timeout(sig)
+        int sig;
+{
+	longjmp(alarmbuf, 1);
+}
+
+warning(term, sdt, now, type)
+	FILE *term;
+	time_t sdt, now;
+	char *type;
+{
+	char *ts;
+	register delay = sdt - now;
+
+	if (delay > 8)
+		while (delay % 5)
+			delay++;
+
+	fprintf(term,
+	    "\007\007\t*** %sSystem shutdown message from %s@%s ***\r\n\n",
+		    type, shutter, hostname);
+
+	ts = ctime(&sdt);
+	if (delay > 10 MINUTES)
+		fprintf(term, "System going down at %5.5s\r\n", ts+11);
+	else if (delay > 95 SECONDS) {
+		fprintf(term, "System going down in %d minute%s\r\n",
+		    (delay+30)/60, (delay+30)/60 != 1 ? "s" : "");
+	} else if (delay > 0) {
+		fprintf(term, "System going down in %d second%s\r\n",
+		    delay, delay != 1 ? "s" : "");
+	} else
+		fprintf(term, "System going down IMMEDIATELY\r\n");
+}
 
 main(argc,argv)
 	int argc;
@@ -141,15 +172,15 @@ main(argc,argv)
 	if (argc < 1) {
 	        /* argv[0] is not available after the argument handling. */
 		printf("Usage: shutdown [ -krhfn ] shutdowntime [ message ]\n");
-		finish();
+		finish(0);
 	}
 	if (fast && (nosync == nosyncflag)) {
 	        printf ("shutdown: Incompatible switches 'fast' & 'nosync'\n");
-		finish();
+		finish(0);
 	}
 	if (geteuid()) {
 		fprintf(stderr, "NOT super-user\n");
-		finish();
+		finish(0);
 	}
 	nowtime = time((long *)0);
 	sdt = getsdt(argv[0]);
@@ -160,7 +191,7 @@ main(argc,argv)
 		(void) strcat(nolog2, *argv++);
 	}
 	m = ((stogo = sdt - nowtime) + 30)/60;
-	h = m/60; 
+	h = m/60;
 	m %= 60;
 	ts = ctime(&sdt);
 	printf("Shutdown at %5.5s (in ", ts+11);
@@ -223,7 +254,7 @@ main(argc,argv)
 				(void) alarm(0);
 				setbuf(termf, tbuf);
 				fprintf(termf, "\n\r\n");
-				warn(termf, sdt, nowtime, f);
+				warning(termf, sdt, nowtime, f);
 				if (first || sdt - nowtime > 1 MINUTES) {
 					if (*nolog2)
 						fprintf(termf, "\t...%s", nolog2);
@@ -248,7 +279,7 @@ main(argc,argv)
 			(void) unlink(nologin);
 			if (!killflg) {
 				printf("but you'll have to do it yourself\n");
-				finish();
+				finish(0);
 			}
 			if (fast)
 				doitfast();
@@ -271,7 +302,7 @@ main(argc,argv)
 				printf("kill -HUP 1\n");
 
 #endif
-			finish();
+			finish(0);
 		}
 		stogo = sdt - time((long *) 0);
 		if (stogo > 0 && sint > 0)
@@ -292,7 +323,7 @@ getsdt(s)
 	if (strcmp(s, "now") == 0)
 		return(nowtime);
 	if (*s == '+') {
-		++s; 
+		++s;
 		t = 0;
 		for (;;) {
 			c = *s++;
@@ -319,7 +350,7 @@ getsdt(s)
 		t = t * 10 + *s++ - '0';
 	if (t > 59)
 		goto badform;
-	tim += t; 
+	tim += t;
 	tim *= 60;
 	t1 = time((long *) 0);
 	lt = localtime(&t1);
@@ -327,42 +358,13 @@ getsdt(s)
 	if (tim < t || tim >= ((long)24*3600)) {
 		/* before now or after midnight */
 		printf("That must be tomorrow\nCan't you wait till then?\n");
-		finish();
+		finish(0);
 	}
 	return (t1 + tim - t);
 badform:
 	printf("Bad time format\n");
-	finish();
+	finish(0);
 	/*NOTREACHED*/
-}
-
-warn(term, sdt, now, type)
-	FILE *term;
-	time_t sdt, now;
-	char *type;
-{
-	char *ts;
-	register delay = sdt - now;
-
-	if (delay > 8)
-		while (delay % 5)
-			delay++;
-
-	fprintf(term,
-	    "\007\007\t*** %sSystem shutdown message from %s@%s ***\r\n\n",
-		    type, shutter, hostname);
-
-	ts = ctime(&sdt);
-	if (delay > 10 MINUTES)
-		fprintf(term, "System going down at %5.5s\r\n", ts+11);
-	else if (delay > 95 SECONDS) {
-		fprintf(term, "System going down in %d minute%s\r\n",
-		    (delay+30)/60, (delay+30)/60 != 1 ? "s" : "");
-	} else if (delay > 0) {
-		fprintf(term, "System going down in %d second%s\r\n",
-		    delay, delay != 1 ? "s" : "");
-	} else
-		fprintf(term, "System going down IMMEDIATELY\r\n");
 }
 
 doitfast()
@@ -387,16 +389,4 @@ nolog(sdt)
 			fprintf(nologf, "\t%s\n", nolog2 + 1);
 		(void) fclose(nologf);
 	}
-}
-
-finish()
-{
-	(void) signal(SIGTERM, SIG_IGN);
-	(void) unlink(nologin);
-	exit(0);
-}
-
-timeout()
-{
-	longjmp(alarmbuf, 1);
 }

@@ -14,58 +14,50 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5.2 (2.11BSD) 1996/12/1
-#
-CFLAGS=	-O
-SEPFLAG= -i
-ASRCS=	apropos.c
-AOBJS=	apropos.o
-MSRCS=	man.c
-MOBJS=	man.o
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: man apropos
+CFLAGS		+= -Werror
 
-apropos: ${AOBJS}
-	${CC} ${SEPFLAG} -o $@ ${AOBJS}
+SRCS		= man.c
+OBJS		= man.o
 
-man: ${MOBJS}
-	${CC} ${SEPFLAG} -o $@ ${MOBJS}
+all:            ../man ../apropos
 
-clean: FRC
-	rm -f core apropos man *.o
+../man:         ${OBJS}
+		${CC} ${LDFLAGS} -o man.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S man.elf > man.dis
+		${SIZE} man.elf
+		${ELF2AOUT} man.elf $@
 
-depend: FRC
-	mkdep ${CFLAGS} ${ASRCS} ${MSRCS}
+../apropos:     ${OBJS}
+		${CC} ${LDFLAGS} -o apropos.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S apropos.elf > apropos.dis
+		${SIZE} apropos.elf
+		${ELF2AOUT} apropos.elf $@
 
-install: man apropos
-	rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
-	install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
-	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
-	ln ${DESTDIR}/usr/ucb/apropos ${DESTDIR}/usr/ucb/whatis
+clean:
+		rm -f *.o *.elf ${MAN} ../man ../apropos *.elf *.dis tags *~
 
-lint: FRC
-	lint ${CFLAGS} ${ASRCS}
-	lint ${CFLAGS} ${MSRCS}
+depend:         FRC
+		mkdep ${CFLAGS} ${ASRCS} ${MSRCS}
 
-tags: FRC
-	ctags ${ASRCS}
-	ctags ${MSRCS}
-	sort -o tags tags
+install:        man apropos
+		rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
+		install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
+		install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
+		ln ${DESTDIR}/usr/ucb/apropos ${DESTDIR}/usr/ucb/whatis
+
+lint:           FRC
+		lint ${CFLAGS} ${ASRCS}
+		lint ${CFLAGS} ${MSRCS}
+
+tags:           FRC
+		ctags ${ASRCS}
+		ctags ${MSRCS}
+		sort -o tags tags
 
 FRC:
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-apropos.o: apropos.c /usr/include/sys/param.h /usr/include/sys/localopts.h
-apropos.o: /usr/include/sys/stddef.h /usr/include/machine/machparam.h
-apropos.o: /usr/include/sys/types.h /usr/include/signal.h
-apropos.o: /usr/include/sys/types.h /usr/include/stdio.h /usr/include/ctype.h
-apropos.o: /usr/include/strings.h /usr/include/string.h
-apropos.o: /usr/include/sys/types.h
-man.o: man.c /usr/include/sys/param.h /usr/include/sys/localopts.h
-man.o: /usr/include/sys/stddef.h /usr/include/machine/machparam.h
-man.o: /usr/include/sys/types.h /usr/include/signal.h /usr/include/sys/types.h
-man.o: /usr/include/sys/file.h /usr/include/fcntl.h /usr/include/sys/types.h
-man.o: /usr/include/sys/dir.h /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

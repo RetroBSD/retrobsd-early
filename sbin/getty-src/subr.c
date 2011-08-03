@@ -1,16 +1,11 @@
 /*
+ * Melbourne getty.
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)subr.c	5.4.2 (2.11BSD GTE) 1997/3/28";
-#endif
-
-/*
- * Melbourne getty.
- */
+#include <string.h>
 #include <sgtty.h>
 #include "gettytab.h"
 
@@ -229,8 +224,6 @@ struct speedtab {
 } speedtab[] = {
 	50,	B50,
 	75,	B75,
-	110,	B110,
-	134,	B134,
 	150,	B150,
 	200,	B200,
 	300,	B300,
@@ -240,11 +233,10 @@ struct speedtab {
 	2400,	B2400,
 	4800,	B4800,
 	9600,	B9600,
-	19200,	EXTA,
-	19,	EXTA,		/* for people who say 19.2K */
-	38400,	EXTB,
-	38,	EXTB,
-	7200,	EXTB,		/* alternative */
+	19200,	B19200,
+	38400,	B38400,
+        57600,  B57600,
+        115200, B115200,
 	0
 };
 
@@ -259,7 +251,7 @@ speed(val)
 	for (sp = speedtab; sp->speed; sp++)
 		if (sp->speed == val)
 			return (sp->uxname);
-	
+
 	return (B300);		/* default in impossible cases */
 }
 

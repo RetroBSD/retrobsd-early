@@ -1,8 +1,7 @@
-#if	defined(DOSCCS) && !defined(lint)
-static char *sccsid = "@(#)find.c	4.17.3 (2.11BSD GTE) 1996/10/23";
-#endif
-
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <fcntl.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -40,7 +39,7 @@ struct	stat Devstat;	/* stats of each argument path's file system */
 
 struct stat Statb;
 
-struct	anode	*exp(),
+struct	anode	*expr(),
 		*e1(),
 		*e2(),
 		*e3(),
@@ -110,7 +109,7 @@ usage:		fprintf(stderr, "Usage: find path-list predicate-list\n");
 			break;
 	if(paths == 1) /* no path-list */
 		goto usage;
-	if(!(exlist = exp())) { /* parse and compile the arguments */
+	if(!(exlist = expr())) { /* parse and compile the arguments */
 		fprintf(stderr, "find: parsing error\n");
 		exit(1);
 	}
@@ -145,16 +144,16 @@ usage:		fprintf(stderr, "Usage: find path-list predicate-list\n");
 	exit(0);
 }
 
-/* compile time functions:  priority is  exp()<e1()<e2()<e3()  */
+/* compile time functions:  priority is  expr()<e1()<e2()<e3()  */
 
-struct anode *exp() { /* parse ALTERNATION (-o)  */
+struct anode *expr() { /* parse ALTERNATION (-o)  */
 	int or();
 	register struct anode * p1;
 
 	p1 = e1() /* get left operand */ ;
 	if(EQ(nxtarg(), "-o")) {
 		Randlast--;
-		return(mk(or, p1, exp()));
+		return(mk(or, p1, expr()));
 	}
 	else if(Ai <= Argc) --Ai;
 	return(p1);
@@ -202,7 +201,7 @@ struct anode *e3() { /* parse parens and predicates */
 	a = nxtarg();
 	if(EQ(a, "(")) {
 		Randlast--;
-		p1 = exp();
+		p1 = expr();
 		a = nxtarg();
 		if(!EQ(a, ")")) goto err;
 		return(p1);
@@ -350,7 +349,7 @@ register struct anode *p;
 	return( !((*p->L->F)(p->L)));
 }
 glob(p)
-register struct { int f; char *pat; } *p; 
+register struct { int f; char *pat; } *p;
 {
 	return(gmatch(Fname, p->pat));
 }
@@ -361,17 +360,17 @@ struct anode *p;
 	return(1);
 }
 mtime(p)
-register struct { int f, t, s; } *p; 
+register struct { int f, t, s; } *p;
 {
 	return(scomp((int)((Now - Statb.st_mtime) / A_DAY), p->t, p->s));
 }
 atime(p)
-register struct { int f, t, s; } *p; 
+register struct { int f, t, s; } *p;
 {
 	return(scomp((int)((Now - Statb.st_atime) / A_DAY), p->t, p->s));
 }
 user(p)
-register struct { int f, u, s; } *p; 
+register struct { int f, u, s; } *p;
 {
 	return(scomp(Statb.st_uid, p->u, p->s));
 }
@@ -388,7 +387,7 @@ register struct { int f, u, s; } *p;
 	return(scomp((int)Statb.st_ino, p->u, p->s));
 }
 group(p)
-register struct { int f, u; } *p; 
+register struct { int f, u; } *p;
 {
 	return(p->u == Statb.st_gid);
 }
@@ -400,17 +399,17 @@ struct anode *p;
 	return (getgroup(Statb.st_gid) == NULL);
 }
 links(p)
-register struct { int f, link, s; } *p; 
+register struct { int f, link, s; } *p;
 {
 	return(scomp(Statb.st_nlink, p->link, p->s));
 }
 size(p)
-register struct { int f, sz, s; } *p; 
+register struct { int f, sz, s; } *p;
 {
 	return(scomp((int)((Statb.st_size+511)>>9), p->sz, p->s));
 }
 perm(p)
-register struct { int f, per, s; } *p; 
+register struct { int f, per, s; } *p;
 {
 	register i;
 	i = (p->s=='-') ? p->per : 07777; /* '-' means only arg bits */
@@ -800,12 +799,12 @@ again:
  * space by a factor of 4-5, bigram coding by a further 20-25%.
  * The codes are:
  *
- *	0-28	likeliest differential counts + offset to make nonnegative 
+ *	0-28	likeliest differential counts + offset to make nonnegative
  *	30	escape code for out-of-range count to follow in next word
  *	128-255 bigram codes, (128 most common, as determined by 'updatedb')
  *	32-127  single character (printable) ascii residue
  *
- * A novel two-tiered string search technique is employed: 
+ * A novel two-tiered string search technique is employed:
  *
  * First, a metacharacter-free subpattern and partial pathname is
  * matched BACKWARDS to avoid full expansion of the pathname list.
@@ -823,11 +822,11 @@ again:
 #define	OFFSET	14
 #define	ESCCODE	30
 
-fastfind ( pathpart )	
+fastfind ( pathpart )
 	char pathpart[];
 {
 	register char *p, *s;
-	register int c; 
+	register int c;
 	char *q, *index(), *patprep();
 	int i, count = 0, globflag;
 	FILE *fp, *fopen();
@@ -840,9 +839,9 @@ fastfind ( pathpart )
 		fprintf ( stderr, "find: can't open %s\n", FCODES );
 		exit ( 1 );
 	}
-	for ( i = 0; i < 128; i++ ) 
+	for ( i = 0; i < 128; i++ )
 		bigram1[i] = getc ( fp ),  bigram2[i] = getc ( fp );
-	
+
 	if ( index ( pathpart, '*' ) || index ( pathpart, '?' ) || index ( pathpart, '[' ) )
 		globflag = YES;
 	patend = patprep ( pathpart );
@@ -853,7 +852,7 @@ fastfind ( pathpart )
 		count += ( (c == ESCCODE) ? getw ( fp ) : c ) - OFFSET;
 
 		for ( p = path + count; (c = getc ( fp )) > ESCCODE; )	/* overlay old path */
-			if ( c < 0200 )	
+			if ( c < 0200 )
 				*p++ = c;
 			else		/* bigrams are parity-marked */
 				*p++ = bigram1[c & 0177],  *p++ = bigram2[c & 0177];
@@ -862,7 +861,7 @@ fastfind ( pathpart )
 		*p-- = NULL;
 		cutoff = ( found ? path : path + count);
 
-		for ( found = NO, s = p; s >= cutoff; s-- ) 
+		for ( found = NO, s = p; s >= cutoff; s-- )
 			if ( *s == *patend ) {		/* fast first char check */
 				for ( p = patend - 1, q = s - 1; *p != NULL; p--, q-- )
 					if ( *q != *p )
@@ -913,8 +912,8 @@ patprep ( name )
 	   check every path (force '/' search)
 	*/
 	if ( (p == name) && index ( "?*[]", *p ) != 0 )
-		*subp++ = '/';					
-	else {				
+		*subp++ = '/';
+	else {
 		for ( endmark = p; p >= name; p-- )
 			if ( index ( "]*?", *p ) != 0 )
 				break;
@@ -1188,7 +1187,7 @@ list(file, stp)
 #endif
 		stp->st_ino,				/* inode #	*/
 #ifdef	S_IFSOCK
-		(long) kbytes(dbtob(stp->st_blocks)),	/* kbytes       */
+		(long) kbytes(stp->st_blocks),          /* kbytes       */
 #else
 		(long) kbytes(stp->st_size),		/* kbytes       */
 #endif

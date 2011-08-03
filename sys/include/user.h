@@ -50,7 +50,7 @@ struct user {
 	size_t	u_ssize;		/* stack size (clicks) */
 
 /* 1.3 - signal management */
-	sig_t	u_signal[NSIG];	/* disposition of signals */
+	sig_t	u_signal[NSIG];         /* disposition of signals */
 	long	u_sigmask[NSIG];	/* signals to be blocked */
 	long	u_sigonstack;		/* signals to take on sigstack */
 	long	u_sigintr;		/* signals that interrupt syscalls */
@@ -96,7 +96,7 @@ struct user {
 		dev_t nc_dev;		/* dev of cached directory */
 	} u_ncache;
 	int	u_stack[1];		/* kernel stack per user
-					 * extends from u + USIZE*64
+					 * extends from u + USIZE
 					 * backward not to reach here */
 };
 

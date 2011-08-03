@@ -30,42 +30,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if !defined(BUILTIN) && !defined(SHELL) && !defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)printf.c	8.1 (Berkeley) 7/20/93";
-#endif /* not lint */
-
-#include <sys/types.h>
-
-#include <errno.h>
-#ifdef SHELL
-#define	EOF	-1
-#else
 #include <stdio.h>
-#endif
 #include <string.h>
-
-extern	double	atof();
-extern	long	strtol();
-extern	int	errno;
-
-/*
- * XXX
- * This *has* to go away.  TK.
- */
-#ifdef SHELL
-#define main printfcmd
-#define warnx(a, b, c) {						\
-	char buf[64];							\
-	(void)sprintf(buf, sizeof(buf), a, b, c);			\
-	error(buf);							\
-}
-#include "../../bin/sh/bltin/bltin.h"
-#endif
+#include <strings.h>
+#include <errno.h>
+#include <sys/types.h>
 
 #define PF(f, func) { \
 	if (fieldwidth) \
@@ -79,17 +48,19 @@ extern	int	errno;
 		(void)printf(f, func); \
 }
 
+static char **gargv;
+
 static int	 asciicode();
 static void	 escape();
 static int	 getchr();
-static double	 getdouble();
 static int	 getint();
 static int	 getlong();
 static char	*getstr();
 static char	*mklong();
 static void	 usage();
-
-static char **gargv;
+#ifndef NOFPU
+static double	 getdouble();
+#endif
 
 int
 #ifdef BUILTIN
@@ -209,7 +180,7 @@ next:		for (start = fmt;; ++fmt) {
 		case 'd': case 'i': case 'o': case 'u': case 'x': case 'X': {
 			long p;
 			char *f;
-			
+
 			if ((f = mklong(start, convch)) == NULL)
 				return (1);
 			if (getlong(&p))
@@ -217,6 +188,7 @@ next:		for (start = fmt;; ++fmt) {
 			PF(f, p);
 			break;
 		}
+#ifndef NOFPU
 		case 'e': case 'E': case 'f': case 'g': case 'G': {
 			double p;
 
@@ -224,6 +196,7 @@ next:		for (start = fmt;; ++fmt) {
 			PF(start, p);
 			break;
 		}
+#endif
 		default:
 			warnx("illegal format character", NULL, NULL);
 			return (1);
@@ -373,7 +346,7 @@ getlong(lp)
 				warnx("%s: %s", *gargv, strerror(ERANGE));
 				return (1);
 			}
-			
+
 		*lp = val;
 		++gargv;
 		return (0);
@@ -382,6 +355,7 @@ getlong(lp)
 	return (0);
 }
 
+#ifndef NOFPU
 static double
 getdouble()
 {
@@ -391,6 +365,7 @@ getdouble()
 		return (atof(*gargv++));
 	return ((double)asciicode());
 }
+#endif
 
 static int
 asciicode()

@@ -1,6 +1,4 @@
 /*
- *	w.c	(2.11BSD)	2.0	1996/11/17
- *
  * w - print system status (who and what)
  *
  * Rewritten using sysctl, no nlist used  - 1/19/94 - sms.
@@ -11,6 +9,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <utmp.h>
 #include <string.h>
@@ -46,11 +45,10 @@ time_t	proctime;		/* cpu time of process in doing */
 double	avenrun[3];
 extern	int errno, optind;
 
-#define	DIV60(t)	((t+30)/60)    /* x/60 rounded */ 
+#define	DIV60(t)	((t+30)/60)    /* x/60 rounded */
 #define	TTYEQ		(tty == pr[i].w_tty)
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
-long	round();
 char	*getargs();
 char	*getptr();
 
@@ -87,7 +85,7 @@ main(argc, argv)
 	int	mib[2];
 
 	program = argv[0];
-	if ((cp = rindex(program, '/')) || *(cp = program) == '-')
+	if ((cp = strrchr(program, '/')) || *(cp = program) == '-')
 		cp++;
 	if (*cp == 'u')
 		wcmd = 0;
@@ -184,7 +182,7 @@ main(argc, argv)
 			printf("%-*.*s %-*.*s  login@  idle   JCPU   PCPU  what\n",
 				NMAX, NMAX, "User", LMAX, LMAX, "tty");
 		else
-			printf("%-*.*s tty idle  what\n", 
+			printf("%-*.*s tty idle  what\n",
 				NMAX, NMAX, "User");
 		fflush(stdout);
 	}
@@ -413,14 +411,14 @@ register struct smproc *smp;
 			continue;
 		/* find & read in the user structure */
 		if (p->p_flag & SLOAD) {
-			addr = ctob((long)p->p_addr);
-			daddr = ctob((long)p->p_daddr);
-			saddr = ctob((long)p->p_saddr);
+			addr = (long)p->p_addr;
+			daddr = (long)p->p_daddr;
+			saddr = (long)p->p_saddr;
 			file = swmem;
 		} else {
-			addr = (off_t)p->p_addr<<9;
-			daddr = (off_t)p->p_daddr<<9;
-			saddr = (off_t)p->p_saddr<<9;
+			addr = (off_t)p->p_addr * DEV_BSIZE;
+			daddr = (off_t)p->p_daddr * DEV_BSIZE;
+			saddr = (off_t)p->p_saddr * DEV_BSIZE;
 			file = swap;
 		}
 		lseek(file, addr, 0);
@@ -430,11 +428,10 @@ register struct smproc *smp;
 			continue;
 
 		/* set up address maps for user pcs */
-		txtsiz = ctob(up.u_tsize);
-		datsiz = ctob(up.u_dsize);
-		stksiz = ctob(up.u_ssize);
-		septxt = up.u_sep;
-		datmap.b1 = (septxt ? 0 : round(txtsiz,TXTRNDSIZ));
+		txtsiz = up.u_tsize;
+		datsiz = up.u_dsize;
+		stksiz = up.u_ssize;
+		datmap.b1 = txtsiz;
 		datmap.e1 = datmap.b1+datsiz;
 		datmap.f1 = daddr;
 		datmap.b2 = stackbas(stksiz);
@@ -442,9 +439,12 @@ register struct smproc *smp;
 		datmap.f2 = saddr;
 
 		/* save the interesting parts */
-		smp->w_addr = saddr + ctob((long)p->p_ssize) - ARGLIST;
+		smp->w_addr = saddr + (long)p->p_ssize - ARGLIST;
 		smp->w_pid = p->p_pid;
-		smp->w_igintr = (int)(((up.u_signal[2]==1) + 2*(up.u_signal[2]>1) + 3*(up.u_signal[3]==1)) + 6*(up.u_signal[3]>1));
+		smp->w_igintr = ((up.u_signal[SIGINT] == SIG_IGN) +
+                        2 * ((unsigned)up.u_signal[SIGINT] > (unsigned)SIG_IGN) +
+                        3 * (up.u_signal[SIGQUIT] == SIG_IGN)) +
+                        6 * ((unsigned)up.u_signal[SIGQUIT] > (unsigned)SIG_IGN);
 		smp->w_time = up.u_ru.ru_utime + up.u_ru.ru_stime;
 		smp->w_ctime = up.u_cru.ru_utime + up.u_cru.ru_stime;
 		smp->w_tty = up.u_ttyd;
@@ -588,13 +588,4 @@ char *adr;
 long lbd, ubd;
 {
 	return((unsigned)adr>=lbd && (unsigned)adr<ubd);
-}
-
-long
-round(a, b)
-	long		a, b;
-{
-	long		w = ((a+b-1)/b)*b;
-
-	return(w);
 }

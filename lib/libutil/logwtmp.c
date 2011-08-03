@@ -13,19 +13,33 @@
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)utmp.h	5.6.1 (2.11BSD) 1996/11/27
  */
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <utmp.h>
+#include <paths.h>
 
-#define	_PATH_UTMP	"/var/run/utmp"
-#define	_PATH_WTMP	"/var/adm/wtmp"
+logwtmp(line, name, host)
+	char *line, *name, *host;
+{
+	struct utmp ut;
+	struct stat buf;
+	int fd;
+	time_t time();
+	char *strncpy();
 
-#define	UT_NAMESIZE	15
-#define	UT_LINESIZE	8
-#define	UT_HOSTSIZE	16
-struct utmp {
-	char	ut_line[UT_LINESIZE];
-	char	ut_name[UT_NAMESIZE];
-	char	ut_host[UT_HOSTSIZE];
-	long	ut_time;
-};
+	if ((fd = open(_PATH_WTMP, O_WRONLY|O_APPEND, 0)) < 0)
+		return;
+	if (!fstat(fd, &buf)) {
+		(void)strncpy(ut.ut_line, line, sizeof(ut.ut_line));
+		(void)strncpy(ut.ut_name, name, sizeof(ut.ut_name));
+		(void)strncpy(ut.ut_host, host, sizeof(ut.ut_host));
+		(void)time(&ut.ut_time);
+		if (write(fd, (char *)&ut, sizeof(struct utmp)) !=
+		    sizeof(struct utmp))
+			(void)ftruncate(fd, buf.st_size);
+	}
+	(void)close(fd);
+}

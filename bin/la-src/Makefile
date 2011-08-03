@@ -1,27 +1,26 @@
 #
 # la Makefile.  Revised 1996/1/28
 #
-DESTDIR=
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-DEFS=
-CFLAGS=	-O ${DEFS}
-SEPFLAG=-i
+CFLAGS		+= -Werror
 
-all: la la.0
+SRCS		= la.c
+OBJS		= la.o
+MAN		= la.0
+MANSRC		= la.1
 
-la: la.o
-	cc ${CFLAGS} ${SEPFLAG} la.o -o la
+all:            ../la la.0
 
-install: la la.0
-	install -s la ${DESTDIR}/usr/new/la
-	install -c -m 444 -o bin -g bin la.0 ${DESTDIR}/usr/new/man/cat1/la.0
+../la:          ${OBJS}
+		${CC} ${LDFLAGS} -o la.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S la.elf > la.dis
+		${SIZE} la.elf
+		${ELF2AOUT} la.elf $@
 
-la.0: la.1
-	/usr/man/manroff la.1 > la.0
+la.0:           ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f la *.o la.0 MAKELOG
-
-depend:
-tags:
-lint:
+		rm -f *.o *.elf ${MAN} ../la *.elf *.dis tags *~

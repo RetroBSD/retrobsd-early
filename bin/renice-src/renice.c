@@ -3,18 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)renice.c	5.1.1 (2.11BSD) 1996/11/17";
-#endif
-
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <pwd.h>
 #include <errno.h>
 
@@ -56,7 +48,7 @@ main(argc, argv)
 		}
 		if (which == PRIO_USER) {
 			register struct passwd *pwd = getpwnam(*argv);
-			
+
 			if (pwd == NULL) {
 				fprintf(stderr, "renice: %s: unknown user\n",
 					*argv);

@@ -14,39 +14,42 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1.3 (2.11BSD) 1996/11/16
-#
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-CFLAGS=	-O
-SEPFLAG= -i
-SRCS=	vipw.c
-OBJS=	vipw.o
-MAN=	vipw.0
-MANSRC=	vipw.8
+CFLAGS		+= -Werror
 
-all: vipw ${MAN}
+SRCS		= vipw.c
+OBJS		= vipw.o
+MAN		= vipw.0
+MANSRC		= vipw.8
 
-vipw: ${OBJS}
-	${CC} ${SEPFLAG} -o $@ ${CFLAGS} ${OBJS}
+all:            ../vipw vipw.0
 
-vipw.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+../vipw:        ${OBJS}
+		${CC} ${LDFLAGS} -o vipw.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S vipw.elf > vipw.dis
+		${SIZE} vipw.elf
+		${ELF2AOUT} vipw.elf $@
+
+vipw.0:         ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} core vipw
+		rm -f *.o *.elf ${MAN} ../vipw *.elf *.dis tags *~
 
-cleandir: clean
-	rm -f tags .depend
+cleandir:       clean
+		rm -f tags .depend
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: ${MAN} vipw
-	install -s -o bin -g bin -m 755 vipw ${DESTDIR}/usr/sbin
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        ${MAN} vipw
+		install -s -o bin -g bin -m 755 vipw ${DESTDIR}/usr/sbin
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+lint:           ${SRCS}
+		lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}

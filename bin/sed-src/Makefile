@@ -1,15 +1,24 @@
-#	Makefile	4.1	85/04/05
-#
-CFLAGS=-O -w
-SEPFLAG=-i
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-sed:	sed0.o sed1.o
-	cc ${SEPFLAG} -o sed *.o
+CFLAGS		+= -Werror
+
+SRCS		= sed0.c sed1.c
+OBJS		= sed0.o sed1.o
+
+all:            ../sed
+
+../sed:         ${OBJS}
+		${CC} ${LDFLAGS} -o sed.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S sed.elf > sed.dis
+		${SIZE} sed.elf
+		${ELF2AOUT} sed.elf $@
+
+clean:
+		rm -f *.o *.elf ${MAN} ../sed *.elf *.dis tags *~
+
+install:        sed
+		install -s sed $(DESTDIR)/bin
 
 sed0.o: sed0.c sed.h
 sed1.o: sed1.c sed.h
-
-install: sed
-	install -s sed $(DESTDIR)/bin
-clean:
-	rm -f *.o sed

@@ -1,22 +1,13 @@
 /*
+ * wc line and word count
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)wc.c	5.1 (Berkeley) 5/31/85";
-#endif not lint
-
-/* wc line and word count */
-
 #include <stdio.h>
+#include <stdlib.h>
+
 long	linect, wordct, charct, pagect;
 long	tlinect, twordct, tcharct, tpagect;
 char	*wd = "lwc";
@@ -31,7 +22,7 @@ char **argv;
 
 	while (argc > 1 && *argv[1] == '-') {
 		switch (argv[1][1]) {
-		case 'l': case 'w': case 'c': 
+		case 'l': case 'w': case 'c':
 			wd = argv[1]+1;
 			break;
 		default:
@@ -116,4 +107,3 @@ long num;
 {
 	printf(" %7ld", num);
 }
-

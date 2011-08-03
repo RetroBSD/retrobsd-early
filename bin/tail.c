@@ -1,18 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)tail.c	5.2.1 (2.11BSD GTE) 1/1/94";
-#endif
-
-/* tail command 
+ * tail command
  *
  *	tail where [file]
  *	where is +/-n[type]
@@ -25,22 +12,28 @@ static char sccsid[] = "@(#)tail.c	5.2.1 (2.11BSD GTE) 1/1/94";
  *	option 'f' means loop endlessly trying to read more
  *		characters after the end of file, on the  assumption
  *		that the file is growing
-*/
-
-#include	<stdio.h>
-#include	<ctype.h>
-#include	<sys/types.h>
-#include	<sys/stat.h>
-#include	<sys/file.h>
-#include	<errno.h>
+ *
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <errno.h>
 
 #ifdef pdp11
 #define LBIN 16385
 #else
 #define LBIN 32769
 #endif
+
 #undef	BUFSIZ
 #define	BUFSIZ	8192
+
 struct	stat	statb;
 int	follow;
 int	piped;
@@ -194,7 +187,7 @@ brka:
 			do {
 				if(--k<0) {
 					if(partial) {
-						if(bkwds) 
+						if(bkwds)
 						    (void)write(1,bin,lastnl+1);
 						goto brkb;
 					}

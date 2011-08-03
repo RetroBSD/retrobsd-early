@@ -8,7 +8,7 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= startup-$(MACHINE) libc
+SUBDIR		= startup-$(MACHINE) libc libutil
 
 all:		${SUBDIR}
 
@@ -25,5 +25,5 @@ tags:
 		cd libc; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags
 
 clean:
-		rm -f a.out core *.s *.o *~
+		rm -f a.out core *.s *.o *.a *~
 		-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done

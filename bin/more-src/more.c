@@ -1,26 +1,15 @@
 /*
+ * more.c - General purpose tty output filter and file perusal program
+ *
+ *	by Eric Shienbrood, UC Berkeley
+ *
+ *	modified by Geoff Peck, UCB to add underlining, single spacing
+ *	modified by John Foderaro, UCB to add -c and MORE environment variable
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)more.c	5.4.2 (2.11BSD) 1997/10/18";
-#endif
-
-/*
-** more.c - General purpose tty output filter and file perusal program
-**
-**	by Eric Shienbrood, UC Berkeley
-**
-**	modified by Geoff Peck, UCB to add underlining, single spacing
-**	modified by John Foderaro, UCB to add -c and MORE environment variable
-*/
-
 #include <stdio.h>
 #undef	putchar			/* force use of function rather than macro */
 #include <sys/types.h>
@@ -32,7 +21,9 @@ static char sccsid[] = "@(#)more.c	5.4.2 (2.11BSD) 1997/10/18";
 #include <setjmp.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #define HELPFILE	"/usr/share/misc/more.help"
 #define VI		"/usr/ucb/vi"
@@ -48,16 +39,15 @@ static char sccsid[] = "@(#)more.c	5.4.2 (2.11BSD) 1997/10/18";
 
 #define TBUFSIZ	1024
 #define LINSIZ	256
-#define ctrl(letter)	('letter' & 077)
+#define ctrl(letter)	(letter & 077)
 #define RUBOUT	'\177'
 #define ESC	'\033'
 #define QUIT	'\034'
 
 struct sgttyb	otty, savetty;
 long		file_pos, file_size;
-int		fnum, no_intty, no_tty, slow_tty;
-int		dum_opt, dlines, onquit(), end_it(), chgwinsz();
-int		onsusp();
+int		fnum, no_intty, no_tty;
+int		dum_opt, dlines;
 int		nscroll = 11;	/* Number of lines scrolled by 'd' */
 int		fold_opt = 1;	/* Fold long lines */
 int		stop_opt = 1;	/* Stop after form feeds */
@@ -94,7 +84,6 @@ char		*Home;		/* go to home */
 char		*cursorm;	/* cursor movement */
 char		cursorhome[40];	/* contains cursor movement to home */
 char		*EodClr;	/* clear rest of screen */
-char		*tgetstr();
 int		Mcol = 80;	/* number of columns */
 int		Wrap = 1;	/* set if automargins */
 int		soglitch;	/* terminal has standout mode glitch */
@@ -104,8 +93,163 @@ struct {
     long chrctr, line;
 } context, screen_start;
 extern char	PC;		/* pad character */
-extern short	ospeed;
 
+/*
+ * Termcap stub.
+ */
+int tgetent (char *buffer, char *termtype)
+{
+    return 1;
+}
+
+int tgetnum (char *name)
+{
+    if (name[0] == 'l' && name[1] == 'i')
+        return 25;
+    if (name[0] == 'c' && name[1] == 'o')
+        return 80;
+    return -1;
+}
+
+int tgetflag (char *name)
+{
+    if (name[0] == 'a' && name[1] == 'm')
+        return 1;
+    return 0;
+}
+
+char *tgetstr (char *name, char **area)
+{
+    /* erase to end of line */
+    if (name[0] == 'c' && name[1] == 'e')
+        return "\33[K";
+
+    /* Clear screen */
+    if (name[0] == 'c' && name[1] == 'l')
+        return "\33[2J";
+
+    /* Reverse */
+    if (name[0] == 's' && name[1] == 'o')
+        return "\33[7m";
+
+    /* End reverse */
+    if (name[0] == 's' && name[1] == 'e')
+        return "\33[m";
+
+    /* Home */
+    if (name[0] == 'h' && name[1] == 'o')
+        return "\33[H";
+
+    /* Clear to end of screen */
+    if (name[0] == 'c' && name[1] == 'd')
+        return "\33[J";
+    return 0;
+}
+
+char *tgoto (char *cstring, int hpos, int vpos)
+{
+    /* Not used */
+    return "";
+}
+
+char PC;
+void tputs (char *string, int nlines, int (*outfun) ())
+{
+    fputs (string, stdout);
+}
+
+/*
+** Come here if a quit signal is received
+*/
+void onquit(sig)
+        int sig;
+{
+    signal(SIGQUIT, SIG_IGN);
+    if (!inwait) {
+	putchar ('\n');
+	if (!startup) {
+	    signal(SIGQUIT, onquit);
+	    longjmp (restore, 1);
+	}
+	else
+	    Pause++;
+    }
+    else if (!dum_opt && notell) {
+	write (2, "[Use q or Q to quit]", 20);
+	promptlen += 20;
+	notell = 0;
+    }
+    signal(SIGQUIT, onquit);
+}
+
+/*
+** Come here if a signal for a window size change is received
+*/
+void chgwinsz(sig)
+        int sig;
+{
+    struct winsize win;
+
+    (void) signal(SIGWINCH, SIG_IGN);
+    if (ioctl(fileno(stdout), TIOCGWINSZ, &win) != -1) {
+	if (win.ws_row != 0) {
+	    Lpp = win.ws_row;
+	    nscroll = Lpp/2 - 1;
+	    if (nscroll <= 0)
+		nscroll = 1;
+	    dlines = Lpp - (noscroll ? 1 : 2);
+	}
+	if (win.ws_col != 0)
+	    Mcol = win.ws_col;
+    }
+    (void) signal(SIGWINCH, chgwinsz);
+}
+
+/*
+** Clean up terminal state and exit. Also come here if interrupt signal received
+*/
+void end_it (sig)
+        int sig;
+{
+
+    reset_tty ();
+    if (clreol) {
+	putchar ('\r');
+	clreos ();
+	fflush (stdout);
+    }
+    else if (!clreol && (promptlen > 0)) {
+	kill_line ();
+	fflush (stdout);
+    }
+    else
+	write (2, "\n", 1);
+    _exit(0);
+}
+
+/*
+ * Come here when we get a suspend signal from the terminal
+ */
+void onsusp (sig)
+        int sig;
+{
+    /* ignore SIGTTOU so we don't get stopped if csh grabs the tty */
+    signal(SIGTTOU, SIG_IGN);
+    reset_tty ();
+    fflush (stdout);
+    signal(SIGTTOU, SIG_DFL);
+    /* Send the TSTP signal to suspend our process group */
+    signal(SIGTSTP, SIG_DFL);
+    sigsetmask(0L);
+    kill (0, SIGTSTP);
+    /* Pause for station break */
+
+    /* We're back */
+    signal (SIGTSTP, onsusp);
+    set_tty ();
+    if (inwait)
+	    longjmp (restore);
+}
 
 main(argc, argv)
 int argc;
@@ -238,7 +382,7 @@ char *argv[];
 		left = command (fnames[fnum], f);
 	    }
 	    if (left != 0) {
-		if ((noscroll || clearit) && (file_size != 0x7fffffffffffffffL))
+		if ((noscroll || clearit) && (file_size != LONG_MAX))
 		    if (clreol)
 			home ();
 		    else
@@ -373,7 +517,7 @@ int *clearfirst;
 	Ungetc (c, f);
     }
     if ((file_size = stbuf.st_size) == 0)
-	file_size = 0x7fffffffffffffffL;
+	file_size = LONG_MAX;
     return (f);
 }
 
@@ -467,75 +611,6 @@ register int num_lines;
     }
 }
 
-/*
-** Come here if a quit signal is received
-*/
-
-onquit()
-{
-    signal(SIGQUIT, SIG_IGN);
-    if (!inwait) {
-	putchar ('\n');
-	if (!startup) {
-	    signal(SIGQUIT, onquit);
-	    longjmp (restore, 1);
-	}
-	else
-	    Pause++;
-    }
-    else if (!dum_opt && notell) {
-	write (2, "[Use q or Q to quit]", 20);
-	promptlen += 20;
-	notell = 0;
-    }
-    signal(SIGQUIT, onquit);
-}
-
-/*
-** Come here if a signal for a window size change is received
-*/
-
-chgwinsz()
-{
-    struct winsize win;
-
-    (void) signal(SIGWINCH, SIG_IGN);
-    if (ioctl(fileno(stdout), TIOCGWINSZ, &win) != -1) {
-	if (win.ws_row != 0) {
-	    Lpp = win.ws_row;
-	    nscroll = Lpp/2 - 1;
-	    if (nscroll <= 0)
-		nscroll = 1;
-	    dlines = Lpp - (noscroll ? 1 : 2);
-	}
-	if (win.ws_col != 0)
-	    Mcol = win.ws_col;
-    }
-    (void) signal(SIGWINCH, chgwinsz);
-}
-
-/*
-** Clean up terminal state and exit. Also come here if interrupt signal received
-*/
-
-end_it ()
-{
-
-    reset_tty ();
-    if (clreol) {
-	putchar ('\r');
-	clreos ();
-	fflush (stdout);
-    }
-    else if (!clreol && (promptlen > 0)) {
-	kill_line ();
-	fflush (stdout);
-    }
-    else
-	write (2, "\n", 1);
-    _exit(0);
-}
-
 copy_file(f)
 register FILE *f;
 {
@@ -543,66 +618,6 @@ register FILE *f;
 
     while ((c = getc(f)) != EOF)
 	putchar(c);
-}
-
-/* Simplified printf function */
-
-printf (fmt, args)
-register char *fmt;
-int args;
-{
-	register int *argp;
-	register char ch;
-	register int ccount;
-
-	ccount = 0;
-	argp = &args;
-	while (*fmt) {
-		while ((ch = *fmt++) != '%') {
-			if (ch == '\0')
-				return (ccount);
-			ccount++;
-			putchar (ch);
-		}
-		switch (*fmt++) {
-		case 'd':
-			ccount += printd (*argp);
-			break;
-		case 's':
-			ccount += pr ((char *)*argp);
-			break;
-		case '%':
-			ccount++;
-			argp--;
-			putchar ('%');
-			break;
-		case '0':
-			return (ccount);
-		default:
-			break;
-		}
-		++argp;
-	}
-	return (ccount);
-
-}
-
-/*
-** Print an integer as a string of decimal digits,
-** returning the length of the print representation.
-*/
-
-printd (n)
-register int n;
-{
-    register int a, nchars;
-
-    if (a = n/10)
-	nchars = 1 + printd(a);
-    else
-	nchars = 1;
-    putchar (n % 10 + '0');
-    return (nchars);
 }
 
 /* Put the print representation of an integer into a string */
@@ -627,7 +642,7 @@ register int n;
     *sptr++ = n % 10 + '0';
 }
 
-static char bell = ctrl(G);
+static char bell = ctrl('G');
 
 /* See whether the last component of the path name "path" is equal to the
 ** string "string"
@@ -901,6 +916,23 @@ static int lastcolon;
 char shell_line[132];
 
 /*
+** Print an integer as a string of decimal digits,
+** returning the length of the print representation.
+*/
+printd (n)
+register int n;
+{
+    register int a, nchars;
+
+    if (a = n/10)
+       nchars = 1 + printd(a);
+    else
+       nchars = 1;
+    putchar (n % 10 + '0');
+    return (nchars);
+}
+
+/*
 ** Read a command and do it. A command consists of an optional integer
 ** argument followed by the command character.  Return the number of lines
 ** to display in the next screenful.  If there is nothing more to display
@@ -926,10 +958,6 @@ register FILE *f;
 	prompt (filename);
     else
 	errors = 0;
-    if (MBIT == RAW && slow_tty) {
-	otty.sg_flags |= MBIT;
-	stty(fileno(stderr), &otty);
-    }
     for (;;) {
 	nlines = number (&comchar);
 	lastp = colonch = 0;
@@ -954,7 +982,7 @@ register FILE *f;
 		done++;
 	    break;
 	case 'b':
-	case ctrl(B):
+	case ctrl('B'):
 	    {
 		register int initline;
 
@@ -1000,7 +1028,7 @@ register FILE *f;
 	    else if (comchar == 'z') dlines = nlines;
 	    ret (nlines);
 	case 'd':
-	case ctrl(D):
+	case ctrl('D'):
 	    if (nlines != 0) nscroll = nlines;
 	    ret (nscroll);
 	case 'q':
@@ -1133,10 +1161,6 @@ register FILE *f;
 endsw:
     inwait = 0;
     notell++;
-    if (MBIT == RAW && slow_tty) {
-	otty.sg_flags &= ~MBIT;
-	stty(fileno(stderr), &otty);
-    }
     return (retval);
 }
 
@@ -1507,7 +1531,7 @@ retry:
 
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
-	    Home = tgetstr("ho",&clearptr);
+	    Home = tgetstr("ho", &clearptr);
 	    if (Home == 0 || *Home == '\0')
 	    {
 		if ((cursorm = tgetstr("cm", &clearptr)) != NULL) {
@@ -1526,13 +1550,10 @@ retry:
     no_intty = gtty(fileno(stdin), &otty);
     gtty(fileno(stderr), &otty);
     savetty = otty;
-    ospeed = otty.sg_ospeed;
-    slow_tty = ospeed < B1200;
     hardtabs = !(otty.sg_flags & XTABS);
-    if (!no_tty) {
+    if (! no_tty) {
 	otty.sg_flags &= ~ECHO;
-	if (MBIT == CBREAK || !slow_tty)
-	    otty.sg_flags |= MBIT;
+        otty.sg_flags |= MBIT;
     }
 }
 
@@ -1748,26 +1769,4 @@ register FILE *f;
     if (c == '\n')
 	Currline++;
     *p = '\0';
-}
-
-/* Come here when we get a suspend signal from the terminal */
-
-onsusp ()
-{
-    /* ignore SIGTTOU so we don't get stopped if csh grabs the tty */
-    signal(SIGTTOU, SIG_IGN);
-    reset_tty ();
-    fflush (stdout);
-    signal(SIGTTOU, SIG_DFL);
-    /* Send the TSTP signal to suspend our process group */
-    signal(SIGTSTP, SIG_DFL);
-    sigsetmask(0L);
-    kill (0, SIGTSTP);
-    /* Pause for station break */
-
-    /* We're back */
-    signal (SIGTSTP, onsusp);
-    set_tty ();
-    if (inwait)
-	    longjmp (restore);
 }

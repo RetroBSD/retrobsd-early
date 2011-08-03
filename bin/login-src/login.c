@@ -1,4 +1,8 @@
 /*
+ * login [ name ]
+ * login -h hostname	(for telnetd, etc.)
+ * login -f name	(for pre-authenticated login: datakit, xterm, etc.)
+ *
  * Copyright (c) 1980, 1987, 1988 The Regents of the University of California.
  * All rights reserved.
  *
@@ -14,23 +18,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1980, 1987, 1988 The Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)login.c	5.40.2 (2.11BSD GTE) 1997/9/26";
-#endif
-
-/*
- * login [ name ]
- * login -h hostname	(for telnetd, etc.)
- * login -f name	(for pre-authenticated login: datakit, xterm, etc.)
- */
-
 #include <sys/param.h>
-#include <sys/quota.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -46,11 +34,19 @@ static char sccsid[] = "@(#)login.c	5.40.2 (2.11BSD GTE) 1997/9/26";
 #include <pwd.h>
 #include <setjmp.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <strings.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <tzfile.h>
 #include <lastlog.h>
-#include "pathnames.h"
+#include <paths.h>
+
+#define	_PATH_DEFPATH	"/bin:/games"
+#define	_PATH_HUSHLOGIN	".hushlogin"
+#define	_PATH_MAILDIR	"/var/spool/mail"
+#define	_PATH_MOTDFILE	"/etc/motd"
 
 #ifdef	KERBEROS
 #include <kerberos/krb.h>
@@ -83,6 +79,13 @@ char *months[] =
 	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 	  "Sep", "Oct", "Nov", "Dec" };
 
+void timedout(sig)
+        int sig;
+{
+	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
+	exit(0);
+}
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -95,7 +98,7 @@ main(argc, argv)
 	register int ch;
 	register char *p;
 	int ask, fflag, hflag, pflag, cnt;
-	int quietlog, passwd_req, ioctlval, timedout();
+	int quietlog, passwd_req, ioctlval;
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
@@ -103,15 +106,16 @@ main(argc, argv)
 	off_t lseek();
 
 	(void)signal(SIGALRM, timedout);
-	(void)alarm((u_int)timeout);
+	(void)alarm((u_int) timeout);
 	(void)signal(SIGQUIT, SIG_IGN);
 	(void)signal(SIGINT, SIG_IGN);
 	(void)setpriority(PRIO_PROCESS, 0, 0);
+#ifdef Q_SETUID
 	(void)quota(Q_SETUID, 0, 0, 0);
-
+#endif
 	/*
 	 * -p is used by getty to tell login not to destroy the environment
- 	 * -f is used to skip a second login authentication 
+ 	 * -f is used to skip a second login authentication
 	 * -h is used by other servers to pass the name of the remote
 	 *    host to login so that it may be placed in utmp and wtmp
 	 */
@@ -299,6 +303,7 @@ main(argc, argv)
 	/* paranoia... */
 	endpwent();
 
+#ifdef Q_SETUID
 	if (quota(Q_SETUID, pwd->pw_uid, 0, 0) < 0 && errno != EINVAL) {
 		switch(errno) {
 		case EUSERS:
@@ -314,7 +319,7 @@ main(argc, argv)
 		}
 		sleepexit(0);
 	}
-
+#endif
 	if (chdir(pwd->pw_dir) < 0) {
 		(void)printf("No directory %s!\n", pwd->pw_dir);
 		if (chdir("/"))
@@ -381,9 +386,9 @@ main(argc, argv)
 	(void)setgid(pwd->pw_gid);
 
 	initgroups(username, pwd->pw_gid);
-
+#ifdef Q_DOWARN
 	quota(Q_DOWARN, pwd->pw_uid, (dev_t)-1, 0);
-
+#endif
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
 	/* turn on new line discipline for the csh */
@@ -431,7 +436,7 @@ main(argc, argv)
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
-	if	(setlogin(pwd->pw_name) < 0)
+	if (setlogin(pwd->pw_name) < 0)
 		fprintf(stderr, "login: setlogin(): %s\n", strerror(errno));
 
 	/* discard permissions last so can't get killed and drop core */
@@ -470,12 +475,6 @@ getloginname()
 	}
 }
 
-timedout()
-{
-	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
-	exit(0);
-}
-
 rootterm(ttyn)
 	char *ttyn;
 {
@@ -486,10 +485,16 @@ rootterm(ttyn)
 
 jmp_buf motdinterrupt;
 
+void sigint(sig)
+        int sig;
+{
+	longjmp(motdinterrupt, 1);
+}
+
 motd()
 {
 	register int fd, nchars;
-	int (*oldint)(), sigint();
+	sig_t oldint;
 	char tbuf[BUFSIZ];
 
 	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
@@ -500,11 +505,6 @@ motd()
 			(void)write(fileno(stdout), tbuf, nchars);
 	(void)signal(SIGINT, oldint);
 	(void)close(fd);
-}
-
-sigint()
-{
-	longjmp(motdinterrupt, 1);
 }
 
 checknologin()

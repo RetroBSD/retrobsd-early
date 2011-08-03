@@ -1,11 +1,7 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char sccsid[] = "@(#)diff.c 4.6 4/3/86";
-#endif
-
-#include "diff.h"
 /*
  * diff - driver and subroutines
  */
+#include "diff.h"
 
 char	diff[] = DIFF;
 char	diffh[] = DIFFH;
@@ -83,7 +79,7 @@ main(argc, argv)
 				if (*argp) {
 					fprintf(stderr,
 					    "diff: -c: bad count\n");
-					done();
+					done(0);
 				}
 				argp = "";
 			} else
@@ -95,7 +91,7 @@ main(argc, argv)
 		case 'S':
 			if (*argp == 0) {
 				fprintf(stderr, "diff: use -Sstart\n");
-				done();
+				done(0);
 			}
 			start = argp;
 			*--argp = 0;		/* don't pass it on */
@@ -112,40 +108,40 @@ main(argc, argv)
 		default:
 			fprintf(stderr, "diff: -%s: unknown option\n",
 			    --argp);
-			done();
+			done(0);
 		}
 	}
 	if (argc != 2) {
 		fprintf(stderr, "diff: two filename arguments required\n");
-		done();
+		done(0);
 	}
 	file1 = argv[0];
 	file2 = argv[1];
 	if (hflag && opt) {
 		fprintf(stderr,
 		    "diff: -h doesn't support -e, -f, -n, -c, or -I\n");
-		done();
+		done(0);
 	}
 	if (!strcmp(file1, "-"))
 		stb1.st_mode = S_IFREG;
 	else if (stat(file1, &stb1) < 0) {
 		fprintf(stderr, "diff: ");
 		perror(file1);
-		done();
+		done(0);
 	}
 	if (!strcmp(file2, "-"))
 		stb2.st_mode = S_IFREG;
 	else if (stat(file2, &stb2) < 0) {
 		fprintf(stderr, "diff: ");
 		perror(file2);
-		done();
+		done(0);
 	}
 	if ((stb1.st_mode & S_IFMT) == S_IFDIR &&
 	    (stb2.st_mode & S_IFMT) == S_IFDIR) {
 		diffdir(argv);
 	} else
 		diffreg();
-	done();
+	done(0);
 }
 
 char *
@@ -156,7 +152,7 @@ savestr(cp)
 
 	if (dp == 0) {
 		fprintf(stderr, "diff: ran out of memory\n");
-		done();
+		done(0);
 	}
 	strcpy(dp, cp);
 	return (dp);
@@ -176,7 +172,8 @@ max(a,b)
 	return (a > b ? a : b);
 }
 
-done()
+void done(sig)
+        int sig;
 {
 	if (tempfile)
 		unlink(tempfile);
@@ -198,7 +195,6 @@ ralloc(p,n)
 char *p;
 {
 	register char *q;
-	char *realloc();
 
 	if ((q = realloc(p, (unsigned)n)) == NULL)
 		noroom();
@@ -208,5 +204,5 @@ char *p;
 noroom()
 {
 	fprintf(stderr, "diff: files too big, try -h\n");
-	done();
+	done(0);
 }

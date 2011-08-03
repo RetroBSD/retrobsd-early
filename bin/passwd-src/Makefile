@@ -14,38 +14,42 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4.2 (2.11BSD) 1996/12/1
-#
-CFLAGS=	-I. -O
-SEPFLAG= -i
-SRCS=	passwd.c
-OBJS=	passwd.o
-MAN=	passwd.0
-MANSRC=	passwd.1
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: passwd ${MAN}
+CFLAGS		+= -Werror
 
-passwd: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= passwd.c
+OBJS		= passwd.o
+MAN		= passwd.0
+MANSRC		= passwd.1
 
-${MAN}: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:            ../passwd passwd.0
+
+../passwd:     ${OBJS}
+		${CC} ${LDFLAGS} -o passwd.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S passwd.elf > passwd.dis
+		${SIZE} passwd.elf
+		${ELF2AOUT} passwd.elf $@
+
+passwd.0:      ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} core passwd
+		rm -f *.o *.elf ${MAN} ../passwd *.elf *.dis tags *~
 
-cleandir: clean
-	rm -f tags .depend
+cleandir:       clean
+		rm -f tags .depend
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: ${MAN} passwd
-	install -s -o root -g bin -m 4755 passwd ${DESTDIR}/bin/passwd
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+install:        ${MAN} passwd
+		install -s -o root -g bin -m 4755 passwd ${DESTDIR}/bin/passwd
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+lint:           ${SRCS}
+		lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}

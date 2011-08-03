@@ -3,20 +3,27 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1.2 (2.11BSD) 1997/10/17
-#
-CFLAGS=	-O
-SEPFLAG= -i
-DESTDIR=
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-more:	more.o
-	${CC} ${SEPFLAG} -o more more.o -ltermcap
+CFLAGS		+= -Werror
 
-install: more more.help
-	install -m 755 -s more ${DESTDIR}/usr/ucb/more
-	rm -f ${DESTDIR}/usr/ucb/page
-	ln ${DESTDIR}/usr/ucb/more ${DESTDIR}/usr/ucb/page
-	install -m 444 -c more.help ${DESTDIR}/usr/share/misc/more.help
+SRCS		= more.c
+OBJS		= more.o
+
+all:            ../more
+
+../more:        ${OBJS}
+		${CC} ${LDFLAGS} -o more.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S more.elf > more.dis
+		${SIZE} more.elf
+		${ELF2AOUT} more.elf $@
 
 clean:
-	rm -f more more.o core a.out errs
+		rm -f *.o *.elf ${MAN} ../more *.elf *.dis tags *~
+
+install:        more more.help
+		install -m 755 -s more ${DESTDIR}/usr/ucb/more
+		rm -f ${DESTDIR}/usr/ucb/page
+		ln ${DESTDIR}/usr/ucb/more ${DESTDIR}/usr/ucb/page
+		install -m 444 -c more.help ${DESTDIR}/usr/share/misc/more.help

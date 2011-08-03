@@ -1,11 +1,8 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char *sccsid = "@(#)diffdir.c	4.9 (Berkeley) 8/28/84";
-#endif
-
-#include "diff.h"
 /*
  * diff - directory comparison
  */
+#include "diff.h"
+
 #define	d_flags	d_ino
 
 #define	ONLY	1		/* Only in this directory */
@@ -34,7 +31,7 @@ diffdir(argv)
 
 	if (opt == D_IFDEF) {
 		fprintf(stderr, "diff: can't specify -I with directories\n");
-		done();
+		done(0);
 	}
 	if (opt == D_EDIT && (sflag || lflag))
 		fprintf(stderr,
@@ -180,7 +177,7 @@ setupdir(cp)
 	if (dirp == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(cp);
-		done();
+		done(0);
 	}
 	nitems = 0;
 #ifdef	pdp11
@@ -194,7 +191,7 @@ setupdir(cp)
 #endif
 	if (dp == 0) {
 		fprintf(stderr, "diff: ran out of memory\n");
-		done();
+		done(0);
 	}
 	while (rp = readdir(dirp)) {
 		ep = &dp[nitems++];
@@ -206,7 +203,7 @@ setupdir(cp)
 			ep->d_entry = malloc(ep->d_namlen + 1);
 			if (ep->d_entry == 0) {
 				fprintf(stderr, "diff: out of memory\n");
-				done();
+				done(0);
 			}
 			strcpy(ep->d_entry, rp->d_name);
 		}
@@ -215,7 +212,7 @@ setupdir(cp)
 			(nitems + 1) * sizeof (struct dir));
 		if (dp == 0) {
 			fprintf(stderr, "diff: ran out of memory\n");
-			done();
+			done(0);
 		}
 #endif
 	}
@@ -336,7 +333,7 @@ calldiff(wantpr)
 		pid = fork();
 		if (pid == -1) {
 			fprintf(stderr, "No more processes");
-			done();
+			done(0);
 		}
 		if (pid == 0) {
 			close(0);
@@ -346,13 +343,13 @@ calldiff(wantpr)
 			execv(pr+4, prargs);
 			execv(pr, prargs);
 			perror(pr);
-			done();
+			done(0);
 		}
 	}
 	pid = fork();
 	if (pid == -1) {
 		fprintf(stderr, "diff: No more processes\n");
-		done();
+		done(0);
 	}
 	if (pid == 0) {
 		if (wantpr) {
@@ -364,7 +361,7 @@ calldiff(wantpr)
 		execv(diff+4, diffargv);
 		execv(diff, diffargv);
 		perror(diff);
-		done();
+		done(0);
 	}
 	if (wantpr) {
 		close(pv[0]);
@@ -376,7 +373,7 @@ calldiff(wantpr)
 		continue;
 /*
 	if ((status >> 8) >= 2)
-		done();
+		done(0);
 */
 }
 

@@ -14,36 +14,39 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1.1 (2.11BSD) 1996/11/16
-#
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-CFLAGS=	-O
-SEPFLAG= -i
-SRCS=	mkpasswd.c
-OBJS=	mkpasswd.o
-MAN=	mkpasswd.0
-MANSRC=	mkpasswd.8
+CFLAGS		+= -Werror
 
-all: mkpasswd ${MAN}
+SRCS		= mkpasswd.c
+OBJS		= mkpasswd.o
+MAN		= mkpasswd.0
+MANSRC		= mkpasswd.8
 
-mkpasswd: ${OBJS}
-	${CC} ${SEPFLAG} -o $@ ${CFLAGS} ${OBJS}
+all:            ../mkpasswd mkpasswd.0
+
+../mkpasswd:    ${OBJS}
+		${CC} ${LDFLAGS} -o mkpasswd.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S mkpasswd.elf > mkpasswd.dis
+		${SIZE} mkpasswd.elf
+		${ELF2AOUT} mkpasswd.elf $@
+
+mkpasswd.0:     ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f *.o *.elf *.dis ${MAN} core mkpasswd
+		rm -f *.o *.elf ${MAN} ../mkpasswd *.elf *.dis tags *~
 
-depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep -p ${CFLAGS} ${SRCS}
 
-install: ${MAN} mkpasswd
-	install -s -o bin -g bin -m 755 mkpasswd ${DESTDIR}/sbin/mkpasswd
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        ${MAN} mkpasswd
+		install -s -o bin -g bin -m 755 mkpasswd ${DESTDIR}/sbin/mkpasswd
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
-mkpasswd.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+lint:           ${SRCS}
+		lint ${CFLAGS} ${SRCS}
 
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}

@@ -30,22 +30,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)sysctl.c	8.1.4 (2.11BSD GTE) 1998/4/3";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
-#include <sys/socket.h>
 #include <machine/cpu.h>
 
 #include <netinet/in.h>
+#if 0
+#include <sys/socket.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
@@ -53,16 +45,17 @@ static char sccsid[] = "@(#)sysctl.c	8.1.4 (2.11BSD GTE) 1998/4/3";
 #include <netinet/ip_var.h>
 #include <netinet/udp.h>
 #include <netinet/udp_var.h>
-
+#endif
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 struct ctlname topname[] = CTL_NAMES;
 struct ctlname kernname[] = CTL_KERN_NAMES;
 struct ctlname vmname[] = CTL_VM_NAMES;
-#ifdef	CTL_NET_NAMES
+#ifdef CTL_NET_NAMES
 struct ctlname netname[] = CTL_NET_NAMES;
 #endif
 struct ctlname hwname[] = CTL_HW_NAMES;
@@ -81,7 +74,7 @@ struct list secondlevel[] = {
 	{ kernname, KERN_MAXID },	/* CTL_KERN */
 	{ vmname, VM_MAXID },		/* CTL_VM */
 	{ 0, 0 },			/* CTL_FS */
-#ifdef	CTL_NET_NAMES
+#ifdef CTL_NET_NAMES
 	{ netname, NET_MAXID },		/* CTL_NET */
 #else
 	{ 0, 0 },
@@ -266,7 +259,7 @@ parse(string, flags)
 			getloadavg(loads, 3);
 			if (!nflag)
 				fprintf(stdout, "%s: ", string);
-			fprintf(stdout, "%.2f %.2f %.2f\n", 
+			fprintf(stdout, "%.2f %.2f %.2f\n",
 			    loads[0], loads[1], loads[2]);
 			return;
 		}
@@ -277,12 +270,14 @@ parse(string, flags)
 		return;
 
 	case CTL_NET:
+#ifdef PF_INET
 		if (mib[1] == PF_INET) {
 			len = sysctl_inet(string, &bufp, mib, flags, &type);
 			if (len >= 0)
 				break;
 			return;
 		}
+#endif
 		if (flags == 0)
 			return;
 		fprintf(stderr, "Use netstat to view %s information\n", string);
@@ -296,18 +291,6 @@ parse(string, flags)
 	case CTL_MACHDEP:
 		if (mib[1] == CPU_CONSDEV)
 			special |= CONSDEV;
-		if (mib[1] == CPU_TMSCP) {
-			len = sysctl_tmscp(string, &bufp, mib, flags, &type);
-			if (len >= 0)
-				goto doit;
-			return;
-		}
-		if (mib[1] == CPU_MSCP) {
-			len = sysctl_mscp(string, &bufp, mib, flags, &type);
-			if (len >= 0)
-				goto doit;
-			return;
-		}
 		break;
 
 	case CTL_FS:
@@ -317,7 +300,7 @@ parse(string, flags)
 	default:
 		fprintf(stderr, "Illegal top level value: %d\n", mib[0]);
 		return;
-	
+
 	}
 doit:
 	if (bufp) {
@@ -442,58 +425,6 @@ doit:
 	}
 }
 
-struct	ctlname tmscpname[]  = TMSCP_NAMES;
-struct	list tmscplist = { tmscpname, TMSCP_MAXID };
-
-struct	ctlname mscpname[]  = MSCP_NAMES;
-struct	list mscplist = { mscpname, MSCP_MAXID };
-
-/*
- * Handle machdep.tmscp.x 
-*/
-sysctl_tmscp(string, bufpp, mib, flags, typep)
-	char *string;
-	char **bufpp;
-	int mib[];
-	int flags;
-	int *typep;
-{
-	int indx;
-
-	if (*bufpp == NULL) {
-		listall(string, &tmscplist);
-		return (-1);
-	}
-	if ((indx = findname(string, "third", bufpp, &tmscplist)) == -1)
-		return (-1);
-	mib[2] = indx;
-	*typep = tmscpname[indx].ctl_type;
-	return (3);
-}
-
-/*
- * Handle machdep.mscp.x 
-*/
-sysctl_mscp(string, bufpp, mib, flags, typep)
-	char *string;
-	char **bufpp;
-	int mib[];
-	int flags;
-	int *typep;
-{
-	int indx;
-
-	if (*bufpp == NULL) {
-		listall(string, &mscplist);
-		return (-1);
-	}
-	if ((indx = findname(string, "third", bufpp, &mscplist)) == -1)
-		return (-1);
-	mib[2] = indx;
-	*typep = mscpname[indx].ctl_type;
-	return (3);
-}
-
 /*
  * Initialize the set of debugging names
  */
@@ -517,6 +448,7 @@ debuginit()
 	}
 }
 
+#ifdef PF_INET
 struct ctlname inetname[] = CTL_IPPROTO_NAMES;
 struct ctlname ipname[] = IPCTL_NAMES;
 struct ctlname icmpname[] = ICMPCTL_NAMES;
@@ -582,6 +514,7 @@ sysctl_inet(string, bufpp, mib, flags, typep)
 	*typep = lp->list[indx].ctl_type;
 	return (4);
 }
+#endif /* PF_INET */
 
 /*
  * Scan a list of names searching for a particular name.

@@ -14,15 +14,6 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char copyright[] =
-"@(#) Copyright (c) 1987 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)vipw.c	5.9.1 (2.11BSD) 1996/1/12";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/signal.h>
@@ -32,8 +23,11 @@ static char sccsid[] = "@(#)vipw.c	5.9.1 (2.11BSD) 1996/1/12";
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <limits.h>
 
 char *passwd, *temp;
 

@@ -1,8 +1,5 @@
-#ifndef lint
-static char *sccsid = "@(#)mknod.c	4.2 (Berkeley) 8/28/85";
-#endif not lint
-
 #include <stdio.h>
+#include <stdlib.h>
 
 main(argc, argv)
 	int argc;

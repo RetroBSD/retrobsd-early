@@ -14,19 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)util.c	5.9.1 (2.11BSD) 1996/1/12";
-#endif
-
 #include <sys/types.h>
 #include <sys/time.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <chpass.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
-#include "pathnames.h"
+#include <paths.h>
+#include "chpass.h"
 
 static char dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -49,7 +44,7 @@ ttoa(tval)
 	else
 		*tbuf = '\0';
 	return(tbuf);
-} 
+}
 
 atot(p, store)
 	char *p;

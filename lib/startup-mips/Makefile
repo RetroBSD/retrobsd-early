@@ -16,6 +16,7 @@ OBJS		= crt0.o
 TAGSFILE	= tags
 
 all:		${OBJS}
+		cp crt0.o ..
 
 install:	${OBJS}
 		$(INSTALLDIR) ${DESTDIR}/lib

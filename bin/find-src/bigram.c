@@ -1,20 +1,16 @@
-#ifndef lint
-static char sccsid[] = "@(#)bigram.c	4.2	(Berkeley)	7/21/83";
-#endif not lint
-
 /*
  *  bigram < text > bigrams
- * 
+ *
  * List bigrams for 'updatedb' script.
  * Use 'code' to encode a file using this output.
  */
-
 #include <stdio.h>
+#include <string.h>
 
 #define MAXPATH	1024		/* maximum pathname length */
 
 char path[MAXPATH];
-char oldpath[MAXPATH] = " ";	
+char oldpath[MAXPATH] = " ";
 
 main ( )
 {
@@ -27,7 +23,7 @@ main ( )
 		   output post-residue bigrams only
 		*/
 		for ( j = count; path[j] != NULL; j += 2 ) {
-			if ( path[j + 1] == NULL ) 
+			if ( path[j + 1] == NULL )
 				break;
 			putchar ( path[j] );
 			putchar ( path[j + 1] );
@@ -42,8 +38,8 @@ prefix_length ( s1, s2 )	/* return length of longest common prefix */
 {
 	register char *start;
 
-    	for ( start = s1; *s1 == *s2; s1++, s2++ )	
-		if ( *s1 == NULL )		
+    	for ( start = s1; *s1 == *s2; s1++, s2++ )
+		if ( *s1 == NULL )
 	    		break;
     	return ( s1 - start );
 }

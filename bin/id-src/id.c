@@ -30,18 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1991, 1993\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)id.c	8.3.1 (2.11BSD) 97/6/25";
-#endif
-
 #include <sys/param.h>
 
-/* #include <err.h> */
 #include <errno.h>
 #include <grp.h>
 #include <pwd.h>
@@ -168,7 +158,7 @@ pretty(pw)
 			(void)printf("uid\t%s\n", pw->pw_name);
 		else
 			(void)printf("uid\t%u\n", rid);
-		
+
 		if ((eid = geteuid()) != rid)
 			if (pw = getpwuid(eid))
 				(void)printf("euid\t%s", pw->pw_name);

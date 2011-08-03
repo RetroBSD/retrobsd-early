@@ -17,35 +17,29 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		+= -Werror
-LIBS            := -lutil $(LIBS)
+CFLAGS          += ${DEFS}
 
-SRCS		= login.c
-OBJS		= login.o
+SRCS            = login.c logout.c logwtmp.c
+OBJS            = login.o logout.o logwtmp.o
 
-all:            ../login
-
-../login:       ${OBJS}
-		${CC} ${LDFLAGS} -o login.elf ${OBJS} ${LIBS}
-		${OBJDUMP} -S login.elf > login.dis
-		${SIZE} login.elf
-		${ELF2AOUT} login.elf $@
+../libutil.a:	${OBJS}
+		$(AR) cru $@ ${OBJS}
+		$(RANLIB) $@
 
 clean:
-		rm -f *.o *.elf ${MAN} ../login *.elf *.dis tags *~
-
+		rm -f *.a *.o *~ profiled/*.o tags
 
 cleandir:       clean
-		rm -f ${MAN} tags .depend
+		rm -f .depend
 
-depend:         ${SRCS}
+depend:
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        ../login
-		install -s -o root -g bin -m 4755 ../login ${DESTDIR}/bin/login
+install: all
+		install -o bin -g bin -m 644 libutil.a ${DESTDIR}/usr/lib
+		ranlib -t ${DESTDIR}/usr/lib/libutil.a
+		install -o bin -g bin -m 644 libutil_p.a ${DESTDIR}/usr/lib
+		ranlib -t ${DESTDIR}/usr/lib/libutil_p.a
 
-lint:           ${SRCS}
-		lint ${CFLAGS} ${SRCS}
-
-tags:           ${SRCS}
+tags:
 		ctags ${SRCS}

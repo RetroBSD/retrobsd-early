@@ -60,7 +60,7 @@ $(PROG):	$(OBJS)
 			@mkdir .deps
 
 clean:
-			rm -rf *.o *~ *_log.txt .deps pavo pic32
+			rm -rf *.o *~ *_log.txt .deps pavo pic32 pic32-log.txt
 
 ifeq (.deps, $(wildcard .deps))
 -include .deps/*.dep

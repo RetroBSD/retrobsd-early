@@ -77,7 +77,6 @@ long	gethostid();
 char	*getpass();
 char	*getusershell();
 char	*getwd();
-char	*mktemp(char *template);
 void	psignal();
 extern	char 	*sys_siglist[];
 char	*re_comp();
@@ -100,6 +99,7 @@ int	execvp (const char *file, char *const argv[]);
 extern	char	**environ;		/* Environment, from crt0. */
 extern	const char *__progname;		/* Program name, from crt0. */
 
+int	getopt();
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	opterr, optind, optopt;
 

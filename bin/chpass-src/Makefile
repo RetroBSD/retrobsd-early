@@ -14,44 +14,48 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1.2 (2.11BSD) 1996/12/1
-#
-CFLAGS=	-I. -O
-SEPFLAG= -i
-SRCS=	chpass.c field.c util.c
-OBJS=	chpass.o field.o util.o
-MAN=	chpass.0
-MANSRC=	chpass.1
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: chpass ${MAN}
+CFLAGS		+= -Werror
 
-chpass: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= chpass.c field.c util.c
+OBJS		= chpass.o field.o util.o
+MAN		= chpass.0
+MANSRC		= chpass.1
 
-chpass.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:            ../chpass chpass.0
+
+../chpass:      ${OBJS}
+		${CC} ${LDFLAGS} -o chpass.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S chpass.elf > chpass.dis
+		${SIZE} chpass.elf
+		${ELF2AOUT} chpass.elf $@
+
+chpass.0:       ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f ${OBJS} ${MAN} core chpass
+		rm -f *.o *.elf ${MAN} ../chpass *.elf *.dis tags *~
 
-cleandir: clean
-	rm -f tags .depend
+cleandir: 	clean
+		rm -f tags .depend
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: ${MAN} chpass
-	install -s -o root -g bin -m 4755 chpass ${DESTDIR}/bin/chpass
-	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chfn
-	rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chsh
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	rm -f ${DESTDIR}/usr/man/cat1/chfn.0
-	rm -f ${DESTDIR}/usr/man/cat1/chsh.0
-	-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chfn.0
-	-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chsh.0
+install: 	${MAN} chpass
+		install -s -o root -g bin -m 4755 chpass ${DESTDIR}/bin/chpass
+		rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chfn
+		rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chsh
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+		rm -f ${DESTDIR}/usr/man/cat1/chfn.0
+		rm -f ${DESTDIR}/usr/man/cat1/chsh.0
+		-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chfn.0
+		-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chsh.0
 
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
+lint:           ${SRCS}
+		lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}

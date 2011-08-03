@@ -26,9 +26,9 @@ union wait	{
 	 * Terminated process status.
 	 */
 	struct {
-		unsigned short	w_Termsig:7;	/* termination signal */
-		unsigned short	w_Coredump:1;	/* core dump indicator */
-		unsigned short	w_Retcode:8;	/* exit code if w_termsig==0 */
+		unsigned w_Termsig :7;	/* termination signal */
+		unsigned w_Coredump :1;	/* core dump indicator */
+		unsigned w_Retcode :8;	/* exit code if w_termsig==0 */
 	} w_T;
 	/*
 	 * Stopped process status.  Returned
@@ -36,8 +36,8 @@ union wait	{
 	 * with the WUNTRACED option bit.
 	 */
 	struct {
-		unsigned short	w_Stopval:8;	/* == W_STOPPED if stopped */
-		unsigned short	w_Stopsig:8;	/* signal that stopped us */
+		unsigned w_Stopval :8;	/* == W_STOPPED if stopped */
+		unsigned w_Stopsig :8;	/* signal that stopped us */
 	} w_S;
 };
 #define	w_termsig	w_T.w_Termsig
@@ -45,7 +45,6 @@ union wait	{
 #define w_retcode	w_T.w_Retcode
 #define w_stopval	w_S.w_Stopval
 #define w_stopsig	w_S.w_Stopsig
-
 
 #define	WSTOPPED	0177	/* value of s.stopval if process is stopped */
 
@@ -61,13 +60,28 @@ union wait	{
 #define WNOHANG		1	/* dont hang in wait */
 #define WUNTRACED	2	/* tell about stopped, untraced children */
 
-#define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)
-#define WIFSIGNALED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
-#define WIFEXITED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig == 0)
-#define	WEXITSTATUS(x)	((x).w_retcode)
+#define WIFSTOPPED(x)	(((union wait*)&(x))->w_stopval == WSTOPPED)
+#define WIFSIGNALED(x)	(((union wait*)&(x))->w_stopval != WSTOPPED &&\
+                        (((union wait*)&(x))->w_termsig != 0))
+#define WIFEXITED(x)	(((union wait*)&(x))->w_stopval != WSTOPPED &&\
+                        (((union wait*)&(x))->w_termsig == 0))
+#define	WEXITSTATUS(x)	(((union wait*)&(x))->w_retcode)
+#define	WTERMSIG(x)	(((union wait*)&(x))->w_termsig)
+#define	WCOREDUMP(x)	(((union wait*)&(x))->w_coredump)
+#define	WSTOPSIG(x)	(((union wait*)&(x))->w_stopsig)
 
 #define	W_STOPCODE(sig)	((sig << 8) | WSTOPPED)
 #define	W_EXITCODE(ret,sig)	((ret << 8) | (sig))
 
 #define	WAIT_ANY	(-1)
 #define	WAIT_MYPGRP	0
+
+#ifndef KERNEL
+#include <sys/time.h>
+#include <sys/resource.h>
+
+int wait (int *istat);
+int wait3 (int *istat, int options, struct rusage *rup);
+int waitpid (int pid, int *istat, int options);
+int wait4 (int pid, int *istat, int options, struct rusage *rup);
+#endif

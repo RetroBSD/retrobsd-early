@@ -14,17 +14,6 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1988 The Regents of the University of California.\n\
- All rights reserved.\n";
-#endif /* not lint */
-
-#ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/signal.h>
@@ -33,8 +22,11 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) 3/16/89";
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 #include <strings.h>
+#include <unistd.h>
 
 uid_t uid;
 

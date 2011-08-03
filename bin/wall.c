@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
-
-/*
  * wall.c - Broadcast a message to all users.
  *
  * This program is not related to David Wall, whose Stanford Ph.D. thesis
  * is entitled "Mechanisms for Broadcast and Selective Broadcast".
+ *
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <utmp.h>
 #include <errno.h>
 #include <signal.h>
@@ -25,12 +25,8 @@ char	hostname[32];
 char	mesg[3000];
 int	msize,sline;
 struct	utmp *utmp;
-char	*strcpy();
-char	*strcat();
-char	*malloc();
 char	who[UT_NAMESIZE + 1] = "???";
-long	clock, time();
-struct tm *localtime();
+long    clock;
 struct tm *localclock;
 
 extern	errno;

@@ -1,6 +1,5 @@
-/*	sed1.c	4.2	85/04/05	*/
-
-#include	<stdio.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "sed.h"
 
 char	*trans[040]  = {
@@ -69,34 +68,34 @@ char *file;
 		}
 		spend = execp;
 
-		for(ipc = ptrspace; ipc->command; ) {
+		for(ipc = ptrspace; ipc->A.command; ) {
 
-			p1 = ipc->ad1;
-			p2 = ipc->ad2;
+			p1 = ipc->A.ad1;
+			p2 = ipc->A.ad2;
 
 			if(p1) {
 
-				if(ipc->inar) {
+				if(ipc->A.inar) {
 					if(*p2 == CEND) {
 						p1 = 0;
 					} else if(*p2 == CLNUM) {
 						c = p2[1];
 						if(lnum > tlno[c]) {
-							ipc->inar = 0;
-							if(ipc->negfl)
+							ipc->A.inar = 0;
+							if(ipc->A.negfl)
 								goto yes;
 							ipc++;
 							continue;
 						}
 						if(lnum == tlno[c]) {
-							ipc->inar = 0;
+							ipc->A.inar = 0;
 						}
 					} else if(match(p2, 0)) {
-						ipc->inar = 0;
+						ipc->A.inar = 0;
 					}
 				} else if(*p1 == CEND) {
 					if(!dolflag) {
-						if(ipc->negfl)
+						if(ipc->A.negfl)
 							goto yes;
 						ipc++;
 						continue;
@@ -105,25 +104,25 @@ char *file;
 				} else if(*p1 == CLNUM) {
 					c = p1[1];
 					if(lnum != tlno[c]) {
-						if(ipc->negfl)
+						if(ipc->A.negfl)
 							goto yes;
 						ipc++;
 						continue;
 					}
 					if(p2)
-						ipc->inar = 1;
+						ipc->A.inar = 1;
 				} else if(match(p1, 0)) {
 					if(p2)
-						ipc->inar = 1;
+						ipc->A.inar = 1;
 				} else {
-					if(ipc->negfl)
+					if(ipc->A.negfl)
 						goto yes;
 					ipc++;
 					continue;
 				}
 			}
 
-			if(ipc->negfl) {
+			if(ipc->A.negfl) {
 				ipc++;
 				continue;
 			}
@@ -135,7 +134,7 @@ char *file;
 
 			if(jflag) {
 				jflag = 0;
-				if((ipc = ipc->lb1) == 0) {
+				if((ipc = ipc->B.lb1) == 0) {
 					ipc = ptrspace;
 					break;
 				}
@@ -338,15 +337,15 @@ char	*alp, *aep;
 substitute(ipc)
 union reptr	*ipc;
 {
-	if(match(ipc->re1, 0) == 0)	return(0);
+	if(match(ipc->A.re1, 0) == 0)	return(0);
 
 	sflag = 1;
-	dosub(ipc->rhs);
+	dosub(ipc->A.rhs);
 
-	if(ipc->gfl) {
+	if(ipc->A.gfl) {
 		while(*loc2) {
-			if(match(ipc->re1, 1) == 0) break;
-			dosub(ipc->rhs);
+			if(match(ipc->A.re1, 1) == 0) break;
+			dosub(ipc->A.rhs);
 		}
 	}
 	return(1);
@@ -410,7 +409,7 @@ union reptr	*ipc;
 	char	*execp;
 
 
-	switch(ipc->command) {
+	switch(ipc->A.command) {
 
 		case ACOM:
 			*aptr++ = ipc;
@@ -423,8 +422,8 @@ union reptr	*ipc;
 
 		case CCOM:
 			delflag = 1;
-			if(!ipc->inar || dolflag) {
-				for(p1 = ipc->re1; *p1; )
+			if(!ipc->A.inar || dolflag) {
+				for(p1 = ipc->A.re1; *p1; )
 					putc(*p1++, stdout);
 				putc('\n', stdout);
 			}
@@ -487,7 +486,7 @@ union reptr	*ipc;
 			break;
 
 		case ICOM:
-			for(p1 = ipc->re1; *p1; )
+			for(p1 = ipc->A.re1; *p1; )
 				putc(*p1++, stdout);
 			putc('\n', stdout);
 			break;
@@ -598,15 +597,15 @@ union reptr	*ipc;
 
 		case SCOM:
 			i = substitute(ipc);
-			if(ipc->pfl && i)
-				if(ipc->pfl == 1) {
+			if(ipc->A.pfl && i)
+				if(ipc->A.pfl == 1) {
 					for(p1 = linebuf; p1 < spend; p1++)
 						putc(*p1, stdout);
 					putc('\n', stdout);
 				}
 				else
 					goto cpcom;
-			if(i && ipc->fcode)
+			if(i && ipc->A.fcode)
 				goto wcom;
 			break;
 
@@ -618,8 +617,8 @@ union reptr	*ipc;
 
 		wcom:
 		case WCOM:
-			fprintf(ipc->fcode, "%s\n", linebuf);
-			fflush(ipc->fcode);
+			fprintf(ipc->A.fcode, "%s\n", linebuf);
+			fflush(ipc->A.fcode);
 			break;
 		case XCOM:
 			p1 = linebuf;
@@ -637,7 +636,7 @@ union reptr	*ipc;
 
 		case YCOM:
 			p1 = linebuf;
-			p2 = ipc->re1;
+			p2 = ipc->A.re1;
 			while(*p1 = p2[*p1])	p1++;
 			break;
 	}
@@ -700,12 +699,12 @@ arout()
 
 	aptr = abuf - 1;
 	while(*++aptr) {
-		if((*aptr)->command == ACOM) {
-			for(p1 = (*aptr)->re1; *p1; )
+		if((*aptr)->A.command == ACOM) {
+			for(p1 = (*aptr)->A.re1; *p1; )
 				putc(*p1++, stdout);
 			putc('\n', stdout);
 		} else {
-			if((fi = fopen((*aptr)->re1, "r")) == NULL)
+			if((fi = fopen((*aptr)->A.re1, "r")) == NULL)
 				continue;
 			while((t = getc(fi)) != EOF) {
 				c = t;
@@ -717,4 +716,3 @@ arout()
 	aptr = abuf;
 	*aptr = 0;
 }
-

@@ -1,6 +1,8 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
+CFLAGS		+= -Werror
+
 SRCS            = pstat.c
 OBJS            = pstat.o
 MAN             = pstat.0
@@ -9,13 +11,16 @@ MANSRC          = pstat.8
 all:            ../pstat pstat.0
 
 ../pstat:       ${OBJS}
-		${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+		${CC} ${LDFLAGS} -o pstat.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S pstat.elf > pstat.dis
+		${SIZE} pstat.elf
+		${ELF2AOUT} pstat.elf $@
 
 pstat.0:        ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f ${OBJS} ${MAN} pstat tags *~
+		rm -f *.o *.elf ${MAN} ../pstat *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

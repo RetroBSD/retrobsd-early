@@ -51,7 +51,6 @@ struct nlist nl[] = {
 };
 
 int	inof;
-int	txtf;
 int	prcf;
 int	ttyf;
 int	usrf;
@@ -94,10 +93,6 @@ char **argv;
 			fcore = fmem = "/core";
 			break;
 
-		case 'x':
-			txtf++;
-			break;
-
 		case 'p':
 			prcf++;
 			break;
@@ -137,12 +132,12 @@ char **argv;
 		printf("Can't find %s\n", fmem);
 		exit(1);
 	}
-	nlist(nl);
+	knlist(nl);
 	if (nl[0].n_type == 0) {
 		printf("no namelist, n_type: %d n_value: %o n_name: %s\n", nl[0].n_type, nl[0].n_value, nl[0].n_name);
 		exit(1);
 	}
-	allflags = filf | totflg | inof | prcf | txtf | ttyf | usrf | swpf;
+	allflags = filf | totflg | inof | prcf | ttyf | usrf | swpf;
 	if (allflags == 0) {
 		printf("pstat: one or more of -[aixptfsu] is required\n");
 		exit(1);
@@ -153,8 +148,6 @@ char **argv;
 		doinode();
 	if (prcf||totflg)
 		doproc();
-	if (txtf||totflg)
-		dotext();
 	if (ttyf)
 		dotty();
 	if (usrf)
@@ -303,7 +296,6 @@ printf("   LOC   S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   P
 		printf(" %7.1o", pp->p_dsize+pp->p_ssize);
 		printf(" %7.1o", pp->p_wchan);
 		printf(" %7.1o", pp->p_link);
-		printf(" %7.1o", pp->p_textp);
 		printf(" %8.1lx", pp->p_sigmask);
 		printf("\n");
 	}
@@ -317,8 +309,6 @@ static struct tty *tty;
 
 dotty()
 {
-	extern char *malloc();
-
 	if ((tty = (struct tty *)malloc(ttyspace * sizeof(*tty))) == 0) {
 		printf("pstat: out of memory\n");
 		return;
@@ -333,7 +323,6 @@ char *name;
 {
 	int ntty;
 	register struct tty *tp;
-	extern char *realloc();
 
 	lseek(fc, (long)nl[number].n_value, 0);
 	read(fc, &ntty, sizeof(ntty));
@@ -379,27 +368,29 @@ struct tty *atp;
 	putf(tp->t_state&TS_ASYNC, 'a');
 	printf("%6d", tp->t_pgrp);
 	switch (tp->t_line) {
-
+#ifdef OTTYDISC
 	case OTTYDISC:
 		printf("\n");
 		break;
-
+#endif
 	case NTTYDISC:
 		printf(" ntty\n");
 		break;
-
+#ifdef NETLDISC
 	case NETLDISC:
 		printf(" berknet\n");
 		break;
-
+#endif
+#ifdef TABLDISC
 	case TABLDISC:
 		printf(" tab\n");
 		break;
-
+#endif
+#ifdef SLIPDISC
 	case SLIPDISC:
 		printf(" slip\n");
 		break;
-
+#endif
 	default:
 		printf(" %d\n", tp->t_line);
 	}
@@ -413,89 +404,51 @@ dousr()
 
 	lseek(fm, ubase << 6, 0);
 	read(fm, &U, sizeof(U));
-	printf("pcb\t%.1o\n", U.u_pcb.pcb_sigc);
-	printf("fps\t%.1o %g %g %g %g %g %g\n", U.u_fps.u_fpsr,
-		U.u_fps.u_fpregs[0], U.u_fps.u_fpregs[1], U.u_fps.u_fpregs[2],
-		U.u_fps.u_fpregs[3], U.u_fps.u_fpregs[4], U.u_fps.u_fpregs[5]);
-	printf("fpsaved\t%d\n", U.u_fpsaved);
-	printf("fperr\t%.1o %.1o\n", U.u_fperr.f_fec, U.u_fperr.f_fea);
-	printf("procp\t%.1o\n", U.u_procp);
-	printf("ar0\t%.1o\n", U.u_ar0);
+	printf("procp\t%p\n", U.u_procp);
+	printf("frame\t%p\n", U.u_frame);
 	printf("comm\t%s\n", U.u_comm);
-	printf("arg\t%.1o %.1o %.1o %.1o %.1o %.1o\n", U.u_arg[0], U.u_arg[1],
+	printf("arg\t%p %p %p %p %p %p\n", U.u_arg[0], U.u_arg[1],
 		U.u_arg[2], U.u_arg[3], U.u_arg[4], U.u_arg[5]);
-	printf("ap\t%.1o\n", U.u_ap);
 	printf("qsave\t");
-	for	(i = 0; i < sizeof (label_t) / sizeof (int); i++)
-		printf("%.1o ", U.u_qsave.val[i]);
+	for (i = 0; i < sizeof (label_t) / sizeof (int); i++)
+		printf("%p ", U.u_qsave.val[i]);
 	printf("\n");
-	printf("r_val1\t%.1o\n", U.u_r.r_val1);
-	printf("r_val2\t%.1o\n", U.u_r.r_val2);
+	printf("rval\t%p\n", U.u_rval);
 	printf("error\t%d\n", U.u_error);
 	printf("uids\t%d,%d,%d,%d,%d\n", U.u_uid, U.u_svuid, U.u_ruid,
 		U.u_svgid, U.u_rgid);
 	printf("groups");
-	for	(i = 0; (i < NGROUPS) && (U.u_groups[i] != NOGROUP); i++)
-		{
-		if	(i%8 == 0) printf("\t");
+	for (i = 0; (i < NGROUPS) && (U.u_groups[i] != NOGROUP); i++) {
+		if (i%8 == 0) printf("\t");
 		printf("%u ", U.u_groups[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
+		if (i%8 == 7) printf("\n");
+	}
+	if (i%8) printf("\n");
 	printf("tsize\t%.1o\n", U.u_tsize);
 	printf("dsize\t%.1o\n", U.u_dsize);
 	printf("ssize\t%.1o\n", U.u_ssize);
 	printf("ssave\t");
-	for	(i = 0; i < sizeof (label_t) / sizeof (int); i++)
+	for (i = 0; i < sizeof (label_t) / sizeof (int); i++)
 		printf("%.1o ", U.u_ssave.val[i]);
 	printf("\n");
 	printf("rsave\t");
 	for	(i = 0; i < sizeof (label_t) / sizeof (int); i++)
 		printf("%.1o ", U.u_rsave.val[i]);
 	printf("\n");
-	printf("uisa");
-	for	(i = 0; i < sizeof (U.u_uisa) / sizeof (short); i++)
-		{
-		if	(i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_uisa[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
-	printf("uisd");
-	for	(i = 0; i < sizeof (U.u_uisd) / sizeof (short); i++)
-		{
-		if	(i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_uisd[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
-	printf("sep\t%d\n", U.u_sep);
-	printf("ovdata\t%d %d %.1o %d\n", U.u_ovdata.uo_curov,
-		U.u_ovdata.uo_ovbase, U.u_ovdata.uo_dbase, U.u_ovdata.uo_nseg);
-	printf("ov_offst");
-	for	(i = 0; i < NOVL; i++)
-		{
-		if	(i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_ovdata.uo_ov_offst[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
 	printf("signal");
-	for	(i = 0; i < NSIG; i++)
-		{
-		if	(i%8 == 0) printf("\t");
+	for (i = 0; i < NSIG; i++) {
+		if (i%8 == 0) printf("\t");
 		printf("%.1o ", U.u_signal[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
+		if (i%8 == 7) printf("\n");
+	}
+	if (i%8) printf("\n");
 	printf("sigmask");
-	for	(i = 0; i < NSIG; i++)
-		{
-		if	(i%8 == 0) printf("\t");
+	for (i = 0; i < NSIG; i++) {
+		if (i%8 == 0) printf("\t");
 		printf("%.1lo ", U.u_sigmask[i]);
-		if	(i%8 == 7) printf("\n");
-		}
-	if	(i%8) printf("\n");
+		if (i%8 == 7) printf("\n");
+	}
+	if (i%8) printf("\n");
 	printf("sigonstack\t%.1lo\n", U.u_sigonstack);
 	printf("sigintr\t%.1lo\n", U.u_sigintr);
 	printf("oldmask\t%.1lo\n", U.u_oldmask);
@@ -539,7 +492,6 @@ dousr()
 		U.u_timer[0].it_value, U.u_timer[1].it_interval,
 		U.u_timer[1].it_value);
 	printf("start\t%ld\n", U.u_start);
-	printf("acflag\t%d\n", U.u_acflag);
 	printf("prof\t%.1o %u %u %u\n", U.u_prof.pr_base, U.u_prof.pr_size,
 		U.u_prof.pr_off, U.u_prof.pr_scale);
 	printf("rlimit cur\t");
@@ -560,11 +512,9 @@ dousr()
 			printf("%ld ", U.u_rlimit[i].rlim_max);
 		}
 	printf("\n");
-	printf("quota\t%.1o\n", U.u_quota);
 	printf("ncache\t%ld %u %d,%d\n", U.u_ncache.nc_prevoffset,
 		U.u_ncache.nc_inumber, major(U.u_ncache.nc_dev),
 		minor(U.u_ncache.nc_dev));
-	printf("login\t%*s\n", MAXLOGNAME, U.u_login);
 }
 
 oatoi(s)

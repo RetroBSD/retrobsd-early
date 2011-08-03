@@ -1,37 +1,42 @@
 #
 # Public Domain.  1996/11/16 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
-#
-CFLAGS=	 -O
-SEPFLAG= -i
-SRCS=	mknod.c
-OBJS=	mknod.o
-MAN=	mknod.0
-MANSRC=	mknod.8
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-all: mknod mknod.0
+CFLAGS		+= -Werror
 
-mknod: ${OBJS}
-	${CC} ${CFLAGS} ${SEPFLAG} -o $@ ${OBJS}
+SRCS		= mknod.c
+OBJS		= mknod.o
+MAN		= mknod.0
+MANSRC		= mknod.8
 
-mknod.0: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+all:            ../mknod mknod.0
+
+../mknod:       ${OBJS}
+		${CC} ${LDFLAGS} -o mknod.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S mknod.elf > mknod.dis
+		${SIZE} mknod.elf
+		${ELF2AOUT} mknod.elf $@
+
+mknod.0:        ${MANSRC}
+		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-	rm -f *.o *.elf *.dis ${MAN} mknod tags
+		rm -f *.o *.elf ${MAN} ../mknod *.elf *.dis tags *~
 
-depend: ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+depend:         ${SRCS}
+		mkdep ${CFLAGS} ${SRCS}
 
-install: mknod
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-	install -s -o root -g bin -m 755 mknod ${DESTDIR}/sbin/mknod
+install:        mknod
+		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+		install -s -o root -g bin -m 755 mknod ${DESTDIR}/sbin/mknod
 
-lint: ${SRCS}
-	lint -hax ${SRCS}
+lint:           ${SRCS}
+		lint -hax ${SRCS}
 
-tags: ${SRCS}
-	ctags ${SRCS}
+tags:           ${SRCS}
+		ctags ${SRCS}
+
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.

@@ -1,8 +1,5 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char sccsid[] = "@(#)diffh.c 4.4 11/27/85";
-#endif
-
 #include <stdio.h>
+#include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -25,7 +22,6 @@ char *getl(f,n)
 long n;
 {
 	register char *t;
-	char *malloc();
 	register delta, nt;
 again:
 	delta = n - lineno[f];
