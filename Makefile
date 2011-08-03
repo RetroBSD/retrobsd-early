@@ -42,11 +42,12 @@ SRCDIR		= tools sys etc share bin sbin
 FSUTIL		= tools/fsutil/fsutil
 UBW32		= tools/ubw32/ubw32
 
-SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/getty sbin/init \
+SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/init \
                   sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount sbin/newfs \
                   sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
                   sbin/update sbin/vipw
-ETC_FILES	= etc/rc etc/rc.local etc/ttys
+ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
+                  etc/passwd etc/master.passwd etc/fstab etc/motd etc/shells
 BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
                   bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/du \
@@ -62,9 +63,9 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
-LIBEXEC_FILES	= libexec/diffh
+LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES)
-ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ var/ var/tmp/ var/run/ var/adm/
 
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
 CDEVS           = dev/console!c0:0 \

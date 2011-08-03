@@ -10,9 +10,9 @@ CFLAGS		+= -Werror
 
 OBJS		= main.o init.o subr.o gettytab.o get_date.o
 
-all:            ../getty
+all:            ../../libexec/getty
 
-../getty:       ${OBJS}
+../../libexec/getty: ${OBJS}
 		${CC} ${LDFLAGS} -o getty.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S getty.elf > getty.dis
 		${SIZE} getty.elf
