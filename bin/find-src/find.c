@@ -69,7 +69,7 @@ char *sbrk();
  *
  *		1/83 incorporate glob-style matching -- jaw
  */
-#define	AMES	1
+//#define	AMES	1
 
 main(argc, argv)
 	int argc;

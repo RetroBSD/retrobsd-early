@@ -12,13 +12,9 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#ifdef pdp11
 #define BLKSIZE 1024
-#else
-#define BLKSIZE 8192
-#endif
 
-#define	MAXSIZ 6000
+#define	MAXSIZ 4000
 #define QSIZE 400
 
 struct words {
