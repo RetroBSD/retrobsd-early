@@ -156,7 +156,7 @@ main(argc, argv)
 	if (argc > 1)
 		tname = argv[1];
 	for (;;) {
-		int ldisp = OTTYDISC;
+		int ldisp = NTTYDISC;
 
 		gettable(tname, tabent, tabstrs);
 		if (OPset || EPset || APset)

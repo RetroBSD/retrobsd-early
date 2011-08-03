@@ -137,9 +137,9 @@ main(argc, argv)
 			}
 		}
 		if (preen) {
-			union wait status;
+			int status;
 			while (wait(&status) != -1)
-				sumstatus |= status.w_retcode;
+				sumstatus |= WEXITSTATUS(status);
 		}
 		passno++;
 	} while (anygtr);

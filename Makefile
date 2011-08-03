@@ -21,7 +21,6 @@
 # See lib/libc/Makefile for explanation.
 #
 DEFS		=
-LIBCDEFS	= DEFS="${DEFS}"
 
 # global flags
 # SRC_MFLAGS are used on makes in command source directories,
@@ -94,8 +93,7 @@ load:           unix.hex $(UBW32)
 		$(UBW32) -write unix.hex -reset
 
 lib:		FRC
-		cd lib/startup-mips; make ${MFLAGS}
-		cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
+		cd lib; make ${MFLAGS} DEFS="${DEFS}"
 
 ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}

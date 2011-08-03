@@ -38,7 +38,6 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
-#include <netdb.h>
 #include <tzfile.h>
 #include <lastlog.h>
 #include <paths.h>

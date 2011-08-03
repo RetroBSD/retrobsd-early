@@ -94,5 +94,6 @@ int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq);
 int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr);
+void dumpregs (cpu_mips_t *cpu);
 
 #endif

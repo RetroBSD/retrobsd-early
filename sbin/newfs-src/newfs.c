@@ -27,8 +27,9 @@
 #include <errno.h>
 #include <paths.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <syslog.h>
-#include <varargs.h>
+#include <stdarg.h>
 
 #ifdef	COMPAT
 	char	*disktype;
@@ -36,8 +37,6 @@
 #endif
 	int	Nflag;
 	struct	disklabel *getdisklabel();
-
-extern	char	*__progname;
 
 static
 usage()
@@ -54,13 +53,11 @@ usage()
 
 /*VARARGS*/
 void
-fatal(fmt, va_alist)
-	char *fmt;
-	va_dcl
+fatal(char *fmt, ...)
 {
 	va_list ap;
 
-	va_start(ap);
+	va_start(ap, fmt);
 
 	if (fcntl(fileno(stderr), F_GETFL) < 0) {
 		openlog(__progname, LOG_CONS, LOG_DAEMON);

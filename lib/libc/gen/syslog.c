@@ -33,7 +33,6 @@
 #include <sys/types.h>
 #include <syslog.h>
 #include <sys/uio.h>
-#include <netdb.h>
 
 #include <errno.h>
 #include <fcntl.h>
