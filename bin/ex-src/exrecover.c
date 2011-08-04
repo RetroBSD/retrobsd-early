@@ -3,16 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char *copyright =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char *sccsid = "@(#)exrecover.c	7.9.2 (2.11BSD) 1996/10/26";
-#endif
-
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
+
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
 #undef	NULL
@@ -29,7 +21,7 @@ short tfile = -1;	/* ditto */
 /*
  *
  * This program searches through the specified directory and then
- * the directory /usr/preserve looking for an instance of the specified
+ * the directory /var/preserve looking for an instance of the specified
  * file from a crashed editor or a crashed system.
  * If this file is found, it is unscrambled and written to
  * the standard output.
@@ -52,7 +44,7 @@ short tfile = -1;	/* ditto */
  * This directory definition also appears (obviously) in expreserve.c.
  * Change both if you change either.
  */
-char	mydir[] =	"/usr/preserve";
+char	mydir[] = "/var/preserve";
 
 /*
  * Limit on the number of printed entries
@@ -222,7 +214,7 @@ listfiles(dirname)
 	struct svfile *fp, svbuf[NENTRY];
 
 	/*
-	 * Open /usr/preserve, and go there to make things quick.
+	 * Open /var/preserve, and go there to make things quick.
 	 */
 	dir = opendir(dirname);
 	if (dir == NULL) {
@@ -235,7 +227,7 @@ listfiles(dirname)
 	}
 
 	/*
-	 * Look at the candidate files in /usr/preserve.
+	 * Look at the candidate files in /var/preserve.
 	 */
 	fp = &svbuf[0];
 	ecount = 0;
@@ -373,7 +365,7 @@ int	bestfd;			/* Keep best file open so it dont vanish */
 
 /*
  * Look for a file, both in the users directory option value
- * (i.e. usually /tmp) and in /usr/preserve.
+ * (i.e. usually /tmp) and in /var/preserve.
  * Want to find the newest so we search on and on.
  */
 findtmp(dir)
@@ -387,7 +379,7 @@ findtmp(dir)
 	bestfd = -1;
 
 	/*
-	 * Search /usr/preserve and, if we can get there, /tmp
+	 * Search /var/preserve and, if we can get there, /tmp
 	 * (actually the users "directory" option).
 	 */
 	searchdir(dir);
@@ -424,7 +416,7 @@ findtmp(dir)
  * Don't chdir here, because the users directory
  * may be ".", and we would move away before we searched it.
  * Note that we actually chdir elsewhere (because it is too slow
- * to look around in /usr/preserve without chdir'ing there) so we
+ * to look around in /var/preserve without chdir'ing there) so we
  * can't win, because we don't know the name of '.' and if the path
  * name of the file we want to unlink is relative, rather than absolute
  * we won't be able to find it again.
@@ -717,7 +709,7 @@ getblock(atl, iof)
 	int iof;
 {
 	register int bno, off;
-	
+
 	bno = (atl >> OFFBTS) & BLKMSK;
 	off = (atl << SHFT) & LBTMSK;
 	if (bno >= NMBLKS)

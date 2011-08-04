@@ -31,6 +31,7 @@
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <utmp.h>
+#include <paths.h>
 #include <psout.h>
 
 #define	within(x,y,z)	(((unsigned)(x) >= (y)) && ((unsigned)(x) < (z)))
@@ -582,18 +583,18 @@ openfiles(argc, argv)
 char	**argv;
 {
 	if (kflg)
-		kmemf = argc > 1 ?  argv[1] : "/usr/sys/core";
+		kmemf = argc > 1 ?  argv[1] : _PATH_CORE;
 	kmem = open(kmemf, 0);
 	if (kmem < 0)
 		perrexit(kmemf);
 	if (!kflg)
-		memf = "/dev/mem";
+		memf = _PATH_MEM;
 	else
 		memf = kmemf;
 	mem = open(memf, 0);
 	if (mem < 0)
 		perrexit(memf);
-	swapf = argc > 2 ?  argv[2] : "/dev/swap";
+	swapf = argc > 2 ?  argv[2] : _PATH_SWAP;
 	swap = open(swapf, 0);
 	if (swap < 0)
 		perrexit(swapf);

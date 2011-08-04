@@ -42,7 +42,6 @@
 #include <strings.h>
 #include <unistd.h>
 #include <time.h>
-
 #include <stdarg.h>
 
 #define	STDERR_FILENO	2
@@ -53,7 +52,7 @@ static	int	LogStat = 0;		/* status bits, set by openlog() */
 static	const char *LogTag = NULL;	/* string to tag the entry with */
 static	int	LogFacility = LOG_USER;	/* default facility code */
 static	int	LogMask = 0xff;		/* mask of priorities to be logged */
-static	char	logfile[] = "/usr/adm/messages";
+static	char	logfile[] = _PATH_MESSAGES;
 
 extern	int	errno;			/* error number */
 

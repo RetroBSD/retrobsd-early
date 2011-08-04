@@ -11,6 +11,7 @@
 #include "jove.h"
 #include "io.h"
 #include "termcap.h"
+#include <paths>
 
 #ifdef MAC
 #	include "mac.h"
@@ -447,7 +448,7 @@ Push()
 #ifdef MSDOS
 	break_rst();
 	if (spawnl(0, Shell, basename(Shell), (char *)0) == -1)
-		message("[Spawn failed]"); 
+		message("[Spawn failed]");
 #endif /* MSDOS */
     	ResetTerm();
     	ClAndRedraw();
@@ -457,7 +458,7 @@ Push()
 	break_off();
 #ifdef CHDIR
 	getCWD();
-#endif	
+#endif
 #endif /* MSDOS */
     	(void) signal(SIGINT, old_int);
 }
@@ -756,7 +757,7 @@ dorecover()
 	_exit(-1);
 }
 #endif /* UNIX */
-		
+
 void
 ShowVersion()
 {
@@ -827,7 +828,7 @@ char	*argv[];
 						find_tag(argv[1], YES);
  				}
   				break;
-  
+
 			case 'w':
 				if (argv[1][2] == '\0')
 					nwinds += 1;
@@ -853,7 +854,7 @@ char	*argv[];
 				(void) chr_to_int(&argv[1][1], 10, NO, &lineno);
 				lineno -= 1;
 				break;
-			case  0: 
+			case  0:
 				lineno = -1;	/* goto end of file ... */
 				break;		/* just like some people's */
 		}				/* favourite editor */
@@ -1089,7 +1090,7 @@ win_reshape()
 	 * LI has changed, and now holds the
 	 * new value.
 	 */
-	/* 
+	/*
 	 *  Go through the window list, changing each window size in
 	 *  proportion to the resize. If a window becomes too small,
 	 *  delete it. We keep track of all the excess lines (caused by
@@ -1235,9 +1236,9 @@ char	*argv[];
 
 #ifdef UNIX
 # ifdef SYSV
-	sprintf(Mailbox, "/usr/mail/%s", getenv("LOGNAME"));
+	sprintf(Mailbox, _PATH_MAIL "%s", getenv("LOGNAME"));
 # else
-	sprintf(Mailbox, "/usr/spool/mail/%s", getenv("USER"));
+	sprintf(Mailbox, _PATH_MAIL "%s", getenv("USER"));
 # endif
 #endif
 
@@ -1275,7 +1276,7 @@ char	*argv[];
 	(void) signal(SIGTERM, SIG_IGN);
 # if defined(TIOCGWINSZ) && defined(SIGWINCH)
 	(void) signal(SIGWINCH, win_reshape);
-# endif 
+# endif
 	/* set things up to update the modeline every UpdFreq seconds */
 	(void) signal(SIGALRM, updmode);
 	(void) alarm((unsigned) (60 - (time((time_t *) 0) % 60)));

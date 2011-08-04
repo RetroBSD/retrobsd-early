@@ -177,7 +177,6 @@ donewgrp(v)
 		panystop(0);
 	(void) signal(SIGTERM, parterm);
 	execl("/bin/newgrp", "newgrp", v[1], (char*)0);
-	execl("/usr/bin/newgrp", "newgrp", v[1], (char*)0);
 	untty();
 	exit(1);
 }

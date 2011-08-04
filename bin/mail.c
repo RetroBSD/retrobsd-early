@@ -35,8 +35,8 @@ int	nlet	= 0;
 char	lfil[50];
 long	iop;
 char	lettmp[] = "/tmp/maXXXXX";
-char	maildir[] = "/usr/spool/mail/";
-char	mailfile[] = "/usr/spool/mail/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+char	maildir[] = _PATH_MAIL;
+char	mailfile[] = _PATH_MAIL "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	dead[] = "dead.letter";
 char	forwmsg[] = " forwarded\n";
 FILE	*tmpf;
@@ -286,7 +286,7 @@ printmail(argc, argv)
 		copyback();
 }
 
-/* copy temp or whatever back to /usr/spool/mail */
+/* copy temp or whatever back to /var/mail */
 copyback()
 {
 	register int i, c;

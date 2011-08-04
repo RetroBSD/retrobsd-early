@@ -1,18 +1,16 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)lmain.c	4.3.1 (2.11BSD) 1996/10/23";
-#endif
-
-# include "ldefs.c"
-# include "once.c"
-
-	/* lex [-[drcyvntf]] [file] ... [file] */
-
-	/* Copyright 1976, Bell Telephone Laboratories, Inc.,
-	    written by Eric Schmidt, August 27, 1976   */
+/*
+ * lex [-[drcyvntf]] [file] ... [file]
+ *
+ * Copyright 1976, Bell Telephone Laboratories, Inc.,
+ * written by Eric Schmidt, August 27, 1976
+ */
+#include "ldefs.c"
+#include "once.c"
 
 main(argc,argv)
   int argc;
-  char **argv; {
+  char **argv;
+{
 	register int i;
 # ifdef DEBUG
 #include <signal.h>
@@ -100,7 +98,8 @@ main(argc,argv)
 # ifdef DEBUG
 	free3core();
 # endif
-	if (ZCH>NCH) cname="/usr/libdata/lex/ebcform";
+	if (ZCH > NCH)
+                cname = _PATH_SHARE "lex/ebcform";
 	fother = fopen(ratfor?ratname:cname,"r");
 	if(fother == NULL)
 		error("Lex driver missing, file %s",ratfor?ratname:cname);

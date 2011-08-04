@@ -7,7 +7,6 @@
 */
 
 			/* Time zone object file directory */
-#define	TZDIR		"/usr/share/zoneinfo"
 #define	TZDEFAULT	"/etc/localtime"
 
 /*

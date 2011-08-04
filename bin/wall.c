@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <utmp.h>
+#include <paths.h>
 #include <errno.h>
 #include <signal.h>
 #include <sys/time.h>

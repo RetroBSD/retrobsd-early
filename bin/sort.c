@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <unistd.h>
+#include <paths.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -20,7 +21,7 @@
 #define rline(mp)	(fgets((mp)->l, L, (mp)->b) == NULL)
 
 FILE	*is, *os;
-char	*dirtry[] = {"/usr/tmp", "/tmp", NULL};
+char	*dirtry[] = {_PATH_USRTMP, _PATH_TMP, NULL};
 char	**dirs;
 char	file1[30];
 char	*file = file1;

@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <utmp.h>
+#include <paths.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <sys/param.h>	/* for MAXHOSTNAMELEN */

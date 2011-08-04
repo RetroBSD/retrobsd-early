@@ -42,11 +42,6 @@
 #include <lastlog.h>
 #include <paths.h>
 
-#define	_PATH_DEFPATH	"/bin:/games"
-#define	_PATH_HUSHLOGIN	".hushlogin"
-#define	_PATH_MAILDIR	"/var/spool/mail"
-#define	_PATH_MOTDFILE	"/etc/motd"
-
 #ifdef	KERBEROS
 #include <kerberos/krb.h>
 #include <sys/termios.h>
@@ -405,7 +400,7 @@ main(argc, argv)
 		strncpy(term, stypeof(tty), sizeof(term));
 	(void)setenv("TERM", term, 0);
 	(void)setenv("USER", pwd->pw_name, 1);
-	(void)setenv("PATH", _PATH_DEFPATH, 0);
+	(void)setenv("PATH", _PATH_STDPATH, 0);
 
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
@@ -420,7 +415,7 @@ main(argc, argv)
 		struct stat st;
 
 		motd();
-		(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pwd->pw_name);
+		(void)sprintf(tbuf, "%s%s", _PATH_MAIL, pwd->pw_name);
 		if (stat(tbuf, &st) == 0 && st.st_size != 0)
 			(void)printf("You have %smail.\n",
 			    (st.st_mtime > st.st_atime) ? "new " : "");
@@ -496,7 +491,7 @@ motd()
 	sig_t oldint;
 	char tbuf[BUFSIZ];
 
-	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
+	if ((fd = open(_PATH_MOTD, O_RDONLY, 0)) < 0)
 		return;
 	oldint = signal(SIGINT, sigint);
 	if (setjmp(motdinterrupt) == 0)

@@ -1,6 +1,8 @@
 /*	ldefs.c	4.1	83/08/11	*/
 
 # include <stdio.h>
+# include <paths.h>
+
 # define PP 1
 # ifdef unix
 

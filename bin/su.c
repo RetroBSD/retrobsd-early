@@ -10,6 +10,7 @@
 #include <syslog.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <paths.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -17,10 +18,10 @@
 char	userbuf[64]	= "USER=";
 char	homebuf[128]	= "HOME=";
 char	shellbuf[128]	= "SHELL=";
-char	pathbuf[128]	= "PATH=:/usr/ucb:/bin:/usr/bin";
-char	*cleanenv[] = { userbuf, homebuf, shellbuf, pathbuf, 0, 0 };
-char	*user = "root";
-char	*shell = "/bin/sh";
+char	pathbuf[128]	= "PATH=" _PATH_STDPATH;
+char	*cleanenv[]     = { userbuf, homebuf, shellbuf, pathbuf, 0, 0 };
+char	*user           = "root";
+char	*shell          = _PATH_BSHELL;
 int	fulllogin;
 int	fastlogin;
 

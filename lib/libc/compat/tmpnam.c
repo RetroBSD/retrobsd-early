@@ -18,8 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#define	P_tmpdir	"/usr/tmp"
+#include <paths.h>
 
 FILE *
 tmpfile()
@@ -41,7 +40,7 @@ tmpnam(s)
 {
 	if (!s && !(s = malloc((u_int)MAXPATHLEN)))
 		return(NULL);
-	(void)sprintf(s, "%s/XXXXXX", P_tmpdir);
+	strcpy(s, _PATH_USRTMP "XXXXXX");
 	return mktemp(s);
 }
 
@@ -64,7 +63,7 @@ tempnam(dir, pfx)
 		if (f = mktemp(name))
 			return(f);
 	}
-	(void)sprintf(name, "%s/%sXXXXXX", P_tmpdir, pfx ? "" : pfx);
+	(void)sprintf(name, _PATH_USRTMP "%sXXXXXX", pfx ? "" : pfx);
 	if (f = mktemp(name))
 		return(f);
 	(void)sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);

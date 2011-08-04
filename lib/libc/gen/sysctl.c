@@ -36,11 +36,6 @@
 #include <string.h>
 #include <paths.h>
 
-extern	int	errno;
-static
-char _PATH_STDPATH[]="/usr/bin:/bin:/usr/ucb:/sbin:/usr/sbin:/usr/local:/usr/new";
-
-
 int
 sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 	int *name;
@@ -71,11 +66,11 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 
 	switch (name[1]) {
 	case USER_CS_PATH:
-		if (oldp && *oldlenp < sizeof(_PATH_STDPATH))
+		if (oldp && *oldlenp < sizeof(_PATH_SYSPATH))
 			return (ENOMEM);
-		*oldlenp = sizeof(_PATH_STDPATH);
+		*oldlenp = sizeof(_PATH_SYSPATH);
 		if (oldp != NULL)
-			strcpy(oldp, _PATH_STDPATH);
+			strcpy(oldp, _PATH_SYSPATH);
 		return (0);
 	}
 

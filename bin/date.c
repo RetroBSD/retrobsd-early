@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <utmp.h>
+#include <paths.h>
 #include <tzfile.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -21,7 +22,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define	WTMP		"/usr/adm/wtmp"
 #define	ATOI2(ar)	(ar[0] - '0') * 10 + (ar[1] - '0'); ar += 2;
 
 static struct timeval	tv;
@@ -185,7 +185,7 @@ main(argc,argv)
 			retval = 1;
 			goto display;
 		}
-		if ((wf = open(WTMP,O_WRONLY|O_APPEND)) < 0)
+		if ((wf = open(_PATH_WTMP, O_WRONLY | O_APPEND)) < 0)
 			fputs("date: can't write wtmp file.\n",stderr);
 		else {
 			(void)time((time_t *)&wtmp[1].ut_time);

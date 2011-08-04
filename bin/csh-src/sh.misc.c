@@ -83,7 +83,7 @@ nomem(i)
 #else
 	showall(av);
 	printf("i=%d: Out of memory\n", i);
-	chdir("/usr/bill/cshcore");
+	chdir("/tmp");
 	abort();
 #endif
 	return 0;		/* fool lint */

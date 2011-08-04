@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <paths.h>
 
 static	char shell[] =	"/bin/sh";
 extern	errno;
@@ -50,7 +51,7 @@ execvp(name, argv)
 
 	pathstr = getenv("PATH");
 	if (! pathstr)
-		pathstr = ":/bin:/usr/bin";
+		pathstr = _PATH_STDPATH;
 	cp = strchr(name, '/') ? "" : pathstr;
 
 	do {

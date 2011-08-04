@@ -22,11 +22,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include <paths.h>
 
-#define	DEF_PAGER	"/usr/ucb/more -s"
-#define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
-#define	LOCAL_PATH	"/usr/local/man"
-#define	NEW_PATH	"/usr/new/man"
+#define	NEW_PATH	"/new/man"
 
 #define	NO	0
 #define	YES	1
@@ -413,7 +411,7 @@ main(argc, argv)
 
 			/*
 			 * if the user uses "more", we make it "more -s"
-			 * watch out for PAGER = "mypager /usr/ucb/more"
+			 * watch out for PAGER = "mypager /bin/more"
 			 */
 			for (p = pager; *p && !isspace(*p); ++p);
 			for (; p > pager && *p != '/'; --p);
@@ -434,12 +432,12 @@ main(argc, argv)
 			}
 		}
 		else
-			pager = DEF_PAGER;
+			pager = _PATH_MORE " -s";
 	if (!(machine = getenv("MACHINE")))
 		setmachine();
 	if (!defpath && !(defpath = getenv("MANPATH")))
-		defpath = DEF_PATH;
-	locpath = LOCAL_PATH;
+		defpath = _PATH_MAN;
+	locpath = _PATH_LOCALMAN;
 	newpath = NEW_PATH;
 	man(argv);
 	/* use system(3) in case someone's pager is "pager arg1 arg2" */

@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <utmp.h>
+#include <paths.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>

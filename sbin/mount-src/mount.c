@@ -41,8 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include "pathnames.h"
+#include <paths.h>
 
 int debug, verbose, skipvfs, mountrw;
 

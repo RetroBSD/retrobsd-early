@@ -1,8 +1,5 @@
-#ifndef lint
-static char sccsid[] = "@(#)sub1.c	4.2 (Berkeley) 2/21/85";
-#endif
-
 # include "ldefs.c"
+
 char *
 getl(p)	/* return next line of input, throw away trailing '\n' */
 	/* returns 0 if eof is had immediately */
@@ -566,7 +563,7 @@ allprint(c)
 				printf("\\%-3o",c);
 				charc += 3;
 				}
-			else 
+			else
 				putchar(c);
 			break;
 		}
@@ -669,7 +666,7 @@ treedump()
 				printf("final %d",left[t]);
 				break;
 			case S1FINAL:
-				printf("s1final %d",left[t]);	
+				printf("s1final %d",left[t]);
 				break;
 			case S2FINAL:
 				printf("s2final %d",left[t]);

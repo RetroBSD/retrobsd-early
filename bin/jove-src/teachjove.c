@@ -7,9 +7,10 @@
 
 #include <sys/types.h>
 #include <sys/file.h>
+#include <paths.h>
 
 #ifndef TEACHJOVE
-#    define TEACHJOVE	"/usr/new/lib/jove/teach-jove"
+#    define TEACHJOVE	_PATH_SHARE "jove/teach-jove"
 #endif
 
 #ifndef W_OK
@@ -37,4 +38,3 @@ main()
 	(void) execlp("jove", "teachjove", fname, (char *) 0);
 	printf("teachjove: cannot execl jove!\n");
 }
-

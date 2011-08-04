@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "tzfile.h"
+#include "paths.h"
 
 char *
 ctime(t)
@@ -105,7 +106,7 @@ register char *	name;
 	register int	i;
 	register int	fid;
 
-	if (name == 0 && (name = TZDEFAULT) == 0)
+	if (name == 0 && (name = _PATH_LOCALTIME) == 0)
 		return -1;
 	{
 		register char *	p;
@@ -114,7 +115,7 @@ register char *	name;
 
 		doaccess = name[0] == '/';
 		if (!doaccess) {
-			if ((p = TZDIR) == 0)
+			if ((p = _PATH_ZONEINFO) == 0)
 				return -1;
 			if ((strlen(p) + strlen(name) + 1) >= sizeof fullname)
 				return -1;

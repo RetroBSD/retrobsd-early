@@ -155,14 +155,14 @@ main(argc, argv)
  * Make shutdown entry in /usr/adm/utmp.
  */
 #include <utmp.h>
+#include <paths.h>
 
 #define	SCPYN(a, b)	strncpy(a, b, sizeof(a))
-#define	WTMPF		"/usr/adm/wtmp"
 
 markdown()
 {
 	struct utmp wtmp;
-	register int f = open(WTMPF, O_WRONLY|O_APPEND);
+	register int f = open(_PATH_WTMP, O_WRONLY|O_APPEND);
 
 	if (f >= 0) {
 		bzero((char *)&wtmp, sizeof(wtmp));

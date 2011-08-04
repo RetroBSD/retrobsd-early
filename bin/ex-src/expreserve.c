@@ -3,15 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-char *copyright =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char *sccsid = "@(#)expreserve.c	7.13.2 (2.11BSD GTE) 1996/10/26";
-#endif
-
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
@@ -31,12 +22,12 @@ static char *sccsid = "@(#)expreserve.c	7.13.2 (2.11BSD GTE) 1996/10/26";
 char xstr[1];			/* make loader happy */
 
 /*
- * Expreserve - preserve a file in /usr/preserve
+ * Expreserve - preserve a file in /var/preserve
  * Bill Joy UCB November 13, 1977
  *
  * This routine is very naive - it doesn't remove anything from
- * /usr/preserve... this may mean that we leave
- * stuff there... the danger in doing anything with /usr/preserve
+ * /var/preserve... this may mean that we leave
+ * stuff there... the danger in doing anything with /var/preserve
  * is that the clock may be screwed up and we may get confused.
  *
  * We are called in two ways - first from the editor with no argumentss
@@ -135,10 +126,10 @@ main(argc)
 	exit(0);
 }
 
-char	pattern[] =	"/usr/preserve/Exaa`XXXXX";
+char	pattern[] = "/var/preserve/Exaa`XXXXX";
 
 /*
- * Copy file name into /usr/preserve/...
+ * Copy file name into /var/preserve/...
  * If name is (char *) 0, then do the standard input.
  * We make some checks on the input to make sure it is
  * really an editor temporary, generate a name for the
@@ -378,7 +369,7 @@ notify(uid, fname, flag, time)
 /*
  *	people making love
  *	never exactly the same
- *	just like a snowflake 
+ *	just like a snowflake
  */
 
 #ifdef lint

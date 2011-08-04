@@ -1,13 +1,9 @@
-#if	defined(DOSCCS) && !defined(lint)
-static char *sccsid = "@(#)ld.c	4.6 1998/01/19";
-#endif
-
 /*
  * 4.6 1998/01/19 - Tim Shoppa (shoppa@triumf.ca)
  *      Minor bug fix: when tsize was being incremented by THUNKSZ,
  *      no check was being made for 16-bit overflow.  Fix was to
  *      call add().  Same was done for the round up to the nearest
- *      0100 on tsize.  Modify add()'s error reporting to reduce memory 
+ *      0100 on tsize.  Modify add()'s error reporting to reduce memory
  *	usage - sms.
  *
  * 4.5 1997/10/31 - sms
@@ -331,7 +327,7 @@ char **argv;
 	if (argc == 1)
 		exit(4);
 /*
- * Initialize the "VM" system with NUM_VM_PAGES memory segments (memory 
+ * Initialize the "VM" system with NUM_VM_PAGES memory segments (memory
  * resident pages).  Then "open the address space" - this creates the paging
  * (tmp) file.
 */
@@ -340,7 +336,7 @@ char **argv;
 	if	(vmopen(&Vspace, (char *)NULL) < 0)
 		error(1, "vmopen failed");
 
-	/* 
+	/*
 	 * Pull out search directories.
 	 */
 	for (c = 1; c < argc; c++) {
@@ -354,9 +350,8 @@ char **argv;
 		}
 	}
 	/* add default search directories */
-	dirs[ndir++] = "/lib";
-	dirs[ndir++] = "/usr/lib";
-	dirs[ndir++] = "/usr/local/lib";
+	dirs[ndir++] = _PATH_USRLIB;
+	dirs[ndir++] = _PATH_LOCALLIB;
 
 	p = argv+1;
 	/*
@@ -501,7 +496,7 @@ delexit()
 	if (delarg==0)
 		chmod(ofilename, 0777 & ~umask(0));
 	if (verbose)
-		printf("ld: nswaps: %ld, nmapsegs: %ld sbrk(0): %u\n", nswaps, 
+		printf("ld: nswaps: %ld, nmapsegs: %ld sbrk(0): %u\n", nswaps,
 			nmapsegs, sbrk(0));
 	exit(delarg);
 	}
@@ -873,7 +868,7 @@ register struct vseg *seg;
  * we are doing a sequential read of the string table.
 */
 		if	(strtab)
-			strncpy(cursym.n_name, (int)objsym.n_un.n_strx + 
+			strncpy(cursym.n_name, (int)objsym.n_un.n_strx +
 				strtab - sizeof (long), NNAMESIZE);
 		else
 			{
@@ -1250,7 +1245,7 @@ load2arg(acp, flag)
 				lseek(infil, lp->loc, L_SET);
 				get_arobj(infil);
 				mkfsym(chdr.name);
-				load2(lp->loc + sizeof (struct ar_hdr) + 
+				load2(lp->loc + sizeof (struct ar_hdr) +
 					chdr.lname);
 			}
 			libp = ++lp;
@@ -1489,7 +1484,7 @@ finishout()
 	off_t	stroff;
 	long dtotal, ovrnd;
 	int	thunk[THUNKSIZ / sizeof (int)];
- 
+
 	if (numov) {
 		int aovhndlr[NOVL+1];
 
@@ -1539,7 +1534,7 @@ finishout()
  *
  * 'voutb' (overlay temp file), 'troutb' (text relocation temp file),
  * 'droutb' (data relocation temp file), and 'doutb' (data temp file)
- * have all been finished with and closed by this point.  We reuse one 
+ * have all been finished with and closed by this point.  We reuse one
  * of these ('doutb') to build the string table.
 */
 

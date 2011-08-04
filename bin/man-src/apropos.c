@@ -18,8 +18,8 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <strings.h>
+#include <paths.h>
 
-#define	DEF_PATH	"/usr/man:/usr/new/man:/usr/local/man"
 #define	MAXLINELEN	1000			/* max line handled */
 #define	WHATIS		"whatis"		/* database name */
 
@@ -65,7 +65,7 @@ main(argc, argv)
 		usage();
 
 	if (!(manpath = getenv("MANPATH")))
-		manpath = DEF_PATH;
+		manpath = _PATH_MAN;
 
 	/*NOSTRICT*/
 	if (!(found = (int *)malloc((u_int)argc))) {

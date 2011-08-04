@@ -19,6 +19,7 @@
 #include <sys/time.h>
 #include <strings.h>
 #include <utmp.h>
+#include <paths.h>
 
 typedef struct utmp UTMP;
 

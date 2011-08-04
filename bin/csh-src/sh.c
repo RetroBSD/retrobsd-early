@@ -14,7 +14,7 @@
 #include "sh.h"
 #include <sys/ioctl.h>
 
-char	*pathlist[] =	{ ".", "/usr/ucb", "/bin", "/usr/bin", 0 };
+char	*pathlist[] =	{ "/bin", 0 };
 char	*dumphist[] =	{ "history", "-h", 0, 0 };
 char	*loadhist[] =	{ "source", "-h", "~/.history", 0 };
 char	HIST = '!';

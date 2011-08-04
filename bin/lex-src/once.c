@@ -55,8 +55,8 @@ char *pushptr = pushc;
 char *slptr = slist;
 
 # if (unix || ibm)
-char *cname = "/usr/libdata/lex/ncform";
-char *ratname = "/usr/libdata/lex/nrform";
+char *cname = _PATH_SHARE "lex/ncform";
+char *ratname = _PATH_SHARE "lex/nrform";
 # endif
 
 # ifdef gcos

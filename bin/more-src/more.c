@@ -24,9 +24,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <paths.h>
 
-#define HELPFILE	"/usr/share/misc/more.help"
-#define VI		"/usr/ucb/vi"
+#define HELPFILE	_PATH_SHARE "misc/more.help"
+#define VI		_PATH_VI
 
 #define Fopen(s,m)	(Currline = 0,file_pos=0,fopen(s,m))
 #define Ftell(f)	file_pos

@@ -9,16 +9,17 @@
 /*
  * Definitions of editor parameters and limits
  */
+#include <paths.h>
 
 /*
  * Pathnames.
  */
 #define E_TERMCAP	"/etc/termcap"
-#define B_CSH		"/bin/csh"
-#define	EXRECOVER	"/usr/sbin/exrecover"
-#define	EXPRESERVE	"/usr/sbin/expreserve"
+#define B_CSH		_PATH_CSHELL
+#define	EXRECOVER	_PATH_USRSBIN "exrecover"
+#define	EXPRESERVE	_PATH_USRSBIN "expreserve"
 #ifndef VMUNIX
-#define	EXSTRINGS	"/usr/share/misc/exstrings"
+#define	EXSTRINGS	_PATH_SHARE "misc/exstrings"
 #endif
 
 /*

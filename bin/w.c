@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <utmp.h>
+#include <paths.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/user.h>

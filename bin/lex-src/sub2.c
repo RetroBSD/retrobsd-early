@@ -1,8 +1,5 @@
-#ifndef lint
-static char sccsid[] = "@(#)sub2.c	4.1 (Berkeley) 8/11/83";
-#endif
-
 # include "ldefs.c"
+
 cfoll(v)
 	int v;
 	{
@@ -55,7 +52,7 @@ cfoll(v)
 		case CARAT:
 			cfoll(left[v]);
 			break;
-		case STAR: case PLUS: case QUEST: case RSCON: 
+		case STAR: case PLUS: case QUEST: case RSCON:
 			cfoll(left[v]);
 			break;
 		case BAR: case RCAT: case DIV: case RNEWE:
@@ -132,7 +129,7 @@ follow(v)
 		case BAR: case QUEST: case RNEWE:
 			follow(p);
 			break;
-		case RCAT: case DIV: 
+		case RCAT: case DIV:
 			if(v == left[p]){
 				if(nullstr[right[p]])
 					follow(p);
@@ -140,7 +137,7 @@ follow(v)
 				}
 			else follow(p);
 			break;
-		case RSCON: case CARAT: 
+		case RSCON: case CARAT:
 			follow(p);
 			break;
 # ifdef DEBUG
@@ -786,7 +783,7 @@ layout(){
 		fprintf(fout, "define YYTOPVAL %d\n", yytop);
 		rprint(verify,"verif",yytop+1);
 		rprint(advance,"advan",yytop+1);
- 		shiftr(stoff, stnum); 
+ 		shiftr(stoff, stnum);
 		rprint(stoff,"stoff",stnum+1);
  		shiftr(sfall, stnum); upone(sfall, stnum+1);
 		rprint(sfall,"sfall",stnum+1);
@@ -831,7 +828,7 @@ layout(){
 	fprintf(fout,"0,\t0,\t0};\n");
 
 	/* put out yymatch */
-	
+
 	fprintf(fout,"struct yywork *yytop = yycrank+%d;\n",yytop);
 	fprintf(fout,"struct yysvf *yybgin = yysvec+1;\n");
 	if(optim){
