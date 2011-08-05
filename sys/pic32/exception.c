@@ -139,6 +139,8 @@ dumpregs (frame)
  */
 #define	USER		1
 
+//#include <sys/inode.h>
+
 /*
  * Called from startup.S when a processor exception occurs.
  * The argument is the array of registers saved on the system stack
@@ -159,6 +161,13 @@ printf ("\nkernel stack = %p", frame);
 		panic ("stack overflow");
 		/*NOTREACHED*/
         }
+#if 0
+{
+register struct inode *ip = (struct inode*) 0x80003d08;
+if (ip->i_number == 169 && ip->i_flags != 0)
+printf ("exception at %p: %d, i_flags=%#x\n", ip, ip->i_number, ip->i_flags);
+}
+#endif
 #ifdef UCB_METER
 	cnt.v_trap++;
 #endif
@@ -336,6 +345,13 @@ out:
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
 ret:
         led_control (LED_KERNEL, 0);
+#if 0
+{
+register struct inode *ip = (struct inode*) 0x80003d08;
+if (ip->i_number == 169 && ip->i_flags != 0)
+printf (" exc done at %p: %d, i_flags=%#x\n", ip, ip->i_number, ip->i_flags);
+}
+#endif
 }
 
 /*

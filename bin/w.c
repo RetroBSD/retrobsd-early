@@ -43,7 +43,7 @@ int	file;
 dev_t	tty;
 char	doing[520];		/* process attached to terminal */
 time_t	proctime;		/* cpu time of process in doing */
-double	avenrun[3];
+unsigned avenrun[3];
 extern	int errno, optind;
 
 #define	DIV60(t)	((t+30)/60)    /* x/60 rounded */
@@ -171,7 +171,8 @@ main(argc, argv)
 			for (i = 0; i < (sizeof(avenrun)/sizeof(avenrun[0])); i++) {
 				if (i > 0)
 					printf(",");
-				printf(" %.2f", avenrun[i]);
+				printf(" %u.%02u", avenrun[i] / 100,
+                                        avenrun[i] % 100);
 			}
 		}
 		printf("\n");

@@ -42,7 +42,7 @@
  */
 int
 getloadavg(loadavg, nelem)
-	double loadavg[];
+	unsigned loadavg[];
 	register int nelem;
 {
 	struct loadavg loadinfo;
@@ -58,6 +58,6 @@ getloadavg(loadavg, nelem)
 
 	nelem = MIN(nelem, sizeof(loadinfo.ldavg) / sizeof(short));
 	for (i = 0; i < nelem; i++)
-		loadavg[i] = (double) loadinfo.ldavg[i] / loadinfo.fscale;
+		loadavg[i] = 100 * loadinfo.ldavg[i] / loadinfo.fscale;
 	return (nelem);
 }

@@ -6,12 +6,15 @@
  */
 main()
 {
-	double vec[3];
+	unsigned vec[3];
 
 	if (getloadavg(vec, 3) < 0) {
 		perror("la: getloadavg");
 		exit(1);
 	}
-	printf("load %.02f %.02f %.02f\n", vec[0], vec[1], vec[2]);
+	printf("load %u.%02u %u.%02u %u.02u\n",
+                vec[0] / 100, vec[0] % 100,
+                vec[1] / 100, vec[1] % 100,
+                vec[1] / 100, vec[1] % 100);
 	exit(0);
 }

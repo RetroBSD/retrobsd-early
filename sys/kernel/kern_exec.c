@@ -126,8 +126,7 @@ getxfile (ip, ep, nargc, uid, gid)
                 sizeof(struct exec) + ep->a_text, IO_UNIT, (int*) 0);
 
 	/* clear BSS and stack */
-//printf ("getxfile: clear %u bytes at %08x\n",
-//USER_DATA_END - USER_DATA_START - ep->a_data, USER_DATA_START + ep->a_data);
+//printf ("getxfile: clear %u bytes at %08x\n", USER_DATA_END - USER_DATA_START - ep->a_data, USER_DATA_START + ep->a_data);
 	bzero ((void*) (USER_DATA_START + ep->a_data),
             USER_DATA_END - USER_DATA_START - ep->a_data);
 

@@ -19,6 +19,8 @@
 #include <sys/stat.h>
 #include <paths.h>
 
+//#undef KERN_SECURELVL
+
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	CMDSIZ	200	/* max string length for getty or window command*/
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
@@ -144,7 +146,7 @@ idle (sig)
 main(argc, argv)
 	char **argv;
 {
-#if 1
+#if 0
         /* Trivial init: just start shell. */
         int fd = open(ctty, O_RDWR, 0);
         if (fd < 0)
@@ -183,7 +185,7 @@ main(argc, argv)
 		exit(1);
 
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
-mylog("init: starting");
+//mylog("init: starting");
 
 	signal(SIGSYS, badsys);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
@@ -362,7 +364,7 @@ runcom(oldhowto)
 	int status;
 	char *arg1, *arg2;
 
-mylog("start %s", runc);
+//mylog("start %s", runc);
 	pid = fork();
 	if (pid == 0) {
 		f = open("/", O_RDONLY, 0);
@@ -420,11 +422,11 @@ multiple()
 
 	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
 	for (;;) {
-mylog("waiting for child termination");
+//mylog("waiting for child termination");
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
-mylog("child pid %d terminated", pid);
+//mylog("child pid %d terminated", pid);
 		omask = sigblock(sigmask(SIGHUP));
 		for (p=itab; p; p=p->next) {
 			/* must restart window system BEFORE emulator */
@@ -461,10 +463,9 @@ void merge(int signum)
 		p->xflag = 0;
 	setttyent();
 	while (t = getttyent()) {
-mylog("ty_name %s, ty_getty = %s, ty_type = %s, ty_status = %#x, ty_comment = %s",
-t->ty_name, t->ty_getty, t->ty_type, t->ty_status, t->ty_comment);
+//mylog("ty_name %s, ty_getty = %s, ty_type = %s, ty_status = %#x, ty_comment = %s", t->ty_name, t->ty_getty, t->ty_type, t->ty_status, t->ty_comment);
 		if ((t->ty_status & TTY_ON) == 0) {
-mylog("ty_status OFF");
+//mylog("ty_status OFF");
 			continue;
 }
 		for (p=itab; p; p=p->next) {
@@ -487,7 +488,7 @@ mylog("ty_status OFF");
 		 */
 		p1 = (struct tab *)calloc(1, sizeof(*p1));
 		if (!p1) {
-mylog("no space for '%s' !?!", t->ty_name);
+//mylog("no space for '%s' !?!", t->ty_name);
 			syslog(LOG_ERR, "no space for '%s' !?!", t->ty_name);
 			goto contin1;
 		}
@@ -509,15 +510,15 @@ mylog("no space for '%s' !?!", t->ty_name);
 			p->xflag |= WCHANGE;
 			SCPYN(p->wcmd, t->ty_window);
 		}
-mylog("new itab entry");
+//mylog("new itab entry");
 	contin1:
 		;
 	}
 	endttyent();
 	p1 = (struct tab *)0;
-mylog("done ttyent");
+//mylog("done ttyent");
 	for (p=itab; p; p=p->next) {
-mylog("p->comm = %s, p->line = %s", p->comn, p->line);
+//mylog("p->comm = %s, p->line = %s", p->comn, p->line);
 		if ((p->xflag & FOUND) == 0) {
 			term(p);
 			wterm(p);

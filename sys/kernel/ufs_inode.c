@@ -98,7 +98,6 @@ iget(dev, fs, ino)
 	union ihead *ih;
 	struct buf *bp;
 	struct dinode *dp;
-
 loop:
 	ih = &ihead[INOHASH(dev, ino)];
 	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
@@ -141,6 +140,7 @@ loop:
 			}
 			ip->i_count++;
 			ip->i_flag |= ILOCKED;
+//if (ip->i_flags) printf ("iget: %d, i_flags=%#x\n", ip->i_number, ip->i_flags);
 			return(ip);
 		}
 
@@ -208,6 +208,7 @@ loop:
 	ip->i_ic2 = dp->di_ic2;
 	bcopy(dp->di_addr, ip->i_addr, NADDR * sizeof (daddr_t));
 	brelse(bp);
+//if (ip->i_flags) printf ("iget: %d, i_flags=%#x\n", ip->i_number, ip->i_flags);
 	return (ip);
 }
 
@@ -343,6 +344,7 @@ iupdat (ip, ta, tm, waitfor)
 	tip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 	dp = (struct dinode*) bp->b_addr + itoo (tip->i_number);
 	dp->di_ic1 = tip->i_ic1;
+//if (ip->i_flags) printf ("iupdat1: %d, i_flags=%#x\n", ip->i_number, ip->i_flags);
 	dp->di_flags = tip->i_flags;
 	dp->di_ic2 = tip->i_ic2;
 	bcopy(ip->i_addr, dp->di_addr, NADDR * sizeof (daddr_t));
@@ -350,6 +352,7 @@ iupdat (ip, ta, tm, waitfor)
 		bwrite(bp);
 	else
 		bdwrite(bp);
+//if (ip->i_flags) printf ("iupdat2: %d, i_flags=%#x\n", ip->i_number, ip->i_flags);
 }
 
 #define	SINGLE	0	/* index of single indirect block */

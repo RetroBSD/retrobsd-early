@@ -254,13 +254,15 @@ parse(string, flags)
 
 	case CTL_VM:
 		if (mib[1] == VM_LOADAVG) {
-			double loads[3];
+			unsigned loads[3];
 
 			getloadavg(loads, 3);
 			if (!nflag)
 				fprintf(stdout, "%s: ", string);
-			fprintf(stdout, "%.2f %.2f %.2f\n",
-			    loads[0], loads[1], loads[2]);
+			fprintf(stdout, "%u.%02u %u.%02u %u.02u\n",
+                                loads[0] / 100, loads[0] % 100,
+                                loads[1] / 100, loads[1] % 100,
+                                loads[2] / 100, loads[2] % 100);
 			return;
 		}
 		if (flags == 0)

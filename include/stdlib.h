@@ -94,7 +94,7 @@ void	*alloca();
 
 int	daemon();
 char	*devname();
-int	getloadavg();
+int	getloadavg(unsigned loadavg[], int nelem);
 
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	getsubopt();
