@@ -3,7 +3,7 @@ This is the RetroBSD source directory.
 
 Source Roadmap:
 ---------------
-bin		System/user commands.
+bin		User commands.
 
 etc		Template files for /etc.
 
@@ -11,14 +11,12 @@ include		System include files.
 
 lib		System libraries.
 
-sbin		System commands.
+libexec		System binaries.
+
+sbin		System administration commands.
 
 share		Shared resources.
 
 sys		Kernel sources.
 
 tools           Build tools and simulators.
-
-usr.bin		User commands.
-
-usr.sbin	System administration commands.

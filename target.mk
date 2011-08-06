@@ -1,14 +1,14 @@
 DESTDIR		= /usr/local/lib/retrobsd
 MACHINE		= mips
-GCCBIN		= /usr/local/mipsel441/bin
-CC		= $(GCCBIN)/mipsel-elf32-gcc -nostdinc -I$(TOPSRC)/include \
-		  -I/usr/local/mipsel441/lib/gcc/mipsel-elf32/4.4.1/include
+GCCBIN		= /usr/local/mips461/bin
+CC		= $(GCCBIN)/mips-elf-gcc -EL -nostdinc -I$(TOPSRC)/include \
+		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
 AS		= $(CC) -x assembler-with-cpp
-LD		= $(GCCBIN)/mipsel-elf32-ld
-AR		= $(GCCBIN)/mipsel-elf32-ar
-RANLIB		= $(GCCBIN)/mipsel-elf32-ranlib
-SIZE		= $(GCCBIN)/mipsel-elf32-size
-OBJDUMP		= $(GCCBIN)/mipsel-elf32-objdump
+LD		= $(GCCBIN)/mips-elf-ld
+AR		= $(GCCBIN)/mips-elf-ar
+RANLIB		= $(GCCBIN)/mips-elf-ranlib
+SIZE		= $(GCCBIN)/mips-elf-size
+OBJDUMP		= $(GCCBIN)/mips-elf-objdump
 YACC            = byacc
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d

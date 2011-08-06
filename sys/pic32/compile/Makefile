@@ -25,11 +25,11 @@ DEFS		+= -DNKL=1
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
-CC		= /usr/local/mipsel441/bin/mipsel-elf32-gcc -g -mips32r2
+CC		= /usr/local/mips461/bin/mips-elf-gcc -EL -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-SIZE		= /usr/local/mipsel441/bin/mipsel-elf32-size
-OBJDUMP		= /usr/local/mipsel441/bin/mipsel-elf32-objdump
-OBJCOPY		= /usr/local/mipsel441/bin/mipsel-elf32-objcopy
+SIZE		= /usr/local/mips461/bin/mips-elf-size
+OBJDUMP		= /usr/local/mips461/bin/mips-elf-objdump
+OBJCOPY		= /usr/local/mips461/bin/mips-elf-objcopy
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.

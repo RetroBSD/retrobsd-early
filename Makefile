@@ -167,5 +167,5 @@ tags:
 		sort -u +0 -1 -o tags tags
 
 clean:
-		rm -f a.out core root.bin swap.bin *.s *.o *~
+		rm -f unix.hex root.bin swap.bin *~
 		for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done

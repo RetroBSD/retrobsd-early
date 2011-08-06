@@ -19,7 +19,7 @@ all:            ../../libexec/getty
 		${ELF2AOUT} getty.elf $@
 
 clean:
-		rm -f *.o *.elf ${MAN} ../getty *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} ../../libexec/getty *.elf *.dis tags *~
 
 install:        all
 		install -s -m 555 -o bin -g bin getty ${DESTDIR}/usr/libexec/getty

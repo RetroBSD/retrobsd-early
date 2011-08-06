@@ -82,7 +82,7 @@ __sysctl()
 {
 	register struct sysctl_args *uap = (struct sysctl_args*) u.u_arg;
 	int error;
-	u_int savelen, oldlen = 0;
+	u_int oldlen = 0;
 	sysctlfn *fn;
 	int name [CTL_MAXNAME];
 
@@ -146,7 +146,6 @@ __sysctl()
 			memlock.sl_locked++;
 		}
 		memlock.sl_lock = 1;
-		savelen = oldlen;
 	}
 	error = (*fn) (name + 1, uap->namelen - 1, uap->old, &oldlen,
 		uap->new, uap->newlen);

@@ -84,7 +84,7 @@ softclock(pc, ps)
 		register struct callout *p1;
 		register caddr_t arg;
 		register void (*func) (caddr_t);
-		register int a, s;
+		register int s;
 
 		s = splhigh();
 		if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
@@ -93,7 +93,6 @@ softclock(pc, ps)
 		}
 		arg = p1->c_arg;
 		func = p1->c_func;
-		a = p1->c_time;
 		calltodo.c_next = p1->c_next;
 		p1->c_next = callfree;
 		callfree = p1;
