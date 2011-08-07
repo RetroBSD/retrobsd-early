@@ -374,7 +374,8 @@ putchr(cc)
 	char c;
 
 	c = cc;
-	c |= partab[c&0177] & 0200;
+	if (EP || OP)
+                c |= partab[c&0177] & 0200;
 	if (OP)
 		c ^= 0200;
 	if (!UB) {

@@ -1349,16 +1349,14 @@ loop:
 		s = spltty();
 		if (tp->t_rawq.c_cc <= 0) {
 			carrier = ISSET(tp->t_state, TS_CARR_ON);
-			if (!carrier && ISSET(tp->t_state, TS_ISOPEN))
-				{
+			if (!carrier && ISSET(tp->t_state, TS_ISOPEN)) {
 				splx(s);
 				return(0);	/* EOF */
-				}
-			if (flag & IO_NDELAY)
-				{
+			}
+			if (flag & IO_NDELAY) {
 				splx(s);
 				return(EWOULDBLOCK);
-				}
+			}
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			splx(s);
 			goto loop;

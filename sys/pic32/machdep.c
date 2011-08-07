@@ -149,16 +149,7 @@ startup()
 		/*printf ("copy %08x from (%08x) to (%08x)\n", *src, src, dest);*/
 		*dest++ = *src++;
 	}
-#if 0
-	/* Initialize .bss segment by zeroes. */
-	extern _end;
-	dest = &_edata;
-	limit = &_end;
-	while (dest < limit) {
-		/*printf ("clear (%08x)\n", dest);*/
-		*dest++ = 0;
-	}
-#endif
+
         /* Get total RAM size. */
 	physmem = BMXDRMSZ;
 }

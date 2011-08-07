@@ -359,10 +359,6 @@ void nchinval (dev_t dev);
  * This structure is a _subset_ of 4.4BSD's vnode attribute structure.  ONLY
  * those attributes which can be *changed by the user* are present.  Since we
  * do not have vnodes why initialize (and carry around) un-used members.
- *
- * NOTE: For reasons of speed the function 'vattr_null()' was written in
- * very compact assembly code and placed in pdp/mch_xxx.s.  If you change
- * the 'vattr' structure be sure and change vattr_null in pdp/mch_xxx.s!
  */
 struct vattr {
 	mode_t	va_mode;
@@ -371,8 +367,8 @@ struct vattr {
 	off_t	va_size;
 	time_t	va_atime;
 	time_t	va_mtime;
-	u_short	va_flags;
-	u_short	va_vaflags;
+	u_int	va_flags;
+	u_int	va_vaflags;
 };
 
 /*

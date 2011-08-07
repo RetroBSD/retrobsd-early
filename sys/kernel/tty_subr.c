@@ -118,7 +118,7 @@ q_to_b (q, cp, cc)
 		}
 	}
 	splx(s);
-	return (cp-acp);
+	return (cp - acp);
 }
 
 /*

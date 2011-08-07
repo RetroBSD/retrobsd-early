@@ -1,7 +1,10 @@
 #!/bin/sh
 HOME=/; export HOME
 PATH=/bin:/sbin; export PATH
-echo /etc/rc started                                    >/dev/console 2>&1
-echo to stdout
-date                                                    >/dev/console 2>&1
+exec >/dev/console 2>&1
+
+echo
+hostname pic32
+#echo /etc/rc started
+date
 exit 0

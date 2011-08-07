@@ -10,10 +10,10 @@ CFLAGS          += -Werror
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= chflags-src chpass-src dc-src diff-src find-src id-src \
-                  la-src ls-src login-src man-src more-src nm-src passwd-src \
-                  printf-src renice-src sed-src sh-src \
-                  stty-src sysctl-src test-src uname-src xargs-src
+SUBDIR		= chflags-src chpass-src dc-src diff-src find-src \
+                  hostname-src id-src la-src ls-src login-src man-src \
+                  more-src nm-src passwd-src printf-src renice-src sed-src \
+                  sh-src stty-src sysctl-src test-src uname-src xargs-src
 # TODO: ar-src awk-src csh-src ex-src fstat-src jove-src lex-src ld-src
 # make-src m4-src pcc-src ranlib-src yacc-src
 
@@ -25,7 +25,7 @@ SCRIPT		= false nohup true #lorder mkdep
 # explicit make lines.
 #
 STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
-		  echo ed fgrep file grep head hostid join kill ln \
+		  echo ed fgrep file grep head hostid hostname join kill ln \
                   mesg mkdir mv nice od pagesize pr pwd rev rm rmail rmdir \
                   size sleep sort split sum sync tail tar tee time touch tr \
                   tsort tty uniq w wc whereis who
