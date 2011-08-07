@@ -100,19 +100,19 @@ void *dev_pic32_bmxcon_access (cpu_mips_t *cpu, struct vdevice *dev,
 
     case PIC32_BMXDRMSZ & 0x1f0:    /* Data RAM memory size */
         if (op_type == MTS_READ) {
-            *data = cpu->vm->ram_size;
+            *data = cpu->vm->ram_size * 1024;
         }
         break;
 
     case PIC32_BMXPFMSZ & 0x1f0:    /* Program Flash memory size */
         if (op_type == MTS_READ) {
-            *data = cpu->vm->flash_size;
+            *data = cpu->vm->flash_size * 1024;
         }
         break;
 
     case PIC32_BMXBOOTSZ & 0x1f0:   /* Boot Flash size */
         if (op_type == MTS_READ) {
-            *data = pic32->boot_flash_size;
+            *data = pic32->boot_flash_size * 1024;
         }
         break;
 
