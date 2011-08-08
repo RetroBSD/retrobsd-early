@@ -25,7 +25,7 @@ SCRIPT		= false nohup true #lorder mkdep
 # explicit make lines.
 #
 STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
-		  echo ed fgrep file grep head hostid hostname join kill ln \
+		  echo ed fgrep file grep head hostid hostname join kill last ln \
                   mesg mkdir mv nice od pagesize pr pwd rev rm rmail rmdir \
                   size sleep sort split sum sync tail tar tee time touch tr \
                   tsort tty uniq w wc whereis who
