@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)getmntopts.c	8.1.1 (2.11BSD) 1996/1/16";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/mount.h>
 

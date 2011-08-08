@@ -165,6 +165,8 @@ again:
 	if (isvfork) {
 		/*
 		 * Wait for the child to finish with it.
+		 * RetroBSD: to make this work, significant
+		 * changes in scheduler are required.
 		 */
 		rip->p_dsize = 0;
 		rip->p_ssize = 0;

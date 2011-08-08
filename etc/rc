@@ -4,7 +4,6 @@ PATH=/bin:/sbin; export PATH
 exec >/dev/console 2>&1
 
 hostname pic32
-date
 
 #
 # First umount everything in case the system is going back into multiuser
@@ -16,7 +15,7 @@ umount -a
 # Now mount everything mentioned in /etc/fstab *except* filesystems with the
 # 'na' (noauto) option.
 #
-#mount -a
+mount -a
 
 rm -f /etc/nologin
 
@@ -26,5 +25,5 @@ echo '.'
 
 #/etc/rc.local
 
-#date
+date
 exit 0

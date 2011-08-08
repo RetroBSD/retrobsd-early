@@ -155,7 +155,6 @@ struct args {
 	int *status;
 	int options;
 	struct rusage *rusage;
-	int compat;
 };
 
 /*
@@ -187,7 +186,7 @@ loop:
 	 * because they are more common, and, as the list is typically small,
 	 * a faster check.
 	 */
-	for (p = zombproc; p;p = p->p_nxt) {
+	for (p = zombproc; p; p = p->p_nxt) {
 		if (p->p_pptr != q)	/* are we the parent of this process? */
 			continue;
 		if (uap->pid != WAIT_ANY &&
@@ -230,14 +229,12 @@ loop:
 		    p->p_pid != uap->pid && p->p_pgrp != -uap->pid)
 			continue;
 		++nfound;
-		if (p->p_stat == SSTOP && (p->p_flag& P_WAITED)==0 &&
-		    (p->p_flag&P_TRACED || uap->options&WUNTRACED)) {
+		if (p->p_stat == SSTOP && ! (p->p_flag & P_WAITED) &&
+		    (p->p_flag & P_TRACED || uap->options & WUNTRACED)) {
 			p->p_flag |= P_WAITED;
 			retval[0] = p->p_pid;
 			error = 0;
-			if (uap->compat)
-				retval[1] = W_STOPCODE(p->p_ptracesig);
-			else if (uap->status) {
+			if (uap->status) {
 				status = W_STOPCODE(p->p_ptracesig);
 				error = copyout ((caddr_t) &status,
 					(caddr_t) uap->status, sizeof (status));
@@ -263,7 +260,6 @@ wait4()
 	int retval[2];
 	register struct	args *uap = (struct args*) u.u_arg;
 
-	uap->compat = 0;
 	retval[0] = 0;
 	u.u_error = wait1 (u.u_procp, uap, retval);
 	if (! u.u_error)

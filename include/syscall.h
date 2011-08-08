@@ -76,7 +76,7 @@
 				/* 63 is unused */
 				/* 64 is old; getpagesize */
 #define	SYS_pselect	65
-#define	SYS_vfork	66
+#define	SYS_vfork	2       /* 66 - not fixed yet */
 				/* 67 is old; vread */
 				/* 68 is old; vwrite */
 #define	SYS_sbrk	69

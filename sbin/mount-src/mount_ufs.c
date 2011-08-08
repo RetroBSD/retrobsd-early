@@ -30,15 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	!defined(lint) && defined(DOSCCS)
-static char copyright[] =
-"@(#) Copyright (c) 1993, 1994\n\
-	The Regents of the University of California.  All rights reserved.\n";
-
-static char sccsid[] = "@(#)mount_ufs.c	8.2.2 (2.11BSD) 1996/4/18";
-#endif /* not lint */
-
 #include <sys/param.h>
 #include <sys/mount.h>
 
@@ -95,7 +86,7 @@ mount_ufs(argc, argv)
 			if (mntflags & MNT_UPDATE)
 				(void)fprintf(stderr,
 		    "Specified device does not match mounted device.\n");
-			else 
+			else
 				(void)fprintf(stderr,
 				    "Incorrect super block.\n");
 			break;
