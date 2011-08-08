@@ -103,12 +103,7 @@ startup()
 	 * Setup UART registers.
 	 * Compute the divisor for 115.2 kbaud.
 	 */
-	U1BRG = PIC32_BRG_BAUD (KHZ * 1000, 115200);
-	U1STA = 0;
-	U1MODE = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
-		 PIC32_UMODE_ON;		/* UART Enable */
-	U1STASET = PIC32_USTA_URXEN |		/* Receiver Enable */
-		   PIC32_USTA_UTXEN;		/* Transmit Enable */
+        cninit();
 
 	/* Setup memory. */
         BMXPUPBA = 256 << 10;                   /* Kernel Flash memory size */
@@ -131,9 +126,22 @@ startup()
 
         /* UBW32 board: LEDs on PORTE[0:3].
 	 * Configure LED pins as output high. */
-	PORTESET = 0x0f;
-	TRISECLR = 0x0f;
-
+#ifdef LED_TTY_PORT
+	PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+	TRIS_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+#endif
+#ifdef LED_DISK_PORT
+	PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+	TRIS_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+#endif
+#ifdef LED_KERNEL_PORT
+	PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+	TRIS_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+#endif
+#ifdef LED_AUX_PORT
+	PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+#endif
 	/* Enable interrupts.  */
 	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
 
@@ -253,20 +261,20 @@ void led_control (int mask, int on)
 {
         /* UBW32 board: LEDs on PORTE[0:3]. */
         if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
-                if (on) PORTECLR = 1 << 0;
-                else    PORTESET = 1 << 0;
+                if (on) PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+                else    PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
         }
         if (mask & LED_DISK) {          /* LED2 on PE1: red */
-                if (on) PORTECLR = 1 << 1;
-                else    PORTESET = 1 << 1;
+                if (on) PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+                else    PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
         }
         if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
-                if (on) PORTECLR = 1 << 2;
-                else    PORTESET = 1 << 2;
+                if (on) PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+                else    PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
         }
         if (mask & LED_TTY) {           /* LED USB on PE3: green */
-                if (on) PORTECLR = 1 << 3;
-                else    PORTESET = 1 << 3;
+                if (on) PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+                else    PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
         }
 }
 

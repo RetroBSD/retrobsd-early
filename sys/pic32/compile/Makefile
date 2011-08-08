@@ -19,8 +19,24 @@ vpath %.S $(M):$(S)
 # Kernel options.
 DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
 
-# Console driver
-DEFS		+= -DNKL=1
+# Console on UART1
+DEFS            += -DCONSOLE_PORT=U1MODE
+DEFS            += -DCONSOLE_ER_IRQ=26
+DEFS            += -DCONSOLE_RX_IRQ=27
+DEFS            += -DCONSOLE_TX_IRQ=28
+
+# SD/MMC card driver at SPI1
+# /CS0 at A9
+# /CS1 at A10
+DEFS            += -DSD_PORT=SPI1CON
+DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
+#DEFS           += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
+
+# LEDs
+DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0
+DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
+DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2
+DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)

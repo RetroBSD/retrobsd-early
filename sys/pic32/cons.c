@@ -13,6 +13,8 @@
 #include "tty.h"
 #include "systm.h"
 
+#define NKL     1                       /* Only one console device */
+
 /*
  * PIC32 UART registers.
  */
@@ -49,6 +51,22 @@ static unsigned speed_bps [NSPEEDS] = {
 
 void cnstart (struct tty *tp);
 
+void cninit()
+{
+	register struct uartreg *reg = (struct uartreg*) &CONSOLE_PORT;
+
+	/*
+	 * Setup UART registers.
+	 * Compute the divisor for 115.2 kbaud.
+	 */
+	reg->brg = PIC32_BRG_BAUD (KHZ * 1000, 115200);
+	reg->sta = 0;
+	reg->mode = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
+		    PIC32_UMODE_ON;		/* UART Enable */
+	reg->staset = PIC32_USTA_URXEN |	/* Receiver Enable */
+		      PIC32_USTA_UTXEN;		/* Transmit Enable */
+}
+
 /*ARGSUSED*/
 int
 cnopen (dev, flag, mode)
@@ -56,15 +74,21 @@ cnopen (dev, flag, mode)
 {
 	register struct uartreg *reg;
 	register struct tty *tp;
-	register int d;
+	register int unit = minor(dev);
 
-//printf ("cnopen (dev=%#x, flag=%d, mode=%d)\n", dev, flag, mode);
-	d = minor(dev);
-	tp = &cnttys[d];
-	if (d==0 && ! tp->t_addr)
-		tp->t_addr = (caddr_t) &U1MODE;
-	if (d >= NKL || ! (reg = (struct uartreg*)tp->t_addr))
+	if (unit >= NKL)
 		return (ENXIO);
+	tp = &cnttys[unit];
+	if (! tp->t_addr) {
+	        switch (unit) {
+                case 0:
+                        tp->t_addr = (caddr_t) &CONSOLE_PORT;
+                        break;
+		default:
+                        return (ENXIO);
+		}
+        }
+        reg = (struct uartreg*) tp->t_addr;
 	tp->t_oproc = cnstart;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		if (tp->t_ispeed == 0) {
@@ -78,18 +102,17 @@ cnopen (dev, flag, mode)
 	if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
 		return (EBUSY);
 
-//printf ("cnopen: tp->t_ospeed = %d\n", speed_bps [tp->t_ospeed]);
 	reg->sta = 0;
 	reg->brg = PIC32_BRG_BAUD (KHZ * 1000, speed_bps [tp->t_ospeed]);
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR | PIC32_UMODE_ON;
 	reg->staset = PIC32_USTA_URXEN | PIC32_USTA_UTXEN;
 
 	/* Enable receive interrupt. */
-	if (&reg->mode == &U1MODE)
-		IECSET(0) = 1 << PIC32_IRQ_U1RX;
-	else
-		IECSET(1) = 1 << (PIC32_IRQ_U2RX-32);
-
+#if CONSOLE_RX_IRQ < 32
+	IECSET(0) = 1 << CONSOLE_RX_IRQ;
+#else
+	IECSET(1) = 1 << (CONSOLE_RX_IRQ - 32);
+#endif
 	if (! linesw[tp->t_line].l_open)
 		return (ENODEV);
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
@@ -176,7 +199,12 @@ cnintr (dev)
 	register struct uartreg *reg = (struct uartreg *)tp->t_addr;
 
         /* Receive */
-        IFSCLR(0) = (1 << PIC32_IRQ_U1RX) | (1 << PIC32_IRQ_U1E);
+#if CONSOLE_RX_IRQ < 32
+	IFSCLR(0) = (1 << CONSOLE_RX_IRQ) | (1 << CONSOLE_ER_IRQ);
+#else
+	IFSCLR(1) = (1 << (CONSOLE_RX_IRQ - 32)) |
+                    (1 << (CONSOLE_ER_IRQ - 32));
+#endif
 	if (reg->sta & PIC32_USTA_URXDA) {
                 c = reg->rxreg;
                 if (linesw[tp->t_line].l_rint)
@@ -188,8 +216,14 @@ cnintr (dev)
         /* Transmit */
         if (reg->sta & PIC32_USTA_TRMT) {
                 led_control (LED_TTY, 0);
-                IECCLR(0) = 1 << PIC32_IRQ_U1TX;
-                IFSCLR(0) = 1 << PIC32_IRQ_U1TX;
+
+#if CONSOLE_TX_IRQ < 32
+                IECCLR(0) = 1 << CONSOLE_TX_IRQ;
+                IFSCLR(0) = 1 << CONSOLE_TX_IRQ;
+#else
+                IECCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
+                IFSCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#endif
                 if (tp->t_state & TS_BUSY) {
                         tp->t_state &= ~TS_BUSY;
                         if (linesw[tp->t_line].l_start)
@@ -202,16 +236,12 @@ void
 cnstart (tp)
 	register struct tty *tp;
 {
-	register struct uartreg *reg;
+	register struct uartreg *reg = (struct uartreg*) tp->t_addr;
 	register int c, s;
 
 	s = spltty();
 	if (tp->t_state & (TS_TIMEOUT | TS_BUSY | TS_TTSTOP)) {
 out:		/* Disable transmit_interrupt. */
-		if (&reg->mode == &U1MODE)
-			IECCLR(0) = 1 << PIC32_IRQ_U1TX;
-		else
-			IECCLR(1) = 1 << (PIC32_IRQ_U2TX-32);
                 led_control (LED_TTY, 0);
 		splx (s);
 		return;
@@ -219,17 +249,17 @@ out:		/* Disable transmit_interrupt. */
 	ttyowake(tp);
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	reg = (struct uartreg*) tp->t_addr;
 	if (reg->sta & PIC32_USTA_TRMT) {
 		c = getc (&tp->t_outq);
 		reg->txreg = c & 0xff;
 		tp->t_state |= TS_BUSY;
 	}
 	/* Enable transmit interrupt. */
-	if (&reg->mode == &U1MODE)
-		IECSET(0) = 1 << PIC32_IRQ_U1TX;
-	else
-		IECSET(1) = 1 << (PIC32_IRQ_U2TX-32);
+#if CONSOLE_TX_IRQ < 32
+        IECSET(0) = 1 << CONSOLE_TX_IRQ;
+#else
+        IECSET(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#endif
         led_control (LED_TTY, 1);
 	splx (s);
 }
@@ -241,7 +271,8 @@ void
 cnputc (c)
 	char c;
 {
-	register struct tty *tp = &cnttys[0];
+	struct tty *tp = &cnttys[0];
+	register struct uartreg *reg = (struct uartreg*) &CONSOLE_PORT;
 	register int s, timo;
 
 	s = spltty();
@@ -251,7 +282,7 @@ again:
 	 * otherwise give up after a reasonable time.
 	 */
 	timo = 30000;
-	while ((U1STA & PIC32_USTA_TRMT) == 0)
+	while ((reg->sta & PIC32_USTA_TRMT) == 0)
 		if (--timo == 0)
 			break;
         if (tp->t_state & TS_BUSY) {
@@ -259,17 +290,21 @@ again:
 		goto again;
         }
         led_control (LED_TTY, 1);
-	U1TXREG = c;
+	reg->txreg = c;
 	if (c == '\n')
 		cnputc('\r');
 
 	timo = 30000;
-	while ((U1STA & PIC32_USTA_TRMT) == 0)
+	while ((reg->sta & PIC32_USTA_TRMT) == 0)
 		if (--timo == 0)
 			break;
 
         /* Clear TX interrupt. */
-	IECCLR(0) = 1 << PIC32_IRQ_U1TX;
+#if CONSOLE_TX_IRQ < 32
+        IECCLR(0) = 1 << CONSOLE_TX_IRQ;
+#else
+        IECCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#endif
         led_control (LED_TTY, 0);
 	splx (s);
 }

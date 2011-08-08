@@ -133,6 +133,16 @@ void clkstart (void);
 
 void led_control (int mask, int on);
 
+/*
+ * Port i/o access, relative to TRIS base.
+ */
+#define TRIS_CLR(p)     (&p)[1]
+#define TRIS_SET(p)     (&p)[2]
+#define TRIS_INV(p)     (&p)[3]
+#define PORT_CLR(p)     (&p)[5]
+#define PORT_SET(p)     (&p)[6]
+#define PORT_INV(p)     (&p)[7]
+
 #endif
 
 #endif /* ENDIAN */

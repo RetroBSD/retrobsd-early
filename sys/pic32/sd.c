@@ -31,22 +31,16 @@
 #include "map.h"
 
 /*
- * Two SD/MMC disks on SPI1.
- * Signals:
+ * Two SD/MMC disks on SPI.
+ * Signals for SPI1:
  *	D0  - SDO1
  *	D10 - SCK1
  *	C4  - SDI1
- *	A9  - /CS0
- *	A10 - /CS1
  */
-#define SDADDR		((struct sdreg*) &SPI1CON)
 #define NSD		2
 #define SECTSIZE	512
 #define SLOW		250     /* 250 kHz */
 #define FAST		20000   /* 20 MHz */
-
-#define PIN_CS0		9	/* port A9 */
-#define PIN_CS1		10	/* port A10 */
 
 /*
  * Definitions for MMC/SDC commands.
@@ -98,7 +92,7 @@ static unsigned
 spi_io (byte)
 	unsigned byte;
 {
-	register struct	sdreg *reg = SDADDR;
+	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
         register int count;
 
 	reg->buf = (unsigned char) byte;
@@ -112,14 +106,26 @@ static inline void
 spi_select (unit, on)
 	int unit, on;
 {
-	if (on) {
-		PORTACLR = (unit == 0) ? 1 << PIN_CS0 : 1 << PIN_CS1;
-	} else {
-                PORTASET = (unit == 0) ? 1 << PIN_CS0 : 1 << PIN_CS1;
-
+        switch (unit) {
+        case 0:
+                if (on)
+                        PORT_CLR(SD_CS0_PORT) = 1 << SD_CS0_PIN;
+                else
+                        PORT_SET(SD_CS0_PORT) = 1 << SD_CS0_PIN;
+                break;
+#ifdef SD_CS1_PORT
+        case 1:
+                if (on)
+                        PORT_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
+                else
+                        PORT_SET(SD_CS1_PORT) = 1 << SD_CS1_PIN;
+                break;
+#endif
+        }
+        if (! on) {
                 /* Need additional SPI clocks after deselect */
                 spi_io (0xFF);
-	}
+        }
 }
 
 /*
@@ -404,16 +410,20 @@ sdopen (dev, flag, mode)
 	int flag, mode;
 {
 	register int unit = minor (dev);
-	register struct	sdreg *reg = SDADDR;
+	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
 
 	if (unit >= NSD)
 		return ENXIO;
 
 	if (! (reg->con & PIC32_SPICON_MSTEN)) {
 		/* Initialize hardware. */
-		spi_select (0, 0);		// initially keep the SD card disabled
-		TRISACLR = 1 << PIN_CS0;	// make Card select an output pin
-		TRISACLR = 1 << PIN_CS1;
+		spi_select (unit, 0);		// initially keep the SD card disabled
+
+                // make Card select an output pin
+		TRIS_CLR(SD_CS0_PORT) = 1 << SD_CS0_PIN;
+#ifdef SD_CS1_PORT
+		TRIS_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
+#endif
 	}
         /* Slow speed: max 40 kbit/sec. */
 	reg->stat = 0;
