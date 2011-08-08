@@ -3,8 +3,28 @@ HOME=/; export HOME
 PATH=/bin:/sbin; export PATH
 exec >/dev/console 2>&1
 
-echo
 hostname pic32
-#echo /etc/rc started
 date
+
+#
+# First umount everything in case the system is going back into multiuser
+# mode.  If the system is being booted for the first time nothing is mounted
+# except the root filesystem and umount ignores attempts to unmount /.
+#
+umount -a
+#
+# Now mount everything mentioned in /etc/fstab *except* filesystems with the
+# 'na' (noauto) option.
+#
+#mount -a
+
+rm -f /etc/nologin
+
+echo -n standard daemons:
+update && echo -n ' update'
+echo '.'
+
+#/etc/rc.local
+
+#date
 exit 0

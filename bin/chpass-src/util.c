@@ -124,9 +124,6 @@ print(fp, pw)
 		fprintf(fp, "Password: %s\n", pw->pw_passwd);
 		fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
 		fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
-		fprintf(fp, "Change [month day year]: %s\n", ttoa(pw->pw_change));
-		fprintf(fp, "Expire [month day year]: %s\n", ttoa(pw->pw_expire));
-		fprintf(fp, "Class: %s\n", pw->pw_class);
 		fprintf(fp, "Home directory: %s\n", pw->pw_dir);
 		fprintf(fp, "Shell: %s\n",
 		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);

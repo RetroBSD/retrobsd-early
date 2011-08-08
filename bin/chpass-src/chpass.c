@@ -33,7 +33,7 @@
 char e1[] = ": ";
 char e2[] = ":,";
 
-int p_change(), p_class(), p_expire(), p_gecos(), p_gid(), p_hdir();
+int p_gecos(), p_gid(), p_hdir();
 int p_login(), p_passwd(), p_shell(), p_uid();
 
 struct entry list[] = {
@@ -41,9 +41,6 @@ struct entry list[] = {
 	{ "Password",		p_passwd, 1,   8, e1,   },
 	{ "Uid",		p_uid,    1,   3, e1,   },
 	{ "Gid",		p_gid,    1,   3, e1,   },
-	{ "Class",		p_class,  1,   5, e1,   },
-	{ "Change",		p_change, 1,   6, NULL, },
-	{ "Expire",		p_expire, 1,   6, NULL, },
 #define	E_NAME		7
 	{ "Full Name",		p_gecos,  0,   9, e2,   },
 #define	E_BPHONE	8
@@ -166,7 +163,7 @@ main(argc, argv)
 				break;
 	}
 
-	passwd = _PATH_MASTERPASSWD;
+	passwd = _PATH_SHADOW;
 	if (!freopen(passwd, "r", stdin)) {
 		(void)fprintf(stderr, "chpass: can't read %s; ", passwd);
 		goto bad;
@@ -191,7 +188,7 @@ main(argc, argv)
 
 	if (makedb(temp)) {
 		(void)fprintf(stderr, "chpass: mkpasswd failed; ");
-bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_MASTERPASSWD);
+bad:		(void)fprintf(stderr, "%s unchanged.\n", _PATH_SHADOW);
 		(void)unlink(temp);
 		exit(1);
 	}
@@ -361,17 +358,15 @@ copy(pw, fp)
 			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
-		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
-		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
-		    pw->pw_dir, pw->pw_shell);
+		    pw->pw_gecos, pw->pw_dir, pw->pw_shell);
 		done = 1;
 	}
 	if (!done)
-		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
-		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
-		    pw->pw_dir, pw->pw_shell);
+		    pw->pw_gecos, pw->pw_dir, pw->pw_shell);
 	return(1);
 }
 
@@ -427,13 +422,6 @@ loadpw(arg, pw)
 	if (!(cp = strsep(&bp, ":")))
 		goto bad;
 	pw->pw_gid = atoi(cp);
-	pw->pw_class = strsep(&bp, ":");
-	if (!(cp = strsep(&bp, ":")))
-		goto bad;
-	pw->pw_change = atol(cp);
-	if (!(cp = strsep(&bp, ":")))
-		goto bad;
-	pw->pw_expire = atol(cp);
 	pw->pw_gecos = strsep(&bp, ":");
 	pw->pw_dir = strsep(&bp, ":");
 	pw->pw_shell = strsep(&bp, ":");

@@ -20,13 +20,11 @@
 #include <sys/file.h>
 #include <stdio.h>
 #include <pwd.h>
-#include <ndbm.h>
 #include <strings.h>
 
-static DBM *_pw_db;
 static FILE *_pw_fp;
-static struct passwd _pw_passwd;
-static int _pw_rewind = 1, _pw_stayopen;
+static struct passwd _pw_entry;
+static int _pw_stayopen;
 static char _pw_flag, *_pw_file = _PATH_PASSWD;
 
 #define	MAXLINELENGTH	256
@@ -37,24 +35,11 @@ start_pw()
 {
 	register char *p;
 
-	if (_pw_db) {
-		_pw_rewind = 1;
-		return(1);
-	}
 	if (_pw_fp) {
 		rewind(_pw_fp);
 		return(1);
 	}
-	if (_pw_db = dbm_open(_pw_file, O_RDONLY, 0)) {
-		_pw_rewind = 1;
-		return(1);
-	}
-	/*
-	 * special case; if it's the official password file, look in
-	 * the master password file, otherwise, look in the file itself.
-	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
-	if (_pw_fp = fopen(p, "r"))
+	if (_pw_fp = fopen(_pw_file, "r"))
 		return(1);
 	return(0);
 }
@@ -63,85 +48,39 @@ static
 scanpw()
 {
 	register char *cp;
-	char	*bp = line;
+	char	*bp;
 	register int ch;
 
 	for (;;) {
 		if (!(fgets(line, sizeof(line), _pw_fp)))
 			return(0);
 		/* skip lines that are too big */
-		if (!(cp = strchr(line, '\n'))) {
+		cp = strchr(line, '\n');
+		if (! cp) {
 			while ((ch = fgetc(_pw_fp)) != '\n' && ch != EOF)
 				;
 			continue;
 		}
 		*cp = '\0';
-		_pw_passwd.pw_name = strsep(&bp, ":");
-		_pw_passwd.pw_passwd = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":")))
+		bp = line;
+		_pw_entry.pw_name = strsep(&bp, ":");
+		_pw_entry.pw_passwd = strsep(&bp, ":");
+		cp = strsep(&bp, ":");
+		if (! cp)
 			continue;
-		_pw_passwd.pw_uid = atoi(cp);
-		if (!(cp = strsep(&bp, ":")))
+		_pw_entry.pw_uid = atoi(cp);
+		cp = strsep(&bp, ":");
+		if (! cp)
 			continue;
-		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_change = atol(cp);
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_expire = atol(cp);
-		_pw_passwd.pw_gecos = strsep(&bp, ":");
-		_pw_passwd.pw_dir = strsep(&bp, ":");
-		_pw_passwd.pw_shell = strsep(&bp, ":");
-		if (!_pw_passwd.pw_shell)
+		_pw_entry.pw_gid = atoi(cp);
+		_pw_entry.pw_gecos = strsep(&bp, ":");
+		_pw_entry.pw_dir = strsep(&bp, ":");
+		_pw_entry.pw_shell = strsep(&bp, ":");
+		if (!_pw_entry.pw_shell)
 			continue;
 		return(1);
 	}
 	/* NOTREACHED */
-}
-
-static
-fetch_pw(key)
-	datum key;
-{
-	register char *p, *t;
-
-	/*
-	 * the .dir file is LOCK_EX locked by programs that are
-	 * renaming the various password files.
-	 */
-	if (flock(dbm_dirfno(_pw_db), LOCK_SH))
-		return(0);
-	if (!key.dptr)
-		if (_pw_rewind) {
-			_pw_rewind = 0;
-			key = dbm_firstkey(_pw_db);
-		} else
-			key = dbm_nextkey(_pw_db);
-	if (key.dptr)
-		key = dbm_fetch(_pw_db, key);
-	(void)flock(dbm_dirfno(_pw_db), LOCK_UN);
-	if (!(p = key.dptr))
-		return(0);
-	t = line;
-#define	EXPAND(e)	e = t; while (*t++ = *p++);
-	EXPAND(_pw_passwd.pw_name);
-	EXPAND(_pw_passwd.pw_passwd);
-	bcopy(p, (char *)&_pw_passwd.pw_uid, sizeof(int));
-	p += sizeof(int);
-	bcopy(p, (char *)&_pw_passwd.pw_gid, sizeof(int));
-	p += sizeof(int);
-	bcopy(p, (char *)&_pw_passwd.pw_change, sizeof(time_t));
-	p += sizeof(time_t);
-	EXPAND(_pw_passwd.pw_class);
-	EXPAND(_pw_passwd.pw_gecos);
-	EXPAND(_pw_passwd.pw_dir);
-	EXPAND(_pw_passwd.pw_shell);
-	bcopy(p, (char *)&_pw_passwd.pw_expire, sizeof(time_t));
-	p += sizeof(time_t);
-	_pw_flag = *p;
-	return(1);
 }
 
 static
@@ -159,10 +98,10 @@ getpw()
 	 * special case; if it's the official password file, look in
 	 * the master password file, otherwise, look in the file itself.
 	 */
-	p = strcmp(_pw_file, _PATH_PASSWD) ? _pw_file : _PATH_MASTERPASSWD;
+	p = strcmp(_pw_file, _PATH_PASSWD) == 0 ? _PATH_SHADOW : _pw_file;
 	if ((fd = open(p, O_RDONLY, 0)) < 0)
 		return;
-	pos = atol(_pw_passwd.pw_passwd);
+	pos = atol(_pw_entry.pw_passwd);
 	if (lseek(fd, pos, L_SET) != pos)
 		goto bad;
 	if ((n = read(fd, pwbuf, sizeof(pwbuf) - 1)) < 0)
@@ -171,7 +110,7 @@ getpw()
 	for (p = pwbuf; *p; ++p)
 		if (*p == ':') {
 			*p = '\0';
-			_pw_passwd.pw_passwd = pwbuf;
+			_pw_entry.pw_passwd = pwbuf;
 			break;
 		}
 bad:	(void)close(fd);
@@ -180,21 +119,17 @@ bad:	(void)close(fd);
 struct passwd *
 getpwent()
 {
-	datum key;
 	register int rval;
 
-	if (!_pw_db && !_pw_fp && !start_pw())
+	if (!_pw_fp && !start_pw())
 		return((struct passwd *)NULL);
 	do {
-		if (_pw_db) {
-			key.dptr = NULL;
-			rval = fetch_pw(key);
-		} else /* _pw_fp */
-			rval = scanpw();
+		rval = scanpw();
 	} while (rval && _pw_flag != _PW_KEYBYNAME);
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+	if (! rval)
+	        return 0;
+	getpw();
+	return &_pw_entry;
 }
 
 struct passwd *
@@ -205,23 +140,18 @@ getpwnam(nam)
 
 	if (!start_pw())
 		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
-
-		key.dptr = nam;
-		key.dsize = strlen(nam);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (!strcmp(nam, _pw_passwd.pw_name)) {
-				rval = 1;
-				break;
-			}
+        for (rval = 0; scanpw();) {
+                if (!strcmp(nam, _pw_entry.pw_name)) {
+                        rval = 1;
+                        break;
+                }
+        }
 	if (!_pw_stayopen)
 		endpwent();
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+	if (! rval)
+	        return 0;
+	getpw();
+	return &_pw_entry;
 }
 
 struct passwd *
@@ -232,23 +162,18 @@ getpwuid(uid)
 
 	if (!start_pw())
 		return((struct passwd *)NULL);
-	if (_pw_db) {
-		datum key;
-
-		key.dptr = (char *)&uid;
-		key.dsize = sizeof(uid);
-		rval = fetch_pw(key);
-	} else /* _pw_fp */
-		for (rval = 0; scanpw();)
-			if (_pw_passwd.pw_uid == uid) {
-				rval = 1;
-				break;
-			}
+        for (rval = 0; scanpw();) {
+                if (_pw_entry.pw_uid == uid) {
+                        rval = 1;
+                        break;
+                }
+        }
 	if (!_pw_stayopen)
 		endpwent();
-	if (rval)
-		getpw();
-	return(rval ? &_pw_passwd : (struct passwd *)NULL);
+	if (! rval)
+	        return 0;
+	getpw();
+	return &_pw_entry;
 }
 
 setpwent()
@@ -268,12 +193,9 @@ setpassent(stayopen)
 void
 endpwent()
 {
-	if (_pw_db) {
-		dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
-	} else if (_pw_fp) {
+	if (_pw_fp) {
 		(void)fclose(_pw_fp);
-		_pw_fp = (FILE *)NULL;
+		_pw_fp = 0;
 	}
 }
 

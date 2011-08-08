@@ -207,7 +207,8 @@ args:
 		exit(0);
 	}
 	arg = argv[1];
-	if (argc == 1 && (!strcmp(arg, "everything") || !strcmp(arg, "all"))) {
+	if (argc == 1 && arg != 0 && (strcmp(arg, "everything") == 0 ||
+            strcmp(arg, "all") == 0)) {
 		prmodes(2);
 		exit(0);
 	}

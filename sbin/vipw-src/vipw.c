@@ -60,7 +60,7 @@ main()
 			    "vipw: %s: %s\n", temp, strerror(errno));
 		exit(1);
 	}
-	passwd = _PATH_MASTERPASSWD;
+	passwd = _PATH_SHADOW;
 	if ((fd_passwd = open(passwd, O_RDONLY, 0)) < 0) {
 		(void)fprintf(stderr, "vipw: %s: %s\n", passwd,
 		    strerror(errno));

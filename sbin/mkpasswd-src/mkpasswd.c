@@ -61,13 +61,6 @@ scanpw()
 		if (!(cp = strsep(&bp, ":")))
 			continue;
 		_pw_passwd.pw_gid = atoi(cp);
-		_pw_passwd.pw_class = strsep(&bp, ":");
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_change = atol(cp);
-		if (!(cp = strsep(&bp, ":")))
-			continue;
-		_pw_passwd.pw_expire = atol(cp);
 		_pw_passwd.pw_gecos = strsep(&bp, ":");
 		_pw_passwd.pw_dir = strsep(&bp, ":");
 		_pw_passwd.pw_shell = strsep(&bp, ":");
@@ -160,14 +153,9 @@ main(argc, argv)
 		p += sizeof(int);
 		bcopy((char *)&_pw_passwd.pw_gid, p, sizeof(int));
 		p += sizeof(int);
-		bcopy((char *)&_pw_passwd.pw_change, p, sizeof(time_t));
-		p += sizeof(time_t);
-		COMPACT(_pw_passwd.pw_class);
 		COMPACT(_pw_passwd.pw_gecos);
 		COMPACT(_pw_passwd.pw_dir);
 		COMPACT(_pw_passwd.pw_shell);
-		bcopy((char *)&_pw_passwd.pw_expire, p, sizeof(time_t));
-		p += sizeof(time_t);
 		flag = p;
 		*p++ = _PW_KEYBYNAME;
 		content.dsize = p - buf;

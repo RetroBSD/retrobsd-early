@@ -198,9 +198,10 @@ main(argc, argv)
 			failures = 0;
 		}
 		(void)strcpy(tbuf, username);
-		if (pwd = getpwnam(username))
+		if (pwd = getpwnam(username)) {
 			salt = pwd->pw_passwd;
-		else
+//printf("getpwnam returned username='%s' password='%s'\n", pwd->pw_name, pwd->pw_passwd);
+		} else
 			salt = "xx";
 
 		/* if user not super-user, check for disabled logins */
@@ -274,6 +275,7 @@ main(argc, argv)
 			}
 		}
 #endif
+//printf("username='%s' password='%s' encrypted='%s' expected='%s' salt='%s'\n", username, pp, p, pwd->pw_passwd, salt);
 		(void) bzero(pp, strlen(pp));
 		if (pwd && !strcmp(p, pwd->pw_passwd))
 			break;
@@ -328,30 +330,6 @@ main(argc, argv)
 	if (notickets && !quietlog)
 		(void)printf("Warning: no Kerberos tickets issued\n");
 #endif
-
-#define	TWOWEEKS	(14*24*60*60)
-	if (pwd->pw_change || pwd->pw_expire)
-		(void)gettimeofday(&tp, (struct timezone *)NULL);
-	if (pwd->pw_change)
-		if (tp.tv_sec >= pwd->pw_change) {
-			(void)printf("Sorry -- your password has expired.\n");
-			sleepexit(1);
-		}
-		else if (pwd->pw_change - tp.tv_sec < TWOWEEKS && !quietlog) {
-			ttp = localtime(&pwd->pw_change);
-			(void)printf("Warning: your password expires on %s %d, %d\n",
-			    months[ttp->tm_mon], ttp->tm_mday, TM_YEAR_BASE + ttp->tm_year);
-		}
-	if (pwd->pw_expire)
-		if (tp.tv_sec >= pwd->pw_expire) {
-			(void)printf("Sorry -- your account has expired.\n");
-			sleepexit(1);
-		}
-		else if (pwd->pw_expire - tp.tv_sec < TWOWEEKS && !quietlog) {
-			ttp = localtime(&pwd->pw_expire);
-			(void)printf("Warning: your account expires on %s %d, %d\n",
-			    months[ttp->tm_mon], ttp->tm_mday, TM_YEAR_BASE + ttp->tm_year);
-		}
 
 	/* nothing else left to fail -- really log in */
 	{

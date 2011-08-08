@@ -47,7 +47,7 @@ SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/init \
                   sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
                   sbin/update sbin/vipw
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
-                  etc/passwd etc/master.passwd etc/fstab etc/motd etc/shells
+                  etc/passwd etc/shadow etc/fstab etc/motd etc/shells
 BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
                   bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/du \
@@ -65,7 +65,7 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
-                  var/log/messages var/log/wtmp
+                  var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/
 
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1

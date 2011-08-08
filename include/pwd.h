@@ -13,12 +13,10 @@
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)pwd.h	4.3.1 (2.11BSD) 1996/11/16
  */
 
 #define	_PATH_PASSWD		"/etc/passwd"
-#define	_PATH_MASTERPASSWD	"/etc/master.passwd"
+#define	_PATH_SHADOW            "/etc/shadow"
 #define	_PATH_MKPASSWD		"/sbin/mkpasswd"
 #define	_PATH_PTMP		"/etc/ptmp"
 
@@ -30,12 +28,9 @@ struct passwd {
 	char	*pw_passwd;			/* encrypted password */
 	int	pw_uid;				/* user uid */
 	int	pw_gid;				/* user gid */
-	long	pw_change;			/* password change time */
-	char	*pw_class;			/* user access class */
-	char	*pw_gecos;			/* Honeywell login info */
+	char	*pw_gecos;			/* real name */
 	char	*pw_dir;			/* home directory */
 	char	*pw_shell;			/* default shell */
-	long	pw_expire;			/* account expiration */
 };
 
 struct passwd *getpwent(), *getpwuid(), *getpwnam();

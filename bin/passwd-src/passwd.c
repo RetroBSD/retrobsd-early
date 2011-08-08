@@ -91,7 +91,7 @@ main(argc, argv)
 		fprintf(stderr, "passwd: can't write %s\n", temp);
 		goto bad;
 	}
-	passwd = _PATH_MASTERPASSWD;
+	passwd = _PATH_SHADOW;
 	if (!freopen(passwd, "r", stdin)) {
 		fprintf(stderr, "passwd: can't read %s\n", passwd);
 		goto bad;
@@ -189,10 +189,9 @@ copy(name, np, fp, pw)
 		 * go and get the "offset" value for this class and reset
 		 * the timer.
 		 */
-		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		fprintf(fp, "%s:%s:%d:%d:%s:%s:%s\n",
 		    pw->pw_name, np, pw->pw_uid, pw->pw_gid,
-		    pw->pw_class, 0L, pw->pw_expire, pw->pw_gecos,
-		    pw->pw_dir, pw->pw_shell);
+		    pw->pw_gecos, pw->pw_dir, pw->pw_shell);
 		done = 1;
 	}
 	return(1);

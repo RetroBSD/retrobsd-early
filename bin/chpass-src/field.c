@@ -131,46 +131,6 @@ p_gid(p, pw, ep)
 }
 
 /* ARGSUSED */
-p_class(p, pw, ep)
-	char *p;
-	struct passwd *pw;
-	struct entry *ep;
-{
-	if (!*p)
-		pw->pw_class = "";
-	else if (!(pw->pw_class = strdup(p))) {
-		(void)fprintf(stderr, "chpass: can't save entry.\n");
-		return(1);
-	}
-
-	return(0);
-}
-
-/* ARGSUSED */
-p_change(p, pw, ep)
-	char *p;
-	struct passwd *pw;
-	struct entry *ep;
-{
-	if (!atot(p, &pw->pw_change))
-		return(0);
-	(void)fprintf(stderr, "chpass: illegal date for change field.\n");
-	return(1);
-}
-
-/* ARGSUSED */
-p_expire(p, pw, ep)
-	char *p;
-	struct passwd *pw;
-	struct entry *ep;
-{
-	if (!atot(p, &pw->pw_expire))
-		return(0);
-	(void)fprintf(stderr, "chpass: illegal date for expire field.\n");
-	return(1);
-}
-
-/* ARGSUSED */
 p_gecos(p, pw, ep)
 	char *p;
 	struct passwd *pw;
