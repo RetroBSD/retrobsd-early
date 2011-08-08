@@ -67,7 +67,7 @@ off_t	lseek();
 ssize_t	read();
 unsigned int	sleep();
 char	*ttyname();
-ssize_t	write();
+ssize_t	write (int fd, const void *buf, size_t count);
 
 void	*brk (const void *addr);
 int	_brk (const void *addr);

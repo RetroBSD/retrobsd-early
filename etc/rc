@@ -3,7 +3,13 @@ HOME=/; export HOME
 PATH=/bin:/sbin; export PATH
 exec >/dev/console 2>&1
 
-hostname pic32
+if test "$1" != 'autoboot'; then
+    # On exit from single-user mode - halt the processor.
+    echo
+    reboot -l -h
+fi
+
+hostname 'pic32'
 
 #
 # First umount everything in case the system is going back into multiuser

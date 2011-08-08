@@ -45,18 +45,6 @@
 
 #include <sys/types.h>
 
-#ifdef	notyet
-typedef struct {
-	int quot;		/* quotient */
-	int rem;		/* remainder */
-} div_t;
-
-typedef struct {
-	long quot;		/* quotient */
-	long rem;		/* remainder */
-} ldiv_t;
-#endif
-
 #ifndef NULL
 #define	NULL	0
 #endif
@@ -77,7 +65,7 @@ void	exit (int);
 void	free (void *);
 char	*getenv();
 void	*malloc (size_t);
-char	*mktemp (char *template);
+char	*mktemp (char *);
 void	qsort();
 int	rand();
 void	*realloc();

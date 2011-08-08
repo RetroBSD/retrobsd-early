@@ -33,7 +33,6 @@ char	utmpf[]	= _PATH_UTMP;
 char	wtmpf[]	= _PATH_WTMP;
 char	ctty[]	= _PATH_CONSOLE;
 
-extern int execl (const char *path, const char *arg0, ...);
 void merge (int signum);
 
 struct utmp wtmp;
@@ -66,27 +65,6 @@ extern	int errno;
 struct	sigvec rvec = { reset, sigmask (SIGHUP), 0 };
 
 jmp_buf	idlebuf;
-
-#if 1
-#include <stdarg.h>
-
-void mylog (const char *fmt, ...)
-{
-	va_list ap;
-	char buf [200];
-	int out;
-
-	va_start (ap, fmt);
-	vsprintf (buf, fmt, ap);
-	va_end (ap);
-        out = open (ctty, O_RDWR, 0);
-        if (out >= 0) {
-                write (out, buf, strlen(buf));
-                write (out, "\n", 1);
-                close (out);
-        }
-}
-#endif
 
 /*
  * Catch a SIGSYS signal.
@@ -185,7 +163,6 @@ main(argc, argv)
 		exit(1);
 
 	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
-//mylog("init: starting");
 
 	signal(SIGSYS, badsys);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
@@ -364,7 +341,6 @@ runcom(oldhowto)
 	int status;
 	char *arg1, *arg2;
 
-//mylog("start %s", runc);
 	pid = fork();
 	if (pid == 0) {
 		f = open("/", O_RDONLY, 0);
@@ -422,11 +398,9 @@ multiple()
 
 	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
 	for (;;) {
-//mylog("waiting for child termination");
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
-//mylog("child pid %d terminated", pid);
 		omask = sigblock(sigmask(SIGHUP));
 		for (p=itab; p; p=p->next) {
 			/* must restart window system BEFORE emulator */
@@ -463,11 +437,8 @@ void merge(int signum)
 		p->xflag = 0;
 	setttyent();
 	while (t = getttyent()) {
-//mylog("ty_name %s, ty_getty = %s, ty_type = %s, ty_status = %#x, ty_comment = %s", t->ty_name, t->ty_getty, t->ty_type, t->ty_status, t->ty_comment);
-		if ((t->ty_status & TTY_ON) == 0) {
-//mylog("ty_status OFF");
+		if ((t->ty_status & TTY_ON) == 0)
 			continue;
-}
 		for (p=itab; p; p=p->next) {
 			if (SCMPN(p->line, t->ty_name))
 				continue;
@@ -488,7 +459,6 @@ void merge(int signum)
 		 */
 		p1 = (struct tab *)calloc(1, sizeof(*p1));
 		if (!p1) {
-//mylog("no space for '%s' !?!", t->ty_name);
 			syslog(LOG_ERR, "no space for '%s' !?!", t->ty_name);
 			goto contin1;
 		}
@@ -510,15 +480,12 @@ void merge(int signum)
 			p->xflag |= WCHANGE;
 			SCPYN(p->wcmd, t->ty_window);
 		}
-//mylog("new itab entry");
 	contin1:
 		;
 	}
 	endttyent();
 	p1 = (struct tab *)0;
-//mylog("done ttyent");
 	for (p=itab; p; p=p->next) {
-//mylog("p->comm = %s, p->line = %s", p->comn, p->line);
 		if ((p->xflag & FOUND) == 0) {
 			term(p);
 			wterm(p);

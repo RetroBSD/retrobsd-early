@@ -3,6 +3,8 @@ MACHINE		= mips
 GCCBIN		= /usr/local/mips461/bin
 CC		= $(GCCBIN)/mips-elf-gcc -EL -nostdinc -I$(TOPSRC)/include \
 		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
+CXX            	= $(GCCBIN)/mips-elf-g++ -EL -nostdinc -I$(TOPSRC)/include \
+		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
 AS		= $(CC) -x assembler-with-cpp
 LD		= $(GCCBIN)/mips-elf-ld
 AR		= $(GCCBIN)/mips-elf-ar
