@@ -197,7 +197,8 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             d->buf [d->count++] = data;
             if (d->count == 7) {
                 /* Send reply */
-                TRACE ("sdcard%d: send media size %u kbytes\n", d->unit, d->kbytes);
+                TRACE ("sdcard%d: send media size %u sectors\n",
+                    d->unit, d->kbytes * 2);
                 reply = 0;
                 d->limit = 16 + 3;
                 d->count = 1;
@@ -211,8 +212,8 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
                 d->buf[2+5] = 0;
                 d->buf[2+6] = 0;
                 d->buf[2+7] = 0;
-                d->buf[2+8] = (d->kbytes - 1) >> 8;
-                d->buf[2+9] = d->kbytes - 1;
+                d->buf[2+8] = (d->kbytes / 512 - 1) >> 8;
+                d->buf[2+9] = d->kbytes / 512 - 1;
                 d->buf[2+10] = 0;
                 d->buf[2+11] = 0;
                 d->buf[2+12] = 0;

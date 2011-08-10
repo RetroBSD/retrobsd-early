@@ -40,18 +40,20 @@
 #define NSD		2
 #define SECTSIZE	512
 #define SLOW		250     /* 250 kHz */
-#define FAST		20000   /* 20 MHz */
+#define FAST		14000   /* 13.33 MHz */
+
+int sd_type[NSD];               /* Card type */
 
 /*
  * Definitions for MMC/SDC commands.
  */
 #define CMD_GO_IDLE		0	/* CMD0 */
 #define CMD_SEND_OP_MMC		1	/* CMD1 (MMC) */
-#define CMD_SEND_IF		8
+#define CMD_SEND_IF_COND	8
 #define CMD_SEND_CSD		9
 #define CMD_SEND_CID		10
 #define CMD_STOP		12
-#define CMD_STATUS_SDC 		13	/* ACMD13 (SDC) */
+#define CMD_SEND_STATUS		13	/* CMD13 */
 #define CMD_SET_BLEN		16
 #define CMD_READ_SINGLE		17
 #define CMD_READ_MULTIPLE	18
@@ -162,6 +164,8 @@ card_cmd (cmd, addr)
          * For all other commands, CRC is ignored. */
         if (cmd == CMD_GO_IDLE)
                 spi_io (0x95);
+        else if (cmd == CMD_SEND_IF_COND)
+                spi_io (0x87);
         else
                 spi_io (0xFF);
 
@@ -183,9 +187,11 @@ card_init (unit)
 	int unit;
 {
 	int i, reply;
+        unsigned char response[4];
 
 	/* Unselect the card. */
 	spi_select (unit, 0);
+        sd_type[unit] = 0;
 
 	/* Send 80 clock cycles for start up. */
 	for (i=0; i<10; i++)
@@ -201,20 +207,67 @@ card_init (unit)
 		return 0;
 	}
 
+        /* Check SD version. */
+	spi_select (unit, 1);
+        reply = card_cmd (CMD_SEND_IF_COND, 0x1AA);
+        if (reply & 4) {
+                /* Illegal command: card type 1. */
+                spi_select (unit, 0);
+                sd_type[unit] = 1;
+//printf ("sd%d: card type 1, reply=%02x\n", unit, reply);
+        } else {
+                response[0] = spi_io (0xFF);
+                response[1] = spi_io (0xFF);
+                response[2] = spi_io (0xFF);
+                response[3] = spi_io (0xFF);
+                spi_select (unit, 0);
+                if (response[3] != 0xAA) {
+                        printf ("sd%d: cannot detect card type, response=%02x-%02x-%02x-%02x\n",
+                                unit, response[0], response[1], response[2], response[3]);
+                        return 0;
+                }
+                sd_type[unit] = 2;
+        }
+
 	/* Send repeatedly SEND_OP until Idle terminates. */
 	for (i=0; ; i++) {
 		spi_select (unit, 1);
 		card_cmd (CMD_APP, 0);
-		reply = card_cmd (CMD_SEND_OP_SDC, 0);
+		reply = card_cmd (CMD_SEND_OP_SDC,
+                        (sd_type[unit] == 2) ? 0x40000000 : 0);
 		spi_select (unit, 0);
 		if (reply == 0)
 			break;
 		if (i >= 10000) {
 			/* Init timed out. */
-//printf ("card_init: SEND_OP timed out, reply = %d\n", reply);
+                        printf ("card_init: SEND_OP timed out, reply = %d\n",
+                                reply);
 			return 0;
 		}
 	}
+
+        /* If SD2 read OCR register to check for SDHC card. */
+        if (sd_type[unit] == 2) {
+		spi_select (unit, 1);
+                reply = card_cmd (CMD_READ_OCR, 0);
+                if (reply != 0) {
+                        spi_select (unit, 0);
+                        printf ("sd%d: READ_OCR failed, reply=%02x\n",
+                                unit, reply);
+                        return 0;
+                }
+                response[0] = spi_io (0xFF);
+                response[1] = spi_io (0xFF);
+                response[2] = spi_io (0xFF);
+                response[3] = spi_io (0xFF);
+                spi_select (unit, 0);
+//printf ("sd%d: READ_OCR response=%02x-%02x-%02x-%02x\n", unit, response[0], response[1], response[2], response[3]);
+                if ((response[0] & 0xC0) == 0xC0) {
+                        sd_type[unit] = 3;
+//printf ("sd%d: card type SDHC\n", unit);
+                }
+//else printf ("sd%d: card type 2, reply=%02x\n", unit, reply);
+        }
 	return 1;
 }
 
@@ -223,9 +276,9 @@ card_init (unit)
  * Return nonzero if successful.
  */
 int
-card_size (unit, nbytes)
+card_size (unit, nsectors)
 	int unit;
-	unsigned *nbytes;
+	unsigned *nsectors;
 {
 	unsigned char csd [16];
 	unsigned csize, n;
@@ -264,12 +317,12 @@ card_size (unit, nbytes)
 	if ((csd[0] >> 6) == 1) {
 		/* SDC ver 2.00 */
 		csize = csd[9] + (csd[8] << 8) + 1;
-		*nbytes = csize << 10;
+		*nsectors = csize << 10;
 	} else {
 		/* SDC ver 1.XX or MMC. */
 		n = (csd[5] & 15) + ((csd[10] & 128) >> 7) + ((csd[9] & 3) << 1) + 2;
 		csize = (csd[8] >> 6) + (csd[7] << 2) + ((csd[6] & 3) << 10) + 1;
-		*nbytes = csize << (n - 9);
+		*nsectors = csize << (n - 9);
 	}
 	return 1;
 }
@@ -286,8 +339,8 @@ card_read (unit, offset, data, bcount)
 {
 	int reply, i;
 #if 0
-	printf ("sd%d: read block %u, length %u bytes, addr %p\n",
-		unit, offset/DEV_BSIZE, bcount, data);
+	printf ("sd%d: read offset %u, length %u bytes, addr %p\n",
+		unit, offset, bcount, data);
 #endif
 again:
 	/* Send READ command. */
@@ -295,7 +348,8 @@ again:
 	reply = card_cmd (CMD_READ_SINGLE, offset);
 	if (reply != 0) {
 		/* Command rejected. */
-printf ("card_read: bad READ_SINGLE reply = %d, offset = %08x\n", reply, offset);
+                printf ("card_read: bad READ_SINGLE reply = %d, offset = %08x\n",
+                        reply, offset);
 		spi_select (unit, 0);
 		return 0;
 	}
@@ -304,7 +358,8 @@ printf ("card_read: bad READ_SINGLE reply = %d, offset = %08x\n", reply, offset)
 	for (i=0; ; i++) {
 		if (i >= 25000) {
 			/* Command timed out. */
-printf ("card_read: READ_SINGLE timed out, reply = %d\n", reply);
+                        printf ("card_read: READ_SINGLE timed out, reply = %d\n",
+                                reply);
 			spi_select (unit, 0);
 			return 0;
 		}
@@ -330,7 +385,7 @@ printf ("card_read: READ_SINGLE timed out, reply = %d\n", reply);
 
         if (bcount > SECTSIZE) {
                 bcount -= SECTSIZE;
-                offset += SECTSIZE;
+                offset += (sd_type[unit] == 3) ? 1 : SECTSIZE;
                 goto again;
         }
 	return 1;
@@ -348,8 +403,8 @@ card_write (unit, offset, data, bcount)
 {
 	unsigned reply, i;
 #if 0
-	printf ("sd%d: write block %u, length %u bytes, addr %p\n",
-		unit, offset/DEV_BSIZE, bcount, data);
+	printf ("sd%d: write offset %u, length %u bytes, addr %p\n",
+		unit, offset, bcount, data);
 #endif
 again:
 	/* Send WRITE command. */
@@ -395,10 +450,27 @@ again:
 
 	/* Disable the card. */
 	spi_select (unit, 0);
-
+#if 0
+	/* Send GET_STATUS command. */
+	spi_select (unit, 1);
+	reply = card_cmd (CMD_SEND_STATUS, offset);
+	if (reply != 0) {
+		/* Write failed. */
+printf ("card_write: SEND_STATUS failed, reply = %#x\n", reply);
+		spi_select (unit, 0);
+		return 0;
+	}
+        reply = spi_io (0xFF);
+	spi_select (unit, 0);
+        if (reply != 0) {
+		/* Write failed. */
+printf ("card_write: SEND_STATUS returned %#x\n", reply);
+		return 0;
+        }
+#endif
         if (bcount > SECTSIZE) {
                 bcount -= SECTSIZE;
-                offset += SECTSIZE;
+                offset += (sd_type[unit] == 3) ? 1 : SECTSIZE;
                 goto again;
         }
 	return 1;
@@ -436,7 +508,15 @@ sdopen (dev, flag, mode)
                 printf ("sd%d: no SD/MMC card detected\n", unit);
 		return ENODEV;
 	}
-
+#if 1
+	unsigned nsectors;
+	if (card_size (unit, &nsectors)) {
+                printf ("sd%d: card type %s, size %u kbytes\n", unit,
+                        sd_type[unit]==3 ? "SDHC" :
+                        sd_type[unit]==2 ? "II" : "I",
+                        nsectors / (DEV_BSIZE / SECTSIZE));
+	}
+#endif
 	/* Fast speed: up to 25 Mbit/sec allowed. */
 	reg->stat = 0;
 	reg->brg = (KHZ / FAST + 1) / 2 - 1;
@@ -453,14 +533,14 @@ sdsize (dev)
 	dev_t	dev;
 {
 	register int unit = minor (dev);
-	unsigned nbytes;
+	unsigned nsectors;
 
-	if (! card_size (unit, &nbytes)) {
+	if (! card_size (unit, &nsectors)) {
 		/* Cannot get disk size. */
 		return 0;
 	}
-	//printf ("sd%d: %u kbytes\n", unit, nbytes / 1024);
-	return nbytes / DEV_BSIZE;
+	printf ("sd%d: %u kbytes\n", unit, nsectors / (DEV_BSIZE / SECTSIZE));
+	return nsectors / (DEV_BSIZE / SECTSIZE);
 }
 
 void
@@ -468,6 +548,7 @@ sdstrategy (bp)
 	register struct buf *bp;
 {
 	int s, unit, retry;
+	unsigned offset;
 
 	unit = minor (bp->b_dev);
 #if 0
@@ -489,27 +570,34 @@ sdstrategy (bp)
                         bp->b_flags |= B_ERROR;
                         break;
 		}
+#if DEV_BSIZE == 1024
+		offset = bp->b_blkno << 1;
+#else
+#error "DEV_BSIZE not supported"
+#endif
+                if (sd_type[unit] != 3)
+                        offset <<= 9;
 		if (bp->b_flags & B_READ) {
-			if (card_read (unit, bp->b_blkno*DEV_BSIZE,
-                            bp->b_addr, bp->b_bcount))
+			if (card_read (unit, offset, bp->b_addr, bp->b_bcount))
                                 break;
 		} else {
-			if (card_write (unit, bp->b_blkno*DEV_BSIZE,
-                            bp->b_addr, bp->b_bcount))
+			if (card_write (unit, offset, bp->b_addr, bp->b_bcount))
                                 break;
 		}
                 printf ("sd%d: hard error, %s block %u\n", unit,
                         (bp->b_flags & B_READ) ? "reading" : "writing",
                         bp->b_blkno);
 	}
-	biodone (bp);
-        splx (s);
-        led_control (LED_DISK, 0);
 #if 0
-	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x\n",
+	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x-%02x-%02x\n",
 		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],
                 (unsigned char) bp->b_addr[2], (unsigned char) bp->b_addr[3],
+                (unsigned char) bp->b_addr[bp->b_bcount-4],
+                (unsigned char) bp->b_addr[bp->b_bcount-3],
                 (unsigned char) bp->b_addr[bp->b_bcount-2],
                 (unsigned char) bp->b_addr[bp->b_bcount-1]);
 #endif
+	biodone (bp);
+        led_control (LED_DISK, 0);
+        splx (s);
 }

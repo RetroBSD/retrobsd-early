@@ -10,6 +10,28 @@
 #include "proc.h"
 #include "vm.h"
 
+//#define TRACE_EXCEPTIONS
+
+#ifdef TRACE_EXCEPTIONS
+static void
+print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
+{
+        void print_arg (val) {
+                if (val & 0xff000000)
+                        printf ("%08x", val);
+                else
+                        printf ("%u", val);
+        }
+
+        print_arg (arg0);
+        if (narg > 1) { printf (", "); print_arg (arg1); }
+        if (narg > 2) { printf (", "); print_arg (arg2); }
+        if (narg > 3) { printf (", "); print_arg (arg3); }
+        if (narg > 4) { printf (", "); print_arg (arg4); }
+        if (narg > 5) { printf (", "); print_arg (arg5); }
+}
+#endif
+
 /*
  * Translate interrupt vector number to IRQ mask.
  */
@@ -298,6 +320,13 @@ printf ("\nkernel stack = %p", frame);
 					u.u_arg[5] = *(unsigned*) addr;
 			}
 		}
+#ifdef TRACE_EXCEPTIONS
+                printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
+                if (callp->sy_narg > 0)
+                        print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1],
+                        u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
+                printf (") at %08x\n", opc);
+#endif
 		u.u_rval = 0;
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
@@ -305,12 +334,18 @@ printf ("\nkernel stack = %p", frame);
 		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    syscall returned %u\n", u.u_rval);
+#endif
 			frame [FRAME_R2] = u.u_rval;	/* $v0 */
 			break;
 		case ERESTART:
 			frame [FRAME_PC] = opc;		/* return to syscall */
 			break;
 		default:
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    syscall failed, errno %u\n", u.u_error);
+#endif
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
 			frame [FRAME_R2] = -1;		/* $v0 */
 		}
