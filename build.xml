@@ -1,0 +1,25 @@
+<project name="retrobsd"  basedir=".">
+    <description>
+       build  retrobsd kernel and  tools
+    </description>
+
+
+    <target name="make" description="make">
+        <exec executable="make">                 
+        </exec>
+    </target>
+    
+ 	<target name="make clean" description="make clean">
+        <exec executable="make">
+            <arg value="clean"/>          
+        </exec>
+    </target>
+    
+    <!-- must be fixed it will not as root
+     <target name="make load" description="make load">
+        <exec executable="sudo make">
+            <arg value="load"/>          
+        </exec>
+    </target>-->
+
+</project>
