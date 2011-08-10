@@ -1,6 +1,12 @@
 /*
  * SecureDigital flash drive on SPI port.
  *
+ * These cards are known to work:
+ * 1) NCP SD 256Mb       - type 1, 249856 kbytes,  244 Mbytes
+ * 2) Patriot SD 2Gb     - type 2, 1902592 kbytes, 1858 Mbytes
+ * 3) Wintec microSD 2Gb - type 2, 1969152 kbytes, 1923 Mbytes
+ * 4) Transcend SDHC 4Gb - type 3, 3905536 kbytes, 3814 Mbytes
+ *
  * Copyright (C) 2010 Serge Vakulenko, <serge@vak.ru>
  *
  * Permission to use, copy, modify, and distribute this software
@@ -483,6 +489,7 @@ sdopen (dev, flag, mode)
 {
 	register int unit = minor (dev);
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+	unsigned nsectors;
 
 	if (unit >= NSD)
 		return ENXIO;
@@ -496,27 +503,24 @@ sdopen (dev, flag, mode)
 #ifdef SD_CS1_PORT
 		TRIS_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
 #endif
-	}
-        /* Slow speed: max 40 kbit/sec. */
-	reg->stat = 0;
-        reg->brg = (KHZ / SLOW + 1) / 2 - 1;
-	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
-                PIC32_SPICON_ON;
+                /* Slow speed: max 40 kbit/sec. */
+                reg->stat = 0;
+                reg->brg = (KHZ / SLOW + 1) / 2 - 1;
+                reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
+                        PIC32_SPICON_ON;
 
-	if (! card_init (unit)) {
-		/* Initialization failed. */
-                printf ("sd%d: no SD/MMC card detected\n", unit);
-		return ENODEV;
+                if (! card_init (unit)) {
+                        /* Initialization failed. */
+                        printf ("sd%d: no SD/MMC card detected\n", unit);
+                        return ENODEV;
+                }
+                if (card_size (unit, &nsectors)) {
+                        printf ("sd%d: card type %s, size %u kbytes\n", unit,
+                                sd_type[unit]==3 ? "SDHC" :
+                                sd_type[unit]==2 ? "II" : "I",
+                                nsectors / (DEV_BSIZE / SECTSIZE));
+                }
 	}
-#if 1
-	unsigned nsectors;
-	if (card_size (unit, &nsectors)) {
-                printf ("sd%d: card type %s, size %u kbytes\n", unit,
-                        sd_type[unit]==3 ? "SDHC" :
-                        sd_type[unit]==2 ? "II" : "I",
-                        nsectors / (DEV_BSIZE / SECTSIZE));
-	}
-#endif
 	/* Fast speed: up to 25 Mbit/sec allowed. */
 	reg->stat = 0;
 	reg->brg = (KHZ / FAST + 1) / 2 - 1;

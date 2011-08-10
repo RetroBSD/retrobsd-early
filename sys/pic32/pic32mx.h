@@ -837,6 +837,25 @@
 #define PIC32_IRQ_FCE       56  /* Flash Control Event */
 #define PIC32_IRQ_USB       57  /* USB */
 
+#define PIC32_IRQ_CAN1      58  /* Control Area Network 1 */
+#define PIC32_IRQ_CAN2      59  /* Control Area Network 2 */
+#define PIC32_IRQ_ETH       60  /* Ethernet Interrupt */
+#define PIC32_IRQ_IC1E      61  /* Input Capture 1 Error */
+#define PIC32_IRQ_IC2E      62  /* Input Capture 2 Error */
+#define PIC32_IRQ_IC3E      63  /* Input Capture 3 Error */
+#define PIC32_IRQ_IC4E      64  /* Input Capture 4 Error */
+#define PIC32_IRQ_IC5E      65  /* Input Capture 5 Error */
+#define PIC32_IRQ_PMPE      66  /* Parallel Master Port Error */
+#define PIC32_IRQ_U4E       67  /* UART4 Error */
+#define PIC32_IRQ_U4RX      68  /* UART4 Receiver */
+#define PIC32_IRQ_U4TX      69  /* UART4 Transmitter */
+#define PIC32_IRQ_U6E       70  /* UART6 Error */
+#define PIC32_IRQ_U6RX      71  /* UART6 Receiver */
+#define PIC32_IRQ_U6TX      72  /* UART6 Transmitter */
+#define PIC32_IRQ_U5E       73  /* UART5 Error */
+#define PIC32_IRQ_U5RX      74  /* UART5 Receiver */
+#define PIC32_IRQ_U5TX      75  /* UART5 Transmitter */
+
 /*
  * Interrupt vector numbers for PIC32MX3xx/4xx.
  */
@@ -882,5 +901,9 @@
 #define PIC32_VECT_DMA3     39  /* DMA Channel 3 */
 #define PIC32_VECT_FCE      44  /* Flash Control Event */
 #define PIC32_VECT_USB      45  /* USB */
+
+#define PIC32_VECT_U4       49  /* UART4 */
+#define PIC32_VECT_U6       50  /* UART6 */
+#define PIC32_VECT_U5       51  /* UART5 */
 
 #endif /* _IO_PIC32MX_H */

@@ -20,19 +20,16 @@ vpath %.S $(M):$(S)
 DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
 
 # Console on UART1
-DEFS            += -DCONSOLE_PORT=U1MODE
-DEFS            += -DCONSOLE_ER_IRQ=26
-DEFS            += -DCONSOLE_RX_IRQ=27
-DEFS            += -DCONSOLE_TX_IRQ=28
+DEFS            += -DCONSOLE_UART1
 
-# SD/MMC card driver at SPI1
-# /CS0 at A9
-# /CS1 at A10
+# SD/MMC card driver on SPI1
+# /CS0 at pin A9
+# /CS1 at pin A10, optional
 DEFS            += -DSD_PORT=SPI1CON
 DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
 #DEFS           += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
 
-# LEDs
+# LEDs at pins E0, E1, E2, E3
 DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0
 DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2

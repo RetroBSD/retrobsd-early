@@ -15,6 +15,47 @@
 
 #define NKL     1                       /* Only one console device */
 
+#ifdef CONSOLE_UART1
+#   define CONSOLE_PORT     U1MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U1E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U1RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U1TX
+
+#elif defined (CONSOLE_UART2)
+#   define CONSOLE_PORT     U2MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U2E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U2RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U2TX
+
+
+#elif defined (CONSOLE_UART3)
+#   define CONSOLE_PORT     U3MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_SPI2E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_SPI2RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_SPI2TX
+
+
+#elif defined (CONSOLE_UART4)
+#   define CONSOLE_PORT     U4MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U4E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U4RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U4TX
+
+#elif defined (CONSOLE_UART5)
+#   define CONSOLE_PORT     U5MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U5E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U5RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U5TX
+
+#elif defined (CONSOLE_UART6)
+#   define CONSOLE_PORT U6MODE
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U6E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U6RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U6TX
+#else
+#   error "No console port"
+#endif
+
 /*
  * PIC32 UART registers.
  */

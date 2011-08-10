@@ -142,8 +142,8 @@ startup()
 	PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
-	/* Enable interrupts.  */
-	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_IE);
+	/* Do not enable interrupts.  */
+	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_EXL | ST_IE);
 
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);

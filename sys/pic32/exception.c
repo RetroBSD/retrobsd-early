@@ -247,7 +247,7 @@ printf ("\nkernel stack = %p", frame);
 
                 /* Handle the interrupt. */
                 switch (irq) {
-                case 0:                 /* Core Timer */
+                case PIC32_VECT_CT:     /* Core Timer */
                         /* Increment COMPARE register. */
                         c = mips_read_c0_register (C0_COMPARE);
                         do {
@@ -258,8 +258,24 @@ printf ("\nkernel stack = %p", frame);
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         hardclock ((caddr_t) frame [FRAME_PC], status);
                         break;
-                case 24:                /* UART1 */
-                        //printf ("*** uart1\n");
+#if CONSOLE_UART1
+                case PIC32_VECT_U1:     /* UART1 */
+#endif
+#if CONSOLE_UART2
+                case PIC32_VECT_U2:     /* UART2 */
+#endif
+#if CONSOLE_UART3
+                case PIC32_VECT_SPI2:   /* UART3 combined with SPI2 */
+#endif
+#if CONSOLE_UART4
+                case PIC32_VECT_U4:     /* UART4 */
+#endif
+#if CONSOLE_UART5
+                case PIC32_VECT_U5:     /* UART5 */
+#endif
+#if CONSOLE_UART6
+                case PIC32_VECT_U6:     /* UART6 */
+#endif
                         cnintr (0);
                         break;
                 default:
