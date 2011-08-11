@@ -432,10 +432,11 @@ badarg:
 	 */
 	ucp = USER_DATA_END - nc - NBPW;
 	ap = ucp - na*NBPW - 2*NBPW;
-	u.u_frame [FRAME_SP] = ap;
+	u.u_frame [FRAME_SP] = ap - 16;
         u.u_frame [FRAME_R4] = na - ne;			/* $a0 := argc */
         u.u_frame [FRAME_R5] = ap;			/* $a1 := argv */
         u.u_frame [FRAME_R6] = ap + (na-ne+1)*NBPW;	/* $a2 := env */
+	*(int*) (USER_DATA_END - NBPW) = ap;            /* for /bin/ps */
 	nc = 0;
 	cc = 0;
 	for (;;) {
@@ -470,7 +471,6 @@ badarg:
 		ap += NBPW;
 	}
 	*(int*) ap = 0;
-	*(int*) (USER_DATA_END - NBPW) = 0;
 	if (bp) {
 		bp->b_flags |= B_AGE;
 		brelse (bp);

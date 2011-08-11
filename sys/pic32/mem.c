@@ -21,6 +21,7 @@ mmrw (dev, uio, flag)
 	register struct iovec *iov;
 	int error = 0;
 	register u_int c;
+	caddr_t addr;
 
 //printf ("mmrw (dev=%u, len=%u, flag=%d)\n", dev, uio->uio_iov->iov_len, flag);
 	while (uio->uio_resid && error == 0) {
@@ -35,7 +36,14 @@ mmrw (dev, uio, flag)
 		switch (minor(dev)) {
 		case 0:		/* minor device 0 is physical memory (/dev/mem) */
 		case 1:		/* minor device 1 is kernel memory (/dev/kmem) */
-			error = uiomove((caddr_t)uio->uio_offset, iov->iov_len, uio);
+		        addr = (caddr_t) uio->uio_offset;
+                        if ((badkaddr (addr) && baduaddr (addr)) ||
+                            (badkaddr (addr + iov->iov_len - 1) &&
+                            baduaddr (addr + iov->iov_len - 1))) {
+                                error = EFAULT;
+                                break;
+                        }
+			error = uiomove(addr, iov->iov_len, uio);
 			break;
 		case 2:		/* minor device 2 is EOF/RATHOLE (/dev/null) */
 			if (uio->uio_rw == UIO_READ)

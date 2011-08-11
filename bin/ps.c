@@ -498,29 +498,19 @@ getptr(adr)
 char	**adr;
 {
 	char	*ptr = 0;
-	register char	*p, *pa;
-	register int	i;
 
-	pa = (char *)adr;
-	p  = (char *)&ptr;
-	for (i = 0; i < sizeof (ptr); i++)
-		*p++ = getbyte(pa++);
+	if (lseek(file, (off_t) adr, 0) == (off_t) -1 ||
+            read (file, &ptr, sizeof(ptr)) != sizeof(ptr))
+		return(0);
 	return(ptr);
 }
 
 getbyte(adr)
 register char	*adr;
 {
-	register struct	map *amap = &datmap;
 	char	b;
-	off_t	saddr;
 
-	if (!within(adr, amap->b1, amap->e1))
-		if (within(adr, amap->b2, amap->e2))
-			saddr = (unsigned) adr + amap->f2 - amap->b2;
-		else	return(0);
-	else	saddr	= (unsigned) adr + amap->f1 - amap->b1;
-	if (lseek(file, saddr, 0) == (off_t) -1 || read (file, &b, 1) < 1)
+	if (lseek(file, (off_t) adr, 0) == (off_t) -1 || read (file, &b, 1) < 1)
 		return(0);
 	return((unsigned) b);
 }
@@ -700,11 +690,13 @@ register struct psout	*a;
 	char	c, **ap;
 	int	cc, nbad, abuf [ARGLIST];
 
+        if (mproc->p_pid == 0)
+                return(1);
 	a->o_args[0] = 0;	/* in case of early return */
-	addr += mproc->p_ssize - ARGLIST*sizeof(int);
+	addr += mproc->p_ssize;
 
 	/* look for sh special */
-	lseek(file, addr + ARGLIST*sizeof(int) - sizeof (char **), 0);
+	lseek(file, addr - sizeof (char **), 0);
 	if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
 		return (1);
 	if (ap) {

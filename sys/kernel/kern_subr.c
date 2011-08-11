@@ -32,14 +32,6 @@ uiomove (cp, n, uio)
 		}
 		if (cnt > n)
 			cnt = n;
-                if ((badkaddr (iov->iov_base) ||
-                    badkaddr (iov->iov_base + cnt - 1)) &&
-                    (baduaddr (iov->iov_base) ||
-                    baduaddr (iov->iov_base + cnt - 1))) {
-printf ("uiomove: bad address %#08x, len %#x\n", iov->iov_base, cnt);
-                        error = EFAULT;
-                        break;
-                }
 		if (uio->uio_rw == UIO_READ)
 			bcopy ((caddr_t) cp, iov->iov_base, cnt);
 		else
