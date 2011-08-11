@@ -138,6 +138,7 @@ main()
 	binit();
 	nchinit();
 	clkstart();
+        spl0();
 
 	/* Mount a root filesystem. */
 	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
@@ -172,18 +173,22 @@ main()
 	/*
 	 * Make init process.
 	 */
-	if (newproc (0)) {
-                p->p_dsize = icodeend - icode;
-                p->p_daddr = USER_DATA_START;
-                p->p_ssize = 1024;              /* one kbyte of stack */
-                p->p_saddr = USER_DATA_END - 1024;
-		bcopy ((caddr_t) icode, (caddr_t) USER_DATA_START, icodeend - icode);
-		/*
-		 * return goes to location 0 of user init code
-		 * just copied out.
-		 */
-		return 0;
-	}
-	sched();
-	return 0;
+	if (newproc (0) == 0) {
+                /* Parent process with pid 0: swapper.
+                 * No return from sched. */
+                sched();
+        }
+        /* Child process with pid 1: init. */
+        splhigh();
+	p = u.u_procp;
+        p->p_dsize = icodeend - icode;
+        p->p_daddr = USER_DATA_START;
+        p->p_ssize = 1024;              /* one kbyte of stack */
+        p->p_saddr = USER_DATA_END - 1024;
+        bcopy ((caddr_t) icode, (caddr_t) USER_DATA_START, icodeend - icode);
+        /*
+         * return goes to location 0 of user init code
+         * just copied out.
+         */
+        return 0;
 }

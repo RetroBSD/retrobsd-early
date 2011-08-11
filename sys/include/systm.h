@@ -102,6 +102,7 @@ void cninit (void);
 void cnputc (char c);
 void tablefull (char *tab);		/* warn that a system table is full */
 int baduaddr (caddr_t addr);		/* detect bad user address */
+int badkaddr (caddr_t addr);		/* detect bad kernel address */
 
 int strncmp (const char *s1, const char *s2, size_t n);
 void bzero (void *s, size_t nbytes);

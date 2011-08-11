@@ -21,7 +21,7 @@ int
 newproc (isvfork)
 	int isvfork;
 {
-	register struct proc *rpp, *rip;
+	register struct proc *child, *parent;
 	register int n;
 	static int pidchecked = 0;
 	struct file *fp;
@@ -47,66 +47,66 @@ retry:
 		 * is in use.  Remember the lowest pid that's greater
 		 * than mpid, so we can avoid checking for a while.
 		 */
-		rpp = allproc;
+		child = allproc;
 again:
-		for (; rpp != NULL; rpp = rpp->p_nxt) {
-			if (rpp->p_pid == mpid || rpp->p_pgrp == mpid) {
+		for (; child != NULL; child = child->p_nxt) {
+			if (child->p_pid == mpid || child->p_pgrp == mpid) {
 				mpid++;
 				if (mpid >= pidchecked)
 					goto retry;
 			}
-			if (rpp->p_pid > mpid && pidchecked > rpp->p_pid)
-				pidchecked = rpp->p_pid;
-			if (rpp->p_pgrp > mpid && pidchecked > rpp->p_pgrp)
-				pidchecked = rpp->p_pgrp;
+			if (child->p_pid > mpid && pidchecked > child->p_pid)
+				pidchecked = child->p_pid;
+			if (child->p_pgrp > mpid && pidchecked > child->p_pgrp)
+				pidchecked = child->p_pgrp;
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			rpp = zombproc;
+			child = zombproc;
 			goto again;
 		}
 	}
-	rpp = freeproc;
-	if (rpp == NULL)
+	child = freeproc;
+	if (child == NULL)
 		panic("no procs");
 
-	freeproc = rpp->p_nxt;			/* off freeproc */
+	freeproc = child->p_nxt;			/* off freeproc */
 
 	/*
 	 * Make a proc table entry for the new process.
 	 */
-	rip = u.u_procp;
-	rpp->p_stat = SIDL;
-	rpp->p_realtimer.it_value = 0;
-	rpp->p_flag = SLOAD;
-	rpp->p_uid = rip->p_uid;
-	rpp->p_pgrp = rip->p_pgrp;
-	rpp->p_nice = rip->p_nice;
-	rpp->p_pid = mpid;
-	rpp->p_ppid = rip->p_pid;
-	rpp->p_pptr = rip;
-	rpp->p_time = 0;
-	rpp->p_cpu = 0;
-	rpp->p_sigmask = rip->p_sigmask;
-	rpp->p_sigcatch = rip->p_sigcatch;
-	rpp->p_sigignore = rip->p_sigignore;
+	parent = u.u_procp;
+	child->p_stat = SIDL;
+	child->p_realtimer.it_value = 0;
+	child->p_flag = SLOAD;
+	child->p_uid = parent->p_uid;
+	child->p_pgrp = parent->p_pgrp;
+	child->p_nice = parent->p_nice;
+	child->p_pid = mpid;
+	child->p_ppid = parent->p_pid;
+	child->p_pptr = parent;
+	child->p_time = 0;
+	child->p_cpu = 0;
+	child->p_sigmask = parent->p_sigmask;
+	child->p_sigcatch = parent->p_sigcatch;
+	child->p_sigignore = parent->p_sigignore;
 	/* take along any pending signals like stops? */
 #ifdef UCB_METER
 	if (isvfork) {
 		forkstat.cntvfork++;
-		forkstat.sizvfork += rip->p_dsize + rip->p_ssize;
+		forkstat.sizvfork += parent->p_dsize + parent->p_ssize;
 	} else {
 		forkstat.cntfork++;
-		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
+		forkstat.sizfork += parent->p_dsize + parent->p_ssize;
 	}
 #endif
-	rpp->p_wchan = 0;
-	rpp->p_slptime = 0;
+	child->p_wchan = 0;
+	child->p_slptime = 0;
 	{
-	struct proc **hash = &pidhash [PIDHASH (rpp->p_pid)];
+	struct proc **hash = &pidhash [PIDHASH (child->p_pid)];
 
-	rpp->p_hash = *hash;
-	*hash = rpp;
+	child->p_hash = *hash;
+	*hash = child;
 	}
 	/*
 	 * some shuffling here -- in most UNIX kernels, the allproc assign
@@ -114,10 +114,10 @@ again:
 	 * wait so that if the clock interrupts us and vmtotal walks allproc
 	 * the text pointer isn't garbage.
 	 */
-	rpp->p_nxt = allproc;			/* onto allproc */
-	rpp->p_nxt->p_prev = &rpp->p_nxt;	/*   (allproc is never NULL) */
-	rpp->p_prev = &allproc;
-	allproc = rpp;
+	child->p_nxt = allproc;			/* onto allproc */
+	child->p_nxt->p_prev = &child->p_nxt;	/*   (allproc is never NULL) */
+	child->p_prev = &allproc;
+	allproc = child;
 
 	/*
 	 * Increase reference counts on shared objects.
@@ -140,27 +140,27 @@ again:
 		return(1);
 	}
 
-	rpp->p_dsize = rip->p_dsize;
-	rpp->p_ssize = rip->p_ssize;
-	rpp->p_daddr = rip->p_daddr;
-	rpp->p_saddr = rip->p_saddr;
+	child->p_dsize = parent->p_dsize;
+	child->p_ssize = parent->p_ssize;
+	child->p_daddr = parent->p_daddr;
+	child->p_saddr = parent->p_saddr;
 
 	/*
 	 * Partially simulate the environment of the new process so that
 	 * when it is actually created (by copying) it will look right.
 	 */
-	u.u_procp = rpp;
+	u.u_procp = child;
 
 	/*
 	 * Swap out the current process to generate the copy.
 	 */
-	rip->p_stat = SIDL;
-	rpp->p_addr = rip->p_addr;
-	rpp->p_stat = SRUN;
-	swapout (rpp, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
-	rpp->p_flag |= SSWAP;
-	rip->p_stat = SRUN;
-	u.u_procp = rip;
+	parent->p_stat = SIDL;
+	child->p_addr = parent->p_addr;
+	child->p_stat = SRUN;
+	swapout (child, X_DONTFREE, X_OLDSIZE, X_OLDSIZE);
+	child->p_flag |= SSWAP;
+	parent->p_stat = SRUN;
+	u.u_procp = parent;
 
 	if (isvfork) {
 		/*
@@ -168,23 +168,23 @@ again:
 		 * RetroBSD: to make this work, significant
 		 * changes in scheduler are required.
 		 */
-		rip->p_dsize = 0;
-		rip->p_ssize = 0;
-		rpp->p_flag |= SVFORK;
-		rip->p_flag |= SVFPRNT;
-		while (rpp->p_flag & SVFORK)
-			sleep ((caddr_t)rpp, PSWP+1);
-		if ((rpp->p_flag & SLOAD) == 0)
+		parent->p_dsize = 0;
+		parent->p_ssize = 0;
+		child->p_flag |= SVFORK;
+		parent->p_flag |= SVFPRNT;
+		while (child->p_flag & SVFORK)
+			sleep ((caddr_t)child, PSWP+1);
+		if ((child->p_flag & SLOAD) == 0)
 			panic ("newproc vfork");
-		u.u_dsize = rip->p_dsize = rpp->p_dsize;
-		rip->p_daddr = rpp->p_daddr;
-		rpp->p_dsize = 0;
-		u.u_ssize = rip->p_ssize = rpp->p_ssize;
-		rip->p_saddr = rpp->p_saddr;
-		rpp->p_ssize = 0;
-		rpp->p_flag |= SVFDONE;
-		wakeup ((caddr_t) rip);
-		rip->p_flag &= ~SVFPRNT;
+		u.u_dsize = parent->p_dsize = child->p_dsize;
+		parent->p_daddr = child->p_daddr;
+		child->p_dsize = 0;
+		u.u_ssize = parent->p_ssize = child->p_ssize;
+		parent->p_saddr = child->p_saddr;
+		child->p_ssize = 0;
+		child->p_flag |= SVFDONE;
+		wakeup ((caddr_t) parent);
+		parent->p_flag &= ~SVFPRNT;
 	}
 	return(0);
 }

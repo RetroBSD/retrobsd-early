@@ -96,9 +96,6 @@ startup()
 	/* Clear CAUSE register: use special interrupt vector 0x200. */
 	mips_write_c0_register (C0_CAUSE, CA_IV);
 
-	/* Entry to user code. */
-	mips_write_c0_register (C0_EPC, USER_DATA_START);
-
 	/*
 	 * Setup UART registers.
 	 * Compute the divisor for 115.2 kbaud.
@@ -142,8 +139,8 @@ startup()
 	PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
-	/* Do not enable interrupts.  */
-	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_EXL | ST_IE);
+	/* Kernel mode, interrupts disabled.  */
+	mips_write_c0_register (C0_STATUS, ST_CU0);
 
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
@@ -357,6 +354,20 @@ baduaddr (addr)
 		return 0;
 	if (addr >= (caddr_t) USER_DATA_START &&
 	    addr < (caddr_t) USER_DATA_END)
+		return 0;
+	return 1;
+}
+
+/*
+ * Return 0 if a kernel address is valid.
+ * There is only one memory region, allowed for kernel: RAM.
+ */
+int
+badkaddr (addr)
+	register caddr_t addr;
+{
+	if (addr >= (caddr_t) KERNEL_DATA_START &&
+	    addr < (caddr_t) KERNEL_DATA_END)
 		return 0;
 	return 1;
 }

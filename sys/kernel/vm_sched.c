@@ -136,6 +136,7 @@ sched()
 			(void) spl0();
 			swapout (p_out, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 		}
+		(void) spl0();
 		swapin (p_in);
 	}
 }

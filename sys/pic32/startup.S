@@ -85,8 +85,11 @@ _reset_vector_:	.globl	_reset_vector_
 		jalr	$a0				# Jump to main()
 		lui	$gp, 0x8000			# Set global pointer (delay slot)
 
+                la      $k0, UBASE
+		mtc0	$k0, $C0_EPC                    # Entry to user code.
+
 		mfc0	$k0, $C0_STATUS
-		ori	$k0, $k0, ST_UM | ST_EXL	# Set user mode
+		ori	$k0, $k0, ST_UM | ST_EXL | ST_IE # Set user mode and enable interrupts
 		mtc0	$k0, $C0_STATUS			# Put SR back
 		ehb
 		eret					# PC <= EPC; EXL <= 0
