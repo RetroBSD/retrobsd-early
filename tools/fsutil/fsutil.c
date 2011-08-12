@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <getopt.h>
 #include "bsdfs.h"
 
@@ -180,11 +181,13 @@ void print_inode_blocks (fs_inode_t *inode, FILE *out)
 
 void extract_inode (fs_inode_t *inode, char *path)
 {
-	int fd, n;
+	int fd, n, mode;
 	unsigned long offset;
 	unsigned char data [BSDFS_BSIZE];
 
-	fd = open (path, O_CREAT | O_WRONLY, inode->mode & 0x777);
+	/* Allow read/write for user. */
+	mode = (inode->mode & 0777) | 0600;
+	fd = open (path, O_CREAT | O_RDWR, mode);
 	if (fd < 0) {
 		perror (path);
 		return;
@@ -210,27 +213,29 @@ void extractor (fs_inode_t *dir, fs_inode_t *inode,
 	char *dirname, char *filename, void *arg)
 {
 	FILE *out = arg;
-	char *path;
+	char *path, *relpath;
 
 	if (verbose)
 		print_inode (inode, dirname, filename, out);
 
 	if ((inode->mode & INODE_MODE_FMT) != INODE_MODE_FDIR &&
-	    (inode->mode & INODE_MODE_FMT) != 0)
+	    (inode->mode & INODE_MODE_FMT) != INODE_MODE_FREG)
 		return;
 
 	path = alloca (strlen (dirname) + strlen (filename) + 2);
 	strcpy (path, dirname);
 	strcat (path, "/");
 	strcat (path, filename);
+        for (relpath=path; *relpath == '/'; relpath++)
+                continue;
 
 	if ((inode->mode & INODE_MODE_FMT) == INODE_MODE_FDIR) {
-		if (mkdir (path, 0775) < 0)
-			perror (path);
+		if (mkdir (relpath, 0775) < 0 && errno != EEXIST)
+			perror (relpath);
 		/* Scan subdirectory. */
 		fs_directory_scan (inode, path, extractor, arg);
 	} else {
-		extract_inode (inode, path);
+		extract_inode (inode, relpath);
 	}
 }
 
@@ -465,11 +470,11 @@ int main (int argc, char **argv)
 
 	if (extract) {
 		/* Extract all files to current directory. */
-		if (! fs_inode_get (&fs, &inode, 1)) {
+		if (! fs_inode_get (&fs, &inode, BSDFS_ROOT_INODE)) {
 			fprintf (stderr, "%s: cannot get inode 1\n", argv[i]);
 			return -1;
 		}
-		fs_directory_scan (&inode, ".", extractor, (void*) stdout);
+		fs_directory_scan (&inode, "", extractor, (void*) stdout);
 		fs_close (&fs);
 		return 0;
 	}
