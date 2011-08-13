@@ -329,6 +329,9 @@ vm_instance_t *create_instance (char *configure_filename)
     }
     vm->hw_data = pic32;
     pic32->vm = vm;
+    vm->vtty_con1_type = VTTY_TYPE_TERM;
+    vm->vtty_con2_type = VTTY_TYPE_TCP;
+    vm->vtty_con2_tcp_port = 2345;
 
     /* Initialize default parameters for  pic32 */
     if (configure_filename == NULL)

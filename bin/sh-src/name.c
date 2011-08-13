@@ -171,7 +171,8 @@ STRING	make(v)
 	REG STRING	p;
 
 	IF v
-	THEN	movstr(v,p=alloc(length(v)));
+	THEN    p = alloc(length(v));
+                movstr(v, p);
 		return(p);
 	ELSE	return(0);
 	FI

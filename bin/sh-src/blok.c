@@ -29,6 +29,7 @@ ADDRESS	alloc(nbytes)
                         IF ! busy(p)
 			THEN	LOOP
 			                q = p->word;
+//prs("    p="); prx(p); prs(" -> "); prx(q); prs("\n");
                                         IF busy(q) THEN break FI
                                         p->word = q->word;
                                 POOL
@@ -38,6 +39,7 @@ ADDRESS	alloc(nbytes)
 					THEN	blokp->word = p->word;
 					FI
 					p->word = BLK(Rcheat(blokp) | BUSY);
+//prs("alloc("); prn(nbytes); prs(") returned "); prx(p+1); prs("\n");
 					return(ADR(p+1));
 				FI
 			FI

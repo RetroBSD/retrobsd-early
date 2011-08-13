@@ -17,7 +17,10 @@ vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
 
 # Kernel options.
-DEFS		+= -I. -I$(H) -DKERNEL -DPIC32MX -DUCB_METER -DKHZ=80000
+DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
+
+# CPU frequency 80 MHz.
+DEFS		+= -DCPU_KHZ=80000
 
 # Console on UART1
 DEFS            += -DCONSOLE_UART1
@@ -91,9 +94,8 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 		chmod -x $@
 		$(OBJDUMP) -d -S $@ > unix.dis
 		$(OBJCOPY) -O binary $@ unix.bin
-		$(OBJCOPY) -O srec $@ unix.srec
-		$(OBJCOPY) -O ihex unix.srec unix.hex
-		chmod -x $@ unix.bin unix.srec
+		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
+		chmod -x $@ unix.bin
 
 load:           unix.elf
 		ubw32 -write unix.hex -reset

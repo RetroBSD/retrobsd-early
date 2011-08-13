@@ -251,7 +251,7 @@ printf ("\nkernel stack = %p", frame);
                         /* Increment COMPARE register. */
                         c = mips_read_c0_register (C0_COMPARE);
                         do {
-                                c += (KHZ * 1000 / HZ + 1) / 2;
+                                c += (CPU_KHZ * 1000 / HZ + 1) / 2;
                                 mips_write_c0_register (C0_COMPARE, c);
                         } while ((int) (c - mips_read_c0_register (C0_COUNT)) < 0);
 

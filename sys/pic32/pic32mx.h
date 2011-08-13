@@ -111,6 +111,7 @@
 #define U1BRGSET	PIC32_R (0x6048)
 #define U1BRGINV	PIC32_R (0x604C)
 
+#ifdef PIC32MX4
 #define U2MODE		PIC32_R (0x6200) /* Mode */
 #define U2MODECLR	PIC32_R (0x6204)
 #define U2MODESET	PIC32_R (0x6208)
@@ -125,6 +126,83 @@
 #define U2BRGCLR	PIC32_R (0x6244)
 #define U2BRGSET	PIC32_R (0x6248)
 #define U2BRGINV	PIC32_R (0x624C)
+#endif
+#ifdef PIC32MX7
+#define U4MODE		PIC32_R (0x6200) /* Mode */
+#define U4MODECLR	PIC32_R (0x6204)
+#define U4MODESET	PIC32_R (0x6208)
+#define U4MODEINV	PIC32_R (0x620C)
+#define U4STA		PIC32_R (0x6210) /* Status and control */
+#define U4STACLR	PIC32_R (0x6214)
+#define U4STASET	PIC32_R (0x6218)
+#define U4STAINV	PIC32_R (0x621C)
+#define U4TXREG		PIC32_R (0x6220) /* Transmit */
+#define U4RXREG		PIC32_R (0x6230) /* Receive */
+#define U4BRG		PIC32_R (0x6240) /* Baud rate */
+#define U4BRGCLR	PIC32_R (0x6244)
+#define U4BRGSET	PIC32_R (0x6248)
+#define U4BRGINV	PIC32_R (0x624C)
+
+#define U3MODE		PIC32_R (0x6400) /* Mode */
+#define U3MODECLR	PIC32_R (0x6404)
+#define U3MODESET	PIC32_R (0x6408)
+#define U3MODEINV	PIC32_R (0x640C)
+#define U3STA		PIC32_R (0x6410) /* Status and control */
+#define U3STACLR	PIC32_R (0x6414)
+#define U3STASET	PIC32_R (0x6418)
+#define U3STAINV	PIC32_R (0x641C)
+#define U3TXREG		PIC32_R (0x6420) /* Transmit */
+#define U3RXREG		PIC32_R (0x6430) /* Receive */
+#define U3BRG		PIC32_R (0x6440) /* Baud rate */
+#define U3BRGCLR	PIC32_R (0x6444)
+#define U3BRGSET	PIC32_R (0x6448)
+#define U3BRGINV	PIC32_R (0x644C)
+
+#define U6MODE		PIC32_R (0x6600) /* Mode */
+#define U6MODECLR	PIC32_R (0x6604)
+#define U6MODESET	PIC32_R (0x6608)
+#define U6MODEINV	PIC32_R (0x660C)
+#define U6STA		PIC32_R (0x6610) /* Status and control */
+#define U6STACLR	PIC32_R (0x6614)
+#define U6STASET	PIC32_R (0x6618)
+#define U6STAINV	PIC32_R (0x661C)
+#define U6TXREG		PIC32_R (0x6620) /* Transmit */
+#define U6RXREG		PIC32_R (0x6630) /* Receive */
+#define U6BRG		PIC32_R (0x6640) /* Baud rate */
+#define U6BRGCLR	PIC32_R (0x6644)
+#define U6BRGSET	PIC32_R (0x6648)
+#define U6BRGINV	PIC32_R (0x664C)
+
+#define U2MODE		PIC32_R (0x6800) /* Mode */
+#define U2MODECLR	PIC32_R (0x6804)
+#define U2MODESET	PIC32_R (0x6808)
+#define U2MODEINV	PIC32_R (0x680C)
+#define U2STA		PIC32_R (0x6810) /* Status and control */
+#define U2STACLR	PIC32_R (0x6814)
+#define U2STASET	PIC32_R (0x6818)
+#define U2STAINV	PIC32_R (0x681C)
+#define U2TXREG		PIC32_R (0x6820) /* Transmit */
+#define U2RXREG		PIC32_R (0x6830) /* Receive */
+#define U2BRG		PIC32_R (0x6840) /* Baud rate */
+#define U2BRGCLR	PIC32_R (0x6844)
+#define U2BRGSET	PIC32_R (0x6848)
+#define U2BRGINV	PIC32_R (0x684C)
+
+#define U5MODE		PIC32_R (0x6A00) /* Mode */
+#define U5MODECLR	PIC32_R (0x6A04)
+#define U5MODESET	PIC32_R (0x6A08)
+#define U5MODEINV	PIC32_R (0x6A0C)
+#define U5STA		PIC32_R (0x6A10) /* Status and control */
+#define U5STACLR	PIC32_R (0x6A14)
+#define U5STASET	PIC32_R (0x6A18)
+#define U5STAINV	PIC32_R (0x6A1C)
+#define U5TXREG		PIC32_R (0x6A20) /* Transmit */
+#define U5RXREG		PIC32_R (0x6A30) /* Receive */
+#define U5BRG		PIC32_R (0x6A40) /* Baud rate */
+#define U5BRGCLR	PIC32_R (0x6A44)
+#define U5BRGSET	PIC32_R (0x6A48)
+#define U5BRGINV	PIC32_R (0x6A4C)
+#endif
 
 /*
  * UART Mode register.
@@ -635,7 +713,7 @@
 /*--------------------------------------
  * SPI registers.
  */
-#if 0
+#ifdef PIC32MX4
 #define SPI1CON		PIC32_R (0x5800) /* Control */
 #define SPI1CONCLR	PIC32_R (0x5804)
 #define SPI1CONSET	PIC32_R (0x5808)
@@ -649,7 +727,36 @@
 #define SPI1BRGCLR	PIC32_R (0x5834)
 #define SPI1BRGSET	PIC32_R (0x5838)
 #define SPI1BRGINV	PIC32_R (0x583C)
-#else
+#endif
+#ifdef PIC32MX7
+#define SPI3CON		PIC32_R (0x5800) /* Control */
+#define SPI3CONCLR	PIC32_R (0x5804)
+#define SPI3CONSET	PIC32_R (0x5808)
+#define SPI3CONINV	PIC32_R (0x580C)
+#define SPI3STAT	PIC32_R (0x5810) /* Status */
+#define SPI3STATCLR	PIC32_R (0x5814)
+#define SPI3STATSET	PIC32_R (0x5818)
+#define SPI3STATINV	PIC32_R (0x581C)
+#define SPI3BUF		PIC32_R (0x5820) /* Transmit and receive buffer */
+#define SPI3BRG		PIC32_R (0x5830) /* Baud rate generator */
+#define SPI3BRGCLR	PIC32_R (0x5834)
+#define SPI3BRGSET	PIC32_R (0x5838)
+#define SPI3BRGINV	PIC32_R (0x583C)
+
+#define SPI4CON		PIC32_R (0x5C00) /* Control */
+#define SPI4CONCLR	PIC32_R (0x5C04)
+#define SPI4CONSET	PIC32_R (0x5C08)
+#define SPI4CONINV	PIC32_R (0x5C0C)
+#define SPI4STAT	PIC32_R (0x5C10) /* Status */
+#define SPI4STATCLR	PIC32_R (0x5C14)
+#define SPI4STATSET	PIC32_R (0x5C18)
+#define SPI4STATINV	PIC32_R (0x5C1C)
+#define SPI4BUF		PIC32_R (0x5C20) /* Transmit and receive buffer */
+#define SPI4BRG		PIC32_R (0x5C30) /* Baud rate generator */
+#define SPI4BRGCLR	PIC32_R (0x5C34)
+#define SPI4BRGSET	PIC32_R (0x5C38)
+#define SPI4BRGINV	PIC32_R (0x5C3C)
+
 #define SPI1CON		PIC32_R (0x5E00) /* Control */
 #define SPI1CONCLR	PIC32_R (0x5E04)
 #define SPI1CONSET	PIC32_R (0x5E08)

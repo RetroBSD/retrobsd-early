@@ -320,15 +320,18 @@ card_size (unit, nsectors)
 	/* Disable the card. */
 	spi_select (unit, 0);
 
-	if ((csd[0] >> 6) == 1) {
-		/* SDC ver 2.00 */
+        /* CSD register has different structure
+         * depending upon protocol version. */
+	switch (csd[0] >> 6) {
+        case 1:                 /* SDC ver 2.00 */
 		csize = csd[9] + (csd[8] << 8) + 1;
 		*nsectors = csize << 10;
-	} else {
-		/* SDC ver 1.XX or MMC. */
+	case 0:                 /* SDC ver 1.XX or MMC. */
 		n = (csd[5] & 15) + ((csd[10] & 128) >> 7) + ((csd[9] & 3) << 1) + 2;
 		csize = (csd[8] >> 6) + (csd[7] << 2) + ((csd[6] & 3) << 10) + 1;
 		*nsectors = csize << (n - 9);
+        default:                /* Unknown version. */
+                return 0;
 	}
 	return 1;
 }
@@ -466,7 +469,9 @@ printf ("card_write: SEND_STATUS failed, reply = %#x\n", reply);
 		spi_select (unit, 0);
 		return 0;
 	}
+        /* SPI mode: 16-bit reply size. */
         reply = spi_io (0xFF);
+        reply |= spi_io (0xFF) << 8;
 	spi_select (unit, 0);
         if (reply != 0) {
 		/* Write failed. */
@@ -505,7 +510,7 @@ sdopen (dev, flag, mode)
 #endif
                 /* Slow speed: max 40 kbit/sec. */
                 reg->stat = 0;
-                reg->brg = (KHZ / SLOW + 1) / 2 - 1;
+                reg->brg = (CPU_KHZ / SLOW + 1) / 2 - 1;
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
@@ -523,7 +528,7 @@ sdopen (dev, flag, mode)
 	}
 	/* Fast speed: up to 25 Mbit/sec allowed. */
 	reg->stat = 0;
-	reg->brg = (KHZ / FAST + 1) / 2 - 1;
+	reg->brg = (CPU_KHZ / FAST + 1) / 2 - 1;
 	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                 PIC32_SPICON_ON;
 	return 0;

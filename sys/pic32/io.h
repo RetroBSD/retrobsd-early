@@ -21,7 +21,10 @@
  * arising out of or in connection with the use or performance of
  * this software.
  */
-#ifdef PIC32MX
+#ifdef PIC32MX4
+#   include "machine/pic32mx.h"
+#endif
+#ifdef PIC32MX7
 #   include "machine/pic32mx.h"
 #endif
 

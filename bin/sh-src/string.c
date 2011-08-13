@@ -43,8 +43,9 @@ INT	cf(s1, s2)
 INT	length(as)
 	STRING as;
 {
-	REG STRING s;
+	REG STRING s = as;
 
-	IF s=as THEN WHILE *s++ DONE FI
-	return(s-as);
+	IF s == 0 THEN return 0; FI
+        WHILE *s++ DONE
+	return(s - as);
 }

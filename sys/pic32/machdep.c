@@ -240,7 +240,7 @@ udelay (usec)
 	u_int usec;
 {
 	unsigned now = mips_read_c0_register (C0_COUNT);
-	unsigned final = now + usec * (KHZ / 1000);
+	unsigned final = now + usec * (CPU_KHZ / 1000);
 
 	for (;;) {
 		now = mips_read_c0_register (C0_COUNT);
