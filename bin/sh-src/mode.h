@@ -1,5 +1,5 @@
 /*
- *	UNIX shell
+ * UNIX shell
  */
 #define BYTESPERWORD	(sizeof(char *))
 

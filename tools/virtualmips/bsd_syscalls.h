@@ -74,7 +74,7 @@ static const struct {
 	{ 0, "vfork",        },		/*  66 = vfork */
 	{ 0, "#67",          },		/*  67 = unused */
 	{ 0, "#68",          },		/*  68 = unused */
-	{ 1, "sbrk",         },		/*  69 = sbrk */
+	{ 1, "brk",          },		/*  69 = brk */
 	{ 0, "#70",          },		/*  70 = unused */
 	{ 0, "#71",          },		/*  71 = unused */
 	{ 0, "#72",          },		/*  72 = unused */

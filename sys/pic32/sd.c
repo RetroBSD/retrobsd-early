@@ -131,7 +131,7 @@ spi_select (unit, on)
 #endif
         }
         if (! on) {
-                /* Need additional SPI clocks after deselect */
+                /* Need additional SPI clocks after deselect. */
                 spi_io (0xFF);
         }
 }

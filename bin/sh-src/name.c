@@ -4,7 +4,7 @@
  * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
+#include "defs.h"
 
 LOCAL BOOL	chkid();
 LOCAL VOID	namwalk();

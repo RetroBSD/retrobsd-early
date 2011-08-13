@@ -717,9 +717,12 @@ static int eret_op (cpu_mips_t * cpu, mips_insn_t insn)
         (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_UM)) {
         unsigned uerror = cpu->gpr[8];
         cpu->trace_syscall = 0;
-        if (uerror == 0)
-            printf ("    syscall returned %u\n", cpu->gpr[2]);
-        else if (uerror == -1)
+        if (uerror == 0) {
+            if (cpu->gpr[2] & ~0xffff)
+                printf ("    syscall returned %08x\n", cpu->gpr[2]);
+            else
+                printf ("    syscall returned %u\n", cpu->gpr[2]);
+        } else if (uerror == -1)
             printf ("    syscall restarted\n");
         else
             printf ("    syscall failed, errno %u\n", uerror);

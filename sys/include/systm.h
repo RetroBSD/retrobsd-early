@@ -171,7 +171,7 @@ void	setgid (void), setegid (void), setuid (void), seteuid (void);
 void	ucall (void);					/* 2BSD calls */
 
 /* 1.2 memory management */
-void	sbrk (void);
+void	brk (void);
 void	lock (void), fetchi (void);				/* 2BSD calls */
 
 /* 1.3 signals */

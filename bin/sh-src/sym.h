@@ -1,10 +1,6 @@
-/*	sym.h	4.1	82/05/07	*/
-
-#
 /*
- *	UNIX shell
+ * UNIX shell
  */
-
 
 /* symbols for parsing */
 #define DOSYM	0405

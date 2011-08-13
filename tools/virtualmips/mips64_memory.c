@@ -1347,6 +1347,10 @@ I did not check it before version 0.04 and hwclock/qtopia always segment fault.
 Very hard to debug this problem!!!!
 yajin
 */
+//if (vaddr == 0x7f010020)
+//printf ("%08x: %s address %08x\n", cpu->pc,
+//(op_type == MTS_WRITE) ? "write" : "read", (unsigned) vaddr);
+
     if (MTS_HALF_WORD == op_size) {
         if (unlikely ((vaddr & 0x00000001UL) != 0x0)) {
 err_addr:   if (is_fromgdb)

@@ -1,16 +1,9 @@
-#ifndef lint
-static char sccsid[] = "@(#)ctype.c	4.2 8/11/83";
-#endif
-
-#
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
- *
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
-
 #include	"defs.h"
 
 char	_ctype1[] = {

@@ -1,12 +1,11 @@
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
- *
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	"sym.h"
+#include "defs.h"
+#include "sym.h"
 
 MSG		version = "\nVERSION sys137	DATE 1978 Nov 6 14:29:22\n";
 

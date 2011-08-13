@@ -214,7 +214,7 @@ execute(argt, execflg, pf1, pf2)
                                         break;
 
 				default:
-					internal=builtin(argn,com);
+					internal = builtin(argn, com);
 
 				ENDSW
 

@@ -1,15 +1,9 @@
-/*	name.h	4.1	82/05/07	*/
-
-#
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
- *
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
-
-
 #define N_RDONLY 0100000
 #define N_EXPORT 0040000
 #define N_ENVNAM 0020000

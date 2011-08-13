@@ -1,21 +1,12 @@
-#ifndef lint
-static char sccsid[] = "@(#)string.c	4.2 8/11/83";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
 #include	"defs.h"
 
-
 /* ========	general purpose string handling ======== */
-
 
 STRING	movstr(a,b)
 	REG STRING	a, b;

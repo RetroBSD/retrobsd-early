@@ -1,44 +1,42 @@
-#ifndef lint
-static char sccsid[] = "@(#)stak.c	4.2 8/11/83";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
-#include	"defs.h"
+#include "defs.h"
 
 STKPTR		stakbot=nullstr;
 
-
-
 /* ========	storage allocation	======== */
 
+/*
+ * allocate requested stack
+ */
 STKPTR	getstak(asize)
 	INT		asize;
-{	/* allocate requested stack */
+{
 	REG STKPTR	oldstak;
 	REG INT		size;
 
-	size=round(asize,BYTESPERWORD);
-	oldstak=stakbot;
+	size = round(asize,BYTESPERWORD);
+	oldstak = stakbot;
 	staktop = stakbot += size;
 	return(oldstak);
 }
 
+/*
+ * set up stack for local use
+ * should be followed by `endstak'
+ */
 STKPTR	locstak()
-{	/* set up stack for local use
-	 * should be followed by `endstak'
-	 */
-	IF brkend-stakbot<BRKINCR
-	THEN	setbrk(brkincr);
+{
+        IF brkend - stakbot < BRKINCR
+	THEN
+                setbrk(brkincr);
 		IF brkincr < BRKMAX
-		THEN	brkincr += 256;
+		THEN
+                        brkincr += 256;
 		FI
 	FI
 	return(stakbot);
@@ -50,13 +48,16 @@ STKPTR	savstak()
 	return(stakbot);
 }
 
+/*
+ * tidy up after `locstak'
+ */
 STKPTR	endstak(argp)
 	REG STRING	argp;
-{	/* tidy up after `locstak' */
+{
 	REG STKPTR	oldstak;
-	*argp++=0;
-	oldstak=stakbot;
-	stakbot=staktop=(STKPTR)round(argp,BYTESPERWORD);
+	*argp++ = 0;
+	oldstak = stakbot;
+	stakbot = staktop = (STKPTR) round(argp, BYTESPERWORD);
 	return(oldstak);
 }
 
@@ -64,17 +65,18 @@ VOID	tdystak(x)
 	REG STKPTR 	x;
 {
 	/* try to bring stack back to x */
-	WHILE ADR(stakbsy)>ADR(x)
-	DO free(stakbsy);
-	   stakbsy = stakbsy->word;
+	WHILE ADR(stakbsy) > ADR(x)
+	DO
+                free(stakbsy);
+                stakbsy = stakbsy->word;
 	OD
-	staktop=stakbot=max(ADR(x),ADR(stakbas));
+	staktop = stakbot = max(ADR(x), ADR(stakbas));
 	rmtemp(x);
 }
 
 stakchk()
 {
-	IF (brkend-stakbas)>BRKINCR+BRKINCR
+	IF (brkend - stakbas) > BRKINCR + BRKINCR
 	THEN	setbrk(-BRKINCR);
 	FI
 }
@@ -82,5 +84,5 @@ stakchk()
 STKPTR	cpystak(x)
 	STKPTR		x;
 {
-	return(endstak(movstr(x,locstak())));
+	return(endstak(movstr(x, locstak())));
 }

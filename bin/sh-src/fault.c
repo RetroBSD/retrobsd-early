@@ -4,8 +4,7 @@
  * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
-
+#include "defs.h"
 
 STRING		trapcom[MAXTRAP];
 BOOL		trapflg[MAXTRAP];

@@ -1,9 +1,8 @@
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
- *
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
 #include "defs.h"
 

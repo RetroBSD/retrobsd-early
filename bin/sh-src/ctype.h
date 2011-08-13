@@ -1,6 +1,3 @@
-/*	ctype.h	4.1	82/05/07	*/
-
-#
 /*
  *	UNIX shell
  *
@@ -8,7 +5,6 @@
  *	Bell Telephone Laboratories
  *
  */
-
 
 /* table 1 */
 #define T_SUB	01

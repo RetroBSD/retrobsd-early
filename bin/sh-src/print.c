@@ -1,17 +1,10 @@
-#ifndef lint
-static char sccsid[] = "@(#)print.c	4.2 8/11/83";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
-#include	"defs.h"
+#include "defs.h"
 
 CHAR		numbuf[6];
 
@@ -98,4 +91,3 @@ STRING	icp;
 	ELSE	return(r);
 	FI
 }
-

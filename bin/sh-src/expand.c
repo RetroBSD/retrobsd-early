@@ -1,13 +1,13 @@
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	<sys/param.h>
-#include	<sys/stat.h>
-#include	<sys/dir.h>
+#include "defs.h"
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/dir.h>
 
 /* globals (file name generation)
  *
@@ -15,7 +15,6 @@
  * "?" in params matches r.e. "."
  * "[...]" in params matches character class
  * "[...a-z...]" in params matches a through z.
- *
  */
 
 LOCAL VOID	addg();

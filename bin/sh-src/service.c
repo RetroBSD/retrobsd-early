@@ -1,18 +1,11 @@
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)service.c	4.4.1 12/9/94";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
-#include	"defs.h"
-#include	<fcntl.h>
+#include "defs.h"
+#include <fcntl.h>
 
 LOCAL STRING	execs();
 LOCAL VOID	gsort();

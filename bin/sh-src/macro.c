@@ -4,8 +4,8 @@
  * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	"sym.h"
+#include "defs.h"
+#include "sym.h"
 
 LOCAL CHAR	quote;	/* used locally */
 LOCAL CHAR	quoted;	/* used locally */

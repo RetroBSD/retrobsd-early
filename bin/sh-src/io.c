@@ -1,18 +1,10 @@
-#ifndef lint
-static char sccsid[] = "@(#)io.c	4.3 3/19/85";
-#endif
-
-#
 /*
  * UNIX shell
  *
  * S. R. Bourne
  * Bell Telephone Laboratories
- *
  */
-
-#include	"defs.h"
-
+#include "defs.h"
 
 /* ========	input output and file copying ======== */
 

@@ -4,13 +4,13 @@
  * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	"sym.h"
-#include	"timeout.h"
-#include	<sys/types.h>
-#include	<sys/stat.h>
-#include	<sgtty.h>
-#include	<signal.h>
+#include "defs.h"
+#include "sym.h"
+#include "timeout.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sgtty.h>
+#include <signal.h>
 
 UFD		output = 2;
 LOCAL BOOL	beenhere = FALSE;
@@ -19,7 +19,7 @@ FILEBLK		stdfile;
 FILE		standin = &stdfile;
 
 #ifdef stupid
-#include	<execargs.h>
+#include <execargs.h>
 #endif
 
 LOCAL VOID	exfile();

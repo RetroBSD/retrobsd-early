@@ -154,7 +154,8 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
     reply = 0xFF;
     if (d->count == 0) {
         d->buf[0] = data;
-        d->count++;
+        if (data != 0xFF)
+            d->count++;
     } else {
         switch (d->buf[0]) {
         case CMD_GO_IDLE:               /* CMD0: reset */

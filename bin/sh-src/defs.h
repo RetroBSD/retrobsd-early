@@ -1,5 +1,5 @@
 /*
- *	UNIX shell
+ * UNIX shell
  */
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,24 +35,24 @@
 #define TFOR	11
 
 /* execute table */
-#define SYSSET	1
-#define SYSCD	2
-#define SYSEXEC	3
-#define SYSLOGIN 4
-#define SYSTRAP	5
-#define SYSEXIT	6
-#define SYSSHFT 7
-#define SYSWAIT	8
-#define SYSCONT 9
-#define SYSBREAK 10
-#define SYSEVAL 11
-#define SYSDOT	12
-#define SYSRDONLY 13
-#define SYSTIMES 14
-#define SYSXPORT 15
-#define SYSNULL 16
-#define SYSREAD 17
-#define SYSTST	18
+#define SYSSET          1
+#define SYSCD           2
+#define SYSEXEC         3
+#define SYSLOGIN        4
+#define SYSTRAP         5
+#define SYSEXIT         6
+#define SYSSHFT         7
+#define SYSWAIT         8
+#define SYSCONT         9
+#define SYSBREAK        10
+#define SYSEVAL         11
+#define SYSDOT          12
+#define SYSRDONLY       13
+#define SYSTIMES        14
+#define SYSXPORT        15
+#define SYSNULL         16
+#define SYSREAD         17
+#define SYSTST          18
 #define	SYSUMASK	19
 
 /* used for input and output of shell */
@@ -200,21 +200,21 @@ STRING		comdiv;
 extern MSG	devnull;
 
 /* flags */
-#define		noexec	01
-#define		intflg	02
-#define		prompt	04
-#define		setflg	010
-#define		errflg	020
-#define		ttyflg	040
-#define		forked	0100
-#define		oneflg	0200
-#define		rshflg	0400
-#define		waiting	01000
-#define		stdflg	02000
-#define		execpr	04000
-#define		readpr	010000
-#define		keyflg	020000
-#define		batchflg	040000
+#define noexec          01
+#define intflg	        02
+#define prompt	        04
+#define setflg	        010
+#define errflg	        020
+#define ttyflg	        040
+#define forked	        0100
+#define oneflg	        0200
+#define rshflg	        0400
+#define waiting	        01000
+#define stdflg	        02000
+#define execpr	        04000
+#define readpr	        010000
+#define keyflg	        020000
+#define batchflg	040000
 INT		flags;
 
 /* error exits from various parts of shell */
@@ -286,4 +286,4 @@ extern MSG	badfile;
 
 extern address	end[];
 
-#include	"ctype.h"
+#include "ctype.h"

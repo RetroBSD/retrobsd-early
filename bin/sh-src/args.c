@@ -4,7 +4,7 @@
  * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
+#include "defs.h"
 
 LOCAL STRING	*copyargs();
 LOCAL DOLPTR	dolh;

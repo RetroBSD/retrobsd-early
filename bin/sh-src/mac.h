@@ -1,14 +1,9 @@
-/*	mac.h	4.2	82/12/24	*/
-
-#
 /*
- *	UNIX shell
+ * UNIX shell
  *
- *	S. R. Bourne
- *	Bell Telephone Laboratories
- *
+ * S. R. Bourne
+ * Bell Telephone Laboratories
  */
-
 #define LOCAL	static
 #define PROC	extern
 #define TYPE	typedef
