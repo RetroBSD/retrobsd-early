@@ -390,9 +390,9 @@ savcom(puid)
 	datmap.b2 = stackbas(stksiz);
 	datmap.e2 = stacktop(stksiz);
 	tp = gettty();
-//	if ((tptr && strncmp(tptr, tp, 2) != 0) ||
-//          (! aflg && strncmp(mytty, tp, 2) != 0))
-//		return(0);
+	if ((tptr && strncmp(tptr, tp, 2) != 0) ||
+            (! aflg && strncmp(mytty, tp, 2) != 0))
+		return(0);
 	a = &outargs[npr];		/* saving com starts here */
 	a->o_uid = puid;
 	a->o_pid = procp->p_pid;
@@ -454,6 +454,7 @@ register int np;
 	register struct	passwd	*pw;
 
 	if (uflg) {
+                setpwent();
 		/*
 		 * If we want names, traverse the password file. For each
 		 * passwd entry, look for it in the processes.
@@ -465,9 +466,10 @@ register int np;
 				if (outargs[i].o_uid == pw->pw_uid) {
 					if (outargs[i].o_uname[0] == 0)
 						strcpy(outargs[i].o_uname, pw->pw_name);
-					}
-			}
+				}
 		}
+                endpwent();
+        }
 	qsort(outargs, np, sizeof (outargs[0]), pscomp);
 }
 
@@ -690,18 +692,22 @@ register struct psout	*a;
 	char	c, **ap;
 	int	cc, nbad, abuf [ARGLIST];
 
+	a->o_args[0] = 0;	/* in case of early return */
         if (mproc->p_pid == 0)
                 return(1);
-	a->o_args[0] = 0;	/* in case of early return */
-	addr += mproc->p_ssize;
 
-	/* look for sh special */
-	lseek(file, addr - sizeof (char **), 0);
-	if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
-		return (1);
-	if (ap) {
-		char	b[82];
-		char	*bp	= b;
+	/* look for in-core process */
+	if (mproc->p_flag & SLOAD) {
+		char	b[82], *bp;
+
+                addr += mproc->p_ssize;
+                lseek(file, addr - sizeof (char **), 0);
+                if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
+                        return (1);
+                if (ap == 0)
+                        return(1);
+
+		bp = b;
 		while ((cp = getptr(ap++)) && cp && (bp < b+sizeof (a->o_args)) ) {
 			nbad	= 0;
 			while ((c = getbyte(cp++)) && (bp < b+sizeof (a->o_args))) {
@@ -719,6 +725,7 @@ register struct psout	*a;
 		return(1);
 	}
 
+        /* process is swapped out */
 	lseek(file, addr, 0);
 	if (read(file, (char *) abuf, sizeof (abuf)) != sizeof (abuf))
 		return (1);

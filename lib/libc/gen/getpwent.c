@@ -25,7 +25,7 @@
 static FILE *_pw_fp;
 static struct passwd _pw_entry;
 static int _pw_stayopen;
-static char _pw_flag, *_pw_file = _PATH_PASSWD;
+static char *_pw_file = _PATH_PASSWD;
 
 #define	MAXLINELENGTH	256
 static char line[MAXLINELENGTH];
@@ -123,9 +123,7 @@ getpwent()
 
 	if (!_pw_fp && !start_pw())
 		return((struct passwd *)NULL);
-	do {
-		rval = scanpw();
-	} while (rval && _pw_flag != _PW_KEYBYNAME);
+	rval = scanpw();
 	if (! rval)
 	        return 0;
 	getpw();
