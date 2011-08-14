@@ -78,7 +78,7 @@ char    devnull[]       = "/dev/null";
 char    execpmsg[]      = "+ ";
 char    readmsg[]       = "> ";
 char    stdprompt[]     = "$ ";
-char    supprompt[]     = "su# ";
+char    supprompt[]     = "# ";
 char    profile[]       = ".profile";
 char    sysprofile[]    = "/etc/profile";
 
