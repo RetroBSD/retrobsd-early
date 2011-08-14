@@ -1,425 +1,877 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	"sym.h"
+#include "defs.h"
+#include <errno.h>
+#include "sym.h"
+#include "hash.h"
 
-LOCAL INT	parent;
+static int      parent;
 
-extern SYSNOD	commands[];
+/* ========     command execution       ========*/
 
-/* ========	command execution	========*/
-
-execute(argt, execflg, pf1, pf2)
-	TREPTR		argt;
-	INT		*pf1, *pf2;
+execute(argt, exec_link, errorflg, pf1, pf2)
+struct trenod   *argt;
+int     *pf1, *pf2;
 {
-	/* `stakbot' is preserved by this routine */
-	REG TREPTR	t;
-	STKPTR		sav=savstak();
+	/*
+	 * `stakbot' is preserved by this routine
+	 */
+	register struct trenod  *t;
+	char            *sav = savstak();
 
 	sigchk();
+	if (!errorflg)
+		flags &= ~errflg;
 
-	IF (t=argt) ANDF execbrk==0
-	THEN	REG INT		treeflgs;
-		INT		oldexit, type;
-		REG STRING	*com;
+	if ((t = argt) && execbrk == 0)
+	{
+		register int    treeflgs;
+		int                     type;
+		register char   **com;
+		short                   pos;
+		int                     linked;
+		int                     execflg;
 
-		treeflgs = t->tretyp; type = treeflgs&COMMSK;
-		oldexit=exitval; exitval=0;
+		linked = exec_link >> 1;
+		execflg = exec_link & 01;
 
-		SWITCH type IN
+		treeflgs = t->tretyp;
+		type = treeflgs & COMMSK;
+
+		switch (type)
+		{
+		case TFND:
+			{
+				struct fndnod   *f = (struct fndnod *)t;
+				struct namnod   *n = lookup(f->fndnam);
+
+				exitval = 0;
+
+				if (n->namflg & N_RDONLY)
+					failed(n->namid, wtfailed);
+
+				if (n->namflg & N_FUNCTN)
+					freefunc(n);
+				else
+				{
+					free(n->namval);
+					free(n->namenv);
+
+					n->namval = NIL;
+					n->namflg &= ~(N_EXPORT | N_ENVCHG);
+				}
+
+				if (funcnt)
+					f->fndval->tretyp++;
+
+				n->namenv = (char *)f->fndval;
+				attrib(n, N_FUNCTN);
+				hash_func(n->namid);
+				break;
+			}
 
 		case TCOM:
-			BEGIN
-			STRING		a1;
-			INT		argn, internal;
-			ARGPTR		schain=gchain;
-			IOPTR		io=t->treio;
-			gchain=0;
-			argn = getarg (t);
-			com = scan (argn);
-			a1 = com[1];
-			gchain = schain;
+			{
+				char    *a1;
+				int     argn, internal;
+				struct argnod   *schain = gchain;
+				struct ionod    *io = t->treio;
+				short   cmdhash;
+				short   comtype;
 
-			IF argn==0 ORF (internal = syslook (com[0], commands))
-			THEN	setlist (((COMPTR)t)->comset, 0);
-			FI
+				exitval = 0;
 
-			IF argn ANDF (flags&noexec)==0
-			THEN	/* print command if execpr */
-				IF flags&execpr
-				THEN	argn=0;	prs(execpmsg);
-					WHILE com[argn]!=ENDARGS
-					DO prs(com[argn++]); blank() OD
-					newline();
-				FI
+				gchain = NIL;
+				argn = getarg(t);
+				com = scan(argn);
+				a1 = com[1];
+				gchain = schain;
 
-				SWITCH internal IN
+				if (argn != 0)
+					cmdhash = pathlook(com[0], 1, comptr(t)->comset);
 
-				case SYSDOT:
-					IF a1
-					THEN	REG INT		f;
+				if (argn == 0 || (comtype = hashtype(cmdhash)) == BUILTIN)
+					setlist(comptr(t)->comset, 0);
 
-						IF (f=pathopen(getpath(a1), a1)) < 0
-						THEN failed(a1,notfound);
-						ELSE execexp(0,f);
-						FI
-					FI
-					break;
+				if (argn && (flags&noexec) == 0)
+				{
+					/* print command if execpr */
 
-				case SYSTIMES:
+					if (flags & execpr)
+						execprint(com);
+
+					if (comtype == NOTFOUND)
 					{
-					L_INT	t[4]; times(t);
-					prt(t[2]); blank(); prt(t[3]); newline();
+						pos = hashdata(cmdhash);
+						if (pos == 1)
+							failed(*com, notfound);
+						else if (pos == 2)
+							failed(*com, badexec);
+						else
+							failed(*com, badperm);
+						break;
 					}
-					break;
 
-				case SYSEXIT:
-					exitsh(a1?stoi(a1):oldexit);
+					else if (comtype == PATH_COMMAND)
+					{
+						pos = -1;
+					}
 
-				case SYSNULL:
-					io=0;
-					break;
+					else if (comtype & (COMMAND | REL_COMMAND))
+					{
+						pos = hashdata(cmdhash);
+					}
 
-				case SYSCONT:
-					execbrk = -loopcnt; break;
+					else if (comtype == BUILTIN)
+					{
+						short index;
 
-				case SYSBREAK:
-					IF (execbrk=loopcnt) ANDF a1
-					THEN breakcnt=stoi(a1);
-					FI
-					break;
+						internal = hashdata(cmdhash);
+						index = initio(io, (internal != SYSEXEC));
 
-				case SYSTRAP:
-					IF a1
-					THEN	BOOL	clear;
-						IF (clear=digit(*a1))==0
-						THEN	++com;
-						FI
-						WHILE *++com
-						DO INT	i;
-						   IF (i=stoi(*com))>=MAXTRAP ORF i<MINTRAP
-						   THEN	failed(*com,badtrap);
-						   ELIF clear
-						   THEN	clrsig(i);
-						   ELSE	replace(&trapcom[i],a1);
-							IF *a1
-							THEN	getsig(i);
-							ELSE	ignsig(i);
-							FI
-						   FI
-						OD
-					ELSE	/* print out current traps */
-						INT		i;
+						switch (internal)
+						{
+						case SYSDOT:
+							if (a1)
+							{
+								register int    f;
 
-						FOR i=0; i<MAXTRAP; i++
-						DO IF trapcom[i]
-						   THEN	prn(i); prs(colon); prs(trapcom[i]); newline();
-						   FI
-						OD
-					FI
-					break;
+								if ((f = pathopen(getpath(a1), a1)) < 0)
+									failed(a1, notfound);
+								else
+									execexp(NIL, f);
+							}
+							break;
 
-				case SYSEXEC:
-					com++;
-					initio(io); ioset=0; io=0;
-					IF a1==0 THEN break FI
+						case SYSTIMES:
+							{
+								long int t[4];
 
-				case SYSLOGIN:
-					flags |= forked;
-					oldsigs(); execa(com); done();
+								times(t);
+								prt(t[2]);
+								prc_buff(SP);
+								prt(t[3]);
+								prc_buff(NL);
+							}
+							break;
 
-				case SYSCD:
-					IF flags&rshflg
-					THEN	failed(com[0],restricted);
-					ELIF (a1==0 ANDF (a1=homenod.namval)==0) ORF chdir(a1)<0
-					THEN	failed(a1,baddir);
-					FI
-					break;
+						case SYSEXIT:
+							flags |= forked;        /* force exit */
+							exitsh(a1 ? stoi(a1) : retval);
 
-				case SYSSHFT:
-					IF dolc<1
-					THEN	error(badshift);
-					ELSE	dolv++; dolc--;
-					FI
-					assnum(&dolladr, dolc);
-					break;
+						case SYSNULL:
+							io = NIL;
+							break;
 
-				case SYSWAIT:
-					await(-1);
-					break;
+						case SYSCONT:
+							if (loopcnt)
+							{
+								execbrk = breakcnt = 1;
+								if (a1)
+									breakcnt = stoi(a1);
+								if (breakcnt > loopcnt)
+									breakcnt = loopcnt;
+								else
+									breakcnt = -breakcnt;
+							}
+							break;
 
-				case SYSREAD:
-					exitval=readvar(&com[1]);
-					break;
+						case SYSBREAK:
+							if (loopcnt)
+							{
+								execbrk = breakcnt = 1;
+								if (a1)
+									breakcnt = stoi(a1);
+								if (breakcnt > loopcnt)
+									breakcnt = loopcnt;
+							}
+							break;
 
-/*
-				case SYSTST:
-					exitval=testcmd(com);
-					break;
-*/
+						case SYSTRAP:
+							if (a1)
+							{
+								BOOL    clear;
 
-				case SYSSET:
-					IF a1
-					THEN	INT	argc;
-						argc = options(argn,com);
-						IF argc>1
-						THEN	setargs(com+argn-argc);
-						FI
-					ELIF ((COMPTR)t)->comset==0
-					THEN	/*scan name chain and print*/
-						namscan(printnam);
-					FI
-					break;
+								if ((clear = digit(*a1)) == 0)
+									++com;
+								while (*++com)
+								{
+									int     i;
 
-				case SYSRDONLY:
-					exitval=N_RDONLY;
-				case SYSXPORT:
-					IF exitval==0 THEN exitval=N_EXPORT; FI
+									if ((i = stoi(*com)) >= MAXTRAP || i < MINTRAP)
+										failed(*com, badtrap);
+									else if (clear)
+										clrsig(i);
+									else
+									{
+										replace(&trapcom[i], a1);
+										if (*a1)
+											getsig(i);
+										else
+											ignsig(i);
+									}
+								}
+							}
+							else    /* print out current traps */
+							{
+								int     i;
 
-					IF a1
-					THEN	WHILE *++com
-						DO attrib(lookup(*com), exitval) OD
-					ELSE	namscan(printflg);
-					FI
-					exitval=0;
-					break;
+								for (i = 0; i < MAXTRAP; i++)
+								{
+									if (trapcom[i])
+									{
+										prn_buff(i);
+										prs_buff(colon);
+										prs_buff(trapcom[i]);
+										prc_buff(NL);
+									}
+								}
+							}
+							break;
 
-				case SYSEVAL:
-					IF a1
-					THEN	execexp(a1,&com[2]);
-					FI
-					break;
+						case SYSEXEC:
+							com++;
+							ioset = 0;
+							io = NIL;
+							if (a1 == NIL)
+							{
+								break;
+							}
 
-                                case SYSUMASK:
-                                        if (a1) {
-                                                int c, i;
-                                                i = 0;
-                                                while ((c = *a1++) >= '0' &&
-                                                        c <= '7')
-                                                        i = (i << 3) + c - '0';
-                                                umask(i);
-                                        } else {
-                                                int i, j;
-                                                umask(i = umask(0));
-                                                prc('0');
-                                                for (j = 6; j >= 0; j -= 3)
-                                                        prc(((i>>j)&07) + '0');
-                                                newline();
-                                        }
-                                        break;
+						case SYSLOGIN:
+							oldsigs();
+							execa(com, -1);
+							done();
 
-				default:
-					internal = builtin(argn, com);
+						case SYSNEWGRP:
+							if (flags & rshflg)
+								failed(com[0], restricted);
+							else
+							{
+								flags |= forked;        /* force bad exec to terminate shell */
+								oldsigs();
+								execa(com, -1);
+								done();
+							}
 
-				ENDSW
+						case SYSCD:
+							if (flags & rshflg)
+								failed(com[0], restricted);
+							else if ((a1 && *a1) || (a1 == NIL && (a1 = homenod.namval)))
+							{
+								char *cdpath;
+								char *dir;
+								int f;
 
-				IF internal
-				THEN	IF io THEN error(illegal) FI
+								if ((cdpath = cdpnod.namval) == NIL ||
+								     *a1 == '/' ||
+								     cf(a1, ".") == 0 ||
+								     cf(a1, "..") == 0 ||
+								     (*a1 == '.' && (a1[1] == '/' || a1[1] == '.' && a1[2] == '/')))
+									cdpath = nullstr;
+
+								do
+								{
+									dir = cdpath;
+									cdpath = catpath(cdpath,a1);
+								}
+								while ((f = (chdir(curstak()) < 0)) && cdpath);
+
+								if (f)
+									failed(a1, baddir);
+								else
+								{
+									cwd(curstak());
+									if (cf(nullstr, dir) &&
+									    *dir != ':' &&
+										any('/', curstak()) &&
+										flags & prompt)
+									{
+										prs_buff(curstak());
+										prc_buff(NL);
+									}
+								}
+								zapcd();
+							}
+							else
+							{
+								if (a1)
+									failed(a1, baddir);
+								else
+									error(nohome);
+							}
+
+							break;
+
+						case SYSSHFT:
+							{
+								int places;
+
+								places = a1 ? stoi(a1) : 1;
+
+								if ((dolc -= places) < 0)
+								{
+									dolc = 0;
+									error(badshift);
+								}
+								else
+									dolv += places;
+							}
+
+							break;
+
+						case SYSWAIT:
+							await(a1 ? stoi(a1) : -1, 1);
+							break;
+
+						case SYSREAD:
+							rwait = 1;
+							exitval = readvar(&com[1]);
+							rwait = 0;
+							break;
+
+						case SYSSET:
+							if (a1)
+							{
+								int     argc;
+
+								argc = options(argn, com);
+								if (argc > 1)
+									setargs(com + argn - argc);
+							}
+							else if (comptr(t)->comset == NIL)
+							{
+								/*
+								 * scan name chain and print
+								 */
+								namscan(printnam);
+							}
+							break;
+
+						case SYSRDONLY:
+							exitval = 0;
+							if (a1)
+							{
+								while (*++com)
+									attrib(lookup(*com), N_RDONLY);
+							}
+							else
+								namscan(printro);
+
+							break;
+
+						case SYSXPORT:
+							{
+								struct namnod   *n;
+
+								exitval = 0;
+								if (a1)
+								{
+									while (*++com)
+									{
+										n = lookup(*com);
+										if (n->namflg & N_FUNCTN)
+											error(badexport);
+										else
+											attrib(n, N_EXPORT);
+									}
+								}
+								else
+									namscan(printexp);
+							}
+							break;
+
+						case SYSEVAL:
+							if (a1)
+								execexp(a1, &com[2]);
+							break;
+
+#ifndef RES
+#ifdef ACCOUNT
+						case SYSULIMIT:
+							{
+								long int i;
+								long ulimit();
+								int command = 2;
+
+								if (*a1 == '-')
+								{       switch(a1[1])
+									{
+										case 'f':
+											command = 2;
+											break;
+
+#ifdef rt
+										case 'p':
+											command = 5;
+											break;
+
+#endif
+
+										default:
+											error(badopt);
+									}
+									a1 = com[2];
+								}
+								if (a1)
+								{
+									int c;
+
+									i = 0;
+									while ((c = *a1++) >= '0' && c <= '9')
+									{
+										i = (i * 10) + (long)(c - '0');
+										if (i < 0)
+											error(badulimit);
+									}
+									if (c || i < 0)
+										error(badulimit);
+								}
+								else
+								{
+									i = -1;
+									command--;
+								}
+
+								if ((i = ulimit(command,i)) < 0)
+									error(badulimit);
+
+								if (command == 1 || command == 4)
+								{
+									prl(i);
+									prc_buff('\n');
+								}
+								break;
+							}
+#endif
+						case SYSUMASK:
+							if (a1)
+							{
+								int c, i;
+
+								i = 0;
+								while ((c = *a1++) >= '0' && c <= '7')
+									i = (i << 3) + c - '0';
+								umask(i);
+							}
+							else
+							{
+								int i, j;
+
+								umask(i = umask(0));
+								prc_buff('0');
+								for (j = 6; j >= 0; j -= 3)
+									prc_buff(((i >> j) & 07) +'0');
+								prc_buff(NL);
+							}
+							break;
+
+#endif
+
+						case SYSTST:
+							exitval = test(argn, com);
+							break;
+
+						case SYSECHO:
+							exitval = echo(argn, com);
+							break;
+
+						case SYSHASH:
+							exitval = 0;
+
+							if (a1)
+							{
+								if (a1[0] == '-')
+								{
+									if (a1[1] == 'r')
+										zaphash();
+									else
+										error(badopt);
+								}
+								else
+								{
+									while (*++com)
+									{
+										if (hashtype(hash_cmd(*com)) == NOTFOUND)
+											failed(*com, notfound);
+									}
+								}
+							}
+							else
+								hashpr();
+
+							break;
+
+						case SYSPWD:
+							{
+								exitval = 0;
+								cwdprint();
+							}
+							break;
+
+						case SYSRETURN:
+							if (funcnt == 0)
+								error(badreturn);
+
+							execbrk = 1;
+							exitval = (a1 ? stoi(a1) : retval);
+							break;
+
+						case SYSTYPE:
+							exitval = 0;
+							if (a1)
+							{
+								while (*++com)
+									what_is_path(*com);
+							}
+							break;
+
+						case SYSUNS:
+							exitval = 0;
+							if (a1)
+							{
+								while (*++com)
+									unset_name(*com);
+							}
+							break;
+
+						default:
+							prs_buff("unknown builtin\n");
+						}
+
+
+						flushb();
+						restore(index);
+						chktrap();
+						break;
+					}
+
+					else if (comtype == FUNCTION)
+					{
+						struct namnod *n;
+						short index;
+
+						n = findnam(com[0]);
+
+						funcnt++;
+						index = initio(io, 1);
+						setargs(com);
+						execute((struct trenod *)(n->namenv), exec_link, errorflg, pf1, pf2);
+						execbrk = 0;
+						restore(index);
+						funcnt--;
+
+						break;
+					}
+				}
+				else if (t->treio == NIL)
+				{
 					chktrap();
 					break;
-				FI
-			ELIF t->treio==0
-			THEN	break;
-			FI
-			END
+				}
+
+			}
 
 		case TFORK:
-			IF execflg ANDF (treeflgs&(FAMP|FPOU))==0
-			THEN	parent=0;
-			ELSE	WHILE (parent=fork()) == -1
-				DO sigchk(); alarm(10); pause() OD
-			FI
+			exitval = 0;
+			if (execflg && (treeflgs & (FAMP | FPOU)) == 0)
+				parent = 0;
+			else
+			{
+				int forkcnt = 1;
 
-			IF parent
-			THEN	/* This is the parent branch of fork;    */
-				/* it may or may not wait for the child. */
-				IF treeflgs&FPRS ANDF flags&ttyflg
-				THEN	prn(parent); newline();
-				FI
-				IF treeflgs&FPCL THEN closepipe(pf1) FI
-				IF (treeflgs&(FAMP|FPOU))==0
-				THEN	await(parent);
-				ELIF (treeflgs&FAMP)==0
-				THEN	post(parent);
-				ELSE	assnum(&pcsadr, parent);
-				FI
+				if (treeflgs & (FAMP | FPOU))
+				{
+					link_iodocs(iotemp);
+					linked = 1;
+				}
 
+
+				/*
+				 * FORKLIM is the max period between forks -
+				 * power of 2 usually.  Currently shell tries after
+				 * 2,4,8,16, and 32 seconds and then quits
+				 */
+
+				while ((parent = fork()) == -1)
+				{
+					if ((forkcnt = (forkcnt * 2)) > FORKLIM)        /* 32 */
+					{
+						switch (errno)
+						{
+						case ENOMEM:
+							error(noswap);
+							break;
+						default:
+						case EAGAIN:
+							error(nofork);
+							break;
+						}
+					}
+					sigchk();
+					alarm(forkcnt);
+					pause();
+				}
+			}
+			if (parent)
+			{
+				/*
+				 * This is the parent branch of fork;
+				 * it may or may not wait for the child
+				 */
+				if (treeflgs & FPRS && flags & ttyflg)
+				{
+					prn(parent);
+					newline();
+				}
+				if (treeflgs & FPCL)
+					closepipe(pf1);
+				if ((treeflgs & (FAMP | FPOU)) == 0)
+					await(parent, 0);
+				else if ((treeflgs & FAMP) == 0)
+					post(parent);
+				else
+					assnum(&pcsadr, parent);
 				chktrap();
 				break;
+			}
+			else    /* this is the forked branch (child) of execute */
+			{
+				flags |= forked;
+				fiotemp  = NIL;
 
+				if (linked == 1)
+				{
+					swap_iodoc_nm(iotemp);
+					exec_link |= 06;
+				}
+				else if (linked == 0)
+					iotemp = NIL;
 
-			ELSE	/* this is the forked branch (child) of execute */
-				flags |= forked; iotemp=0;
+#ifdef ACCOUNT
+				suspacct();
+#endif
+
 				postclr();
 				settmp();
-
-				/* Turn off INTR and QUIT if `FINT'  */
-				/* Reset ramaining signals to parent */
-				/* except for those `lost' by trap   */
+				/*
+				 * Turn off INTR and QUIT if `FINT'
+				 * Reset ramaining signals to parent
+				 * except for those `lost' by trap
+				 */
 				oldsigs();
-				IF treeflgs&FINT
-				THEN	signal(INTR, SIG_IGN);
-                                        signal(QUIT, SIG_IGN);
-				FI
+				if (treeflgs & FINT)
+				{
+					signal(SIGINT, SIG_IGN);
+					signal(SIGQUIT, SIG_IGN);
 
-				/* pipe in or out */
-				IF treeflgs&FPIN
-				THEN	rename(pf1[INPIPE],0);
+#ifdef NICE
+					nice(NICEVAL);
+#endif
+
+				}
+				/*
+				 * pipe in or out
+				 */
+				if (treeflgs & FPIN)
+				{
+					rename(pf1[INPIPE], 0);
 					close(pf1[OTPIPE]);
-				FI
-				IF treeflgs&FPOU
-				THEN	rename(pf2[OTPIPE],1);
+				}
+				if (treeflgs & FPOU)
+				{
 					close(pf2[INPIPE]);
-				FI
+					rename(pf2[OTPIPE], 1);
+				}
+				/*
+				 * default std input for &
+				 */
+				if (treeflgs & FINT && ioset == 0)
+					rename(chkopen(devnull), 0);
+				/*
+				 * io redirection
+				 */
+				initio(t->treio, 0);
 
-				/* default std input for & */
-				IF treeflgs&FINT ANDF ioset==0
-				THEN	rename(chkopen(devnull),0);
-				FI
-
-				/* io redirection */
-				initio(t->treio);
-				IF type!=TCOM
-				THEN	execute (((FORKPTR)t)->forktre, 1);
-				ELIF com[0] != ENDARGS
-				THEN	setlist (((COMPTR)t)->comset, N_EXPORT);
-					execa (com);
-				FI
+				if (type != TCOM)
+				{
+					execute(forkptr(t)->forktre, exec_link | 01, errorflg);
+				}
+				else if (com[0] != ENDARGS)
+				{
+					eflag = 0;
+					setlist(comptr(t)->comset, N_EXPORT);
+					rmtemp(NIL);
+					execa(com, pos);
+				}
 				done();
-			FI
+			}
 
 		case TPAR:
-			rename (dup(2), output);
-			execute (((PARPTR)t)->partre, execflg);
+			execute(parptr(t)->partre, exec_link, errorflg);
 			done();
 
 		case TFIL:
-			BEGIN
-			   INT pv[2];
-			   chkpipe (pv);
-			   IF execute (((LSTPTR)t)->lstlef, 0, pf1, pv)==0
-			   THEN	execute (((LSTPTR)t)->lstrit, execflg, pv, pf2);
-			   ELSE	closepipe(pv);
-			   FI
-			END
+			{
+				int pv[2];
+
+				chkpipe(pv);
+				if (execute(lstptr(t)->lstlef, 0, errorflg, pf1, pv) == 0)
+					execute(lstptr(t)->lstrit, exec_link, errorflg, pv, pf2);
+				else
+					closepipe(pv);
+			}
 			break;
 
 		case TLST:
-			execute (((LSTPTR)t)->lstlef, 0);
-			execute (((LSTPTR)t)->lstrit, execflg);
+			execute(lstptr(t)->lstlef, 0, errorflg);
+			execute(lstptr(t)->lstrit, exec_link, errorflg);
 			break;
 
 		case TAND:
-			IF execute (((LSTPTR)t)->lstlef, 0) == 0
-			THEN	execute (((LSTPTR)t)->lstrit, execflg);
-			FI
+			if (execute(lstptr(t)->lstlef, 0, 0) == 0)
+				execute(lstptr(t)->lstrit, exec_link, errorflg);
 			break;
 
 		case TORF:
-			IF execute (((LSTPTR)t)->lstlef, 0) != 0
-			THEN	execute (((LSTPTR)t)->lstrit, execflg);
-			FI
+			if (execute(lstptr(t)->lstlef, 0, 0) != 0)
+				execute(lstptr(t)->lstrit, exec_link, errorflg);
 			break;
 
 		case TFOR:
-			BEGIN
-			   NAMPTR	n = lookup (((FORPTR)t)->fornam);
-			   STRING	*args;
-			   DOLPTR	argsav=0;
+			{
+				struct namnod *n = lookup(forptr(t)->fornam);
+				char    **args;
+				struct dolnod *argsav = NIL;
 
-			   IF ((FORPTR)t)->forlst == 0
-			   THEN    args = dolv + 1;
-				   argsav = useargs();
-			   ELSE	   ARGPTR	schain = gchain;
-				   gchain = 0;
-				   trim ((args = scan (getarg (((FORPTR)t)->forlst)))[0]);
-				   gchain = schain;
-			   FI
-			   loopcnt++;
-			   WHILE *args!=ENDARGS ANDF execbrk==0
-			   DO	assign (n, *args++);
-				execute (((FORPTR)t)->fortre, 0);
-				IF execbrk < 0 THEN execbrk = 0 FI
-			   OD
-			   IF breakcnt THEN breakcnt-- FI
-			   execbrk=breakcnt; loopcnt--;
-			   argfor=freeargs(argsav);
-			END
+				if (forptr(t)->forlst == NIL)
+				{
+					args = dolv + 1;
+					argsav = useargs();
+				}
+				else
+				{
+					struct argnod *schain = gchain;
+
+					gchain = NIL;
+					trim((args = scan(getarg(forptr(t)->forlst)))[0]);
+					gchain = schain;
+				}
+				loopcnt++;
+				while (*args != ENDARGS && execbrk == 0)
+				{
+					assign(n, *args++);
+					execute(forptr(t)->fortre, 0, errorflg);
+					if (breakcnt < 0)
+						execbrk = (++breakcnt != 0);
+				}
+				if (breakcnt > 0)
+						execbrk = (--breakcnt != 0);
+
+				loopcnt--;
+				argfor = (struct dolnod *)freeargs(argsav);
+			}
 			break;
 
 		case TWH:
 		case TUN:
-			BEGIN
-			   INT		i=0;
+			{
+				int     i = 0;
 
-			   loopcnt++;
-			   WHILE execbrk==0 ANDF
-			      (execute (((WHPTR)t)->whtre, 0) == 0) == (type == TWH)
-			   DO i = execute (((WHPTR)t)->dotre, 0);
-			      IF execbrk < 0 THEN execbrk = 0 FI
-			   OD
-			   IF breakcnt THEN breakcnt-- FI
-			   execbrk = breakcnt;
-			   loopcnt--;
-			   exitval = i;
-			END
+				loopcnt++;
+				while (execbrk == 0 && (execute(whptr(t)->whtre, 0, 0) == 0) == (type == TWH))
+				{
+					i = execute(whptr(t)->dotre, 0, errorflg);
+					if (breakcnt < 0)
+						execbrk = (++breakcnt != 0);
+				}
+				if (breakcnt > 0)
+						execbrk = (--breakcnt != 0);
+
+				loopcnt--;
+				exitval = i;
+			}
 			break;
 
 		case TIF:
-			IF execute (((IFPTR)t)->iftre,0) == 0
-			THEN	execute (((IFPTR)t)->thtre, execflg);
-			ELSE	execute (((IFPTR)t)->eltre, execflg);
-			FI
+			if (execute(ifptr(t)->iftre, 0, 0) == 0)
+				execute(ifptr(t)->thtre, exec_link, errorflg);
+			else if (ifptr(t)->eltre)
+				execute(ifptr(t)->eltre, exec_link, errorflg);
+			else
+				exitval = 0;    /* force zero exit for if-then-fi */
 			break;
 
 		case TSW:
-			BEGIN
-			   REG STRING	r = mactrim (((SWPTR)t)->swarg);
-			   t = (TREPTR) ((SWPTR)t)->swlst;
-			   WHILE t
-			   DO	ARGPTR		rex = ((REGPTR)t)->regptr;
-				WHILE rex
-				DO	REG STRING	s;
-					IF gmatch (r, s = macro (rex->argval)) ORF
-					   (trim (s), eq (r, s))
-					THEN	execute (((REGPTR)t)->regcom, 0);
-						t = 0;
-						break;
-					FI
-					rex = rex->argnxt;
-				OD
-				IF t THEN t = (TREPTR) ((REGPTR)t)->regnxt FI
-			   OD
-			END
-			break;
-		ENDSW
-		exitset();
-	FI
+			{
+				register char   *r = mactrim(swptr(t)->swarg);
+				register struct regnod *regp;
 
+				regp = swptr(t)->swlst;
+				while (regp)
+				{
+					struct argnod *rex = regp->regptr;
+
+					while (rex)
+					{
+						register char   *s;
+
+						if (gmatch(r, s = macro(rex->argval)) || (trim(s), eq(r, s)))
+						{
+							execute(regp->regcom, 0, errorflg);
+							regp = NIL;
+							break;
+						}
+						else
+							rex = rex->argnxt;
+					}
+					if (regp)
+						regp = regp->regnxt;
+				}
+			}
+			break;
+		}
+		exitset();
+	}
 	sigchk();
 	tdystak(sav);
+	flags |= eflag;
 	return(exitval);
 }
 
-
-execexp(s,f)
-	STRING		s;
-	UFD		f;
+execexp(s, f)
+char    *s;
+int     f;
 {
-	FILEBLK		fb;
+	struct fileblk  fb;
 
-	push (&fb);
-	IF s
-	THEN	estabf (s);
-		fb.feval = (STRING*) f;
-	ELIF f >= 0
-	THEN	initf (f);
-	FI
-	execute (cmd (NL, NLFLG | MTFLG), 0);
+	push(&fb);
+	if (s)
+	{
+		estabf(s);
+		fb.feval = (char **)(f);
+	}
+	else if (f >= 0)
+		initf(f);
+	execute(cmd(NL, NLFLG | MTFLG), 0, (int)(flags & errflg));
 	pop();
+}
+
+execprint(com)
+	char **com;
+{
+	register int    argn = 0;
+
+	prs(execpmsg);
+
+	while(com[argn] != ENDARGS)
+	{
+		prs(com[argn++]);
+		blank();
+	}
+
+	newline();
 }

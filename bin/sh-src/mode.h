@@ -1,199 +1,202 @@
 /*
  * UNIX shell
  */
-#define BYTESPERWORD	(sizeof(char *))
+typedef int BOOL;
 
-TYPE char	CHAR;
-TYPE char	BOOL;
-TYPE int	UFD;
-TYPE int	INT;
-TYPE float	REAL;
-TYPE char	*ADDRESS;
-TYPE long int	L_INT;
-TYPE int	VOID;
-TYPE unsigned	POS;
-TYPE char	*STRING;
-TYPE char	MSG[];
-TYPE int	PIPE[];
-TYPE char	*STKPTR;
-TYPE char	*BYTPTR;
+#define uchar unsigned char
 
-STRUCT stat	STATBUF;	/* defined in /usr/sys/stat.h */
-STRUCT blk	*BLKPTR;
-STRUCT fileblk	FILEBLK;
-STRUCT filehdr	FILEHDR;
-STRUCT fileblk	*FILE;
-STRUCT trenod	*TREPTR;
-STRUCT forknod	*FORKPTR;
-STRUCT comnod	*COMPTR;
-STRUCT swnod	*SWPTR;
-STRUCT regnod	*REGPTR;
-STRUCT parnod	*PARPTR;
-STRUCT ifnod	*IFPTR;
-STRUCT whnod	*WHPTR;
-STRUCT fornod	*FORPTR;
-STRUCT lstnod	*LSTPTR;
-STRUCT argnod	*ARGPTR;
-STRUCT dolnod	*DOLPTR;
-STRUCT ionod	*IOPTR;
-STRUCT namnod	NAMNOD;
-STRUCT namnod	*NAMPTR;
-STRUCT sysnod	SYSNOD;
-STRUCT sysnod	*SYSPTR;
+#define BYTESPERWORD    (sizeof (char *))
+#define NIL     	0
 
-/* the following nonsense is required
+/*
+ * the following nonsense is required
  * because casts turn an Lvalue
  * into an Rvalue so two cheats
  * are necessary, one for each context.
  */
 #define Lcheat(a)	(*(int*)&(a))
-#define Rcheat(a)	((int)(a))
+#define Rcheat(a)       ((int)(a))
+
 
 /* address puns for storage allocation */
-UNION {
-	FORKPTR	_forkptr;
-	COMPTR	_comptr;
-	PARPTR	_parptr;
-	IFPTR	_ifptr;
-	WHPTR	_whptr;
-	FORPTR	_forptr;
-	LSTPTR	_lstptr;
-	BLKPTR	_blkptr;
-	NAMPTR	_namptr;
-	BYTPTR	_bytptr;
+typedef union
+{
+	struct forknod  *_forkptr;
+	struct comnod   *_comptr;
+	struct fndnod   *_fndptr;
+	struct parnod   *_parptr;
+	struct ifnod    *_ifptr;
+	struct whnod    *_whptr;
+	struct fornod   *_forptr;
+	struct lstnod   *_lstptr;
+	struct blk      *_blkptr;
+	struct namnod   *_namptr;
+	char    *_bytptr;
 } address;
 
 
-/* for functions that do not return values */
-/*
-struct void {INT vvvvvvvv;};
-*/
-
-
 /* heap storage */
-struct blk {
-	BLKPTR	word;
+struct blk
+{
+	struct blk      *word;
 };
 
-#define	BUFSIZ	64
-struct fileblk {
-	UFD	fdes;
-	POS	flin;
-	BOOL	feof;
-	CHAR	fsiz;
-	STRING	fnxt;
-	STRING	fend;
-	STRING	*feval;
-	FILE	fstak;
-	CHAR	fbuf[BUFSIZ];
+#define BUFSIZ  128
+struct fileblk
+{
+	int     fdes;
+	unsigned flin;
+	BOOL    feof;
+	uchar    fsiz;
+	char    *fnxt;
+	char    *fend;
+	char    **feval;
+	struct fileblk  *fstak;
+	char    fbuf[BUFSIZ];
 };
+
+struct tempblk
+{
+	int fdes;
+	struct tempblk *Fstak;
+};
+
 
 /* for files not used with file descriptors */
-struct filehdr {
-	UFD	fdes;
-	POS	flin;
-	BOOL	feof;
-	CHAR	fsiz;
-	STRING	fnxt;
-	STRING	fend;
-	STRING	*feval;
-	FILE	fstak;
-	CHAR	_fbuf[1];
+struct filehdr
+{
+	int     fdes;
+	unsigned        flin;
+	BOOL    feof;
+	uchar    fsiz;
+	char    *fnxt;
+	char    *fend;
+	char    **feval;
+	struct fileblk  *fstak;
+	char    _fbuf[1];
 };
 
-struct sysnod {
-	STRING	sysnam;
-	INT	sysval;
+struct sysnod
+{
+	char    *sysnam;
+	int     sysval;
 };
 
 /* this node is a proforma for those that follow */
-struct trenod {
-	INT	tretyp;
-	IOPTR	treio;
+struct trenod
+{
+	int     tretyp;
+	struct ionod    *treio;
 };
 
 /* dummy for access only */
-struct argnod {
-	ARGPTR	argnxt;
-	CHAR	argval[1];
+struct argnod
+{
+	struct argnod   *argnxt;
+	char    argval[1];
 };
 
-struct dolnod {
-	DOLPTR	dolnxt;
-	INT	doluse;
-	CHAR	dolarg[1];
+struct dolnod
+{
+	struct dolnod   *dolnxt;
+	int     doluse;
+	char    *dolarg[1];
 };
 
-struct forknod {
-	INT	forktyp;
-	IOPTR	forkio;
-	TREPTR	forktre;
+struct forknod
+{
+	int     forktyp;
+	struct ionod    *forkio;
+	struct trenod   *forktre;
 };
 
-struct comnod {
-	INT	comtyp;
-	IOPTR	comio;
-	ARGPTR	comarg;
-	ARGPTR	comset;
+struct comnod
+{
+	int     comtyp;
+	struct ionod    *comio;
+	struct argnod   *comarg;
+	struct argnod   *comset;
 };
 
-struct ifnod {
-	INT	iftyp;
-	TREPTR	iftre;
-	TREPTR	thtre;
-	TREPTR	eltre;
+struct fndnod
+{
+	int     fndtyp;
+	char    *fndnam;
+	struct trenod   *fndval;
 };
 
-struct whnod {
-	INT	whtyp;
-	TREPTR	whtre;
-	TREPTR	dotre;
+struct ifnod
+{
+	int     iftyp;
+	struct trenod   *iftre;
+	struct trenod   *thtre;
+	struct trenod   *eltre;
 };
 
-struct fornod {
-	INT	fortyp;
-	TREPTR	fortre;
-	STRING	fornam;
-	COMPTR	forlst;
+struct whnod
+{
+	int     whtyp;
+	struct trenod   *whtre;
+	struct trenod   *dotre;
 };
 
-struct swnod {
-	INT	swtyp;
-	STRING	swarg;
-	REGPTR	swlst;
+struct fornod
+{
+	int     fortyp;
+	struct trenod   *fortre;
+	char    *fornam;
+	struct comnod   *forlst;
 };
 
-struct regnod {
-	ARGPTR	regptr;
-	TREPTR	regcom;
-	REGPTR	regnxt;
+struct swnod
+{
+	int     swtyp;
+	char *swarg;
+	struct regnod   *swlst;
 };
 
-struct parnod {
-	INT	partyp;
-	TREPTR	partre;
+struct regnod
+{
+	struct argnod   *regptr;
+	struct trenod   *regcom;
+	struct regnod   *regnxt;
 };
 
-struct lstnod {
-	INT	lsttyp;
-	TREPTR	lstlef;
-	TREPTR	lstrit;
+struct parnod
+{
+	int     partyp;
+	struct trenod   *partre;
 };
 
-struct ionod {
-	INT	iofile;
-	STRING	ioname;
-	IOPTR	ionxt;
-	IOPTR	iolst;
+struct lstnod
+{
+	int     lsttyp;
+	struct trenod   *lstlef;
+	struct trenod   *lstrit;
 };
 
-#define	FORKTYPE	(sizeof(struct forknod))
-#define	COMTYPE		(sizeof(struct comnod))
-#define	IFTYPE		(sizeof(struct ifnod))
-#define	WHTYPE		(sizeof(struct whnod))
-#define	FORTYPE		(sizeof(struct fornod))
-#define	SWTYPE		(sizeof(struct swnod))
-#define	REGTYPE		(sizeof(struct regnod))
-#define	PARTYPE		(sizeof(struct parnod))
-#define	LSTTYPE		(sizeof(struct lstnod))
-#define	IOTYPE		(sizeof(struct ionod))
+struct ionod
+{
+	int     iofile;
+	char    *ioname;
+	char    *iolink;
+	struct ionod    *ionxt;
+	struct ionod    *iolst;
+};
+
+struct fdsave
+{
+	int org_fd;
+	int dup_fd;
+};
+
+
+#define fndptr(x)       ((struct fndnod *)x)
+#define comptr(x)       ((struct comnod *)x)
+#define forkptr(x)      ((struct forknod *)x)
+#define parptr(x)       ((struct parnod *)x)
+#define lstptr(x)       ((struct lstnod *)x)
+#define forptr(x)       ((struct fornod *)x)
+#define whptr(x)        ((struct whnod *)x)
+#define ifptr(x)        ((struct ifnod *)x)
+#define swptr(x)        ((struct swnod *)x)

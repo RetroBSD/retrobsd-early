@@ -1,25 +1,20 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
 
-STKPTR		stakbot=nullstr;
-
 /* ========	storage allocation	======== */
 
-/*
- * allocate requested stack
- */
-STKPTR	getstak(asize)
-	INT		asize;
+char *
+getstak(asize)			/* allocate requested stack */
+int	asize;
 {
-	REG STKPTR	oldstak;
-	REG INT		size;
+	register char	*oldstak;
+	register int	size;
 
-	size = round(asize,BYTESPERWORD);
+	size = round(asize, BYTESPERWORD);
 	oldstak = stakbot;
 	staktop = stakbot += size;
 	return(oldstak);
@@ -29,60 +24,59 @@ STKPTR	getstak(asize)
  * set up stack for local use
  * should be followed by `endstak'
  */
-STKPTR	locstak()
+char *
+locstak()
 {
-        IF brkend - stakbot < BRKINCR
-	THEN
-                setbrk(brkincr);
-		IF brkincr < BRKMAX
-		THEN
-                        brkincr += 256;
-		FI
-	FI
+	if (brkend - stakbot < BRKINCR)
+	{
+		if (setbrk(brkincr) == -1)
+			error(nostack);
+		if (brkincr < BRKMAX)
+			brkincr += 256;
+	}
 	return(stakbot);
 }
 
-STKPTR	savstak()
+char *
+savstak()
 {
-	assert(staktop==stakbot);
+	assert(staktop == stakbot);
 	return(stakbot);
 }
 
-/*
- * tidy up after `locstak'
- */
-STKPTR	endstak(argp)
-	REG STRING	argp;
+char *
+endstak(argp)		/* tidy up after `locstak' */
+register char	*argp;
 {
-	REG STKPTR	oldstak;
+	register char	*oldstak;
+
 	*argp++ = 0;
 	oldstak = stakbot;
-	stakbot = staktop = (STKPTR) round(argp, BYTESPERWORD);
+	stakbot = staktop = (char *)round(argp, BYTESPERWORD);
 	return(oldstak);
 }
 
-VOID	tdystak(x)
-	REG STKPTR 	x;
+tdystak(x)		/* try to bring stack back to x */
+register char	*x;
 {
-	/* try to bring stack back to x */
-	WHILE ADR(stakbsy) > ADR(x)
-	DO
-                free(stakbsy);
-                stakbsy = stakbsy->word;
-	OD
-	staktop = stakbot = max(ADR(x), ADR(stakbas));
+	while ((char *)(stakbsy) > (char *)(x))
+	{
+		free(stakbsy);
+		stakbsy = stakbsy->word;
+	}
+	staktop = stakbot = max((char *)(x), (char *)(stakbas));
 	rmtemp(x);
 }
 
 stakchk()
 {
-	IF (brkend - stakbas) > BRKINCR + BRKINCR
-	THEN	setbrk(-BRKINCR);
-	FI
+	if ((brkend - stakbas) > BRKINCR + BRKINCR)
+		setbrk(-BRKINCR);
 }
 
-STKPTR	cpystak(x)
-	STKPTR		x;
+char *
+cpystak(x)
+char	*x;
 {
 	return(endstak(movstr(x, locstak())));
 }

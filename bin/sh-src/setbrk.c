@@ -1,15 +1,18 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
 
-int
-setbrk (incr)
+char 	*sbrk();
+
+char*
+setbrk(incr)
 {
-	REG BYTPTR a = sbrk (incr);
+
+	register char *a = sbrk(incr);
+
 	brkend = a + incr;
-	return (int) a;
+	return(a);
 }

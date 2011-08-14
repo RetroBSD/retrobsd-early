@@ -1,45 +1,8 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#define LOCAL	static
-#define PROC	extern
-#define TYPE	typedef
-#define STRUCT	TYPE struct
-#define UNION	TYPE union
-#define REG	register
-
-#define IF	if(
-#define THEN	){
-#define ELSE	} else {
-#define ELIF	} else if (
-#define FI	;}
-
-#define BEGIN	{
-#define END	}
-#define SWITCH	switch(
-#define IN	){
-#define ENDSW	}
-#define FOR	for(
-#define WHILE	while(
-#define DO	){
-#define OD	;}
-#define REP	do{
-#define PER	}while(
-#undef DONE
-#define DONE	);
-#define LOOP	for(;;){
-#define POOL	}
-
-
-#define SKIP	;
-#define DIV	/
-#define REM	%
-#define NEQ	^
-#define ANDF	&&
-#define ORF	||
 
 #define TRUE	(-1)
 #define FALSE	0
@@ -54,3 +17,10 @@
 #define RQ	'\''
 #define MINUS	'-'
 #define COLON	':'
+#define TAB	'\t'
+
+#define MAX(a,b)	((a)>(b)?(a):(b))
+
+#define blank()		prc(SP)
+#define	tab()		prc(TAB)
+#define newline()	prc(NL)

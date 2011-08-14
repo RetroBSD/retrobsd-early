@@ -1,131 +1,306 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
 
-LOCAL STRING	*copyargs();
-LOCAL DOLPTR	dolh;
+static struct dolnod *copyargs();
+static struct dolnod *freedolh();
+extern struct dolnod *freeargs();
+static struct dolnod *dolh;
 
-CHAR	flagadr[10];
+char	flagadr[14];
 
-CHAR	flagchar[] = {
-	'x',	'n',	'v',	't',	's',	'i',	'e',	'r',	'k',	'u',	0
+char	flagchar[] =
+{
+	'x',
+	'n',
+	'v',
+	't',
+	STDFLG,
+	'i',
+	'e',
+	'r',
+	'k',
+	'u',
+	'h',
+	'f',
+	'a',
+	 0
 };
-INT	flagval[]  = {
-	execpr,	noexec,	readpr,	oneflg,	stdflg,	intflg,	errflg,	rshflg,	keyflg,	setflg,	0
+
+long	flagval[]  =
+{
+	execpr,
+	noexec,
+	readpr,
+	oneflg,
+	stdflg,
+	intflg,
+	errflg,
+	rshflg,
+	keyflg,
+	setflg,
+	hashflg,
+	nofngflg,
+	exportflg,
+	  0
 };
 
 /* ========	option handling	======== */
 
-INT	options(argc,argv)
-	STRING		*argv;
-	INT		argc;
+
+options(argc,argv)
+	char	**argv;
+	int	argc;
 {
-	REG STRING	cp;
-	REG STRING	*argp=argv;
-	REG STRING	flagc;
-	STRING		flagp;
+	register char *cp;
+	register char **argp = argv;
+	register char *flagc;
+	char	*flagp;
 
-	IF argc>1 ANDF *argp[1]=='-'
-	THEN	cp=argp[1];
-		flags &= ~(execpr|readpr);
-		WHILE *++cp
-		DO	flagc=flagchar;
+	if (argc > 1 && *argp[1] == '-')
+	{
+		/*
+		 * if first argument is "--" then options are not
+		 * to be changed. Fix for problems getting
+		 * $1 starting with a "-"
+		 */
 
-			WHILE *flagc ANDF *flagc != *cp DO flagc++ OD
-			IF *cp == *flagc
-			THEN	flags |= flagval[flagc-flagchar];
-			ELIF *cp=='c' ANDF argc>2 ANDF comdiv==0
-			THEN	comdiv=argp[2];
-				argp[1]=argp[0]; argp++; argc--;
-			ELSE	failed(argv[1],badopt);
-			FI
-		OD
-		argp[1]=argp[0]; argc--;
-	FI
+		cp = argp[1];
+		if (cp[1] == '-')
+		{
+			argp[1] = argp[0];
+			argc--;
+			return(argc);
+		}
+		if (cp[1] == '\0')
+			flags &= ~(execpr|readpr);
 
-	/* set up $- */
-	flagc=flagchar;
-	flagp=flagadr;
-	WHILE *flagc
-	DO IF flags&flagval[flagc-flagchar]
-	   THEN *flagp++ = *flagc;
-	   FI
-	   flagc++;
-	OD
-	*flagp++=0;
+		/*
+		 * Step along 'flagchar[]' looking for matches.
+		 * 'sicr' are not legal with 'set' command.
+		 */
 
+		while (*++cp)
+		{
+			flagc = flagchar;
+			while (*flagc && *flagc != *cp)
+				flagc++;
+			if (*cp == *flagc)
+			{
+				if (eq(argv[0], "set") && any(*cp, "sicr"))
+					failed(argv[1], badopt);
+				else
+				{
+					flags |= flagval[flagc-flagchar];
+					if (flags & errflg)
+						eflag = errflg;
+				}
+			}
+			else if (*cp == 'c' && argc > 2 && comdiv == NIL)
+			{
+				comdiv = argp[2];
+				argp[1] = argp[0];
+				argp++;
+				argc--;
+			}
+			else
+				failed(argv[1],badopt);
+		}
+		argp[1] = argp[0];
+		argc--;
+	}
+	else if (argc > 1 && *argp[1] == '+')	/* unset flags x, k, t, n, v, e, u */
+	{
+		cp = argp[1];
+		while (*++cp)
+		{
+			flagc = flagchar;
+			while (*flagc && *flagc != *cp)
+				flagc++;
+			/*
+			 * step through flags
+			 */
+			if (!any(*cp, "sicr") && *cp == *flagc)
+			{
+				/*
+				 * only turn off if already on
+				 */
+				if ((flags & flagval[flagc-flagchar]))
+				{
+					flags &= ~(flagval[flagc-flagchar]);
+					if (*cp == 'e')
+						eflag = 0;
+				}
+			}
+		}
+		argp[1] = argp[0];
+		argc--;
+	}
+	/*
+	 * set up $-
+	 */
+	flagp = flagadr;
+	if (flags)
+	{
+		flagc = flagchar;
+		while (*flagc)
+		{
+			if (flags & flagval[flagc-flagchar])
+				*flagp++ = *flagc;
+			flagc++;
+		}
+	}
+	*flagp = 0;
 	return(argc);
 }
 
-VOID	setargs(argi)
-	STRING		argi[];
+/*
+ * sets up positional parameters
+ */
+setargs(argi)
+	char	*argi[];
 {
-	/* count args */
-	REG STRING	*argp = argi;
-	REG INT		argn = 0;
+	register char **argp = argi;	/* count args */
+	register int argn = 0;
 
-	WHILE Rcheat(*argp++)!=ENDARGS DO argn++ OD
-
-	/* free old ones unless on for loop chain */
-	freeargs (dolh);
-	dolh = (DOLPTR) copyargs (argi, argn);	/* sets dolv */
-	assnum (&dolladr, dolc = argn - 1);
+	while (Rcheat(*argp++) != ENDARGS)
+		argn++;
+	/*
+	 * free old ones unless on for loop chain
+	 */
+	freedolh();
+	dolh = copyargs(argi, argn);
+	dolc = argn - 1;
 }
 
-DOLPTR	freeargs(blk)
-	DOLPTR		blk;
-{
-	REG STRING	*argp;
-	REG DOLPTR	argr = 0;
-	REG DOLPTR	argblk;
 
-	IF argblk = blk
-	THEN	argr = argblk->dolnxt;
-		IF (--argblk->doluse)==0
-		THEN	FOR argp = (STRING*) argblk->dolarg; Rcheat(*argp) != ENDARGS; argp++
-			DO free(*argp) OD
+static struct dolnod *
+freedolh()
+{
+	register char **argp;
+	register struct dolnod *argblk;
+
+	if (argblk = dolh)
+	{
+		if ((--argblk->doluse) == 0)
+		{
+			for (argp = argblk->dolarg; Rcheat(*argp) != ENDARGS; argp++)
+				free(*argp);
 			free(argblk);
-		FI
-	FI
+		}
+	}
+}
+
+struct dolnod *
+freeargs(blk)
+	struct dolnod *blk;
+{
+	register char **argp;
+	register struct dolnod *argr = NIL;
+	register struct dolnod *argblk;
+	int cnt;
+
+	if (argblk = blk)
+	{
+		argr = argblk->dolnxt;
+		cnt  = --argblk->doluse;
+
+		if (argblk == dolh)
+		{
+			if (cnt == 1)
+				return(argr);
+			else
+				return(argblk);
+		}
+		else
+		{
+			if (cnt == 0)
+			{
+				for (argp = argblk->dolarg; Rcheat(*argp) != ENDARGS; argp++)
+					free(*argp);
+				free(argblk);
+			}
+		}
+	}
 	return(argr);
 }
 
-LOCAL STRING *	copyargs(from, n)
-	STRING		from[];
+static struct dolnod *
+copyargs(from, n)
+	char	*from[];
 {
-	REG STRING *	np = (STRING*) alloc (n*sizeof(STRING*) + 3*BYTESPERWORD);
-	REG STRING *	fp = from;
-	REG STRING *	pp = np;
+	register struct dolnod *np = (struct dolnod *) alloc(sizeof(char**) * n + 3 * BYTESPERWORD);
+	register char **fp = from;
+	register char **pp;
 
-	((DOLPTR)np)->doluse = 1;	/* use count */
-	np = (STRING*) ((DOLPTR)np)->dolarg;
-	dolv = np;
+	np->doluse = 1;	/* use count */
+	pp = np->dolarg;
+	dolv = pp;
 
-	WHILE n--
-	DO *np++ = make (*fp++) OD
-	*np++ = ENDARGS;
-	return(pp);
+	while (n--)
+		*pp++ = make(*fp++);
+	*pp++ = ENDARGS;
+	return(np);
+}
+
+
+struct dolnod *
+clean_args(blk)
+	struct dolnod *blk;
+{
+	register char **argp;
+	register struct dolnod *argr = NIL;
+	register struct dolnod *argblk;
+
+	if (argblk = blk)
+	{
+		argr = argblk->dolnxt;
+
+		if (argblk == dolh)
+			argblk->doluse = 1;
+		else
+		{
+			for (argp = argblk->dolarg; Rcheat(*argp) != ENDARGS; argp++)
+				free(*argp);
+			free(argblk);
+		}
+	}
+	return(argr);
 }
 
 clearup()
 {
-	/* force `for' $* lists to go away */
-	WHILE argfor=freeargs(argfor) DONE
+	/*
+	 * force `for' $* lists to go away
+	 */
+	while (argfor = clean_args(argfor))
+		;
+	/*
+	 * clean up io files
+	 */
+	while (pop())
+		;
 
-	/* clean up io files */
-	WHILE pop() DONE
+	/*
+	 * clean up tmp files
+	*/
+	while (poptemp())
+		;
 }
 
-DOLPTR	useargs()
+struct dolnod *
+useargs()
 {
-	IF dolh
-	THEN	dolh->doluse++;
-		dolh->dolnxt=argfor;
-		return(argfor=dolh);
-	ELSE	return(0);
-	FI
+	if (dolh)
+	{
+		if (dolh->doluse++ == 1)
+		{
+			dolh->dolnxt = argfor;
+			argfor = dolh;
+		}
+	}
+	return(dolh);
 }

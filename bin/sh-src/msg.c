@@ -1,148 +1,192 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
 #include "sym.h"
 
-MSG		version = "\nVERSION sys137	DATE 1978 Nov 6 14:29:22\n";
-
-/* error messages */
-MSG	badopt		= "bad option(s)";
-MSG	mailmsg		= "you have mail\n";
-MSG	nospace		= "no space";
-MSG	synmsg		= "syntax error";
-
-MSG	badnum		= "bad number";
-MSG	badparam	= "parameter not set";
-MSG	badsub		= "bad substitution";
-MSG	badcreate	= "cannot create";
-MSG	illegal		= "illegal io";
-MSG	restricted	= "restricted";
-MSG	piperr		= "cannot make pipe";
-MSG	badopen		= "cannot open";
-MSG	coredump	= " - core dumped";
-MSG	arglist		= "arg list too long";
-MSG	txtbsy		= "text busy";
-MSG	toobig		= "too big";
-MSG	badexec		= "cannot execute";
-MSG	notfound	= "not found";
-MSG	badfile		= "bad file number";
-MSG	badshift	= "cannot shift";
-MSG	baddir		= "bad directory";
-MSG	badtrap		= "bad trap";
-MSG	wtfailed	= "is read only";
-MSG	notid		= "is not an identifier";
-
-/* built in names */
-MSG	pathname	= "PATH";
-MSG	homename	= "HOME";
-MSG	mailname	= "MAIL";
-MSG	fngname		= "FILEMATCH";
-MSG	ifsname		= "IFS";
-MSG	ps1name		= "PS1";
-MSG	ps2name		= "PS2";
-
-/* string constants */
-MSG	nullstr		= "";
-MSG	sptbnl		= " \t\n";
-MSG	defpath		= ":/bin:/sbin";
-MSG	colon		= ": ";
-MSG	minus		= "-";
-MSG	endoffile	= "end of file";
-MSG	unexpected 	= " unexpected";
-MSG	atline		= " at line ";
-MSG	devnull		= "/dev/null";
-MSG	execpmsg	= "+ ";
-MSG	readmsg		= "> ";
-MSG	stdprompt	= "$ ";
-MSG	supprompt	= "# ";
-MSG	profile		= ".profile";
-
-
-/* tables */
-SYSNOD reserved[] = {
-		{"in",		INSYM},
-		{"esac",	ESSYM},
-		{"case",	CASYM},
-		{"for",		FORSYM},
-		{"done",	ODSYM},
-		{"if",		IFSYM},
-		{"while",	WHSYM},
-		{"do",		DOSYM},
-		{"then",	THSYM},
-		{"else",	ELSYM},
-		{"elif",	EFSYM},
-		{"fi",		FISYM},
-		{"until",	UNSYM},
-		{ "{",		BRSYM},
-		{ "}",		KTSYM},
-		{0,	0},
-};
-
-STRING sysmsg[] = {
-		0,
-		"Hangup",
-		0,	/* Interrupt */
-		"Quit",
-		"Illegal instruction",
-		"Trace/BPT trap",
-		"IOT trap",
-		"EMT trap",
-		"Floating exception",
-		"Killed",
-		"Bus error",
-		"Memory fault",
-		"Bad system call",
-		0,	/* Broken pipe */
-		"Alarm call",
-		"Terminated",
-		"Urgent condition",
-		"Stopped",
-		"Stopped from terminal",
-		"Continued",
-		"Child terminated",
-		"Stopped on terminal input",
-		"Stopped on terminal output",
-		"Asynchronous I/O",
-		"Exceeded cpu time limit",
-		"Exceeded file size limit",
-		"Virtual time alarm",
-		"Profiling time alarm",
-		"Window changed",
-		"Signal 29",
-		"User defined signal 1",
-		"User defined signal 2",
-		"Signal 32",
-};
-INT		num_sysmsg = (sizeof sysmsg / sizeof sysmsg[0]);
-
-MSG		export = "export";
-MSG		readonly = "readonly";
-SYSNOD commands[] = {
-		{"cd",		SYSCD},
-		{"read",	SYSREAD},
 /*
-		{"[",		SYSTST},
-*/
-		{"set",		SYSSET},
-		{":",		SYSNULL},
-		{"trap",	SYSTRAP},
-		{"login",	SYSLOGIN},
-		{"wait",	SYSWAIT},
-		{"eval",	SYSEVAL},
-		{".",		SYSDOT},
-		{readonly,	SYSRDONLY},
-		{export,	SYSXPORT},
-		{"chdir",	SYSCD},
-		{"break",	SYSBREAK},
-		{"continue",	SYSCONT},
-		{"shift",	SYSSHFT},
-		{"exit",	SYSEXIT},
-		{"exec",	SYSEXEC},
-		{"times",	SYSTIMES},
-		{"umask",	SYSUMASK},
-		{0,	0},
+ * error messages
+ */
+char    badopt[]        = "bad option(s)";
+char    mailmsg[]       = "you have mail\n";
+char    nospace[]       = "no space";
+char    nostack[]       = "no stack space";
+char    synmsg[]        = "syntax error";
+
+char    badnum[]        = "bad number";
+char    badparam[]      = "parameter null or not set";
+char    unset[]         = "parameter not set";
+char    badsub[]        = "bad substitution";
+char    badcreate[]     = "cannot create";
+char    nofork[]        = "fork failed - too many processes";
+char    noswap[]        = "cannot fork: no swap space";
+char    restricted[]    = "restricted";
+char    piperr[]        = "cannot make pipe";
+char    badopen[]       = "cannot open";
+char    coredump[]      = " - core dumped";
+char    arglist[]       = "arg list too long";
+char    txtbsy[]        = "text busy";
+char    toobig[]        = "too big";
+char    badexec[]       = "cannot execute";
+char    notfound[]      = "not found";
+char    badfile[]       = "bad file number";
+char    badshift[]      = "cannot shift";
+char    baddir[]        = "bad directory";
+char    badtrap[]       = "bad trap";
+char    wtfailed[]      = "is read only";
+char    notid[]         = "is not an identifier";
+char    badulimit[]     = "Bad ulimit";
+char    badreturn[] = "cannot return when not in function";
+char    badexport[] = "cannot export functions";
+char    badunset[]      = "cannot unset";
+char    nohome[]        = "no home directory";
+char    badperm[]       = "execute permission denied";
+char    longpwd[]       = "sh error: pwd too long";
+/*
+ * messages for 'builtin' functions
+ */
+char    btest[]         = "test";
+char    badop[]         = "unknown operator ";
+/*
+ * built in names
+ */
+char    pathname[]      = "PATH";
+char    cdpname[]       = "CDPATH";
+char    homename[]      = "HOME";
+char    mailname[]      = "MAIL";
+char    ifsname[]       = "IFS";
+char    ps1name[]       = "PS1";
+char    ps2name[]       = "PS2";
+char    mchkname[]      = "MAILCHECK";
+char    acctname[]      = "SHACCT";
+char    mailpname[]     = "MAILPATH";
+
+/*
+ * string constants
+ */
+char    nullstr[]       = "";
+char    sptbnl[]        = " \t\n";
+char    defpath[]       = ":/bin:/usr/bin:/usr/ucb/bin:/etc";
+char    colon[]         = ": ";
+char    minus[]         = "-";
+char    endoffile[]     = "end of file";
+char    unexpected[]    = " unexpected";
+char    atline[]        = " at line ";
+char    devnull[]       = "/dev/null";
+char    execpmsg[]      = "+ ";
+char    readmsg[]       = "> ";
+char    stdprompt[]     = "$ ";
+char    supprompt[]     = "su# ";
+char    profile[]       = ".profile";
+char    sysprofile[]    = "/etc/profile";
+
+/*
+ * tables
+ */
+
+struct sysnod reserved[] =
+{
+	{ "case",       CASYM   },
+	{ "do",         DOSYM   },
+	{ "done",       ODSYM   },
+	{ "elif",       EFSYM   },
+	{ "else",       ELSYM   },
+	{ "esac",       ESSYM   },
+	{ "fi",         FISYM   },
+	{ "for",        FORSYM  },
+	{ "if",         IFSYM   },
+	{ "in",         INSYM   },
+	{ "then",       THSYM   },
+	{ "until",      UNSYM   },
+	{ "while",      WHSYM   },
+	{ "{",          BRSYM   },
+	{ "}",          KTSYM   }
 };
+
+int no_reserved = 15;
+
+char    *sysmsg[] =
+{
+	0,
+	"Hangup",
+	0,      /* Interrupt */
+	"Quit",
+	"Illegal instruction",
+	"Trace/BPT trap",
+	"abort",
+	"EMT trap",
+	"Floating exception",
+	"Killed",
+	"Bus error",
+	"Memory fault",
+	"Bad system call",
+	"Broken pipe",
+	"Alarm call",
+	"Terminated",
+	"Urgent cond.",
+	"Stopped",
+	"Ctrl Z",
+	"Continued",
+	"Child death",
+	"Tty input",
+	"Tty output",
+	"Keyboard",
+	/* "Power Fail" */
+};
+
+char    export[] = "export";
+char    duperr[] = "cannot dup";
+char    readonly[] = "readonly";
+
+struct sysnod commands[] =
+{
+	{ ".",          SYSDOT  },
+	{ ":",          SYSNULL },
+
+#ifndef RES
+	{ "[",          SYSTST },
+#endif
+
+	{ "break",      SYSBREAK },
+	{ "cd",         SYSCD   },
+	{ "continue",   SYSCONT },
+	{ "echo",       SYSECHO },
+	{ "eval",       SYSEVAL },
+	{ "exec",       SYSEXEC },
+	{ "exit",       SYSEXIT },
+	{ "export",     SYSXPORT },
+	{ "hash",       SYSHASH },
+
+#ifdef RES
+	{ "login",      SYSLOGIN },
+	{ "newgrp",     SYSLOGIN },
+#else
+	{ "login",      SYSLOGIN },
+	{ "newgrp",     SYSNEWGRP },
+#endif
+	{ "pwd",        SYSPWD },
+	{ "read",       SYSREAD },
+	{ "readonly",   SYSRDONLY },
+	{ "return",     SYSRETURN },
+	{ "set",	SYSSET	},
+	{ "shift",	SYSSHFT	},
+	{ "test",	SYSTST },
+	{ "times",	SYSTIMES },
+	{ "trap",	SYSTRAP	},
+	{ "type",	SYSTYPE },
+
+#ifndef RES
+	{ "ulimit",	SYSULIMIT },
+	{ "umask",	SYSUMASK },
+#endif
+	{ "unset", 	SYSUNS },
+	{ "wait",	SYSWAIT	}
+};
+
+#ifdef RES
+	int no_commands = 26;
+#else
+	int no_commands = 28;
+#endif

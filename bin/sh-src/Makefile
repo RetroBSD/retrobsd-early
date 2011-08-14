@@ -1,12 +1,10 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-SRCS		= args.c blok.c builtin.c cmd.c ctype.c error.c expand.c \
-		  fault.c io.c macro.c main.c msg.c name.c print.c service.c \
-		  setbrk.c stak.c string.c word.c xec.c
-OBJS		= args.o blok.o builtin.o cmd.o ctype.o error.o expand.o \
-		  fault.o io.o macro.o main.o msg.o name.o print.o service.o \
-		  setbrk.o stak.o string.o word.o xec.o
+OBJS            = setbrk.o blok.o stak.o cmd.o fault.o main.o word.o \
+                  string.o name.o args.o xec.o service.o error.o io.o \
+                  print.o macro.o expand.o ctype.o msg.o test.o defs.o \
+                  echo.o hash.o hashserv.o pwd.o func.o
 
 all:		../sh
 

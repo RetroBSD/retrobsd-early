@@ -1,131 +1,243 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
-#include	"sym.h"
+#include "defs.h"
+#include "sym.h"
 
-/* ========	character handling for command lines	========*/
+/* ========     character handling for command lines    ========*/
 
 word()
 {
-	REG CHAR	c, d;
-	REG CHAR	*argp = locstak() + BYTESPERWORD;
-	REG ARGPTR	ap;
-	INT		alpha=1;
+	register char   c, d;
+	struct argnod   *arg = (struct argnod *)locstak();
+	register char   *argp = arg->argval;
+	int             alpha = 1;
 
-	wdnum=0; wdset=0;
+	wdnum = 0;
+	wdset = 0;
 
-	WHILE (c=nextc(0), space(c)) DONE
+	while (1)
+	{
+		while (c = nextc(0), space(c))          /* skipc() */
+			;
 
-	IF c=='#' ANDF ((flags&prompt)==0 ORF ((flags&ttyflg) ANDF
-	    standin->fstak!=0))
-	THEN	WHILE (c=readc()) ANDF c!=NL DONE
-	FI
+		if (c == COMCHAR)
+		{
+			while ((c = readc()) != NL && c != EOF);
+			peekc = c;
+		}
+		else
+		{
+			break;  /* out of comment - white space loop */
+		}
+	}
+	if (!eofmeta(c))
+	{
+		do
+		{
+			if (c == LITERAL)
+			{
+				*argp++ = (DQUOTE);
+				while ((c = readc()) && c != LITERAL)
+				{
+					/* @@@ *argp++ = (c | QUOTE); */
+					*argp++ = qmask(c);
 
-	IF !eofmeta(c)
-	THEN	REP	IF c==LITERAL
-			THEN	*argp++=(DQUOTE);
-				WHILE (c=readc()) ANDF c!=LITERAL
-				DO *argp++=(c|QUOTE); chkpr(c) OD
-				*argp++=(DQUOTE);
+					if (c == NL)
+						chkpr();
+				}
+				*argp++ = (DQUOTE);
+			}
+			else
+			{
+				*argp++ = (c);
+				if (c == '=')
+					wdset |= alpha;
+				if (!alphanum(c))
+					alpha = 0;
+				if (qotchar(c))
+				{
+					d = c;
+					while ((*argp++ = (c = nextc(d))) && c != d)
+					{
+						if (c == NL)
+							chkpr();
+					}
+				}
+			}
+		} while ((c = nextc(0), !eofmeta(c)));
+		argp = endstak(argp);
+		if (!letter(arg->argval[0]))
+			wdset = 0;
 
-			ELSE	*argp++=(c);
-				IF c=='=' THEN wdset |= alpha FI
-				IF !alphanum(c) THEN alpha=0 FI
-				IF qotchar(c)
-				THEN	d=c;
-					WHILE (*argp++=(c=nextc(d))) ANDF c!=d
-					DO chkpr(c) OD
-				FI
-			FI
-		PER (c=nextc(0), !eofmeta(c)) DONE
-		ap = (ARGPTR) endstak (argp);
-		IF ! letter (ap->argval[0]) THEN wdset=0 FI
-
-		peekc = c | MARK;
-		IF ap->argval[1]==0 ANDF (d=ap->argval[0], digit(d)) ANDF (c=='>' ORF c=='<')
-		THEN	word();
+		peekn = c | MARK;
+		if (arg->argval[1] == 0 &&
+		    (d = arg->argval[0], digit(d)) &&
+		    (c == '>' || c == '<'))
+		{
+			word();
 			wdnum = d - '0';
-		ELSE	/*check for reserved words*/
-			IF reserv == FALSE ORF (wdval = syslook (ap->argval, reserved))==0
-			THEN	wdarg = ap;
+		}
+		else            /*check for reserved words*/
+		{
+			if (reserv == FALSE || (wdval = syslook(arg->argval,reserved, no_reserved)) == 0)
+			{
+				wdarg = arg;
 				wdval = 0;
-			FI
-		FI
-
-	ELIF dipchar(c)
-	THEN	IF (d=nextc(0))==c
-		THEN	wdval = c|SYMREP;
-		ELSE	peekc = d|MARK; wdval = c;
-		FI
-	ELSE	IF (wdval=c)==EOF
-		THEN	wdval=EOFSYM;
-		FI
-		IF iopend ANDF eolchar(c)
-		THEN	copy(iopend); iopend=0;
-		FI
-	FI
-	reserv=FALSE;
+			}
+		}
+	}
+	else if (dipchar(c))
+	{
+		if ((d = nextc(0)) == c)
+		{
+			wdval = c | SYMREP;
+			if (c == '<')
+			{
+				if ((d = nextc(0)) == '-')
+					wdnum |= IOSTRIP;
+				else
+					peekn = d | MARK;
+			}
+		}
+		else
+		{
+			peekn = d | MARK;
+			wdval = c;
+		}
+	}
+	else
+	{
+		if ((wdval = c) == EOF)
+			wdval = EOFSYM;
+		if (iopend && eolchar(c))
+		{
+			copy(iopend);
+			iopend = 0;
+		}
+	}
+	reserv = FALSE;
 	return(wdval);
 }
 
-nextc(quote)
-	CHAR		quote;
+skipc()
 {
-	REG CHAR	c, d;
-	IF (d=readc())==ESCAPE
-	THEN	IF (c=readc())==NL
-		THEN	chkpr(NL); d=nextc(quote);
-		ELIF quote ANDF c!=quote ANDF !escchar(c)
-		THEN	peekc=c|MARK;
-		ELSE	d = c|QUOTE;
-		FI
-	FI
-	return(d);
+	register char c;
+
+	while (c = nextc(0), space(c))
+		;
+	return(c);
 }
 
-LOCAL	readb()
+nextc(quote)
+char    quote;
 {
-	REG FILE	f=standin;
-	REG INT		len;
+	register char   c, d;
 
-	IF setjmp(INTbuf) == 0 THEN trapjmp[INTR] = 1; FI
-	REP	IF trapnote&SIGSET THEN newline(); sigchk() FI
-	PER (len=read(f->fdes,f->fbuf,f->fsiz))<0 ANDF trapnote DONE
-	trapjmp[INTR] = 0;
-	return(len);
+retry:
+	if ((d = readc()) == ESCAPE)
+	{
+		if ((c = readc()) == NL)
+		{
+			chkpr();
+			goto retry;
+		}
+		else if (quote && c != quote && !escchar(c))
+			peekc = c | MARK;
+		else
+			/* @@@ d = c | QUOTE; */
+			d = qmask(c);
+	}
+	return(d);
 }
 
 readc()
 {
-	REG CHAR	c;
-	REG INT		len;
-	REG FILE	f;
+	register char   c;
+	register int    len;
+	register struct fileblk *f;
 
+	if (peekn)
+	{
+		peekc = peekn;
+		peekn = 0;
+	}
+	if (peekc)
+	{
+		c = peekc;
+		peekc = 0;
+		return(c);
+	}
+	f = standin;
 retry:
-	IF peekc
-	THEN	c=peekc; peekc=0;
-	ELIF (f=standin, f->fnxt!=f->fend)
-	THEN	IF (c = *f->fnxt++)==0
-		THEN	IF f->feval
-			THEN	IF estabf(*f->feval++)
-				THEN	c=EOF;
-				ELSE	c=SP;
-				FI
-			ELSE	goto retry; /* = c=readc(); */
-			FI
-		FI
-		IF flags&readpr ANDF standin->fstak==0 THEN prc(c) FI
-		IF c==NL THEN f->flin++ FI
-	ELIF f->feof ORF f->fdes<0
-	THEN	c=EOF; f->feof++;
-	ELIF (len = readb()) <= 0
-	THEN	close(f->fdes); f->fdes = -1; c=EOF; f->feof++;
-	ELSE	f->fend = (f->fnxt = f->fbuf)+len;
+	if (f->fnxt != f->fend)
+	{
+		if ((c = *f->fnxt++) == 0)
+		{
+			if (f->feval)
+			{
+				if (estabf(*f->feval++))
+					c = EOF;
+				else
+					c = SP;
+			}
+			else
+				goto retry;     /* = c = readc(); */
+		}
+		if (flags & readpr && standin->fstak == NIL)
+			prc(c);
+		if (c == NL)
+			f->flin++;
+	}
+	else if (f->feof || f->fdes < 0)
+	{
+		c = EOF;
+		f->feof++;
+	}
+	else if ((len = readb()) <= 0)
+	{
+		close(f->fdes);
+		f->fdes = -1;
+		c = EOF;
+		f->feof++;
+	}
+	else
+	{
+		f->fend = (f->fnxt = f->fbuf) + len;
 		goto retry;
-	FI
+	}
 	return(c);
+}
+
+readb()
+{
+	register struct fileblk *f = standin;
+	register int    len;
+
+	do
+	{
+		if (trapnote & SIGSET)
+		{
+			newline();
+			sigchk();
+		}
+		else if ((trapnote & TRAPSET) && (rwait > 0))
+		{
+			newline();
+			chktrap();
+			clearup();
+		}
+
+	       len = read(f->fdes, f->fbuf, (f->fsiz) & 0377);
+
+		/* @@@ &0377 HACK, because of fsiz is unsigned char,
+		 * which is not supported on pdp11-unix.
+		 * Then the sign extension happens !
+		 */
+
+	} while (  len < 0 && trapnote );
+
+	return(len);
 }

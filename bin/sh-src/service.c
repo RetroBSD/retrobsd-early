@@ -1,399 +1,677 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
-#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
 
-LOCAL STRING	execs();
-LOCAL VOID	gsort();
-LOCAL INT	split();
+#define ARGMK   01
 
-#define ARGMK	01
-
-INT		errno;
-extern STRING	sysmsg[];
-INT		num_sysmsg;
-
-/* fault handling */
-#define ENOMEM	12
-#define ENOEXEC 8
-#define E2BIG	7
-#define ENOENT	2
-#define ETXTBSY 26
+extern char     *sysmsg[];
+extern short topfd;
 
 
-
-/* service routines for `execute' */
-
-VOID	initio(iop)
-	IOPTR		iop;
+/*
+ * service routines for `execute'
+ */
+initio(iop, save)
+	struct ionod    *iop;
+	int             save;
 {
-	REG STRING	ion;
-	REG INT		iof, fd;
+	register char   *ion;
+	register int    iof, fd;
+	int             ioufd;
+	short   lastfd;
 
-	IF iop
-	THEN	iof=iop->iofile;
-		ion=mactrim(iop->ioname);
-		IF *ion ANDF (flags&noexec)==0
-		THEN	IF iof&IODOC
-			THEN	subst(chkopen(ion),(fd=tmpfil()));
-				close(fd); fd=chkopen(tmpout); unlink(tmpout);
-			ELIF iof&IOMOV
-			THEN	IF eq(minus,ion)
-				THEN	fd = -1;
-					close(iof&IOUFD);
-				ELIF (fd=stoi(ion))>=USERIO
-				THEN	failed(ion,badfile);
-				ELSE	fd=dup(fd);
-				FI
-			ELIF (iof&IOPUT)==0
-			THEN	fd=chkopen(ion);
-			ELIF flags&rshflg
-			THEN	failed(ion,restricted);
-			ELIF iof&IOAPP ANDF (fd=open(ion,O_WRONLY|O_APPEND))>=0
-			THEN	;
-			ELSE	fd=create(ion);
-			FI
-			IF fd>=0
-			THEN	rename(fd,iof&IOUFD);
-			FI
-		FI
-		initio(iop->ionxt);
-	FI
+	lastfd = topfd;
+	while (iop)
+	{
+		iof = iop->iofile;
+		ion = mactrim(iop->ioname);
+		ioufd = iof & IOUFD;
+
+		if (*ion && (flags&noexec) == 0)
+		{
+			if (save)
+			{
+				fdmap[topfd].org_fd = ioufd;
+				fdmap[topfd++].dup_fd = savefd(ioufd);
+			}
+
+			if (iof & IODOC)
+			{
+				struct tempblk tb;
+
+				subst(chkopen(ion), (fd = tmpfil(&tb)));
+
+				poptemp();      /* pushed in tmpfil() --
+						   bug fix for problem with
+						   in-line scripts
+						*/
+
+				fd = chkopen(tmpout);
+				unlink(tmpout);
+			}
+			else if (iof & IOMOV)
+			{
+				if (eq(minus, ion))
+				{
+					fd = -1;
+					close(ioufd);
+				}
+				else if ((fd = stoi(ion)) >= USERIO)
+					failed(ion, badfile);
+				else
+					fd = dup(fd);
+			}
+			else if ((iof & IOPUT) == 0)
+				fd = chkopen(ion);
+			else if (flags & rshflg)
+				failed(ion, restricted);
+			else if (iof & IOAPP && (fd = open(ion, 1)) >= 0)
+				lseek(fd, 0L, 2);
+			else
+				fd = create(ion);
+			if (fd >= 0)
+				rename(fd, ioufd);
+		}
+
+		iop = iop->ionxt;
+	}
+	return(lastfd);
 }
 
-STRING	getpath(s)
-	STRING		s;
+char *
+simple(s)
+char    *s;
 {
-	REG STRING	path;
-	IF any('/',s)
-	THEN	IF flags&rshflg
-		THEN	failed(s, restricted);
-		ELSE	return(nullstr);
-		FI
-	ELIF (path = pathnod.namval)==0
-	THEN	return(defpath);
-	ELSE	return(cpystak(path));
-	FI
+	char    *sname;
+
+	sname = s;
+	while (1)
+	{
+		if (any('/', sname))
+			while (*sname++ != '/')
+				;
+		else
+			return(sname);
+	}
 }
 
-INT	pathopen(path, name)
-	REG STRING	path, name;
+char *
+getpath(s)
+	char    *s;
 {
-	REG UFD		f;
+	register char   *path;
 
-	REP path=catpath(path,name);
-	PER (f=open(curstak(), O_RDONLY))<0 ANDF path DONE
+	if (any('/', s) || any(('/' | QUOTE), s))
+	{
+		if (flags & rshflg)
+			failed(s, restricted);
+		else
+			return(nullstr);
+	}
+	else if ((path = pathnod.namval) == NIL)
+		return(defpath);
+	else
+		return(cpystak(path));
+}
+
+pathopen(path, name)
+register char *path, *name;
+{
+	register int    f;
+
+	do
+	{
+		path = catpath(path, name);
+	} while ((f = open(curstak(), 0)) < 0 && path);
 	return(f);
 }
 
-STRING	catpath(path,name)
-	REG STRING	path;
-	STRING		name;
+char *
+catpath(path, name)
+register char   *path;
+char    *name;
 {
-	/* leaves result on top of stack */
-	REG STRING	scanp = path,
-			argp = locstak();
+	/*
+	 * leaves result on top of stack
+	 */
+	register char   *scanp = path;
+	register char   *argp = locstak();
 
-	WHILE *scanp ANDF *scanp!=COLON DO *argp++ = *scanp++ OD
-	IF scanp!=path THEN *argp++='/' FI
-	IF *scanp==COLON THEN scanp++ FI
-	path=(*scanp ? scanp : 0); scanp=name;
-	WHILE (*argp++ = *scanp++) DONE
+	while (*scanp && *scanp != COLON)
+		*argp++ = *scanp++;
+	if (scanp != path)
+		*argp++ = '/';
+	if (*scanp == COLON)
+		scanp++;
+	path = (*scanp ? scanp : NIL);
+	scanp = name;
+	while ((*argp++ = *scanp++))
+		;
 	return(path);
 }
 
-LOCAL STRING	xecmsg;
-LOCAL STRING	*xecenv;
-
-VOID	execa(at)
-	STRING		at[];
+char *
+nextpath(path)
+	register char   *path;
 {
-	REG STRING	path;
-	REG STRING	*t = at;
+	register char   *scanp = path;
 
-	IF (flags&noexec)==0
-	THEN	xecmsg=notfound; path=getpath(*t);
-		namscan(exname);
-		xecenv=setenvir();
-		WHILE path = execs (path, t) DONE
-		failed(*t,xecmsg);
-	FI
+	while (*scanp && *scanp != COLON)
+		scanp++;
+
+	if (*scanp == COLON)
+		scanp++;
+
+	return(*scanp ? scanp : NIL);
 }
 
-LOCAL STRING	execs(ap,t)
-	STRING		ap;
-	REG STRING	t[];
+static char     *xecmsg;
+static char     **xecenv;
+
+static char *
+execs(ap, t)
+char    *ap;
+register char   *t[];
 {
-	REG STRING	p, prefix;
+	register char *p, *prefix;
 
-	prefix=catpath(ap,t[0]);
-	trim(p=curstak());
-
+	prefix = catpath(ap, t[0]);
+	trim(p = curstak());
 	sigchk();
+
 	execve(p, &t[0] ,xecenv);
-	SWITCH errno IN
+	switch (errno)
+	{
+	case ENOEXEC:           /* could be a shell script */
+		funcnt = 0;
+		flags = 0;
+		*flagadr = 0;
+		comdiv = 0;
+		ioset = 0;
+		clearup();      /* remove open files and for loop junk */
+		if (input)
+			close(input);
+		input = chkopen(p);
 
-	    case ENOEXEC:
-		flags=0;
-		comdiv=0; ioset=0;
-		clearup(); /* remove open files and for loop junk */
-		IF input THEN close(input) FI
-		close(output); output=2;
-		input=chkopen(p);
-
-		/* band aid to get csh... 2/26/79 */
 		{
-			char c;
-			if (!isatty(input)) {
-				read(input, &c, 1);
-				if (c == '#')
-					gocsh(t, p, xecenv);
-				lseek(input, (long) 0, 0);
+			/* if the command file begins with #
+			 * then we must call csh,
+			 * else sh
+			 */
+			char s[2];
+			if( !isatty(input)){
+				s[1] = 0; s[0] = 0;
+				read ( input, s, 2 );
+				if( s[0] == '#' && s[1] != '!' )
+					gocsh( t, p, xecenv );
+				lseek( input, (long)0, 0 );
 			}
 		}
 
-		/* set up new args */
+#ifdef ACCOUNT
+		preacct(p);     /* reset accounting */
+#endif
+
+		/*
+		 * set up new args
+		 */
+
 		setargs(t);
-		longjmp(subshell,1);
+		longjmp(subshell, 1);
 
-	    case ENOMEM:
-		failed(p,toobig);
+	case ENOMEM:
+		failed(p, toobig);
 
-	    case E2BIG:
-		failed(p,arglist);
+	case E2BIG:
+		failed(p, arglist);
 
-	    case ETXTBSY:
-		failed(p,txtbsy);
+	case ETXTBSY:
+		failed(p, txtbsy);
 
-	    default:
-		xecmsg=badexec;
-	    case ENOENT:
+	default:
+		xecmsg = badexec;
+	case ENOENT:
 		return(prefix);
-	ENDSW
+	}
 }
 
-gocsh(t, cp, xecenv)
+int     execa(at, pos)
+	char    *at[];
+	short pos;
+{
+	register char   *path;
+	register char   **t = at;
+	int             cnt;
+
+	if ((flags & noexec) == 0)
+	{
+		xecmsg = notfound;
+		path = getpath(*t);
+		xecenv = setenvv();
+
+		if (pos > 0)
+		{
+			cnt = 1;
+			while (cnt != pos)
+			{
+				++cnt;
+				path = nextpath(path);
+			}
+			execs(path, t);
+			path = getpath(*t);
+		}
+		while (path = execs(path,t))
+			;
+		failed(*t, xecmsg);
+	}
+}
+
+gocsh( t, cp, xecenv )
 	register char **t, *cp, **xecenv;
 {
-	char *newt[1000];
+	char *newt[ 1000 ];
 	register char **p;
 	register int i;
 
-	for (i = 0; t[i]; i++)
-		newt[i+1] = t[i];
-	newt[i+1] = 0;
-	newt[0] = "/bin/csh";
-	newt[1] = cp;
-	execve ("/bin/csh", newt, xecenv);
+	for( i=0; t[i] ; i++ )
+		newt[ i+1 ] = t[ i ];
+	newt[ i+1 ] = NIL;
+	newt[ 0 ] = "/bin/csh";
+	newt[ 1 ] = cp;
+	execve( "/bin/csh", newt, xecenv );
+	exit(33);
 }
 
-/* for processes to be waited for */
+/*
+ * for processes to be waited for
+ */
 #define MAXP 20
-LOCAL INT	pwlist[MAXP];
-LOCAL INT	pwc;
+static int      pwlist[MAXP];
+static int      pwc;
 
 postclr()
 {
-	REG INT		*pw = pwlist;
+	register int    *pw = pwlist;
 
-	WHILE pw <= &pwlist[pwc]
-	DO *pw++ = 0 OD
-	pwc=0;
+	while (pw <= &pwlist[pwc])
+		*pw++ = 0;
+	pwc = 0;
 }
 
-VOID	post(pcsid)
-	INT		pcsid;
+post(pcsid)
+int     pcsid;
 {
-	REG INT		*pw = pwlist;
+	register int    *pw = pwlist;
 
-	IF pcsid
-	THEN	WHILE *pw DO pw++ OD
-		IF pwc >= MAXP-1
-		THEN	pw--;
-		ELSE	pwc++;
-		FI
+	if (pcsid)
+	{
+		while (*pw)
+			pw++;
+		if (pwc >= MAXP - 1)
+			pw--;
+		else
+			pwc++;
 		*pw = pcsid;
-	FI
+	}
 }
 
-VOID	await(i)
-	INT		i;
+await(i, bckg)
+int     i, bckg;
 {
-	INT		rc=0, wx=0;
-	INT		w;
-	INT		ipwc = pwc;
+	int     rc = 0, wx = 0;
+	union wait w;
+	int     ipwc = pwc;
 
 	post(i);
-	WHILE pwc
-	DO	REG INT		p;
-		REG INT		sig;
-		INT		w_hi;
+	while (pwc)
+	{
+		register int    p;
+		register int    sig;
+		int             w_hi;
+		int     found = 0;
 
-		BEGIN
-		   REG INT	*pw=pwlist;
- 		   IF setjmp(INTbuf) == 0
- 		   THEN	trapjmp[INTR] = 1; p=wait(&w);
- 		   ELSE	p = -1;
- 		   FI
- 		   trapjmp[INTR] = 0;
-		   WHILE pw <= &pwlist[ipwc]
-		   DO IF *pw==p
-		      THEN *pw=0; pwc--;
-		      ELSE pw++;
-		      FI
-		   OD
-		END
+		{
+			register int    *pw = pwlist;
 
-		IF p == -1 THEN continue FI
+			p = wait(&w.w_status);
+			if (wasintr)
+			{
+				wasintr = 0;
+				if (bckg)
+				{
+					break;
+				}
+			}
+			while (pw <= &pwlist[ipwc])
+			{
+				if (*pw == p)
+				{
+					*pw = 0;
+					pwc--;
+					found++;
+				}
+				else
+					pw++;
+			}
+		}
+		if (p == -1)
+		{
+			if (bckg)
+			{
+				register int *pw = pwlist;
 
-		w_hi = (w>>8)&LOBYTE;
-
-		IF sig = w&0177
-		THEN	IF sig == 0177	/* ptrace! return */
-			THEN	prs("ptrace: ");
+				while (pw <= &pwlist[ipwc] && i != *pw)
+					pw++;
+				if (i == *pw)
+				{
+					*pw = 0;
+					pwc--;
+				}
+			}
+			continue;
+		}
+		w_hi = w.w_retcode;
+		if (sig = w.w_termsig)
+		{
+			if (sig == 0177)        /* ptrace! return */
+			{
+				prs("ptrace: ");
 				sig = w_hi;
-			FI
-			IF sig < num_sysmsg ANDF sysmsg[sig]
-			THEN	IF i!=p ORF (flags&prompt)==0
-				THEN prp(); prn(p); blank()
-				FI
+			}
+			if (sysmsg[sig])
+			{
+				if (i != p || (flags & prompt) == 0)
+				{
+					prp();
+					prn(p);
+					blank();
+				}
 				prs(sysmsg[sig]);
-				IF w&0200 THEN prs(coredump) FI
-			FI
+				if (w.w_coredump)
+					prs(coredump);
+			}
 			newline();
-		FI
-
-		IF rc==0
-		THEN	rc = (sig ? sig|SIGFLG : w_hi);
-		FI
-		wx |= w;
-	OD
-
-	IF wx ANDF flags&errflg
-	THEN	exitsh(rc);
-	FI
-	exitval=rc; exitset();
+		}
+		if (rc == 0 && found != 0)
+			rc = (sig ? sig | SIGFLG : w_hi);
+		wx |= w.w_status;
+		if (p == i)
+		{
+			break;
+		}
+	}
+	if (wx && flags & errflg)
+		exitsh(rc);
+	flags |= eflag;
+	exitval = rc;
+	exitset();
 }
 
-BOOL		nosubst;
+BOOL            nosubst;
 
 trim(at)
-	STRING		at;
+char    *at;
 {
-	REG STRING	p;
-	REG CHAR	c;
-	REG CHAR	q=0;
+	register char   *p;
+	register char   *ptr;
+	register char   c;
+	register char   q = 0;
 
-	IF p=at
-	THEN	WHILE c = *p
-		DO *p++=c&STRIP; q |= c OD
-	FI
-	nosubst=q&QUOTE;
+	if (p = at)
+	{
+		ptr = p;
+		while (c = *p++)
+		{
+			/* @@@ if (*ptr = c & STRIP) */
+			if( *ptr = smask(c))
+				++ptr;
+			q |= c;
+		}
+
+		*ptr = 0;
+	}
+	/* @@@ nosubst = q & QUOTE; */
+	nosubst = isq(q);
 }
 
-STRING	mactrim(s)
-	STRING		s;
+char *
+mactrim(s)
+char    *s;
 {
-	REG STRING	t=macro(s);
+	register char   *t = macro(s);
+
 	trim(t);
 	return(t);
 }
 
-STRING	*scan(argn)
-	INT		argn;
+static int
+gsort(from, to)
+char    *from[], *to[];
 {
-	REG ARGPTR	argp = (ARGPTR) (Rcheat(gchain) & ~ARGMK);
-	REG STRING	*comargn, *comargm;
+	int     k, m, n;
+	register int    i, j;
 
-	comargn = (STRING*) getstak (BYTESPERWORD * argn + BYTESPERWORD);
+	if ((n = to - from) <= 1)
+		return;
+	for (j = 1; j <= n; j *= 2)
+		;
+	for (m = 2 * j - 1; m /= 2; )
+	{
+		k = n - m;
+		for (j = 0; j < k; j++)
+		{
+			for (i = j; i >= 0; i -= m)
+			{
+				register char **fromi;
+
+				fromi = &from[i];
+				if (cf(fromi[m], fromi[0]) > 0)
+				{
+					break;
+				}
+				else
+				{
+					char *s;
+
+					s = fromi[m];
+					fromi[m] = fromi[0];
+					fromi[0] = s;
+				}
+			}
+		}
+	}
+}
+
+char **
+scan(argn)
+int     argn;
+{
+	register struct argnod *argp = (struct argnod *)(Rcheat(gchain) & ~ARGMK);
+	register char **comargn, **comargm;
+
+	comargn = (char **)getstak(BYTESPERWORD * argn + BYTESPERWORD);
 	comargm = comargn += argn;
 	*comargn = ENDARGS;
+	while (argp)
+	{
+		*--comargn = argp->argval;
 
-	WHILE argp
-	DO	*--comargn = argp->argval;
-		IF argp = argp->argnxt
-		THEN trim(*comargn);
-		FI
-		IF argp==0 ORF Rcheat(argp)&ARGMK
-		THEN	gsort (comargn, comargm);
+		trim(*comargn);
+		argp = argp->argnxt;
+
+		if (argp == NIL || Rcheat(argp) & ARGMK)
+		{
+			gsort(comargn, comargm);
 			comargm = comargn;
-		FI
+		}
 		/* Lcheat(argp) &= ~ARGMK; */
-		argp = (ARGPTR) (Rcheat(argp) & ~ARGMK);
-	OD
+		argp = (struct argnod *)(Rcheat(argp) & ~ARGMK);
+	}
 	return(comargn);
 }
 
-LOCAL VOID	gsort (from, to)
-	STRING		from[], to[];
+static int
+split(s)                /* blank interpretation routine */
+register char   *s;
 {
-	INT		k, m, n;
-	REG INT		i, j;
+	register char   *argp;
+	register int    c;
+	int             count = 0;
 
-	IF (n=to-from)<=1 THEN return FI
+	for (;;)
+	{
+		sigchk();
+		argp = locstak() + BYTESPERWORD;
+		while ((c = *s++, !any(c, ifsnod.namval) && c))
+			*argp++ = c;
+		if (argp == staktop + BYTESPERWORD)
+		{
+			if (c)
+			{
+				continue;
+			}
+			else
+			{
+				return(count);
+			}
+		}
+		else if (c == 0)
+			s--;
+		/*
+		 * file name generation
+		 */
 
-	FOR j=1; j<=n; j*=2 DONE
+		argp = endstak(argp);
 
-	FOR m=2*j-1; m/=2;
-	DO  k=n-m;
-	    FOR j=0; j<k; j++
-	    DO	FOR i=j; i>=0; i-=m
-		DO  REG STRING *fromi; fromi = &from[i];
-		    IF cf(fromi[m],fromi[0])>0
-		    THEN break;
-		    ELSE STRING s; s=fromi[m]; fromi[m]=fromi[0]; fromi[0]=s;
-		    FI
-		OD
-	    OD
-	OD
+		if ((flags & nofngflg) == 0 &&
+			(c = expand(((struct argnod *)argp)->argval, 0)))
+			count += c;
+		else
+		{
+			makearg(argp);
+			count++;
+		}
+		gchain = (struct argnod *)((int)gchain | ARGMK);
+	}
 }
 
-/* Argument list generation */
-
-INT	getarg(ac)
-	COMPTR		ac;
+/*
+ * Argument list generation
+ */
+getarg(ac)
+struct comnod   *ac;
 {
-	REG ARGPTR	argp;
-	REG INT		count=0;
-	REG COMPTR	c;
+	register struct argnod  *argp;
+	register int            count = 0;
+	register struct comnod  *c;
 
-	IF c=ac
-	THEN	argp=c->comarg;
-		WHILE argp
-		DO	count += split(macro(argp->argval));
-			argp=argp->argnxt;
-		OD
-	FI
+	if (c = ac)
+	{
+		argp = c->comarg;
+		while (argp)
+		{
+			count += split(macro(argp->argval));
+			argp = argp->argnxt;
+		}
+	}
 	return(count);
 }
 
-LOCAL INT	split(s)
-	REG STRING	s;
-{
-	REG STRING	argp;
-	REG INT		c;
-	INT		count=0;
+#ifdef ACCOUNT
+#include        <sys/types.h>
+#include        "acctdef.h"
+#include        <sys/acct.h>
+#include        <sys/times.h>
 
-	LOOP	sigchk(); argp=locstak()+BYTESPERWORD;
-		WHILE (c = *s++, !any(c,ifsnod.namval) && c)
-		DO *argp++ = c OD
-		IF argp==staktop+BYTESPERWORD
-		THEN	IF c
-			THEN	continue;
-			ELSE	return(count);
-			FI
-		ELIF c==0
-		THEN	s--;
-		FI
-		IF c = expand (((ARGPTR)(argp = endstak (argp)))->argval,0)
-		THEN	count += c;
-		ELSE	/* assign(&fngnod, argp->argval); */
-			makearg(argp); count++;
-		FI
-		Lcheat(gchain) |= ARGMK;
-	POOL
+struct acct sabuf;
+struct tms buffer;
+extern long times();
+static long before;
+static int shaccton;    /* 0 implies do not write record on exit
+			   1 implies write acct record on exit
+			*/
+
+
+/*
+ *      suspend accounting until turned on by preacct()
+ */
+
+suspacct()
+{
+	shaccton = 0;
 }
+
+preacct(cmdadr)
+	char *cmdadr;
+{
+	char *simple();
+
+	if (acctnod.namval && *acctnod.namval)
+	{
+		sabuf.ac_btime = time((long *)NUL);
+		before = times(&buffer);
+		sabuf.ac_uid = getuid();
+		sabuf.ac_gid = getgid();
+		movstrn(simple(cmdadr), sabuf.ac_comm, sizeof(sabuf.ac_comm));
+		shaccton = 1;
+	}
+}
+
+#include        <fcntl.h>
+
+doacct()
+{
+	int fd;
+	long int after;
+
+	if (shaccton)
+	{
+		after = times(&buffer);
+		sabuf.ac_utime = compress(buffer.tms_utime + buffer.tms_cutime);
+		sabuf.ac_stime = compress(buffer.tms_stime + buffer.tms_cstime);
+		sabuf.ac_etime = compress(after - before);
+
+		if ((fd = open(acctnod.namval, O_WRONLY | O_APPEND | O_CREAT, 0666)) != -1)
+		{
+			write(fd, &sabuf, sizeof(sabuf));
+			close(fd);
+		}
+	}
+}
+
+/*
+ *      Produce a pseudo-floating point representation
+ *      with 3 bits base-8 exponent, 13 bits fraction
+ */
+
+compress(t)
+	register time_t t;
+{
+	register exp = 0;
+	register rund = 0;
+
+	while (t >= 8192)
+	{
+		exp++;
+		rund = t & 04;
+		t >>= 3;
+	}
+
+	if (rund)
+	{
+		t++;
+		if (t >= 8192)
+		{
+			t >>= 3;
+			exp++;
+		}
+	}
+
+	return((exp << 13) + t);
+}
+#endif

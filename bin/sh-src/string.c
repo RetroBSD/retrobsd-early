@@ -1,51 +1,60 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#include	"defs.h"
+#include "defs.h"
 
-/* ========	general purpose string handling ======== */
+/* ========     general purpose string handling ======== */
 
-STRING	movstr(a,b)
-	REG STRING	a, b;
+char *
+movstr(a, b)
+register char   *a, *b;
 {
-	WHILE *b++ = *a++ DONE
+	while (*b++ = *a++);
 	return(--b);
 }
 
-INT	any(c,s)
-	REG CHAR	c;
-	STRING		s;
+any(c, s)
+register char   c;
+char    *s;
 {
-	REG CHAR d;
+	register char d;
 
-	WHILE d = *s++
-	DO	IF d==c
-		THEN	return(TRUE);
-		FI
-	OD
+	while (d = *s++)
+	{
+		if (d == c)
+			return(TRUE);
+	}
 	return(FALSE);
 }
 
-INT	cf(s1, s2)
-	REG STRING s1, s2;
+cf(s1, s2)
+register char *s1, *s2;
 {
-	WHILE *s1++ == *s2
-	DO	IF *s2++==0
-		THEN	return(0);
-		FI
-	OD
-	return(*--s1 - *s2);
+	while (*s1++ == *s2)
+		if (*s2++ == '\0')
+			return(0);
+	return *--s1 - *s2;
 }
 
-INT	length(as)
-	STRING as;
+length(as)
+char    *as;
 {
-	REG STRING s = as;
+	register char   *s;
 
-	IF s == 0 THEN return 0; FI
-        WHILE *s++ DONE
+	if (s = as)
+		while (*s++);
 	return(s - as);
+}
+
+char *
+movstrn(a, b, n)
+	register char *a, *b;
+	register int n;
+{
+	while ((n-- > 0) && *a)
+		*b++ = *a++;
+
+	return(b);
 }

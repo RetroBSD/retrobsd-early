@@ -5,3 +5,4 @@
  * Bell Telephone Laboratories
  */
 #define DUPFLG 0100
+#define EXCLOSE 1

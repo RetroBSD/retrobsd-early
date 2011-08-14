@@ -1,182 +1,360 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-/* globals (file name generation)
+#define MAXDIR  64
+struct direct           *getdir();
+
+static struct direct    dirbuf[MAXDIR];
+static int              nxtdir = -1;
+static int              maxdir = 0;
+static char             entry[MAXNAMLEN+1];
+
+#define XXX 0200
+
+static int
+addg(as1, as2, as3)
+char    *as1, *as2, *as3;
+{
+	register char   *s1, *s2;
+	register int    c;
+
+	s2 = locstak() + BYTESPERWORD;
+	s1 = as1;
+	while (c = /* @@@ *s1++ */ cii(*s1++))
+	{
+		if (/* @@@ (c &= STRIP)*/ (c=smask(c)) == 0)
+		{
+			*s2++ = '/';
+			break;
+		}
+		*s2++ = c;
+	}
+	s1 = as2;
+	while (*s2 = *s1++)
+		s2++;
+	if (s1 = as3)
+	{
+		*s2++ = '/';
+		while (*s2++ = *++s1);
+	}
+	makearg(endstak(s2));
+}
+
+/*
+ * globals (file name generation)
  *
  * "*" in params matches r.e ".*"
  * "?" in params matches r.e. "."
  * "[...]" in params matches character class
  * "[...a-z...]" in params matches a through z.
+ *
  */
-
-LOCAL VOID	addg();
-
-INT	expand(as,rflg)
-	STRING		as;
+expand(as, rcnt)
+	char    *as;
 {
-	INT		count;
-	DIR		*dirf;
-	BOOL		dir=0;
-	STRING		rescan = 0;
-	REG STRING	s, cs;
-	ARGPTR		schain = gchain;
-	struct direct	*dp;
-	STATBUF		statb;
+	int     count, dirf;
+	BOOL    dir = 0;
+	char    *rescan = NIL;
+	register char   *s, *cs;
+	struct argnod   *schain = gchain;
+	struct stat statb;
+	BOOL    slash;
 
-	IF trapnote&SIGSET THEN return(0); FI
+	if (trapnote & SIGSET)
+		return(0);
+	s = cs = as;
 
-	s=cs=as;
+	/*
+	 * check for meta chars
+	 */
+	{
+		register BOOL open;
 
-	/* check for meta chars */
-	BEGIN
-	   REG BOOL slash; slash=0;
-	   WHILE !fngchar(*cs)
-	   DO	IF *cs++==0
-		THEN	IF rflg ANDF slash THEN break; ELSE return(0) FI
-		ELIF *cs=='/'
-		THEN	slash++;
-		FI
-	   OD
-	END
+		slash = 0;
+		open = 0;
+		do
+		{
+			switch (*cs++)
+			{
+			case 0:
+				if (rcnt && slash)
+					break;
+				else
+					return(0);
 
-	LOOP	IF cs==s
-		THEN	s=nullstr;
+			case '/':
+				slash++;
+				open = 0;
+				continue;
+
+			case '[':
+				open++;
+				continue;
+
+			case ']':
+				if (open == 0)
+					continue;
+
+			case '?':
+			case '*':
+				if (rcnt > slash)
+					continue;
+				else
+					cs--;
+				break;
+
+
+			default:
+				continue;
+			}
 			break;
-		ELIF *--cs == '/'
-		THEN	*cs=0;
-			IF s==cs THEN s="/" FI
+		} while (TRUE);
+	}
+
+	for (;;)
+	{
+		if (cs == s)
+		{
+			s = nullstr;
 			break;
-		FI
-	POOL
-	IF stat(s,&statb)>=0
-	    ANDF (statb.st_mode&S_IFMT)==S_IFDIR
-	    ANDF (dirf=opendir(s)) != NULL
-	THEN	dir++;
-	FI
-	count=0;
-	IF *cs==0 THEN *cs++=0200 FI
-	IF dir
-	THEN	/* check for rescan */
-		REG STRING rs; rs=cs;
+		}
+		else if (*--cs == '/')
+		{
+			*cs = 0;
+			if (s == cs)
+				s = "/";
+			break;
+		}
+	}
 
-		REP	IF *rs=='/' THEN rescan=rs; *rs=0; gchain=0 FI
-		PER	*rs++ DONE
+	if ((dirf = open(*s ? s : ".", 0)) > 0)
+	{
+		if (fstat(dirf, &statb) != -1 &&
+		    (statb.st_mode & S_IFMT) == S_IFDIR)
+			dir++;
+		else
+			close(dirf);
+	}
 
-		IF setjmp(INTbuf) == 0 THEN trapjmp[INTR] = 1; FI
-		WHILE (trapnote&SIGSET) == 0 ANDF (dp = readdir(dirf)) != NULL
-		DO	IF (*dp->d_name=='.' ANDF *cs!='.')
-			THEN	continue;
-			FI
-			IF gmatch(dp->d_name, cs)
-			THEN	addg(s,dp->d_name,rescan); count++;
-			FI
-		OD
-		closedir(dirf); trapjmp[INTR] = 0;
+	count = 0;
+	if (*cs == 0)
+		*cs++ = XXX;
+	if (dir)                /* check for rescan */
+	{
+		register char *rs;
+		struct direct *e;
 
-		IF rescan
-		THEN	REG ARGPTR	rchain;
-			rchain=gchain; gchain=schain;
-			IF count
-			THEN	count=0;
-				WHILE rchain
-				DO	count += expand(rchain->argval,1);
-					rchain=rchain->argnxt;
-				OD
-			FI
-			*rescan='/';
-		FI
-	FI
+		rs = cs;
+		do
+		{
+			if (*rs == '/')
+			{
+				rescan = rs;
+				*rs = 0;
+				gchain = NIL;
+			}
+		} while (*rs++);
 
-	BEGIN
-	   REG CHAR	c;
-	   s=as;
-	   WHILE c = *s
-	   DO	*s++=(c&STRIP?c:'/') OD
-	END
+		while ((e = getdir(dirf)) && (trapnote & SIGSET) == 0)
+		{
+			*(movstrn(e->d_name, entry, MAXNAMLEN)) = 0;
+
+			if (entry[0] == '.' && *cs != '.')
+#ifndef BOURNE
+				continue;
+#else
+			{
+				if (entry[1] == 0)
+					continue;
+				if (entry[1] == '.' && entry[2] == 0)
+					continue;
+			}
+#endif
+
+			if (gmatch(entry, cs))
+			{
+				addg(s, entry, rescan);
+				count++;
+			}
+		}
+		close(dirf);
+
+		if (rescan)
+		{
+			register struct argnod  *rchain;
+
+			rchain = gchain;
+			gchain = schain;
+			if (count)
+			{
+				count = 0;
+				while (rchain)
+				{
+					count += expand(rchain->argval, slash + 1);
+					rchain = rchain->argnxt;
+				}
+			}
+			*rescan = '/';
+		}
+	}
+
+	{
+		register char   c;
+
+		s = as;
+		while (c = *s)
+			/* @@@ *s++ = (c & STRIP ? c : '/'); */
+			*s++ = smask(c) ? c: '/';
+	}
 	return(count);
 }
 
-gmatch(s, p)
-	REG STRING	s, p;
+
+reset_dir()
 {
-	REG INT		scc;
-	CHAR		c;
-
-	IF scc = *s++
-	THEN	IF (scc &= STRIP)==0
-		THEN	scc=0200;
-		FI
-	FI
-	SWITCH c = *p++ IN
-
-	    case '[':
-		{BOOL ok; INT lc;
-		ok=0; lc=077777;
-		WHILE c = *p++
-		DO	IF c==']'
-			THEN	return(ok?gmatch(s,p):0);
-			ELIF c==MINUS
-			THEN	IF lc<=scc ANDF scc<=(*p++) THEN ok++ FI
-			ELSE	IF scc==(lc=(c&STRIP)) THEN ok++ FI
-			FI
-		OD
-		return(0);
-		}
-
-	    default:
-		IF (c&STRIP)!=scc THEN return(0) FI
-
-	    case '?':
-		return(scc?gmatch(s,p):0);
-
-	    case '*':
-		IF *p==0 THEN return(1) FI
-		--s;
-		WHILE *s
-		DO  IF gmatch(s++,p) THEN return(1) FI OD
-		return(0);
-
-	    case 0:
-		return(scc==0);
-	ENDSW
+	nxtdir = -1;
+	maxdir = 0;
 }
 
-LOCAL VOID	addg(as1,as2,as3)
-	STRING		as1, as2, as3;
+
+/*
+ * read next directory entry
+ * and ignore inode == 0
+ *
+ */
+
+struct direct *
+getdir(dirf)
 {
-	REG STRING	s1, s2;
-	REG INT		c;
+	for (;;)
+	{
+		if (++nxtdir == maxdir)
+		{
+			int r;
 
-	s2 = locstak()+BYTESPERWORD;
+			r = read(dirf, dirbuf, sizeof(dirbuf)) / sizeof(struct direct);
+			if (maxdir = r)
+				nxtdir = 0;
+			else
+			{
+				nxtdir = -1;
+				return(0);
+			}
+		}
 
-	s1=as1;
-	WHILE c = *s1++
-	DO	IF (c &= STRIP)==0
-		THEN	*s2++='/';
-			break;
-		FI
-		*s2++=c;
-	OD
-	s1=as2;
-	WHILE *s2 = *s1++ DO s2++ OD
-	IF s1=as3
-	THEN	*s2++='/';
-		WHILE *s2++ = *++s1 DONE
-	FI
-	makearg(endstak(s2));
+		/* nxtdir is next available entry */
+		if (dirbuf[nxtdir].d_ino == 0)
+			continue;
+
+
+		return(&dirbuf[nxtdir]);
+	}
+}
+
+
+gmatch(s, p)
+register char   *s, *p;
+{
+	register int    scc;
+	char            c;
+
+	if (scc = /* @@@ *s++ */ cii( *s++))
+	{
+		if ( /* @@@ (scc &= STRIP) */  smask(scc) == 0)
+			scc=XXX;
+	}
+	switch (c = /* @@@ *p++ */ cii( *p++) )
+	{
+	case '[':
+		{
+			BOOL ok;
+			int lc;
+			int notflag = 0;
+
+			ok = 0;
+			lc = 077777;
+			if (*p == '!')
+			{
+				notflag = 1;
+				p++;
+			}
+			while (c = /* @@@ *p++ */ cii(*p++))
+			{
+				if (c == ']')
+					return(ok ? gmatch(s, p) : 0);
+				else if (c == MINUS)
+				{
+					if (notflag)
+					{
+						if (scc < lc || scc > *p++)
+							ok++;
+						else
+							return(0);
+					}
+					else
+					{
+						if (lc <= scc && scc <= *p++)
+							ok++;
+					}
+				}
+				else
+				{
+					/* @@@ lc = c & STRIP; */
+					lc = ismask(c);
+
+					if (notflag)
+					{
+						if (scc && scc != lc)
+							ok++;
+						else
+							return(0);
+					}
+					else
+					{
+						if (scc == lc)
+							ok++;
+					}
+				}
+			}
+			return(0);
+		}
+
+	default:
+		if (/* @@@ (c & STRIP)*/ ismask(c) != scc)
+			return(0);
+
+	case '?':
+		return(scc ? gmatch(s, p) : 0);
+
+	case '*':
+		while (*p == '*')
+			p++;
+
+		if (*p == 0)
+			return(1);
+		--s;
+		while (*s)
+		{
+			if (gmatch(s++, p))
+				return(1);
+		}
+		return(0);
+
+	case 0:
+		return(scc == 0);
+	}
 }
 
 makearg(args)
-	REG STRING	args;
+	register struct argnod *args;
 {
-	((ARGPTR)args)->argnxt = gchain;
-	gchain = (ARGPTR) args;
+	args->argnxt = gchain;
+	gchain = args;
 }

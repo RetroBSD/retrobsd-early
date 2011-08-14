@@ -1,4 +1,0 @@
-builtin()
-{
-        return(0);
-}

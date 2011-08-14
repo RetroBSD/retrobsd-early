@@ -1,7 +1,6 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
 #include "defs.h"
@@ -12,124 +11,177 @@
  */
 
 #define BUSY 01
-#define busy(x)	(Rcheat((x)->word) & BUSY)
+#define busy(x) (Rcheat((x)->word) & BUSY)
 
-POS		brkincr = BRKINCR;
-BLKPTR		blokp;			/*current search pointer*/
-BLKPTR		bloktop = BLK(end) - 1;	/*top of arena (last blok)*/
+unsigned        brkincr = BRKINCR;
+struct blk *blokp;                      /*current search pointer*/
+struct blk *bloktop;            /* top of arena (last blok) */
 
-ADDRESS	alloc(nbytes)
-	POS		nbytes;
+char            *brkbegin;
+char            *setbrk();
+
+char *
+alloc(nbytes)
+	unsigned nbytes;
 {
-	REG POS		rbytes = round(nbytes + BYTESPERWORD, BYTESPERWORD);
-	LOOP	INT		c = 0;
-		REG BLKPTR	p = blokp;
-		REG BLKPTR	q;
-		REP
-                        IF ! busy(p)
-			THEN	LOOP
-			                q = p->word;
-//prs("    p="); prx(p); prs(" -> "); prx(q); prs("\n");
-                                        IF busy(q) THEN break FI
-                                        p->word = q->word;
-                                POOL
-				IF ADR(q)-ADR(p) >= rbytes
-				THEN	blokp = BLK(ADR(p)+rbytes);
-					IF q > blokp
-					THEN	blokp->word = p->word;
-					FI
-					p->word = BLK(Rcheat(blokp) | BUSY);
-//prs("alloc("); prn(nbytes); prs(") returned "); prx(p+1); prs("\n");
-					return(ADR(p+1));
-				FI
-			FI
+	register unsigned rbytes = round(nbytes+BYTESPERWORD, BYTESPERWORD);
+
+	for (;;)
+	{
+		int     c = 0;
+		register struct blk *p = blokp;
+		register struct blk *q;
+
+		do
+		{
+			if (!busy(p))
+			{
+				while (!busy(q = p->word))
+					p->word = q->word;
+				if ((char *)q - (char *)p >= rbytes)
+				{
+					blokp = (struct blk *)((char *)p + rbytes);
+					if (q > blokp)
+						blokp->word = p->word;
+					p->word = (struct blk *)(Rcheat(blokp) | BUSY);
+					return((char *)(p + 1));
+				}
+			}
 			q = p;
-                        p = BLK(Rcheat(p->word) & ~BUSY);
-		PER p > q ORF (c++) == 0 DONE
+			p = (struct blk *)(Rcheat(p->word) & ~BUSY);
+		} while (p > q || (c++) == 0);
 		addblok(rbytes);
-	POOL
+	}
 }
 
-VOID	addblok(reqd)
-	POS		reqd;
+addblok(reqd)
+	unsigned reqd;
 {
-	IF stakbas != staktop
-	THEN	REG STKPTR	rndstak;
-		REG BLKPTR	blokstak;
+	if (stakbot == NIL)
+	{
+                extern end;
+		brkbegin = setbrk(BRKINCR * 5);
+		bloktop = (struct blk *) &end;
+	}
+
+	if (stakbas != staktop)
+	{
+		register char *rndstak;
+		register struct blk *blokstak;
 
 		pushstak(0);
-		rndstak = (STKPTR) round(staktop, BYTESPERWORD) - sizeof(int*);
-		blokstak = BLK(stakbas) - 1;
+		rndstak = (char *)round(staktop, BYTESPERWORD);
+		blokstak = (struct blk *)(stakbas) - 1;
 		blokstak->word = stakbsy;
-                stakbsy = blokstak;
-		bloktop->word = BLK(Rcheat(rndstak) | BUSY);
-		bloktop = BLK(rndstak);
-	FI
+		stakbsy = blokstak;
+		bloktop->word = (struct blk *)(Rcheat(rndstak) | BUSY);
+		bloktop = (struct blk *)(rndstak);
+	}
 	reqd += brkincr;
-        reqd &= ~(brkincr - 1);
+	reqd &= ~(brkincr - 1);
 	blokp = bloktop;
-	blokp->word = BLK(Rcheat(bloktop) + reqd);
-	bloktop = blokp->word;
-	bloktop->word = BLK(ADR(end) + 1);
-	BEGIN
-                REG STKPTR stakadr = STK(bloktop + 2);
-                staktop = movstr(stakbot, stakadr);
-                stakbas = stakbot = stakadr;
-	END
+	bloktop = bloktop->word = (struct blk *)(Rcheat(bloktop) + reqd);
+	bloktop->word = (struct blk *)(brkbegin + 1);
+	{
+		register char *stakadr = (char *)(bloktop + 2);
+
+		if (stakbot != staktop)
+			staktop = movstr(stakbot, stakadr);
+		else
+			staktop = stakadr;
+
+		stakbas = stakbot = stakadr;
+	}
 }
 
-VOID	free(ap)
-	BLKPTR		ap;
+free(ap)
+	struct blk *ap;
 {
-	REG BLKPTR	p;
+	register struct blk *p;
 
-	p = ap;
-	IF (p != 0) ANDF (p < bloktop)
-	THEN
-                Lcheat((--p)->word) &= ~BUSY;
-	FI
-}
-
-prx(x)
-	INT		x;
-{
-        static const char hex[16] = "0123456789abcdef";
-	prc(hex[(x >> 28) & 15]);
-	prc(hex[(x >> 24) & 15]);
-	prc(hex[(x >> 20) & 15]);
-	prc(hex[(x >> 16) & 15]);
-	prc(hex[(x >> 12) & 15]);
-	prc(hex[(x >> 8) & 15]);
-	prc(hex[(x >> 4) & 15]);
-	prc(hex[x & 15]);
+	if ((p = ap) && p < bloktop)
+	{
+#ifdef DEBUG
+		chkbptr(p);
+#endif
+		--p;
+		p->word = (struct blk *)(Rcheat(p->word) & ~BUSY);
+	}
 }
 
 
 #ifdef DEBUG
-chkbptr(ptr)
-	BLKPTR	ptr;
-{
-	INT		exf = 0;
-	REG BLKPTR	p = end;
-	REG BLKPTR	q;
-	INT		us = 0, un = 0;
 
-	LOOP
-	   q = Rcheat(p->word)&~BUSY;
-	   IF p == ptr THEN exf++ FI
-	   IF q < end ORF q > bloktop THEN abort(3) FI
-	   IF p == bloktop THEN break FI
-	   IF busy(p)
-	   THEN us += q - p;
-	   ELSE un += q - p;
-	   FI
-	   IF p >= q THEN abort(4) FI
-	   p = q;
-	POOL
-	IF exf == 0 THEN abort(1) FI
+chkbptr(ptr)
+	struct blk *ptr;
+{
+	int	exf = 0;
+	register struct blk *p = (struct blk *)brkbegin;
+	register struct blk *q;
+	int	us = 0, un = 0;
+
+	for (;;)
+	{
+		q = (struct blk *)(Rcheat(p->word) & ~BUSY);
+
+		if (p+1 == ptr)
+			exf++;
+
+		if (q < (struct blk *)brkbegin || q > bloktop)
+			abort(3);
+
+		if (p == bloktop)
+			break;
+
+		if (busy(p))
+			us += q - p;
+		else
+			un += q - p;
+
+		if (p >= q)
+			abort(4);
+
+		p = q;
+	}
+	if (exf == 0)
+		abort(1);
+}
+
+
+chkmem()
+{
+	register struct blk *p = (struct blk *)brkbegin;
+	register struct blk *q;
+	int	us = 0, un = 0;
+
+	for (;;)
+	{
+		q = (struct blk *)(Rcheat(p->word) & ~BUSY);
+
+		if (q < (struct blk *)brkbegin || q > bloktop)
+			abort(3);
+
+		if (p == bloktop)
+			break;
+
+		if (busy(p))
+			us += q - p;
+		else
+			un += q - p;
+
+		if (p >= q)
+			abort(4);
+
+		p = q;
+	}
+
+	prs("un/used/avail ");
 	prn(un);
-        prc(SP);
-        prn(us);
-        prc(NL);
+	blank();
+	prn(us);
+	blank();
+	prn((char *)bloktop - brkbegin - (un + us));
+	newline();
+
 }
 #endif

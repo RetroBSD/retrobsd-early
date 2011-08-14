@@ -88,7 +88,9 @@
  * Macros for fast min/max.
  */
 #define	MIN(a,b)	(((a)<(b))?(a):(b))
+#ifndef MAX
 #define	MAX(a,b)	(((a)>(b))?(a):(b))
+#endif
 
 /*
  * Macros for counting and rounding.

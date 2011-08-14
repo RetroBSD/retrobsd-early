@@ -1,7 +1,7 @@
 /*
  * UNIX shell
  *
- * S. R. Bourne
  * Bell Telephone Laboratories
  */
-#define TIMEOUT 2400
+#define TIMEOUT 	0	/* seconds elapsing before log-off (normal) */
+#define MAILCHECK	"600"	/* 10 minutes */
