@@ -510,7 +510,7 @@ sdopen (dev, flag, mode)
 #endif
                 /* Slow speed: max 40 kbit/sec. */
                 reg->stat = 0;
-                reg->brg = (CPU_KHZ / SLOW + 1) / 2 - 1;
+                reg->brg = (BUS_KHZ*2 / SLOW + 1) / 2 - 1;
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
@@ -528,7 +528,7 @@ sdopen (dev, flag, mode)
 	}
 	/* Fast speed: up to 25 Mbit/sec allowed. */
 	reg->stat = 0;
-	reg->brg = (CPU_KHZ / FAST + 1) / 2 - 1;
+	reg->brg = (BUS_KHZ*2 / FAST + 1) / 2 - 1;
 	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                 PIC32_SPICON_ON;
 	return 0;

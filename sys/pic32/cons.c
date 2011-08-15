@@ -100,7 +100,7 @@ void cninit()
 	 * Setup UART registers.
 	 * Compute the divisor for 115.2 kbaud.
 	 */
-	reg->brg = PIC32_BRG_BAUD (CPU_KHZ * 1000, 115200);
+	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, 115200);
 	reg->sta = 0;
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
 		    PIC32_UMODE_ON;		/* UART Enable */
@@ -144,7 +144,7 @@ cnopen (dev, flag, mode)
 		return (EBUSY);
 
 	reg->sta = 0;
-	reg->brg = PIC32_BRG_BAUD (CPU_KHZ * 1000, speed_bps [tp->t_ospeed]);
+	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, speed_bps [tp->t_ospeed]);
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR | PIC32_UMODE_ON;
 	reg->staset = PIC32_USTA_URXEN | PIC32_USTA_UTXEN;
 

@@ -21,6 +21,7 @@ DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
 
 # CPU frequency 80 MHz.
 DEFS		+= -DCPU_KHZ=80000
+DEFS		+= -DBUS_KHZ=40000
 
 # Console on UART1
 DEFS            += -DCONSOLE_UART1
