@@ -57,9 +57,9 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/mail bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/pr bin/printf bin/ps bin/pwd bin/renice bin/rev bin/rm \
-                  bin/rmail bin/rmdir bin/sed bin/sh bin/size bin/sleep \
+                  bin/rmail bin/rmdir bin/rz bin/sed bin/sh bin/size bin/sleep \
                   bin/sort bin/split bin/strip bin/stty bin/su bin/sum \
-                  bin/sync bin/sysctl bin/tail bin/tar bin/tee bin/test \
+                  bin/sync bin/sysctl bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs

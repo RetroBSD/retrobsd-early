@@ -24,8 +24,8 @@
 #define ROPMODE "r"
 #ifdef LLITOUT
 int Locmode;		/* Saved "local mode" for 4.x BSD "new driver" */
-int Locbit = LLITOUT|LDECCTQ;	/* Bit SUPPOSED to disable output 
-				   translations and only allow ^Q to 
+int Locbit = LLITOUT|LDECCTQ;	/* Bit SUPPOSED to disable output
+				   translations and only allow ^Q to
 				   resume after ^S */
 #include <strings.h>
 #endif
@@ -52,6 +52,8 @@ int Locbit = LLITOUT|LDECCTQ;	/* Bit SUPPOSED to disable output
 Howmany must be 255 or less
 #endif
 
+extern void bibi (int);
+
 /*
  * return 1 iff stdout and stderr are different devices
  *  indicating this program operating with a modem on a
@@ -77,15 +79,21 @@ struct {
 	unsigned baudr;
 	int speedcode;
 } speeds[] = {
-	110,	B110,
+	50,	B50,
+	75,	B75,
+	150,	B150,
+	200,	B200,
 	300,	B300,
 	600,	B600,
 	1200,	B1200,
+	1800,	B1800,
 	2400,	B2400,
 	4800,	B4800,
 	9600,	B9600,
-	19200,	EXTA,
-	38400,	EXTB,
+	19200,  B19200,
+	38400,  B38400,
+	57600,  B57600,
+	115200, B115200,
 	0,
 };
 
@@ -165,7 +173,7 @@ struct tchars oldtch, tch;
  * mode(n)
  *  3: save old tty stat, set raw mode with flow control
  *  2: set XON/XOFF for sb/sz with ZMODEM or YMODEM-g
- *  1: save old tty stat, set raw mode 
+ *  1: save old tty stat, set raw mode
  *  0: restore original tty mode
  */
 mode(n)

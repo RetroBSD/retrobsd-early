@@ -48,12 +48,12 @@
  *
  *  USG UNIX (3.0) ioctl conventions courtesy Jeff Martin
  *
- * 
+ *
  *	This version implements numerous enhancements including ZMODEM
  *	Run Length Encoding and variable length headers.  These
  *	features were not funded by the original Telenet development
  *	contract.
- * 
+ *
  * This software may be freely used for non commercial and
  * educational (didactic only) purposes.  This software may also
  * be freely used to support file transfer operations to or from
@@ -61,7 +61,7 @@
  * part or all of this software must be provided in source form
  * with this notice intact except by written permission from Omen
  * Technology Incorporated.
- * 
+ *
  * Use of this software for commercial or administrative purposes
  * except when exclusively limited to interfacing Omen Technology
  * products requires a per port license payment of $20.00 US per
@@ -82,7 +82,7 @@
  *
  *
  *  2.1x hacks to avoid VMS fseek() bogosity, allow input from pipe
- *     -DBADSEEK -DTXBSIZE=32768  
+ *     -DBADSEEK -DTXBSIZE=32768
  *  2.x has mods for VMS flavor
  *
  * 1.34 implements tx backchannel garbage count and ZCRCW after ZRPOS
@@ -96,61 +96,12 @@ long Thisflen;
 
 char *substr(), *getenv();
 
-#ifdef vax11c
-#define STATIC
-#define BADSEEK
-#define TXBSIZE 32768		/* Must be power of two, < MAXINT */
-#include <types.h>
-#include <stat.h>
-#define STAT
-#define LOGFILE "szlog.tmp"
-#include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
-#include <ctype.h>
-#include <errno.h>
-#define OS "VMS"
-#define ROPMODE "r"
-#define READCHECK
-#define BUFWRITE
-extern int errno;
-#define SS_NORMAL SS$_NORMAL
-#define xsendline(c) sendline(c)
-
-#ifndef PROGNAME
-#define PROGNAME "sz"
-#endif
-
-
-#else	/* vax11c */
-
-#ifdef GENIE
-#define STATIC static
-#define LOGFILE "szlog"
-#define BADSEEK
-#define TXBSIZE 32768		/* Must be power of two, < MAXINT */
-#define OS "GEnie"
-#define SS_NORMAL 0
-#include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
-#include <ctype.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <fildes.h>
-FILDES fdes;
-extern int errno;
-int Binfile;
-long Thisflen;
-
-#define sendline(c) putchar(c & 0377)
-#define xsendline(c) putchar(c)
-
-#else	/* GENIE */
-
 #define LOGFILE "/tmp/szlog"
 #define SS_NORMAL 0
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <ctype.h>
@@ -160,9 +111,6 @@ extern int errno;
 
 #define sendline(c) putchar(c & 0377)
 #define xsendline(c) putchar(c)
-
-#endif
-#endif
 
 #define PATHLEN 256
 #define OK 0
@@ -330,6 +278,7 @@ register char *s;
 
 
 /* called by signal interrupt or terminate to clean things up */
+void
 bibi(n)
 {
 	canit(); fflush(stdout); mode(0);
@@ -343,8 +292,10 @@ bibi(n)
 	cucheck();
 	exit(128+n);
 }
+
 /* Called when ZMODEM gets an interrupt (^X) */
-onintr()
+void
+onintr(sig)
 {
 	signal(SIGINT, SIG_IGN);
 	longjmp(intrjmp, -1);
@@ -387,7 +338,7 @@ char *argv[];
 	npats=0;
 	if (argc<2)
 		usage();
-	setbuf(stdout, xXbuf);		
+	setbuf(stdout, xXbuf);
 	while (--argc) {
 		cp = *++argv;
 		if (*cp++ == '-' && *cp) {
@@ -516,7 +467,7 @@ char *argv[];
 			}
 		}
 	}
-	if (npats < 1 && !Command && !Test) 
+	if (npats < 1 && !Command && !Test)
 		usage();
 	if (Verbose) {
 		if (freopen(LOGFILE, "a", stderr)==NULL) {
@@ -989,7 +940,7 @@ cancan:
 				Crcflg = TRUE;
 		case NAK:
 			zperr("NAK on sector"); continue;
-		case ACK: 
+		case ACK:
 			firstsec=FALSE;
 			Totsecs += (cseclen>>7);
 			return OK;
@@ -1186,6 +1137,7 @@ long pos;
 
 /* VARARGS1 */
 vfile(f, a, b, c, d)
+char *f;
 long a, b, c, d;
 {
 	if (Verbose > 2) {
@@ -1194,12 +1146,11 @@ long a, b, c, d;
 	}
 }
 
-
-alrm()
+void
+alrm(sig)
 {
 	longjmp(tohere, -1);
 }
-
 
 #ifndef GENIE
 #ifndef vax11c
@@ -1380,7 +1331,7 @@ getzrxinit()
 #endif
 
 	for (n=10; --n>=0; ) {
-		
+
 		switch (zgethdr(Rxhdr, 1)) {
 		case ZCHALLENGE:	/* Echo receiver's challenge numbr */
 			stohdr(Rxpos);
@@ -2037,7 +1988,7 @@ register char **argv;
 			fprintf(stderr, "\nCountem: %03d %s ", argc, *argv);
 			fflush(stderr);
 		}
-		++Filesleft;  
+		++Filesleft;
 #ifdef XARGSFILE
 		/* Look for file length in third colon sep field */
 		for (p = *argv; *p; ++p) {

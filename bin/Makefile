@@ -13,7 +13,8 @@ CFLAGS          += -Werror
 SUBDIR		= chflags-src chpass-src dc-src diff-src find-src \
                   hostname-src id-src la-src ls-src login-src man-src \
                   more-src nm-src passwd-src printf-src renice-src sed-src \
-                  sh-src stty-src sysctl-src test-src uname-src xargs-src
+                  sh-src stty-src sysctl-src test-src uname-src xargs-src \
+                  zmodem-src
 # TODO: ar-src awk-src csh-src ex-src fstat-src jove-src lex-src ld-src
 # make-src m4-src pcc-src ranlib-src yacc-src
 

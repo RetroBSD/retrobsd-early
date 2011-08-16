@@ -36,7 +36,7 @@
  *	Run Length Encoding and variable length headers.  These
  *	features were not funded by the original Telenet development
  *	contract.
- * 
+ *
  * This software may be freely used for non commercial and
  * educational (didactic only) purposes.  This software may also
  * be freely used to support file transfer operations to or from
@@ -44,7 +44,7 @@
  * part or all of this software must be provided in source form
  * with this notice intact except by written permission from Omen
  * Technology Incorporated.
- * 
+ *
  * Use of this software for commercial or administrative purposes
  * except when exclusively limited to interfacing Omen Technology
  * products requires a per port license payment of $20.00 US per
@@ -65,14 +65,14 @@
  *
  *
  *
- * Iff the program is invoked by rzCOMMAND, output is piped to 
+ * Iff the program is invoked by rzCOMMAND, output is piped to
  * "COMMAND filename"  (Unix only)
  *
  *  Some systems (Venix, Coherent, Regulus) may not support tty raw mode
  *  read(2) the same way as Unix. ONEREAD must be defined to force one
  *  character reads for these systems. Added 7-01-84 CAF
  *
- *  Alarm signal handling changed to work with 4.2 BSD 7-15-84 CAF 
+ *  Alarm signal handling changed to work with 4.2 BSD 7-15-84 CAF
  *
  *  BIX added 6-30-87 to support BIX(TM) upload protocol used by the
  *  Byte Information Exchange.
@@ -92,39 +92,16 @@
  *
  *  USG UNIX (3.0) ioctl conventions courtesy  Jeff Martin
  */
-
-#ifdef vax11c
-#include <types.h>
-#include <stat.h>
-#define LOGFILE "rzlog.tmp"
-#include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
-#include <ctype.h>
-#include <errno.h>
-#define OS "VMS"
-#define BUFREAD
-extern int errno;
-#define SS_NORMAL SS$_NORMAL
-
-#ifndef PROGNAME
-#define PROGNAME "rz"
-#endif
-
-
-#else
-
-
 #define SS_NORMAL 0
 #define LOGFILE "/tmp/rzlog"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <signal.h>
 #include <setjmp.h>
 #include <ctype.h>
 #include <errno.h>
-extern int errno;
-FILE *popen();
-#endif
 
 #define OK 0
 #define FALSE 0
@@ -244,12 +221,14 @@ jmp_buf tohere;		/* For the interrupt on RX timeout */
 
 int tryzhdrtype=ZRINIT;	/* Header type to send corresponding to Last rx close */
 
-alrm()
+void
+alrm(sig)
 {
 	longjmp(tohere, -1);
 }
 
 /* called by signal interrupt or terminate to clean things up */
+void
 bibi(n)
 {
 	if (Zmodem)
@@ -400,6 +379,7 @@ usage()
  */
 /* VARARGS1 */
 vfile(f, a, b, c, d)
+char *f;
 long a, b, c, d;
 {
 	if (Verbose > 2) {
@@ -902,7 +882,7 @@ int dmode;
 	}
 
 	/* If stat fails for a reason other than non-existence, return error */
-	if (errno != ENOENT) return -1; 
+	if (errno != ENOENT) return -1;
 
 	switch (cpid = fork()) {
 
@@ -920,7 +900,7 @@ int dmode;
 		status = umask(status | (0777 & ~dmode)); /* Set for mkdir */
 		execl("/bin/mkdir", "mkdir", dpath, (char *)0);
 		_exit(-1);		/* Can't exec /bin/mkdir */
-	
+
 	default:			/* Parent process */
 		while (cpid != wait(&status)) ;	/* Wait for kid to finish */
 	}
@@ -1528,7 +1508,7 @@ bttyout(c)
 
 #ifndef vax11c
 /*
- * Strip leading ! if present, do shell escape. 
+ * Strip leading ! if present, do shell escape.
  */
 sys2(s)
 register char *s;
