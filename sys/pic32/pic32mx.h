@@ -259,7 +259,7 @@
  * the bus frequency and baud rate.
  * Round to the nearest integer.
  */
-#define PIC32_BRG_BAUD(fr,bd)	((((fr)/4 + (bd)) / (bd) / 2) - 1)
+#define PIC32_BRG_BAUD(fr,bd)	((((fr)/8 + (bd)) / (bd) / 2) - 1)
 
 /*--------------------------------------
  * Port A-G registers.
