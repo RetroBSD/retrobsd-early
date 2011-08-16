@@ -159,6 +159,11 @@ card_cmd (cmd, addr)
 {
 	int i, reply;
 
+        /* Wait for not busy, up to 300 msec. */
+	for (i=0; i<1000; i++)
+                if (spi_io (0xFF) == 0xFF)
+                        break;
+
 	/* Send a comand packet (6 bytes). */
 	spi_io (cmd | 0x40);
 	spi_io (addr >> 24);
@@ -326,10 +331,12 @@ card_size (unit, nsectors)
         case 1:                 /* SDC ver 2.00 */
 		csize = csd[9] + (csd[8] << 8) + 1;
 		*nsectors = csize << 10;
+		break;
 	case 0:                 /* SDC ver 1.XX or MMC. */
 		n = (csd[5] & 15) + ((csd[10] & 128) >> 7) + ((csd[9] & 3) << 1) + 2;
 		csize = (csd[8] >> 6) + (csd[7] << 2) + ((csd[6] & 3) << 10) + 1;
 		*nsectors = csize << (n - 9);
+		break;
         default:                /* Unknown version. */
                 return 0;
 	}

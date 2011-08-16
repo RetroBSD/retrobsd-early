@@ -151,8 +151,10 @@ cnopen (dev, flag, mode)
 	/* Enable receive interrupt. */
 #if CONSOLE_RX_IRQ < 32
 	IECSET(0) = 1 << CONSOLE_RX_IRQ;
-#else
+#elif CONSOLE_RX_IRQ < 64
 	IECSET(1) = 1 << (CONSOLE_RX_IRQ - 32);
+#else
+	IECSET(2) = 1 << (CONSOLE_RX_IRQ - 64);
 #endif
 	if (! linesw[tp->t_line].l_open)
 		return (ENODEV);
@@ -242,9 +244,12 @@ cnintr (dev)
         /* Receive */
 #if CONSOLE_RX_IRQ < 32
 	IFSCLR(0) = (1 << CONSOLE_RX_IRQ) | (1 << CONSOLE_ER_IRQ);
-#else
+#elif CONSOLE_RX_IRQ < 64
 	IFSCLR(1) = (1 << (CONSOLE_RX_IRQ - 32)) |
                     (1 << (CONSOLE_ER_IRQ - 32));
+#else
+	IFSCLR(2) = (1 << (CONSOLE_RX_IRQ - 64)) |
+                    (1 << (CONSOLE_ER_IRQ - 64));
 #endif
 	if (reg->sta & PIC32_USTA_URXDA) {
                 c = reg->rxreg;
@@ -261,9 +266,12 @@ cnintr (dev)
 #if CONSOLE_TX_IRQ < 32
                 IECCLR(0) = 1 << CONSOLE_TX_IRQ;
                 IFSCLR(0) = 1 << CONSOLE_TX_IRQ;
-#else
+#elif CONSOLE_TX_IRQ < 64
                 IECCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
                 IFSCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#else
+                IECCLR(2) = 1 << (CONSOLE_TX_IRQ - 64);
+                IFSCLR(2) = 1 << (CONSOLE_TX_IRQ - 64);
 #endif
                 if (tp->t_state & TS_BUSY) {
                         tp->t_state &= ~TS_BUSY;
@@ -298,8 +306,10 @@ out:		/* Disable transmit_interrupt. */
 	/* Enable transmit interrupt. */
 #if CONSOLE_TX_IRQ < 32
         IECSET(0) = 1 << CONSOLE_TX_IRQ;
-#else
+#elif CONSOLE_TX_IRQ < 64
         IECSET(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#else
+        IECSET(2) = 1 << (CONSOLE_TX_IRQ - 64);
 #endif
         led_control (LED_TTY, 1);
 	splx (s);
@@ -343,8 +353,10 @@ again:
         /* Clear TX interrupt. */
 #if CONSOLE_TX_IRQ < 32
         IECCLR(0) = 1 << CONSOLE_TX_IRQ;
-#else
+#elif CONSOLE_TX_IRQ < 64
         IECCLR(1) = 1 << (CONSOLE_TX_IRQ - 32);
+#else
+        IECCLR(2) = 1 << (CONSOLE_TX_IRQ - 64);
 #endif
         led_control (LED_TTY, 0);
 	splx (s);
