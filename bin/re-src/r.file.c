@@ -31,9 +31,9 @@ int n;
     /* дай справочник */
     if (file) {
         f0=file;
-    } 
+    }
     else {
-        f0=openfnames[n]; 
+        f0=openfnames[n];
         nowrbak=1;
     }
     for (f1=f2=f0; *f1; f1++) if (*f1 == '/') f2 = f1;
@@ -46,7 +46,7 @@ int n;
     else i = open (".",0);
     if (i < 0)
     {
-        error (DIAG("Directory does not exist.","Справочник не существует."));
+        error ("Directory does not exist.");
         return(0);
     }
     j = checkpriv(i);
@@ -55,56 +55,56 @@ int n;
     {
         if (file)
         {
-            error (DIAG("Can't write in specified directory","Запись в справочник запрещена"));
+            error ("Can't write in specified directory");
             return(0);
         }
         if (f2 > f0)
         {
-            telluser(DIAG("Hit <save> to use '.'","Нажмите <save> чтобы использовать '.'"),0);
-            lread1 = -1; 
+            telluser("Hit <save> to use '.'",0);
+            lread1 = -1;
             nowrbak=0;
             read1();
             if (lread1 != CCSAVEFILE) return(-1);
             if ((i = open(".",0)) < 0)
             {
-                error (DIAG("Directory '.' does not exist!","Справочник '.' не существует!"));
+                error ("Directory '.' does not exist!");
                 return(0);
             }
             j = checkpriv(i);
             close (i);
             if (j != 2)
             {
-                error (DIAG("Can't write in '.'","Запись в '.' невозможна"));
+                error ("Can't write in '.'");
                 return(0);
             }
             f0 = f2 +1;/* points to file name */
         }
         else
         {
-            error (DIAG("Can't write in '.'","Запись в '.' невозможна"));
+            error ("Can't write in '.'");
             return(0);
         }
     }
     /* Готовимся к записи файла f0 */
-    f1 = append (f0,SUFFBAK);
+    f1 = append (f0, "~");
     if (nowrbak && !movebak[n]) {
-        nowrbak=0; 
+        nowrbak=0;
         movebak[n]=1;
     }
     if (!nowrbak)
-    {   
+    {
         unlink(f1);
         link (f0,f1);
     }
     unlink (f0);
     if ((newf = creat(f0,getpriv(n))) < 0)
     {
-        error (DIAG("Creat failed!","Ошибка создания!"));
+        error ("Creat failed!");
         return(0);
     }
     /*      chown(f0,userid);       */
     /* Собственно запись. */
-    telluser(DIAG("save: ","зап: "),0);
+    telluser("save: ",0);
     telluser(f0,6);
     return (fsdwrite(openfsds[n],077777,newf) == -1 ? 0 : 1);
 }
@@ -159,7 +159,7 @@ int nl, newf;
                 read(f->fsdfile,cline,j);
                 if (write(newf,cline,j) < 0)
                 {
-                    error(DIAG("DANGER -- WRITE ERROR","Внимание:ошибка записи"));
+                    error("DANGER -- WRITE ERROR");
                     close(newf);
                     return(-1);
                 }
@@ -173,7 +173,7 @@ int nl, newf;
                 if (bflag == 0 && ++nl == 0) j = 0;
                 bflag = 1;
             }
-            else {  
+            else {
                 if (j > nl) j = nl;
                 nl -= j;
             }
@@ -181,7 +181,7 @@ int nl, newf;
             while (k) cline[--k] = NEWLINE;
             if (j && write(newf,cline,j) < 0)
             {
-                error(DIAG("DANGER -- WRITE ERROR","Внимание: ошибка записи."));
+                error("DANGER -- WRITE ERROR");
                 close(newf);
                 return(-1);
             }
@@ -228,24 +228,24 @@ int line, col, mkflg, puflg;
         {
             if (fn >= MAXFILES)
             {
-                error(DIAG("Too many files -- editor limit!","Слишком много файлов"));
+                error("Too many files -- editor limit!");
                 close(fn);
                 return(0);
             }
             if ((j = checkpriv(fn)) == 0)
             {
-                error(DIAG("File read protected.","Файл защищен по чтению."));
+                error("File read protected.");
                 close(fn);
                 return(0);
             }
             openwrite[fn] = (j == 2 ? 1 : 0);
-            telluser(DIAG("Use: ","Ред: "),0);
+            telluser("Use: ",0);
             telluser(file,5);
         }
         else if (mkflg)
         {
-            telluser(DIAG("hit <use> (ctrl-d) to make: ","Создать(Y/N)?: "),0);
-            telluser(file,DIAG(28,27));
+            telluser("hit <use> (ctrl-d) to make: ",0);
+            telluser(file,28);
             lread1 = -1;
             read1();
             if (lread1 != CCSETFILE&&lread1 != 'Y' &&lread1 != 'y') return(-1);
@@ -259,29 +259,29 @@ int line, col, mkflg, puflg;
             else i = open(".",0);
             if (i < 0)
             {
-                error(DIAG("Specified directory does not exist.","Справочник не существует"));
+                error("Specified directory does not exist.");
                 return(0);
             }
             if (checkpriv(i) != 2)
             {
-                error(DIAG("Can't write in:","Не могу записать в:"));
+                error("Can't write in:");
                 telluser (file,21);
                 return(0);
             }
             close(i);
             if (d > file) *d = '/';
             /* Создаем файл */
-            fn = creat(file,FILEMODE); 
+            fn = creat(file,FILEMODE);
             close(fn);
             if ((fn = open(file,0)) < 0)
             {
-                error(DIAG("Create failed!","Ошибка создания файла."));
+                error("Create failed!");
                 return(0);
             }
             if (fn >= MAXFILES)
             {
                 close(fn);
-                error(DIAG("Too many files -- Editor limit!","Слишком много файлов."));
+                error("Too many files -- Editor limit!");
                 return(0);
             }
             openwrite[fn] = 1;

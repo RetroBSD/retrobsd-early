@@ -12,11 +12,8 @@
  */
 
 #include "r.defs.h"
-#ifndef WORK
-#define debug
-#endif
 
-#ifdef debug
+#ifdef DEBUG
 #define ASSERT(p) if(!(p))botch("p");else
 botch(s)
 char *s;
@@ -76,7 +73,7 @@ static  union store *alloct;    /*arena top*/
 static  union store *allocx;    /*for benefit of realloc*/
 char    *sbrk();
 
-char *
+void *
 malloc(nbytes)
 unsigned nbytes;
 {
@@ -140,10 +137,12 @@ found:
         return((char *)(p+1));
 }
 
-/*      freeing strategy tuned for LIFO allocation
-*/
+/*
+ * freeing strategy tuned for LIFO allocation
+ */
+void
 free(ap)
-register char *ap;
+void *ap;
 {
         register union store *p = (union store *)ap;
 
@@ -191,7 +190,7 @@ unsigned nbytes;
 }
 #endif
 
-#ifdef debug
+#ifdef DEBUG
 allock()
 {
     register union store *p;
@@ -206,10 +205,10 @@ allock()
 }
 #endif
 
-#ifdef debug
+#ifdef DEBUG
 static ptflag=0;
 ptfree()
-{ 
+{
     register union store *p,*q;
     register int i=0;
     if (ptflag++) return;
@@ -218,13 +217,13 @@ ptfree()
     for (p=allocs; ;)   {
         if ( !testbusy(p->ptr) )
         {
-            printf(" 0%o( %d)\t%c", p,
+            printf(" %p( %d)\t%c", p,
                 ((int)p->ptr - (int)p) - (WORD), (++i%4?' ':012));
         }
         q = p;
         p = clearbusy(p->ptr);
         if ( p > q ) ASSERT( p <= alloct );
-        else if ( q != alloct || p != allocs ) { 
+        else if ( q != alloct || p != allocs ) {
             printf("Corrupt arena\n");
             return;
         }

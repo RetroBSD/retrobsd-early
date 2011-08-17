@@ -10,187 +10,33 @@
 #define MAXHOP  32  /* max number of tc= indirections */
 #define BUFSIZ  1024
 
+#include <stdlib.h>
 #include <string.h>
 #include <sgtty.h>
 #include <ctype.h>
 #define E_TERMCAP "/etc/termcap"
+
 /*
  * Программы для взаимодействия с описанием  терминала "/etc/termcap"
- *
  */
-
 static char *tbuf;
 static int hopcount;   /* detect infinite loops in termcap, init 0 */
 static char    *tskip();
 static char    *tdecode();
 char    *tgetstr();
-char    *getenv();
-/* В случае ОС ДЕМОС используется мини-вариант tgetent,так как
- * в  этом случае описание находится в переменной TERMCAP
+
+/*
+ * Terminal description is placed in TERMCAP variable.
  * ko= 1 - нормально, 0  - TERMCAP не найден
-*/
-#ifdef FROMTCAP
+ */
 tgettc()
 {
-    tbuf=getenv("TERMCAP");
-    return((tbuf?1:0));
-}
-#else FROMTCAP
-/*
- * Получает описание терминала и помещает его в буфер bp
- * name - тип терминала.
- */
-tgetent(bp, name)
-char *bp, *name;
-{
-    register char *cp;
-    register int c;
-    register int i = 0, cnt = 0;
-    char ibuf[BUFSIZ];
-    char *cp2;
-    int tf;
-    tbuf = bp;
-    tf = 0;
-#ifndef V6
-    cp = getenv("TERMCAP");
-    /*
-         * TERMCAP can have one of two things in it. It can be the
-         * name of a file to use instead of /etc/termcap. In this
-         * case it better start with a "/". Or it can be an entry to
-         * use so we don't have to read the file. In this case it
-         * has to already have the newlines crunched out.
-         */
-    if (cp && *cp) {
-        if (*cp!='/') {
-            cp2 = getenv("TERM");
-            if (cp2==(char *) 0 || strcmp(name,cp2)==0) {
-                strcpy(bp,cp);
-                return(tnchktc());
-            }
-            else {
-                tf = open(E_TERMCAP, 0);
-            }
-        }
-        else
-            tf = open(cp, 0);
-    }
-    if (tf==0)
-        tf = open(E_TERMCAP, 0);
-#else
-    tf = open(E_TERMCAP, 0);
-#endif
-    if (tf < 0)
-        return (-1);
-    for (;;) {
-        cp = bp;
-        for (;;) {
-            if (i == cnt) {
-                cnt = read(tf, ibuf, BUFSIZ);
-                if (cnt <= 0) {
-                    close(tf);
-                    return (0);
-                }
-                i = 0;
-            }
-            c = ibuf[i++];
-            if (c == '\n') {
-                if (cp > bp && cp[-1] == '\\'){
-                    cp--;
-                    continue;
-                }
-                break;
-            }
-            if (cp >= bp+BUFSIZ) {
-                write(2,"Termcap entry too long\n", 23);
-                break;
-            }
-            else
-                *cp++ = c;
-        }
-        *cp = 0;
-        /*
-                 * The real work for the match.
-                 */
-        if (tnamatch(name)) {
-            close(tf);
-            return(tnchktc());
-        }
+    tbuf = getenv("TERMCAP");
+    if (! tbuf) {
+        printf1 ("re: TERMCAP environment variable required\n");
+        exit(1);
     }
 }
-
-/*
- * tnchktc: check the last entry, see if it's tc=xxx. If so,
- * recursively find xxx and append that entry (minus the names)
- * to take the place of the tc=xxx entry. This allows termcap
- * entries to say "like an HP2621 but doesn't turn on the labels".
- * Note that this works because of the left to right scan.
- */
-tnchktc()
-{
-    register char *p, *q;
-    char tcname[16];    /* name of similar terminal */
-    char tcbuf[BUFSIZ];
-    char *holdtbuf = tbuf;
-    int l;
-    p = tbuf + strlen(tbuf) - 2;    /* before the last colon */
-    while (*--p != ':')
-        if (p<tbuf) {
-            write(2, "Bad termcap entry\n", 18);
-            return (0);
-        }
-    p++;
-    /* p now points to beginning of last field */
-    if (p[0] != 't' || p[1] != 'c')
-        return(1);
-    strcpy(tcname,p+3);
-    q = tcname;
-    while (q && *q != ':')
-        q++;
-    *q = 0;
-    if (++hopcount > MAXHOP) {
-        write(2, "Infinite tc= loop\n", 18);
-        return (0);
-    }
-    if (tgetent(tcbuf, tcname) != 1)
-        return(0);
-    for (q=tcbuf; *q != ':'; q++)
-        ;
-    l = p - holdtbuf + strlen(q);
-    if (l > BUFSIZ) {
-        write(2, "Termcap entry too long\n", 23);
-        q[BUFSIZ - (p-tbuf)] = 0;
-    }
-    strcpy(p, q+1);
-    tbuf = holdtbuf;
-    return(1);
-}
-
-/*
- * Tnamatch deals with name matching.  The first field of the termcap
- * entry is a sequence of names separated by |'s, so we compare
- * against each such name.  The normal : terminator after the last
- * name (before the first field) stops us.
- */
-tnamatch(np)
-char *np;
-{
-    register char *Np, *Bp;
-    Bp = tbuf;
-    if (*Bp == '#')
-        return(0);
-    for (;;) {
-        for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
-            continue;
-        if (*Np == 0 && (*Bp == '|' || *Bp == ':' || *Bp == 0))
-            return (1);
-        while (*Bp && *Bp != ':' && *Bp != '|')
-            Bp++;
-        if (*Bp == 0 || *Bp == ':')
-            return (0);
-        Bp++;
-    }
-}
-#endif FROMTCAP
 
 /*
  * Skip to the next field.  Notice that this is very dumb, not
@@ -336,15 +182,6 @@ nextc:
         }
         *cp++ = c;
     }
-#if 0
-    if ( jdelay )
-    { extern ospeed;
-      register int i = ospeed;
-      while ( i < B9600 )
-        jdelay /= 2, i++;
-        jdelay++;
-    }
-#endif
     if(jdelay>100) jdelay=100;
     while(jdelay--) *cp++='\200';
     *cp++ = 0;

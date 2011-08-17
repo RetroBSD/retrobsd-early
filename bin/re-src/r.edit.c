@@ -51,12 +51,9 @@ int chan;
     nby = 0;
     nl = 0;
 #endif
-    FOREVER
-        {
-        if ( (c < 0) || (nby >= NBYMAX) || (nl == FSDMAXL))
-        {
-            if (c != -2)
-            {
+    for (;;) {
+        if ((c < 0) || (nby >= NBYMAX) || (nl == FSDMAXL)) {
+            if (c != -2) {
                 lastfsd = thisfsd;
                 thisfsd = (struct fsd *)salloc(nby + SFSD);
                 if (firstfsd == 0) firstfsd = thisfsd;
@@ -71,8 +68,8 @@ int chan;
                 bpt = &(thisfsd->fsdbytes);
                 for (i=0; i<nby; ++i) *(bpt++) = fby[i];
             }
-            if (c == -1)
-            { /* Поместим блок конца и выйдем */
+            if (c == -1) {
+                /* Поместим блок конца и выйдем */
                 thisfsd->fwdptr = lastfsd = (struct fsd *)salloc(SFSD);
                 lastfsd->backptr = thisfsd;
                 return (firstfsd);
@@ -118,19 +115,18 @@ int fi,h,l;
         charsfi = fi;
         return;
     }
-    if((charsfi != fi)||(chkh != h)||(l > chkl)||(l < chkl - charsn))
-    {
+    if ((charsfi != fi) || (chkh != h) || (l > chkl) || (l < chkl - charsn)) {
         chkh = h;
         seek(fi,h,3);
 #ifndef ALIGBUF
         seek(fi,l,1);
         chkl = l;
         charsi = charsn = 0;
-#else ALIGBUF
+#else
         chkl = 0;
         charsi = l;
         charsn = 0;
-#endif ALIGBUF
+#endif
     }
     else charsi = charsn + l - chkl;
     ncline = 0;
@@ -182,13 +178,13 @@ int chars(flg)
         {
             charsn=read(charsfi, charsbuf, CHARBUFSZ);
             charsi=0;
-#else ALIGBUF
+#else
         {
             charsi -= charsn;
             charsn=read(charsfi, charsbuf, CHARBUFSZ);
-#endif ALIGBUF
-            if(charsn<0) {
-                error(DIAG("Read Error","Oшибка чтения"));
+#endif
+            if (charsn<0) {
+                error("Read Error");
                 charsn=0;
             }
             chkl += charsn;
@@ -266,102 +262,49 @@ int *no,mo;
     /* main loop */
     while((sy= *sf)!='\n' && sf!=se)
     {
-        if((n+2)>mo) {
-            ir=2;
+        if (n+2 > mo) {
+            ir = 2;
             break;
         }
-        if( sy=='\11' )
-        {
-            i=(n&(~07))+8;
-            if(i>mo) {
-                ir=2;
+        if (sy == '\11') {
+            i = (n & ~7) + 8;
+            if (i > mo) {
+                ir = 2;
                 break;
             }
-            for(; n<i; n++) *st++ =' ';
+            for (; n<i; n++)
+                *st++ = ' ';
             goto next;
         }
         /* DEL */
-        if(sy=='\177') {
-            *st++ =esc0;
-            *st++ ='#';
+        if (sy == '\177') {
+            *st++ = esc0;
+            *st++ = '#';
             n += 2;
             goto next;
         }
         /* CNTRL X */
-        s1= (sy)&0340;
-        if(s1==0)  {
-            *st++ =esc0;
-            *st++ =sy|0100;
+        s1 = sy & 0340;
+        if (s1 == 0) {
+            *st++ = esc0;
+            *st++ = sy | 0100;
             n += 2;
             goto next;
         }
         /* letters and sim. */
-        if(s1!=040)
-        {
-            if(s1==0200||s1==0240||(sy==S_NO1)||(lcasef && sy==S_NO2))
-            /* \377 */              {
-                if (n+4>mo) {
-                    ir=2;
+        if (s1 != 040) {
+            if (s1 == 0200 || s1 == 0240) {
+                /* \377 */
+                if (n+4 > mo) {
+                    ir = 2;
                     break;
                 }
-                *st++ =esc0;
-                *st++ =(sy>>6)&3 + '0';
-                *st++ =(sy>>3)&7 + '0';
-                *st++ =((sy) &7) + '0';
+                *st++ = esc0;
+                *st++ = (sy>>6)&3 + '0';
+                *st++ = (sy>>3)&7 + '0';
+                *st++ = ((sy) &7) + '0';
                 n += 4;
                 goto next;
-            }
-            /* russion letters */
-            if (latf && ((sy&0300)==0300) )
-            {
-                *st++ = esc2;
-                *st++ = (sy==0337?sy&0177:(sy&0177)^040);
-                n += 2;
-                goto next;
-            }
-            /* \A  A \( \) \! ... */
-            if (lcasef)
-            {
-                *st=esc1;
-                s= ((int)sy) & 0377;
-                if (s>='A' && s<= 'Z')
-                {
-                    *++st = s;
-                    st++;
-                    n += 2;
-                    goto next;
-                }
-                if (RLPRO(s))
-                {
-                    *++st = STK7(s);
-                    st++;
-                    n += 2;
-                    goto next;
-                }
-                if (s>='a' && s<='z')
-                {
-                    *st++ = (s&0177) ^ 040;
-                    n++;
-                    goto next;
-                }
-                if (RLSTRO(s))
-                {
-                    *st++ = STK7(s);
-                    n++;
-                    goto next;
-                }
-                /* table twice chars */
-                sft=sf;
-                sf=seit;
-                while ( *sf && *sf++!=sy) sf++;
-                if( *sf) {
-                    *++st = *sf;
-                    st++;
-                    n += 2;
-                    sf=sft;
-                    goto next;
-                }
-                sf=sft;
             }
         }
         *st++ = sy;
@@ -377,15 +320,12 @@ next:
     return(ir);
 }
 
-int flgtabs=1;
 /*
  * dechars(line,n) -
  * Преобразование строки line из внутренней (экранной) формы
  * во внешнюю. Преобразование делается прямо в строке line.
  * n - длина строки. В строке должно быть не менее n+1 символов,
  * так как в конец полученной строки пишется NEWLINE.
- * Замена пробелов табуляциями управляется через flgtabs
- *      0 - нет, 1 - начальные табуляции, 2 - все пробелы.
  * Возвращает число символов в полученной строке.
  * Хвостовые пробелы исключаются.
  */
@@ -403,70 +343,31 @@ int n;
     fm = to = line;
     cn = -1;
     lnb = 0;
-    while ((cc = *fm++) != NEWLINE)
-    {
+    while ((cc = *fm++) != NEWLINE) {
         cn++;
-        if ( cc != ' ')
-        {
-            if(flgtabs==2 || flgtabs==1 && lnb==0)
-                /* Пробелы заменяем табуляциями */
-                while (8+(lnb&(~07)) <= cn)
-                {
-                    *to++ = (lnb&7)==7 ? ' ' : '\t';
-                    lnb &= (~07);
-                    lnb += 8;
-                }
-            while ( ++lnb <= cn ) *to++ = ' ';
+        if (cc != ' ') {
+            while (++lnb <= cn)
+                *to++ = ' ';
             /* расшифровка символов */
-            if (cc==esc0)
-            {
-                if( *fm >='@' || (unsigned)(*fm) > 0200 )
-                {
+            if (cc == esc0) {
+                if (*fm >= '@' || (unsigned)*fm > 0200) {
                     *to++ = *fm++ & 037;
                     continue;
                 }
-                if ( *fm == '#') {
+                if (*fm == '#') {
                     *to++ = '\177';
                     *fm++;
                     continue;
                 }
                 /* <esc>XXX */
-                i=0;
-                j=0;
+                i = 0;
+                j = 0;
                 while (j++ <3 && (*fm >= '0' && *fm <= '7'))
-                    i= (i<<3) + (*fm++ - '0');
+                    i = (i<<3) + (*fm++ - '0');
                 *to++ = i & 0377;
                 continue;
             }
-            else if (lcasef)
-            {
-                if (cc>='A' && cc<= 'Z')
-                    cc=cc^040;
-                else if (cc>=0140 && cc <= 0176 )
-                    cc=K7TS(cc)^040;
-                else if (cc==esc1 && (cc= *fm) !=NEWLINE )
-                {
-                    *fm++;
-                    if (cc>=0140 && cc<=0176)
-                        cc=K7TS(cc);
-                    else if (cc<'A' || cc>'Z')
-                    {
-                        to1=to;
-                        to=seit-1;
-                        while (*++to && *++to != cc);
-                        if (*to) cc= *--to;
-                        to=to1;
-                    }
-                }
-                *to++ =cc;
-                continue;
-            }
-            else if (latf && cc==esc2 && *fm != NEWLINE )
-            {
-                cc= *fm++ ^ 0240;
-                if (cc==0377) cc= 0337;
-            }
-            *to++ =cc;
+            *to++ = cc;
         } /* while - continue - not skip */
     }
     *to++ = NEWLINE;
@@ -592,7 +493,7 @@ switchfile()
     if (curport->altwksp->wfile == 0)
     {
         if (editfile(deffile,0,0,0,1) <= 0)
-            error(DIAG("Default file gone: notify sys admin.","Нет файла инструкций."));
+            error("Default file gone: notify sys admin.");
         return;
     }
     switchwksp();
@@ -644,8 +545,8 @@ int line, col, number, nl;
         putbks(col,number);
         fcline = 1;
         putline(0);
-        if((j=i - curwksp->ulhclno)<= curport ->btext)
-            putup(j,j);
+        if ((j = i - curwksp->ulhclno) <= curport->btext)
+            putup(j, j);
     }
     poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
 }
@@ -793,9 +694,10 @@ int line, col, number, nl, flg;
     line1 = (line0=line) + nl;
     while( nl = (line1 - line0))
     {
-        if(nl > FSDMAXL) nl=FSDMAXL;
-        f1 = (struct fsd *)salloc(SFSD+(number>127?nl*2:nl));
-        if(f2) {
+        if (nl > FSDMAXL)
+            nl = FSDMAXL;
+        f1 = (struct fsd*) salloc(SFSD + (number>127 ? nl*2 : nl));
+        if (f2) {
             f2->fwdptr = f1;
             f1->backptr = f2;
         }
@@ -846,8 +748,8 @@ int line, col, number, nl, flg;
         ncline -= number;
         fcline = 1;
         putline(0);
-        if((i=j - curwksp->ulhclno) <= curport->btext)
-            putup(i,i);
+        if ((i = j - curwksp->ulhclno) <= curport->btext)
+            putup(i, i);
     }
     insert(pickwksp,f0,n = nlines[2]);
     redisplay((struct workspace *)NULL,2,n,n,nl);
@@ -1372,14 +1274,14 @@ struct workspace *w;
         /* сливаем два fsd  и пытаемся повторить */
         i=nl1;
         cc=c= &(f0->fsdbytes);
-        while(i--)
-        {
-            if((j= *c++ ) &0200) j= (j&0177)*128 + *c++;
+        while (i--) {
+            if ((j = *c++) & 0200)
+                j = (j & 0177) * 128 + *c++;
             l1 += j;
         }
         lb1 = c - cc;
-        f2=f;
-        f=(struct fsd *)salloc(SFSD + lb0 + lb1);
+        f2 = f;
+        f = (struct fsd*) salloc(SFSD + lb0 + lb1);
         *f = *f0;
         f->fwdptr = f2->fwdptr;
         w->curfsd=f;
@@ -1398,10 +1300,12 @@ struct workspace *w;
         free((char *)f2);
         free((char *)f0);
         f->fwdptr ->backptr =f;
-        if( f0=f->backptr) f0->fwdptr = f;
-        else openfsds[w->wfile]=f;
-        f0=f;
-        f=f0->fwdptr;
+        if (f0 = f->backptr)
+            f0->fwdptr = f;
+        else
+            openfsds[w->wfile] = f;
+        f0 = f;
+        f = f0->fwdptr;
     }
     return(kod);
 }
@@ -1445,17 +1349,17 @@ int line,m,jproc,*pipef;
     else {
         m = fsdwrite(curwksp->curfsd,m,pipef[1]);
         if (m == -1) {
-            error(DIAG("Can't write on pipe.","Ошибка записи в pipe."));
+            error("Can't write on pipe.");
             kill(jproc,9);
         }
     }
     while (wait(&n) != jproc);          /* wait for completion */
     if ((n & 0177400) == 0157400) {
-        error(DIAG("Can't find program to execute.","Не найдена программа"));
+        error("Can't find program to execute.");
         return;
     }
     if ((n & 0177400) == 0177000 || (n & 0377) != 0) {
-        error(DIAG("Abnormal termination of program.","Плохой код конца программы."));
+        error("Abnormal termination of program.");
         return;
     }
     charsfi = -1;                   /* forget old position before fork */
@@ -1489,10 +1393,9 @@ char **args;
     exit(0337); /* Код ответа согласован с doreplace */
 }
 
-#ifndef WORK
-/*  #ifndef WORK
- *  printfsd(f) -
- * Отладочная печать цепочек fsd
+#ifdef DEBUG
+/*
+ * Debug output of fsd chains.
  */
 printfsd(f)
 struct fsd *f;
@@ -1506,9 +1409,8 @@ struct fsd *f;
     *cp;
     printf("\n**********");
     while (f) {
-        printf("\nfsdnl=%d chan=%d hi=%d lo=%d at %o",
-        f->fsdnlines,f->fsdfile,f->seekhigh,
-        f->seeklow,f);
+        printf("\nfsdnl=%d chan=%d hi=%d lo=%d at %p",
+            f->fsdnlines,f->fsdfile,f->seekhigh,f->seeklow,f);
         if (f->fwdptr && f != f->fwdptr->backptr) printf("\n*** next block bad backpointer ***");
         c = &(f->fsdbytes);
         for (i=0; i<f->fsdnlines; i++) {
@@ -1527,10 +1429,6 @@ checkfsd()
 {
     register struct fsd *f;
     register int nl;
-    struct {
-        int s0;
-        char *s1;
-    };
     register char *g;
     char *gg;
     nl = 0;

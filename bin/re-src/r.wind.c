@@ -62,7 +62,7 @@ int number;
     if ((i = number - curwksp->ulhclno) >= 0) {
         if (i > curport->btext) i = curport->btext;
         poscursor(cursorcol,i);
-    }       
+    }
 }
 /*
  * cgoto(ln,col,slin,lkey) -
@@ -172,7 +172,7 @@ char *file;
     /* Есть ли место */
     if (nportlist >= MAXPORTLIST)
     {
-        error(DIAG("Can't make any more windows.","Слишком много окон"));
+        error("Can't make any more windows.");
         return;
     }
     if (cursorcol == 0 && cursorline > 0
@@ -181,7 +181,7 @@ char *file;
         && cursorcol < curport->rtext-1) horiz = 0;
     else
     {
-        error(DIAG("Can't put a window there.","Здесь нельзя создать окно"));
+        error("Can't put a window there.");
         return;
     }
     oldport = curport;
@@ -230,7 +230,7 @@ char *file;
     switchport(newport);
     defplline = defmiline = (newport->bmarg - newport->tmarg)/ 4 + 1;
     if (editfile(file,0,0,1,1) <= 0 && editfile(deffile,0,0,0,1) <= 0)
-        error(DIAG("Default file gone: notify sys admin.","Нет файла инструкций."));
+        error("Default file gone: notify sys admin.");
     drawport(oldport,1);
     drawport(newport,1);
     poscursor(0,0);
@@ -247,7 +247,7 @@ removeport()
     register struct viewport *theport, *pport;
     if (nportlist == 1)
     {
-        error (DIAG("Can't remove remaining port.","Нельзя уничтожить последнее окно"));
+        error ("Can't remove remaining port.");
         return;
     }
     pport = portlist[pnum = (theport = portlist[--nportlist])->prevport];
@@ -371,4 +371,3 @@ int from,to,delta,fn;
         }
     }
 }
-

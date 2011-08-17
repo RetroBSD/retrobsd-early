@@ -19,50 +19,52 @@
  *      Особый случай - если l0 отрицательно, то выдать только строку lf.
  *      При этом строка берется из cline, и выдавать только с колонки -l0.
  */
-putup(lo,lf)
-int lo,lf;
+putup(lo, lf)
+int lo, lf;
 {
     register int i, l0, fc;
-    int j,k,l1;
-    char lmc,*cp,c,rmargflg;
+    int j, k, l1;
+    char lmc, *cp, c, rmargflg;
+
     l0 = lo;
     lo += 2;
-    if (lo > 0) lo = 0; /* Нач. колонка */
+    if (lo > 0)
+        lo = 0; /* Нач. колонка */
     l1 = lo;
     lmc = (curport->lmarg == curport->ltext ? 0 :
-    curwksp->ulhccno == 0 ? LMCH : MLMCH);
+        curwksp->ulhccno == 0 ? LMCH : MLMCH);
     rmargflg = (curport->ltext + curport->rtext < curport->rmarg);
-    while (l0 <= lf)
-    {
+    while (l0 <= lf) {
         lo = l1;
-        if (l0 < 0)
-        {
+        if (l0 < 0) {
             l0 = lf;
             lf = -1;
             i = 0;
+        } else {
+            if (l0 != lf && intrup())
+                return;
+            i = wseek(curwksp,curwksp->ulhclno + l0);
+            if (i && lmc != 0)
+                lmc = ELMCH;
         }
-        else
-        {
-            if (l0 != lf && intrup())  return;
-            if (i = wseek(curwksp,curwksp->ulhclno + l0)
-                && lmc != 0) lmc = ELMCH;
-        }
-        if (lmc == curport->lmchars[l0] || lmc == 0 || lo < 0) poscursor(0,l0);
-        else
-        {
-            poscursor(-1,l0);
-            putch(lmc,0);
+        if (lmc == curport->lmchars[l0] || lmc == 0 || lo < 0)
+            poscursor(0, l0);
+        else {
+            poscursor(-1, l0);
+            putch(lmc, 0);
         }
         curport->lmchars[l0] = lmc;
-        if (rmargflg != 0) rmargflg = RMCH;
-        if (i != 0) i = 0;
-        else
-        {
-            if (lf >= 0) c = chars(1);
+        if (rmargflg != 0)
+            rmargflg = RMCH;
+        if (i != 0)
+            i = 0;
+        else {
+            if (lf >= 0)
+                c = chars(1);
             i = (ncline - 1) - curwksp->ulhccno;
-            if (i < 0) i = 0;
-            else if (i > curport->rtext)
-            {
+            if (i < 0)
+                i = 0;
+            else if (i > curport->rtext) {
                 if (i > 1 + curport->rtext && rmargflg)
                     rmargflg = MRMCH;
                 i = 1 + curport->rtext;
@@ -72,21 +74,26 @@ int lo,lf;
          * Вывод символов.
          * Пытаемся пропустить начальные пробелы
          */
-        if (lo == 0)
-        {
-            for (fc=0;cline[curwksp->ulhccno + fc]==' ';fc++);
-            j=curport->rtext+1; 
-            if(fc>j) fc=j; 
-            if(fc>127) fc=127;
+        if (lo == 0) {
+            for (fc=0; cline != 0 && cline[curwksp->ulhccno + fc]==' '; fc++);
+            j = curport->rtext+1;
+            if (fc > j)
+                fc = j;
+            if (fc > 127)
+                fc = 127;
             lo = (curport->firstcol)[l0] > fc ?
-            - fc : - (curport->firstcol)[l0];
-            if (i+lo<=0) lo = 0;
-            else curport->firstcol[l0] = fc;
+                - fc : - (curport->firstcol)[l0];
+            if (i + lo <= 0)
+                lo = 0;
+            else
+                curport->firstcol[l0] = fc;
         }
-        if (lo) poscursor(-lo,l0);
+        if (lo)
+            poscursor(-lo, l0);
         j = i + lo;
         cp = cline + curwksp->ulhccno - lo;
-        while(j--) putcha(*cp++);
+        while(j--)
+            putcha(*cp++);
         cursorcol += (i + lo);
         if (curport->lastcol[l0] < cursorcol)
             curport->lastcol[l0] = cursorcol;
@@ -115,7 +122,7 @@ int lo,lf;
  */
 poscursor(col,lin)
 int col,lin;
-{ 
+{
     register int scol,dcol,dlin;
     int slin;
     if (cursorline == lin)
@@ -145,30 +152,30 @@ int col,lin;
             return;
         }
     }
-    scol=col+curport->ltext; 
+    scol=col+curport->ltext;
     slin=lin+curport->ttext; /* screen col, lin */
-    dcol=col-cursorcol; 
+    dcol=col-cursorcol;
     dlin=lin-cursorline;           /* delta col,lin   */
-    cursorcol=col; 
+    cursorcol=col;
     cursorline=lin;
     if (pcursor(scol,slin)) return; /* direct positioning */
     if ( (( abs(scol)+abs(slin)) < (abs(dcol)+abs(dlin))))
-    { 
-        putcha(COHO); 
-        dcol=scol; 
+    {
+        putcha(COHO);
+        dcol=scol;
         dlin=slin;
     }
-    if (dcol>0) { 
-        while (dcol--) putcha(CORT); 
+    if (dcol>0) {
+        while (dcol--) putcha(CORT);
     }
-    else if (dcol<0) { 
-        while (dcol++) putcha(COLT); 
+    else if (dcol<0) {
+        while (dcol++) putcha(COLT);
     }
-    if (dlin>0) { 
-        while (dlin--) putcha(CODN); 
+    if (dlin>0) {
+        while (dlin--) putcha(CODN);
     }
-    else if (dlin<0) { 
-        while (dlin++) putcha(COUP); 
+    else if (dlin<0) {
+        while (dlin++) putcha(COUP);
     }
     return;
 }
@@ -193,7 +200,7 @@ int arg;
     col=cursorcol;
     switch (arg)
     {
-    case 0: 
+    case 0:
         break;
     case HO:
         col = lin = 0;
@@ -274,8 +281,8 @@ char j;
 fixcurs()
 {
     if (eolflag && curport->ltext+cursorcol>=LINEL)    /* for VT-52 */
-    { 
-        cursorcol=LINEL-curport->ltext; 
+    {
+        cursorcol=LINEL-curport->ltext;
         return 0;
     }
     if (curport->ltext + cursorcol >= LINEL) {
@@ -331,8 +338,7 @@ back:
     if(macro) goto rmac;
     if (CONTROLCHAR && lread1 && (lread1<=BT))
     {
-        telluser(DIAG("arg: *** cursor defined ***",
-        "arg: *** указание курсором ***"),0);
+        telluser("arg: *** cursor defined ***",0);
         switchport(w);
         poscursor(paramc0,paramr0);
 t0:
@@ -350,13 +356,13 @@ t0:
             else paramc0 = cursorcol;
             if(cursorline > paramr0)paramr1 = cursorline;
             else paramr0 = cursorline;
-            paraml = 0; 
+            paraml = 0;
             paramv = NULL;
             paramtype = -1;
         }
         else
         {
-            error(DIAG("Printing character illegal here","Этот символ здесь недопустим"));
+            error("Printing character illegal here");
             lread1 = -1;
             read1();
             goto t0;
@@ -364,13 +370,13 @@ t0:
     }
     else if (CTRLCHAR)
     {
-        paraml = 0; 
+        paraml = 0;
         paramv = NULL;
         paramtype=0;
     }
     else
     {
-rmac:           
+rmac:
         paraml = pn = 0;
 loop:
         c = read1();
@@ -399,7 +405,7 @@ loop:
                 --pn;
                 if((paramv[pn]&0340) ==0)
                 {
-                    putch(' ',0); 
+                    putch(' ',0);
                     movecursor(LT);
                     movecursor(LT);
                 }
@@ -417,7 +423,7 @@ loop:
         if (c != 0)
         {
             if((c&0140)==0){
-                putch('^',0); 
+                putch('^',0);
                 c = c | 0100;
             }
             putch(c,0);
@@ -449,7 +455,7 @@ int vertf;
     switchport(&wholescreen);
     if(newport->tmarg != newport->ttext) {
         poscursor(newport->lmarg,newport->tmarg);
-        for (i = newport->lmarg;i <= newport->rmarg;i++) putch(TMCH,0); 
+        for (i = newport->lmarg;i <= newport->rmarg;i++) putch(TMCH,0);
     }
     if ( vertf )
         for (j = newport->tmarg + 1;j <= newport->bmarg - 1;j++)
@@ -477,8 +483,8 @@ int vertf;
 error(msg)
 char *msg;
 {
-        putcha(COBELL); 
-        putcha(COBELL); 
+        putcha(COBELL);
+        putcha(COBELL);
         putcha(COBELL);
         telluser("**** ",0);
         telluser(msg,5);
@@ -521,7 +527,7 @@ int col;
  */
 /*ARGSUSED*/
 rescreen(nom)int nom;
-{       
+{
     register int i;
     int j;
     register struct viewport *curp,*curp0 = curport;
@@ -532,16 +538,16 @@ rescreen(nom)int nom;
     putcha(COSTART);
     putcha(COHO);
     for ( j=0; j<nportlist; j++) {
-        switchport(portlist[j]); 
+        switchport(portlist[j]);
         curp = curport;
         for (i=0;i<curport->btext+1;i++)
         {
-            curp->firstcol[i]=0; 
+            curp->firstcol[i]=0;
             curp->lastcol[i]= 0; /* curport->rtext;*/
             curp->lmchars[i] = curp->rmchars[i] =' ';
         }
         drawport(curp,0);
-        putup(0,curp->btext); 
+        putup(0,curp->btext);
     }
     switchport(curp0);
     poscursor(col,lin);
@@ -555,19 +561,11 @@ rescreen(nom)int nom;
 info(ss,ml)
 char *ss;
 int ml;
-{ 
-    register char *s=ss;
-    if( lcasef )
-    { 
-        char putbuf[PARAMRINFO+1], *si, *so=putbuf;
-        int no=1;
-        si=s; 
-        while(*s++); /* na{li konec */
-        exinss(&si, --s, &so, &no, PARAMRINFO);
-        *so =0;
-        s=putbuf;
-    }
-    while (*s && cursorcol < ml) putch( ( latf? *s++ &0177 : *s++ ),0);
+{
+    register char *s = ss;
+
+    while (*s && cursorcol < ml)
+        putch(*s++, 0);
 }
 
 /*   Руднев А.П. Москва, ИАЭ им. Курчатова, 1984 */

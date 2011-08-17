@@ -1,21 +1,9 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.main.c,v 3.1 1986/04/20 23:42:22 alex Exp $
- *      $Log: r.main.c,v $
- *      Revision 3.1  1986/04/20 23:42:22  alex
- *      *** empty log message ***
- *
- * Revision 1.5  86/04/13  21:56:42  alex
- * .
- * 
- *
  *  Главная программа - вход/выход, открытие окон,
  *  разбор параметров
- *
  */
 
-#define VERS DIAG("** Red (kiae v.3/EXPR 04.86)","** Red (ИАЭ v.3/EXPR  04.86)")
+#define VERS "** Red (kiae v.3/EXPR 04.86)"
 
 /*
  * Аргументы:
@@ -28,100 +16,116 @@
  *      либо
  *      red
  *      (редактировать с того же места)
- *
- *
  */
 #include "r.defs.h"
 #include <signal.h>
-#ifndef lint
-static char *sccsid="@(#) red - MNOS 1.2 && DEMOS 1.2 $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.main.c,v 3.1 1986/04/20 23:42:22 alex Exp $";
-#endif
+#include <string.h>
+
+char *ttyname();
+int oldttmode;
 
 char *ttynm, *ttytmp, *rfile;
 struct savebuf pb,db;
-int sig(),igsig(),testsig();
-long lseek();
+
+/*
+ * sig() -
+ * Фатальный сигнал
+ */
+void
+sig(n)
+{
+    fatal("Fatal signal");
+}
+
+/*
+ * igsig() - Установить игнорирование
+ */
+void
+igsig(n)
+{
+    void testsig(int);
+
+    signal(3,igsig);
+    signal(2,testsig);
+}
+
+/*
+ * testsig() -
+ * проверить, не было ли прерывания
+ */
+void
+testsig(n)
+{
+    signal(2, igsig);
+    if (intrflag)
+        fatal("RE WAS INTERRUPTED\n");
+    igsig();
+    intrflag = 1;
+}
 
 /*
  * main(nargs,args)
  * Головная программа
  */
-main(nargs,args)
+main(nargs, args)
 int nargs;
 char *args[];
 {
-    int i;
+    int restart, i;
     char *cp, ichar;
-    if(atcread)
-    { 
-        i=(*atcread)();
-        if(i) {
-            printf1((i==1?
-            DIAG("unknown term capabilities\n please, type \n  TERM=<type>;export TERM \n and repeat red\n","Не задано описание возможностей терминала, \n наберите TERM=тип;export TERM и повторите вызов"):
-            DIAG("re can not work with this terminal\n","red не может работать с этим терминалом")));
-            exit(1);
-        }
-    }
-    i=0; /* режим работы 0 - норм, 1 - повторный, 2 - из файла /tmp/tt.. */
+
+    tcread();
+
+    /* режим работы 0 - норм, 1 - повторный, 2 - из файла /tmp/tt.. */
+    restart = 0;
     if (nargs == 1) {
-        i=1; 
-        ichar='!';
-    }
-    else
-        if(*(cp = args[1]) == '-')
-        {
-            if(*++cp)
-                /* Указан файл протокола */
-            {   
-                if ((inputfile = open( cp,0)) < 0)
-                {
-                    printf1(DIAG("Can't open command file.\n","Не могу открыть файл-протокол"));
-                    exit(1);
-                }
-            } 
-            else i=2;
-            nargs=1;
-        } 
-        else ichar = ' ';
-    startup(i);
-    if ( inputfile )
-    {
-        if (read(inputfile,&ichar,1) <= 0)
-        {
+        restart = 1;
+        ichar = '!';
+
+    } else if (*(cp = args[1]) == '-') {
+        if (*++cp) {
+            /* Указан файл протокола */
+            if ((inputfile = open( cp,0)) < 0) {
+                printf1("Can't open command file.\n");
+                exit(1);
+            }
+        } else
+            restart = 2;
+        nargs = 1;
+    } else
+        ichar = ' ';
+
+    startup(restart);
+    if (inputfile) {
+        if (read(inputfile, &ichar, 1) <= 0) {
             cleanup();
-            printf1(DIAG("Command file is empty.\n","Файл с протоколом пуст\n"));
+            printf1("Command file is empty.\n");
             exit(1);
         }
-    }
-    else
-        write(ttyfile,&ichar,1); /* Для повтора сеанса */
+    } else
+        write(ttyfile, &ichar, 1); /* Для повтора сеанса */
+
     getstate(ichar);
-    if (nargs > 1 && *args[1] != '\0')
-    {
+    if (nargs > 1 && *args[1] != '\0') {
         i =  defplline+1;
-        if ( (nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
+        if ((nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
             i = defplline+1;
         poscursor(curwksp->ccol,curwksp->crow);
         writefile(CCENTER,args[1],CCSETFILE);
-        if (editfile(args[1],i-defplline-1,0,1,1) <= 0 )
-        {
+        if (editfile(args[1],i-defplline-1,0,1,1) <= 0) {
             putup(0,curport->btext);
             poscursor (curwksp->ccol,curwksp->crow);
-        }
-        else
-        {
+        } else {
             if (nargs>2 && i>1) writefile(CCENTER,args[2],CCGOTO);
         }
-    }
-    else
-    {
+    } else {
         putup(0,curport->btext);
         poscursor (curwksp->ccol,curwksp->crow);
     }
     telluser(VERS,0);
     mainloop();
-    putcha(COFIN);  
-    dumpcbuf(); 
+    putcha(COFIN);
+    dumpcbuf();
     printf("\n");
     cleanup();
     savestate();    /* Записать выходное состояние */
@@ -131,55 +135,58 @@ char *args[];
 
 /*
  * startup() - Инициализация режимов и файлов
+ * 2 - повторить сеанс из ttyfile
+ * 1 - начать заново
  */
-char *ttyname();
-int oldttmode;
-startup(f)
-int f; /* 2 - повторить сеанс из ttyfile ;
-        * 1 - начать заново
-        */
+startup(restart)
+int restart;
 {
     register int i;
     register char *c, *name;
-    char *getnm(), *getenv();
-    NICE; /* Установить приоритет (опред. в ned.?defs) */
-    userid = GETUID;
-    groupid = GETGID;
+    char *getnm();
+
+    nice(-10); /* Установить приоритет (опред. в ned.?defs) */
+    userid = getuid();
+    groupid = getgid();
     setuid(userid);
     setgid(groupid);
-    for (i=LINEL; i;) blanks[--i] = ' ';
-    if(!(name = getenv("USER"))) name = getnm(userid);
-    ttynm=ttyname(0); 
-    if( !ttynm) ttynm="nottyno\0\0";
-    c=ttynm; 
-    while( *++c); 
-    *c++='.'; 
-    *c=0;
-    tmpname =append( append( "/tmp/retm" , c-3) ,name);
-    ttytmp  =append( append( "/tmp/rett" , c-3) ,name);
-    rfile   =append( append( "/tmp/resv" , c-3) ,name);
-    *--c=0;
-    if (f) { 
-        ttyfile=open(ttytmp,2);
-        if( ttyfile>=0 && f !=2) close(ttyfile);
+    for (i=LINEL; i; )
+        blanks[--i] = ' ';
+    name = getenv("USER");
+    if (! name)
+        name = getnm(userid);
+    ttynm = ttyname(0);
+    if (! ttynm)
+        ttynm = "nottyno\0\0";
+    c = ttynm + strlen (ttynm) - 2;
+    if (*c == '/')
+        *c = '-';
+    tmpname = append(append("/tmp/retm", c), name);
+    ttytmp  = append(append("/tmp/rett", c), name);
+    rfile   = append(append("/tmp/resv", c), name);
+    if (restart) {
+        ttyfile = open(ttytmp, 2);
+        if (ttyfile >= 0 && restart != 2)
+            close(ttyfile);
     }
-    if (f != 2) {
+    if (restart != 2) {
         unlink(ttytmp);
-        ttyfile=creat(ttytmp,FILEMODE); 
+        ttyfile = creat(ttytmp, FILEMODE);
+    } else
+        inputfile = ttyfile;
+    if (ttyfile < 0) {
+        printf1("can't open ttyfile.\n");
+        exit(1);
     }
-    else inputfile = ttyfile;
-    if (ttyfile <0) {
-        printf1("can't open ttyfile.\n"); 
-        exit(1); 
-    }
-    if ((i = (unlink(tmpname),creat(tmpname,0600))) < 0)
-    {
+    unlink(tmpname);
+    i = creat(tmpname, 0600);
+    if (i < 0) {
         printf1("Can't open temporary file.\n");
         exit(1);
     }
     /*  Рабочий файл нужен на read/write - приходится переоткрыть */
     close(i);
-    i = open(tmpname,2);
+    i = open(tmpname, 2);
     openfnames[i] = tmpname;
     openwrite[i] = 1;
     tempfile = i;
@@ -205,13 +212,13 @@ int f; /* 2 - повторить сеанс из ttyfile ;
     /*
      * Переопределяем сигналы
      */
-    for (i=SIGTERM; i; i--) signal(i,sig);
+    for (i=SIGTERM; i; i--)
+        signal(i,sig);
     signal(SIGINT,testsig);
     signal(SIGQUIT,igsig);
     curport = &wholescreen;
-    putcha(COSTART); 
+    putcha(COSTART);
     putcha(COHO);
-    return;
 }
 
 /*
@@ -275,7 +282,7 @@ savestate()
             nletters = f1 - fname;
             put1w(nletters,sbuf);
             f1 = fname;
-            do put1c(*f1,sbuf); 
+            do put1c(*f1,sbuf);
             while (*f1++);
             put1w(port->altwksp->ulhclno,sbuf);
             put1w(port->altwksp->ulhccno,sbuf);
@@ -288,7 +295,7 @@ savestate()
         nletters = f1 - fname;
         put1w(nletters,sbuf);
         f1 = fname;
-        do put1c(*f1,sbuf); 
+        do put1c(*f1,sbuf);
         while (*f1++);
         put1w(port->wksp->ulhclno,sbuf);
         put1w(port->wksp->ulhccno,sbuf);
@@ -316,7 +323,7 @@ char ichar;
     struct viewport *port;
     if (ichar != '!' || (gbuf=open(rfile,0))<=0 || (nportlist = get1w(gbuf)) == -1)
     {
-        makestate(); 
+        makestate();
         ichar = ' ';
         return;
     }
@@ -335,7 +342,7 @@ char ichar;
         if (nletters=get1w(gbuf))
         {
             f1 = fname = salloc(nletters);
-            do *f1 = get1c(gbuf); 
+            do *f1 = get1c(gbuf);
             while (*f1++);
             row = get1w(gbuf);
             col = get1w(gbuf);
@@ -346,7 +353,7 @@ char ichar;
         }
         nletters=get1w(gbuf);
         f1 = fname = salloc(nletters);
-        do *f1 = get1c(gbuf); 
+        do *f1 = get1c(gbuf);
         while (*f1++);
         row = get1w(gbuf);
         col = get1w(gbuf);
@@ -373,40 +380,12 @@ char ichar;
  */
 makestate()
 {
-        register struct viewport *port;
-        nportlist = 1;
-        port = portlist[0] = (struct viewport *)salloc(SVIEWPORT);
-        setupviewport(portlist[0],0,LINEL-1,0,NLINES-NPARAMLINES-1,1);
-        drawport(port,0);
-        poscursor(0,0);
-}
-
-/*
- * sig() -
- * Фатальный сигнал
- */
-sig()
-{
-fatal("Fatal signal");
-}
-
-/* igsig() - Установить игнорирование */
-igsig()
-{
-signal(3,igsig);
-signal(2,testsig);
-}
-
-/*
- * testsig() -
- * проверить, не было ли прерывания
- */
-testsig()
-{ 
-        signal(2,igsig);
-        if(intrflag) fatal(DIAG("RED WAS INTERUPTED\n","RED прерван\n"));
-        igsig();
-        intrflag=1;
+    register struct viewport *port;
+    nportlist = 1;
+    port = portlist[0] = (struct viewport *)salloc(SVIEWPORT);
+    setupviewport(portlist[0],0,LINEL-1,0,NLINES-NPARAMLINES-1,1);
+    drawport(port,0);
+    poscursor(0,0);
 }
 
 /*
@@ -415,22 +394,22 @@ testsig()
 fatal(s)
 char *s;
 {
-    putcha(COFIN); 
-    putcha(COBELL); 
+    putcha(COFIN);
+    putcha(COBELL);
     putcha(COBELL);
     dumpcbuf();
     ttcleanup();
-    printf1(DIAG("\nFirst the bad news - the RED just    ","\n Сначала огорчим: Red слетел:"));
+    printf1("\nFirst the bad news - the RE just ");
     if (s) {
-        printf1(DIAG("died:\n","сбой:"));
+        printf1("died:\n");
         printf1(s);
-    }                                                                                         
-    if(userid%51==0) printf1("\n ReD - KiAe MoScOw RuDnEv A.p.\n");
-    else printf1(DIAG("ran out of space.\n","Исчерпал оперативную память"));
-    printf1(DIAG("\n Now the good news - your editing session can be reproduced\n  from file ","\n Сеанс можно воспроизвести из файла:"));
+    } else
+        printf1("ran out of space.\n");
+    printf1("\nNow the good news - your editing session can be reproduced\n");
+    printf1("from file ");
     printf1(ttytmp);
-    printf1(DIAG("\n use command 'red -' to do it.\n","\nиспользуйте команду 'red -'\n"));
-#ifndef WORK
+    printf1("\nUse command 're -' to do it.\n");
+#ifdef DEBUG
     if (inputfile || (!isatty(1)) )
     {
         register int i;
@@ -445,7 +424,7 @@ char *s;
         for (i = 0; i < nportlist; i++)
         {
             w = portlist[i]->wksp;
-            printf("\nViewport #%d: FSD chain %d, current line %d at block %o,\n",
+            printf("\nViewport #%d: FSD chain %d, current line %d at block %p,\n",
             i,w->wfile,w->curlno,w->curfsd);
             printf(" first line %d, ulhc (%d,%d)\n",w->curflno,w->ulhccno,
             w->ulhclno);

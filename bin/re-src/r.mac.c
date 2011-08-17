@@ -50,7 +50,7 @@ int typ,l;
     cname = (*name|040) &0177;
     if((cname >'z') || (cname<'a') || (*(name+1) != 0))
     {
-        error(DIAG("ill.macro name","Недоп.имя макро"));
+        error("ill.macro name");
         goto err;
     }
     i= cname -'a';
@@ -58,14 +58,14 @@ int typ,l;
         if(mtaba[i]) {
             if (mtabt[i] == MMAC) free(mtaba[i]->mstring);
             free(mtaba[i]);
-            telluser(DIAG("macro redefined","макро переопределен"),0);
+            telluser("macro redefined",0);
         }
         mtabt[i]=typ;
         mtaba[i]=(union macro *)salloc(l);
         goto retn;
     }
     if( mtabt[i] != typ) {
-        error( mtabt[i]?DIAG("ill.macro type","Ошиб.тип макро"):DIAG("undefined","неопределено"));
+        error( mtabt[i]?"ill.macro type":"undefined");
         goto err;
     }
 retn:
@@ -146,12 +146,12 @@ mdeftag(name)
 char *name;
 {
     register union macro *m;
-    register struct workspace *cws; 
+    register struct workspace *cws;
     int cl,ln,f=0;
     if( !(m=mname(name,MTAG,0))) return(0);
     cws = curwksp;
     if(m->mtag.nfile != cws->wfile) {
-        error(DIAG("another file","Другой файл"));
+        error("another file");
         return(0);
     }
     paramtype= -2;
@@ -162,14 +162,14 @@ char *name;
     if( paramr0 > paramr1) {
         f++;
         ln = paramr1;
-        paramr1 = paramr0; 
+        paramr1 = paramr0;
         paramr0 = ln;
     }
     else ln = paramr0;
     if( paramc0 > paramc1) {
         f++;
         cl = paramc1;
-        paramc1 = paramc0; 
+        paramc1 = paramc0;
         paramc0 = cl;
     }
     else cl = paramc0;
@@ -181,10 +181,10 @@ char *name;
     paramc0 -= cws -> ulhccno;
     paramc1 -= cws -> ulhccno;
     if (paramr1 == paramr0)
-        telluser(DIAG("**:columns defined by tag","***Часть строки указана меткой***"),0);
+        telluser("**:columns defined by tag",0);
     else if(paramc1 == paramc0)
-        telluser(DIAG("**:lines defined by tag","***:строки указаны меткой"),0);
-    else telluser(DIAG("**:square defined by tag","**:прямоугольник указан меткой"),0);
+        telluser("**:lines defined by tag",0);
+    else telluser("**:square defined by tag",0);
     return(1);
 }
 
@@ -199,11 +199,11 @@ char *name;
     if(!(m = mname(name,MMAC,MSMAC))) return(0);
     param(1);
     if(paramtype == 1 && paramv)
-        {    
-        m->mstring = paramv; 
+        {
+        m->mstring = paramv;
         paraml = 0; paramv=NULL;
         return(1);
-    }               
+    }
     return(0);
 }
 
@@ -235,12 +235,12 @@ defkey()
     struct viewport *curp;
     int curl,curc;
     register char *c,*c1;
-    curp = curport; 
-    curc = cursorcol; 
+    curp = curport;
+    curc = cursorcol;
     curl = cursorline;
     switchport(&paramport);
     poscursor(22,0);
-    telluser(DIAG(" enter <new key><del>:","нажмите <новую клавишу><забой>:"),0);
+    telluser(" enter <new key><del>:",0);
     lc = 0;
     while((bufc[lc] = read2()) !='\177'  && lc++ < LKEY);
     if ( lc ==0 || lc == LKEY )
@@ -248,7 +248,7 @@ defkey()
         goto reterr;
     }
     bufc[lc] = 0;
-    telluser(DIAG("enter <command> or <macro name>:","введите команду или имя макро"),1);
+    telluser("enter <command> or <macro name>:",1);
     poscursor(33,0);
     lread1= -1;
     read1();
@@ -265,13 +265,13 @@ defkey()
     c1 = bufc;
     while ( *c++ = *c1++);
     lc = addkey(lread1,buf);
-ret:    
+ret:
     lread1 = -1;
     switchport(curp);
     poscursor(curc,curl);
     return(lc);
 reterr:
-    lc = 0; 
-    error(DIAG("illegal","ошибка")); 
+    lc = 0;
+    error("illegal");
     goto ret;
 }

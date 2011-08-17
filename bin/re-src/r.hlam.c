@@ -20,7 +20,7 @@ char *salloc(n)
 int n;
 {
     register char *c, *i;
-    extern char *malloc();
+
     if(!(c=malloc(n))) fatal(NULL);
     i = c + n;
     while (i != c) *--i = 0;
@@ -192,8 +192,10 @@ int get1w(fd)
 int fd;
 {
         int i;
-        if(read(fd,&i,SWORD)==SWORD) return(i);
-        return(-1);
+
+        if (read(fd, &i, sizeof(int)) !=  sizeof(int))
+            return -1;
+        return i;
 }
 
 int get1c(fd)
@@ -207,8 +209,7 @@ int fd;
 put1w(w,fd)
 int fd,w;
 {
-        write(fd,&w,SWORD);
-        return;
+        write(fd, &w, sizeof(int));
 }
 
 put1c(c,fd)
@@ -216,86 +217,4 @@ int fd;
 char c;
 {
         write(fd,&c,1);
-        return;
 }
-
-
-#if 0
-/*  ==== Не используется ====
- * C library -- alloc/free
- *      - Сия функция абсолютно не переносима
- *      - и не транслируется через pcc. Это все временно
- */
-
-#define logical char *
-struct fb {
-        logical size;
-        char    *next;
-};
-
-int     freelist[] {
-        0,
-        -1,
-};
-logical slop    2;
-alloc(asize)
-logical asize;
-{
-    register logical size;
-    register logical np;
-    register logical cp;
-    if ((size = asize) == 0)
-        return(0);
-    size += 3;
-    size &= ~01;
-    for (;;) {
-        cp = freelist;
-        while ((np = cp->next) != -1) {
-            if (np->size>=size) {
-                if (size+slop >= np->size) {
-                    cp->next = np->next;
-                    return(&np->next);
-                }
-                cp = cp->next = np+size;
-                cp->size = np->size - size;
-                cp->next = np->next;
-                np->size = size;
-                return(&np->next);
-            }
-            cp = np;
-        }
-        asize = size<1024? 1024: size;
-        if ((cp = sbrk(asize)) == -1) {
-            fatal(0);
-        }
-        cp->size = asize;
-        free(&cp->next);
-    }
-}
-
-free(aptr)
-char *aptr;
-{
-        register logical ptr;
-        register logical cp;
-        register logical np;
-        if (aptr == 0) return;
-        ptr = aptr-2;
-        cp = freelist;
-        while ((np = cp->next) < ptr)
-                cp = np;
-        if (ptr+ptr->size == np) {
-                ptr->size += np->size;
-                ptr->next = np->next;
-                np = ptr;
-        }
-        else
-                ptr->next = np;
-        if (cp+cp->size == ptr) {
-                cp->size += ptr->size;
-                cp->next = ptr->next;
-        }
-        else
-                cp->next = ptr;
-}
-#endif

@@ -1,111 +1,82 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *      Основной файл описаний для редактора RED
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.defs.h,v 3.1 1986/04/20 23:39:22 alex Exp $
- *      $Log: r.defs.h,v $
- *      Revision 3.1  1986/04/20 23:39:22  alex
- *      *** empty log message ***
- *
- *      Revision 1.4  86/04/13  21:55:13  alex
- *
- *
- *
- *
+ * Main definitions.
  */
+#include <stdlib.h>
 
-#ifndef DEBUG
-#define WORK
-#endif
-
-#ifndef WORK
+#ifdef DEBUG
 #include <stdio.h>
 #endif
 
-/* Локальные параметры в ned.ddefs */
-#include "r.local.h"
-
-#ifdef RUSDIAG
-#define DIAG(l,r) r
+#ifndef DEBUG
+#   define printf printf1
+#   define DEBUGCHECK /* */
 #else
-#define DIAG(l,r) l
+#   define DEBUGCHECK checkfsd()   /* check fsd consistency for debugging */
 #endif
 
+#define EDITED      2       /* Значение openwrite, если файл редактировался */
 
-#ifdef WORK
-#define printf printf1
-#define DEBUGCHECK /* */
-#else
-#define DEBUGCHECK checkfsd()   /* check fsd consistency for debugging */
-#endif
-#undef NULL
-#define NIL 0
-#define EDITED 2       /* Значение openwrite, если файл редактировался */
-#define NULL ((char *)0)
-
-#define esc0 COCURS
-#define esc1 '\\'
-#define esc2 (('#'|'\200')&0377)
+#define esc0        COCURS
+#define esc1        '\\'
 
 #define CONTROLCHAR (lread1 < 040)
-#define CTRLCHAR   (((lread1>=0)&&(lread1<040)) || ((lread1 >= 0177)&& (lread1<=0240)))
-#define LINELM 128                /* макс. длина строки на экране */
-#define NLINESM 48                /* макс. число строк на экране  */
-#define LBUFFER 256     /* *** НЕ МЕНЬШЕ  fsdmaxl  **** */
-#define NEWLINE 012     /* newline  */
-#define PARAMREDIT 40           /* редактируемая часть paramport */
-#define PARAMRINFO 78           /* последняя колонка в paramport */
-#define NPARAMLINES 1           /* число строк в PARAMPORT */
-#define FILEMODE 0664           /* режим доступа к создаваемым файлам */
-#define NTABS 30
-#define BIGTAB 32767
+#define CTRLCHAR    (((lread1>=0)&&(lread1<040)) || ((lread1 >= 0177)&& (lread1<=0240)))
+#define LINELM      128     /* макс. длина строки на экране */
+#define NLINESM     48      /* макс. число строк на экране  */
+#define LBUFFER     256     /* *** НЕ МЕНЬШЕ  fsdmaxl  **** */
+#define NEWLINE     012     /* newline  */
+#define PARAMREDIT  40      /* редактируемая часть paramport */
+#define PARAMRINFO  78      /* последняя колонка в paramport */
+#define NPARAMLINES 1       /* число строк в PARAMPORT */
+#define FILEMODE    0664    /* режим доступа к создаваемым файлам */
+#define NTABS       30
+#define BIGTAB      32767
 
-#define FOREVER for (;;)
-#define BADF -1
-#define CONTF -2
+#define BADF        -1
+#define CONTF       -2
 
-#define VMOTCODE 4  /* коды 1 - 4 уводят курсор из текущей строки */
-#define UP 1 /* Up     */
-#define DN 2 /* Down   */
-#define RN 3 /* Return */
-#define HO 4 /* Home   */
-#define RT 5 /* Right  */
-#define LT 6 /* Left   */
-#define TB 7 /* Tab    */
-#define BT 8 /* Backtab*/
+#define VMOTCODE    4       /* коды 1 - 4 уводят курсор из текущей строки */
+#define UP          1       /* Up     */
+#define DN          2       /* Down   */
+#define RN          3       /* Return */
+#define HO          4       /* Home   */
+#define RT          5       /* Right  */
+#define LT          6       /* Left   */
+#define TB          7       /* Tab    */
+#define BT          8       /* Backtab*/
 
   /* OUTPUT CODES */
 
-#define COSTART 0
-#define COUP 1
-#define CODN 2
-#define CORN 3
-#define COHO 4
-#define CORT 5
-#define COLT 6
-#define COCURS 7
-#define COBELL 8
-#define COFIN 9
-#define COERASE 10
-#define COMCOD 11 /* Число выходных кодов */
+#define COSTART     0
+#define COUP        1
+#define CODN        2
+#define CORN        3
+#define COHO        4
+#define CORT        5
+#define COLT        6
+#define COCURS      7
+#define COBELL      8
+#define COFIN       9
+#define COERASE     10
+#define COMCOD      11      /* Число выходных кодов */
 
 /* margin characters */
-#define LMCH  '!'
-#define RMCH  '!'
-#define TMCH   '-'
-#define BMCH   '-'
-#define MRMCH '>'
-#define MLMCH '<'
-#define ELMCH ';'
-#define DOTCH '+'
+#define LMCH        '|'
+#define RMCH        '|'
+#define TMCH        '-'
+#define BMCH        '-'
+#define MRMCH       '>'
+#define MLMCH       '<'
+#define ELMCH       ';'
+#define DOTCH       '+'
 
 /* struct fsd -
  * Описатель сегмента файла. Описывает от 1 до 127 строк файла,
  * записанных подряд. Это минимальная компонента цепочки описателей
  */
-#define FSDMAXL 127     /* Макс. число строк в fsd */
+#define FSDMAXL     127     /* Макс. число строк в fsd */
 
-struct fsd
-        {
+struct fsd {
         struct fsd *backptr;    /* Ссылка на пред. fsd   */
         struct fsd *fwdptr;     /* Ссылка на след. fsd   */
         char fsdnlines;         /* Число строк, которые описывает fsd */
@@ -125,13 +96,18 @@ struct fsd
                         Отметим, что в принципе в одном fsd можно описать и
                         несмежные строки, но такая возможность не учтена
                         в функциях записи файла.               */
-        };
+};
+
 /* Урезанный вариант - без fsdbyte */
-struct fsdsht {struct fsd *backptr, *fwdptr;
-               char fsdnlines; char fsdfile;
-               int seekhigh, seeklow;};
-#define SFSD (sizeof (struct fsdsht))
-#define MAXFILES 14
+struct fsdsht {
+    struct fsd *backptr, *fwdptr;
+    char fsdnlines;
+    char fsdfile;
+    int seekhigh, seeklow;
+};
+
+#define SFSD        (sizeof (struct fsdsht))
+#define MAXFILES    14
 
 struct fsd *openfsds[MAXFILES];
 char *openfnames[MAXFILES],
@@ -140,8 +116,7 @@ char *openfnames[MAXFILES],
 int  nlines[MAXFILES];          /* Число непустых строк в файле */
 
 /* workspace - структура, которая описывает файл */
-struct workspace
-        {
+struct workspace {
         struct fsd *curfsd;     /* ptr на текущий fsd */
         int ulhclno;            /* номер строки, верхней на экране */
         int ulhccno;            /* номер колонки, которая 0 на экране */
@@ -151,7 +126,7 @@ struct workspace
         char wfile;             /* номер файла, 0 - если нет вообще */
         int ccol;               /* curorcol, когда не активен */
         int crow;               /* cursorline, когда неактивен */
-        };
+};
 #define SWKSP (sizeof (struct workspace))
 
 struct workspace *curwksp, *pickwksp;
@@ -166,8 +141,7 @@ int curfile;
 
 #define SVIEWPORT (sizeof (struct viewport))
 
-struct viewport
-        {
+struct viewport {
         struct workspace *wksp; /* Ссылка на workspace         */
         struct workspace *altwksp;      /* Альтернативное workspace */
         int prevport;           /* Номер пред. окна   */
@@ -187,7 +161,7 @@ struct viewport
         char *lastcol;          /*  -//-  последних -//-         */
         char *lmchars;          /* символы - левые ограничители  */
         char *rmchars;          /* символы - правые ограничители */
-        };
+};
 
 #define MAXPORTLIST 10
 struct viewport *portlist[MAXPORTLIST],
@@ -200,12 +174,11 @@ int nportlist;
 
 #define SSAVEBUF (sizeof (struct savebuf))
 
-struct  savebuf
-        {
+struct savebuf {
         int linenum;    /* Номер первой строки в "#" */
         int nrows;      /* Число строк               */
         int ncolumns;   /* Число колонок             */
-        };
+};
 struct savebuf *pickbuf, *deletebuf;
 
 /*
@@ -219,7 +192,6 @@ struct savebuf *pickbuf, *deletebuf;
 #define CCMOVEUP           UP      /* move up 1 lin        */
 #define CCRETURN           RN      /* return               */
 #define CCTAB              TB      /* tab                  */
-
 
 #define CCCTRLQUOTE        000     /* knockdown next char  */
 #define CCPICK             011     /* pick                 */
@@ -254,24 +226,21 @@ struct savebuf *pickbuf, *deletebuf;
 int cursorline;         /* physical screen position of */
 int cursorcol;          /*  cursor from (0,0)=ulhc of text in port */
 
-
-extern char  cntlmotions[];
-
-
+extern char cntlmotions[];
 
 extern int tabstops[];
 char blanks[LINELM];
 
-extern int lread1;             /* Текущий входной символ, -1 - дай еще! */
-char intrflag; /* 1 - был сигнал INTERUP */
+extern int lread1;      /* Текущий входной символ, -1 - дай еще! */
+char intrflag;          /* 1 - был сигнал INTERUP */
 
 /* Умолчания */
 extern int defplline,defplpage,defmiline,defmipage,deflport,defrport,
         definsert, defdelete, defpick;
 extern char deffile[];
 
-int errsw;    /* 1 - в окне параметров сообщение об ошибке */
-int gosw;     /* -- атавизм */
+int errsw;              /* 1 - в окне параметров сообщение об ошибке */
+int gosw;               /* -- атавизм */
 
 /*
  * Глобальные параметры для param():
@@ -311,22 +280,26 @@ int tempfl;
 int ttyfile;
 int inputfile;
 
-char *searchkey,*symac;
+char *searchkey, *symac;
 
-int userid,groupid;
+int userid, groupid;
 
-char *tmpname;         /* name of file, for do command */
+char *tmpname;                  /* name of file, for do command */
 
-/* codes for output on terminal, defined in ned.vt.c  */
-int LINEL,NLINES; /* SIZE OF THE SCREEN  - VT.C */
+int LINEL, NLINES;              /* size of the screen */
 int eolflag;
-extern char *curspos,*cvtout[];
-char *(*agoto)();  /* for termcap definitions */
-int (*atcread)();
-int slowsw;   /* is 1 if slow speed terminal */
+extern char *curspos, *cvtout[];
+char *(*agoto)();               /* for termcap definitions */
 
-int rawf, lcasef, latf, flgtabs; /* terminal regim flags */
-char kioutf; /* Не 0 если 15IE0013  с непереключенной клавиатурой*/
 char *append(), *salloc();
 char *s2i();
 struct fsd *file2fsd();
+
+/*
+ * Таблица клавиатуры (команда / строка символов)
+ */
+struct ex_int {
+    int incc;
+    char *excc;
+};
+extern struct ex_int inctab[];

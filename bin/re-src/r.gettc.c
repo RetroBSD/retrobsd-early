@@ -11,84 +11,90 @@
  */
 
 extern char *UP, *BC;
-char **toup= &UP;        /* Так сложно из-за совпадения имен */
+char **toup = &UP;        /* Так сложно из-за совпадения имен */
 
 #include "r.defs.h"
-#include "r.tele.h"
 
 /*
  * Выходные коды
  */
 char *cvtout[] = {
-/* COSTART: */ "cl?is?ti?ho",          /* COUP:       */"up",
-/* CODN   : */ "do",              /* CORN:       */"\015",
-/* COHO   : */ "ho",              /* CORT:       */"nd",
-/* COLT   : */ "bc",              /* COCURS:     */"cu",
-/* COBELL : */ "\007",           /* COFIN:      */"cl?fs?te",
-/* COERASE: */ "cl" };
+    /* COSTART */ "cl?is?ti?ho",    /* COUP   */ "up",
+    /* CODN    */ "do",             /* CORN   */ "\015",
+    /* COHO    */ "ho",             /* CORT   */ "nd",
+    /* COLT    */ "le",             /* COCURS */ "cu",
+    /* COBELL  */ "\007",           /* COFIN  */ "cl?fs?te",
+    /* COERASE */ "cl",
+};
 
 char *curspos;
-int slowsw=1;
+
 /*   Входные коды
  *
  *   Таблица in0tab является временным явлением для
  *   замены кодов 01 - 010.
  */
 
- char in0tab[BT] ={   /* meanings of the <ctrl>A - <ctrl>-H */
- CCLPORT, BT, CCCHPORT, CCSETFILE, CCMISRCH, CCPICK,CCPUT , LT };
+char in0tab[BT] = { /* meanings of the <ctrl>A - <ctrl>-H */
+    CCLPORT, BT, CCCHPORT, CCSETFILE, CCMISRCH, CCPICK, CCPUT, LT,
+};
 
-/*  Таблица кодов клавиш терминала и их комбинаций */
-/*  Сюда же записываются коды при переопределении  */
+/*
+ * Таблица кодов клавиш терминала и их комбинаций
+ * Сюда же записываются коды при переопределении
+ */
 char escch1 = '\012';
+
 struct ex_int inctab[] = {
- BT,    "\002",
- BT,    "k.",
- LT,    "kl",
- TB,    "\011",
- HO,    "kh",
- RN,    "\015",
- UP,    "ku",
- DN,    "kd",
- RT,    "kr",
- LT,    "kl",
- CCDELCH        ,"DC",   CCBACKSPACE    ,"\10",
- CCCHPORT       ,"k2k0",
- CCCLOSE        ,"DL"  , CCCLOSE        ,"k2k8",
- CCCTRLQUOTE    ,"k0",
- CCDELCH        ,"k6",
- CCDOCMD        ,"k2k.",
- CCENTER        ,"ER",   CCENTER        ,"k1",
- CCGOTO         ,"k4",
- CCINSMODE      ,"IC",  CCINSMODE      ,"k5",
- CCLPORT        ,"k2kl",
- CCMAKEPORT     ,"k2k4",
- CCMILINE       ,"k2ku",
- CCMIPAGE       ,"k2k7",
- CCMISRCH       ,"k2k3",
- CCOPEN         ,"IL",  CCOPEN           ,"k8",
- CCPICK         ,"k9",
- CCPLLINE       ,"k2kd",
- CCPLPAGE       ,"k7",
- CCPLSRCH       ,"k3",
- CCPUT          ,"k2k9",
- CCRPORT        ,"k2kr",
- CCSAVEFILE     ,"k2k-",
- CCSETFILE      ,"k-",
- CCTABS         ,"k2k5",
- CCQUIT         ,"\033\033",
-   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-   0, 0 ,  };
+    BT,         "\002",
+    BT,         "k.",
+    LT,         "kl",
+    TB,         "\011",
+    HO,         "kh",
+    RN,         "\015",
+    UP,         "ku",
+    DN,         "kd",
+    RT,         "kr",
+    LT,         "kl",
+    CCDELCH,    "kD",       CCBACKSPACE,"\10",
+    CCCHPORT,   "k2k0",
+    CCCLOSE,    "DL",       CCCLOSE,    "k2k8",
+    CCCTRLQUOTE,"k0",
+    CCDELCH,    "k6",
+    CCDOCMD,    "k2k.",
+    CCENTER,    "ER",       CCENTER,    "k1",
+    CCGOTO,     "k4",
+    CCINSMODE,  "kI",       CCINSMODE,  "k5",
+    CCLPORT,    "k2kl",
+    CCMAKEPORT, "k2k4",
+    CCMILINE,   "k2ku",
+    CCMIPAGE,   "k2k7",
+    CCMISRCH,   "k2k3",
+    CCOPEN,     "IL",       CCOPEN,     "k8",
+    CCPICK,     "k9",
+    CCPLLINE,   "k2kd",
+    CCPLPAGE,   "k7",
+    CCPLSRCH,   "k3",
+    CCPUT,      "k2k9",
+    CCRPORT,    "k2kr",
+    CCSAVEFILE, "k2k-",
+    CCSETFILE,  "k-",
+    CCTABS,     "k2k5",
+    CCPLPAGE,   "kN",
+    CCMIPAGE,   "kP",
+    CCQUIT,     "\033\033",
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0,
+};
 
 /* Декодирование termcap */
-int nfinc=8;
+int nfinc = 8;
 char *tgetstr(), *tgoto();
 char *salloc();
 static char *stc;
 static int ltc;
+
 #define LTCM 128
-int tcread();
-int (*atcread)()= tcread;
 
 /*
  * char *gettcs(tc) -
@@ -99,48 +105,48 @@ int (*atcread)()= tcread;
 char *gettcs(tc)
 char *tc;
 {
-        char buftc0[LTCM], *buftc=buftc0;
-        register char c1, *c;
-        int i,fcase;
-        if (*tc<' ' && *tc>=0) return(tc);
-        c=tc;
-        while(*c !=0)
-        {
-                if(*c=='?'){
-                        fcase=1;
-                        c++;
-                }
-                else fcase=0;
-                c1=c[2];
-                c[2]=0;
-                i=(tgetstr(c,&buftc)==0);
-                c += 2;
-                *c=c1;
-                if(i){
-                        if(!fcase) return(0);
-                        else *buftc++ =0;
-                }
-                buftc--;
+    char name[3], buftc0[LTCM], *buftc = buftc0;
+    register char c1, *c;
+    int i, optional;
+
+    if (*tc < ' ' && *tc >= 0)
+        return(tc);
+    c = tc;
+    while (*c != 0) {
+        if (*c == '?') {
+            optional = 1;
+            c++;
+        } else
+            optional = 0;
+        name[0] = *c++;
+        name[1] = *c++;
+        name[2] = 0;
+        if (tgetstr(name, &buftc) == 0) {
+            /* not found */
+            if (! optional)
+                return(0);
+            *buftc++ = 0;
         }
-        *buftc++=0;
-        if((i=buftc-buftc0)>ltc)
-        {
-                if (i>LTCM) return(0);
-                stc=salloc(LTCM);
-                ltc=LTCM;
-        }
-        c=buftc0;
-        buftc=stc;
-        do
-            {
-                *stc++ = *c;
-                ltc--;
-        }
-        while (*c++);
+        buftc--;
+    }
+    *buftc++ = 0;
+    if ((i = buftc - buftc0)>ltc) {
+        if (i > LTCM)
+            return(0);
+        stc = salloc(LTCM);
+        ltc = LTCM;
+    }
+    c = buftc0;
+    buftc = stc;
+    do {
+        *stc++ = *c;
+        ltc--;
+    } while (*c++);
 #ifdef TEST
-         printf("%s=",tc); ptss(buftc);
+    printf("%s=", tc);
+    ptss(buftc);
 #endif
-        return(buftc);
+    return(buftc);
 }
 
 /*
@@ -154,50 +160,53 @@ tcread()
 {
     register int i;
     register struct ex_int *ir, *iw;
-#ifndef FROMTCAP
-    char buftcs[1024]; 
-    extern char *getenv();
-    if ( tgetent(buftcs,getenv("TERM"))!=1) return(1);
-#else
-    if ( !tgettc()) return(1);
-#endif
-    LINEL=tgetnum("co");
-    NLINES=tgetnum("li");
-    for (i=0; i<COMCOD ; i++)
-    {
-        cvtout[i]=gettcs(cvtout[i]);
+
+    tgettc();
+    LINEL = tgetnum("co");
+    NLINES = tgetnum("li");
+    for (i=0; i<COMCOD; i++) {
+        cvtout[i] = gettcs(cvtout[i]);
     }
-    if (tgetflag("nb")) cvtout[COBELL]="\0";
-    if (tgetflag("bs")) cvtout[COLT]="\010";
-    if(curspos=gettcs("cm")) agoto= tgoto;
-    rawf=tgetflag("rw");
-    latf= !tgetflag("KI");
-    eolflag=!tgetflag("am");
-    if( !cvtout[COCURS]) cvtout[COCURS]="@";
-    if (LINEL<=60 || NLINES<8) return(2);
-    if(LINEL>LINELM) LINEL=LINELM;
-    if(NLINES>NLINESM) NLINES=NLINESM;
-    if(!curspos) for(i=0;i<COMCOD; i++) if(!cvtout[i]) return(2);
+    if (tgetflag("nb"))
+        cvtout[COBELL] = "\0";
+    if (tgetflag("bs"))
+        cvtout[COLT] = "\010";
+    if (curspos = gettcs("cm"))
+        agoto = tgoto;
+    eolflag = ! tgetflag("am");
+    if (! cvtout[COCURS])
+        cvtout[COCURS] = "@";
+    if (LINEL <= 60 || NLINES < 8)
+        return(2);
+    if (LINEL > LINELM)
+        LINEL = LINELM;
+    if (NLINES > NLINESM)
+        NLINES = NLINESM;
+    if (! curspos) {
+        for (i=0; i<COMCOD; i++) {
+            if (! cvtout[i]) {
+                printf1 ("re can not work with this terminal\n");
+                exit(1);
+            }
+        }
+    }
     /*
      input codes definition
      */
-    ir=iw=inctab;
-    while(ir->excc)
-    {
-        if ((iw->excc=gettcs(ir->excc)))
-        {
-            iw->incc=ir->incc;
+    ir = iw = inctab;
+    while (ir->excc) {
+        if ((iw->excc = gettcs(ir->excc))) {
+            iw->incc = ir->incc;
             iw++;
-        }
-        else nfinc++;
+        } else
+            nfinc++;
         ir++;
     }
-    iw->excc=NULL; 
+    iw->excc = NULL;
     iw->incc = 0;
     itsort(inctab,iw-1,0);
-    *toup=cvtout[UP]; 
-    BC=cvtout[LT];
-    return(0);
+    *toup = cvtout[UP];
+    BC = cvtout[LT];
 }
 
 /*
@@ -206,32 +215,27 @@ tcread()
  * функции findt
  */
 itsort(fb,fe,ns)
-struct ex_int *fb,*fe; 
+struct ex_int *fb,*fe;
 int ns;
 {
     register struct ex_int *fr, *fw;
-    char c; 
+    char c;
     struct ex_int temp;
-    fw= fb-1;
-    while(fw != fe)
-    {
-        fr=fb= ++fw; 
-        c=fw->excc[ns];
-        while(fr++ != fe)
-        {
-            if(fr->excc[ns]==c)
-            {
-                if(fr!= ++fw){
-                    temp= *fr; 
-                    *fr= *fw; 
-                    *fw=temp;
+
+    fw = fb - 1;
+    while (fw != fe) {
+        fr = fb = ++fw;
+        c = fw->excc[ns];
+        while (fr++ != fe) {
+            if (fr->excc[ns] == c) {
+                if (fr != ++fw) {
+                    temp = *fr;
+                    *fr = *fw;
+                    *fw = temp;
                 }
             }
         }
-        if(c!=0 && ((fw-fb)>1)) itsort(fb,fw,ns+1);
+        if (c != 0 && (fw - fb) > 1)
+            itsort(fb, fw, ns+1);
     }
 }
-
-#ifdef TEST
-#include "t.tc.c"
-#endif

@@ -50,12 +50,10 @@ mainloop()
 #ifndef lint
     goto funcdone;
 #endif
-    FOREVER
-        {
+    for (;;) {
         csrsw = clrsw = 0;
         read1();
-        if (errsw)
-        {
+        if (errsw) {
             errsw = 0;
             clrsw = 1;
             goto errclear;
@@ -518,34 +516,34 @@ spdir:
         }
         goto funcdone;
 badkeyerr:
-        error(DIAG("Illegal key or unnown macro","Неизвестная клавиша или макро"));
+        error("Illegal key or unnown macro");
         goto funcdone;
 notstrerr:
-        error(DIAG("Argument must be a string.","Аргумент должен быть строкой"));
+        error("Argument must be a string.");
         goto funcdone;
 noargerr:
-        error(DIAG("Invalid argument.","Плохой аргумент"));
+        error("Invalid argument.");
         goto funcdone;
 notinterr:
-        error(DIAG("Argument must be numerik.","Аргумент должен быть числом"));
+        error("Argument must be numerik.");
         goto funcdone;
 notposerr:
-        error(DIAG("Argument must be positive.","Аргумент должен быть положительным"));
+        error("Argument must be positive.");
         goto funcdone;
 nopickerr:
-        error(DIAG("Nothing in the pick buffer.","Буфер вставок пуст"));
+        error("Nothing in the pick buffer.");
         goto funcdone;
 nodelerr:
-        error (DIAG("Nothing in the close buffer.","Буфер убранных строк пуст"));
+        error ("Nothing in the close buffer.");
         goto funcdone;
 notimperr:
-        error(DIAG("Feature not implemented yet.","Еще не определено."));
+        error("Feature not implemented yet.");
         goto funcdone;
 margerr:
         error("Margin stusk; move cursor to free.");
         goto funcdone;
 nowriterr:
-        error(DIAG("You cannot modify this file!","Вы не можете изменить этот файл."));
+        error("You cannot modify this file!");
         goto funcdone;
 funcdone:
         clrsw = 1;
@@ -567,10 +565,10 @@ errclear:
             poscursor(PARAMREDIT+2,0);
             if (oport->wksp->wfile)
             {
-                info(DIAG("file ","файл "),PARAMRINFO);
+                info("file ",PARAMRINFO);
                 info(openfnames[oport->wksp->wfile],PARAMRINFO);
             }
-            info(DIAG(" line "," строка: "),PARAMRINFO);
+            info(" line ",PARAMRINFO);
             clsave = cursorline;
             first=0;
             ccsave = cursorcol;
@@ -589,8 +587,7 @@ errclear:
         switchport(oport);
         paramport.redit = PARAMREDIT;
         poscursor(j,k);
-        if (csrsw)
-        {
+        if (csrsw) {
             putch(COCURS,1);
             poscursor(j,k);
             dumpcbuf();
@@ -599,7 +596,7 @@ errclear:
             poscursor(j,k);
         }
         if (imodesw && clrsw && !errsw)
-            telluser(DIAG("     ***** i n s e r t m o d e *****","  * * * * режим вставки * * * * "),0);
+            telluser("     ***** i n s e r t m o d e *****",0);
 contin:
         ;
     }
@@ -622,20 +619,15 @@ int delta;
     paraml = 0;
     if (searchkey == 0 || *searchkey == 0)
     {
-        error(DIAG("Nothing to search for.","А что искать?"));
+        error("Nothing to search for.");
         return;
     }
     col = cursorcol;
     slin = lin = cursorline;
     if (delta == 1) telluser("+",0);
     else telluser("-",0);
-    telluser(DIAG("search: ","поиск: "),1);
-    i=lcasef;
-/* --- */
-    lcasef=0; /* Внутренняя форма текста: */
+    telluser("search: ",1);
     telluser(searchkey,9);
-    lcasef =i;
-/* --- */
     putch(COCURS,1);
     poscursor(col,lin);
     dumpcbuf();
@@ -645,18 +637,16 @@ int delta;
     getlin (ln = lin + curwksp->ulhclno);
     putline(0);
     at = cline + col + curwksp->ulhccno;
-    FOREVER
-        {
+    for (;;) {
         at += delta;
-        while (at <  cline || at >  cline + ncline - lkey)
-        {
+        while (at < cline || at >  cline + ncline - lkey) {
             /* Прервать, если было прерывание с терминала */
             if ((i=intrup()) || (ln += delta) < 0 ||
                 (wposit(curwksp,ln) && delta == 1))
             {
                 putup(lin,lin);
                 poscursor(col,lin);
-                error(i?"Interup.":DIAG("Search key not found.","Текст не найден."));
+                error(i?"Interrupt.":"Search key not found.");
                 csrsw = 0;
                 symac = 0;
                 return;
@@ -689,7 +679,7 @@ int tabcol;
     register int i, j;
     if (tabstops[NTABS-1] == BIGTAB)
     {
-        error(DIAG("Too many tabstops; can't set more.","Много табуляций."));
+        error("Too many tabstops; can't set more.");
         return;
     }
     for (i=0;i<NTABS;i++)
@@ -805,15 +795,15 @@ callexec()
         /* exit теперь в EXECR, -1 если ошибка */
     }
     /* Отец: */
-    telluser(DIAG("Executing ...","Выполнение ..."),0);
+    telluser("Executing ...",0);
     free((char *)execargs);
     doreplace(i,m,j,pipef);
     return(1);
 nopiperr:
-    error(DIAG("Can not fork or write pipe.","Ошибка записи"));
+    error("Can not fork or write pipe.");
     return(0);
 noargerr:
-    error(DIAG("Invalid argument.","ошибка в аргументе."));
+    error("Invalid argument.");
     return(0);
 }
 /*   Руднев А.П. Москва, ИАЭ им. Курчатова, 1984 */
