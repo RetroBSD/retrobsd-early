@@ -97,15 +97,7 @@ void *mips_get_stack_pointer ()
 /*
  * Read C0 coprocessor register.
  */
-#define mips_read_c0_register(reg)				\
-({ int __value;							\
-	asm volatile (						\
-	"mfc0	%0, $%1"					\
-	: "=r" (__value) : "K" (reg));				\
-	__value;						\
-})
-
-#define mips_read_c0_select(reg,sel)				\
+#define mips_read_c0_register(reg,sel)				\
 	({ int __value;						\
 	asm volatile (						\
 	"mfc0	%0, $%1, %2"					\
@@ -116,14 +108,7 @@ void *mips_get_stack_pointer ()
 /*
  * Write C0 coprocessor register.
  */
-#define mips_write_c0_register(reg, value)			\
-	do {							\
-	asm volatile (						\
-	"mtc0	%z0, $%1 \n	ehb"                            \
-	: : "r" ((unsigned int) (value)), "K" (reg));		\
-	} while (0)
-
-#define mips_write_c0_select(reg, sel, value)			\
+#define mips_write_c0_register(reg, sel, value)			\
 do {								\
 	asm volatile (						\
 	"mtc0	%z0, $%1, %2 \n	ehb"                            \
@@ -148,7 +133,7 @@ mips_intr_disable ()
 static void inline __attribute__ ((always_inline))
 mips_intr_restore (int x)
 {
-	mips_write_c0_register (C0_STATUS, x);
+	mips_write_c0_register (C0_STATUS, 0, x);
 }
 
 /*
@@ -174,34 +159,4 @@ mips_count_leading_zeroes (unsigned x)
 		: "=r" (n) : "r" (x));
 	return n;
 }
-
-/*
- * Translate virtual address to physical one.
- * Only for fixed mapping.
- */
-static unsigned int inline
-mips_virtual_addr_to_physical (unsigned int virt)
-{
-	unsigned segment_desc = virt >> 28;
-	if (segment_desc <= 0x7) {
-		// kuseg
-		if (mips_read_c0_register(C0_STATUS) & ST_ERL) {
-			// ERL == 1, no mapping
-			return virt;
-		} else {
-			// Assume fixed-mapped
-			return (virt + 0x40000000);
-		}
-	} else {
-		// kseg0, or kseg1, or kseg2, or kseg3
-		if (segment_desc <= 0xb) {
-			// kseg0 или kseg1, cut bits A[31:29].
-			return (virt & 0x1fffffff);
-		} else {
-			// Fixed-mapped - no mapping
-			return virt;
-		}
-	}
-}
-
 #endif /* __ASSEMBLER__ */

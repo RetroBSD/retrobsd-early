@@ -104,6 +104,8 @@ main()
 	printf ("\n%s", version);
 	printf ("phys mem  = %u kbytes\n", physmem / 1024);
 	printf ("user mem  = %u kbytes\n", MAXMEM / 1024);
+	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
+        cnidentify();
 
 	/*
 	 * Set up system process 0 (swapper).
@@ -141,7 +143,6 @@ main()
         spl0();
 
 	/* Mount a root filesystem. */
-	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
 	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
 			(struct inode*) 0);
 	if (! fs)

@@ -99,6 +99,7 @@ void log (int level, char *fmt, ...);
 int logwrt (char *buf, int len, int log);
 void logwakeup (int unit);
 void cninit (void);
+void cnidentify (void);
 void cnputc (char c);
 void tablefull (char *tab);		/* warn that a system table is full */
 int baduaddr (caddr_t addr);		/* detect bad user address */

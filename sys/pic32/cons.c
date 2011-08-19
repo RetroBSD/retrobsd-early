@@ -108,6 +108,40 @@ void cninit()
 		      PIC32_USTA_UTXEN;		/* Transmit Enable */
 }
 
+static char *
+port_name ()
+{
+#ifdef CONSOLE_UART1
+        return "UART1";
+#elif defined (CONSOLE_UART2)
+        return "UART2";
+#elif defined (CONSOLE_UART3)
+        return "UART3";
+#elif defined (CONSOLE_UART4)
+        return "UART4";
+#elif defined (CONSOLE_UART5)
+        return "UART5";
+#elif defined (CONSOLE_UART6)
+        return "UART6";
+#endif
+        /* Cannot happen */
+        return "???";
+}
+
+void cnidentify()
+{
+        printf ("console: port %s\n", port_name());
+#if 0
+	printf ("Config  = %08x\n", mips_read_c0_register (16, 0));
+	printf ("Config1 = %08x\n", mips_read_c0_register (16, 1));
+	printf ("Config2 = %08x\n", mips_read_c0_register (16, 2));
+	printf ("Config3 = %08x\n", mips_read_c0_register (16, 3));
+        printf ("IntCtl  = %08x\n", mips_read_c0_register (12, 1));
+	printf ("SRSCtl  = %08x\n", mips_read_c0_register (12, 2));
+	printf ("PRId    = %08x\n", mips_read_c0_register (15, 0));
+#endif
+}
+
 /*ARGSUSED*/
 int
 cnopen (dev, flag, mode)

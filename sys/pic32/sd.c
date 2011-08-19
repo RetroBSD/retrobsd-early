@@ -494,6 +494,58 @@ printf ("card_write: SEND_STATUS returned %#x\n", reply);
 	return 1;
 }
 
+static char *
+spi_name (port)
+        void *port;
+{
+        switch ((short) (int) port) {
+        case (short) (int) &SPI1CON: return "SPI1";
+        case (short) (int) &SPI2CON: return "SPI2";
+        case (short) (int) &SPI3CON: return "SPI3";
+        case (short) (int) &SPI4CON: return "SPI4";
+        }
+        /* Cannot happen */
+        return "???";
+}
+
+static int
+cs_name (unit)
+        int unit;
+{
+        int port;
+
+#ifdef SD_CS1_PORT
+        if (unit == 1) {
+                port = (int) &SD_CS1_PORT;
+        } else
+#endif
+        port = (int) &SD_CS0_PORT;
+
+        switch ((short) port) {
+        case (short) (int) &TRISA: return 'A';
+        case (short) (int) &TRISB: return 'B';
+        case (short) (int) &TRISC: return 'C';
+        case (short) (int) &TRISD: return 'D';
+        case (short) (int) &TRISE: return 'E';
+        case (short) (int) &TRISF: return 'F';
+        case (short) (int) &TRISG: return 'G';
+        }
+        /* Cannot happen */
+        return '?';
+}
+
+static int
+cs_pin (unit)
+        int unit;
+{
+#ifdef SD_CS1_PORT
+        if (unit == 1) {
+                return SD_CS1_PIN;
+        }
+#endif
+        return SD_CS0_PIN;
+}
+
 int
 sdopen (dev, flag, mode)
 	dev_t dev;
@@ -526,6 +578,8 @@ sdopen (dev, flag, mode)
                         printf ("sd%d: no SD/MMC card detected\n", unit);
                         return ENODEV;
                 }
+                printf ("sd%d: port %s, select at pin %c%d\n", unit,
+                        spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
                 if (card_size (unit, &nsectors)) {
                         printf ("sd%d: card type %s, size %u kbytes\n", unit,
                                 sd_type[unit]==3 ? "SDHC" :

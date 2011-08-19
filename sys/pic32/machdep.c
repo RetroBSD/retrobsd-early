@@ -86,15 +86,15 @@ startup()
 
 	/* Initialize STATUS register: master interrupt disable.
 	 * Setup interrupt vector base. */
-	mips_write_c0_register (C0_STATUS, ST_CU0 | ST_BEV);
-	mips_write_c0_select (C0_EBASE, 1, _exception_base_);
-	mips_write_c0_register (C0_STATUS, ST_CU0);
+	mips_write_c0_register (C0_STATUS, 0, ST_CU0 | ST_BEV);
+	mips_write_c0_register (C0_EBASE, 1, _exception_base_);
+	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
 
 	/* Set vector spacing: not used really, but must be nonzero. */
-	mips_write_c0_select (C0_INTCTL, 1, 32);
+	mips_write_c0_register (C0_INTCTL, 1, 32);
 
 	/* Clear CAUSE register: use special interrupt vector 0x200. */
-	mips_write_c0_register (C0_CAUSE, CA_IV);
+	mips_write_c0_register (C0_CAUSE, 0, CA_IV);
 
 	/*
 	 * Setup UART registers.
@@ -140,7 +140,7 @@ startup()
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
 	/* Kernel mode, interrupts disabled.  */
-	mips_write_c0_register (C0_STATUS, ST_CU0);
+	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
 
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
@@ -239,11 +239,11 @@ void
 udelay (usec)
 	u_int usec;
 {
-	unsigned now = mips_read_c0_register (C0_COUNT);
+	unsigned now = mips_read_c0_register (C0_COUNT, 0);
 	unsigned final = now + usec * (CPU_KHZ / 1000);
 
 	for (;;) {
-		now = mips_read_c0_register (C0_COUNT);
+		now = mips_read_c0_register (C0_COUNT, 0);
 
 		/* This comparison is valid only when using a signed type. */
 		if ((int) (now - final) >= 0)

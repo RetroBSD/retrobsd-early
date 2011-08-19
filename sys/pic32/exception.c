@@ -105,7 +105,7 @@ dumpregs (frame)
 
 	printf ("\n*** 0x%08x: exception ", frame [FRAME_PC]);
 
-	cause = mips_read_c0_register (C0_CAUSE);
+	cause = mips_read_c0_register (C0_CAUSE, 0);
 	switch (cause & CA_EXC_CODE) {
 	case CA_Int:	code = "Interrupt"; break;
 	case CA_AdEL:	code = "Address Load"; break;
@@ -128,7 +128,7 @@ dumpregs (frame)
 	case CA_AdEL:
 	case CA_AdES:
                 printf ("*** badvaddr = 0x%08x\n",
-                        mips_read_c0_register (C0_BADVADDR));
+                        mips_read_c0_register (C0_BADVADDR, 0));
         }
 	printf ("                t0 = %8x   s0 = %8x   t8 = %8x   lo = %8x\n",
 		frame [FRAME_R8], frame [FRAME_R16],
@@ -185,7 +185,7 @@ printf ("\nkernel stack = %p", frame);
 	cnt.v_trap++;
 #endif
 	status = frame [FRAME_STATUS];
-	cause = mips_read_c0_register (C0_CAUSE);
+	cause = mips_read_c0_register (C0_CAUSE, 0);
 	cause &= CA_EXC_CODE;
 	if (USERMODE (status))
 		cause |= USER;
@@ -249,11 +249,11 @@ printf ("\nkernel stack = %p", frame);
                 switch (irq) {
                 case PIC32_VECT_CT:     /* Core Timer */
                         /* Increment COMPARE register. */
-                        c = mips_read_c0_register (C0_COMPARE);
+                        c = mips_read_c0_register (C0_COMPARE, 0);
                         do {
                                 c += (CPU_KHZ * 1000 / HZ + 1) / 2;
-                                mips_write_c0_register (C0_COMPARE, c);
-                        } while ((int) (c - mips_read_c0_register (C0_COUNT)) < 0);
+                                mips_write_c0_register (C0_COMPARE, 0, c);
+                        } while ((int) (c - mips_read_c0_register (C0_COUNT, 0)) < 0);
 
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         hardclock ((caddr_t) frame [FRAME_PC], status);
@@ -293,7 +293,8 @@ printf ("\nkernel stack = %p", frame);
 		if ((cause & USER) && runrun) {
 		        /* Process switch: in user mode only. */
                         /* Switch to kernel mode, enable interrupts. */
-                        mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
+                        mips_write_c0_register (C0_STATUS, 0,
+                                status & ~(ST_UM | ST_EXL));
                         goto out;
                 }
                 goto ret;
@@ -306,7 +307,8 @@ printf ("\nkernel stack = %p", frame);
 		cnt.v_syscall++;
 #endif
                 /* Switch to kernel mode, enable interrupts. */
-                mips_write_c0_register (C0_STATUS, status & ~(ST_UM | ST_EXL));
+                mips_write_c0_register (C0_STATUS, 0,
+                        status & ~(ST_UM | ST_EXL));
 		u.u_error = 0;
                 u.u_frame = frame;
                 u.u_code = frame [FRAME_PC];            /* For signal handler */
