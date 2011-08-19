@@ -160,7 +160,9 @@ void printmem (unsigned addr, int nbytes)
 void
 execv()
 {
-	((struct execa *)u.u_arg)->envp = NULL;
+	struct execa *arg = (struct execa *)u.u_arg;
+
+	arg->envp = NULL;
 	execve();
 }
 

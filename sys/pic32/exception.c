@@ -59,28 +59,51 @@ static const unsigned mask_by_vector[] = {
 	(1 << PIC32_IRQ_T5),            /* 20 - Timer5 */
 	(1 << PIC32_IRQ_IC5),           /* 21 - Input Capture 5 */
 	(1 << PIC32_IRQ_OC5),           /* 22 - Output Compare 5 */
-	(1 << PIC32_IRQ_SPI1E) |        /* 23 - SPI1 */
-	(1 << PIC32_IRQ_SPI1TX) |
+	(1 << PIC32_IRQ_SPI1E)       |  /* 23 - SPI1 */
+	(1 << PIC32_IRQ_SPI1TX)      |
 	(1 << PIC32_IRQ_SPI1RX),
-	(1 << PIC32_IRQ_U1E) |          /* 24 - UART1 */
-	(1 << PIC32_IRQ_U1RX) |
-	(1 << PIC32_IRQ_U1TX),
-	(1 << PIC32_IRQ_I2C1B) |        /* 25 - I2C1 */
-	(1 << PIC32_IRQ_I2C1S) |
+
+	(1 << PIC32_IRQ_U1E)         |  /* 24 - UART1 */
+	(1 << PIC32_IRQ_U1RX)        |
+	(1 << PIC32_IRQ_U1TX)        |
+	(1 << PIC32_IRQ_SPI3E)       |  /* 24 - SPI3 */
+	(1 << PIC32_IRQ_SPI3TX)      |
+	(1 << PIC32_IRQ_SPI3RX)      |
+	(1 << PIC32_IRQ_I2C3B)       |  /* 24 - I2C3 */
+	(1 << PIC32_IRQ_I2C3S)       |
+	(1 << PIC32_IRQ_I2C3M),
+
+	(1 << PIC32_IRQ_I2C1B)       |  /* 25 - I2C1 */
+	(1 << PIC32_IRQ_I2C1S)       |
 	(1 << PIC32_IRQ_I2C1M),
 	(1 << (PIC32_IRQ_CN-32)),       /* 26 - Input Change Interrupt */
 	(1 << (PIC32_IRQ_AD1-32)),      /* 27 - ADC1 Convert Done */
 	(1 << (PIC32_IRQ_PMP-32)),      /* 28 - Parallel Master Port */
 	(1 << (PIC32_IRQ_CMP1-32)),     /* 29 - Comparator Interrupt */
 	(1 << (PIC32_IRQ_CMP2-32)),     /* 30 - Comparator Interrupt */
-	(1 << (PIC32_IRQ_SPI2E-32)) |   /* 31 - SPI2 */
+
+	(1 << (PIC32_IRQ_U3E-32))    |  /* 31 - UART3 */
+	(1 << (PIC32_IRQ_U3E-32))    |
+	(1 << (PIC32_IRQ_U3E-32))    |
+	(1 << (PIC32_IRQ_SPI2E-32))  |  /* 31 - SPI2 */
 	(1 << (PIC32_IRQ_SPI2TX-32)) |
-	(1 << (PIC32_IRQ_SPI2RX-32)),
-	(1 << (PIC32_IRQ_U2E-32)) |     /* 32 - UART2 */
-	(1 << (PIC32_IRQ_U2RX-32)) |
-	(1 << (PIC32_IRQ_U2TX-32)),
-	(1 << (PIC32_IRQ_I2C2B-32)) |   /* 33 - I2C2 */
-	(1 << (PIC32_IRQ_I2C2S-32)) |
+	(1 << (PIC32_IRQ_SPI2RX-32)) |
+	(1 << (PIC32_IRQ_I2C4B-32))  |  /* 31 - I2C4 */
+	(1 << (PIC32_IRQ_I2C4S-32))  |
+	(1 << (PIC32_IRQ_I2C4M-32)),
+
+	(1 << (PIC32_IRQ_U2E-32))    |  /* 32 - UART2 */
+	(1 << (PIC32_IRQ_U2RX-32))   |
+	(1 << (PIC32_IRQ_U2TX-32))   |
+	(1 << (PIC32_IRQ_SPI4E-32))  |  /* 32 - SPI4 */
+	(1 << (PIC32_IRQ_SPI4TX-32)) |
+	(1 << (PIC32_IRQ_SPI4RX-32)) |
+	(1 << (PIC32_IRQ_I2C5B-32))  |  /* 32 - I2C5 */
+	(1 << (PIC32_IRQ_I2C5S-32))  |
+	(1 << (PIC32_IRQ_I2C5M-32)),
+
+	(1 << (PIC32_IRQ_I2C2B-32))  |  /* 33 - I2C2 */
+	(1 << (PIC32_IRQ_I2C2S-32))  |
 	(1 << (PIC32_IRQ_I2C2M-32)),
 	(1 << (PIC32_IRQ_FSCM-32)),     /* 34 - Fail-Safe Clock Monitor */
 	(1 << (PIC32_IRQ_RTCC-32)),     /* 35 - Real-Time Clock and Calendar */
@@ -88,12 +111,24 @@ static const unsigned mask_by_vector[] = {
 	(1 << (PIC32_IRQ_DMA1-32)),     /* 37 - DMA Channel 1 */
 	(1 << (PIC32_IRQ_DMA2-32)),     /* 38 - DMA Channel 2 */
 	(1 << (PIC32_IRQ_DMA3-32)),     /* 39 - DMA Channel 3 */
-	0,				/* 40 */
-	0,				/* 41 */
-	0,				/* 42 */
-	0,				/* 43 */
+	(1 << (PIC32_IRQ_DMA4-32)),	/* 40 - DMA Channel 4 */
+	(1 << (PIC32_IRQ_DMA5-32)),	/* 41 - DMA Channel 5 */
+	(1 << (PIC32_IRQ_DMA6-32)),	/* 42 - DMA Channel 6 */
+	(1 << (PIC32_IRQ_DMA7-32)),	/* 43 - DMA Channel 7 */
 	(1 << (PIC32_IRQ_FCE-32)),      /* 44 - Flash Control Event */
 	(1 << (PIC32_IRQ_USB-32)),      /* 45 - USB */
+	(1 << (PIC32_IRQ_CAN1-32)),     /* 46 - Control Area Network 1 */
+	(1 << (PIC32_IRQ_CAN2-32)),     /* 47 - Control Area Network 2 */
+	(1 << (PIC32_IRQ_ETH-32)),      /* 48 - Ethernet Controller */
+	(1 << (PIC32_IRQ_U4E-64))    |  /* 49 - UART4 */
+	(1 << (PIC32_IRQ_U4RX-64))   |
+	(1 << (PIC32_IRQ_U4TX-64)),
+	(1 << (PIC32_IRQ_U6E-64))    |  /* 50 - UART6 */
+	(1 << (PIC32_IRQ_U6RX-64))   |
+	(1 << (PIC32_IRQ_U6TX-64)),
+	(1 << (PIC32_IRQ_U5E-64))    |  /* 51 - UART5 */
+	(1 << (PIC32_IRQ_U5RX-64))   |
+	(1 << (PIC32_IRQ_U5TX-64))
 };
 
 static void
@@ -265,7 +300,7 @@ printf ("\nkernel stack = %p", frame);
                 case PIC32_VECT_U2:     /* UART2 */
 #endif
 #if CONSOLE_UART3
-                case PIC32_VECT_SPI2:   /* UART3 combined with SPI2 */
+                case PIC32_VECT_U3:     /* UART3 */
 #endif
 #if CONSOLE_UART4
                 case PIC32_VECT_U4:     /* UART4 */

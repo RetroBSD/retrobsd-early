@@ -79,7 +79,7 @@ smount()
 		char	*freg;
 		int	flags;
 	} *uap = (struct a *)u.u_arg;
-	dev_t dev;
+	dev_t dev = 0;
 	register struct inode *ip;
 	register struct fs *fs;
 	struct	nameidata nd;
@@ -279,7 +279,7 @@ static int
 unmount1 (fname)
 	caddr_t fname;
 {
-	dev_t dev;
+	dev_t dev = 0;
 	register struct mount *mp;
 	register struct inode *ip;
 	register int error;

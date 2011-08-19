@@ -30,9 +30,9 @@
 
 #elif defined (CONSOLE_UART3)
 #   define CONSOLE_PORT     U3MODE
-#   define CONSOLE_ER_IRQ   PIC32_IRQ_SPI2E
-#   define CONSOLE_RX_IRQ   PIC32_IRQ_SPI2RX
-#   define CONSOLE_TX_IRQ   PIC32_IRQ_SPI2TX
+#   define CONSOLE_ER_IRQ   PIC32_IRQ_U3E
+#   define CONSOLE_RX_IRQ   PIC32_IRQ_U3RX
+#   define CONSOLE_TX_IRQ   PIC32_IRQ_U3TX
 
 
 #elif defined (CONSOLE_UART4)

@@ -40,7 +40,7 @@
 #define PIC32_IECCLR(n)	PIC32_R (0x81064+((n)<<4))
 #define PIC32_IECSET(n)	PIC32_R (0x81068+((n)<<4))
 #define PIC32_IECINV(n)	PIC32_R (0x8106C+((n)<<4))
-#define PIC32_IPC(n)	PIC32_R (0x81090+((n)<<4))  /* IPC(0..11) - Interrupt Priority Control */
+#define PIC32_IPC(n)	PIC32_R (0x81090+((n)<<4))  /* IPC(0..12) - Interrupt Priority Control */
 #define PIC32_IPCCLR(n)	PIC32_R (0x81094+((n)<<4))
 #define PIC32_IPCSET(n)	PIC32_R (0x81098+((n)<<4))
 #define PIC32_IPCINV(n)	PIC32_R (0x8109C+((n)<<4))
@@ -77,7 +77,7 @@
 #define PIC32_IPC_IP3(x)	((x)<<26)	/* Interrupt 3 priority */
 
 /*
- * IRQ numbers for PIC32MX3xx/4xx.
+ * IRQ numbers for PIC32MX3xx/4xx/5xx/6xx/7xx.
  */
 #define PIC32_IRQ_CT        0   /* Core Timer Interrupt */
 #define PIC32_IRQ_CS0       1   /* Core Software Interrupt 0 */
@@ -105,9 +105,17 @@
 #define PIC32_IRQ_SPI1E     23  /* SPI1 Fault */
 #define PIC32_IRQ_SPI1TX    24  /* SPI1 Transfer Done */
 #define PIC32_IRQ_SPI1RX    25  /* SPI1 Receive Done */
+
+#define PIC32_IRQ_SPI3E     26  /* SPI3 Fault */
+#define PIC32_IRQ_SPI3TX    27  /* SPI3 Transfer Done */
+#define PIC32_IRQ_SPI3RX    28  /* SPI3 Receive Done */
 #define PIC32_IRQ_U1E       26  /* UART1 Error */
 #define PIC32_IRQ_U1RX      27  /* UART1 Receiver */
 #define PIC32_IRQ_U1TX      28  /* UART1 Transmitter */
+#define PIC32_IRQ_I2C3B     26  /* I2C3 Bus Collision Event */
+#define PIC32_IRQ_I2C3S     27  /* I2C3 Slave Event */
+#define PIC32_IRQ_I2C3M     28  /* I2C3 Master Event */
+
 #define PIC32_IRQ_I2C1B     29  /* I2C1 Bus Collision Event */
 #define PIC32_IRQ_I2C1S     30  /* I2C1 Slave Event */
 #define PIC32_IRQ_I2C1M     31  /* I2C1 Master Event */
@@ -116,12 +124,27 @@
 #define PIC32_IRQ_PMP       34  /* Parallel Master Port */
 #define PIC32_IRQ_CMP1      35  /* Comparator Interrupt */
 #define PIC32_IRQ_CMP2      36  /* Comparator Interrupt */
+
 #define PIC32_IRQ_SPI2E     37  /* SPI2 Fault */
 #define PIC32_IRQ_SPI2TX    38  /* SPI2 Transfer Done */
 #define PIC32_IRQ_SPI2RX    39  /* SPI2 Receive Done */
+#define PIC32_IRQ_U3E       37  /* UART3 Error */
+#define PIC32_IRQ_U3RX      38  /* UART3 Receiver */
+#define PIC32_IRQ_U3TX      39  /* UART3 Transmitter */
+#define PIC32_IRQ_I2C4B     37  /* I2C4 Bus Collision Event */
+#define PIC32_IRQ_I2C4S     38  /* I2C4 Slave Event */
+#define PIC32_IRQ_I2C4M     39  /* I2C4 Master Event */
+
+#define PIC32_IRQ_SPI4E     40  /* SPI4 Fault */
+#define PIC32_IRQ_SPI4TX    41  /* SPI4 Transfer Done */
+#define PIC32_IRQ_SPI4RX    42  /* SPI4 Receive Done */
 #define PIC32_IRQ_U2E       40  /* UART2 Error */
 #define PIC32_IRQ_U2RX      41  /* UART2 Receiver */
 #define PIC32_IRQ_U2TX      42  /* UART2 Transmitter */
+#define PIC32_IRQ_I2C5B     40  /* I2C5 Bus Collision Event */
+#define PIC32_IRQ_I2C5S     41  /* I2C5 Slave Event */
+#define PIC32_IRQ_I2C5M     42  /* I2C5 Master Event */
+
 #define PIC32_IRQ_I2C2B     43  /* I2C2 Bus Collision Event */
 #define PIC32_IRQ_I2C2S     44  /* I2C2 Slave Event */
 #define PIC32_IRQ_I2C2M     45  /* I2C2 Master Event */
@@ -131,9 +154,12 @@
 #define PIC32_IRQ_DMA1      49  /* DMA Channel 1 */
 #define PIC32_IRQ_DMA2      50  /* DMA Channel 2 */
 #define PIC32_IRQ_DMA3      51  /* DMA Channel 3 */
+#define PIC32_IRQ_DMA4      52  /* DMA Channel 4 */
+#define PIC32_IRQ_DMA5      53  /* DMA Channel 5 */
+#define PIC32_IRQ_DMA6      54  /* DMA Channel 6 */
+#define PIC32_IRQ_DMA7      55  /* DMA Channel 7 */
 #define PIC32_IRQ_FCE       56  /* Flash Control Event */
 #define PIC32_IRQ_USB       57  /* USB */
-
 #define PIC32_IRQ_CAN1      58  /* Control Area Network 1 */
 #define PIC32_IRQ_CAN2      59  /* Control Area Network 2 */
 #define PIC32_IRQ_ETH       60  /* Ethernet Interrupt */
@@ -154,7 +180,7 @@
 #define PIC32_IRQ_U5TX      75  /* UART5 Transmitter */
 
 /*
- * Interrupt vector numbers for PIC32MX3xx/4xx.
+ * Interrupt vector numbers for PIC32MX3xx/4xx/5xx/6xx/7xx.
  */
 #define PIC32_VECT_CT       0   /* Core Timer Interrupt */
 #define PIC32_VECT_CS0      1   /* Core Software Interrupt 0 */
@@ -180,15 +206,26 @@
 #define PIC32_VECT_IC5      21  /* Input Capture 5 */
 #define PIC32_VECT_OC5      22  /* Output Compare 5 */
 #define PIC32_VECT_SPI1     23  /* SPI1 */
+
+#define PIC32_VECT_SPI3     24  /* SPI3 */
 #define PIC32_VECT_U1       24  /* UART1 */
+#define PIC32_VECT_I2C3     24  /* I2C3 */
+
 #define PIC32_VECT_I2C1     25  /* I2C1 */
 #define PIC32_VECT_CN       26  /* Input Change Interrupt */
 #define PIC32_VECT_AD1      27  /* ADC1 Convert Done */
 #define PIC32_VECT_PMP      28  /* Parallel Master Port */
 #define PIC32_VECT_CMP1     29  /* Comparator Interrupt */
 #define PIC32_VECT_CMP2     30  /* Comparator Interrupt */
+
 #define PIC32_VECT_SPI2     31  /* SPI2 */
+#define PIC32_VECT_U3       31  /* UART3 */
+#define PIC32_VECT_I2C4     31  /* I2C4 */
+
+#define PIC32_VECT_SPI4     32  /* SPI4 */
 #define PIC32_VECT_U2       32  /* UART2 */
+#define PIC32_VECT_I2C5     32  /* I2C5 */
+
 #define PIC32_VECT_I2C2     33  /* I2C2 */
 #define PIC32_VECT_FSCM     34  /* Fail-Safe Clock Monitor */
 #define PIC32_VECT_RTCC     35  /* Real-Time Clock and Calendar */
@@ -196,9 +233,15 @@
 #define PIC32_VECT_DMA1     37  /* DMA Channel 1 */
 #define PIC32_VECT_DMA2     38  /* DMA Channel 2 */
 #define PIC32_VECT_DMA3     39  /* DMA Channel 3 */
+#define PIC32_VECT_DMA4     40  /* DMA Channel 4 */
+#define PIC32_VECT_DMA5     41  /* DMA Channel 5 */
+#define PIC32_VECT_DMA6     42  /* DMA Channel 6 */
+#define PIC32_VECT_DMA7     43  /* DMA Channel 7 */
 #define PIC32_VECT_FCE      44  /* Flash Control Event */
 #define PIC32_VECT_USB      45  /* USB */
-
+#define PIC32_VECT_CAN1     46  /* Control Area Network 1 */
+#define PIC32_VECT_CAN2     47  /* Control Area Network 2 */
+#define PIC32_VECT_ETH      48  /* Ethernet Interrupt */
 #define PIC32_VECT_U4       49  /* UART4 */
 #define PIC32_VECT_U6       50  /* UART6 */
 #define PIC32_VECT_U5       51  /* UART5 */

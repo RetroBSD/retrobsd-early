@@ -118,11 +118,13 @@ startup()
 	IPC(0) = IPC(1) = IPC(2) = IPC(3) = 	/* Interrupt Priority Control */
 	IPC(4) = IPC(5) = IPC(6) = IPC(7) =
 	IPC(8) = IPC(9) = IPC(10) = IPC(11) =
+	IPC(12) =
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
 
         /* UBW32 board: LEDs on PORTE[0:3].
 	 * Configure LED pins as output high. */
+#ifndef LED_POLARITY
 #ifdef LED_TTY_PORT
 	PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
 	TRIS_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
@@ -139,6 +141,26 @@ startup()
 	PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
+#else   // LED_POLARITY
+	// Maximite board, configure LEDs as ouptut low
+#ifdef LED_TTY_PORT
+	PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+	TRIS_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+#endif
+#ifdef LED_DISK_PORT
+	PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+	TRIS_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+#endif
+#ifdef LED_KERNEL_PORT
+	PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+	TRIS_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+#endif
+#ifdef LED_AUX_PORT
+	PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+	TRIS_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+#endif
+#endif  // LED_POLARITY
+
 	/* Kernel mode, interrupts disabled.  */
 	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
 
@@ -257,22 +279,58 @@ udelay (usec)
 void led_control (int mask, int on)
 {
         /* UBW32 board: LEDs on PORTE[0:3]. */
+#ifndef LED_POLARITY
+#ifdef LED_AUX_PORT
         if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
                 if (on) PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
                 else    PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
         }
+#endif
+#ifdef LED_DISK_PORT
         if (mask & LED_DISK) {          /* LED2 on PE1: red */
                 if (on) PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
                 else    PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
         }
+#endif
+#ifdef LED_KERNEL_PORT
         if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
                 if (on) PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
                 else    PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
         }
+#endif
+#ifdef LED_TTY_PORT
         if (mask & LED_TTY) {           /* LED USB on PE3: green */
                 if (on) PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
                 else    PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
         }
+#endif
+#else   // LED_POLARITY
+        // Maximite board
+#ifdef LED_AUX_PORT
+        if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
+                if (on) PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+                else    PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+        }
+#endif
+#ifdef LED_DISK_PORT
+        if (mask & LED_DISK) {          /* LED2 on PE1: red */
+                if (on) PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+                else    PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+        }
+#endif
+#ifdef LED_KERNEL_PORT
+        if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
+                if (on) PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+                else    PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+        }
+#endif
+#ifdef LED_TTY_PORT
+        if (mask & LED_TTY) {           /* LED USB on PE3: green */
+                if (on) PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+                else    PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+        }
+#endif
+#endif  // LED_POLARITY
 }
 
 /*
@@ -343,7 +401,7 @@ strlen (s)
 
 /*
  * Return 0 if a user address is valid.
- * There are two memory regions, allowed for user: flash and RAM.
+ * There are two memory regions allowed for user: flash and RAM.
  */
 int
 baduaddr (addr)
@@ -360,7 +418,7 @@ baduaddr (addr)
 
 /*
  * Return 0 if a kernel address is valid.
- * There is only one memory region, allowed for kernel: RAM.
+ * There is only one memory region allowed for kernel: RAM.
  */
 int
 badkaddr (addr)
@@ -468,6 +526,13 @@ bcopy (const void *src0, void *dst0, size_t nbytes)
 
 	while (nbytes--)
 		*dst++ = *src++;
+}
+
+void *
+memcpy (void *dst, const void *src, size_t nbytes)
+{
+    bcopy (src, dst, nbytes);
+    return dst;
 }
 
 /*

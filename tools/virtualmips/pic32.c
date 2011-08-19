@@ -54,9 +54,19 @@ static const int irq_to_vector[] = {
     PIC32_VECT_SPI1,    /* 23 - SPI1 Fault */
     PIC32_VECT_SPI1,    /* 24 - SPI1 Transfer Done */
     PIC32_VECT_SPI1,    /* 25 - SPI1 Receive Done */
-    PIC32_VECT_U1,      /* 26 - UART1 Error */
-    PIC32_VECT_U1,      /* 27 - UART1 Receiver */
-    PIC32_VECT_U1,      /* 28 - UART1 Transmitter */
+
+    PIC32_VECT_U1     | /* 26 - UART1 Error */
+    PIC32_VECT_SPI3   | /* 26 - SPI3 Fault */
+    PIC32_VECT_I2C3,    /* 26 - I2C3 Bus Collision Event */
+
+    PIC32_VECT_U1     | /* 27 - UART1 Receiver */
+    PIC32_VECT_SPI3   | /* 27 - SPI3 Transfer Done */
+    PIC32_VECT_I2C3,    /* 27 - I2C3 Slave Event */
+
+    PIC32_VECT_U1     | /* 28 - UART1 Transmitter */
+    PIC32_VECT_SPI3   | /* 28 - SPI3 Receive Done */
+    PIC32_VECT_I2C3,    /* 28 - I2C3 Master Event */
+
     PIC32_VECT_I2C1,    /* 29 - I2C1 Bus Collision Event */
     PIC32_VECT_I2C1,    /* 30 - I2C1 Slave Event */
     PIC32_VECT_I2C1,    /* 31 - I2C1 Master Event */
@@ -65,12 +75,31 @@ static const int irq_to_vector[] = {
     PIC32_VECT_PMP,     /* 34 - Parallel Master Port */
     PIC32_VECT_CMP1,    /* 35 - Comparator Interrupt */
     PIC32_VECT_CMP2,    /* 36 - Comparator Interrupt */
-    PIC32_VECT_SPI2,    /* 37 - SPI2 Fault */
-    PIC32_VECT_SPI2,    /* 38 - SPI2 Transfer Done */
-    PIC32_VECT_SPI2,    /* 39 - SPI2 Receive Done */
-    PIC32_VECT_U2,      /* 40 - UART2 Error */
-    PIC32_VECT_U2,      /* 41 - UART2 Receiver */
-    PIC32_VECT_U2,      /* 42 - UART2 Transmitter */
+
+    PIC32_VECT_U3     | /* 37 - UART3 Error */
+    PIC32_VECT_SPI2   | /* 37 - SPI2 Fault */
+    PIC32_VECT_I2C4,    /* 37 - I2C4 Bus Collision Event */
+
+    PIC32_VECT_U3     | /* 38 - UART3 Receiver */
+    PIC32_VECT_SPI2   | /* 38 - SPI2 Transfer Done */
+    PIC32_VECT_I2C4,    /* 38 - I2C4 Slave Event */
+
+    PIC32_VECT_U3     | /* 39 - UART3 Transmitter */
+    PIC32_VECT_SPI2   | /* 39 - SPI2 Receive Done */
+    PIC32_VECT_I2C4,    /* 39 - I2C4 Master Event */
+
+    PIC32_VECT_U2     | /* 40 - UART2 Error */
+    PIC32_VECT_SPI4   | /* 40 - SPI4 Fault */
+    PIC32_VECT_I2C5,    /* 40 - I2C5 Bus Collision Event */
+
+    PIC32_VECT_U2     | /* 41 - UART2 Receiver */
+    PIC32_VECT_SPI4   | /* 41 - SPI4 Transfer Done */
+    PIC32_VECT_I2C5,    /* 41 - I2C5 Slave Event */
+
+    PIC32_VECT_U2     | /* 42 - UART2 Transmitter */
+    PIC32_VECT_SPI4   | /* 42 - SPI4 Receive Done */
+    PIC32_VECT_I2C5,    /* 42 - I2C5 Master Event */
+
     PIC32_VECT_I2C2,    /* 43 - I2C2 Bus Collision Event */
     PIC32_VECT_I2C2,    /* 44 - I2C2 Slave Event */
     PIC32_VECT_I2C2,    /* 45 - I2C2 Master Event */
@@ -80,12 +109,30 @@ static const int irq_to_vector[] = {
     PIC32_VECT_DMA1,    /* 49 - DMA Channel 1 */
     PIC32_VECT_DMA2,    /* 50 - DMA Channel 2 */
     PIC32_VECT_DMA3,    /* 51 - DMA Channel 3 */
-    -1,                 /* 52 */
-    -1,                 /* 53 */
-    -1,                 /* 54 */
-    -1,                 /* 55 */
+    PIC32_VECT_DMA4,    /* 52 - DMA Channel 4 */
+    PIC32_VECT_DMA5,    /* 53 - DMA Channel 5 */
+    PIC32_VECT_DMA6,    /* 54 - DMA Channel 6 */
+    PIC32_VECT_DMA7,    /* 55 - DMA Channel 7 */
     PIC32_VECT_FCE,     /* 56 - Flash Control Event */
     PIC32_VECT_USB,     /* 57 - USB */
+    PIC32_VECT_CAN1,    /* 58 - Control Area Network 1 */
+    PIC32_VECT_CAN2,    /* 59 - Control Area Network 2 */
+    PIC32_VECT_ETH,     /* 60 - Ethernet Interrupt */
+    PIC32_VECT_IC1,     /* 61 - Input Capture 1 Error */
+    PIC32_VECT_IC2,     /* 62 - Input Capture 2 Error */
+    PIC32_VECT_IC3,     /* 63 - Input Capture 3 Error */
+    PIC32_VECT_IC4,     /* 64 - Input Capture 4 Error */
+    PIC32_VECT_IC5,     /* 65 - Input Capture 5 Error */
+    PIC32_VECT_PMP,     /* 66 - Parallel Master Port Error */
+    PIC32_VECT_U4,      /* 67 - UART4 Error */
+    PIC32_VECT_U4,      /* 68 - UART4 Receiver */
+    PIC32_VECT_U4,      /* 69 - UART4 Transmitter */
+    PIC32_VECT_U6,      /* 70 - UART6 Error */
+    PIC32_VECT_U6,      /* 71 - UART6 Receiver */
+    PIC32_VECT_U6,      /* 72 - UART6 Transmitter */
+    PIC32_VECT_U5,      /* 73 - UART5 Error */
+    PIC32_VECT_U5,      /* 74 - UART5 Receiver */
+    PIC32_VECT_U5,      /* 75 - UART5 Transmitter */
 };
 
 /* Initialize the PIC32 Platform (MIPS) */
@@ -133,12 +180,32 @@ static int pic32_init_platform (pic32_t *pic32)
         if (dev_pic32_flash_init (vm, "Boot flash", pic32->boot_flash_size,
                 pic32->boot_flash_address, pic32->boot_file_name) == -1)
             return (-1);
-    if (dev_pic32_uart_init (vm, "PIC32 UART1", PIC32_U1MODE,
-            PIC32_IRQ_U1E, vm->vtty_con1) == -1)
+    if (dev_pic32_uart_init (vm, "PIC32 UART", PIC32_U1MODE,
+            PIC32_IRQ_U1E, vm->vtty_con[0]) == -1)
         return (-1);
     if (dev_pic32_uart_init (vm, "PIC32 UART2", PIC32_U2MODE,
-            PIC32_IRQ_U2E, vm->vtty_con2) == -1)
+            PIC32_IRQ_U2E, vm->vtty_con[1]) == -1)
         return (-1);
+#if NVTTY >= 3
+    if (dev_pic32_uart_init (vm, "PIC32 UART3", PIC32_U3MODE,
+            PIC32_IRQ_U3E, vm->vtty_con[2]) == -1)
+        return (-1);
+#endif
+#if NVTTY >= 4
+    if (dev_pic32_uart_init (vm, "PIC32 UART4", PIC32_U4MODE,
+            PIC32_IRQ_U4E, vm->vtty_con[3]) == -1)
+        return (-1);
+#endif
+#if NVTTY >= 5
+    if (dev_pic32_uart_init (vm, "PIC32 UART5", PIC32_U5MODE,
+            PIC32_IRQ_U5E, vm->vtty_con[4]) == -1)
+        return (-1);
+#endif
+#if NVTTY >= 6
+    if (dev_pic32_uart_init (vm, "PIC32 UART6", PIC32_U6MODE,
+            PIC32_IRQ_U6E, vm->vtty_con[5]) == -1)
+        return (-1);
+#endif
     if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
         return (-1);
     if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
@@ -250,6 +317,8 @@ static void pic32_parse_configure (pic32_t *pic32)
     vm_instance_t *vm = pic32->vm;
     char *start_address = 0;
     char *trace_address = 0;
+    char *uart_type[NVTTY] = {0};
+    char *uart_port[NVTTY] = {0};
     cfg_opt_t opts[] = {
         COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
         COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("debug_level", &(vm->debug_level)),
@@ -262,10 +331,23 @@ static void pic32_parse_configure (pic32_t *pic32)
         CFG_SIMPLE_INT ("sdcard1_size", &pic32->sdcard1_size),
         CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
         CFG_SIMPLE_STR ("sdcard1_file_name", &pic32->sdcard1_file_name),
+        CFG_SIMPLE_STR ("uart1_type", &uart_type[0]),
+        CFG_SIMPLE_STR ("uart2_type", &uart_type[1]),
+        CFG_SIMPLE_STR ("uart3_type", &uart_type[2]),
+        CFG_SIMPLE_STR ("uart4_type", &uart_type[3]),
+        CFG_SIMPLE_STR ("uart5_type", &uart_type[4]),
+        CFG_SIMPLE_STR ("uart6_type", &uart_type[5]),
+        CFG_SIMPLE_STR ("uart1_port", &uart_port[0]),
+        CFG_SIMPLE_STR ("uart2_port", &uart_port[1]),
+        CFG_SIMPLE_STR ("uart3_port", &uart_port[2]),
+        CFG_SIMPLE_STR ("uart4_port", &uart_port[3]),
+        CFG_SIMPLE_STR ("uart5_port", &uart_port[4]),
+        CFG_SIMPLE_STR ("uart6_port", &uart_port[5]),
 
         CFG_END ()
     };
     cfg_t *cfg;
+    int i;
 
     cfg = cfg_init (opts, 0);
     cfg_parse (cfg, vm->configure_filename);
@@ -274,6 +356,25 @@ static void pic32_parse_configure (pic32_t *pic32)
         pic32->start_address = strtoul (start_address, 0, 0);
     if (trace_address)
         vm->trace_address = strtoul (trace_address, 0, 0);
+    for (i=0; i<NVTTY; i++)
+        if (uart_type[i]) {
+            if (strcmp (uart_type[i], "console") == 0)
+                vm->vtty_type[i] = VTTY_TYPE_TERM;
+            else if (strcmp (uart_type[i], "tcp") == 0)
+                vm->vtty_type[i] = VTTY_TYPE_TCP;
+            else if (strcmp (uart_type[i], "none") == 0)
+                vm->vtty_type[i] = VTTY_TYPE_NONE;
+            else {
+                printf ("Unknown option: uart%d_type = %s\n",
+                    i+1, uart_type[i]);
+                continue;
+            }
+            if (uart_port[i]) {
+                vm->vtty_tcp_port[i] = strtoul (uart_port[i], 0, 0);
+            } else if (vm->vtty_type[i] == VTTY_TYPE_TCP) {
+                vm->vtty_tcp_port[i] = 2300 + i;
+            }
+        }
 
     VALID_COMMON_CONFIG_OPTION;
 
@@ -303,6 +404,15 @@ static void pic32_parse_configure (pic32_t *pic32)
     printf ("start_address: 0x%x\n", pic32->start_address);
     if (vm->trace_address != 0)
         printf ("trace_address: 0x%x\n", vm->trace_address);
+    for (i=0; i<NVTTY; i++) {
+        if (vm->vtty_type[i] != VTTY_TYPE_NONE)
+            printf ("uart%d_type = %s\n", i+1,
+                vm->vtty_type[i] == VTTY_TYPE_TERM ? "console" :
+                vm->vtty_type[i] == VTTY_TYPE_TCP  ? "tcp" : "???");
+        if (vm->vtty_tcp_port[i])
+            printf ("uart%d_type = %u\n", i+1,
+                vm->vtty_tcp_port[i]);
+    }
 }
 
 /*
@@ -313,6 +423,7 @@ vm_instance_t *create_instance (char *configure_filename)
     vm_instance_t *vm;
     pic32_t *pic32;
     const char *name = "pic32";
+    int i;
 
     pic32 = malloc (sizeof (*pic32));
     if (! pic32) {
@@ -329,9 +440,9 @@ vm_instance_t *create_instance (char *configure_filename)
     }
     vm->hw_data = pic32;
     pic32->vm = vm;
-    vm->vtty_con1_type = VTTY_TYPE_TERM;
-    vm->vtty_con2_type = VTTY_TYPE_TCP;
-    vm->vtty_con2_tcp_port = 2345;
+    vm->vtty_type[0] = VTTY_TYPE_TERM;
+    for (i=1; i<NVTTY; i++)
+        vm->vtty_type[i] = VTTY_TYPE_NONE;
 
     /* Initialize default parameters for  pic32 */
     if (configure_filename == NULL)

@@ -86,12 +86,13 @@ struct vm_instance {
     void (*set_irq) (vm_instance_t * vm, u_int irq);
     void (*clear_irq) (vm_instance_t * vm, u_int irq);
 
-    /* Console  VTTY type and parameters */
-    int vtty_con1_type, vtty_con2_type;
-    int vtty_con1_tcp_port, vtty_con2_tcp_port;
-    vtty_serial_option_t vtty_con1_serial_option, vtty_con2_serial_option;
+    /* Console VTTY type and parameters */
+#define NVTTY 6
+    int vtty_type [NVTTY];
+    int vtty_tcp_port[NVTTY];
+    vtty_serial_option_t vtty_serial_option[NVTTY];
     /* Virtual TTY for Console and AUX ports */
-    vtty_t *vtty_con1, *vtty_con2;
+    vtty_t *vtty_con [NVTTY];
 
     /* Specific hardware data */
     void *hw_data;
@@ -104,7 +105,6 @@ struct vm_instance {
     virtual_breakpoint_t *breakpoint_head, *breakpoint_tail;
     int mipsy_debug_mode;
     int mipsy_break_nexti;
-
 };
 
 char *vm_get_type (vm_instance_t * vm);

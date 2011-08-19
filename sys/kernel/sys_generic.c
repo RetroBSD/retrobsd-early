@@ -170,6 +170,7 @@ ioctl()
 	u_int k_com;
 	register u_int size;
 	char data[IOCPARM_MASK+1];
+        caddr_t *pdata = (caddr_t*) data;
 
 	uap = (struct a *)u.u_arg;
 	if ((fp = getf(uap->fdes)) == NULL)
@@ -208,7 +209,7 @@ ioctl()
 			if (u.u_error)
 				return;
 		} else
-			*(caddr_t*) data = uap->cmarg;
+			*pdata = uap->cmarg;
 	} else if ((com & IOC_OUT) && size)
 		/*
 		 * Zero the buffer on the stack so the user
@@ -216,20 +217,20 @@ ioctl()
 		 */
 		bzero ((caddr_t) data, size);
 	else if (com & IOC_VOID)
-		*(caddr_t*) data = uap->cmarg;
+		*pdata = uap->cmarg;
 
 	switch (k_com) {
 	case FIONBIO:
-		u.u_error = fset (fp, FNONBLOCK, *(int *)data);
+		u.u_error = fset (fp, FNONBLOCK, *(int*) pdata);
 		return;
 	case FIOASYNC:
-		u.u_error = fset (fp, FASYNC, *(int *)data);
+		u.u_error = fset (fp, FASYNC, *(int*) pdata);
 		return;
 	case FIOSETOWN:
-		u.u_error = fsetown (fp, *(int *)data);
+		u.u_error = fsetown (fp, *(int*) pdata);
 		return;
 	case FIOGETOWN:
-		u.u_error = fgetown (fp, (int *)data);
+		u.u_error = fgetown (fp, (int*) pdata);
 		return;
 	}
 	u.u_error = (*Fops[fp->f_type]->fo_ioctl) (fp, k_com, data);

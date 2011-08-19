@@ -168,6 +168,7 @@ void vm_error (vm_instance_t * vm, char *format, ...)
 vm_instance_t *vm_create (const char *name, int machine_type)
 {
     vm_instance_t *vm;
+    int i;
 
     vm = malloc (sizeof (*vm));
     if (!vm) {
@@ -179,8 +180,9 @@ vm_instance_t *vm_create (const char *name, int machine_type)
     vm->type = machine_type;
     vm->status = VM_STATUS_HALTED;
     vm->jit_use = 0;
-    vm->vtty_con1_type = VTTY_TYPE_TERM;
-    vm->vtty_con2_type = VTTY_TYPE_NONE;
+    vm->vtty_type[0] = VTTY_TYPE_TERM;
+    for (i=1; i<NVTTY; i++)
+        vm->vtty_type[i] = VTTY_TYPE_NONE;
     //vm->timer_irq_check_itv = VM_TIMER_IRQ_CHECK_ITV;
     vm->log_file_enabled = TRUE;
 
@@ -312,23 +314,29 @@ So I just add 0x2000 to ram.
 /* Initialize VTTY */
 int vm_init_vtty (vm_instance_t * vm)
 {
-    /* Create Console and AUX ports */
-    vm->vtty_con1 = vtty_create (vm, "Console port",
-        vm->vtty_con1_type, vm->vtty_con1_tcp_port,
-        &vm->vtty_con1_serial_option);
+    int i;
 
-    vm->vtty_con2 = vtty_create (vm, "AUX port",
-        vm->vtty_con2_type, vm->vtty_con2_tcp_port,
-        &vm->vtty_con2_serial_option);
+    /* Create Console and AUX ports */
+    vm->vtty_con[0] = vtty_create (vm, "Console port",
+        vm->vtty_type[0], vm->vtty_tcp_port[0],
+        &vm->vtty_serial_option[0]);
+
+    for (i=1; i<NVTTY; i++)
+        vm->vtty_con[i] = vtty_create (vm, "UART port",
+            vm->vtty_type[i], vm->vtty_tcp_port[i],
+            &vm->vtty_serial_option[i]);
     return (0);
 }
 
 /* Delete VTTY */
 void vm_delete_vtty (vm_instance_t * vm)
 {
-    vtty_delete (vm->vtty_con1);
-    vtty_delete (vm->vtty_con2);
-    vm->vtty_con1 = vm->vtty_con2 = NULL;
+    int i;
+
+    for (i=0; i<NVTTY; i++) {
+        vtty_delete (vm->vtty_con[i]);
+        vm->vtty_con[i] = NULL;
+    }
 }
 
 /* Bind a device to a virtual machine */

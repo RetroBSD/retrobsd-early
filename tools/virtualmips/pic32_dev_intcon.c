@@ -117,6 +117,7 @@ void *dev_pic32_intcon_access (cpu_mips_t *cpu, struct vdevice *dev,
     case PIC32_IPC(9) & 0x1f0:
     case PIC32_IPC(10) & 0x1f0:
     case PIC32_IPC(11) & 0x1f0:
+    case PIC32_IPC(12) & 0x1f0:
         n = (offset - (PIC32_IPC(0) & 0x1f0)) >> 4;
         if (op_type == MTS_READ) {
             *data = pic32->ipc[n];
