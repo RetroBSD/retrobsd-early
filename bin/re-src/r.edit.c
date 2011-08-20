@@ -1,27 +1,22 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
  * Функции по манипулированию содержимым файлов для RED
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.edit.c,v 3.1 1986/04/20 23:40:53 alex Exp $
- *      $Log: r.edit.c,v $
- *      Revision 3.1  1986/04/20 23:40:53  alex
- *      *** empty log message ***
- *
- * Revision 1.5  86/04/13  21:57:54  alex
- *
+ * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
  */
-
 #include "r.defs.h"
 
-int charskh,charskl,charscol;   /* Положение символа ( для chars) */
 #define NBYMAX 150      /* Макс. размер байтов для fsdbytes, +1 */
-struct fsd *temp2fsd(),*delete(),*pick(),*blanklines(),*writemp(),*copyfsd();
+
+int charskh, charskl, charscol;   /* Положение символа (для chars) */
+
+struct fsd *temp2fsd(), *delete(), *pick(), *blanklines(), *writemp(), *copyfsd();
 
 /*
  * struct fsd *file2fsd(fname)
  * Создать цепочку описателей для файла fname
  */
 struct fsd *file2fsd(fname)
-int fname;
+    int fname;
 {
     charsin(fname,0,0);
     return temp2fsd(fname);
@@ -32,25 +27,21 @@ int fname;
  * работает с текущего места в файле chan
  */
 struct fsd *temp2fsd(chan)
-int chan;
+    int chan;
 {
-    register struct fsd *thisfsd, *lastfsd;
-    struct fsd *firstfsd;
-    register int nby;
+    register struct fsd *thisfsd = 0, *lastfsd = 0;
+    struct fsd *firstfsd = 0;
+    register int nby = 0;
     char *bpt;
     int c;
     char fby[NBYMAX+1];
-    int i,lct,nl,sh,sl,kh,kl;
-    firstfsd = thisfsd = lastfsd = 0;
+    int i, lct, nl = 0, sh, sl, kh, kl;
+
     /* основной цикл. c - очередной символ, но -1 означает
      * конец файла, а -2 - вход в цикл.
      */
     c = -2;
     sh = sl = 0;
-#ifdef lint
-    nby = 0;
-    nl = 0;
-#endif
     for (;;) {
         if ((c < 0) || (nby >= NBYMAX) || (nl == FSDMAXL)) {
             if (c != -2) {
@@ -97,19 +88,18 @@ int chan;
 /*
  * Настройка программы чтения из файла
  */
-#define ALIGBUF                 /* Читать по границе листа!! */
+//#define ALIGBUF                 /* Читать по границе листа!! */
 #define CHARBUFSZ 512           /* >= 512, если ALIGBUF */
 
-
-int chkl,chkh;  /* position of next read from charsfi */
-int charsfi,charsi,charsn;
+int chkl, chkh;  /* position of next read from charsfi */
+int charsfi, charsi, charsn;
 
 /*
  * charsin(file,h,l) - настроить программу чтения символов "char" на
  * файл "fi" с позиции (h,l) = (блок, сдвиг).
  */
-charsin(fi,h,l)
-int fi,h,l;
+charsin(fi, h, l)
+    int fi, h, l;
 {
     if (fi <= 0) {
         charsfi = fi;
@@ -162,22 +152,24 @@ int chars(flg)
     register int ko;
     char *si, *so;
     static char charsbuf[CHARBUFSZ];
-    if (charsfi <= 0)
-    {
-        if (lcline == 0) excline(1);
+
+    if (charsfi <= 0) {
+        if (lcline == 0)
+            excline(1);
         ncline = 1;
         cline[0] = NEWLINE;
         return (NEWLINE);
     }
-    so=cline;
-    ko=(charsi>=charsn? 1 : 2 ) ;
-    do
-        {
-        if (ko==1)
+    if (! cline)
+        excline(0);
+    so = cline;
+    ko = (charsi >= charsn) ? 1 : 2;
+    do {
+        if (ko == 1)
 #ifndef ALIGBUF
         {
-            charsn=read(charsfi, charsbuf, CHARBUFSZ);
-            charsi=0;
+            charsn = read(charsfi, charsbuf, CHARBUFSZ);
+            charsi = 0;
 #else
         {
             charsi -= charsn;
@@ -189,49 +181,49 @@ int chars(flg)
             }
             chkl += charsn;
         }
-        if (charsn<=charsi) {
-            ko=1;
+        if (charsn <= charsi) {
+            ko = 1;
             break;
-        }/* read buf empty */
-        si=charsbuf+charsi;
-        se=charsbuf+charsn;
-        if ( !flg)
-        {
-            c=si;
-            while ( *c++ !=NEWLINE && c != se);
-            charsi=c-charsbuf;
-            ko=(*(c-1)==NEWLINE ? 0 : 1 );
+        } /* read buf empty */
+
+        si = charsbuf + charsi;
+        se = charsbuf + charsn;
+        if (! flg) {
+            c = si;
+            while (*c++ != NEWLINE && c != se);
+            charsi = c - charsbuf;
+            ko = (*(c-1) == NEWLINE) ? 0 : 1;
             continue;
         }
-        while (!lcline||(ko=exinss(&si, se, &so, &ncline, lcline))==2)
-        {
-            ncline=so-cline;
+        while (! lcline || (ko = exinss(&si, se, &so, &ncline, lcline)) == 2) {
+            ncline = so - cline;
             excline(0);
-            so=cline+ncline;
+            so = cline + ncline;
         }
-        charsi=si-charsbuf;
-    }
-    while (ko);
+        charsi = si - charsbuf;
+    } while (ko);
+
     /* ko=0 - NEWLINE, 1 - end of file */
-    chkl=normhl(chkl,&chkh);
-    charskh  = chkh;
+    chkl = normhl(chkl, &chkh);
+    charskh = chkh;
     charskl = chkl + charsi - charsn;
-    charskl=normhl(charskl, &charskh);
-    if (ko==1)
+    charskl = normhl(charskl, &charskh);
+    if (ko == 1)
         charsfi = 0;
+
     /* Убрать хвостовые пробелы */
-    if (flg)
-    {
-        *so=' ';
-        c= so;
-        while (*c==' ' && c--!=cline);
-        *++c=NEWLINE;
-        ncline=(c-cline)+1;
+    if (flg && so) {
+        *so = ' ';
+        c = so;
+        while (*c == ' ' && c-- != cline);
+        *++c = NEWLINE;
+        ncline = (c - cline) + 1;
     }
-    return( ko? -1 : NEWLINE);
+    return ko ? -1 : NEWLINE;
 }
 
-static char *seit="\\\\\140'{(})|!~^";
+static char *seit = "\\\\\140'{(})|!~^";
+
 /*
  * exinss(&si,&se,&so,&no,&mo) -
  * Преобразование строки из внешней во внутреннюю форму.
@@ -386,14 +378,19 @@ int n;
 {
     register int j;
     register char *tmp;
+fprintf (stderr, "excline(%d)", n);
     j = lcline + icline;
-    if (j < n) j = n;
+    if (j < n)
+        j = n;
     tmp = salloc(j+1);
     icline += icline >> 1;
-    while (--lcline >= 0) tmp[lcline] = cline[lcline];
+    while (--lcline >= 0)
+        tmp[lcline] = cline[lcline];
     lcline = j;
-    if (cline != 0) free(cline);
+    if (cline != 0)
+        free(cline);
     cline = tmp;
+fprintf (stderr, " returned %p\n", cline);
 }
 
 /*
@@ -427,26 +424,27 @@ struct workspace *wksp;
 int lno;
 {
     register char *cp;
-    int h,i;
-    register int j,l;
+    int h, i;
+    register int j, l;
+
     /* 1. Получим fsd, в котором "сидит" данная строка */
-    if (wposit(wksp,lno)) return (1);
+    if (wposit(wksp,lno))
+        return (1);
+
     /* Теперь вычислим смещение */
     h = wksp->curfsd->seekhigh;
     l = wksp->curfsd->seeklow;
     i = lno - wksp->curflno;
     cp = &(wksp->curfsd->fsdbytes);
-    while (i-- != 0)
-    {
-        if ((j = *(cp++)) &0200)
-        {
+    while (i-- != 0) {
+        if ((j = *(cp++)) & 0200) {
             l += 128*(j&0177);
             j = *(cp++);
         }
         l += j;
     }
-    l=normhl(l, &h);
-    charsin(wksp->curfsd->fsdfile,h,l);
+    l = normhl(l, &h);
+    charsin(wksp->curfsd->fsdfile, h, l);
     return (0);
 }
 
@@ -460,20 +458,19 @@ struct workspace *wk;
 int lno;
 {
     register struct workspace *wksp;
+
     wksp = wk;
-    if (lno < 0) fatal("Wposit neg arg");
-    while (lno >= (wksp->curflno + wksp->curfsd->fsdnlines))
-    {
-        if (wksp->curfsd->fsdfile == 0)
-        {
+    if (lno < 0)
+        fatal("Wposit neg arg");
+    while (lno >= (wksp->curflno + wksp->curfsd->fsdnlines)) {
+        if (wksp->curfsd->fsdfile == 0) {
             wksp->curlno = wksp->curflno;
             return (1);
         }
         wksp->curflno += wksp->curfsd->fsdnlines;
         wksp->curfsd = wksp->curfsd->fwdptr;
     }
-    while (lno < wksp->curflno)
-    {
+    while (lno < wksp->curflno) {
         if ((wksp->curfsd = wksp->curfsd->backptr) == 0)
             fatal("Wposit 0 backptr");
         wksp->curflno -= wksp->curfsd->fsdnlines;
@@ -490,15 +487,14 @@ int lno;
  */
 switchfile()
 {
-    if (curport->altwksp->wfile == 0)
-    {
-        if (editfile(deffile,0,0,0,1) <= 0)
+    if (curport->altwksp->wfile == 0) {
+        if (editfile(deffile, 0, 0, 0, 1) <= 0)
             error("Default file gone: notify sys admin.");
         return;
     }
     switchwksp();
-    putup(0,curport->btext);
-    poscursor(curwksp->ccol,curwksp->crow);
+    putup(0, curport->btext);
+    poscursor(curwksp->ccol, curwksp->crow);
 }
 
 /*
@@ -509,6 +505,7 @@ switchfile()
 switchwksp()
 {
     register struct workspace *tempwksp;
+
     curwksp->ccol = cursorcol;
     curwksp->crow = cursorline;
     tempwksp = curwksp;
@@ -524,11 +521,13 @@ switchwksp()
 openlines(from,number)
 int from, number;
 {
-    if (from >= nlines[curfile]) return;
+    if (from >= nlines[curfile])
+        return;
     nlines[curfile] += number;
-    insert(curwksp,blanklines(number),from);
-    redisplay((struct workspace *)NULL,curfile,from,from+number-1,number);
-    poscursor(cursorcol,from - curwksp->ulhclno);
+    insert(curwksp, blanklines(number), from);
+    redisplay((struct workspace *)NULL, curfile,
+        from, from + number - 1, number);
+    poscursor(cursorcol, from - curwksp->ulhclno);
 }
 
 /*
@@ -538,11 +537,12 @@ int from, number;
 openspaces(line,col,number, nl)
 int line, col, number, nl;
 {
-    register int i,j;
-    for (i=line;i<line+nl;i++)
+    register int i, j;
+
+    for (i=line; i<line+nl; i++)
     {
         getlin(i);
-        putbks(col,number);
+        putbks(col, number);
         fcline = 1;
         putline(0);
         if ((j = i - curwksp->ulhclno) <= curport->btext)
@@ -560,7 +560,9 @@ int line,col;
 {
     register int nsave;
     register char csave;
-    if (line >= nlines[curfile]) return;
+
+    if (line >= nlines[curfile])
+        return;
     nlines[curfile]++;
     getlin(line);
     if (col >= ncline - 1) openlines(line+1,1);
@@ -1443,8 +1445,6 @@ checkfsd()
         nl += f->fsdnlines;
         f = f->fwdptr;
     }
-    allock();
+    /*allock();*/
 }
 #endif
-
-/*   Руднев А.П. Москва, ИАЭ им. Курчатова, 1984 */

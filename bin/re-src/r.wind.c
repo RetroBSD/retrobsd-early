@@ -1,15 +1,10 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *      r.wind.c - работа с окнами
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.wind.c,v 3.1 1986/04/20 23:43:41 alex Exp $
- *      $Log: r.wind.c,v $
- *      Revision 3.1  1986/04/20 23:43:41  alex
- *      *** empty log message ***
- *
- *
- *
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * r.wind.c - работа с окнами
+ * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.wind.c,v 3.1 1986/04/20 23:43:41 alex Exp $
+ * $Log: r.wind.c,v $
+ * Revision 3.1  1986/04/20 23:43:41  alex
  */
-
 #include "r.defs.h"
 
 /*

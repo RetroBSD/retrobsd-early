@@ -2,6 +2,7 @@
  * Main definitions.
  */
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -292,6 +293,8 @@ extern char *curspos, *cvtout[];
 char *(*agoto)();               /* for termcap definitions */
 
 char *append(), *salloc();
+char *tgoto();
+unsigned nbytes;
 char *s2i();
 struct fsd *file2fsd();
 

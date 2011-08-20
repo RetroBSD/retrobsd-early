@@ -6,19 +6,18 @@
 #include "r.defs.h"
 #include <sgtty.h>
 
-#ifdef TIOCGETP
-struct sgttyb templ;
-#else
+#ifdef TERMIOS
 #include <termios.h>
-#endif
 
-#ifdef TIOCGETC
-struct tchars tchars0;
-#endif
-
-#ifdef TCGETA
+#define NCC NCCS
 struct termios tioparam;
-#endif
+
+#else /* TERMIOS */
+
+struct sgttyb templ;
+struct tchars tchars0;
+
+#endif /* TERMIOS */
 
 /*
  * ttstartup()
@@ -26,6 +25,37 @@ struct termios tioparam;
  */
 ttstartup()
 {
+#ifdef TERMIOS
+    {
+    struct termios param;
+    register int i;
+
+    tcgetattr(0, &tioparam);
+    param = tioparam;
+
+    for (i=0; i<NCC; i++)
+        param.c_cc[i] = 0377;
+
+    if (param.c_cc[VINTR] == 0177)
+        param.c_cc[VINTR] = 3;
+    param.c_cc[VMIN ] = 1;
+    param.c_cc[VTIME] = 2;
+
+    /* input modes */
+    param.c_iflag &= ~ICRNL;
+
+    /* output modes */
+    param.c_oflag &= ~OPOST;
+
+    /* control modes */
+    param.c_cflag |= CREAD;
+
+    /* local modes */
+    param.c_lflag = ECHOK | ISIG;
+
+    tcsetattr(0, TCSADRAIN, &param);
+    }
+#else /* TERMIOS */
 #ifdef TIOCGETC
     struct tchars tcharsw;
 
@@ -38,7 +68,6 @@ ttstartup()
     tcharsw.t_eofc = tcharsw.t_quitc = -1;
     ioctl(0, TIOCSETC, &tcharsw);
 #endif
-
 #ifdef TIOCGETP
     {
     struct sgttyb templw;
@@ -52,39 +81,7 @@ ttstartup()
     ioctl(0, TIOCSETP, &templw);
     }
 #endif
-
-#ifdef TCGETA
-    {
-    struct termios param;
-    register int i;
-
-    tcgetattr(0, &tioparam);
-    param = tioparam;
-
-    for (i=0; i<NCC; i++)
-        if (i != VINTR)
-            param.c_cc[i] = 0377;
-
-    if (param.c_cc[VINTR] == 0177)
-        param.c_cc[VINTR] = 3;
-    param.c_cc[VMIN ] = 1;
-    param.c_cc[VTIME] = 2;
-
-    /* input modes */
-    //param.c_iflag = XXX;
-
-    /* output modes */
-    //param.c_oflag &= ~OPOST;
-
-    /* control modes */
-    param.c_cflag |= CREAD;
-
-    /* local modes */
-    param.c_lflag = ECHOK | ISIG;
-
-    tcsetattr(0, TCSADRAIN, &param);
-    }
-#endif
+#endif /* TERMIOS */
 }
 
 /*
@@ -93,13 +90,12 @@ ttstartup()
  */
 ttcleanup()
 {
-#ifdef TIOCGETP
+#ifdef TERMIOS
+    tcsetattr(0, TCSADRAIN, &tioparam);
+#else /* TERMIOS */
     ioctl(0, TIOCSETP, &templ);
-#endif
-
-#ifdef TIOCGETC
     ioctl(0, TIOCSETC, &tchars0);
-#endif
+#endif /* TERMIOS */
 }
 
 /*
@@ -215,18 +211,22 @@ char *rmacl();
 #define LBUFWSY 5
 
 static char *sy0, knockdown=0, bufwsy[LBUFWSY];
-extern char escch1, in0tab[];
+extern char in0tab[];
 
 int
 read1()
 {
     char sy1;
-    int i,cntf=0;
+    int i, cntf=0;
     register int *lr1 = &lread1;
 #define lread1 (*lr1)   /* Для ускорения */
+
     dumpcbuf();
+
     /* Если остался неиспользованным символ */
-    if (lread1 != -1) goto retnl;
+    if (lread1 != -1)
+        goto retnl;
+
     /* Если еще не кончилось макро-расширение */
 rmac:
     if (symac) {
@@ -243,8 +243,8 @@ rmac:
      * =====================================
      */
     /* Было преобразование и символы не кончились */
-    if (sy0!=0) {
-        lread1= *sy0++;
+    if (sy0 != 0) {
+        lread1 = *sy0++;
         if (*sy0 == 0)
             sy0 = 0;
         goto retn;
@@ -268,30 +268,30 @@ new:
         lread1 += 0100;
         goto readycchr;
     }
-    /* Если символ - спец. признак? */
-    if (lread1 == escch1) {
+    /* Если символ - ^X? */
+    if (lread1 == '\30') {
         if (read(inputfile, &sy1, 1) != 1)
             goto readquit;
         switch (sy1) {
-        case '\177':
+        case '\3':          /* ^X ^C */
             lread1 = CCQUIT;
             goto readycchr;
-        case '+':;
-        case ';':
+        case '+':           /* ^X + */
+        case ';':           /* ^X ; */
             lread1 = CCPLLINE;
             goto readycchr;
-        case '-':;
-        case '=':
+        case '-':           /* ^X - */
+        case '=':           /* ^X = */
             lread1 = CCMILINE;
             goto readycchr;
-        case '.':;
-        case '>':
+        case '.':           /* ^X . */
+        case '>':           /* ^X > */
             lread1 = CCGOTO;
             goto readycchr;
-        case ' ':
+        case ' ':           /* ^X Space */
             lread1 = CCENTER;
             goto readycchr;
-        case '$':
+        case '$':           /* ^X $ */
 rmacname:
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
@@ -308,11 +308,11 @@ rmacname:
     }
     /* Веден управляющий символ - ищем команду в таблице */
     {
-        int *i1,*i2, ts, k;
+        int *i1, *i2, ts, k;
         i1 = i2 = 0;
         ts = 0;
         sy1 = lread1;
-        while ((k = findt(&i1,&i2,sy1,ts++)) == CONTF) {
+        while ((k = findt(&i1, &i2, sy1, ts++)) == CONTF) {
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
         }
@@ -396,10 +396,10 @@ readfc()
 }
 
 /*
- * intrup() -
+ * interrupt() -
  *       опрос, не было ли прерывания.
  */
-intrup()
+interrupt()
 {
     char sy1;
     if (inputfile) {

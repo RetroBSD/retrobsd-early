@@ -1,12 +1,9 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *      файл r.init.h - инициализация переменных.
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.init.c,v 3.1 1986/04/20 23:42:03 alex Exp $
- *      $Log: r.init.c,v $
- *      Revision 3.1  1986/04/20 23:42:03  alex
- *      *** empty log message ***
- *
- * Revision 1.4  86/04/13  22:03:40  alex
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * файл r.init.h - инициализация переменных.
+ * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.init.c,v 3.1 1986/04/20 23:42:03 alex Exp $
+ * $Log: r.init.c,v $
+ * Revision 3.1  1986/04/20 23:42:03  alex
  */
 #include "r.defs.h"
 

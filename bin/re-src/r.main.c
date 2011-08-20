@@ -3,7 +3,7 @@
  *  разбор параметров
  */
 
-#define VERS "** Red (kiae v.3/EXPR 04.86)"
+#define VERS "** RE Version 1.0/RetroBSD **"
 
 /*
  * Аргументы:
@@ -25,7 +25,7 @@ char *ttyname();
 int oldttmode;
 
 char *ttynm, *ttytmp, *rfile;
-struct savebuf pb,db;
+struct savebuf pb, db;
 
 /*
  * sig() -
@@ -107,22 +107,23 @@ char *args[];
 
     getstate(ichar);
     if (nargs > 1 && *args[1] != '\0') {
-        i =  defplline+1;
+        i = defplline + 1;
         if ((nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
             i = defplline+1;
-        poscursor(curwksp->ccol,curwksp->crow);
-        writefile(CCENTER,args[1],CCSETFILE);
-        if (editfile(args[1],i-defplline-1,0,1,1) <= 0) {
-            putup(0,curport->btext);
-            poscursor (curwksp->ccol,curwksp->crow);
+        poscursor(curwksp->ccol, curwksp->crow);
+        writefile(CCENTER, args[1], CCSETFILE);
+        if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
+            putup(0, curport->btext);
+            poscursor(curwksp->ccol, curwksp->crow);
         } else {
-            if (nargs>2 && i>1) writefile(CCENTER,args[2],CCGOTO);
+            if (nargs > 2 && i > 1)
+                writefile(CCENTER, args[2], CCGOTO);
         }
     } else {
-        putup(0,curport->btext);
-        poscursor (curwksp->ccol,curwksp->crow);
+        putup(0, curport->btext);
+        poscursor (curwksp->ccol, curwksp->crow);
     }
-    telluser(VERS,0);
+    telluser(VERS, 0);
     mainloop();
     putcha(COFIN);
     dumpcbuf();
@@ -429,8 +430,9 @@ char *s;
             printf(" first line %d, ulhc (%d,%d)\n",w->curflno,w->ulhccno,
             w->ulhclno);
         }
-        ptfree();
-        for (i=12; i; i--) signal(i,0);
+        /*ptfree();*/
+        for (i=12; i; i--)
+            signal(i, 0);
     }
 #endif
     close(ttyfile);

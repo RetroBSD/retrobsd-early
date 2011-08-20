@@ -1,15 +1,8 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *      r.gettc.c - вытаскивание описания терминала из termcap
- *               и работа с таблицей команд.
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.gettc.c, 3.1 1986/04/20 23:41:41 alex Exp $
- *      $Log: r.gettc.c, $
- *      Revision 3.1  1986/04/20 23:41:41  alex
- *      *** empty log message ***
- *
- * Revision 1.4  86/04/13  21:56:14  alex
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Вытаскивание описания терминала из termcap
+ * и работа с таблицей команд.
  */
-
 extern char *UP, *BC;
 char **toup = &UP;        /* Так сложно из-за совпадения имен */
 
@@ -43,34 +36,33 @@ char in0tab[BT] = { /* meanings of the <ctrl>A - <ctrl>-H */
  * Таблица кодов клавиш терминала и их комбинаций
  * Сюда же записываются коды при переопределении
  */
-char escch1 = '\012';
-
 struct ex_int inctab[] = {
-    BT,         "\002",
+    BT,         "\002",     /* ^B */
     BT,         "k.",
     LT,         "kl",
-    TB,         "\011",
+    TB,         "\011",     /* ^I */
     HO,         "kh",
-    RN,         "\015",
+    RN,         "\015",     /* ^M */
     UP,         "ku",
     DN,         "kd",
     RT,         "kr",
     LT,         "kl",
-    CCDELCH,    "kD",       CCBACKSPACE,"\10",
+    CCDELCH,    "kD",
+    CCBACKSPACE,"\10",      /* ^H */
     CCCHPORT,   "k2k0",
-    CCCLOSE,    "DL",       CCCLOSE,    "k2k8",
-    CCCTRLQUOTE,"k0",
+    CCCLOSE,    "k2k8",
+    CCCTRLQUOTE,"\20",      /* ^P */
     CCDELCH,    "k6",
     CCDOCMD,    "k2k.",
-    CCENTER,    "ER",       CCENTER,    "k1",
+    CCENTER,    "k1",
     CCGOTO,     "k4",
     CCINSMODE,  "kI",       CCINSMODE,  "k5",
     CCLPORT,    "k2kl",
     CCMAKEPORT, "k2k4",
     CCMILINE,   "k2ku",
-    CCMIPAGE,   "k2k7",
+    CCMIPAGE,   "\33k7",
     CCMISRCH,   "k2k3",
-    CCOPEN,     "IL",       CCOPEN,     "k8",
+    CCOPEN,     "k8",
     CCPICK,     "k9",
     CCPLLINE,   "k2kd",
     CCPLPAGE,   "k7",
@@ -82,19 +74,13 @@ struct ex_int inctab[] = {
     CCTABS,     "k2k5",
     CCPLPAGE,   "kN",
     CCMIPAGE,   "kP",
-    CCQUIT,     "\033\033",
+    CCQUIT,     "k0",
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0,
 };
 
 /* Декодирование termcap */
 int nfinc = 8;
-char *tgetstr(), *tgoto();
-char *salloc();
-static char *stc;
-static int ltc;
-
-#define LTCM 128
 
 /*
  * char *gettcs(tc) -
@@ -105,7 +91,7 @@ static int ltc;
 char *gettcs(tc)
 char *tc;
 {
-    char name[3], buftc0[LTCM], *buftc = buftc0;
+    char name[3], buftc0[128], *buftc = buftc0;
     register char c1, *c;
     int i, optional;
 
@@ -116,6 +102,9 @@ char *tc;
         if (*c == '?') {
             optional = 1;
             c++;
+        } else if (*c < ' ') {
+            *buftc++ = *c++;
+            continue;
         } else
             optional = 0;
         name[0] = *c++;
@@ -130,18 +119,7 @@ char *tc;
         buftc--;
     }
     *buftc++ = 0;
-    if ((i = buftc - buftc0)>ltc) {
-        if (i > LTCM)
-            return(0);
-        stc = salloc(LTCM);
-        ltc = LTCM;
-    }
-    c = buftc0;
-    buftc = stc;
-    do {
-        *stc++ = *c;
-        ltc--;
-    } while (*c++);
+    buftc = strdup (buftc0);
 #ifdef TEST
     printf("%s=", tc);
     ptss(buftc);
@@ -173,7 +151,9 @@ tcread()
         cvtout[COLT] = "\010";
     if (curspos = gettcs("cm"))
         agoto = tgoto;
+#if 0
     eolflag = ! tgetflag("am");
+#endif
     if (! cvtout[COCURS])
         cvtout[COCURS] = "@";
     if (LINEL <= 60 || NLINES < 8)

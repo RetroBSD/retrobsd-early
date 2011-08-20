@@ -1,23 +1,15 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *      файл r.cmd.c - основной цикл редактора RED.
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.cmd.c,v 3.1 1986/04/20 23:40:29 alex Exp $
- *      $Log: r.cmd.c,v $
- *      Revision 3.1  1986/04/20 23:40:29  alex
- *      *** empty log message ***
- *
- * Revision 1.4  86/04/13  21:59:31  alex
+ * едактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Основной цикл редактора RED.
  */
-
-
 #include "r.defs.h"
 
-char use0flg; /* используется для блокировки преобразования первого имени файла при "lcase" и "red - */
-int clrsw;  /* 1 - чистить окно параметров */
-int csrsw;  /* 1 - показать текущую позицию меткой  */
-int imodesw;/* 1 - режим вставки  */
-int oldccol;           /* используется для отметки положения курсора */
-int oldcline;          /* - - / / - - */
+char use0flg;   /* используется для блокировки преобразования первого имени файла при "lcase" и "red - */
+int clrsw;      /* 1 - чистить окно параметров */
+int csrsw;      /* 1 - показать текущую позицию меткой  */
+int imodesw;    /* 1 - режим вставки  */
+int oldccol;    /* используется для отметки положения курсора */
+int oldcline;   /* - - / / - - */
 
 /*
  * mainloop() -
@@ -41,12 +33,15 @@ mainloop()
     /* === */
     extern int templ[4];
     struct viewport *oport;
+
     /*
      * Обработка одного символа или команды
      * ====================================
      */
-    if (cursorline== 0) oldcline = 1;
-    if (cursorcol == 0) oldccol  = 1;
+    if (cursorline == 0)
+        oldcline = 1;
+    if (cursorcol == 0)
+        oldccol  = 1;
 #ifndef lint
     goto funcdone;
 #endif
@@ -61,31 +56,36 @@ mainloop()
         /*
          * Редактирование в строке
          */
-        if ((! CTRLCHAR) || lread1 == CCCTRLQUOTE || lread1 == CCBACKSPACE || lread1 == CCDELCH)
+        if ((! CTRLCHAR) || lread1 == CCCTRLQUOTE ||
+            lread1 == CCBACKSPACE || lread1 == CCDELCH)
         {
             /* Отмена в 1 колонке */
-            if (lread1 == CCBACKSPACE  &&  cursorcol == 0)
+            if (lread1 == CCBACKSPACE &&  cursorcol == 0)
             {
                 lread1 = -1;
                 goto contin;
             }
-            if (openwrite[curfile] == 0) goto nowriterr;
+            if (openwrite[curfile] == 0)
+                goto nowriterr;
+
             /* Строки у нас нет? Дай! */
             if (clineno != (i = curwksp->ulhclno+cursorline))
                 getlin(i);
+
             /* исключение символа */
-            if (lread1==CCDELCH || (imodesw && lread1==CCBACKSPACE) )
+            if (lread1==CCDELCH || (imodesw && lread1==CCBACKSPACE))
             {
                 thiscol = cursorcol + curwksp->ulhccno;
                 thisrow = cursorline;
                 if (lread1 == CCBACKSPACE) thiscol--;
-                if (ncline < thiscol + 2)
-                {
-                    if (lread1 == CCBACKSPACE) movecursor(LT);
+                if (ncline < thiscol + 2) {
+                    if (lread1 == CCBACKSPACE)
+                        movecursor(LT);
                     lread1 = -1;
                     goto contin;
                 }
-                for (i=thiscol;i<ncline-2;i++) cline[i] = cline[i+1];
+                for (i=thiscol;i<ncline-2;i++)
+                    cline[i] = cline[i+1];
                 ncline--;
                 thiscol -= curwksp->ulhccno;
                 putup(-(1+thiscol),cursorline);
@@ -320,7 +320,8 @@ yesarg:
         case CCPLSRCH:
             if (paramtype <= 0)  goto notstrerr;
             if (paramv == 0) goto noargerr;
-            if (searchkey) free(searchkey);
+            if (searchkey)
+                free(searchkey);
             searchkey = paramv;
             paraml = 0;
             search(lread1==CCPLSRCH?1:-1);
@@ -641,7 +642,7 @@ int delta;
         at += delta;
         while (at < cline || at >  cline + ncline - lkey) {
             /* Прервать, если было прерывание с терминала */
-            if ((i=intrup()) || (ln += delta) < 0 ||
+            if ((i=interrupt()) || (ln += delta) < 0 ||
                 (wposit(curwksp,ln) && delta == 1))
             {
                 putup(lin,lin);

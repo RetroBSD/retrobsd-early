@@ -1,24 +1,17 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.mac.c,v 3.1 1986/04/20 23:42:10 alex Exp $
- *      $Log: r.mac.c,v $
- *      Revision 3.1  1986/04/20 23:42:10  alex
- *      *** empty log message ***
- *
- * Revision 1.4  86/04/13  22:01:27  alex
- */
-
-
-/* Файл содержит программы, реализующие новые возможности
- *  редактора "RED", связанные с макропеременными
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Файл содержит программы, реализующие новые возможности
+ * редактора "RED", связанные с макропеременными
  *
  * Типы макросов
- TAG - точка в файле
- BUF - буфер вставки
- MAC - макро=вставка
-*/
-
+ * TAG - точка в файле
+ * BUF - буфер вставки
+ * MAC - макро=вставка
+ *
+ * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.mac.c,v 3.1 1986/04/20 23:42:10 alex Exp $
+ * $Log: r.mac.c,v $
+ * Revision 3.1  1986/04/20 23:42:10  alex
+ */
 #include "r.defs.h"
 
 #define MTAG 1
@@ -56,7 +49,8 @@ int typ,l;
     i= cname -'a';
     if(l) {
         if(mtaba[i]) {
-            if (mtabt[i] == MMAC) free(mtaba[i]->mstring);
+            if (mtabt[i] == MMAC)
+                free(mtaba[i]->mstring);
             free(mtaba[i]);
             telluser("macro redefined",0);
         }

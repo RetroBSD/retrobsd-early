@@ -1,11 +1,14 @@
 CFLAGS          = -O -DDEBUG -g
 
+# For Linux of Mac OS X
+CFLAGS          += -DTERMIOS
+
 all:            re
 
 # Вместо r.termc.o можно использовать и -ltermcap
 
 OBJ             = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o r.init.o \
-                  r.mac.o r.main.o r.tele.o r.termc.o r.ttyio.o r.wind.o r.mall.o
+                  r.mac.o r.main.o r.tele.o r.termc.o r.ttyio.o r.wind.o
 
 re:             $(OBJ)
 		cc $(OBJ) -o $@

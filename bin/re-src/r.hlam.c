@@ -1,13 +1,11 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
  *
- * r.hlam.c Разные программы / всякий хлам
+ * Разные программы / всякий хлам
  *
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.hlam.c,v 3.1 1986/04/20 23:41:51 alex Exp $
- *      $Log: r.hlam.c,v $
- *      Revision 3.1  1986/04/20 23:41:51  alex
- *      *** empty log message ***
- *
+ * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.hlam.c,v 3.1 1986/04/20 23:41:51 alex Exp $
+ * $Log: r.hlam.c,v $
+ * Revision 3.1  1986/04/20 23:41:51  alex
  */
 #include "r.defs.h"
 #include <sys/types.h>
@@ -21,9 +19,12 @@ int n;
 {
     register char *c, *i;
 
-    if(!(c=malloc(n))) fatal(NULL);
+    c = malloc(n);
+    if (! c)
+        fatal(NULL);
     i = c + n;
-    while (i != c) *--i = 0;
+    while (i != c)
+        *--i = 0;
     return (c);
 }
 

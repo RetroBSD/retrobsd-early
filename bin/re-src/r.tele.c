@@ -41,7 +41,7 @@ int lo, lf;
             lf = -1;
             i = 0;
         } else {
-            if (l0 != lf && intrup())
+            if (l0 != lf && interrupt())
                 return;
             i = wseek(curwksp,curwksp->ulhclno + l0);
             if (i && lmc != 0)
@@ -99,17 +99,15 @@ int lo, lf;
             curport->lastcol[l0] = cursorcol;
         /* Хвост строки заполняем пробелами */
         k = (j = curport->lastcol[l0]) - i;
-        if (k > 0)
-        {
+        if (k > 0) {
             putblanks(k);
         }
         fixcurs();
-        if (rmargflg && rmargflg != curport->rmchars[l0])
-        {
+        if (rmargflg && rmargflg != curport->rmchars[l0]) {
             poscursor(curport->rmarg - curport->ltext, l0);
             putch(rmargflg,0);
-        }
-        else movecursor(0);
+        } else
+            movecursor(0);
         curport->rmchars[l0] = rmargflg;
         curport->lastcol[l0] = (k > 0 ? i : j);
         ++l0;
@@ -246,23 +244,25 @@ int arg;
  *      если установлен flag=1, то учесть его
  *      в размерах строки
  */
-putch(j,flg)
+putch(j, flg)
 int flg;
 char j;
 {
     if (flg && lread1 != ' ')
     {
-        if ((curport->firstcol)[cursorline] > cursorcol)
-            (curport->firstcol)[cursorline] = cursorcol;
-        if ((curport->lastcol)[cursorline] <= cursorcol)
-            (curport->lastcol)[cursorline] = cursorcol+1;
+        if (curport->firstcol[cursorline] > cursorcol)
+            curport->firstcol[cursorline] = cursorcol;
+        if (curport->lastcol[cursorline] <= cursorcol)
+            curport->lastcol[cursorline] = cursorcol + 1;
     }
     ++cursorcol;
-    if (fixcurs() == 0) putcha(j);
-    if (cursorcol <= 0) poscursor(curport->ledit,
-    cursorline < curport->tedit ? curport->tedit :
-    cursorline > curport->bedit ? curport->tedit :
-    cursorline);
+    if (fixcurs() == 0)
+        putcha(j);
+    if (cursorcol <= 0)
+        poscursor(curport->ledit,
+            cursorline < curport->tedit ? curport->tedit :
+            cursorline > curport->bedit ? curport->tedit :
+            cursorline);
     movecursor(0);
 }
 
@@ -277,25 +277,29 @@ char j;
  * 4) Если cursorcol <= 0, спозиционировать курсор. fixcurs возвращает 1,
  *    если курсор переместился на следующую строку.
  */
-
 fixcurs()
 {
-    if (eolflag && curport->ltext+cursorcol>=LINEL)    /* for VT-52 */
-    {
-        cursorcol=LINEL-curport->ltext;
-        return 0;
-    }
     if (curport->ltext + cursorcol >= LINEL) {
+#if 0
+        if (eolflag) {   /* for VT-52 */
+            cursorcol = LINEL - curport->ltext;
+            return 0;
+        }
         cursorcol = - curport->ltext;
+#endif
+        cursorcol = - curport->ltext - 1;
+#if 1
+        return 0;
+#else
         if (curport->ttext + ++cursorline >= NLINES) {
             cursorline = - curport->ttext;
             putcha(COHO);
             return (1);
         }
+#endif
     }
     return (0);
 }
-
 
 /*
  *  param() - Запрос параметра
@@ -319,7 +323,8 @@ int macro;
     int c;
     register int i,pn;
     struct viewport *w;
-    if (paraml != 0 && paramv != 0) free(paramv);
+    if (paraml != 0 && paramv != 0)
+        free(paramv);
     paramc1 = paramc0 = cursorcol;
     paramr1 = paramr0 = cursorline;
     putch(COCURS,1);
@@ -387,7 +392,8 @@ loop:
             c1 = paramv;
             c2 = cp;
             for (i=0; i<paraml; ++i) *c1++ = *c2++;
-            if (paraml) free(cp);
+            if (paraml)
+                free(cp);
             paraml += LPARAM;
         }
         /* Конец ввода параметра */
