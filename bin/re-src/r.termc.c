@@ -220,10 +220,9 @@ char    *BC;
  *
  * all other characters are ``self-inserting''.
  */
-char *
-tgoto(CM, destcol, destline)
-char *CM;
-int destcol, destline;
+char *tgoto(CM, destcol, destline)
+    char *CM;
+    int destcol, destline;
 {
     static char result[16];
     static char added[10];

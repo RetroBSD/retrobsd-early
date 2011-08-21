@@ -8,105 +8,115 @@
 #include "r.defs.h"
 
 /*
- *   movew(nl) -
- *    сдвинуть текущее окно на nl строк вниз (+) или вверх
+ * Move a current window by nl rows down.
  */
-movew(nl)
-int nl;
+void movew(nl)
+    int nl;
 {
-    register int cc,cl;
-    if ((curwksp->ulhclno += nl) < 0) curwksp->ulhclno = 0;
+    register int cc, cl;
+
+    curwksp->ulhclno += nl;
+    if (curwksp->ulhclno < 0)
+        curwksp->ulhclno = 0;
     cc = cursorcol;
     cl = cursorline - nl;
-    putup(0,curport->btext);
-    if (cl < 0 || cl > curport->btext)
-    {
+    putup(0, curport->btext);
+    if (cl < 0 || cl > curport->btext) {
         cl = defplline;
         cc = 0;
     }
-    poscursor(cc,cl);
+    poscursor(cc, cl);
 }
 
 /*
- * movep(nc) -
- *  сдвинуть окно на nc строк вправо
+ * Move a window by nc columns to right.
  */
-movep(nc)
-int nc;
+void movep(nc)
+    int nc;
 {
-    register int cl,cc;
+    register int cl, cc;
+
     cl = cursorline;
     cc = cursorcol;
-    if ((curwksp->ulhccno + nc) < 0) nc = - curwksp->ulhccno;
+    if ((curwksp->ulhccno + nc) < 0)
+        nc = - curwksp->ulhccno;
     curwksp->ulhccno += nc;
-    putup(0,curport->btext);
-    if ((cc -= nc) < curport->ledit) cc = curport->ledit;
-    else if (cc > curport->redit) cc = curport->redit;
-    poscursor(cc,cl);
+    putup(0, curport->btext);
+    cc -= nc;
+    if (cc < curport->ledit)
+        cc = curport->ledit;
+    else if (cc > curport->redit)
+        cc = curport->redit;
+    poscursor(cc, cl);
 }
 
 /*
- *  gtfcn(number) -
- *  перейти к строке number
+ * Go to line by number.
  */
-gtfcn(number)
-int number;
+void gtfcn(number)
+    int number;
 {
     register int i;
+
     movew(number - curwksp->ulhclno - defplline);
-    if ((i = number - curwksp->ulhclno) >= 0) {
-        if (i > curport->btext) i = curport->btext;
-        poscursor(cursorcol,i);
+    i = number - curwksp->ulhclno;
+    if (i >= 0) {
+        if (i > curport->btext)
+            i = curport->btext;
+        poscursor(cursorcol, i);
     }
 }
+
 /*
- * cgoto(ln,col,slin,lkey) -
- * Подвести тек. окно search и mgotag
+ * Scroll window to show a given area.
  * slin - номер строки, на которой был курсор раньше
  * (для стирания отметки курсора)
  * lkey = 0 - не двигать окно, если можно.
  */
-cgoto(ln,col,slin,lkey)
-int ln,col,slin,lkey;
+void cgoto(ln, col, slin, lkey)
+    int ln, col, slin, lkey;
 {
     register int lin;
-    lin  = ln - curwksp->ulhclno;
-    if (lkey || lin  < 0 || lin  > curport->btext)
-    {
+
+    lin = ln - curwksp->ulhclno;
+    if (lkey || lin < 0 || lin  > curport->btext) {
         lkey = -1;
         lin = defplline;
-        if ((curwksp->ulhclno = ln - defplline) < 0)
-        {
+        curwksp->ulhclno = ln - defplline;
+        if (curwksp->ulhclno < 0) {
             lin += curwksp->ulhclno;
             curwksp->ulhclno = 0;
         }
     }
     col -= curwksp->ulhccno;
-    if (col < 0 || col > curport->rtext)
-    {
+    if (col < 0 || col > curport->rtext) {
         curwksp->ulhccno += col;
         col = 0;
         lkey = -1;
     }
-    if (lkey) putup(0,curport->btext);
-    else  if (slin >=0) putup(slin,slin);
-    poscursor(col,lin);
+    if (lkey)
+        putup(0, curport->btext);
+    else if (slin >=0)
+        putup(slin, slin);
+
+    poscursor(col, lin);
 }
 
 
 /*
- * switchport(w) -
- * перейти к окну "w".
- * cursorcol, cursorline пересчитываются к новому окну
+ * Switch to given window.
+ * Compute cursorcol, cursorline for new window.
  */
-switchport(ww)
-struct viewport *ww;
+void switchport(ww)
+    struct viewport *ww;
 {
-    register struct viewport *w=ww;
+    register struct viewport *w = ww;
+
     cursorcol  -= (w->ltext - curport->ltext);
     cursorline -= (w->ttext - curport->ttext);
     curport = w;
-    if (curwksp = curport->wksp) curfile = curwksp->wfile;
+    if (curwksp = curport->wksp)
+        curfile = curwksp->wfile;
 }
 
 /*
@@ -154,19 +164,19 @@ int cl,cr,lt,lb,c;
 }
 
 
-/* makeport() -
- *  создание нового окна
+/*
+ * Make new window.
  */
-makeport(file)
-char *file;
+void makeport(file)
+    char *file;
 {
     register struct viewport *oldport, *newport;
     char horiz;             /* 1 - если горизонтально */
     register int i;
     int portnum;
+
     /* Есть ли место */
-    if (nportlist >= MAXPORTLIST)
-    {
+    if (nportlist >= MAXPORTLIST) {
         error("Can't make any more windows.");
         return;
     }
@@ -174,49 +184,43 @@ char *file;
         && cursorline < curport->btext) horiz = 1;
     else if (cursorline == 0 && cursorcol > 0
         && cursorcol < curport->rtext-1) horiz = 0;
-    else
-    {
+    else {
         error("Can't put a window there.");
         return;
     }
     oldport = curport;
-    newport = portlist[nportlist++]=(struct viewport *)salloc(SVIEWPORT);
-    /* Ищем номер curport */
-    for (portnum=0;portlist[portnum]!=curport;portnum++);
+    newport = portlist[nportlist++] = (struct viewport *) salloc(SVIEWPORT);
+
+    /* Find a port number */
+    for (portnum=0; portlist[portnum] != curport; portnum++);
     newport->prevport = portnum;
     oldport->wksp->ccol = oldport->altwksp->ccol = 0;
     oldport->wksp->crow = oldport->altwksp->crow = 0;
-    if (horiz)
-    {
-        setupviewport(newport,oldport->lmarg,
-        oldport->rmarg,
-        oldport->tmarg + cursorline + 1,
-        oldport->bmarg,1);
+    if (horiz) {
+        setupviewport(newport, oldport->lmarg,
+            oldport->rmarg,
+            oldport->tmarg + cursorline + 1,
+            oldport->bmarg, 1);
         oldport->bmarg = oldport->tmarg + cursorline + 1;
         oldport->btext = oldport->bedit = cursorline - 1;
-        for (i=0;i <= newport->btext;i++)
-        {
+        for (i=0; i <= newport->btext; i++) {
             newport->firstcol[i] =
-                oldport->firstcol[i+cursorline+1];
+                oldport->firstcol[i + cursorline + 1];
             newport->lastcol[i] =
-                oldport->lastcol[i+cursorline+1];
+                oldport->lastcol[i + cursorline + 1];
         }
-    }
-    else
-    {
-        setupviewport(newport,oldport->lmarg + cursorcol + 2,
-        oldport->rmarg,
-        oldport->tmarg,
-        oldport->bmarg,1);
+    } else {
+        setupviewport(newport, oldport->lmarg + cursorcol + 2,
+            oldport->rmarg,
+            oldport->tmarg,
+            oldport->bmarg, 1);
         oldport->rmarg = oldport->lmarg + cursorcol + 1;
         oldport->rtext = oldport->redit = cursorcol - 1;
-        for (i=0;i <= newport->btext;i++)
-        {
-            if (oldport->lastcol[i] > oldport->rtext + 1)
-            {
+        for (i=0; i <= newport->btext; i++) {
+            if (oldport->lastcol[i] > oldport->rtext + 1) {
                 newport->firstcol[i] = 0;
-                newport->lastcol[i] = oldport->lastcol[i] -
-                    cursorcol - 2;
+                newport->lastcol[i] =
+                    oldport->lastcol[i] - cursorcol - 2;
                 oldport->lastcol[i] = oldport->rtext + 1;
                 oldport->rmchars[i] = MRMCH;
             }
@@ -224,46 +228,41 @@ char *file;
     }
     switchport(newport);
     defplline = defmiline = (newport->bmarg - newport->tmarg)/ 4 + 1;
-    if (editfile(file,0,0,1,1) <= 0 && editfile(deffile,0,0,0,1) <= 0)
+    if (editfile (file, 0, 0, 1, 1) <= 0 &&
+        editfile (deffile, 0, 0, 0, 1) <= 0)
         error("Default file gone: notify sys admin.");
-    drawport(oldport,1);
-    drawport(newport,1);
-    poscursor(0,0);
+    drawport(oldport, 1);
+    drawport(newport, 1);
+    poscursor(0, 0);
 }
 
 /*
- * removeport() -
- *  уничтожить окно, созданное последним
+ * Remove last window.
  */
-removeport()
+void removeport()
 {
     int j, pnum;
     register int i;
     register struct viewport *theport, *pport;
-    if (nportlist == 1)
-    {
+
+    if (nportlist == 1) {
         error ("Can't remove remaining port.");
         return;
     }
     pport = portlist[pnum = (theport = portlist[--nportlist])->prevport];
-    if (pport->bmarg != theport->bmarg)
-    {
+    if (pport->bmarg != theport->bmarg) {
         /* Vertical */
         pport->firstcol[j = pport->btext+1] = 0;
         pport->lastcol[j++] = pport->rtext+1;
-        for (i=0;i<=theport->btext;i++)
-        {
+        for (i=0; i<=theport->btext; i++) {
             pport->firstcol[j+i] = theport->firstcol[i];
             pport->lastcol[j+i] = theport->lastcol[i];
         }
         pport->bmarg = theport->bmarg;
         pport->bedit = pport->btext = pport->bmarg - pport->tmarg - 2;
-    }
-    else
-    {
+    } else {
         /* Горизонтальное */
-        for (i=0;i<=pport->btext;i++)
-        {
+        for (i=0; i<=pport->btext; i++) {
             pport->lastcol[i] = theport->lastcol[i] +
                 theport->lmarg - pport->lmarg;
             if (pport->firstcol[i] > pport->rtext)
@@ -272,10 +271,10 @@ removeport()
         pport->rmarg = theport->rmarg;
         pport->redit = pport->rtext = pport->rmarg - pport->lmarg - 2;
     }
-    drawport(pport,1);
+    drawport(pport, 1);
     chgport(pnum);
-    putup(0,curport->btext);
-    poscursor(0,0);
+    putup(0, curport->btext);
+    poscursor(0, 0);
     DEBUGCHECK;
     free(theport->firstcol);
     free(theport->lastcol);
@@ -288,23 +287,28 @@ removeport()
 }
 
 /*
- * chgport(portnum) -
- * перейти в следующее окно
+ * Switch to another window.
  */
-chgport(portnum)
-int portnum;
+void chgport(portnum)
+    int portnum;
 {
     register struct viewport *oldport, *newport;
+
     oldport = curport;
-    if (portnum < 0) for (portnum=0;portnum<nportlist &&
-        oldport != portlist[portnum++];);
-        oldport->wksp->ccol = cursorcol;
+    if (portnum < 0) {
+        /* Find portnum. */
+        for (portnum=0; portnum<nportlist &&
+            oldport != portlist[portnum++]; );
+    }
+    oldport->wksp->ccol = cursorcol;
     oldport->wksp->crow = cursorline;
-    newport = portlist[portnum%nportlist];
-    if (newport == oldport) return;
-    /*   drawport(oldport,newport);    */ switchport(newport);
+    newport = portlist[portnum % nportlist];
+    if (newport == oldport)
+        return;
+    /* drawport(oldport, newport); */
+    switchport(newport);
     defplline = defmiline = (newport->bmarg - newport->tmarg) / 4 + 1;
-    poscursor(curport->wksp->ccol,curport->wksp->crow);
+    poscursor(curport->wksp->ccol, curport->wksp->crow);
 }
 
 /*

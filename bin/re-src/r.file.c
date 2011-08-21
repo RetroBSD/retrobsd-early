@@ -5,15 +5,13 @@
 #include "r.defs.h"
 
 /*
- * savefile(file,n) -
- * Запись файла из канала n в файл "file"
- * Если file не задан, используется свое родное имя
- * openfnames[n];
- * если файл не записывается, предлагает записать его в "."
+ * Write file from channel n to file.
+ * When no file given use the name from openfnames[n].
+ * When no permission to write, ask to write to ".".
  */
-savefile(file, n)
-char *file;
-int n;
+int savefile(file, n)
+    char *file;
+    int n;
 {
     register char *f1;
     char *f0, *f2;
@@ -109,8 +107,7 @@ struct fsd *ff;
 int nl, newf;
 {
     register struct fsd *f;
-    register char *c;
-    register int i;
+    register int *c, i;
     int j, k, bflag, tlines;
 
     if (lcline < LBUFFER)
@@ -118,36 +115,34 @@ int nl, newf;
     f = ff;
     bflag = 1;
     tlines = 0;
-    while (f->fsdfile && nl)
-    {
-        if (f->fsdfile > 0)
-        {
+    while (f->fsdfile && nl) {
+        if (f->fsdfile > 0) {
             i = 0;
             c = &f->fsdbytes;
-            for (j=f->fsdnlines; j; j--)
-            {
+            for (j=f->fsdnlines; j; j--) {
                 if (nl < 0) {
                     /* Проверяем счетчик пустых строк */
-                    if (bflag && *c != 1) bflag = 0;
+                    if (bflag && *c != 1)
+                        bflag = 0;
                     else if (bflag == 0 && *c == 1) {
                         bflag = 1;
-                        if (++nl == 0) break;
+                        if (++nl == 0)
+                            break;
                     }
                 }
-                if (*c&0200) i += 128 * (*c++&0177);
+                if (*c & 0200)
+                    i += 128 * (*c++ & 0177);
                 i += *c++;
                 ++tlines;
                 /* Проверяем счетчик строк */
-                if (nl > 0 && --nl == 0) break;
+                if (nl > 0 && --nl == 0)
+                    break;
             }
-            seek(f->fsdfile,f->seekhigh,3);
-            seek(f->fsdfile,f->seeklow,1);
-            while (i)
-            {
-                j = i < LBUFFER ? i : LBUFFER;
-                read(f->fsdfile,cline,j);
-                if (write(newf,cline,j) < 0)
-                {
+            lseek(f->fsdfile, f->seek, SEEK_SET);
+            while (i) {
+                j = (i < LBUFFER) ? i : LBUFFER;
+                read(f->fsdfile, cline, j);
+                if (write(newf, cline, j) < 0) {
                     error("DANGER -- WRITE ERROR");
                     close(newf);
                     return(-1);
@@ -157,16 +152,18 @@ int nl, newf;
         } else {
             j = f->fsdnlines;
             if (nl < 0) {
-                if (bflag == 0 && ++nl == 0) j = 0;
+                if (bflag == 0 && ++nl == 0)
+                    j = 0;
                 bflag = 1;
             } else {
-                if (j > nl) j = nl;
+                if (j > nl)
+                    j = nl;
                 nl -= j;
             }
             k = j;
-            while (k) cline[--k] = NEWLINE;
-            if (j && write(newf,cline,j) < 0)
-            {
+            while (k)
+                cline[--k] = NEWLINE;
+            if (j && write(newf, cline, j) < 0) {
                 error("DANGER -- WRITE ERROR");
                 close(newf);
                 return(-1);
@@ -180,7 +177,6 @@ int nl, newf;
 }
 
 /*
- * editfile(file,line,col,mkflg,puflg) -
  * Открыть файл file для редактирования, начиная со строки
  * line и колонки col.
  * Файл открывается в текущем окне.
@@ -189,26 +185,29 @@ int nl, newf;
  * Код ответа -1, если файл не открыли и не создали.
  * Если putflg равен 1, файл тут же выводится в окно.
  */
-editfile(file,line,col,mkflg,puflg)
-char *file;
-int line, col, mkflg, puflg;
+int editfile(file, line, col, mkflg, puflg)
+    char *file;
+    int line, col, mkflg, puflg;
 {
-    int i,j;
+    int i, j;
     register int fn;
     register char *c,*d;
+
     fn = -1;
-    for (i=0; i<MAXFILES;++i) if (openfnames[i] != 0)
-    {
-        c = file;
-        d = openfnames[i];
-        while (*(c++) == *d) if (*(d++) == 0)
-        {
-            fn = i;
-            break;
+    for (i=0; i<MAXFILES; ++i) {
+        if (openfnames[i] != 0) {
+            c = file;
+            d = openfnames[i];
+            while (*c++ == *d) {
+                if (*(d++) == 0) {
+                    fn = i;
+                    break;
+                }
+            }
         }
     }
     if (fn < 0) {
-        fn = open(file,0);  /* Файл существует? */
+        fn = open(file, 0);  /* Файл существует? */
         if (fn >= 0) {
             if (fn >= MAXFILES) {
                 error("Too many files -- editor limit!");
@@ -221,21 +220,23 @@ int line, col, mkflg, puflg;
                 close(fn);
                 return(0);
             }
-            openwrite[fn] = (j == 2 ? 1 : 0);
+            openwrite[fn] = (j == 2) ? 1 : 0;
             telluser("Use: ",0);
-            telluser(file,5);
+            telluser(file, 5);
         } else {
             if (! mkflg)
                 return (-1);
-            telluser("hit <use> (ctrl-d) to make: ",0);
-            telluser(file,28);
+            telluser("Hit <use> (ctrl-d) to make: ",0);
+            telluser(file, 28);
             lread1 = -1;
             read1();
-            if (lread1 != CCSETFILE&&lread1 != 'Y' &&lread1 != 'y') return(-1);
+            if (lread1 != CCSETFILE&&lread1 != 'Y' &&lread1 != 'y')
+                return(-1);
             /* Находим справочник */
-            for (c=d=file; *c; c++)  if (*c == '/') d = c;
-            if (d > file)
-            {
+            for (c=d=file; *c; c++)
+                if (*c == '/')
+                    d = c;
+            if (d > file) {
                 *d = '\0';
                 i = open(file,0);
             } else
@@ -284,24 +285,23 @@ int line, col, mkflg, puflg;
     curwksp->ulhclno = line;
     curwksp->ulhccno = col;
     if (puflg) {
-        putup(0,curport->btext);
-        poscursor(0,defplline);
+        putup(0, curport->btext);
+        poscursor(0, defplline);
     }
     return(1);
 }
 
-
 /*
- * endit() -
- * закончить работу и записать все
- * ответ = 0, если при записи были ошибки
+ * End a session and write all.
+ * Return 0 on write error.
  */
-endit()
+int endit()
 {
     register int i, ko = 1;
 
-    for (i = 0; i < MAXFILES; i++)
+    for (i=0; i<MAXFILES; i++)
         if (openfsds[i] && openwrite[i] == EDITED)
-            if (savefile(NULL, i) == 0) ko = 0;
+            if (savefile(NULL, i) == 0)
+                ko = 0;
     return(ko);
 }

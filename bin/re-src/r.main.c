@@ -1,6 +1,7 @@
 /*
- *  Главная программа - вход/выход, открытие окон,
- *  разбор параметров
+ * Главная программа - вход/выход, открытие окон,
+ * разбор параметров
+ * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
  */
 
 #define VERS "** RE Version 1.0/RetroBSD **"
@@ -28,20 +29,19 @@ char *ttynm, *ttytmp, *rfile;
 struct savebuf pb, db;
 
 /*
- * sig() -
  * Фатальный сигнал
  */
-void
-sig(n)
+void sig(n)
+    int n;
 {
     fatal("Fatal signal");
 }
 
 /*
- * igsig() - Установить игнорирование
+ * Установить игнорирование
  */
-void
-igsig(n)
+void igsig(n)
+    int n;
 {
     void testsig(int);
 
@@ -50,11 +50,10 @@ igsig(n)
 }
 
 /*
- * testsig() -
  * проверить, не было ли прерывания
  */
-void
-testsig(n)
+void testsig(n)
+    int n;
 {
     signal(2, igsig);
     if (intrflag)
@@ -237,17 +236,16 @@ char *str;
 }
 
 /*
- * cleanup() -
- * Почиститься перед выходом
+ * Cleanup before exit.
  */
-cleanup()
+void cleanup()
 {
-        /* restore tty mode and exit */
-        ttcleanup();
-        close(tempfile);
-        unlink(tmpname);
-        close(ttyfile);
-        chmod(ttynm,07777 & oldttmode);
+    /* restore tty mode and exit */
+    ttcleanup();
+    close(tempfile);
+    unlink(tmpname);
+    close(ttyfile);
+    chmod(ttynm, 07777 & oldttmode);
 }
 
 /*
@@ -390,10 +388,10 @@ makestate()
 }
 
 /*
- * fatal(s) -- Печать аварийного состояния
+ * Print error message and exit.
  */
-fatal(s)
-char *s;
+void fatal(s)
+    char *s;
 {
     putcha(COFIN);
     putcha(COBELL);
@@ -411,26 +409,25 @@ char *s;
     printf1(ttytmp);
     printf1("\nUse command 're -' to do it.\n");
 #ifdef DEBUG
-    if (inputfile || (!isatty(1)) )
-    {
+    if (inputfile || ! isatty(1)) {
         register int i;
         register struct workspace *w;
         int j;
-        if (s) printf("%s\n\n",s);
-        for (i = 0; i < MAXFILES; i++) if (openfsds[i])
-        {
-            printf("\n*** OPENFSDS[%d] - file %s\n",i,openfnames[i]);
-            printfsd(openfsds[i]);
-        }
-        for (i = 0; i < nportlist; i++)
-        {
+
+        if (s)
+            printf("%s\n\n", s);
+        for (i = 0; i < MAXFILES; i++)
+            if (openfsds[i]) {
+                printf("\n*** OPENFSDS[%d] - file %s\n", i, openfnames[i]);
+                printfsd(openfsds[i]);
+            }
+        for (i = 0; i < nportlist; i++) {
             w = portlist[i]->wksp;
             printf("\nViewport #%d: FSD chain %d, current line %d at block %p,\n",
-            i,w->wfile,w->curlno,w->curfsd);
-            printf(" first line %d, ulhc (%d,%d)\n",w->curflno,w->ulhccno,
-            w->ulhclno);
+                i, w->wfile, w->curlno, w->curfsd);
+            printf(" first line %d, ulhc (%d,%d)\n",
+                w->curflno, w->ulhccno, w->ulhclno);
         }
-        /*ptfree();*/
         for (i=12; i; i--)
             signal(i, 0);
     }
@@ -438,4 +435,3 @@ char *s;
     close(ttyfile);
     exit(1);
 }
-/*   Руднев А.П. Москва, ИАЭ им. Курчатова, 1984 */

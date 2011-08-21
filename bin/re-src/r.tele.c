@@ -1,26 +1,17 @@
 /*
- *      Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- *
- *      $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.tele.c,v 3.1 1986/04/20 23:42:39 alex Exp $
- *      $Log: r.tele.c,v $
- *      Revision 3.1  1986/04/20 23:42:39  alex
- *      *** empty log message ***
- *
- * Revision 1.5  86/04/13  22:01:59  alex
- *
- * r.tele.c - Работа с терминалом - логический уровень
- *
- *
+ * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Работа с терминалом - логический уровень
+ * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
  */
-
 #include "r.defs.h"
 
-/*   putup(l0,lf) - выдать строки с l0 до lf
- *      Особый случай - если l0 отрицательно, то выдать только строку lf.
- *      При этом строка берется из cline, и выдавать только с колонки -l0.
+/*
+ * putup(l0,lf) - выдать строки с l0 до lf
+ * Особый случай - если l0 отрицательно, то выдать только строку lf.
+ * При этом строка берется из cline, и выдавать только с колонки -l0.
  */
-putup(lo, lf)
-int lo, lf;
+void putup(lo, lf)
+    int lo, lf;
 {
     register int i, l0, fc;
     int j, k, l1;
@@ -118,86 +109,85 @@ int lo, lf;
  * poscursor(col,lin) -
  * Позиционирование курсора в текущем окне
  */
-poscursor(col,lin)
-int col,lin;
+void poscursor(col, lin)
+    int col, lin;
 {
     register int scol,dcol,dlin;
     int slin;
-    if (cursorline == lin)
-    {
-        if (cursorcol == col) return;
-        if ((cursorcol == col-1)&&(putcha(CORT)) )
-        {
+
+    if (cursorline == lin) {
+        if (cursorcol == col)
+            return;
+        if ((cursorcol == col-1) && putcha(CORT)) {
             ++cursorcol;
             return;
         }
-        if ((cursorcol == col+1)&&(putcha(COLT)) )
-        {
+        if ((cursorcol == col+1) && putcha(COLT)) {
             --cursorcol;
             return;
         }
     }
-    if (cursorcol == col)
-    {
-        if ((cursorline == lin-1)&&(putcha(CODN)))
-        {
+    if (cursorcol == col) {
+        if ((cursorline == lin-1) && putcha(CODN)) {
             ++cursorline;
             return;
         }
-        if ((cursorline == lin+1)&&(putcha(COUP)) )
-        {
+        if ((cursorline == lin+1) && putcha(COUP)) {
             --cursorline;
             return;
         }
     }
-    scol=col+curport->ltext;
-    slin=lin+curport->ttext; /* screen col, lin */
-    dcol=col-cursorcol;
-    dlin=lin-cursorline;           /* delta col,lin   */
-    cursorcol=col;
-    cursorline=lin;
-    if (pcursor(scol,slin)) return; /* direct positioning */
-    if ( (( abs(scol)+abs(slin)) < (abs(dcol)+abs(dlin))))
-    {
+    scol = col + curport->ltext;
+    slin = lin + curport->ttext;    /* screen col, lin */
+    dcol = col - cursorcol;
+    dlin = lin - cursorline;        /* delta col, lin */
+    cursorcol = col;
+    cursorline = lin;
+    if (pcursor(scol, slin))        /* direct positioning */
+        return;
+    if ((abs(scol) + abs(slin)) < (abs(dcol) + abs(dlin))) {
         putcha(COHO);
-        dcol=scol;
-        dlin=slin;
+        dcol = scol;
+        dlin = slin;
     }
-    if (dcol>0) {
-        while (dcol--) putcha(CORT);
+    if (dcol > 0) {
+        while (dcol--)
+            putcha(CORT);
     }
-    else if (dcol<0) {
-        while (dcol++) putcha(COLT);
+    else if (dcol < 0) {
+        while (dcol++)
+            putcha(COLT);
     }
-    if (dlin>0) {
-        while (dlin--) putcha(CODN);
+    if (dlin > 0) {
+        while (dlin--)
+            putcha(CODN);
     }
     else if (dlin<0) {
-        while (dlin++) putcha(COUP);
+        while (dlin++)
+            putcha(COUP);
     }
-    return;
 }
 
 /*
- *      Движение курсора в границах окна "curscreen"
- *      Значение аргумента:
- *     UP - Вверх
- *     CR - переход на начало строки
- *     DN - вниз на строку
- *     RT - вправо на колонку
- *     LT - влево на колонку
- *     TB - прямая табуляция
- *     BT - табуляция назад
- *      0 - не операции (только проверить)
+ * Движение курсора в границах окна "curscreen"
+ * Значение аргумента:
+ * UP - Вверх
+ * CR - переход на начало строки
+ * DN - вниз на строку
+ * RT - вправо на колонку
+ * LT - влево на колонку
+ * TB - прямая табуляция
+ * BT - табуляция назад
+ *  0 - не операции (только проверить)
  */
-movecursor(arg)
-int arg;
+void movecursor(arg)
+    int arg;
 {
-    register int lin,col,i;
-    lin=cursorline;
-    col=cursorcol;
-    switch (arg)
-    {
+    register int lin, col, i;
+
+    lin = cursorline;
+    col = cursorcol;
+    switch (arg) {
     case 0:
         break;
     case HO:
@@ -230,26 +220,27 @@ int arg;
         col = (i ? tabstops[i-1] - curwksp->ulhccno : -1);
         break;
     }
-    if (col > curport->redit) col = curport->ledit;
-    else if (col < curport->ledit) col = curport->redit;
-    if (lin < curport->tedit) lin = curport->bedit;
-    else if (lin > curport->bedit) lin = curport->tedit;
-    poscursor(col,lin);
-    return;
+    if (col > curport->redit)
+        col = curport->ledit;
+    else if (col < curport->ledit)
+        col = curport->redit;
+
+    if (lin < curport->tedit)
+        lin = curport->bedit;
+    else if (lin > curport->bedit)
+        lin = curport->tedit;
+
+    poscursor(col, lin);
 }
 
 /*
- * putch(c,flag) -
- *      поместить символ в текущую позицию.
- *      если установлен flag=1, то учесть его
- *      в размерах строки
+ * Put a symbol to current position.
+ * When flag=1, count it to line size.
  */
-putch(j, flg)
-int flg;
-char j;
+void putch(j, flg)
+    int j, flg;
 {
-    if (flg && lread1 != ' ')
-    {
+    if (flg && lread1 != ' ') {
         if (curport->firstcol[cursorline] > cursorcol)
             curport->firstcol[cursorline] = cursorcol;
         if (curport->lastcol[cursorline] <= cursorcol)
@@ -270,8 +261,6 @@ char j;
  * fixcurs() -
  * Обработка граничных эффектов на экране.
  * Устанавливает cursorcol, cursorline равными корректным значениям
- * Управляется через eolflag (=1 - курсор фиксируется на границе экрана)
- * При достижении правой граници фиксируется cursorcol, если есть eolflag.
  * Правильная последовательность:
  * 1) Увеличить cursorcol; 2) Вызвать fixcurs; 3) Вывести символ;
  * 4) Если cursorcol <= 0, спозиционировать курсор. fixcurs возвращает 1,
@@ -279,50 +268,34 @@ char j;
  */
 fixcurs()
 {
-    if (curport->ltext + cursorcol >= LINEL) {
-#if 0
-        if (eolflag) {   /* for VT-52 */
-            cursorcol = LINEL - curport->ltext;
-            return 0;
-        }
+    if (curport->ltext + cursorcol >= LINEL)
         cursorcol = - curport->ltext;
-#endif
-        cursorcol = - curport->ltext - 1;
-#if 1
-        return 0;
-#else
-        if (curport->ttext + ++cursorline >= NLINES) {
-            cursorline = - curport->ttext;
-            putcha(COHO);
-            return (1);
-        }
-#endif
-    }
     return (0);
 }
 
 /*
- *  param() - Запрос параметра
- *      Три типа параметров.
- *              paramtype = -1 -- определение области
- *              paramtype = 0  -- пустой аргумент
- *              paramtype = 1  -- строка.
- *              при использовании макро бывает paramtype = -2 - tag defined
- *      Возвращается указатель на введенную строку (paramv).
- *      Длина возвращается в переменной paraml.
- *      Если при очередном вызове paraml не 0, старый paramv
- *      освобождается, так что если старый параметр нужен,
- *      нужно обнулить paraml.
+ * Get a parameter.
+ * Три типа параметров.
+ *         paramtype = -1 -- определение области
+ *         paramtype = 0  -- пустой аргумент
+ *         paramtype = 1  -- строка.
+ *         при использовании макро бывает paramtype = -2 - tag defined
+ * Возвращается указатель на введенную строку (paramv).
+ * Длина возвращается в переменной paraml.
+ * Если при очередном вызове paraml не 0, старый paramv
+ * освобождается, так что если старый параметр нужен,
+ * нужно обнулить paraml.
  */
-#define LPARAM 20       /* Длина приращения длины */
 char *param(macro)
-int macro;
+    int macro;
 {
     register char *c1;
     char *cp,*c2;
     int c;
     register int i,pn;
     struct viewport *w;
+#define LPARAM 20       /* length increment */
+
     if (paraml != 0 && paramv != 0)
         free(paramv);
     paramc1 = paramc0 = cursorcol;
@@ -331,116 +304,108 @@ int macro;
     poscursor(cursorcol,cursorline);
     w = curport;
 back:
-    telluser(macro?"mac: ":"arg: ",0);
+    telluser(macro ? "mac: " : "arg: ", 0);
     switchport(&paramport);
     poscursor(5,0);
-    do
-        {
+    do {
         lread1 = -1;
         read1();
-    }
-    while (lread1 == CCBACKSPACE);
-    if(macro) goto rmac;
-    if (CONTROLCHAR && lread1 && (lread1<=BT))
-    {
-        telluser("arg: *** cursor defined ***",0);
+    } while (lread1 == CCBACKSPACE);
+
+    if (macro)
+        goto rmac;
+    if (CONTROLCHAR && lread1 && (lread1 <= BT)) {
+        telluser("arg: *** cursor defined ***", 0);
         switchport(w);
-        poscursor(paramc0,paramr0);
+        poscursor(paramc0, paramr0);
 t0:
-        while (CONTROLCHAR && (i=((lread1<=BT)?lread1:0)))
-        {
+        while (CONTROLCHAR && (i = ((lread1 <= BT) ? lread1 : 0))) {
             movecursor(i);
-            if (cursorline == paramr0 &&
-                cursorcol  == paramc0)  goto back;
+            if (cursorline == paramr0 && cursorcol == paramc0)
+                goto back;
             lread1 = -1;
             read1();
         }
-        if (CTRLCHAR && lread1 != CCBACKSPACE)
-        {
-            if(cursorcol > paramc0)paramc1 = cursorcol;
-            else paramc0 = cursorcol;
-            if(cursorline > paramr0)paramr1 = cursorline;
-            else paramr0 = cursorline;
+        if (CTRLCHAR && lread1 != CCBACKSPACE) {
+            if (cursorcol > paramc0)
+                paramc1 = cursorcol;
+            else
+                paramc0 = cursorcol;
+            if (cursorline > paramr0)
+                paramr1 = cursorline;
+            else
+                paramr0 = cursorline;
             paraml = 0;
             paramv = NULL;
             paramtype = -1;
-        }
-        else
-        {
+        } else {
             error("Printing character illegal here");
             lread1 = -1;
             read1();
             goto t0;
         }
-    }
-    else if (CTRLCHAR)
-    {
+    } else if (CTRLCHAR) {
         paraml = 0;
         paramv = NULL;
-        paramtype=0;
-    }
-    else
-    {
+        paramtype = 0;
+    } else {
 rmac:
         paraml = pn = 0;
 loop:
         c = read1();
-        if (pn >= paraml)
-        {
+        if (pn >= paraml) {
             cp = paramv;
-            paramv = salloc(paraml + LPARAM+1); /* 1 for dechars */
+            paramv = salloc(paraml + LPARAM + 1); /* 1 for dechars */
             c1 = paramv;
             c2 = cp;
-            for (i=0; i<paraml; ++i) *c1++ = *c2++;
+            for (i=0; i<paraml; ++i)
+                *c1++ = *c2++;
             if (paraml)
                 free(cp);
             paraml += LPARAM;
         }
         /* Конец ввода параметра */
-        if ((!macro && CONTROLCHAR)|| c==CCBACKSPACE || c==CCQUIT)
-        {
-            if (c == CCBACKSPACE &&  cursorcol != curport->ledit)
+        if ((! macro && CONTROLCHAR) || c==CCBACKSPACE || c==CCQUIT) {
+            if (c == CCBACKSPACE && cursorcol != curport->ledit) {
                 /* backspace */
-            {
-                if (pn == 0)
-                {
+                if (pn == 0) {
                     lread1 = -1;
                     goto loop;
                 }
                 movecursor(LT);
                 --pn;
-                if((paramv[pn]&0340) ==0)
-                {
-                    putch(' ',0);
+                if ((paramv[pn] & 0340) == 0) {
+                    putch(' ', 0);
                     movecursor(LT);
                     movecursor(LT);
                 }
                 paramv[pn] = 0;
-                putch(' ',0);
+                putch(' ', 0);
                 movecursor(LT);
                 lread1 = -1;
-                if (pn == 0) goto back;
+                if (pn == 0)
+                    goto back;
                 goto loop;
-            }
-            else c = 0;
+            } else
+                c = 0;
         }
-        if (c == 0177) c = 0;    /* del is a contol code  */
+        if (c == 0177)          /* del is a control code */
+            c = 0;
         paramv[pn++] = c;
-        if (c != 0)
-        {
-            if((c&0140)==0){
-                putch('^',0);
+        if (c != 0) {
+            if ((c & 0140) == 0){
+                putch('^', 0);
                 c = c | 0100;
             }
-            putch(c,0);
+            putch(c, 0);
             lread1 = -1;
             goto loop;
         }
         paramtype = 1;
     }
     switchport(w);
-    putup(paramr0,paramr0);
-    poscursor(paramc0,paramr0);
+    putup(paramr0, paramr0);
+    poscursor(paramc0, paramr0);
     return (paramv);
 }
 
@@ -483,28 +448,26 @@ int vertf;
 }
 
 /*
- * error(msg) -
- * Выдать сообщение об ошибке
+ * Display error message.
  */
-error(msg)
-char *msg;
+void error(msg)
+    char *msg;
 {
-        putcha(COBELL);
-        putcha(COBELL);
-        putcha(COBELL);
-        telluser("**** ",0);
-        telluser(msg,5);
-        errsw = 1;
+    putcha(COBELL);
+    putcha(COBELL);
+    putcha(COBELL);
+    telluser("**** ", 0);
+    telluser(msg, 5);
+    errsw = 1;
 }
 
 /*
- * telluser(msg,col) -
- * Выдать сообщение с колонки  col. Если col =0 -
- * очистить окно параметров
+ * Display a message from column col.
+ * When col=0 - clear the arg area.
  */
-telluser(msg,col)
-char *msg;
-int col;
+void telluser(msg, col)
+    char *msg;
+    int col;
 {
     struct viewport *oldport;
     register int c,l;
@@ -518,60 +481,52 @@ int col;
         putblanks(paramport.redit);
     }
     poscursor(col,0);
-    /*      while (*msg) putch(*msg++,0);   */
-    info(msg, PARAMREDIT);
+    /* while (*msg) putch(*msg++, 0); */
+    putstr(msg, PARAMREDIT);
     switchport(oldport);
     poscursor(c,l);
     dumpcbuf();
 }
 
-
 /*
- * rescreen(nom) -
- * Восстановление сбитого окна
- * ( nom - пока не используется)
+ * Redraw a screen.
  */
-/*ARGSUSED*/
-rescreen(nom)int nom;
+void rescreen()
 {
     register int i;
     int j;
-    register struct viewport *curp,*curp0 = curport;
-    int col=cursorcol, lin=cursorline;
+    register struct viewport *curp, *curp0 = curport;
+    int col = cursorcol, lin = cursorline;
+
     switchport(&wholescreen);
-    cursorcol = cursorline =0;
+    cursorcol = cursorline = 0;
     putcha(COFIN);
     putcha(COSTART);
     putcha(COHO);
-    for ( j=0; j<nportlist; j++) {
+    for (j=0; j<nportlist; j++) {
         switchport(portlist[j]);
         curp = curport;
-        for (i=0;i<curport->btext+1;i++)
-        {
-            curp->firstcol[i]=0;
-            curp->lastcol[i]= 0; /* curport->rtext;*/
+        for (i=0; i<curport->btext+1; i++) {
+            curp->firstcol[i] = 0;
+            curp->lastcol[i] = 0; /* curport->rtext;*/
             curp->lmchars[i] = curp->rmchars[i] =' ';
         }
-        drawport(curp,0);
-        putup(0,curp->btext);
+        drawport(curp, 0);
+        putup(0, curp->btext);
     }
     switchport(curp0);
-    poscursor(col,lin);
+    poscursor(col, lin);
 }
 
 /*
- * info(ss,ml)
- * - выдать (с преобразованием во внешнюю форму) строку
- * ss в окно параметров, макс. длина "ml"
+ * Put a string, limited by column.
  */
-info(ss,ml)
-char *ss;
-int ml;
+void putstr(ss, ml)
+    char *ss;
+    int ml;
 {
     register char *s = ss;
 
     while (*s && cursorcol < ml)
         putch(*s++, 0);
 }
-
-/*   Руднев А.П. Москва, ИАЭ им. Курчатова, 1984 */

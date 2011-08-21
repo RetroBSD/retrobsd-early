@@ -11,20 +11,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-/*   salloc -
- * выделить память, обнулить и проверить
+/*
+ * Allocate zeroed memory.
+ * Always succeeds.
  */
 char *salloc(n)
-int n;
+    int n;
 {
-    register char *c, *i;
+    register char *c;
 
-    c = malloc(n);
+    c = calloc(n, 1);
     if (! c)
         fatal(NULL);
-    i = c + n;
-    while (i != c)
-        *--i = 0;
     return (c);
 }
 
@@ -104,39 +102,44 @@ int number;
 }
 
 /*
- * append(name,ext) - возвращает об'единение строк
+ * Append strings.
+ * Allocates memory.
  */
-char *append(name,ext)
-char *name,*ext;
+char *append(name, ext)
+    char *name, *ext;
 {
     int lname;
-    register char *c,*d,*newname;
+    register char *c, *d, *newname;
+
     lname = 0;
     c = name;
-    while (*c++) ++lname;
+    while (*c++)
+        ++lname;
     c = ext;
-    while (*c++) ++lname;
-    newname = c = salloc(lname+1);
+    while (*c++)
+        ++lname;
+    newname = c = salloc(lname + 1);
     d = name;
-    while (*d) *c++ = *d++;
+    while (*d)
+        *c++ = *d++;
     d = ext;
     while (*c++ = *d++);
     return newname;
 }
 
 /*
- * s2i(s,*i) - Преобразование строки s в целое. Значение пересылается в *i.
- *      Возвращается указатель на первый символ в строке за числом, если
- *        там еще остались символы, или 0.
+ * Convert a string to number.  Store result into *i.
+ * Return pointer to first symbol after a number, or 0 if none.
  */
-char *s2i(s,i)
-char *s;
-int *i;
+char *s2i(s, i)
+    char *s;
+    int *i;
 {
-    register char lc,c;
+    register char lc, c;
     register int val;
     int sign;
     char *ans;
+
     sign = 1;
     val = lc = 0;
     ans = 0;
@@ -151,20 +154,6 @@ int *i;
     }
     *i = val * sign;
     return ans;
-}
-
-/* seek -  Сопля от V6 */
-long lseek();
-seek(fd,of,typ)
-int fd,of,typ;
-{
-    long i;
-    i=of;
-    if(typ>2) {
-        typ=typ-3;
-        i=i*512;
-    }
-    return ( (int)lseek(fd,i,typ) );
 }
 
 /*

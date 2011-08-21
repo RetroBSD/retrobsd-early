@@ -10,14 +10,22 @@
 #include <termios.h>
 
 #define NCC NCCS
-struct termios tioparam;
+static struct termios tioparam;
 
 #else /* TERMIOS */
 
-struct sgttyb templ;
-struct tchars tchars0;
+static struct sgttyb templ;
+static struct tchars tchars0;
 
 #endif /* TERMIOS */
+
+/*
+ * Работа с буфером символов
+ */
+#define NPUTCBUF 256   /* Размер буфера вывода */
+
+static char putcbuf[NPUTCBUF];
+static int iputcbuf = 0;
 
 /*
  * ttstartup()
@@ -99,6 +107,17 @@ ttcleanup()
 }
 
 /*
+ * Вывод символа без в безусловном режиме
+ */
+static void putchb(c)
+    int c;
+{
+    putcbuf[iputcbuf++] = c & 0177;
+    if (iputcbuf == NPUTCBUF)
+        dumpcbuf();
+}
+
+/*
  * pcursor(col,lin) -
  * установить курсор в физические координаты на
  * экране. Ответ 0, если нет прямой адресации
@@ -127,26 +146,19 @@ int col, lin;
     return 1;
 }
 
-/* ===================
- * Работа с буфером символов
- * ===================
- */
-#define NPUTCBUF 256   /* Размер буфера вывода */
-
-char putcbuf[NPUTCBUF];
-int iputcbuf=0;
-
 /*
  * putcha(c) - выдать символ "c".
  * "c" может быть кодом управления.
  * Возвращается 0, если запрошенная операция невозможна
  */
-putcha(c)
-char c;
+int putcha(c)
+    int c;
 {
-    register char cr, *s;
+    register int cr;
+    register char *s;
+
     cr = c & 0177;
-    if (cr>=0 && cr<=COMCOD) {
+    if (cr >= 0 && cr <= COMCOD) {
         s = cvtout[cr];
         if (! s)
             return(0);
@@ -161,23 +173,11 @@ char c;
 }
 
 /*
- * putchb(c) -
- * Вывод символа без в безусловном режиме
- */
-putchb(c)
-char c;
-{
-    putcbuf[iputcbuf++] = c&0177;
-    if (iputcbuf == NPUTCBUF) dumpcbuf();
-    return;
-}
-
-/*
  * putblanks(k) -
  * Вывод строки пробелов
  */
-putblanks(k)
-register int k;
+void putblanks(k)
+    register int k;
 {
     cursorcol += k;
     while (k--) {
@@ -189,13 +189,13 @@ register int k;
 }
 
 /*
- * dumpcbuf() -
- * выталкивание буфера вывода
+ * Flush output buffer.
  */
-dumpcbuf()
+void dumpcbuf()
 {
-        if (iputcbuf != 0) write(2,putcbuf,iputcbuf);
-        iputcbuf = 0;
+    if (iputcbuf != 0)
+        write(2, putcbuf, iputcbuf);
+    iputcbuf = 0;
 }
 
 /*
@@ -396,26 +396,26 @@ readfc()
 }
 
 /*
- * interrupt() -
- *       опрос, не было ли прерывания.
+ * We were interrupted?
  */
-interrupt()
+int interrupt()
 {
     char sy1;
+
     if (inputfile) {
         if (isy0f == CCINTRUP) {
             isy0f = -1;
-            return(1);
+            return 1;
         }
-        return(0);
+        return 0;
     }
     if (intrflag) {
         intrflag = 0;
         sy1 = CCINTRUP;
         write(ttyfile, &sy1, 1);
-        return(1);
+        return 1;
     }
-    return(0);
+    return 0;
 }
 
 #define CCDEL 0177

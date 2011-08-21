@@ -3,6 +3,8 @@
  */
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -80,12 +82,11 @@
 struct fsd {
         struct fsd *backptr;    /* Ссылка на пред. fsd   */
         struct fsd *fwdptr;     /* Ссылка на след. fsd   */
-        char fsdnlines;         /* Число строк, которые описывает fsd */
+        int fsdnlines;          /* Число строк, которые описывает fsd */
                                 /* 0 , если это конец цепи. */
-        char fsdfile;           /* Дескриптор файла, 0, если это конец цепи */
-        int seekhigh;           /* Сдвиг в файле ( из двух слов): блок */
-        int seeklow;            /*                              : символ */
-        char fsdbytes;  /* Переменное число байт - столько, сколько нужно
+        int fsdfile;            /* Дескриптор файла, 0, если это конец цепи */
+        off_t seek;             /* Сдвиг в файле */
+        int fsdbytes;  /* Переменное число байт - столько, сколько нужно
                         для того, чтобы описать очередные fsdnlines-1 строк:
                         Интерпретация очередного байта:
                         1-127   смещение следующей строки от предыдущей
@@ -102,9 +103,9 @@ struct fsd {
 /* Урезанный вариант - без fsdbyte */
 struct fsdsht {
     struct fsd *backptr, *fwdptr;
-    char fsdnlines;
-    char fsdfile;
-    int seekhigh, seeklow;
+    int fsdnlines;
+    int fsdfile;
+    off_t seek;
 };
 
 #define SFSD        (sizeof (struct fsdsht))
@@ -123,8 +124,7 @@ struct workspace {
         int ulhccno;            /* номер колонки, которая 0 на экране */
         int curlno;             /* текущий номер строки */
         int curflno;            /* номер строки, первой в curfsd */
-        char flags;             /* не использовано        */
-        char wfile;             /* номер файла, 0 - если нет вообще */
+        int wfile;              /* номер файла, 0 - если нет вообще */
         int ccol;               /* curorcol, когда не активен */
         int crow;               /* cursorline, когда неактивен */
 };
@@ -133,13 +133,12 @@ struct workspace {
 struct workspace *curwksp, *pickwksp;
 int curfile;
 
-
-/* viewport - описатель окна на экране терминала
+/*
+ * viewport - описатель окна на экране терминала
  * все координаты на экране, а также ltext и ttext, измеряются по отношению
  *      к (0,0) = начало экрана. Остальные 6 границ приводятся по отношению
  *      к ltext и ttext.
  */
-
 #define SVIEWPORT (sizeof (struct viewport))
 
 struct viewport {
@@ -183,8 +182,8 @@ struct savebuf {
 struct savebuf *pickbuf, *deletebuf;
 
 /*
-Управляющие символы */
-
+ * Управляющие символы
+ */
 #define CCBACKTAB          BT      /* tab left             */
 #define CCHOME             HO      /* home cursor          */
 #define CCMOVEDOWN         DN      /* move down 1 line     */
@@ -222,8 +221,6 @@ struct savebuf *pickbuf, *deletebuf;
 #define CCINTRUP          0240     /* interuption (for ttyfile)     */
 #define CCMAC             0200     /* macro marka                   */
 
-/*  */
-
 int cursorline;         /* physical screen position of */
 int cursorcol;          /*  cursor from (0,0)=ulhc of text in port */
 
@@ -256,9 +253,8 @@ char *paramv, paramtype;
 int paramc0, paramr0, paramc1, paramr1;
 
 /*
- * cline 0- массив для строки, lcline - макс. длина,
- * ncline - текущая длина, icline  - следующее приращение
- * длины
+ * cline  - массив для строки, lcline - макс. длина,
+ * ncline - текущая длина, icline - следующее приращение длины
  * fcline - флаг (было изменение), clineno - номер строки в файле
  */
 char *cline;
@@ -270,14 +266,12 @@ int clineno;
 
 /*
  * Описатели файлов:
- * tempfile, tempfh, tempfl - дескриптор и
- * смещение во временном файле
+ * tempfile, tempfl - дескриптор и смещение во временном файле
  * ttyfile - дескриптор файда протокола
  * inputfile - дескриптор файла ввода команд из протокола
  */
 int tempfile;
-int tempfh;
-int tempfl;
+off_t tempfl;
 int ttyfile;
 int inputfile;
 
@@ -288,15 +282,66 @@ int userid, groupid;
 char *tmpname;                  /* name of file, for do command */
 
 int LINEL, NLINES;              /* size of the screen */
-int eolflag;
 extern char *curspos, *cvtout[];
 char *(*agoto)();               /* for termcap definitions */
 
-char *append(), *salloc();
-char *tgoto();
 unsigned nbytes;
-char *s2i();
-struct fsd *file2fsd();
+
+int read1 (void);               /* read a symbol from terminal */
+void getlin (int);              /* get a line from current file */
+void putline (int);             /* put a line to current file */
+void movecursor (int);          /* cursor movement operation */
+void poscursor (int, int);      /* position a cursor in current window */
+void putup (int, int);          /* show lines of file */
+void movep (int);               /* move a window to right */
+void movew (int);               /* move a window down */
+void excline (int);             /* extend cline array */
+int putcha (int);               /* output symbol or op */
+void putch (int, int);          /* put a symbol at current position */
+void putstr (char *, int);       /* put a string, limited by column */
+int endit (void);               /* end a session and write all */
+void switchfile (void);         /* switch to alternative file */
+void chgport (int);             /* switch to another window */
+void search (int);              /* search a text in file */
+void put (struct savebuf *, int, int); /* put a buffer into file */
+void gtfcn (int);               /* go to line by number */
+int savefile (char *, int);     /* save a file */
+void makeport (char *);         /* make new window */
+void error (char *);            /* display error message */
+char *param (int);              /* get a parameter */
+int dechars (char *, int);      /* conversion of line from internal to external form */
+void cleanup (void);            /* cleanup before exit */
+void fatal (char *);            /* print error message and exit */
+int editfile (char *, int, int, int, int); /* open a file for editing */
+void splitline (int, int);      /* split a line at given position */
+int msrbuf (struct savebuf *, char *, int); /* store or get a buffer by name */
+void combineline (int, int);    /* merge a line with next one */
+int msvtag (char *name);        /* save a file position by name */
+int mdeftag (char *);           /* define a file area by name */
+int defkey (void);              /* redefine a keyboard key */
+void rescreen (void);           /* redraw a screen */
+int defmac (char *);            /* define a macro sequence */
+int mgotag (char *);            /* return a cursor back to named position */
+void execr (char **);           /* run command with given parameters */
+void telluser (char *, int);    /* display a message in arg area */
+void doreplace(int, int, int, int*); /* replace lines via pipe */
+void removeport (void);         /* remove last window */
+void switchport (struct viewport *); /* switch to given window */
+void dumpcbuf (void);           /* flush output buffer */
+char *s2i (char *, int *);      /* convert a string to number */
+char *salloc (int);             /* allocate zeroed memory */
+void openlines (int, int);      /* insert lines */
+void closelines (int, int);     /* delete lines from file */
+void picklines (int, int);      /* get lines from file to pick workspace */
+void openspaces (int, int, int, int); /* insert spaces */
+void closespaces (int, int, int, int); /* delete rectangular area */
+void pickspaces (int, int, int, int); /* get rectangular area to pick buffer */
+int interrupt (void);           /* we have been interrupted? */
+int wposit (struct workspace *, int); /* Set workspace position */
+void cgoto (int, int, int, int); /* scroll window to show a given area */
+char *append (char *, char *);  /* append strings */
+char *tgoto (char *, int, int); /* cursor addressing */
+struct fsd *file2fsd (int);     /* create a file descriptor list for a file */
 
 /*
  * Таблица клавиатуры (команда / строка символов)

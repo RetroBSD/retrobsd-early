@@ -2,31 +2,37 @@
  * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
  * Файл содержит программы, реализующие новые возможности
  * редактора "RED", связанные с макропеременными
- *
+ */
+#include "r.defs.h"
+
+/*
  * Типы макросов
  * TAG - точка в файле
  * BUF - буфер вставки
  * MAC - макро=вставка
- *
- * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.mac.c,v 3.1 1986/04/20 23:42:10 alex Exp $
- * $Log: r.mac.c,v $
- * Revision 3.1  1986/04/20 23:42:10  alex
  */
-#include "r.defs.h"
-
 #define MTAG 1
 #define MBUF 2
 #define MMAC 3
 
-struct tag {int line, col, nfile;};
+struct tag {
+    int line, col, nfile;
+};
+
 #define MSBUF SSAVEBUF
 #define MSTAG sizeof(struct tag)
 #define MSMAC sizeof(char *)
 
 #define LMAC ('z'-'a'+1)
+
 int csrsw; /* Для яркой отметки на экране */
-union macro {struct savebuf mbuf; struct tag mtag; char *mstring;}
-                *mtaba[LMAC];
+
+union macro {
+    struct savebuf mbuf;
+    struct tag mtag;
+    char *mstring;
+} *mtaba[LMAC];
+
 char mtabt[LMAC];
 
 /*
@@ -69,136 +75,149 @@ err:
 }
 
 /*
- * msrbuf( sbuf, name,op)
  * Функция запоминает и выдает буфер вставки
- * op=1 - выдать, 0 - запомнить
+ * op = 1 - выдать, 0 - запомнить
  * ответ 1, если хорошо, иначе 0
  */
-msrbuf( sbuf, name,op)
-register struct savebuf *sbuf;
-register char *name;
-int op;
+int msrbuf(sbuf, name, op)
+    register struct savebuf *sbuf;
+    register char *name;
+    int op;
 {
     register union macro *m;
-    if ((m=mname(name,MBUF,(op?0:MSBUF))))
-        {
-        if(op) *sbuf = m->mbuf; else m->mbuf = *sbuf;
-        return(1);
+
+    m = mname(name, MBUF, (op ? 0 : MSBUF));
+    if (m) {
+        if (op)
+            *sbuf = m->mbuf;
+        else
+            m->mbuf = *sbuf;
+        return 1;
     }
-    return(0);
+    return 0;
 }
 
 /*
- * msvtag(name) -
  * Функция запоминает текущее положение курсора в файле под именем name.
  * Ее дефект в том, что tag (метка) не связана с файлом жестко и
  * перемещается при редактировании предыдущих строк файла
  */
-msvtag(name)
-register char *name;
+int msvtag(name)
+    register char *name;
 {
-        register union macro *m; register struct workspace *cws;
-        cws = curwksp;
-        if( !(m=mname(name,MTAG,MSTAG)) ) return(0);
-        m->mtag.line = cursorline + cws->ulhclno;
-        m->mtag.col  = cursorcol  + cws->ulhccno;
-        m->mtag.nfile= cws->wfile;
-        return(1);
+    register union macro *m;
+    register struct workspace *cws;
+
+    cws = curwksp;
+    m = mname(name, MTAG, MSTAG);
+    if (! m)
+        return 0;
+    m->mtag.line  = cursorline + cws->ulhclno;
+    m->mtag.col   = cursorcol  + cws->ulhccno;
+    m->mtag.nfile = cws->wfile;
+    return 1;
 }
 
 /*
- * mgotag(name) -
- * Функция mgotag служит для установки курсора обратно в именованную
- * точку. cgoto является общей для нее и для нескольких других функций
+ * Return a cursor back to named position.
+ * cgoto is common for it and other functions.
  */
-mgotag(name)
-char *name;
+int mgotag(name)
+    char *name;
 {
     register int i;
-    int fnew=0;
+    int fnew = 0;
     register union macro *m;
-    if( !(m=mname(name,MTAG,0))) return(0);
-    if (curwksp->wfile != (i=m->mtag.nfile))
-    {
-        editfile(openfnames[i],0,0,0,0);
-        fnew=1;
+
+    m = mname(name, MTAG, 0);
+    if (! m)
+            return 0;
+    i = m->mtag.nfile;
+    if (curwksp->wfile != i) {
+        editfile(openfnames[i], 0, 0, 0, 0);
+        fnew = 1;
     }
     cgoto(m->mtag.line, m->mtag.col, -1, fnew);
     csrsw = 1;
-    return(1);
+    return 1;
 }
 
 /*
- * mdeftag(name)
  * Функция mdeftag вырабатывает параметры, описывающие область
- *  между текущим положением курсора и меткой "name". Она заполняет:
+ * между текущим положением курсора и меткой "name". Она заполняет:
  *      paramtype = -2
  *      paramc1   =    соответствует точке "name"
  *      paramr1   =           -- // --
  */
-mdeftag(name)
-char *name;
+int mdeftag(name)
+    char *name;
 {
     register union macro *m;
     register struct workspace *cws;
-    int cl,ln,f=0;
-    if( !(m=mname(name,MTAG,0))) return(0);
+    int cl, ln, f = 0;
+
+    m = mname(name, MTAG, 0);
+    if (! m)
+        return 0;
     cws = curwksp;
-    if(m->mtag.nfile != cws->wfile) {
+    if (m->mtag.nfile != cws->wfile) {
         error("another file");
         return(0);
     }
-    paramtype= -2;
+    paramtype = -2;
     paramr1 = m->mtag.line;
     paramc1 = m->mtag.col ;
     paramr0 += cws -> ulhclno;
     paramc0 += cws -> ulhccno;
-    if( paramr0 > paramr1) {
+    if (paramr0 > paramr1) {
         f++;
         ln = paramr1;
         paramr1 = paramr0;
         paramr0 = ln;
-    }
-    else ln = paramr0;
-    if( paramc0 > paramc1) {
+    } else
+        ln = paramr0;
+    if (paramc0 > paramc1) {
         f++;
         cl = paramc1;
         paramc1 = paramc0;
         paramc0 = cl;
-    }
-    else cl = paramc0;
-    if( f ){
-        cgoto(ln,cl,-1,0);
+    } else
+        cl = paramc0;
+    if (f) {
+        cgoto(ln, cl, -1, 0);
     }
     paramr0 -= cws -> ulhclno;
     paramr1 -= cws -> ulhclno;
     paramc0 -= cws -> ulhccno;
     paramc1 -= cws -> ulhccno;
     if (paramr1 == paramr0)
-        telluser("**:columns defined by tag",0);
-    else if(paramc1 == paramc0)
-        telluser("**:lines defined by tag",0);
-    else telluser("**:square defined by tag",0);
-    return(1);
+        telluser("**:columns defined by tag", 0);
+    else if (paramc1 == paramc0)
+        telluser("**:lines defined by tag", 0);
+    else
+        telluser("**:square defined by tag", 0);
+    return 1;
 }
 
 /*
- * defmac(name)
- * Программа определения макро - последовательности,
+ * Define a macro sequence.
  */
-defmac(name)
-char *name;
+int defmac(name)
+    char *name;
 {
     register union macro *m;
-    if(!(m = mname(name,MMAC,MSMAC))) return(0);
+
+    m = mname(name, MMAC, MSMAC);
+    if (! m)
+        return 0;
     param(1);
-    if(paramtype == 1 && paramv)
-        {
+    if (paramtype == 1 && paramv) {
         m->mstring = paramv;
-        paraml = 0; paramv=NULL;
-        return(1);
+        paraml = 0;
+        paramv = NULL;
+        return 1;
     }
-    return(0);
+    return 0;
 }
 
 /*
@@ -217,18 +236,18 @@ int isy;
         return(m->mstring);
 }
 
-#define LKEY 20 /* Макс. число символов, генерируемых новой клавишей */
 /*
- * defkey()
- * Функция служит для диалогового переопределения клавиатуры
+ * Redefine a keyboard key.
  */
-defkey()
+int defkey()
 {
+#define LKEY 20 /* Макс. число символов, генерируемых новой клавишей */
     char bufc[LKEY+1], *buf;
     register int lc;
     struct viewport *curp;
     int curl,curc;
-    register char *c,*c1;
+    register char *c, *c1;
+
     curp = curport;
     curc = cursorcol;
     curl = cursorline;

@@ -151,9 +151,6 @@ tcread()
         cvtout[COLT] = "\010";
     if (curspos = gettcs("cm"))
         agoto = tgoto;
-#if 0
-    eolflag = ! tgetflag("am");
-#endif
     if (! cvtout[COCURS])
         cvtout[COCURS] = "@";
     if (LINEL <= 60 || NLINES < 8)
