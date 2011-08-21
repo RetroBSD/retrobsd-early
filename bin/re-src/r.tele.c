@@ -34,7 +34,7 @@ void putup(lo, lf)
         } else {
             if (l0 != lf && interrupt())
                 return;
-            i = wseek(curwksp,curwksp->ulhclno + l0);
+            i = wseek(curwksp, curwksp->ulhclno + l0);
             if (i && lmc != 0)
                 lmc = ELMCH;
         }
@@ -93,7 +93,8 @@ void putup(lo, lf)
         if (k > 0) {
             putblanks(k);
         }
-        fixcurs();
+        if (curport->ltext + cursorcol >= LINEL)
+            cursorcol = - curport->ltext;
         if (rmargflg && rmargflg != curport->rmchars[l0]) {
             poscursor(curport->rmarg - curport->ltext, l0);
             putch(rmargflg,0);
@@ -143,29 +144,7 @@ void poscursor(col, lin)
     dlin = lin - cursorline;        /* delta col, lin */
     cursorcol = col;
     cursorline = lin;
-    if (pcursor(scol, slin))        /* direct positioning */
-        return;
-    if ((abs(scol) + abs(slin)) < (abs(dcol) + abs(dlin))) {
-        putcha(COHO);
-        dcol = scol;
-        dlin = slin;
-    }
-    if (dcol > 0) {
-        while (dcol--)
-            putcha(CORT);
-    }
-    else if (dcol < 0) {
-        while (dcol++)
-            putcha(COLT);
-    }
-    if (dlin > 0) {
-        while (dlin--)
-            putcha(CODN);
-    }
-    else if (dlin<0) {
-        while (dlin++)
-            putcha(COUP);
-    }
+    pcursor(scol, slin);            /* direct positioning */
 }
 
 /*
@@ -247,30 +226,15 @@ void putch(j, flg)
             curport->lastcol[cursorline] = cursorcol + 1;
     }
     ++cursorcol;
-    if (fixcurs() == 0)
-        putcha(j);
+    if (curport->ltext + cursorcol >= LINEL)
+        cursorcol = - curport->ltext;
+    putcha(j);
     if (cursorcol <= 0)
         poscursor(curport->ledit,
             cursorline < curport->tedit ? curport->tedit :
             cursorline > curport->bedit ? curport->tedit :
             cursorline);
     movecursor(0);
-}
-
-/*
- * fixcurs() -
- * Обработка граничных эффектов на экране.
- * Устанавливает cursorcol, cursorline равными корректным значениям
- * Правильная последовательность:
- * 1) Увеличить cursorcol; 2) Вызвать fixcurs; 3) Вывести символ;
- * 4) Если cursorcol <= 0, спозиционировать курсор. fixcurs возвращает 1,
- *    если курсор переместился на следующую строку.
- */
-fixcurs()
-{
-    if (curport->ltext + cursorcol >= LINEL)
-        cursorcol = - curport->ltext;
-    return (0);
 }
 
 /*
@@ -410,40 +374,40 @@ loop:
 }
 
 /*
- * drawport(newp,vertf) -
- * Рисовать окно newp (рамки). vertf говорит, нужно ли
- * рисовать верт. рамку
+ * Draw borders for a window.
+ * When vertf, draw a vertical borders.
  */
-drawport(newp,vertf)
-struct viewport *newp;
-int vertf;
+void drawport(newp, vertf)
+    struct viewport *newp;
+    int vertf;
 {
     register struct viewport *newport;
-    register int i;
-    register char c;
+    register int i, c;
     int j;
+
     newport = newp;
     switchport(&wholescreen);
     if(newport->tmarg != newport->ttext) {
         poscursor(newport->lmarg,newport->tmarg);
-        for (i = newport->lmarg;i <= newport->rmarg;i++) putch(TMCH,0);
+        for (i = newport->lmarg; i <= newport->rmarg; i++)
+            putch(TMCH, 0);
     }
-    if ( vertf )
-        for (j = newport->tmarg + 1;j <= newport->bmarg - 1;j++)
-        {
-            if (c = newport->lmchars[j - newport->tmarg - 1])
-            {
-                poscursor(newport->lmarg,j);
-                putch(c,0);
-                poscursor(newport->rmarg,j);
-                putch(newport->rmchars[j - newport->tmarg - 1],0);
+    if (vertf)
+        for (j = newport->tmarg + 1; j <= newport->bmarg - 1; j++) {
+            c = newport->lmchars[j - newport->tmarg - 1];
+            if (c != 0) {
+                poscursor(newport->lmarg, j);
+                putch(c, 0);
+                poscursor(newport->rmarg, j);
+                putch(newport->rmchars[j - newport->tmarg - 1], 0);
             }
         }
-    if(newport->tmarg != newport->ttext) {
-        poscursor(newport->lmarg,newport->bmarg);
-        for (i = newport->lmarg;i <= newport->rmarg;i++) putch(BMCH,0);
+    if (newport->tmarg != newport->ttext) {
+        poscursor(newport->lmarg, newport->bmarg);
+        for (i = newport->lmarg; i <= newport->rmarg; i++)
+            putch(BMCH, 0);
     }
-    /*   poscursor(newport->lmarg + 1,newport->tmarg + 1);     */
+    /* poscursor(newport->lmarg + 1,newport->tmarg + 1); */
     switchport(newport);
 }
 

@@ -227,6 +227,7 @@ extern char cntlmotions[];
 
 extern int tabstops[];
 char blanks[LINELM];
+extern char in0tab[];   /* input control codes */
 
 extern int lread1;      /* Текущий входной символ, -1 - дай еще! */
 char intrflag;          /* 1 - был сигнал INTERUP */
@@ -282,50 +283,58 @@ char *tmpname;                  /* name of file, for do command */
 
 int LINEL, NLINES;              /* size of the screen */
 extern char *curspos, *cvtout[];
-char *(*agoto)();               /* for termcap definitions */
 
 unsigned nbytes;
 
-int read1 (void);               /* read a symbol from terminal */
+int read1 (void);               /* read command from terminal */
+int read2 (void);               /* read raw input character */
 void getlin (int);              /* get a line from current file */
 void putline (int);             /* put a line to current file */
 void movecursor (int);          /* cursor movement operation */
 void poscursor (int, int);      /* position a cursor in current window */
+void pcursor (int, int);        /* move screen cursor */
 void putup (int, int);          /* show lines of file */
 void movep (int);               /* move a window to right */
 void movew (int);               /* move a window down */
 void excline (int);             /* extend cline array */
 int putcha (int);               /* output symbol or op */
 void putch (int, int);          /* put a symbol at current position */
-void putstr (char *, int);       /* put a string, limited by column */
+void putstr (char *, int);      /* put a string, limited by column */
+void putblanks (int);           /* output a line of spaces */
 int endit (void);               /* end a session and write all */
 void switchfile (void);         /* switch to alternative file */
 void chgport (int);             /* switch to another window */
 void search (int);              /* search a text in file */
 void put (struct savebuf *, int, int); /* put a buffer into file */
+int msrbuf (struct savebuf *, char *, int); /* store or get a buffer by name */
 void gtfcn (int);               /* go to line by number */
 int savefile (char *, int);     /* save a file */
 void makeport (char *);         /* make new window */
 void error (char *);            /* display error message */
 char *param (int);              /* get a parameter */
+int chars (int);                /* read next line from file */
 int dechars (char *, int);      /* conversion of line from internal to external form */
 void cleanup (void);            /* cleanup before exit */
 void fatal (char *);            /* print error message and exit */
 int editfile (char *, int, int, int, int); /* open a file for editing */
 void splitline (int, int);      /* split a line at given position */
-int msrbuf (struct savebuf *, char *, int); /* store or get a buffer by name */
 void combineline (int, int);    /* merge a line with next one */
 int msvtag (char *name);        /* save a file position by name */
 int mdeftag (char *);           /* define a file area by name */
 int defkey (void);              /* redefine a keyboard key */
+int addkey(int, char *);        /* add new command key to the code table */
 void rescreen (void);           /* redraw a screen */
 int defmac (char *);            /* define a macro sequence */
+char *rmacl (int);              /* get macro sequence by name */
 int mgotag (char *);            /* return a cursor back to named position */
 void execr (char **);           /* run command with given parameters */
 void telluser (char *, int);    /* display a message in arg area */
 void doreplace(int, int, int, int*); /* replace lines via pipe */
 void removeport (void);         /* remove last window */
 void switchport (struct viewport *); /* switch to given window */
+void drawport(struct viewport *, int); /* draw borders for a window */
+void setupviewport (struct viewport *, int, int, int, int, int);
+                                /* create new window */
 void dumpcbuf (void);           /* flush output buffer */
 char *s2i (char *, int *);      /* convert a string to number */
 char *salloc (int);             /* allocate zeroed memory */
@@ -336,12 +345,33 @@ void openspaces (int, int, int, int); /* insert spaces */
 void closespaces (int, int, int, int); /* delete rectangular area */
 void pickspaces (int, int, int, int); /* get rectangular area to pick buffer */
 int interrupt (void);           /* we have been interrupted? */
-int wposit (struct workspace *, int); /* Set workspace position */
+int wseek (struct workspace *, int); /* set file position by line number */
+int wposit (struct workspace *, int); /* set workspace position */
+void redisplay (struct workspace *, int, int, int, int);
+                                /* redisplay windows of the file */
 void cgoto (int, int, int, int); /* scroll window to show a given area */
 char *append (char *, char *);  /* append strings */
 char *tgoto (char *, int, int); /* cursor addressing */
 struct fsd *file2fsd (int);     /* create a file descriptor list for a file */
 void puts1 (char *);            /* write a string to stdout */
+void switchwksp (void);         /* switch to alternative workspace */
+void checkfsd (void);           /* check fsd correctness */
+int fsdwrite (struct fsd *, int, int); /* write descriptor chain to file */
+void printfsd (struct fsd *);   /* debug output of fsd chains */
+int checkpriv (int);            /* check access rights */
+int getpriv (int);              /* get file access modes */
+void tcread (void);             /* load termcap descriptions */
+char *tgetstr(char *, char *, char **); /* get string option from termcap */
+int tgetnum (char *, char *);   /* get a numeric termcap option */
+int tgetflag (char *, char *);  /* get a flag termcap option */
+char *getnm (int);              /* get user id as printable text */
+void ttstartup (void);          /* setup terminal modes */
+void ttcleanup (void);          /* restore terminal modes */
+int get1w (int);                /* read word */
+int get1c (int);                /* read byte */
+void put1w (int, int);          /* write word */
+void put1c (char, int);         /* write byte */
+void mainloop (void);           /* main editor loop */
 
 /*
  * Таблица клавиатуры (команда / строка символов)

@@ -95,16 +95,15 @@ int savefile(file, n)
 }
 
 /*
- * fsdwrite(f,nl,newf) -
  * Запись по цепочке описателей f в файл "newf"
  * Если nl # 0  - записывать только nl строк или
  * -nl абзацев текста (nl используется в случае
  * команды "exec".
  * Ответ - число записанных строк, или -1, если ошибка.
  */
-fsdwrite(ff, nl, newf)
-struct fsd *ff;
-int nl, newf;
+int fsdwrite(ff, nl, newf)
+    struct fsd *ff;
+    int nl, newf;
 {
     register struct fsd *f;
     register int *c, i;

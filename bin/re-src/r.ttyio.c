@@ -27,11 +27,14 @@ static struct tchars tchars0;
 static char putcbuf[NPUTCBUF];
 static int iputcbuf = 0;
 
+static char *sy0;
+static int isy0f = -1;
+static int knockdown = 0;
+
 /*
- * ttstartup()
- * Установить режимы терминала
+ * Setup terminal modes.
  */
-ttstartup()
+void ttstartup()
 {
 #ifdef TERMIOS
     {
@@ -93,10 +96,9 @@ ttstartup()
 }
 
 /*
- * ttcleanup()
- * Восстановить режимы терминала
+ * Restore terminal modes.
  */
-ttcleanup()
+void ttcleanup()
 {
 #ifdef TERMIOS
     tcsetattr(0, TCSADRAIN, &tioparam);
@@ -118,32 +120,17 @@ static void putchb(c)
 }
 
 /*
- * pcursor(col,lin) -
- * установить курсор в физические координаты на
- * экране. Ответ 0, если нет прямой адресации
+ * Move screen cursor to given coordinates.
  */
-pcursor(col, lin)
-int col, lin;
+void pcursor(col, lin)
+    int col, lin;
 {
     register char *c, sy;
 
-    c = curspos;
-    if (c == 0)
-        return 0;
-    if (agoto)
-        c = (*agoto) (curspos, col, lin);
-    if (*c == 'O')
-        return(0);
+    c = tgoto (curspos, col, lin);
     while ((sy = *c++)) {
-        if (! agoto && (sy & 0200)) {
-            if (sy & 0100)
-                sy = (sy & 077) + col;  /* 300 - col */
-            else
-                sy = (sy & 077) + lin;  /* 200 - lin */
-        }
         putchb(sy);
     }
-    return 1;
 }
 
 /*
@@ -173,8 +160,7 @@ int putcha(c)
 }
 
 /*
- * putblanks(k) -
- * Вывод строки пробелов
+ * Output a line of spaces.
  */
 void putblanks(k)
     register int k;
@@ -199,6 +185,97 @@ void dumpcbuf()
 }
 
 /*
+ * Поиск кода клавиши.
+ * struct ex_int * (fb , fe) = NULL при подаче
+ * первого символа с данной клавиши.
+ * Дальше они используются при поиске кода.
+ * Коды ответа:
+ * CONTF - дай следующий символ,
+ * BADF  - такой последовательности нет в таблице,
+ * >=0   - код команды.
+ */
+static int findt (fb, fe, sy, ns)
+    struct ex_int **fb, **fe;
+    char sy;
+    int ns;
+{
+    char sy1;
+    register struct ex_int *fi;
+
+    fi = (*fb ? *fb : inctab);
+    *fb = 0;
+    if (sy == 0)
+        return BADF;
+    for (; fi != *fe; fi++) {
+        if (! *fe && ! fi->excc)
+            goto exit;
+        sy1 = fi->excc[ns];
+        if (*fb) {
+            if (sy != sy1)
+                goto exit;
+        } else {
+            if (sy == sy1) {
+                *fb = fi;
+            }
+        }
+    }
+exit:
+    *fe = fi; /* for "addkey" */
+    if (! *fb)
+        return BADF;
+    fi = *fb;
+    if (fi->excc[ns+1])
+        return CONTF;
+    return (fi->incc);
+}
+
+#if 0
+/*
+ * Test for findt().
+ */
+int main()
+{
+    char *s = "\017abz";
+    int i, j, k, l, m, is;
+
+    i = j = k = l = m = 0;
+    for (is=0; *s; is++) {
+        k = findt(&i, &j, *s++, l++);
+        if (k != CONTF)
+            break;
+    }
+ex1:
+    printf(" k=%d is=%d pt %o %o\n", k, is, i, j);
+    return 0;
+}
+#endif
+
+/*
+ * Получение символа из файла протокола.
+ * возвращается 0, если файл кончился
+ */
+static int readfc()
+{
+    char sy1 = CCQUIT;
+    do {
+        lread1 = isy0f;
+        if (intrflag || read(inputfile, &sy1, 1) !=1) {
+            if (inputfile != ttyfile)
+                close(inputfile);
+            else
+                lseek(ttyfile, (long) -1, 1);
+            inputfile = 0;
+            intrflag = 0;
+            putcha(COBELL);
+            dumpcbuf();
+            return 0;
+        }
+        isy0f = (unsigned char) sy1;
+    } while (lread1 < 0);
+    return 1;
+}
+
+/*
  * read1()
  * Чтание очередного символа с терминала.
  * Кроме того, здесь же разворачиваются макро и
@@ -206,18 +283,10 @@ void dumpcbuf()
  * функции будут убраны повыше.
  * Ответ приходит в lread1.
  */
-char *rmacl();
-
-#define LBUFWSY 5
-
-static char *sy0, knockdown=0, bufwsy[LBUFWSY];
-extern char in0tab[];
-
-int
-read1()
+int read1()
 {
     char sy1;
-    int i, cntf=0;
+    int cntf = 0;
     register int *lr1 = &lread1;
 #define lread1 (*lr1)   /* Для ускорения */
 
@@ -236,7 +305,7 @@ rmac:
         goto retnl;
     }
     /* Если идет чтение из файла */
-    if (inputfile!=0 && readfc())
+    if (inputfile != 0 && readfc())
         goto retnm;
     /*
      * Ниже - то, что относится к терминалу
@@ -306,9 +375,10 @@ rmacname:
         lread1 = (int) sy1 & 037;
         goto corrcntr;
     }
-    /* Веден управляющий символ - ищем команду в таблице */
+    /* Введен управляющий символ - ищем команду в таблице */
     {
-        int *i1, *i2, ts, k;
+        struct ex_int *i1, *i2;
+        int ts, k;
         i1 = i2 = 0;
         ts = 0;
         sy1 = lread1;
@@ -365,36 +435,6 @@ readquit:
 }
 #undef lread1
 
-static int isy0f = -1;
-
-/*
- * readfc()
- * - получение символа из файла протокола
- *   возвращается 0, если файл кончился
- */
-readfc()
-{
-    char sy1 = CCQUIT;
-    do {
-        lread1=isy0f;
-        if ( intrflag || (read(inputfile,&sy1,1) !=1))
-        {
-            if (inputfile != ttyfile)
-                close(inputfile);
-            else
-                lseek(ttyfile, (long) -1, 1);
-            inputfile = 0;
-            intrflag = 0;
-            putcha(COBELL);
-            dumpcbuf();
-            return 0;
-        }
-        isy0f = ((int)sy1) & 0377;
-    }
-    while (lread1<0);
-    return (1);
-}
-
 /*
  * We were interrupted?
  */
@@ -420,95 +460,32 @@ int interrupt()
 
 #define CCDEL 0177
 
-/* read2() -
- *     функция, читающая входные символы
- *     без их анализа.  Используется при
- *     переопределении клавиш.
+/*
+ * Read raw input characters.
  */
-read2()
+int read2()
 {
     char c;
 
     if (inputfile && readfc())
-        return(lread1);
+        return lread1;
     if (read(0, &c, 1) != 1) {
         c = CCDEL;
         intrflag = 0;
     }
     c &= 0177;
     write(ttyfile, &c, 1);
-    return(c);
+    return (unsigned char) c;
 }
 
 /*
- * findt (&fb,&fe,sy,ns) -
- * Поиск кода клавиши.
- * struct ex_int * (fb , fe) = NULL при подаче
- * первого символа с данной клавиши.
- * Дальше они используются при поиске кода.
- * Коды ответа:
- * CONTF - дай следующий символ,
- * BADF  - такой последовательности нет в таблице,
- * >=0   - код команды.
- */
-
-/*VARARGS*/
-findt (fb,fe,sy,ns)
-struct ex_int **fb, **fe;
-char sy;
-int ns;
-{
-    char sy1;
-    register struct ex_int *fi;
-
-    fi = (*fb ? *fb : inctab);
-    *fb = 0;
-    if (sy == 0)
-        return BADF;
-    for (; fi != *fe; fi++) {
-        if (! *fe && ! fi->excc)
-            goto exit;
-        sy1 = fi->excc[ns];
-        if (*fb) {
-            if (sy != sy1)
-                goto exit;
-        } else {
-            if (sy == sy1) {
-                *fb = fi;
-            }
-        }
-    }
-exit:
-    *fe = fi; /* for "addkey" */
-    if (! *fb)
-        return BADF;
-    fi = *fb;
-    if (fi->excc[ns+1])
-        return CONTF;
-    return (fi->incc);
-}
-
-/* Тест findt
- main()
-  { char *s = "\017abz"; int i,j,k,l,m,is;
-        i=j=k=l=m=0;
-        for(is=0;*s; is++)
-        { k=findt(&i,&j,*s++,l++); if (k != CONTF) goto ex1; }
-ex1:   printf(" k= %d is= %d pt %o %o ", k,is,i,j);
-  }
- t(i) int i; {return;}
- */
-
-/*
- * addkey(cmd,key) -
- * добавления новой управляющей клавиши
- *      в таблицу кодов
+ * Add new command key to the code table.
  */
 extern int nfinc; /* число свободных мест в таблице */
 
-addkey(cmd,key)
-int cmd;
-char *key;
+int addkey(cmd, key)
+    int cmd;
+    char *key;
 {
     struct ex_int *fb, *fe;
     register struct ex_int *fw;
@@ -516,7 +493,7 @@ char *key;
 
     ns=0;
     fb = fe = 0;
-    while((i=findt(&fb,&fe,key[ns],ns))==CONTF && key[ns++]);
+    while ((i = findt(&fb, &fe, key[ns], ns)) == CONTF && key[ns++]);
     if (i != BADF) {
         telluser("key redefined",0);
         fw = fb;
@@ -536,7 +513,7 @@ char *key;
     while(--fw != fe);
 retn:
 #ifdef TEST
-test("addkey out");
+    test("addkey out");
 #endif
     fw ->excc = key;
     fw->incc = cmd;

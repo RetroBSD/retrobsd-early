@@ -1,9 +1,6 @@
 /*
  * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * r.wind.c - работа с окнами
- * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.wind.c,v 3.1 1986/04/20 23:43:41 alex Exp $
- * $Log: r.wind.c,v $
- * Revision 3.1  1986/04/20 23:43:41  alex
+ * работа с окнами
  */
 #include "r.defs.h"
 
@@ -115,35 +112,33 @@ void switchport(ww)
     cursorcol  -= (w->ltext - curport->ltext);
     cursorline -= (w->ttext - curport->ttext);
     curport = w;
-    if (curwksp = curport->wksp)
+    curwksp = curport->wksp;
+    if (curwksp)
         curfile = curwksp->wfile;
 }
 
 /*
- * setupviewport() -
- *  создать новое окно
- *  c = 1 если окно имеет границы по краям
+ * Create new window.
+ * Flag c = 1 when borders enable.
  */
-setupviewport(ww,cl,cr,lt,lb,c)
-struct viewport *ww;
-int cl,cr,lt,lb,c;
+void setupviewport(ww, cl, cr, lt, lb, c)
+    struct viewport *ww;
+    int cl, cr, lt, lb, c;
 {
     register int i,size;
     register struct viewport *w;
+
     w = ww;
     w->lmarg = cl;
     w->rmarg = cr;
     w->tmarg = lt;
     w->bmarg = lb;
-    if (c)
-    {
+    if (c) {
         w->ltext = cl + 1;
         w->rtext = cr - cl - 2;
         w->ttext = lt + 1;
         w->btext = lb - lt - 2;
-    }
-    else
-    {
+    } else {
         w->ltext = cl;
         w->rtext = cr - cl;
         w->ttext = lt;
@@ -152,11 +147,14 @@ int cl,cr,lt,lb,c;
     w->ledit = w->tedit = 0;
     w->redit = w->rtext;
     w->bedit = w->btext;
+
     /* eventually this extra space may not be needed */
     w->wksp = (struct workspace *)salloc(SWKSP);
     w->altwksp = (struct workspace *)salloc(SWKSP);
-    w->firstcol = salloc(size = NLINES - lt + 1);
-    for (i=0;i<size;i++) (w->firstcol)[i] = w->rtext + 1;
+    size = NLINES - lt + 1;
+    w->firstcol = salloc(size);
+    for (i=0; i<size; i++)
+        w->firstcol[i] = w->rtext + 1;
     w->lastcol = salloc(size);
     w->lmchars = salloc(size);
     w->rmchars = salloc(size);
@@ -312,8 +310,8 @@ void chgport(portnum)
 }
 
 /*
- * redisplay(w,w->wfile,from,to,delta) -
- * Перевыдать изменившиеся окна после сдвига строк в файле.
+ * Redisplay changed windows after lines in file shifted.
+ *
  * w - Рабочее пространство;
  * fn - имя измененного файла;
  * from, to, delta - диапазон изменившихся строк и
@@ -326,9 +324,9 @@ void chgport(portnum)
  *  3. Пересчитываются текущие номера строк в рабочих областях, если они
  *     отображают хвосты изменившихся файлов.
  */
-redisplay(w,fn,from,to,delta)
-struct workspace *w;
-int from,to,delta,fn;
+void redisplay(w, fn, from, to, delta)
+    struct workspace *w;
+    int from, to, delta, fn;
 {
     register struct workspace *tw;
     register int i,j;

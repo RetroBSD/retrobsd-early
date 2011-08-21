@@ -1,6 +1,6 @@
-CFLAGS          = -O -DDEBUG -g #-Wall -Werror
+CFLAGS          = -O3 -g -Wall -Werror -DDEBUG
 
-# For Linux of Mac OS X
+# For Linux or Mac OS X
 CFLAGS          += -DTERMIOS
 
 all:            re

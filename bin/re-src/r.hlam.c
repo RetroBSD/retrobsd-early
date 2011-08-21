@@ -27,47 +27,54 @@ char *salloc(n)
 }
 
 /*
- * checkpriv(file) - Проверить права. 0 - ни чтения, ни записи;
- *                   1 только чтение
- *                   2 и чтение, и запись
+ * Check access rights.
+ * Return 0 - no access;
+ *        1 - only read;
+ *        2 - read and write.
  */
-checkpriv(fildes)
-int fildes;
+int checkpriv(fildes)
+    int fildes;
 {
     register struct stat *buf;
     struct stat buffer;
     int anum, num;
-    register int unum,gnum;
-    if (userid == 0) return 2;   /* superuser accesses all */
+    register int unum, gnum;
+
+    if (userid == 0)
+        return 2;       /* superuser accesses all */
     buf = &buffer;
-    fstat(fildes,buf);
+    fstat(fildes, buf);
     unum = gnum = anum = 0;
-    if (buf->st_uid == userid)
-    {
-        if (buf->st_mode & 0200) unum = 2;
-        else if (buf->st_mode & 0400) unum = 1;
+    if (buf->st_uid == userid) {
+        if (buf->st_mode & 0200)
+            unum = 2;
+        else if (buf->st_mode & 0400)
+            unum = 1;
     }
-    if (buf->st_gid == groupid)
-    {
-        if (buf->st_mode & 020) gnum = 2;
-        else if (buf->st_mode & 040) gnum = 1;
+    if (buf->st_gid == groupid) {
+        if (buf->st_mode & 020)
+            gnum = 2;
+        else if (buf->st_mode & 040)
+            gnum = 1;
     }
-    if (buf->st_mode & 02) anum = 2;
-    else if (buf->st_mode & 04) anum = 1;
+    if (buf->st_mode & 02)
+        anum = 2;
+    else if (buf->st_mode & 04)
+        anum = 1;
     num = (unum > gnum ? unum : gnum);
     num = (num  > anum ? num  : anum);
-    return(num);
+    return num;
 }
 
 /*
- * getpriv(fildes)
- * Дай режим
+ * Get file access modes.
  */
-getpriv(fildes)
-int fildes;
+int getpriv(fildes)
+    int fildes;
 {
     struct stat buffer;
     register struct stat *buf;
+
     buf = &buffer;
     fstat(fildes,buf);
     return (buf->st_mode & 0777);
@@ -116,7 +123,7 @@ char *append(name, ext)
     while (*d)
         *c++ = *d++;
     d = ext;
-    while (*c++ = *d++);
+    while ((*c++ = *d++) != 0);
     return newname;
 }
 
@@ -150,56 +157,65 @@ char *s2i(s, i)
 }
 
 /*
- * getnm() -    Подпрограмма выдает номер пользователя в текстовом виде.
+ * Get user id as printable text.
  */
-#define LNAME 8
-static char namewd[LNAME+1];
 char *getnm(uid)
-int uid;
+    int uid;
 {
-    register int i,j;
+#define LNAME 8
+    static char namewd[LNAME+1];
+    register int i;
+
     i = LNAME;
     namewd[LNAME]=0;
-    while( i>1 && uid>0) {
-            namewd[--i]= '0' + uid %10;
+    while (i > 1 && uid > 0) {
+            namewd[--i] = '0' + uid %10;
             uid /= 10;
     }
-    return(&namewd[i]);
+    return &namewd[i];
 }
 
 /*
- * get1c, get1w(fd) - дай байт/слово
- * put1c, put1w(w,fd) - положи байт/слово
+ * Read word.
  */
 int get1w(fd)
-int fd;
+    int fd;
 {
     int i;
 
-    if (read(fd, &i, sizeof(int)) !=  sizeof(int))
+    if (read(fd, &i, sizeof(int)) != sizeof(int))
         return -1;
     return i;
 }
 
+/*
+ * Read byte.
+ */
 int get1c(fd)
-int fd;
+    int fd;
 {
     char c;
 
     if (read(fd, &c, 1) == 1)
-        return c & 0377;
+        return (unsigned char) c;
     return -1;
 }
 
-put1w(w,fd)
-int fd,w;
+/*
+ * Write word.
+ */
+void put1w(w, fd)
+    int fd, w;
 {
     write(fd, &w, sizeof(int));
 }
 
-put1c(c,fd)
-int fd;
-char c;
+/*
+ * Write byte.
+ */
+void put1c(c, fd)
+    int fd;
+    char c;
 {
     write(fd, &c, 1);
 }

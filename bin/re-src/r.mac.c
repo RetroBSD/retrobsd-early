@@ -221,19 +221,21 @@ int defmac(name)
 }
 
 /*
- * char *rmacl(isy)
- * Выдается макро = последовательность или 0;
- * Имя определяется как один символ с кодом isy - 0200 + 'a'
+ * Get macro contents by name.
+ * Name is a single symbol with code = isy - 0200 + 'a'
  */
 char *rmacl(isy)
-int isy;
+    int isy;
 {
         char nm[2];
         register union macro *m;
-        nm[0]=isy - (CCMAC+1) + 'a';
-        nm[1] =0;
-        if (!(m=mname(nm,MMAC,0))) return(0);
-        return(m->mstring);
+
+        nm[0] = isy - (CCMAC + 1) + 'a';
+        nm[1] = 0;
+        m = mname(nm, MMAC, 0);
+        if (! m)
+            return 0;
+        return m->mstring;
 }
 
 /*
@@ -252,39 +254,37 @@ int defkey()
     curc = cursorcol;
     curl = cursorline;
     switchport(&paramport);
-    poscursor(22,0);
+    poscursor(22, 0);
     telluser(" enter <new key><del>:",0);
     lc = 0;
     while((bufc[lc] = read2()) !='\177'  && lc++ < LKEY);
-    if ( lc ==0 || lc == LKEY )
-    {
-        goto reterr;
+    if (lc ==0 || lc == LKEY) {
+reterr: lc = 0;
+        error("illegal");
+        goto ret;
     }
     bufc[lc] = 0;
     telluser("enter <command> or <macro name>:",1);
-    poscursor(33,0);
-    lread1= -1;
+    poscursor(33, 0);
+    lread1 = -1;
     read1();
-    if (!CTRLCHAR) {
-        if(lread1 == '$') lread1 = CCMAC;
+    if (! CTRLCHAR) {
+        if (lread1 == '$')
+            lread1 = CCMAC;
+
+        else if(lread1 >= 'a' && lread1 <= 'z')
+            lread1 += CCMAC + 1 -'a';
         else
-            if(lread1 >= 'a' && lread1 <= 'z') lread1 += CCMAC+1 -'a';
-            else {
-                goto reterr;
-            }
+            goto reterr;
     }
-    telluser("",0);
+    telluser("", 0);
     c = buf = salloc(lc + 1);
     c1 = bufc;
-    while ( *c++ = *c1++);
-    lc = addkey(lread1,buf);
+    while ((*c++ = *c1++) != 0);
+    lc = addkey(lread1, buf);
 ret:
     lread1 = -1;
     switchport(curp);
-    poscursor(curc,curl);
-    return(lc);
-reterr:
-    lc = 0;
-    error("illegal");
-    goto ret;
+    poscursor(curc, curl);
+    return lc;
 }

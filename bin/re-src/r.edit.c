@@ -4,47 +4,221 @@
  * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
  */
 #include "r.defs.h"
+#include <signal.h>
 
 #define NBYMAX 150      /* Макс. размер байтов для fsdbytes, +1 */
 
-int charskl, charscol;   /* Положение символа (для chars) */
+static int charskl;     /* Положение символа (для chars) */
 
 /*
  * Настройка программы чтения из файла
  */
-//#define ALIGBUF                 /* Читать по границе листа!! */
-#define CHARBUFSZ 512           /* >= 512, если ALIGBUF */
+#define CHARBUFSZ 512
 
-int chkl;       /* position of next read from charsfi */
-int charsfi, charsi, charsn;
+static int charsoff;    /* position of next read from charsfi */
+static int charsfi, charsi, charsn;
+
+static char charsbuf[CHARBUFSZ];
 
 /*
- * charsin(file,l) - настроить программу чтения символов "char" на
- * файл "fi" с позиции l = сдвиг.
+ * Настроить программу чтения символов "char" на
+ * файл "fi" с позиции offset = сдвиг.
  */
-static void charsin(fi, l)
-    int fi, l;
+static void charsin(fi, offset)
+    int fi, offset;
 {
     if (fi <= 0) {
         charsfi = fi;
         return;
     }
-    if ((charsfi != fi) || (l > chkl) || (l < chkl - charsn)) {
-#ifndef ALIGBUF
-        lseek(fi, l, SEEK_SET);
-        chkl = l;
-        charsi = charsn = 0;
-#else
-        chkl = 0;
-        charsi = l;
+    if (charsfi == fi && offset <= charsoff && offset >= charsoff - charsn) {
+        /* New offset is inside the last buffer. */
+        charsi = charsn + offset - charsoff;
+    } else {
+        lseek(fi, (off_t) offset, SEEK_SET);
+        charsoff = offset;
+        charsi = 0;
         charsn = 0;
-#endif
-    } else
-        charsi = charsn + l - chkl;
-
+    }
     ncline = 0;
     charsfi = fi;
-    charskl = chkl + charsi - charsn;
+    charskl = charsoff + charsi - charsn;
+}
+
+/*
+ * Преобразование строки из внешней во внутреннюю форму.
+ * *si - Текущий входной символ
+ * *(se-1) - Последний ранее считанный входной символ
+ * *so - текущее место в строке вывода
+ *  no - текущая колонка на выводе, +1 (1, если пусто)
+ *  mo - макс. номер колонки в олученной строке
+ *
+ * Код ответа:
+ *       0 - end of line
+ *       1 - end of input string
+ *       2 - the output line overflow
+ */
+static int exinss(si, se, so, no, mo)
+    char **si, *se, **so;
+    int *no, mo;
+{
+    register char *st, *sf;
+    register unsigned sy;
+    int s1, n, i;
+    int ir = 0;
+
+    sf = *si;
+    st = *so;
+    /*==== se +=1; ====*/
+    n = *no;
+    /* main loop */
+    while ((sy = *sf) != '\n' && sf != se) {
+        if (n+2 > mo) {
+            ir = 2;
+            break;
+        }
+        if (sy == '\11') {
+            i = (n & ~7) + 8;
+            if (i > mo) {
+                ir = 2;
+                break;
+            }
+            for (; n<i; n++)
+                *st++ = ' ';
+            goto next;
+        }
+        /* DEL */
+        if (sy == '\177') {
+            *st++ = esc0;
+            *st++ = '#';
+            n += 2;
+            goto next;
+        }
+        /* CNTRL X */
+        s1 = sy & 0340;
+        if (s1 == 0) {
+            *st++ = esc0;
+            *st++ = sy | 0100;
+            n += 2;
+            goto next;
+        }
+        /* letters and sim. */
+        if (s1 != 040) {
+            if (s1 == 0200 || s1 == 0240) {
+                /* \377 */
+                if (n+4 > mo) {
+                    ir = 2;
+                    break;
+                }
+                *st++ = esc0;
+                *st++ = ((sy >> 6) & 3) + '0';
+                *st++ = ((sy >> 3) & 7) + '0';
+                *st++ = (sy & 7) + '0';
+                n += 4;
+                goto next;
+            }
+        }
+        *st++ = sy;
+        n++;
+next:
+        sf++;
+    }
+    if (ir == 0) {
+        if (sy == '\n')
+            sf++;
+        else
+            ir = 1;
+    }
+    *si = sf;
+    *so = st;
+    *no = n;
+    *st = 0;
+    return ir;
+}
+
+/*
+ * Main function for reading next line from file.
+ * Управляется глобальными переменными charsoff и charsfi.
+ * (сдвиг в файле и дескриптор).
+ * Возвращает: последний символ либо -1 при конце файла.
+ * Если flg = 1 - заполняется строка "cline".
+ * Длина строки возвращается в ncline, с учетом символа конца.
+ * Строка оканчивается символом LINE FEED или -1, если конец файла.
+ * ============================================================
+ * При вводе строка разворачивается из файловой в экранную форму.
+ * При этом заменяются символы табуляции, неграфические символы,
+ * а в режимах "lcase" или "lat" часть символов преобразуются в пару
+ * символов.
+ * Обратное преобразование (из экранной в файловую форму)
+ * делается функцией "dechar".
+ *
+ * Если flg = 0 - строка не формируется, этот режим служит для
+ * составления цепи дескрипторов.
+ */
+int chars(flg)
+    int flg;
+{
+    register char *c,*se;
+    register int ko;
+    char *si, *so;
+
+    if (charsfi <= 0) {
+        if (lcline == 0)
+            excline(1);
+        ncline = 1;
+        cline[0] = NEWLINE;
+        return (NEWLINE);
+    }
+    if (! cline)
+        excline(0);
+    so = cline;
+    ko = (charsi >= charsn) ? 1 : 2;
+    do {
+        if (ko == 1) {
+            charsi = 0;
+            charsn = read(charsfi, charsbuf, CHARBUFSZ);
+            if (charsn < 0) {
+                error("Read Error");
+                charsn = 0;
+            }
+            charsoff += charsn;
+        }
+        if (charsn <= charsi) {
+            ko = 1;
+            break;
+        } /* read buf empty */
+
+        si = charsbuf + charsi;
+        se = charsbuf + charsn;
+        if (! flg) {
+            c = si;
+            while (*c++ != NEWLINE && c != se);
+            charsi = c - charsbuf;
+            ko = (*(c-1) == NEWLINE) ? 0 : 1;
+            continue;
+        }
+        while (! lcline || (ko = exinss(&si, se, &so, &ncline, lcline)) == 2) {
+            ncline = so - cline;
+            excline(0);
+            so = cline + ncline;
+        }
+        charsi = si - charsbuf;
+    } while (ko);
+
+    /* ko=0 - NEWLINE, 1 - end of file */
+    charskl = charsoff + charsi - charsn;
+    if (ko == 1)
+        charsfi = 0;
+
+    /* Убрать хвостовые пробелы */
+    if (flg && so) {
+        *so = ' ';
+        c = so;
+        while (*c == ' ' && c-- != cline);
+        *++c = NEWLINE;
+        ncline = (c - cline) + 1;
+    }
+    return ko ? -1 : NEWLINE;
 }
 
 /*
@@ -96,9 +270,8 @@ static struct fsd *temp2fsd(chan)
         c = chars(0);
         lct = charskl - kl;
         if (c != -1 || lct) {
-            if (lct > 127)
-            {
-                fby[nby++] = (lct / 128)|0200;
+            if (lct > 127) {
+                fby[nby++] = (lct / 128) | 0200;
                 lct = lct % 128;
             }
             fby[nby++] = lct;
@@ -118,189 +291,6 @@ struct fsd *file2fsd(fname)
 }
 
 /*
- * int chars(flg)
- * Основная функция для чтения очередной строки из файла.
- * Управляется глобальными переменными chkх, chkl, и charsfi.
- * (сдвиг в файле и дескриптор).
- * Возвращает: последний символ либо -1 при конце файла.
- * Если flg = 1 - заполняется строка "cline".
- * Длина строки возвращается в ncline, с учетом символа конца.
- * Строка оканчивается символом LINE FEED или -1, если конец файла.
- * ============================================================
- * При вводе строка разворачивается из файловой в экранную форму.
- * При этом заменяются символы табуляции, неграфические символы,
- * а в режимах "lcase" или "lat" часть символов преобразуются в пару
- * символов.
- * Обратное преобразование (из экранной в файловую форму)
- * делается функцией "dechar".
- *
- * Если flg = 0 - строка не формируется, этот режим служит для
- * составления цепи дескрипторов.
- */
-int chars(flg)
-{
-    register char *c,*se;
-    register int ko;
-    char *si, *so;
-    static char charsbuf[CHARBUFSZ];
-
-    if (charsfi <= 0) {
-        if (lcline == 0)
-            excline(1);
-        ncline = 1;
-        cline[0] = NEWLINE;
-        return (NEWLINE);
-    }
-    if (! cline)
-        excline(0);
-    so = cline;
-    ko = (charsi >= charsn) ? 1 : 2;
-    do {
-        if (ko == 1)
-#ifndef ALIGBUF
-        {
-            charsn = read(charsfi, charsbuf, CHARBUFSZ);
-            charsi = 0;
-#else
-        {
-            charsi -= charsn;
-            charsn=read(charsfi, charsbuf, CHARBUFSZ);
-#endif
-            if (charsn<0) {
-                error("Read Error");
-                charsn=0;
-            }
-            chkl += charsn;
-        }
-        if (charsn <= charsi) {
-            ko = 1;
-            break;
-        } /* read buf empty */
-
-        si = charsbuf + charsi;
-        se = charsbuf + charsn;
-        if (! flg) {
-            c = si;
-            while (*c++ != NEWLINE && c != se);
-            charsi = c - charsbuf;
-            ko = (*(c-1) == NEWLINE) ? 0 : 1;
-            continue;
-        }
-        while (! lcline || (ko = exinss(&si, se, &so, &ncline, lcline)) == 2) {
-            ncline = so - cline;
-            excline(0);
-            so = cline + ncline;
-        }
-        charsi = si - charsbuf;
-    } while (ko);
-
-    /* ko=0 - NEWLINE, 1 - end of file */
-    charskl = chkl + charsi - charsn;
-    if (ko == 1)
-        charsfi = 0;
-
-    /* Убрать хвостовые пробелы */
-    if (flg && so) {
-        *so = ' ';
-        c = so;
-        while (*c == ' ' && c-- != cline);
-        *++c = NEWLINE;
-        ncline = (c - cline) + 1;
-    }
-    return ko ? -1 : NEWLINE;
-}
-
-static char *seit = "\\\\\140'{(})|!~^";
-
-/*
- * exinss(&si,&se,&so,&no,&mo) -
- * Преобразование строки из внешней во внутреннюю форму.
- * *si - Текущий входной символ
- * *(se-1) - Последний ранее считанный входной символ
- * *so - текущее место в строке вывода
- *  no - текущая колонка на выводе, +1 (1, если пусто)
- *  mo - макс. номер колонки в олученной строке
- *
- * Код ответа:
- *       0 - end of line
- *       1 - end of input string
- *       2 - the output line overflow
- */
-exinss(si,se,so,no,mo)
-char **si,*se,**so;
-int *no,mo;
-{
-    register char *st, *sf;
-    register unsigned sy;
-    int s,s1,n,i;
-    char *sft;
-    int ir=0;
-    sf= *si;
-    st= *so;
-    /*==== se +=1; ====*/
-    n= *no;
-    /* main loop */
-    while((sy= *sf)!='\n' && sf!=se)
-    {
-        if (n+2 > mo) {
-            ir = 2;
-            break;
-        }
-        if (sy == '\11') {
-            i = (n & ~7) + 8;
-            if (i > mo) {
-                ir = 2;
-                break;
-            }
-            for (; n<i; n++)
-                *st++ = ' ';
-            goto next;
-        }
-        /* DEL */
-        if (sy == '\177') {
-            *st++ = esc0;
-            *st++ = '#';
-            n += 2;
-            goto next;
-        }
-        /* CNTRL X */
-        s1 = sy & 0340;
-        if (s1 == 0) {
-            *st++ = esc0;
-            *st++ = sy | 0100;
-            n += 2;
-            goto next;
-        }
-        /* letters and sim. */
-        if (s1 != 040) {
-            if (s1 == 0200 || s1 == 0240) {
-                /* \377 */
-                if (n+4 > mo) {
-                    ir = 2;
-                    break;
-                }
-                *st++ = esc0;
-                *st++ = (sy>>6)&3 + '0';
-                *st++ = (sy>>3)&7 + '0';
-                *st++ = ((sy) &7) + '0';
-                n += 4;
-                goto next;
-            }
-        }
-        *st++ = sy;
-        n++;
-next:
-        sf++;
-    }
-    ir= ( ir?  ir : ((sy=='\n')?(sf++,0):1) );
-    *si=sf;
-    *so=st;
-    *no=n;
-    *st=0;
-    return(ir);
-}
-
-/*
  * Conversion of line from internal to external form.
  * Преобразование делается прямо в строке line.
  * n - длина строки. В строке должно быть не менее n+1 символов,
@@ -316,8 +306,7 @@ int dechars(line, n)
     register unsigned cc;   /* current character */
     int lnb;       /* 1 + last non-blank col */
     int cn;                 /* col number */
-    int i,j;
-    char *to1;
+    int i, j;
     line[n] = NEWLINE;
     fm = to = line;
     cn = -1;
@@ -335,7 +324,7 @@ int dechars(line, n)
                 }
                 if (*fm == '#') {
                     *to++ = '\177';
-                    *fm++;
+                    fm++;
                     continue;
                 }
                 /* <esc>XXX */
@@ -383,8 +372,8 @@ void excline(n)
  * putbks(col,n) -
  * вставить n пробелов в колонке col текущей строки
  */
-putbks(col,n)
-int col,n;
+void putbks(col, n)
+    int col, n;
 {
     register int i;
 
@@ -403,15 +392,14 @@ int col,n;
 }
 
 /*
- * wseek(wksp,lno) -
  * Установить файл и смещение для ввода строки nlo
  * из рабочего пространства wksp.
  * После этого chars(0) считает требуемую строку.
  * Код ответа = 1, если такой строки нет, 0 если ОК
  */
-int wseek(wksp,lno)
-struct workspace *wksp;
-int lno;
+int wseek(wksp, lno)
+    struct workspace *wksp;
+    int lno;
 {
     register int *cp;
     int i;
@@ -482,11 +470,9 @@ void switchfile()
 }
 
 /*
- * switchwksp() -
- *  Переключить wksp на альтернативное.
- *
+ * Switch to alternative workspace.
  */
-switchwksp()
+void switchwksp()
 {
     register struct workspace *tempwksp;
 
@@ -523,6 +509,222 @@ static struct fsd *blanklines(n)
         f = g;
     }
     return (f);
+}
+
+/*
+ * разломать fsd по строке n в пространстве
+ * w. curlno = curflno при возврате, и curfsd указывает на первую
+ * строку после разрыва (которая может быть строкой из конечного
+ * блока). Исходный fsd остается, возможно, с неиспользуемым
+ * остатком списка длин.
+ * Если функция применяется к концу файла, текущая
+ * позиция остается в конце файла, на конечном блоке.
+ * Если указанная строка выходит за пределы файла, добавляются
+ * описатели пустых строк (с каналом -1).
+ * Если "reall=1" то блок перед разрывом переразмещается в памяти с
+ * целью экономии места.
+ * ВНИМАНИЕ: breakfsd может нарушить корректность указателей в  workspace.
+ * Поэтому после всех операций нужно вызывать "redisplay".
+ */
+static int breakfsd(w, n, reall)
+    struct workspace *w;
+    int n, reall;
+{
+    int nby, i, j, jj, k, lfb0;
+    register struct fsd *f,*ff;
+    struct fsd *fn;
+    register int *c;
+    int *cc;
+    off_t offs;
+
+    DEBUGCHECK;
+    if (wposit(w, n)) {
+        f = w->curfsd;
+        ff = f->backptr;
+        free((char *)f);
+        fn = blanklines(n - w->curlno);
+        w->curfsd = fn;
+        fn->backptr = ff;
+        if (ff)
+            ff->fwdptr = fn;
+        else
+            openfsds[w->wfile] = fn;
+        wposit(w,n);
+        return (1);
+    }
+    f = w->curfsd;
+    cc = c = &f->fsdbytes;
+    offs = 0;
+    ff = f;
+    nby = n - w->curflno;
+    if (nby != 0) {
+        /* get down to the nth line */
+        for (i=0; i<nby; i++) {
+            j = *c++;
+            if (j & 0200) {
+                offs += 128 * (j & 0177);
+                j = *c++;
+            }
+            offs += j;
+        }
+        /* now make a new fsd from the remainder of f */
+        i = j = jj = f -> fsdnlines - nby; /* number of lines in new fsd */
+        lfb0 = c - cc;
+        cc = c;
+        while (--i >= 0) {
+            if (*cc++ < 0) {
+                j++;
+                cc++;
+            }
+        }
+        ff = (struct fsd *)salloc(SFSD + j);
+        ff->fsdnlines = jj;
+        ff->fsdfile = f->fsdfile;
+        offs += f->seek;
+        ff->seek = offs;
+        cc = &ff->fsdbytes;
+        for (k=0; k<jj; k++)
+            if ((*cc++ = *c++) < 0)
+                *cc++ = *c++;
+        if ((ff->fwdptr = f->fwdptr))
+            ff->fwdptr->backptr = ff;
+        ff->backptr = f;
+        f->fwdptr = ff;
+        f->fsdnlines = nby;
+        if (reall && jj > 4 && f->backptr) {
+            ff = (struct fsd *)salloc(SFSD+lfb0);
+            *ff = *f;
+            c = &(ff->fsdbytes);
+            cc = &(f->fsdbytes);
+            while (lfb0--) {
+                *c++ = *cc++;
+            }
+            ff->backptr->fwdptr = ff->fwdptr->backptr = ff;
+            free((char*) f);
+            f = ff;
+            ff = f->fwdptr;
+        }
+    }
+    w->curfsd = ff;
+    w->curflno = n;
+    DEBUGCHECK;
+    return (0);
+}
+
+/*
+ * программа пытается слить несколько fsd - блоков в один
+ * для экономии памяти.
+ * делается попытка слить в один блок w->curfsd->backptr и
+ * w->curfsd, если они описывают смежную информацию.
+ */
+static int catfsd(w)
+    struct workspace *w;
+{
+    register struct fsd *f0, *f;
+    struct fsd *f2;
+    register int *c;
+    int *cc;
+    int i, j, l0=0, l1=0, lb0=0, lb1, dl, nl0, nl1, fd0, kod = 0;
+    /* l0,  l1:  число байтов в участке файла, описываемом f0, f;
+     * lb0, lb1: длина описателя длин в fsd;
+     * nl0, nl1: число строк в fsd */
+
+    f = w->curfsd;
+    if ((f0 = f->backptr) == 0) {
+        openfsds[w->wfile] = f;
+        return(0);
+    }
+    f0->fwdptr = f;
+    fd0=f0->fsdfile;
+    nl0=f0->fsdnlines;
+    while (fd0>0 && fd0==f->fsdfile && (nl0+(nl1=f->fsdnlines)< FSDMAXL)) {
+        dl = f->seek - f0->seek;
+        /*  подсчитываем длину блока, eсли она неизвестна */
+        if (l0==0) {
+            i = nl0;
+            cc = c = &f0->fsdbytes;
+            while(i--) {
+                if ((j = *c++) & 0200)
+                    j = (j & 0177) * 128 + *c++;
+                l0 += j;
+            }
+            lb0 = c - cc;
+        }
+        if (dl != l0)
+            return(kod);
+        /* сливаем два fsd  и пытаемся повторить */
+        i = nl1;
+        cc = c = &(f0->fsdbytes);
+        while (i--) {
+            if ((j = *c++) & 0200)
+                j = (j & 0177) * 128 + *c++;
+            l1 += j;
+        }
+        lb1 = c - cc;
+        f2 = f;
+        f = (struct fsd*) salloc(SFSD + lb0 + lb1);
+        *f = *f0;
+        f->fwdptr = f2->fwdptr;
+        w->curfsd = f;
+        w->curflno -= nl0;
+        nl0=f->fsdnlines = nl0 + nl1;
+        c = &(f->fsdbytes);
+        i =lb0;
+        cc = &(f0->fsdbytes);
+        while (i--)
+            *c++ = *cc++;
+        i = lb1;
+        cc = &(f2->fsdbytes);
+        while (i--)
+            *c++ = *cc++;
+        lb0 += lb1;
+        l0 += l1;
+        kod = 1;
+        free((char *)f2);
+        free((char *)f0);
+        f->fwdptr ->backptr = f;
+        f0 = f->backptr;
+        if (f0)
+            f0->fwdptr = f;
+        else
+            openfsds[w->wfile] = f;
+        f0 = f;
+        f = f0->fwdptr;
+    }
+    return(kod);
+}
+
+/*
+ * Вставить описатель f в файл, описываемый wksp,
+ * перед строкой at.
+ * Вызывающая программа должна вызвать redisplay с
+ * соответствующими аргументами.
+ */
+static void insert(wksp, f, at)
+    struct workspace *wksp;
+    struct fsd *f;
+    int at;
+{
+    register struct fsd *w0, *wf, *ff;
+
+    DEBUGCHECK;
+    ff = f;
+    while (ff->fwdptr->fsdfile) {
+        ff = ff->fwdptr;
+    }
+    breakfsd(wksp, at, 1);
+    wf = wksp->curfsd;
+    w0 = wf->backptr;
+    free((char *)ff->fwdptr);
+    ff->fwdptr = wf;
+    wf->backptr = ff;
+    f->backptr = w0;
+    wksp->curfsd = f;
+    wksp->curlno = wksp->curflno = at;
+    if (openwrite[wksp->wfile])
+        openwrite[wksp->wfile] = EDITED;
+    catfsd(wksp);
+    DEBUGCHECK;
 }
 
 /*
@@ -686,6 +888,102 @@ void closelines(frum, number)
 }
 
 /*
+ * Pick (flg=0) / delete (flg=1).
+ */
+static void pcspaces(line, col, number, nl, flg)
+    int line, col, number, nl, flg;
+{
+    register struct fsd *f1,*f2;
+    struct fsd *f0;
+    char *linebuf;
+    register int i;
+    int *bp, j, n, line0, line1;
+
+    if (charsfi == tempfile)
+        charsfi = 0;
+    linebuf = salloc(number+1);
+    f0 = f2 = 0;
+    line0 = line;
+    line1 = line0 + nl;
+    while ((nl = (line1 - line0)) != 0) {
+        if (nl > FSDMAXL)
+            nl = FSDMAXL;
+        f1 = (struct fsd*) salloc(SFSD + (number>127 ? nl*2 : nl));
+        if (f2) {
+            f2->fwdptr = f1;
+            f1->backptr = f2;
+        } else
+            f0 = f1;
+        bp = &(f1->fsdbytes);
+        f1->fsdnlines = nl;
+        f1->fsdfile = tempfile;
+        f1->seek = tempfl;
+        for (j=line0; j<line0+nl; j++) {
+            getlin(j);
+            if (col+number >= ncline) {
+                if (col+number >= lcline)
+                    excline(col+number+1);
+                for (i=ncline-1; i<col+number; i++)
+                    cline[i] = ' ';
+                cline[col+number] = NEWLINE;
+                ncline = col + number + 1;
+            }
+            for (i=0; i<number; i++)
+                linebuf[i] = cline[col+i];
+            linebuf[number] = NEWLINE;
+            lseek(tempfile, tempfl, SEEK_SET);
+            if (charsfi == tempfile)
+                charsfi = 0;
+            write(tempfile, linebuf, n = dechars(linebuf,number));
+            if (n > 127)
+                *bp++ = (n/128) | 0200;
+            *bp++ = n % 128;
+            tempfl += n;
+        }
+        f2 = f1;
+        line0 = line0 + nl;
+    }
+    f2->fwdptr = (struct fsd*) salloc(SFSD);
+    f2->fwdptr->backptr = f2;
+    nl = line1 - line;
+    if (flg) {
+        for (j=line; j<line+nl; j++) {
+            getlin(j);
+            if (col+number >= ncline) {
+                if (col+number >= lcline)
+                    excline(col+number+1);
+                for (i=ncline-1; i<col+number; i++)
+                    cline[i] = ' ';
+                cline[col+number] = NEWLINE;
+                ncline = col + number + 1;
+            }
+            for (i=col+number; i<ncline; i++)
+                cline[i-number] = cline[i];
+            ncline -= number;
+            fcline = 1;
+            putline(0);
+            i = j - curwksp->ulhclno;
+            if (i <= curport->btext)
+                putup(i, i);
+        }
+    }
+    insert(pickwksp, f0, n = nlines[2]);
+    redisplay((struct workspace *)NULL, 2, n, n, nl);
+    if (flg) {
+        deletebuf->linenum = n;
+        deletebuf->nrows = nl;
+        deletebuf->ncolumns = number;
+    } else {
+        pickbuf->linenum = n;
+        pickbuf->nrows = nl;
+        pickbuf->ncolumns = number;
+    }
+    nlines[2] += nl;
+    free(linebuf);
+    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+}
+
+/*
  * Delete rectangular area.
  */
 void closespaces(line, col, number, nl)
@@ -818,126 +1116,12 @@ void pickspaces(line, col, number, nl)
 }
 
 /*
- * pcspaces(line,col,number,nl,flg) -
- * Взять (flg=0) / убрать (flg = 1)
- * Общая функция
- */
-pcspaces(line, col, number, nl, flg)
-int line, col, number, nl, flg;
-{
-    register struct fsd *f1,*f2;
-    struct fsd *f0;
-    char *linebuf;
-    register int i;
-    int *bp, j, n, line0, line1;
-
-    if (charsfi == tempfile)
-        charsfi = 0;
-    linebuf = salloc(number+1);
-    f0 = f2 = 0;
-    line1 = (line0=line) + nl;
-    while (nl = (line1 - line0)) {
-        if (nl > FSDMAXL)
-            nl = FSDMAXL;
-        f1 = (struct fsd*) salloc(SFSD + (number>127 ? nl*2 : nl));
-        if (f2) {
-            f2->fwdptr = f1;
-            f1->backptr = f2;
-        }
-        else
-            f0 = f1;
-        bp = &(f1->fsdbytes);
-        f1->fsdnlines = nl;
-        f1->fsdfile = tempfile;
-        f1->seek = tempfl;
-        for (j=line0; j<line0+nl; j++) {
-            getlin(j);
-            if (col+number >= ncline) {
-                if (col+number >= lcline)
-                    excline(col+number+1);
-                for (i=ncline-1; i<col+number; i++)
-                    cline[i] = ' ';
-                cline[col+number] = NEWLINE;
-                ncline = col + number + 1;
-            }
-            for (i=0; i<number; i++)
-                linebuf[i] = cline[col+i];
-            linebuf[number] = NEWLINE;
-            lseek(tempfile, tempfl, SEEK_SET);
-            if (charsfi == tempfile)
-                charsfi = 0;
-            write(tempfile, linebuf, n = dechars(linebuf,number));
-            if (n > 127)
-                *bp++ = (n/128) | 0200;
-            *bp++ = n % 128;
-            tempfl += n;
-        }
-        f2 = f1;
-        line0 = line0 + nl;
-    }
-    f2->fwdptr = (struct fsd*) salloc(SFSD);
-    f2->fwdptr->backptr = f2;
-    nl = line1 - line;
-    if (flg) {
-        for (j=line; j<line+nl; j++) {
-            getlin(j);
-            if (col+number >= ncline) {
-                if (col+number >= lcline)
-                    excline(col+number+1);
-                for (i=ncline-1; i<col+number; i++)
-                    cline[i] = ' ';
-                cline[col+number] = NEWLINE;
-                ncline = col + number + 1;
-            }
-            for (i=col+number; i<ncline; i++)
-                cline[i-number] = cline[i];
-            ncline -= number;
-            fcline = 1;
-            putline(0);
-            i = j - curwksp->ulhclno;
-            if (i <= curport->btext)
-                putup(i, i);
-        }
-    }
-    insert(pickwksp, f0, n = nlines[2]);
-    redisplay((struct workspace *)NULL, 2, n, n, nl);
-    if (flg) {
-        deletebuf->linenum = n;
-        deletebuf->nrows = nl;
-        deletebuf->ncolumns = number;
-    } else {
-        pickbuf->linenum = n;
-        pickbuf->nrows = nl;
-        pickbuf->ncolumns = number;
-    }
-    nlines[2] += nl;
-    free(linebuf);
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
-}
-
-/*
- * Поместить на указанное место взятое "buf"
- * Если buf->ncolumns == 0, вставляются строки,
- * иначе прямоугольная область.
- */
-void put(buf, line, col)
-    struct savebuf *buf;
-    int line, col;
-{
-    if (buf->ncolumns == 0)
-        plines(buf, line);
-    else
-        pspaces(buf, line, col);
-}
-
-/*
- * plines(buf,line) -
  * Поместить на указанное место строки из buf.
  * Должно быть buf->ncolumns == 0 .
  */
-plines(buf,line)
-struct savebuf *buf;
-int line;
+static void plines(buf, line)
+    struct savebuf *buf;
+    int line;
 {
     int lbuf, cc, cl;
     struct fsd *w0, *w1;
@@ -964,179 +1148,55 @@ int line;
 }
 
 /*
- * pspaces(buf,line,col)    -
  * Поместить на указанное место взятое "buf"
  * Должно быть buf->ncolumns != 0 .
  */
-pspaces(buf,line,col)
-struct savebuf *buf;
-int line, col;
+static void pspaces(buf, line, col)
+    struct savebuf *buf;
+    int line, col;
 {
     struct workspace *oldwksp;
     char *linebuf;
     int nc, i, j;
+
     linebuf = salloc(nc = buf->ncolumns);
     oldwksp = curwksp;
-    for (i=0;i<buf->nrows;i++)
-    {
+    for (i=0; i<buf->nrows; i++) {
         curwksp = pickwksp;
         getlin(buf->linenum + i);
-        if (ncline-1 < nc) for (j=ncline-1;j<nc;j++) cline[j] = ' ';
-        for (j=0;j<nc;j++) linebuf[j] = cline[j];
+        if (ncline-1 < nc)
+            for (j=ncline-1; j<nc; j++)
+                cline[j] = ' ';
+        for (j=0; j<nc; j++)
+            linebuf[j] = cline[j];
         curwksp = oldwksp;
-        getlin(line+i);
-        putbks(col,nc);
-        for (j=0;j<nc;j++) cline[col+j] = linebuf[j];
+        getlin(line + i);
+        putbks(col, nc);
+        for (j=0; j<nc; j++)
+            cline[col+j] = linebuf[j];
         fcline = 1;
         putline(0);
-        if ((j = line+i-curwksp->ulhclno) <= curport->btext)
-            putup(j,j);
+        j = line+i-curwksp->ulhclno;
+        if (j <= curport->btext)
+            putup(j, j);
     }
     free(linebuf);
     poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
-    return;
-}
-
-/* ========= Подпрограммы нижнего уровня ========
- *         = Для работы с описателями fsd =
- */
-/*
- * insert(wksp,f,at) -
- * Вставить описатель f в файл, описываемый wksp,
- * перед строкой at.
- * Вызывающая программа должна вызвать redisplay с
- * соответствующими аргументами.
- */
-insert(wksp,f,at)
-struct workspace *wksp;
-struct fsd *f;
-int at;
-{
-    register struct fsd *w0, *wf, *ff;
-    DEBUGCHECK;
-    /* determine length of insert */
-    ff = f;
-    /* ln = 0;      */
-    while (ff->fwdptr->fsdfile)
-    {
-        /*  ln += ff->fsdnlines;  */
-        ff = ff->fwdptr;
-    }
-    /* ln += ff->fsdnlines; */
-    breakfsd(wksp,at,1);
-    wf = wksp->curfsd;
-    w0 = wf->backptr;
-    free((char *)ff->fwdptr);
-    ff->fwdptr = wf;
-    wf->backptr = ff;
-    f->backptr = w0;
-    wksp->curfsd = f;
-    wksp->curlno = wksp->curflno = at;
-    if (openwrite[wksp->wfile])
-        openwrite[wksp->wfile] = EDITED;
-    catfsd(wksp);
-    DEBUGCHECK;
 }
 
 /*
- * struct fsd *breakfsd(w,n,reall) -
- * разломать fsd по строке n в пространстве
- * w. curlno = curflno при возврате, и curfsd указывает на первую
- * строку после разрыва (которая может быть строкой из конечного
- * блока). Исходный fsd остается, возможно, с неиспользуемым
- * остатком списка длин.
- * Если функция применяется к концу файла, текущая
- * позиция остается в конце файла, на конечном блоке.
- * Если указанная строка выходит за пределы файла, добавляются
- * описатели пустых строк (с каналом -1).
- * Если "reall=1" то блок перед разрывом переразмещается в памяти с
- * целью экономии места.
- * ВНИМАНИЕ: breakfsd может нарушить корректность указателей в  workspace.
- * Поэтому после всех операций нужно вызывать "redisplay".
+ * Поместить на указанное место взятое "buf"
+ * Если buf->ncolumns == 0, вставляются строки,
+ * иначе прямоугольная область.
  */
-int breakfsd(w,n,reall)
-struct workspace *w;
-int n,reall;
+void put(buf, line, col)
+    struct savebuf *buf;
+    int line, col;
 {
-    int nby, i, j, jj, k, lfb0;
-    register struct fsd *f,*ff;
-    struct fsd *fn;
-    register int *c;
-    int *cc;
-    off_t offs;
-
-    DEBUGCHECK;
-    if (wposit(w, n)) {
-        f = w->curfsd;
-        ff = f->backptr;
-        free((char *)f);
-        fn = blanklines(n - w->curlno);
-        w->curfsd = fn;
-        fn->backptr = ff;
-        if (ff)
-            ff->fwdptr = fn;
-        else
-            openfsds[w->wfile] = fn;
-        wposit(w,n);
-        return (1);
-    }
-    f = w->curfsd;
-    cc = c = &f->fsdbytes;
-    offs = 0;
-    ff = f;
-    nby = n - w->curflno;
-    if (nby != 0) {
-        /* get down to the nth line */
-        for (i=0; i<nby; i++) {
-            j = *c++;
-            if (j & 0200) {
-                offs += 128 * (j & 0177);
-                j = *c++;
-            }
-            offs += j;
-        }
-        /* now make a new fsd from the remainder of f */
-        i = j = jj = f -> fsdnlines - nby; /* number of lines in new fsd */
-        lfb0 = c - cc;
-        cc = c;
-        while (--i >= 0) {
-            if (*cc++ < 0) {
-                j++;
-                cc++;
-            }
-        }
-        ff = (struct fsd *)salloc(SFSD + j);
-        ff->fsdnlines = jj;
-        ff->fsdfile = f->fsdfile;
-        offs += f->seek;
-        ff->seek = offs;
-        cc = &ff->fsdbytes;
-        for (k=0; k<jj; k++)
-            if ((*cc++ = *c++) < 0)
-                *cc++ = *c++;
-        if ((ff->fwdptr = f->fwdptr))
-            ff->fwdptr->backptr = ff;
-        ff->backptr = f;
-        f->fwdptr = ff;
-        f->fsdnlines = nby;
-        if (reall && jj > 4 && f->backptr) {
-            ff = (struct fsd *)salloc(SFSD+lfb0);
-            *ff = *f;
-            c = &(ff->fsdbytes);
-            cc = &(f->fsdbytes);
-            while (lfb0--) {
-                *c++ = *cc++;
-            }
-            ff->backptr->fwdptr = ff->fwdptr->backptr = ff;
-            free((char*) f);
-            f = ff;
-            ff = f->fwdptr;
-        }
-    }
-    w->curfsd = ff;
-    w->curflno = n;
-    DEBUGCHECK;
-    return (0);
+    if (buf->ncolumns == 0)
+        plines(buf, line);
+    else
+        pspaces(buf, line, col);
 }
 
 /*
@@ -1205,13 +1265,13 @@ void putline(n)
 }
 
 /*
- * freefsd(f) -
  * Почистить цепочку fsd.
  */
-freefsd(f)
-struct fsd *f;
+void freefsd(f)
+    struct fsd *f;
 {
     register struct fsd *g;
+
     while (f) {
         g = f;
         f = f->fwdptr;
@@ -1220,95 +1280,12 @@ struct fsd *f;
 }
 
 /*
- * catfsd(w)
- *  программа пытается слить несколько fsd - блоков в один
- *  для экономии памяти.
- *  делается попытка слить в один блок w->curfsd->backptr и
- *  w->curfsd, если они описывают смежную информацию.
- */
-catfsd(w)
-struct workspace *w;
-{
-    register struct fsd *f0, *f;
-    struct fsd *f2;
-    register int *c;
-    int *cc;
-    int i, j, l0=0, l1=0, lb0=0, lb1, dl, nl0, nl1, fd0, kod = 0;
-    /* l0,  l1:  число байтов в участке файла, описываемом f0, f;
-     * lb0, lb1: длина описателя длин в fsd;
-     * nl0, nl1: число строк в fsd */
-
-    f = w->curfsd;
-    if ((f0 = f->backptr) == 0) {
-        openfsds[w->wfile] = f;
-        return(0);
-    }
-    f0->fwdptr = f;
-    fd0=f0->fsdfile;
-    nl0=f0->fsdnlines;
-    while (fd0>0 && fd0==f->fsdfile && (nl0+(nl1=f->fsdnlines)< FSDMAXL)) {
-        dl = f->seek - f0->seek;
-        /*  подсчитываем длину блока, eсли она неизвестна */
-        if (l0==0) {
-            i = nl0;
-            cc = c = &f0->fsdbytes;
-            while(i--) {
-                if ((j = *c++) & 0200)
-                    j = (j & 0177) * 128 + *c++;
-                l0 += j;
-            }
-            lb0 = c - cc;
-        }
-        if (dl != l0)
-            return(kod);
-        /* сливаем два fsd  и пытаемся повторить */
-        i = nl1;
-        cc = c = &(f0->fsdbytes);
-        while (i--) {
-            if ((j = *c++) & 0200)
-                j = (j & 0177) * 128 + *c++;
-            l1 += j;
-        }
-        lb1 = c - cc;
-        f2 = f;
-        f = (struct fsd*) salloc(SFSD + lb0 + lb1);
-        *f = *f0;
-        f->fwdptr = f2->fwdptr;
-        w->curfsd = f;
-        w->curflno -= nl0;
-        nl0=f->fsdnlines = nl0 + nl1;
-        c = &(f->fsdbytes);
-        i =lb0;
-        cc = &(f0->fsdbytes);
-        while (i--)
-            *c++ = *cc++;
-        i = lb1;
-        cc = &(f2->fsdbytes);
-        while (i--)
-            *c++ = *cc++;
-        lb0 += lb1;
-        l0 += l1;
-        kod = 1;
-        free((char *)f2);
-        free((char *)f0);
-        f->fwdptr ->backptr = f;
-        if (f0 = f->backptr)
-            f0->fwdptr = f;
-        else
-            openfsds[w->wfile] = f;
-        f0 = f;
-        f = f0->fwdptr;
-    }
-    return(kod);
-}
-
-/*
  * Replace m lines from "line", via jproc pipe.
  */
 void doreplace(line, m, jproc, pipef)
     int line, m, jproc, *pipef;
 {
-    register struct fsd *e,*ee;
+    register struct fsd *e, *ee;
     register int l;
     int n;
 
@@ -1338,8 +1315,8 @@ void doreplace(line, m, jproc, pipef)
     charsin(tempfile, tempfl);
     ee = e = temp2fsd(tempfile);
     tempfl = charskl;
+    l = 0;
     if (e->fsdnlines) {
-        l = 0;
         while (e->fsdfile) {
             l += e->fsdnlines;
             e = e->fwdptr;
@@ -1347,7 +1324,7 @@ void doreplace(line, m, jproc, pipef)
         insert(curwksp, ee, line);
         nlines[curfile] += l;
     }
-    redisplay((struct workspace *)NULL, curfile, line, line+m, l-m);
+    redisplay((struct workspace *)NULL, curfile, line, line + m, l - m);
     poscursor(cursorcol, cursorline);
 }
 
@@ -1365,16 +1342,12 @@ void execr(args)
 /*
  * Debug output of fsd chains.
  */
-printfsd(f)
-struct fsd *f;
+void printfsd(f)
+    struct fsd *f;
 {
     int i;
     register int *c;
-    register struct {
-        char *s0;
-        char *s1;
-    }
-    *cp;
+
     printf("\n**********");
     while (f) {
         printf("\nfsdnl=%d chan=%d seek=%lu at %p",
@@ -1392,30 +1365,26 @@ struct fsd *f;
 }
 
 /*
- * checkfsd() -
- * Проверка корректности цепочек fsd.
+ * Check fsd correctness.
  */
-checkfsd()
+void checkfsd()
 {
     register struct fsd *f;
     register int nl;
-    register char *g;
-    char *gg;
 
     nl = 0;
     f = openfsds[curfile];
     while (f) {
-        if (curwksp->curlno >=nl && curwksp->curlno <
-            nl + f->fsdnlines && curwksp->curfsd != f &&
-            curwksp->curfsd->backptr)
-        {
+        if (curwksp->curlno >= nl &&
+            curwksp->curlno < nl + f->fsdnlines &&
+            curwksp->curfsd != f && curwksp->curfsd->backptr)
             fatal("CKFSD CURFSD LOST");
-        }
+
         if (f->fwdptr && f->fwdptr->backptr != f)
             fatal("CKFSD BAD CHAIN");
+
         nl += f->fsdnlines;
         f = f->fwdptr;
     }
-    /*allock();*/
 }
 #endif
