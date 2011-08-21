@@ -33,7 +33,7 @@ tgettc()
 {
     tbuf = getenv("TERMCAP");
     if (! tbuf) {
-        printf1 ("re: TERMCAP environment variable required\n");
+        puts1 ("re: TERMCAP environment variable required\n");
         exit(1);
     }
 }

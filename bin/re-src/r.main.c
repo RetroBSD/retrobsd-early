@@ -1,12 +1,7 @@
 /*
- * Главная программа - вход/выход, открытие окон,
- * разбор параметров
+ * Главная программа - вход/выход, открытие окон, разбор параметров
  * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
- */
-
-#define VERS "** RE Version 1.0/RetroBSD **"
-
-/*
+ *
  * Аргументы:
  *
  *      red файл [номер строки]
@@ -20,9 +15,40 @@
  */
 #include "r.defs.h"
 #include <signal.h>
-#include <string.h>
 
-char *ttyname();
+#define VERS "** RE Version 1.0/RetroBSD **"
+
+int tabstops[NTABS] = {
+    -1, 0,  8,  16, 24,  32,  40,  48,  56,  64,
+    72, 80, 88, 96, 104, 112, 120, 128, 136, BIGTAB,
+    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,
+};
+
+int lread1 = -1;         /* -1 означает, что символ использован */
+
+/* Параметры для движения по файлу */
+
+int defplline = 10;                 /* +LINE       */
+int defmiline = 10;                 /* -LINE       */
+int defplpage =  1;                 /* +PAGE      */
+int defmipage =  1;                 /* -PAGE      */
+int deflport  = 30;                 /* LEFT PORT  */
+int defrport  = 30;                 /* RIGHT PORT */
+int definsert  = 1;                 /* OPEN       */
+int defdelete  = 1;                 /* CLOSE      */
+int defpick    = 1;                 /* PICK       */
+char deffile[] = "/share/re.std";   /* Help file */
+
+/* Инициализации  */
+int lcline  = 0;
+int icline  = 20; /* Инкремент для расширения */
+int clineno = -1;
+char fcline = 0;
+
+/* Файл / протокол */
+int ttyfile  = -1;
+int inputfile = 0;
+
 int oldttmode;
 
 char *ttynm, *ttytmp, *rfile;
@@ -85,7 +111,7 @@ char *args[];
         if (*++cp) {
             /* Указан файл протокола */
             if ((inputfile = open( cp,0)) < 0) {
-                printf1("Can't open command file.\n");
+                puts1("Can't open command file.\n");
                 exit(1);
             }
         } else
@@ -98,7 +124,7 @@ char *args[];
     if (inputfile) {
         if (read(inputfile, &ichar, 1) <= 0) {
             cleanup();
-            printf1("Command file is empty.\n");
+            puts1("Command file is empty.\n");
             exit(1);
         }
     } else
@@ -175,13 +201,13 @@ int restart;
     } else
         inputfile = ttyfile;
     if (ttyfile < 0) {
-        printf1("can't open ttyfile.\n");
+        puts1("can't open ttyfile.\n");
         exit(1);
     }
     unlink(tmpname);
     i = creat(tmpname, 0600);
     if (i < 0) {
-        printf1("Can't open temporary file.\n");
+        puts1("Can't open temporary file.\n");
         exit(1);
     }
     /*  Рабочий файл нужен на read/write - приходится переоткрыть */
@@ -398,16 +424,16 @@ void fatal(s)
     putcha(COBELL);
     dumpcbuf();
     ttcleanup();
-    printf1("\nFirst the bad news - the RE just ");
+    puts1("\nFirst the bad news - the RE just ");
     if (s) {
-        printf1("died:\n");
-        printf1(s);
+        puts1("died:\n");
+        puts1(s);
     } else
-        printf1("ran out of space.\n");
-    printf1("\nNow the good news - your editing session can be reproduced\n");
-    printf1("from file ");
-    printf1(ttytmp);
-    printf1("\nUse command 're -' to do it.\n");
+        puts1("ran out of space.\n");
+    puts1("\nNow the good news - your editing session can be reproduced\n");
+    puts1("from file ");
+    puts1(ttytmp);
+    puts1("\nUse command 're -' to do it.\n");
 #ifdef DEBUG
     if (inputfile || ! isatty(1)) {
         register int i;

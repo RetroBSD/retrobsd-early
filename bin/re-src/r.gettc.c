@@ -162,7 +162,7 @@ tcread()
     if (! curspos) {
         for (i=0; i<COMCOD; i++) {
             if (! cvtout[i]) {
-                printf1 ("re can not work with this terminal\n");
+                puts1 ("re can not work with this terminal\n");
                 exit(1);
             }
         }

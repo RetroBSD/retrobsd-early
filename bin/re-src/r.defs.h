@@ -10,11 +10,10 @@
 #include <stdio.h>
 #endif
 
-#ifndef DEBUG
-#   define printf printf1
-#   define DEBUGCHECK /* */
-#else
+#ifdef DEBUG
 #   define DEBUGCHECK checkfsd()   /* check fsd consistency for debugging */
+#else
+#   define DEBUGCHECK /* */
 #endif
 
 #define EDITED      2       /* Значение openwrite, если файл редактировался */
@@ -342,6 +341,7 @@ void cgoto (int, int, int, int); /* scroll window to show a given area */
 char *append (char *, char *);  /* append strings */
 char *tgoto (char *, int, int); /* cursor addressing */
 struct fsd *file2fsd (int);     /* create a file descriptor list for a file */
+void puts1 (char *);            /* write a string to stdout */
 
 /*
  * Таблица клавиатуры (команда / строка символов)

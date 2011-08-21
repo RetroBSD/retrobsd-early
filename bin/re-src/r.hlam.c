@@ -66,39 +66,32 @@ int fildes;
 getpriv(fildes)
 int fildes;
 {
-        struct stat buffer;
-        register struct stat *buf;
-        buf = &buffer;
-        fstat(fildes,buf);
-        return (buf->st_mode & 0777);
+    struct stat buffer;
+    register struct stat *buf;
+    buf = &buffer;
+    fstat(fildes,buf);
+    return (buf->st_mode & 0777);
 }
 
-/* printf1 - printf для рабочего режима
+/*
+ * Write a string to stdout.
  */
-printf1(s) char *s;
+void puts1(s)
+    char *s;
 {
-        register int i=0;
-        register char *s1=s;
-        while(*s1++) i++;
-        if(i) write(1,s,i);
+    register int len = strlen (s);
+
+    if (len > 0)
+        write(1, s, len);
 }
 
-/* strcopy(a,b)
- * Копировать строку b в строку a
- */
-strcopy(a,b)
-char *a,*b;
-{
-        while(*a++ = *b++);
-}
-
-/* abs(n) -
+/*
  * Функция abs
  */
-abs(number)
-int number;
+int abs(number)
+    int number;
 {
-        return (number<0 ? -number : number);
+    return (number < 0) ? -number : number;
 }
 
 /*
@@ -164,14 +157,14 @@ static char namewd[LNAME+1];
 char *getnm(uid)
 int uid;
 {
-        register int i,j;
-        i = LNAME;
-        namewd[LNAME]=0;
-        while( i>1 && uid>0) {
-                namewd[--i]= '0' + uid %10;
-                uid /= 10;
-        }
-        return(&namewd[i]);
+    register int i,j;
+    i = LNAME;
+    namewd[LNAME]=0;
+    while( i>1 && uid>0) {
+            namewd[--i]= '0' + uid %10;
+            uid /= 10;
+    }
+    return(&namewd[i]);
 }
 
 /*
@@ -181,30 +174,32 @@ int uid;
 int get1w(fd)
 int fd;
 {
-        int i;
+    int i;
 
-        if (read(fd, &i, sizeof(int)) !=  sizeof(int))
-            return -1;
-        return i;
+    if (read(fd, &i, sizeof(int)) !=  sizeof(int))
+        return -1;
+    return i;
 }
 
 int get1c(fd)
 int fd;
 {
-        char c;
-        if(read(fd,&c,1)==1) return(c&0377);
-        return(-1);
+    char c;
+
+    if (read(fd, &c, 1) == 1)
+        return c & 0377;
+    return -1;
 }
 
 put1w(w,fd)
 int fd,w;
 {
-        write(fd, &w, sizeof(int));
+    write(fd, &w, sizeof(int));
 }
 
 put1c(c,fd)
 int fd;
 char c;
 {
-        write(fd,&c,1);
+    write(fd, &c, 1);
 }

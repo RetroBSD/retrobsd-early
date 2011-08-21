@@ -7,7 +7,7 @@ all:            re
 
 # Вместо r.termc.o можно использовать и -ltermcap
 
-OBJ             = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o r.init.o \
+OBJ             = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o \
                   r.mac.o r.main.o r.tele.o r.termc.o r.ttyio.o r.wind.o
 
 re:             $(OBJ)
