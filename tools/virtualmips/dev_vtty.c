@@ -457,7 +457,7 @@ vtty_t *vtty_create (vm_instance_t * vm, char *name, int type, int tcp_port,
     vtty->fstream = NULL;
     vtty->accept_fd = -1;
     pthread_mutex_init (&vtty->lock, NULL);
-    vtty->terminal_support = 1;
+    vtty->terminal_support = 0; // was 1 (vak)
     vtty->input_state = VTTY_INPUT_TEXT;
 
     switch (vtty->type) {

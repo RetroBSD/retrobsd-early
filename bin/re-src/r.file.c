@@ -1,6 +1,8 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Работа с файлами.
+ * Opening and saving files.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 
@@ -47,11 +49,11 @@ int savefile(file, n)
             return(0);
         }
         if (f2 > f0) {
-            telluser("Hit <save> to use '.'",0);
+            telluser("Hit ^N to use '.'",0);
             lread1 = -1;
             nowrbak = 0;
             read1();
-            if (lread1 != CCSAVEFILE)
+            if (lread1 != CCSETFILE)
                 return(-1);
             i = open(".", 0);
             if (i < 0) {
@@ -78,7 +80,10 @@ int savefile(file, n)
     }
     if (! nowrbak) {
         unlink(f1);
-        link (f0, f1);
+        if (link (f0, f1) < 0) {
+            error ("Link failed!");
+            return(0);
+        }
     }
     unlink (f0);
     newf = creat(f0, getpriv(n));
@@ -141,7 +146,8 @@ int fsdwrite(ff, nl, newf)
             lseek(f->fsdfile, f->seek, 0);
             while (i) {
                 j = (i < LBUFFER) ? i : LBUFFER;
-                read(f->fsdfile, cline, j);
+                if (read(f->fsdfile, cline, j) < 0)
+                    /* ignore errors */;
                 if (write(newf, cline, j) < 0) {
                     error("DANGER -- WRITE ERROR");
                     close(newf);
@@ -230,7 +236,7 @@ int editfile(file, line, col, mkflg, puflg)
             telluser(file, 28);
             lread1 = -1;
             read1();
-            if (lread1 != CCSETFILE&&lread1 != 'Y' &&lread1 != 'y')
+            if (lread1 != CCSETFILE && lread1 != 'Y' &&lread1 != 'y')
                 return(-1);
             /* Находим справочник */
             for (c=d=file; *c; c++)
@@ -269,7 +275,8 @@ int editfile(file, line, col, mkflg, puflg)
                 return(0);
             }
             openwrite[fn] = 1;
-            chown(file, userid, groupid);
+            if (chown(file, userid, groupid) < 0)
+                /* ignore errors */;
         }
         paraml = 0;   /* so its kept around */
         openfnames[fn] = file;

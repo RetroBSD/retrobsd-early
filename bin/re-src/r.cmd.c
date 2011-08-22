@@ -1,9 +1,11 @@
 /*
- * едактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Основной цикл редактора RED.
- * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
+ * Main loop of editor.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
+#include <sys/wait.h>
 
 char use0flg;   /* используется для блокировки преобразования первого имени файла при "lcase" и "red - */
 int clrsw;      /* 1 - чистить окно параметров */
@@ -127,7 +129,8 @@ static int callexec()
         goto nopiperr;
     if (j == 0) {               /* команда;red */
         close(0);               /* Замыкаем в станд. ввод */
-        dup(pipef[0]);
+        if (dup(pipef[0]) < 0)
+            exit(-1);
         close(1);               /* Вывод в рабочий файл */
         open(tmpname, 1);
         lseek(1, tempfl, 0);
@@ -326,7 +329,6 @@ void mainloop()
         if (lread1 == CCQUIT) {
             if (endit() == 0)
                 goto funcdone;
-            gosw = 0;
             return;
         }
         switch (lread1) {
@@ -455,7 +457,6 @@ yesarg:
             if (paraml > 0 &&
                 (dechars(paramv, paraml), *paramv) == 'a')
             {
-                gosw = 0;
                 if (*(paramv+1) != 'd')
                     return;
                 cleanup();
@@ -464,7 +465,6 @@ yesarg:
             }
             if (endit() == 0)
                 goto funcdone;
-            gosw = 1;
             return;
         }
         switch (lread1) {
@@ -606,7 +606,6 @@ yesarg:
             case 'q':
                 lread1 = CCQUIT;
                 if (paramv[1] == 'a') {
-                    gosw = 0;
                     return;
                 }
                 goto contin;
@@ -850,39 +849,44 @@ contin:
 void search(delta)
     int delta;
 {
-    register char *at,*sk,*fk;
-    int ln,lkey,col,lin,slin,i;
+    register char *at, *sk, *fk;
+    int ln, lkey, col, lin, slin, i;
+
     paraml = 0;
-    if (searchkey == 0 || *searchkey == 0)
-    {
+    if (searchkey == 0 || *searchkey == 0) {
         error("Nothing to search for.");
         return;
     }
     col = cursorcol;
     slin = lin = cursorline;
-    if (delta == 1) telluser("+",0);
-    else telluser("-",0);
-    telluser("search: ",1);
-    telluser(searchkey,9);
-    putch(COCURS,1);
-    poscursor(col,lin);
+    if (delta == 1)
+        telluser("+", 0);
+    else
+        telluser("-", 0);
+    telluser("search: ", 1);
+    telluser(searchkey, 9);
+    putch(COCURS, 1);
+    poscursor(col, lin);
     dumpcbuf();
     lkey = 0;
     sk = searchkey;
-    while (*sk++) lkey++;
-    getlin (ln = lin + curwksp->ulhclno);
+    while (*sk++)
+        lkey++;
+    ln = lin + curwksp->ulhclno;
+    getlin (ln);
     putline(0);
     at = cline + col + curwksp->ulhccno;
     for (;;) {
         at += delta;
         while (at < cline || at >  cline + ncline - lkey) {
             /* Прервать, если было прерывание с терминала */
-            if ((i=interrupt()) || (ln += delta) < 0 ||
-                (wposit(curwksp,ln) && delta == 1))
+            i = interrupt();
+            if (i || (ln += delta) < 0 ||
+                (wposit(curwksp, ln) && delta == 1))
             {
-                putup(lin,lin);
-                poscursor(col,lin);
-                error(i?"Interrupt.":"Search key not found.");
+                putup(lin, lin);
+                poscursor(col, lin);
+                error(i ? "Interrupt." : "Search key not found.");
                 csrsw = 0;
                 symac = 0;
                 return;
@@ -890,14 +894,14 @@ void search(delta)
             getlin(ln);
             putline(0);
             at = cline;
-            if (delta < 0) at += ncline - lkey;
+            if (delta < 0)
+                at += ncline - lkey;
         }
         sk = searchkey;
         fk = at;
         while (*sk == *fk++ && *++sk);
-        if (*sk == 0)
-        {
-            cgoto(ln,at-cline,slin,0);
+        if (*sk == 0) {
+            cgoto(ln, at - cline, slin, 0);
             csrsw = 1;  /* put up a bullit briefly */
             return;
         }

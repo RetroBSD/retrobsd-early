@@ -1,11 +1,8 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
+ * Miscellaneous functions.
  *
- * Разные программы / всякий хлам
- *
- * $Header: /home/sergev/Project/vak-opensource/trunk/relcom/nred/RCS/r.hlam.c,v 3.1 1986/04/20 23:41:51 alex Exp $
- * $Log: r.hlam.c,v $
- * Revision 3.1  1986/04/20 23:41:51  alex
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 #include <sys/types.h>
@@ -88,12 +85,14 @@ void puts1(s)
 {
     register int len = strlen (s);
 
-    if (len > 0)
-        write(1, s, len);
+    if (len <= 0)
+        return;
+    if (write(1, s, len) != len)
+        /* ignore errors */;
 }
 
 /*
- * Функция abs
+ * Absolute value of a number.
  */
 int abs(number)
     int number;
@@ -207,7 +206,8 @@ int get1c(fd)
 void put1w(w, fd)
     int fd, w;
 {
-    write(fd, &w, sizeof(int));
+    if (write(fd, &w, sizeof(int)) != sizeof(int))
+        /* ignore errors */;
 }
 
 /*
@@ -217,5 +217,6 @@ void put1c(c, fd)
     int fd;
     char c;
 {
-    write(fd, &c, 1);
+    if (write(fd, &c, 1) != 1)
+        /* ignore errors */;
 }

@@ -1,7 +1,8 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Файл содержит программы, реализующие новые возможности
- * редактора "RED", связанные с макропеременными
+ * Implementation of macro features.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 

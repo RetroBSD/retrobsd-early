@@ -1,7 +1,8 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Работа с терминалом - логический уровень
- * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
+ * Interface to display - logical level.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 

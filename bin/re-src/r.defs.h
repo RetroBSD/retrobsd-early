@@ -1,5 +1,8 @@
 /*
- * Main definitions.
+ * Global definitions.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include <stdlib.h>
 #include <string.h>
@@ -181,7 +184,7 @@ struct savebuf *pickbuf, *deletebuf;
 #define CCMOVERIGHT     5       /* move right                   right */
 #define CCMOVELEFT      6       /* move left                    left */
 #define CCTAB           7       /* tab                  ^I          */
-#define CCBACKTAB       010      /* tab left             ^X t        */
+#define CCBACKTAB       010     /* tab left             ^X t        */
 #define CCPICK          011     /* pick                         f6 */
 #define CCMAKEPORT      012     /* make a viewport              f4 */
 #define CCOPEN          013     /* insert                       f7 */
@@ -229,7 +232,6 @@ extern int defplline,defplpage,defmiline,defmipage,deflport,defrport,
 extern char deffile[];
 
 int errsw;              /* 1 - в окне параметров сообщение об ошибке */
-int gosw;               /* -- атавизм */
 
 /*
  * Глобальные параметры для param():
@@ -274,8 +276,6 @@ char *tmpname;                  /* name of file, for do command */
 
 int LINEL, NLINES;              /* size of the screen */
 extern char *curspos, *cvtout[];
-
-unsigned nbytes;
 
 int read1 (void);               /* read command from terminal */
 int read2 (void);               /* read raw input character */

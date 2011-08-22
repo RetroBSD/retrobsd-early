@@ -1,23 +1,19 @@
 /*
- * Главная программа - вход/выход, открытие окон, разбор параметров
- * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
+ * Main program: enter/exit, open windows, parse options.
  *
- * Аргументы:
+ * Usage:
+ *      re file [line-number]   - Open file
+ * or
+ *      re                      - Open last edited file
+ * or
+ *      re -                    - Replay last session after crash
  *
- *      red файл [номер строки]
- *
- *      либо
- *      red -
- *      (повтор сеанса)
- *      либо
- *      red
- *      (редактировать с того же места)
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 #include <signal.h>
 #include <sys/stat.h>
-
-#define VERS "** RE Version 1.0/RetroBSD **"
 
 int tabstops[NTABS] = {
     -1, 0,  8,  16, 24,  32,  40,  48,  56,  64,
@@ -100,7 +96,8 @@ static void startup(restart)
     register int i;
     register char *c, *name;
 
-    nice(-10); /* Установить приоритет (опред. в ned.?defs) */
+    if (nice(-10) < 0)
+        /* ignore errors */;
     userid = getuid();
     groupid = getgid();
     setuid(userid);
@@ -270,10 +267,15 @@ static void writefile(code1, str, code2)
     int code1, code2;
     char *str;
 {
-    write(ttyfile, &code1, 1);
-    for(; *str; str++)
-        write(ttyfile, str, 1);
-    write(ttyfile, &code2, 1);
+    int len;
+
+    if (write(ttyfile, &code1, 1) != 1)
+        /* ignore errors */;
+    len = strlen (str);
+    if (len > 0 && write(ttyfile, str, len) != len)
+        /* ignore errors */;
+    if (write(ttyfile, &code2, 1) != 1)
+        /* ignore errors */;
 }
 
 /*
@@ -379,9 +381,11 @@ int main(nargs, args)
             puts1("Command file is empty.\n");
             return 1;
         }
-    } else
-        write(ttyfile, &ichar, 1); /* Для повтора сеанса */
-
+    } else {
+        /* For repeated session */
+        if (write(ttyfile, &ichar, 1) != 1)
+            /* ignore errors */;
+    }
     getstate(ichar);
     if (nargs > 1 && *args[1] != '\0') {
         i = defplline + 1;
@@ -390,17 +394,20 @@ int main(nargs, args)
         poscursor(curwksp->ccol, curwksp->crow);
         writefile(CCENTER, args[1], CCSETFILE);
         if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
+            /* Failed to open file - use empty buffer. */
             putup(0, curport->btext);
             poscursor(curwksp->ccol, curwksp->crow);
         } else {
+            /* File opened. */
             if (nargs > 2 && i > 1)
                 writefile(CCENTER, args[2], CCGOTO);
         }
     } else {
+        /* Saved session restored. */
         putup(0, curport->btext);
-        poscursor (curwksp->ccol, curwksp->crow);
+        poscursor(curwksp->ccol, curwksp->crow);
     }
-    telluser(VERS, 0);
+    telluser("", 0);
     mainloop();
     putcha(COFIN);
     dumpcbuf();

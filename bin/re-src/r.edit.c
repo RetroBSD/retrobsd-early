@@ -1,10 +1,12 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Функции по манипулированию содержимым файлов для RED
- * Руднев А.П. Москва, ИАЭ им. Курчатова, 1984
+ * Functions for manipulating file contents.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 #include <signal.h>
+#include <sys/wait.h>
 
 #define NBYMAX 150      /* Макс. размер байтов для fsdbytes, +1 */
 
@@ -781,7 +783,8 @@ static struct fsd *writemp(buf,n)
     lseek(tempfile, tempfl, 0);
 
     n = dechars(buf, n-1);
-    write(tempfile, buf, n);
+    if (write(tempfile, buf, n) != n)
+        return 0;
 
     /* now make fsd */
     f1 = (struct fsd *)salloc(2 + SFSD);
@@ -937,7 +940,9 @@ static void pcspaces(line, col, number, nl, flg)
             lseek(tempfile, tempfl, 0);
             if (charsfi == tempfile)
                 charsfi = 0;
-            write(tempfile, linebuf, n = dechars(linebuf,number));
+            n = dechars(linebuf, number);
+            if (write(tempfile, linebuf, n) != n)
+                puts1("Error writing temp file!\n");
             if (n > 127)
                 *bp++ = (n/128) | 0200;
             *bp++ = n % 128;

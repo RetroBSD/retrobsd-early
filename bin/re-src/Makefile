@@ -1,3 +1,10 @@
+#
+# Visual text editor for Unix.
+# Based on sources of RAND Editor.
+# Part of Demos Operating System Project, Russia 1982-1991.
+#
+# Alex P. Roudnev, Moscow, KIAE, 1984
+#
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 

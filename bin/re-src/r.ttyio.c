@@ -1,7 +1,9 @@
 /*
- * Работа с терминалом : установка/снятие режимов, ввод/вывод.
- * Ввод управляющих клавиш.
- * Физический уровень
+ * Interface to display - physical level.
+ * Parsing escape sequences.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 #include <sgtty.h>
@@ -9,7 +11,9 @@
 #ifdef TERMIOS
 #include <termios.h>
 
-#define NCC NCCS
+#ifndef NCC
+#   define NCC NCCS
+#endif
 static struct termios tioparam;
 
 #else /* TERMIOS */
@@ -107,7 +111,7 @@ void ttcleanup()
 }
 
 /*
- * Вывод символа без в безусловном режиме
+ * Вывод символа в безусловном режиме
  */
 static void putchb(c)
     int c;
@@ -177,8 +181,10 @@ void putblanks(k)
  */
 void dumpcbuf()
 {
-    if (iputcbuf != 0)
-        write(2, putcbuf, iputcbuf);
+    if (iputcbuf == 0)
+        return;
+    if (write(2, putcbuf, iputcbuf) != iputcbuf)
+        /* ignore errors */;
     iputcbuf = 0;
 }
 
@@ -200,7 +206,7 @@ static int findt (fb, fe, sy, ns)
     char sy1;
     register struct ex_int *fi;
 
-    fi = (*fb ? *fb : inctab);
+    fi = *fb ? *fb : inctab;
     *fb = 0;
     if (sy == 0)
         return BADF;
@@ -222,31 +228,10 @@ exit:
     if (! *fb)
         return BADF;
     fi = *fb;
-    if (fi->excc[ns+1])
+    if (fi->excc[ns + 1])
         return CONTF;
-    return (fi->incc);
+    return fi->incc;
 }
-
-#if 0
-/*
- * Test for findt().
- */
-int main()
-{
-    char *s = "\017abz";
-    int i, j, k, l, m, is;
-
-    i = j = k = l = m = 0;
-    for (is=0; *s; is++) {
-        k = findt(&i, &j, *s++, l++);
-        if (k != CONTF)
-            break;
-    }
-ex1:
-    printf(" k=%d is=%d pt %o %o\n", k, is, i, j);
-    return 0;
-}
-#endif
 
 /*
  * Получение символа из файла протокола.
@@ -337,7 +322,7 @@ new:
         if (read(inputfile, &sy1, 1) != 1)
             goto readquit;
         switch (sy1) {
-        case '\3':          /* ^X ^C */
+        case 'C' & 037:     /* ^X ^C */
             lread1 = CCQUIT;
             goto readycchr;
         case 'n':           /* ^X n */
@@ -426,7 +411,8 @@ readychr:
     }
 retn:
     sy1 = lread1;
-    write (ttyfile, &sy1, 1); /* ATTENSION - ONLY 8 BIT */
+    if (write (ttyfile, &sy1, 1) != 1)
+        /* ignore errors */;
     /*
      * Конец того, что относится к терминалу (до quit).
      * ================================================
@@ -465,7 +451,8 @@ int interrupt()
     if (intrflag) {
         intrflag = 0;
         sy1 = CCINTRUP;
-        write(ttyfile, &sy1, 1);
+        if (write(ttyfile, &sy1, 1) != 1)
+            /* ignore errors */;
         return 1;
     }
     return 0;
@@ -487,7 +474,8 @@ int read2()
         intrflag = 0;
     }
     c &= 0177;
-    write(ttyfile, &c, 1);
+    if (write(ttyfile, &c, 1) != 1)
+        /* ignore errors */;
     return (unsigned char) c;
 }
 

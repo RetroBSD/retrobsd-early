@@ -1,7 +1,8 @@
 /*
- * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Вытаскивание описания терминала из termcap
- * и работа с таблицей команд.
+ * Parsing termcap options and creating a table of commands.
+ *
+ * RED editor for OS DEMOS
+ * Alex P. Roudnev, Moscow, KIAE, 1984
  */
 #include "r.defs.h"
 
@@ -62,21 +63,21 @@ const char in0tab[32] = {
  * Сюда же записываются коды при переопределении
  */
 struct ex_int inctab[] = {
-    { CCMOVELEFT,   "kl",   },
-    { CCMOVERIGHT,  "kr",   },
-    { CCMOVEUP,     "ku",   },
-    { CCMOVEDOWN,   "kd",   },
-    { CCHOME,       "kh",   },
-    { CCEND,        "kH",   },
+    { CCMOVEUP,     "ku",   },  { CCMOVEUP,     "\33OA",   },
+    { CCMOVEDOWN,   "kd",   },  { CCMOVEDOWN,   "\33OB",   },
+    { CCMOVERIGHT,  "kr",   },  { CCMOVERIGHT,  "\33OC",   },
+    { CCMOVELEFT,   "kl",   },  { CCMOVELEFT,   "\33OD",   },
+    { CCHOME,       "kh",   },  { CCHOME,       "\33OH",   },
+    { CCEND,        "kH",   },  { CCEND,        "\33OF",   },
     { CCPLPAGE,     "kN",   },
     { CCMIPAGE,     "kP",   },
     { CCINSMODE,    "kI",   },
     { CCDELCH,      "kD",   },
-    { CCENTER,      "k1",   },
-    { CCSAVEFILE,   "k2",   },
-    { CCCHPORT,     "k3",   },
-    { CCMAKEPORT,   "k4",   },
-    { CCSETFILE,    "k5",   },
+    { CCENTER,      "k1",   },  { CCENTER,      "\33OP",   },
+    { CCSAVEFILE,   "k2",   },  { CCSAVEFILE,   "\33OQ",   },
+    { CCCHPORT,     "k3",   },  { CCCHPORT,     "\33OR",   },
+    { CCMAKEPORT,   "k4",   },  { CCMAKEPORT,   "\33OS",   },
+    { CCSETFILE,    "k5",   },  { CCSETFILE,    "\33OT",   },
     { CCPICK,       "k6",   },
     { CCOPEN,       "k7",   },
     { CCCLOSE,      "k8",   },
@@ -143,8 +144,7 @@ static char *gettcs(termcap, tc)
 }
 
 /*
- * сортировка inctab  для работы
- * функции findt
+ * сортировка inctab для работы функции findt
  */
 static void itsort(fb, fe, ns)
     struct ex_int *fb,*fe;
@@ -184,18 +184,14 @@ void tcread()
     /* Terminal description is placed in TERMCAP variable. */
     termcap = getenv("TERMCAP");
     if (! termcap) {
-#if 1
-        termcap = "linux:co#80:li#25:bs:cm=\33[%i%d;%dH:cl=\33[H\33[2J:"
-                  "ho=\33[H:up=\33[A:do=\33[B:nd=\33[C:le=\10:cu=\33[7m \33[m:"
-                  "kh=\33[1~:ku=\33[A:kd=\33[B:kr=\33[C:kl=\33[D:kP=\33[5~:"
-                  "kN=\33[6~:kI=\33[2~:kD=\33[3~:kh=\33[1~:kH=\33[4~:k.=\33[Z:"
-                  "k1=\33[[A:k2=\33[[B:k3=\33[[C:k4=\33[[D:k5=\33[[E:"
+        /* Default: linux console. */
+        termcap = ":co#80:li#25:cm=\33[%i%d;%dH:cl=\33[H\33[2J:ho=\33[H:"
+                  "up=\33[A:do=\33[B:nd=\33[C:le=\10:cu=\33[7m \33[m:"
+                  "ku=\33[A:kd=\33[B:kr=\33[C:kl=\33[D:kP=\33[5~:kN=\33[6~:"
+                  "kI=\33[2~:kD=\33[3~:kh=\33[1~:kH=\33[4~:"
+                  "k1=\33[A:k2=\33[B:k3=\33[C:k4=\33[D:k5=\33[15~:"
                   "k6=\33[17~:k7=\33[18~:k8=\33[19~:k9=\33[20~:k0=\33[21~:"
                   "F1=\33[23~:F2=\33[24~:";
-#else
-        puts1 ("re: TERMCAP environment variable required\n");
-        exit(1);
-#endif
     }
     curspos = gettcs(termcap, "cm");
     if (! curspos) {
@@ -217,20 +213,22 @@ void tcread()
     }
     if (tgetflag(termcap, "nb"))
         cvtout[COBELL] = "\0";
-    if (tgetflag(termcap, "bs"))
-        cvtout[COLT] = "\010";
     if (! cvtout[COCURS])
         cvtout[COCURS] = "@";
 
     /* Input codes. */
-    ir = iw = inctab;
-    while (ir->excc) {
-        if ((iw->excc = gettcs(termcap, ir->excc))) {
-            iw->incc = ir->incc;
-            iw++;
+    iw = inctab;
+    for (ir=iw; ir->excc; ir++) {
+        if (ir->excc[0] > ' ') {
+            iw->excc = gettcs(termcap, ir->excc);
+            if (iw->excc == 0) {
+                nfinc++;
+                continue;
+            }
         } else
-            nfinc++;
-        ir++;
+            iw->excc = ir->excc;
+        iw->incc = ir->incc;
+        iw++;
     }
     iw->excc = NULL;
     iw->incc = 0;
