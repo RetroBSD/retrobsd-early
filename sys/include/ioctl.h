@@ -17,6 +17,9 @@
 #else
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>
+
+int     ioctl (int d, int request, ...);
+
 #endif
 
 struct tchars {

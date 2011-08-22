@@ -90,6 +90,11 @@ struct	stat
  */
 #define	APPEND		(UF_APPEND | SF_APPEND)
 #define	IMMUTABLE	(UF_IMMUTABLE | SF_IMMUTABLE)
+#else
+
+int     chmod (const char *path, mode_t mode);
+int     fchmod (int fd, mode_t mode);
+
 #endif
 
 #endif /* !_STAT_H_ */

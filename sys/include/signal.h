@@ -4,6 +4,8 @@
  * specifies the terms and conditions for redistribution.
  */
 #ifndef	NSIG
+#include <sys/types.h>
+
 #define NSIG	32
 
 #define	SIGHUP	1	/* hangup */
@@ -46,7 +48,8 @@ typedef	void (*sig_t) (int);	/* type of signal function */
 #define	SIG_IGN		(sig_t) 1
 
 #ifndef KERNEL
-sig_t signal (int, sig_t);
+sig_t   signal (int, sig_t);
+int     kill (pid_t pid, int sig);
 #endif
 
 typedef unsigned long sigset_t;

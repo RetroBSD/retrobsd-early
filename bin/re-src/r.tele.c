@@ -16,7 +16,7 @@ void putup(lo, lf)
 {
     register int i, l0, fc;
     int j, k, l1;
-    char lmc, *cp, c, rmargflg;
+    char lmc, *cp, rmargflg;
 
     l0 = lo;
     lo += 2;
@@ -52,7 +52,7 @@ void putup(lo, lf)
             i = 0;
         else {
             if (lf >= 0)
-                c = chars(1);
+                chars(1);
             i = (ncline - 1) - curwksp->ulhccno;
             if (i < 0)
                 i = 0;
@@ -114,7 +114,7 @@ void putup(lo, lf)
 void poscursor(col, lin)
     int col, lin;
 {
-    register int scol,dcol,dlin;
+    register int scol;
     int slin;
 
     if (cursorline == lin) {
@@ -141,8 +141,6 @@ void poscursor(col, lin)
     }
     scol = col + curport->ltext;
     slin = lin + curport->ttext;    /* screen col, lin */
-    dcol = col - cursorcol;
-    dlin = lin - cursorline;        /* delta col, lin */
     cursorcol = col;
     cursorline = lin;
     pcursor(scol, slin);            /* direct positioning */

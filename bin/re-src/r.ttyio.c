@@ -269,7 +269,6 @@ static int readfc()
 int read1()
 {
     char sy1;
-    int cntf = 0;
 
     dumpcbuf();
 
@@ -309,13 +308,13 @@ new:
     lread1 = (unsigned char) sy1;
     if (lread1 == 0177) {
         lread1 = CCBACKSPACE;
-        goto readycchr;
+        goto readychr;
     }
     if (lread1 > 037)
         goto readychr;
     if (knockdown) {
         lread1 += 0100;
-        goto readycchr;
+        goto readychr;
     }
     /* Если символ - ^X? */
     if (lread1 == ('X' & 037)) {
@@ -324,46 +323,46 @@ new:
         switch (sy1) {
         case 'C' & 037:     /* ^X ^C */
             lread1 = CCQUIT;
-            goto readycchr;
+            goto readychr;
         case 'n':           /* ^X n */
         case 'N':           /* ^X N */
             lread1 = CCPLLINE;
-            goto readycchr;
+            goto readychr;
         case 'p':           /* ^X p */
         case 'P':           /* ^X P */
             lread1 = CCMILINE;
-            goto readycchr;
+            goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */
             lread1 = CCRPORT;
-            goto readycchr;
+            goto readychr;
         case 'b':           /* ^X b */
         case 'B':           /* ^X B */
             lread1 = CCLPORT;
-            goto readycchr;
+            goto readychr;
         case 'h':           /* ^X h */
         case 'H':           /* ^X H */
             lread1 = CCHOME;
-            goto readycchr;
+            goto readychr;
         case 't':           /* ^X t */
         case 'T':           /* ^X T */
             lread1 = CCBACKTAB;
-            goto readycchr;
+            goto readychr;
         case 'i':           /* ^X i */
         case 'I':           /* ^X I */
             lread1 = CCINSMODE;
-            goto readycchr;
+            goto readychr;
         case 'x':           /* ^X x */
         case 'X':           /* ^X X */
             lread1 = CCDOCMD;
-            goto readycchr;
+            goto readychr;
         case '$':           /* ^X $ */
 rmacname:
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
             if (sy1 >= 'a' && sy1 <='z') {
                 lread1 = (unsigned char) sy1 - 'a' + CCMAC+1;
-                goto readycchr;
+                goto readychr;
             }
             goto new;
         default:
@@ -391,20 +390,15 @@ rmacname:
         lread1 = k;
         if (lread1 == CCMAC)
             goto rmacname;
-        goto readycchr;
+        goto readychr;
     }
     /* ========================================================= */
 corrcntr:
     if (lread1 > 0 && lread1 <= 037)
         lread1 = in0tab[lread1];
-readycchr:
-    cntf = 1;
 readychr:
     if (lread1 == -1)
         goto new;
-    if (lread1 == 0177) {
-        cntf = 1;
-    }
     knockdown = 0;
     if (lread1 == CCCTRLQUOTE) {
         knockdown = 1;
@@ -427,10 +421,10 @@ readquit:
     if (intrflag) {
         lread1 = CCENTER;
         intrflag = 0;
-        goto readycchr;
+        goto readychr;
     }
     lread1 = CCQUIT;
-    goto readycchr;
+    goto readychr;
 }
 #undef lread1
 

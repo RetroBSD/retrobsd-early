@@ -88,6 +88,22 @@ unsigned int	ualarm();
 void	usleep();
 pid_t	vfork();
 
+int     pipe (int pipefd[2]);
+int     close (int fd);
+int     dup (int oldfd);
+int     dup2 (int oldfd, int newfd);
+int     unlink (const char *pathname);
+int     link (const char *oldpath, const char *newpath);
+int     chown (const char *path, uid_t owner, gid_t group);
+int     nice (int inc);
+int     setuid (uid_t uid);
+int     setgid (gid_t gid);
+int     isatty (int fd);
+
+struct stat;
+int     stat (const char *path, struct stat *buf);
+int     fstat (int fd, struct stat *buf);
+
 int	execl (const char *path, const char *arg0, ... /* NULL */);
 int	execle (const char *path, const char *arg0, ... /* NULL, char *envp[] */);
 int	execlp (const char *file, const char *arg0, ... /* NULL */);
@@ -99,7 +115,8 @@ int	execvp (const char *file, char *const argv[]);
 extern	char	**environ;		/* Environment, from crt0. */
 extern	const char *__progname;		/* Program name, from crt0. */
 
-int	getopt();
+int	getopt (int argc, char * const argv[], const char *optstring);
+
 extern	char	*optarg;		/* getopt(3) external variables */
 extern	int	opterr, optind, optopt;
 

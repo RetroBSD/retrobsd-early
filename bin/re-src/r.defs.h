@@ -65,7 +65,7 @@
 #define ELMCH       ';'
 #define DOTCH       '+'
 
-/* struct fsd -
+/*
  * Описатель сегмента файла. Описывает от 1 до 127 строк файла,
  * записанных подряд. Это минимальная компонента цепочки описателей
  */
@@ -92,15 +92,15 @@ struct fsd {
                         в функциях записи файла.               */
 };
 
-/* Урезанный вариант - без fsdbyte */
-struct fsdsht {
+/* Only header, without fsdbyte */
+struct fsd_header {
     struct fsd *backptr, *fwdptr;
     int fsdnlines;
     int fsdfile;
     off_t seek;
 };
 
-#define SFSD        (sizeof (struct fsdsht))
+#define SFSD        sizeof (struct fsd_header)
 #define MAXFILES    14
 
 struct fsd *openfsds[MAXFILES];
