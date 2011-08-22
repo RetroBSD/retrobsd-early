@@ -224,11 +224,9 @@ static int pic32_init_platform (pic32_t *pic32)
         return (-1);
     if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
         return (-1);
-/*
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
             pic32->sdcard0_file_name) < 0)
         return (-1);
-*/
     if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
             pic32->sdcard1_file_name) < 0)
         return (-1);
@@ -237,11 +235,11 @@ static int pic32_init_platform (pic32_t *pic32)
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 2", pic32->sdcard2_size,
             pic32->sdcard2_file_name) < 0)
         return (-1);
-*/
+
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 3", pic32->sdcard3_size,
             pic32->sdcard3_file_name) < 0)
         return (-1);
-
+*/
     pic32->sdcard[1].unit = 1;
     return (0);
 }
