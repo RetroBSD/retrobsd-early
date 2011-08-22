@@ -307,28 +307,52 @@ void led_control (int mask, int on)
 #else   // LED_POLARITY
         // Maximite board
 #ifdef LED_AUX_PORT
-        if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
-                if (on) PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-                else    PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-        }
+        if (mask & LED_AUX) {
+                if (on)
+		{
+			PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+			TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+                } else {
+			PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+			TRIS_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+		}
+         }
 #endif
 #ifdef LED_DISK_PORT
-        if (mask & LED_DISK) {          /* LED2 on PE1: red */
-                if (on) PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-                else    PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-        }
+        if (mask & LED_DISK) {          /* LED on PE1: red */
+                if (on)
+		{
+			PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+			TRIS_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+                } else {
+			PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+			TRIS_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+		}
+         }
 #endif
 #ifdef LED_KERNEL_PORT
-        if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
-                if (on) PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-                else    PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-        }
+        if (mask & LED_KERNEL) {        /* LED on PF0: green */
+                if (on)
+		{
+			PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+			TRIS_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+                } else {
+			PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+			TRIS_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+		}
+         }
 #endif
 #ifdef LED_TTY_PORT
-        if (mask & LED_TTY) {           /* LED USB on PE3: green */
-                if (on) PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-                else    PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-        }
+        if (mask & LED_TTY) {
+                if (on)
+		{
+			PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+			TRIS_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+                } else {
+			PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+			TRIS_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+		}
+         }
 #endif
 #endif  // LED_POLARITY
 }

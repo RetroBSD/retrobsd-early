@@ -27,9 +27,8 @@ DEFS		+= -DBUS_KHZ=80000
 # Console on UART1
 DEFS            += -DCONSOLE_UART1
 # SD/MMC card driver on SPI1
-# /CS0 at pin A9
-# /CS1 at pin A10, optional
 DEFS            += -DSD_PORT=SPI1CON
+# /CS0 at pin A9 (and optional /CS1 at pin A10)
 DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
 #DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
 # LEDs at pins E0, E1, E2, E3
@@ -42,8 +41,8 @@ DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
 # Console on UART4
 #DEFS            += -DCONSOLE_UART4
 # SD/MMC card driver on SPI4
-# /CS0 at pin E0
 #DEFS            += -DSD_PORT=SPI4CON
+# /CS0 at pin E0
 #DEFS            += -DSD_CS0_PORT=TRISE -DSD_CS0_PIN=0
 # LEDs at pins E1, F0 and opposite polarity to UBW32
 #DEFS            += -DLED_POLARITY
