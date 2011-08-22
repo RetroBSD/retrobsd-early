@@ -43,11 +43,12 @@ R6 (5k6 through-hole). Pick up pin 43/RD9 at the rear connector.
 ** On the Dontronics SM1 version of the PCB this resistor is R8 (2k7 SMD).
 A convenient pickup point for pin 43 is the feedthrough adjacent the PIC32.
 
-For the bootloader, see the tools/HIDBoot_v1_3 directory. This was built under
-Windows XP with both MPLAB 8.70 and MPLABX so there are two HIDBoot.hex files.
+For the bootloader, see the tools/HIDBoot_v1_3 directory. This will build under
+Windows XP with both MPLAB 8.70 and MPLABX, the former makes a much smaller file.
 The build can also be configured for UBW32 by undefining MAXIMITE in the compiler
 build options. Provision has also been made for the 32MX695F512 (no CAN controller)
-and the 'H' (64-pin) versions of the chip, which were all missing in the original configure scripts. See HardwareProfile.h for further details.
+and the 'H' (64-pin) versions of the chip, which were all missing in the original
+configure scripts. See HardwareProfile.h for further details.
 
 Rob Judd <judd@ob-wan.com> 21 Aug 2011
 
