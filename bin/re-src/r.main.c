@@ -38,7 +38,7 @@ int defrport  = 30;                 /* RIGHT PORT */
 int definsert  = 1;                 /* OPEN       */
 int defdelete  = 1;                 /* CLOSE      */
 int defpick    = 1;                 /* PICK       */
-char deffile[] = "/share/re.std";   /* Help file */
+char deffile[] = "/share/re.help";  /* Help file */
 
 /* Инициализации  */
 int lcline  = 0;
@@ -206,7 +206,7 @@ static void getstate(ichar)
 
     if (ichar != '!' || (gbuf = open(rfile, 0)) <= 0 ||
         (nportlist = get1w(gbuf)) == -1) {
-        makestate();
+make:   makestate();
         ichar = ' ';
         return;
     }
@@ -236,6 +236,8 @@ static void getstate(ichar)
             poscursor(curwksp->ccol, curwksp->crow);
         }
         nletters = get1w(gbuf);
+        if (nletters < 0)
+            goto make;
         f1 = fname = salloc(nletters);
         do {
             *f1 = get1c(gbuf);
@@ -321,17 +323,19 @@ static void savestate()
             put1w(0, sbuf);
 
         f1 = fname = openfnames[port->wksp->wfile];
-        while (*f1++);
-        nletters = f1 - fname;
-        put1w(nletters, sbuf);
-        f1 = fname;
-        do {
-            put1c(*f1, sbuf);
-        } while (*f1++);
-        put1w(port->wksp->ulhclno, sbuf);
-        put1w(port->wksp->ulhccno, sbuf);
-        put1w(port->wksp->ccol, sbuf);
-        put1w(port->wksp->crow, sbuf);
+        if (f1) {
+            while (*f1++);
+            nletters = f1 - fname;
+            put1w(nletters, sbuf);
+            f1 = fname;
+            do {
+                put1c(*f1, sbuf);
+            } while (*f1++);
+            put1w(port->wksp->ulhclno, sbuf);
+            put1w(port->wksp->ulhccno, sbuf);
+            put1w(port->wksp->ccol, sbuf);
+            put1w(port->wksp->crow, sbuf);
+        }
     }
     close(sbuf);
 }
@@ -431,7 +435,7 @@ void fatal(s)
     putcha(COBELL);
     dumpcbuf();
     ttcleanup();
-    puts1("\nFirst the bad news - the RE just ");
+    puts1("\nFirst the bad news: editor just ");
     if (s) {
         puts1("died:\n");
         puts1(s);

@@ -35,7 +35,7 @@ static void charsin(fi, offset)
         /* New offset is inside the last buffer. */
         charsi = charsn + offset - charsoff;
     } else {
-        lseek(fi, (off_t) offset, SEEK_SET);
+        lseek(fi, (off_t) offset, 0);
         charsoff = offset;
         charsi = 0;
         charsn = 0;
@@ -778,7 +778,7 @@ static struct fsd *writemp(buf,n)
 
     if (charsfi == tempfile)
         charsfi = 0;
-    lseek(tempfile, tempfl, SEEK_SET);
+    lseek(tempfile, tempfl, 0);
 
     n = dechars(buf, n-1);
     write(tempfile, buf, n);
@@ -934,7 +934,7 @@ static void pcspaces(line, col, number, nl, flg)
             for (i=0; i<number; i++)
                 linebuf[i] = cline[col+i];
             linebuf[number] = NEWLINE;
-            lseek(tempfile, tempfl, SEEK_SET);
+            lseek(tempfile, tempfl, 0);
             if (charsfi == tempfile)
                 charsfi = 0;
             write(tempfile, linebuf, n = dechars(linebuf,number));

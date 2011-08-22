@@ -1,14 +1,8 @@
 /*
  * Редактор RED. ИАЭ им. И.В. Курчатова, ОС ДЕМОС
- * Мини / вариант termcap.
+ * Мини-вариант termcap.
  */
 #include "r.defs.h"
-
-#define MAXHOP  32  /* max number of tc= indirections */
-#define BUFSIZ  1024
-
-//#include <stdlib.h>
-//#include <string.h>
 #include <ctype.h>
 
 /*

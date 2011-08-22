@@ -1,26 +1,21 @@
-CFLAGS          = -O3 -g -Wall -Werror -DDEBUG
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-# For Linux or Mac OS X
-CFLAGS          += -DTERMIOS
+CFLAGS		+= -DDEBUG #-Wall #-Werror
 
-all:            re
-
-# Вместо r.termc.o можно использовать и -ltermcap
-
-OBJ             = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o \
+OBJS            = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o \
                   r.mac.o r.main.o r.tele.o r.termc.o r.ttyio.o r.wind.o
 
-re:             $(OBJ)
-		cc $(OBJ) -o $@
+all:            ../re ../../share/re.help
 
-$(OBJ):         r.defs.h
+../re:          ${OBJS}
+		${CC} ${LDFLAGS} -o re.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S re.elf > re.dis
+		${SIZE} re.elf
+		${ELF2AOUT} re.elf $@
 
-install:        re
-		chmod a-t ${DSTDIR}/bin/re
-		-${DSTDIR}/bin/re </dev/null
-		strip re
-		cp re ${DSTDIR}/bin/re
-		chmod 7111 ${DSTDIR}/bin/re
+../../share/re.help: help.txt
+		cp -p $< $@
 
 clean:
-		rm -f *.o *~ re
+		rm -f *.o *.elf ../re *.elf *.dis *~

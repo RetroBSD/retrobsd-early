@@ -56,7 +56,7 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/iostat bin/join bin/kill bin/la bin/last bin/ln bin/ls bin/login \
                   bin/mail bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
-                  bin/pr bin/printf bin/ps bin/pwd bin/renice bin/rev bin/rm \
+                  bin/pr bin/printf bin/ps bin/pwd bin/re bin/renice bin/rev bin/rm \
                   bin/rmail bin/rmdir bin/rz bin/sed bin/sh bin/size bin/sleep \
                   bin/sort bin/split bin/strip bin/stty bin/su bin/sum \
                   bin/sync bin/sysctl bin/sz bin/tail bin/tar bin/tee bin/test \
@@ -65,7 +65,7 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
-                  var/log/messages var/log/wtmp .profile
+                  var/log/messages var/log/wtmp .profile share/re.help
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/
 
 BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1

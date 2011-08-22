@@ -138,7 +138,7 @@ int fsdwrite(ff, nl, newf)
                 if (nl > 0 && --nl == 0)
                     break;
             }
-            lseek(f->fsdfile, f->seek, SEEK_SET);
+            lseek(f->fsdfile, f->seek, 0);
             while (i) {
                 j = (i < LBUFFER) ? i : LBUFFER;
                 read(f->fsdfile, cline, j);
@@ -226,7 +226,7 @@ int editfile(file, line, col, mkflg, puflg)
         } else {
             if (! mkflg)
                 return (-1);
-            telluser("Hit <use> (ctrl-d) to make: ",0);
+            telluser("Hit ^N to create new file: ",0);
             telluser(file, 28);
             lread1 = -1;
             read1();

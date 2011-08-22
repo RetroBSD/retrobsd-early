@@ -72,11 +72,9 @@ void ttstartup()
 
     ioctl(0, TIOCGETC, &tchars0);
     tcharsw = tchars0;
-    if (tcharsw.t_intrc == '\177') {
-        /* ^C - interrupt of RE */
-        tcharsw.t_intrc = 3;
-    }
-    tcharsw.t_eofc = tcharsw.t_quitc = -1;
+    tcharsw.t_eofc = -1;        /* end-of-file */
+    tcharsw.t_quitc = -1;       /* quit */
+    tcharsw.t_intrc = -1;	/* interrupt */
     ioctl(0, TIOCSETC, &tcharsw);
 #endif
 #ifdef TIOCGETP
@@ -86,7 +84,7 @@ void ttstartup()
     ioctl(0, TIOCGETP, &templ);
     templw = templ;
 
-    templw.sg_flags &= ~(ECHO | CRMOD | INDCTL | XTABS | RAW);
+    templw.sg_flags &= ~(ECHO | CRMOD | XTABS | RAW);
     templw.sg_flags |= CBREAK;
 
     ioctl(0, TIOCSETP, &templw);
@@ -521,11 +519,10 @@ int addkey(cmd, key)
     }
     fw = fe;
     nfinc--;
-    while((fw++)->excc);
-    do{
+    while ((fw++)->excc);
+    do {
         *fw = *(fw-1);
-    }
-    while(--fw != fe);
+    } while (--fw != fe);
 retn:
 #ifdef TEST
     test("addkey out");

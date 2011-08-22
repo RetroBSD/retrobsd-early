@@ -35,9 +35,9 @@ const char in0tab[32] = {
     CCTAB,          /* ^I */
     CCRETURN,       /* ^J */
     -1,             /* ^K */
-    CCREDRAW,       /* ^L ? */
+    CCREDRAW,       /* ^L */
     CCRETURN,       /* ^M */
-    -1,             /* ^N */
+    CCSETFILE,      /* ^N */
     -1,             /* ^O */
     CCCTRLQUOTE,    /* ^P */
     -1 /*special*/, /* ^Q */
@@ -184,8 +184,18 @@ void tcread()
     /* Terminal description is placed in TERMCAP variable. */
     termcap = getenv("TERMCAP");
     if (! termcap) {
+#if 1
+        termcap = "linux:co#80:li#25:bs:cm=\33[%i%d;%dH:cl=\33[H\33[2J:"
+                  "ho=\33[H:up=\33[A:do=\33[B:nd=\33[C:le=\10:cu=\33[7m \33[m:"
+                  "kh=\33[1~:ku=\33[A:kd=\33[B:kr=\33[C:kl=\33[D:kP=\33[5~:"
+                  "kN=\33[6~:kI=\33[2~:kD=\33[3~:kh=\33[1~:kH=\33[4~:k.=\33[Z:"
+                  "k1=\33[[A:k2=\33[[B:k3=\33[[C:k4=\33[[D:k5=\33[[E:"
+                  "k6=\33[17~:k7=\33[18~:k8=\33[19~:k9=\33[20~:k0=\33[21~:"
+                  "F1=\33[23~:F2=\33[24~:";
+#else
         puts1 ("re: TERMCAP environment variable required\n");
         exit(1);
+#endif
     }
     curspos = gettcs(termcap, "cm");
     if (! curspos) {

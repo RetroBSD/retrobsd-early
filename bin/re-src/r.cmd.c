@@ -130,7 +130,7 @@ static int callexec()
         dup(pipef[0]);
         close(1);               /* Вывод в рабочий файл */
         open(tmpname, 1);
-        lseek(1, tempfl, SEEK_SET);
+        lseek(1, tempfl, 0);
         j = 2;
         /* Закрываем все, что осталось открыто */
         while ((k = dup(1)) >= 0)
