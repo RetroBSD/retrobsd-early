@@ -169,33 +169,36 @@ void movecursor(arg)
     switch (arg) {
     case 0:
         break;
-    case HO:
+    case CCHOME:                /* home cursor */
         col = lin = 0;
         break;
-    case UP:
+    case CCMOVEUP:              /* move up 1 line */
         --lin;
         break;
-    case RN:
-        col = curport->ledit;       /* break не нужен */
-    case DN:
+    case CCRETURN:              /* return */
+        col = curport->ledit;
+        /* fall through... */
+    case CCMOVEDOWN:            /* move down 1 line */
         ++lin;
         break;
-    case RT:
+    case CCMOVERIGHT:           /* forward move */
         ++col;
         break;
-    case LT:
+    case CCMOVELEFT:            /* backspace */
         --col;
         break;
-    case TB:
-        i=0;
+    case CCTAB:                 /* tab */
+        i = 0;
         col = col + curwksp->ulhccno;
-        while (col >= tabstops[i]) i++;
+        while (col >= tabstops[i])
+            i++;
         col = tabstops[i] - curwksp->ulhccno;
         break;
-    case BT:
-        i=0;
+    case CCBACKTAB:             /* tab left */
+        i = 0;
         col = col + curwksp->ulhccno;
-        while (col >  tabstops[i]) i++;
+        while (col >  tabstops[i])
+            i++;
         col = (i ? tabstops[i-1] - curwksp->ulhccno : -1);
         break;
     }
@@ -278,19 +281,19 @@ back:
 
     if (macro)
         goto rmac;
-    if (CONTROLCHAR && lread1 && (lread1 <= BT)) {
+    if (MOVECMD(lread1)) {
         telluser("arg: *** cursor defined ***", 0);
         switchport(w);
         poscursor(paramc0, paramr0);
 t0:
-        while (CONTROLCHAR && (i = ((lread1 <= BT) ? lread1 : 0))) {
-            movecursor(i);
+        while (MOVECMD(lread1)) {
+            movecursor(lread1);
             if (cursorline == paramr0 && cursorcol == paramc0)
                 goto back;
             lread1 = -1;
             read1();
         }
-        if (CTRLCHAR && lread1 != CCBACKSPACE) {
+        if (CTRLCHAR(lread1) && lread1 != CCBACKSPACE) {
             if (cursorcol > paramc0)
                 paramc1 = cursorcol;
             else
@@ -308,7 +311,7 @@ t0:
             read1();
             goto t0;
         }
-    } else if (CTRLCHAR) {
+    } else if (CTRLCHAR(lread1)) {
         paraml = 0;
         paramv = NULL;
         paramtype = 0;
@@ -329,23 +332,23 @@ loop:
             paraml += LPARAM;
         }
         /* Конец ввода параметра */
-        if ((! macro && CONTROLCHAR) || c==CCBACKSPACE || c==CCQUIT) {
+        if ((! macro && lread1 < ' ') || c==CCBACKSPACE || c==CCQUIT) {
             if (c == CCBACKSPACE && cursorcol != curport->ledit) {
                 /* backspace */
                 if (pn == 0) {
                     lread1 = -1;
                     goto loop;
                 }
-                movecursor(LT);
+                movecursor(CCMOVELEFT);
                 --pn;
                 if ((paramv[pn] & 0340) == 0) {
                     putch(' ', 0);
-                    movecursor(LT);
-                    movecursor(LT);
+                    movecursor(CCMOVELEFT);
+                    movecursor(CCMOVELEFT);
                 }
                 paramv[pn] = 0;
                 putch(' ', 0);
-                movecursor(LT);
+                movecursor(CCMOVELEFT);
                 lread1 = -1;
                 if (pn == 0)
                     goto back;

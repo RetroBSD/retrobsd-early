@@ -268,7 +268,7 @@ reterr: lc = 0;
     poscursor(33, 0);
     lread1 = -1;
     read1();
-    if (! CTRLCHAR) {
+    if (! CTRLCHAR(lread1)) {
         if (lread1 == '$')
             lread1 = CCMAC;
 

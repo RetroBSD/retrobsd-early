@@ -231,7 +231,7 @@ static struct fsd *temp2fsd(chan)
     register struct fsd *thisfsd = 0, *lastfsd = 0;
     struct fsd *firstfsd = 0;
     register int nby = 0;
-    int *bpt;
+    char *bpt;
     int c;
     char fby[NBYMAX+1];
     int i, lct, nl = 0, sl, kl;
@@ -242,20 +242,23 @@ static struct fsd *temp2fsd(chan)
     c = -2;
     sl = 0;
     for (;;) {
-        if ((c < 0) || (nby >= NBYMAX) || (nl == FSDMAXL)) {
+        if ((c < 0) || nby >= NBYMAX || nl == FSDMAXL) {
             if (c != -2) {
                 lastfsd = thisfsd;
                 thisfsd = (struct fsd *)salloc(nby + SFSD);
-                if (firstfsd == 0) firstfsd = thisfsd;
-                else lastfsd->fwdptr = thisfsd;
+                if (firstfsd == 0)
+                    firstfsd = thisfsd;
+                else
+                    lastfsd->fwdptr = thisfsd;
                 thisfsd->backptr = lastfsd;
-                thisfsd->fwdptr = (struct fsd *)0;
+                thisfsd->fwdptr = 0;
                 thisfsd->fsdnlines = nl;
                 nlines[chan] += nl;
                 thisfsd->fsdfile = chan;
                 thisfsd->seek = sl;
                 bpt = &(thisfsd->fsdbytes);
-                for (i=0; i<nby; ++i) *(bpt++) = fby[i];
+                for (i=0; i<nby; ++i)
+                    *bpt++ = fby[i];
             }
             if (c == -1) {
                 /* Поместим блок конца и выйдем */
@@ -401,7 +404,7 @@ int wseek(wksp, lno)
     struct workspace *wksp;
     int lno;
 {
-    register int *cp;
+    register char *cp;
     int i;
     register int j, l;
 
@@ -492,7 +495,7 @@ static struct fsd *blanklines(n)
 {
     int i;
     register struct fsd *f,*g;
-    register int *c;
+    register char *c;
 
     f = (struct fsd *)salloc(SFSD);
     while (n) {
@@ -533,8 +536,8 @@ static int breakfsd(w, n, reall)
     int nby, i, j, jj, k, lfb0;
     register struct fsd *f,*ff;
     struct fsd *fn;
-    register int *c;
-    int *cc;
+    register char *c;
+    char *cc;
     off_t offs;
 
     DEBUGCHECK;
@@ -549,7 +552,7 @@ static int breakfsd(w, n, reall)
             ff->fwdptr = fn;
         else
             openfsds[w->wfile] = fn;
-        wposit(w,n);
+        wposit(w, n);
         return (1);
     }
     f = w->curfsd;
@@ -622,8 +625,8 @@ static int catfsd(w)
 {
     register struct fsd *f0, *f;
     struct fsd *f2;
-    register int *c;
-    int *cc;
+    register char *c;
+    char *cc;
     int i, j, l0=0, l1=0, lb0=0, lb1, dl, nl0, nl1, fd0, kod = 0;
     /* l0,  l1:  число байтов в участке файла, описываемом f0, f;
      * lb0, lb1: длина описателя длин в fsd;
@@ -682,7 +685,7 @@ static int catfsd(w)
         kod = 1;
         free((char *)f2);
         free((char *)f0);
-        f->fwdptr ->backptr = f;
+        f->fwdptr->backptr = f;
         f0 = f->backptr;
         if (f0)
             f0->fwdptr = f;
@@ -771,7 +774,7 @@ static struct fsd *writemp(buf,n)
     int n;
 {
     register struct fsd *f1, *f2;
-    register int *p;
+    register char *p;
 
     if (charsfi == tempfile)
         charsfi = 0;
@@ -895,9 +898,9 @@ static void pcspaces(line, col, number, nl, flg)
 {
     register struct fsd *f1,*f2;
     struct fsd *f0;
-    char *linebuf;
+    char *linebuf, *bp;
     register int i;
-    int *bp, j, n, line0, line1;
+    int j, n, line0, line1;
 
     if (charsfi == tempfile)
         charsfi = 0;
@@ -1033,17 +1036,18 @@ static struct fsd *copyfsd(f, end)
 {
     struct fsd *res, *ff, *rend = 0;
     register int i;
-    register int *c1, *c2;
+    register char *c1, *c2;
 
     res = 0;
     while (f->fsdfile && f != end) {
         c1 = &f->fsdbytes;
         for (i = f->fsdnlines; i; i--)
-            if (*c1++&0200)
-            c1++;
-        c2 = (int*) f; /* !!! Подсчет места !!!*/
+            if (*c1++ & 0200)
+                c1++;
+        c2 = (char*) f; /* !!! Подсчет места !!!*/
         i = c1 - c2;
-        ff = (struct fsd*) (c2 = (int*) salloc(i * sizeof(int)));
+        c2 = salloc(i);
+        ff = (struct fsd*) c2;
         c2 += i;
         while (i--)
             *--c2 = *--c1;
@@ -1346,7 +1350,7 @@ void printfsd(f)
     struct fsd *f;
 {
     int i;
-    register int *c;
+    register char *c;
 
     printf("\n**********");
     while (f) {

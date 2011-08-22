@@ -287,8 +287,6 @@ int read1()
 {
     char sy1;
     int cntf = 0;
-    register int *lr1 = &lread1;
-#define lread1 (*lr1)   /* Для ускорения */
 
     dumpcbuf();
 
@@ -299,7 +297,7 @@ int read1()
     /* Если еще не кончилось макро-расширение */
 rmac:
     if (symac) {
-        lread1= *symac++;
+        lread1 = (unsigned char) *symac++;
         if (*symac == 0)
             symac = 0;
         goto retnl;
@@ -313,7 +311,7 @@ rmac:
      */
     /* Было преобразование и символы не кончились */
     if (sy0 != 0) {
-        lread1 = *sy0++;
+        lread1 = (unsigned char) *sy0++;
         if (*sy0 == 0)
             sy0 = 0;
         goto retn;
@@ -325,54 +323,70 @@ new:
         goto readquit;
 
     /* Если символ не управляющий */
-    lread1 = sy1;
+    lread1 = (unsigned char) sy1;
     if (lread1 == 0177) {
         lread1 = CCBACKSPACE;
         goto readycchr;
     }
-    lread1 &= 0377;
-    if ((lread1 & 0177) > 037)
+    if (lread1 > 037)
         goto readychr;
     if (knockdown) {
         lread1 += 0100;
         goto readycchr;
     }
     /* Если символ - ^X? */
-    if (lread1 == '\30') {
+    if (lread1 == ('X' & 037)) {
         if (read(inputfile, &sy1, 1) != 1)
             goto readquit;
         switch (sy1) {
         case '\3':          /* ^X ^C */
             lread1 = CCQUIT;
             goto readycchr;
-        case '+':           /* ^X + */
-        case ';':           /* ^X ; */
+        case 'n':           /* ^X n */
+        case 'N':           /* ^X N */
             lread1 = CCPLLINE;
             goto readycchr;
-        case '-':           /* ^X - */
-        case '=':           /* ^X = */
+        case 'p':           /* ^X p */
+        case 'P':           /* ^X P */
             lread1 = CCMILINE;
             goto readycchr;
-        case '.':           /* ^X . */
-        case '>':           /* ^X > */
-            lread1 = CCGOTO;
+        case 'f':           /* ^X f */
+        case 'F':           /* ^X F */
+            lread1 = CCRPORT;
             goto readycchr;
-        case ' ':           /* ^X Space */
-            lread1 = CCENTER;
+        case 'b':           /* ^X b */
+        case 'B':           /* ^X B */
+            lread1 = CCLPORT;
+            goto readycchr;
+        case 'h':           /* ^X h */
+        case 'H':           /* ^X H */
+            lread1 = CCHOME;
+            goto readycchr;
+        case 't':           /* ^X t */
+        case 'T':           /* ^X T */
+            lread1 = CCBACKTAB;
+            goto readycchr;
+        case 'i':           /* ^X i */
+        case 'I':           /* ^X I */
+            lread1 = CCINSMODE;
+            goto readycchr;
+        case 'x':           /* ^X x */
+        case 'X':           /* ^X X */
+            lread1 = CCDOCMD;
             goto readycchr;
         case '$':           /* ^X $ */
 rmacname:
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
             if (sy1 >= 'a' && sy1 <='z') {
-                lread1 = (int) sy1 - 'a' + CCMAC+1;
+                lread1 = (unsigned char) sy1 - 'a' + CCMAC+1;
                 goto readycchr;
             }
             goto new;
         default:
             ;
         }
-        lread1 = (int) sy1 & 037;
+        lread1 = sy1 & 037;
         goto corrcntr;
     }
     /* Введен управляющий символ - ищем команду в таблице */
@@ -398,8 +412,8 @@ rmacname:
     }
     /* ========================================================= */
 corrcntr:
-    if (lread1 > 0 && lread1 <= BT)
-        lread1 = in0tab[lread1-1];
+    if (lread1 > 0 && lread1 <= 037)
+        lread1 = in0tab[lread1];
 readycchr:
     cntf = 1;
 readychr:
@@ -420,10 +434,11 @@ retn:
      * ================================================
      */
 retnm:
+    lread1 = (unsigned char) lread1;
     if (lread1 > CCMAC && lread1 <= CCMAC+1+'z'-'a' && (symac = rmacl(lread1)))
         goto rmac;
 retnl:
-    return (lread1);
+    return lread1;
 readquit:
     if (intrflag) {
         lread1 = CCENTER;

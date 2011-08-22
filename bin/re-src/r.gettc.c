@@ -22,15 +22,39 @@ char *curspos;
 /*
  * Meanings of the input control codes: ^A - ^H
  */
-char in0tab[BT] = {
-    CCLPORT,        /* ^A */
-    BT,             /* ^B */
-    CCCHPORT,       /* ^C */
-    CCSETFILE,      /* ^D */
-    CCMISRCH,       /* ^E */
-    CCPICK,         /* ^F */
-    CCPUT,          /* ^G */
-    LT,             /* ^H */
+const char in0tab[32] = {
+    -1,             /* ^@ */
+    CCENTER,        /* ^A */
+    CCMISRCH,       /* ^B */
+    -1,             /* ^C */
+    CCDELCH,        /* ^D */
+    -1,             /* ^E */
+    CCPLSRCH,       /* ^F */
+    -1,             /* ^G */
+    CCBACKSPACE,    /* ^H */
+    CCTAB,          /* ^I */
+    CCRETURN,       /* ^J */
+    -1,             /* ^K */
+    CCREDRAW,       /* ^L ? */
+    CCRETURN,       /* ^M */
+    -1,             /* ^N */
+    -1,             /* ^O */
+    CCCTRLQUOTE,    /* ^P */
+    -1 /*special*/, /* ^Q */
+    -1,             /* ^R */
+    -1 /*special*/, /* ^S */
+    -1,             /* ^T */
+    -1,             /* ^U */
+    -1,             /* ^V */
+    -1,             /* ^W */
+    -1 /*special*/, /* ^X */
+    CCCLOSE,        /* ^Y */
+    -1,             /* ^Z */
+    -1 /*special*/, /* ^[ */
+    -1,             /* ^\ */
+    -1,             /* ^] */
+    -1,             /* ^^ */
+    -1,             /* ^_ */
 };
 
 /*
@@ -38,45 +62,30 @@ char in0tab[BT] = {
  * Сюда же записываются коды при переопределении
  */
 struct ex_int inctab[] = {
-    { BT,           "\002", },  /* ^B */
-    { BT,           "k.",   },
-    { LT,           "kl",   },
-    { TB,           "\011", },  /* ^I */
-    { HO,           "kh",   },
-    { RN,           "\015", },  /* ^M */
-    { UP,           "ku",   },
-    { DN,           "kd",   },
-    { RT,           "kr",   },
-    { LT,           "kl",   },
-    { CCDELCH,      "kD",   },
-    { CCBACKSPACE,  "\10",  },  /* ^H */
-    { CCCHPORT,     "k2k0", },
-    { CCCLOSE,      "k2k8", },
-    { CCCTRLQUOTE,  "\20",  },  /* ^P */
-    { CCDELCH,      "k6",   },
-    { CCDOCMD,      "k2k.", },
-    { CCENTER,      "k1",   },
-    { CCGOTO,       "k4",   },
-    { CCINSMODE,    "kI",   },
-    { CCINSMODE,    "k5",   },
-    { CCLPORT,      "k2kl", },
-    { CCMAKEPORT,   "k2k4", },
-    { CCMILINE,     "k2ku", },
-    { CCMIPAGE,     "\33k7",},
-    { CCMISRCH,     "k2k3", },
-    { CCOPEN,       "k8",   },
-    { CCPICK,       "k9",   },
-    { CCPLLINE,     "k2kd", },
-    { CCPLPAGE,     "k7",   },
-    { CCPLSRCH,     "k3",   },
-    { CCPUT,        "k2k9", },
-    { CCRPORT,      "k2kr", },
-    { CCSAVEFILE,   "k2k-", },
-    { CCSETFILE,    "k-",   },
-    { CCTABS,       "k2k5", },
+    { CCMOVELEFT,   "kl",   },
+    { CCMOVERIGHT,  "kr",   },
+    { CCMOVEUP,     "ku",   },
+    { CCMOVEDOWN,   "kd",   },
+    { CCHOME,       "kh",   },
+    { CCEND,        "kH",   },
     { CCPLPAGE,     "kN",   },
     { CCMIPAGE,     "kP",   },
-    { CCQUIT,       "k0",   },
+    { CCINSMODE,    "kI",   },
+    { CCDELCH,      "kD",   },
+    { CCENTER,      "k1",   },
+    { CCSAVEFILE,   "k2",   },
+    { CCCHPORT,     "k3",   },
+    { CCMAKEPORT,   "k4",   },
+    { CCSETFILE,    "k5",   },
+    { CCPICK,       "k6",   },
+    { CCOPEN,       "k7",   },
+    { CCCLOSE,      "k8",   },
+    { CCREDRAW,     "k9",   }, // free
+    { CCGOTO,       "k0",   },
+    { CCPUT,        "F1",   },
+    { CCREDRAW,     "F2",   }, // free
+    { 0,            0,      },
+    { 0,            0,      },
     { 0,            0,      },
     { 0,            0,      },
     { 0,            0,      },

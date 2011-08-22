@@ -106,7 +106,8 @@ int fsdwrite(ff, nl, newf)
     int nl, newf;
 {
     register struct fsd *f;
-    register int *c, i;
+    register char *c;
+    register int i;
     int j, k, bflag, tlines;
 
     if (lcline < LBUFFER)

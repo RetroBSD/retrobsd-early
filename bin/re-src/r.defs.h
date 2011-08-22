@@ -21,8 +21,8 @@
 #define esc0        COCURS
 #define esc1        '\\'
 
-#define CONTROLCHAR (lread1 < 040)
-#define CTRLCHAR    (((lread1>=0)&&(lread1<040)) || ((lread1 >= 0177)&& (lread1<=0240)))
+#define MOVECMD(x)  ((x) >= CCMOVEUP && (x) <= CCBACKTAB)
+#define CTRLCHAR(x) ((((x) >= 0) && ((x) < ' ')) || ((lread1 >= 0177) && (lread1 <= 0240)))
 #define LINELM      128     /* макс. длина строки на экране */
 #define NLINESM     48      /* макс. число строк на экране  */
 #define LBUFFER     256     /* *** НЕ МЕНЬШЕ  fsdmaxl  **** */
@@ -37,17 +37,7 @@
 #define BADF        -1
 #define CONTF       -2
 
-#define VMOTCODE    4       /* коды 1 - 4 уводят курсор из текущей строки */
-#define UP          1       /* Up     */
-#define DN          2       /* Down   */
-#define RN          3       /* Return */
-#define HO          4       /* Home   */
-#define RT          5       /* Right  */
-#define LT          6       /* Left   */
-#define TB          7       /* Tab    */
-#define BT          8       /* Backtab*/
-
-  /* OUTPUT CODES */
+/* OUTPUT CODES */
 
 #define COSTART     0
 #define COUP        1
@@ -85,7 +75,7 @@ struct fsd {
                                 /* 0 , если это конец цепи. */
         int fsdfile;            /* Дескриптор файла, 0, если это конец цепи */
         off_t seek;             /* Сдвиг в файле */
-        int fsdbytes;  /* Переменное число байт - столько, сколько нужно
+        char fsdbytes;  /* Переменное число байт - столько, сколько нужно
                         для того, чтобы описать очередные fsdnlines-1 строк:
                         Интерпретация очередного байта:
                         1-127   смещение следующей строки от предыдущей
@@ -183,42 +173,43 @@ struct savebuf *pickbuf, *deletebuf;
 /*
  * Управляющие символы
  */
-#define CCBACKTAB          BT      /* tab left             */
-#define CCHOME             HO      /* home cursor          */
-#define CCMOVEDOWN         DN      /* move down 1 line     */
-#define CCMOVELEFT         LT      /* backspace            */
-#define CCMOVERIGHT        RT      /* forward move         */
-#define CCMOVEUP           UP      /* move up 1 lin        */
-#define CCRETURN           RN      /* return               */
-#define CCTAB              TB      /* tab                  */
-
-#define CCCTRLQUOTE        000     /* knockdown next char  */
-#define CCPICK             011     /* pick                 */
-#define CCMAKEPORT         012     /* make a viewport      */
-#define CCOPEN             013     /* insert               */
-#define CCSETFILE          014     /* set file             */
-#define CCCHPORT           015     /* change port          */
-#define CCPLPAGE           016     /* minus a page         */
-#define CCGOTO             017     /* goto linenumber      */
-#define CCDOCMD            020     /* execute a filter     */
-#define CCMIPAGE           021     /* plus a page          */
-#define CCPLSRCH           022     /* plus search          */
-#define CCRPORT            023     /* port right           */
-#define CCPLLINE           024     /* minus a line         */
-#define CCDELCH            025     /* character delete     */
-#define CCSAVEFILE         026     /* make new file        */
-#define CCMILINE           027     /* plus a line          */
-#define CCMISRCH           030     /* minus search         */
-#define CCLPORT            031     /* port left            */
-#define CCPUT              032     /* put                  */
-#define CCTABS             033     /* set tabs             */
-#define CCINSMODE          034     /* insert mode          */
-#define CCBACKSPACE        035     /* backspace and erase  */
-#define CCCLOSE            036     /* delete               */
-#define CCENTER            037     /* enter parameter      */
-#define CCQUIT            0177     /* terminate editor run */
-#define CCINTRUP          0240     /* interuption (for ttyfile)     */
-#define CCMAC             0200     /* macro marka                   */
+#define CCCTRLQUOTE     0       /* knockdown next char  ^P          */
+#define CCMOVEUP        1       /* move up 1 line               up  */
+#define CCMOVEDOWN      2       /* move down 1 line             down */
+#define CCRETURN        3       /* return               ^M          */
+#define CCHOME          4       /* home cursor          ^X h    home */
+#define CCMOVERIGHT     5       /* move right                   right */
+#define CCMOVELEFT      6       /* move left                    left */
+#define CCTAB           7       /* tab                  ^I          */
+#define CCBACKTAB       010      /* tab left             ^X t        */
+#define CCPICK          011     /* pick                         f6 */
+#define CCMAKEPORT      012     /* make a viewport              f4 */
+#define CCOPEN          013     /* insert                       f7 */
+#define CCSETFILE       014     /* set file                     f5 */
+#define CCCHPORT        015     /* change port                  f3 */
+#define CCPLPAGE        016     /* minus a page                 page down */
+#define CCGOTO          017     /* goto linenumber              f10 */
+#define CCDOCMD         020     /* execute a filter     ^X x        */
+#define CCMIPAGE        021     /* plus a page                  page up */
+#define CCPLSRCH        022     /* plus search          ^F          */
+#define CCRPORT         023     /* port right           ^X f        */
+#define CCPLLINE        024     /* minus a line         ^X p        */
+#define CCDELCH         025     /* character delete     ^D      delete */
+#define CCSAVEFILE      026     /* make new file                f2  */
+#define CCMILINE        027     /* plus a line          ^X n        */
+#define CCMISRCH        030     /* minus search         ^B          */
+#define CCLPORT         031     /* port left            ^X b        */
+#define CCPUT           032     /* put                          f11 */
+#define CCTABS          033     /* set tabs             ^X t        */
+#define CCINSMODE       034     /* insert mode          ^X i    insert */
+#define CCBACKSPACE     035     /* backspace and erase  ^H          */
+#define CCCLOSE         036     /* delete               ^Y      f8  */
+#define CCENTER         037     /* enter parameter      ^A      f1  */
+#define CCQUIT          0177    /* terminate session    ^X ^C       */
+#define CCREDRAW        0236    /* redraw screen        ^L          */
+#define CCEND           0237    /* cursor to end        ^X e    end */
+#define CCINTRUP        0240    /* interrupt (ttyfile) */
+#define CCMAC           0200    /* macro marker */
 
 int cursorline;         /* physical screen position of */
 int cursorcol;          /*  cursor from (0,0)=ulhc of text in port */
@@ -227,7 +218,7 @@ extern char cntlmotions[];
 
 extern int tabstops[];
 char blanks[LINELM];
-extern char in0tab[];   /* input control codes */
+extern const char in0tab[]; /* input control codes */
 
 extern int lread1;      /* Текущий входной символ, -1 - дай еще! */
 char intrflag;          /* 1 - был сигнал INTERUP */

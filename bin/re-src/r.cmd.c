@@ -170,8 +170,6 @@ void mainloop()
     register int j;
     int clsave = 0, ccsave = 0, k;
     /* Хитрости с экономией памяти */
-    register int *lre1 = &lread1;
-#define lread1 (*lre1)
     int thiscol, thisrow;
     char ich[8], *cp;
     /* Для команд с тремя вариантами аргументов */
@@ -200,11 +198,11 @@ void mainloop()
         /*
          * Редактирование в строке
          */
-        if ((! CTRLCHAR) || lread1 == CCCTRLQUOTE ||
+        if (! CTRLCHAR(lread1) || lread1 == CCCTRLQUOTE ||
             lread1 == CCBACKSPACE || lread1 == CCDELCH)
         {
             /* Отмена в 1 колонке */
-            if (lread1 == CCBACKSPACE &&  cursorcol == 0)
+            if (lread1 == CCBACKSPACE && cursorcol == 0)
             {
                 lread1 = -1;
                 goto contin;
@@ -221,14 +219,15 @@ void mainloop()
             {
                 thiscol = cursorcol + curwksp->ulhccno;
                 thisrow = cursorline;
-                if (lread1 == CCBACKSPACE) thiscol--;
+                if (lread1 == CCBACKSPACE)
+                    thiscol--;
                 if (ncline < thiscol + 2) {
                     if (lread1 == CCBACKSPACE)
-                        movecursor(LT);
+                        movecursor(CCMOVELEFT);
                     lread1 = -1;
                     goto contin;
                 }
-                for (i=thiscol;i<ncline-2;i++)
+                for (i=thiscol; i<ncline-2; i++)
                     cline[i] = cline[i+1];
                 ncline--;
                 thiscol -= curwksp->ulhccno;
@@ -239,19 +238,18 @@ void mainloop()
                 goto contin;
             }
             /* Проверка на границу окна */
-            if (cursorcol > curport->rtext)
-            {
+            if (cursorcol > curport->rtext) {
                 if (fcline) {
                     putline(0);
                     movep(defrport);
                     goto contin;
                 }
-                else  goto margerr;
+                goto margerr;
             }
             fcline = 1;
             j = (lread1 == CCBACKSPACE);
             if (j) {
-                movecursor(LT);
+                movecursor(CCMOVELEFT);
                 lread1 = ' ';
             }
             i = cursorcol + curwksp->ulhccno;
@@ -290,7 +288,7 @@ void mainloop()
             /* Если переехали границу */
             curport->redit = curport->rtext;
             if (j)
-                movecursor(LT);
+                movecursor(CCMOVELEFT);
             lread1 = -1;
             goto contin;
         }
@@ -309,12 +307,14 @@ void mainloop()
         /*
          * Если команда перемещения
          */
-        if (lread1<=BT) {
+        if (lread1 <= CCBACKTAB) {
             movecursor(lread1);
-            if (lread1 <= VMOTCODE ) {
+            if (lread1 == CCMOVEUP || lread1 == CCMOVEDOWN ||
+                lread1 == CCRETURN || lread1 == CCHOME)
+            {
+                /* Row changed: save current line. */
                 putline(0);
-                if (curspos)
-                    goto newnumber;
+                goto newnumber;
             }
             lread1 = -1;
             goto contin;
@@ -424,6 +424,12 @@ void mainloop()
             settab(curwksp->ulhccno + cursorcol);
             goto funcdone;
 
+        case CCREDRAW:                  /* Redraw screen */
+        case CCEND:                     /* TODO */
+            rescreen();
+            lread1 = -1;
+            goto funcdone;
+
         /* case CCMOVELEFT: */
         /* case CCTAB:      */
         /* case CCMOVEDOWN: */
@@ -436,7 +442,7 @@ void mainloop()
         /* Повтор ввода аргумента */
 reparg:
         read1();
-        if (CTRLCHAR)
+        if (CTRLCHAR(lread1))
             goto yesarg;
         goto noargerr;
         /*
@@ -562,7 +568,7 @@ yesarg:
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
-            m = ((lread1 <= BT) ? lread1 : 0);
+            m = ((lread1 <= CCBACKTAB) ? lread1 : 0);
             while (--i >= 0)
                 movecursor(m);
             goto funcdone;
@@ -833,7 +839,6 @@ errclear:
 contin:
         ;
     }
-#undef lread1
 }
 
 /*
