@@ -13,7 +13,7 @@
   */
 
 #ifndef __VM_H__
-#define  __VM_H__
+#define __VM_H__
 
 #include <pthread.h>
 
@@ -53,17 +53,17 @@ struct vm_instance {
 
     char *log_file;             /* Log filename */
     int log_file_enabled;       /* Logging enabled */
-    u_int ram_size;             /* RAM   size in Mb */
-    //u_int rom_size;                    /*   ROM size in Mb */
-    //char *rom_filename;             /* ROM filename */
-    //m_pa_t rom_address;           /*ROM phy address*/
+    u_int ram_size;             /* RAM size in Mb */
+    //u_int rom_size;           /* ROM size in Mb */
+    //char *rom_filename;       /* ROM filename */
+    //m_pa_t rom_address;       /* ROM phy address */
 
-    u_int flash_size;           /*   FLASH size in Mb */
+    u_int flash_size;           /* FLASH size in Mb */
     char *flash_filename;       /* FLASH filename */
-    m_pa_t flash_address;       /*FLASH phy address */
-    u_int flash_type;           /*NAND Flash OR NOR FLASH */
+    m_pa_t flash_address;       /* FLASH phy address */
+    u_int flash_type;           /* NAND Flash OR NOR FLASH */
 
-    u_int boot_method;          /*binary or elf */
+    u_int boot_method;          /* binary or elf */
     char *kernel_filename;
     u_int boot_from;
 
@@ -97,7 +97,7 @@ struct vm_instance {
     /* Specific hardware data */
     void *hw_data;
 
-    /*gdb interface */
+    /* gdb interface */
     m_uint32_t gdb_debug, gdb_port;
     int gdb_interact_sock;      //connect socket
     int gdb_listen_sock;        //listen socket
