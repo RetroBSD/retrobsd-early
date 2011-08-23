@@ -1,16 +1,36 @@
 DESTDIR		= /usr/local/lib/retrobsd
 MACHINE		= mips
-GCCBIN		= /usr/local/mips461/bin
-CC		= $(GCCBIN)/mips-elf-gcc -EL -nostdinc -I$(TOPSRC)/include \
+
+# MPLABX C32 on Linux - not verified yet
+ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX	= /opt/microchip/mplabc32/v2.00/bin/pic32-
+endif 
+
+# MPLABX C32 on Mac OS X - not verified yet
+ifneq (,$(wildcard /Applications/microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX   = /Applications/microchip/mplabc32/v2.00/bin/pic32-
+endif
+
+# MPLABX C32 on Windows - not verified yet
+ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX   = /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-
+endif
+
+# Plain GCC
+ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
+    GCCPREFIX	= /usr/local/mips461/bin/mips-elf-
+endif
+
+CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include \
 		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
-CXX            	= $(GCCBIN)/mips-elf-g++ -EL -nostdinc -I$(TOPSRC)/include \
+CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -I$(TOPSRC)/include \
 		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
+LD		= $(GCCPREFIX)ld
+AR		= $(GCCPREFIX)ar
+RANLIB          = $(GCCPREFIX)ranlib
+SIZE            = $(GCCPREFIX)size
+OBJDUMP         = $(GCCPREFIX)objdump -mmips:isa32r2
 AS		= $(CC) -x assembler-with-cpp
-LD		= $(GCCBIN)/mips-elf-ld
-AR		= $(GCCBIN)/mips-elf-ar
-RANLIB		= $(GCCBIN)/mips-elf-ranlib
-SIZE		= $(GCCBIN)/mips-elf-size
-OBJDUMP		= $(GCCBIN)/mips-elf-objdump
 YACC            = byacc
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d

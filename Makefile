@@ -50,7 +50,7 @@ ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells
 BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
-                  bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/du \
+                  bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
                   bin/file bin/find bin/grep bin/groups bin/head bin/hostid bin/hostname bin/id \
                   bin/iostat bin/join bin/kill bin/la bin/last bin/ln bin/ls bin/login \
