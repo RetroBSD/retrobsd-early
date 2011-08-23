@@ -56,7 +56,19 @@ ASFLAGS		= $(DEFS) $(DEPFLAGS)
 # MPLABX C32 on Linux
 ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
     GCCPREFIX   = /opt/microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips 
+    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
+endif
+
+# MPLABX C32 on Mac OS X
+ifneq (,$(wildcard /Applications/microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX   = /Applications/microchip/mplabc32/v2.00/bin/pic32-
+    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
+endif
+
+# MPLABX C32 on Windows - not verified yet
+ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX   = /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-
+    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
 endif
 
 # Plain GCC
@@ -65,9 +77,9 @@ ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
     LDFLAGS     =
 endif
 
-CC		= $(GCCPREFIX)gcc -EL -mips32r2 -g 
+CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map 
+LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map
 SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
