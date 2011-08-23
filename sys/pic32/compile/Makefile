@@ -52,11 +52,25 @@ DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
-CC		= /usr/local/mips461/bin/mips-elf-gcc -EL -g -mips32r2
+
+# MPLABX C32 on Linux
+ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
+    GCCPREFIX   = /opt/microchip/mplabc32/v2.00/bin/pic32-
+    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips 
+endif
+
+# Plain GCC
+ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
+    GCCPREFIX   = /usr/local/mips461/bin/mips-elf-
+    LDFLAGS     =
+endif
+
+CC		= $(GCCPREFIX)gcc -EL -mips32r2 -g 
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-SIZE		= /usr/local/mips461/bin/mips-elf-size
-OBJDUMP		= /usr/local/mips461/bin/mips-elf-objdump
-OBJCOPY		= /usr/local/mips461/bin/mips-elf-objcopy
+LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map 
+SIZE		= $(GCCPREFIX)size
+OBJDUMP		= $(GCCPREFIX)objdump
+OBJCOPY		= $(GCCPREFIX)objcopy
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
@@ -101,7 +115,7 @@ machine:
 		ln -s .. $@
 
 unix.elf:	$(KERNOBJ) using-bootloader.ld
-		$(CC) -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map $(KERNOBJ) -o $@
+		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
 		chmod -x $@
 		$(OBJDUMP) -d -S $@ > unix.dis
 		$(OBJCOPY) -O binary $@ unix.bin

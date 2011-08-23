@@ -82,7 +82,7 @@ void
 startup()
 {
 	extern void _etext(), _exception_base_();
-	extern unsigned __data_start, _edata;
+	extern unsigned __data_start;
 
 	/* Initialize STATUS register: master interrupt disable.
 	 * Setup interrupt vector base. */
@@ -167,8 +167,34 @@ startup()
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
 
+#if __PIC32MX__
+	/* Microchip C32 compiler generates a .dinit table with 
+         * initialization values for .data segment. */
+	extern const unsigned _dinit_addr[];
+        unsigned const *dinit = &_dinit_addr[0];
+        for (;;) {
+            char *dst = (char*) (*dinit++);
+            if (dst == 0)
+                    break;
+                    
+            unsigned nbytes = *dinit++;
+            unsigned fmt = *dinit++;
+            if (fmt == 0) {                     /* Clear */
+                    do {
+                        *dst++ = 0;
+                    } while (--nbytes > 0);
+            } else {                            /* Copy */
+                    char *src = (char*) dinit;
+                    do {
+                        *dst++ = *src++;
+                    } while (--nbytes > 0);
+                    dinit = (unsigned*) ((unsigned) (src + 3) & ~3);
+            }
+        }
+#else
 	/* Copy the .data image from flash to ram.
 	 * Linker places it at the end of .text segment. */
+	extern unsigned _edata;
 	unsigned *src = (unsigned*) &_etext;
 	unsigned *dest = &__data_start;
 	unsigned *limit = &_edata;
@@ -176,7 +202,7 @@ startup()
 		/*printf ("copy %08x from (%08x) to (%08x)\n", *src, src, dest);*/
 		*dest++ = *src++;
 	}
-
+#endif
         /* Get total RAM size. */
 	physmem = BMXDRMSZ;
 }

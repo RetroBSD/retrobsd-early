@@ -7,10 +7,17 @@ OUTPUT_ARCH(mips)
 ENTRY(_reset_vector_)
 MEMORY
 {
-  flash  (rx)   : ORIGIN = 0x9d005000,	LENGTH = 492K
-  ram    (rw!x) : ORIGIN = 0x80000000,	LENGTH = 26K
-  u0area (rw!x) : ORIGIN = 0x80006800,	LENGTH = 3K
-  uarea  (rw!x) : ORIGIN = 0x80007400,	LENGTH = 3K
+  flash                (rx)  : ORIGIN = 0x9d005000, LENGTH = 492K
+  ram                  (rw!x): ORIGIN = 0x80000000, LENGTH = 26K
+  u0area               (rw!x): ORIGIN = 0x80006800, LENGTH = 3K
+  uarea                (rw!x): ORIGIN = 0x80007400, LENGTH = 3K
+
+  /* Required by Microchip C32 linker */
+  kseg0_program_mem    (rx)  : ORIGIN = 0x9D000000, LENGTH = 0x80000
+  kseg0_boot_mem             : ORIGIN = 0x9FC00490, LENGTH = 0x970
+  exception_mem              : ORIGIN = 0x9FC01000, LENGTH = 0x1000
+  kseg1_boot_mem             : ORIGIN = 0xBFC00000, LENGTH = 0x490
+  kseg1_data_mem       (w!x) : ORIGIN = 0xA0000000, LENGTH = 0x20000
 }
 
 /* higher address of the user mode stack */
@@ -20,21 +27,20 @@ u_end	= ORIGIN(uarea) + LENGTH(uarea);
 
 SECTIONS
 {
-  . = 0x0000;
-
-  .text           :
+  .text ORIGIN(flash) :
   {
     /* Exception handlers. */
     *(.exception)
     . = 0x1000;
     /* Execution starts here. */
-    *(.init)
+    *(.startup) 
     *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)
     *(.glue_7t) *(.glue_7)
     __rodata_start = . ;
     *(.rodata .rodata.* .gnu.linkonce.r.* .rel.dyn)
+    *(.dinit)
     /* Align here to ensure that the .text section ends on word boundary. */
     . = ALIGN (32 / 8);
     _etext = .;
@@ -45,11 +51,11 @@ SECTIONS
   {
     __data_start = . ;
     _gp = .; 	/* We use only 32k RAM for kernel, so no need for 0x8000 offset. */
-    *(.data .data.* .gnu.linkonce.d.*)
     /* We want the small data sections together, so single-instruction offsets
        can access them all, and initialized data all before uninitialized, so
        we can shorten the on-disk segment size.  */
     *(.sdata .sdata.* .gnu.linkonce.s.*)
+    *(.data .data.* .gnu.linkonce.d.*)
     *(.eh_frame)
     _edata = .;
   } > ram
@@ -103,4 +109,7 @@ SECTIONS
   .debug_funcnames 0 : { *(.debug_funcnames) }
   .debug_typenames 0 : { *(.debug_typenames) }
   .debug_varnames  0 : { *(.debug_varnames) }
+  .debug_pubtypes 0 : { *(.debug_pubtypes) }
+  .debug_ranges   0 : { *(.debug_ranges) }
+  .gnu.attributes 0 : { KEEP (*(.gnu.attributes)) }
 }

@@ -39,7 +39,7 @@
 #---------------------------------------
 # Reset vector at 0x9D006000
 #
-		.section .init
+		.section .startup,"ax",@progbits
 		.org	0
 		.type	_reset_vector_, @function
 _reset_vector_:	.globl	_reset_vector_
@@ -99,7 +99,7 @@ _reset_vector_:	.globl	_reset_vector_
 #---------------------------------------
 # Exception vector at 0x0x9D005200
 #
-		.section .exception
+		.section .exception,"ax",@progbits
 _exception_base_: .globl _exception_base_
 		.org	0x200
 		.type	_exception_vector_, @function
