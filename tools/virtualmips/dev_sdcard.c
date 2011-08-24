@@ -31,11 +31,11 @@
  * Definitions for MMC/SDC commands.
  */
 #define CMD_GO_IDLE         (0x40+0)    /* CMD0 */
-#define	CMD_SEND_OP_SDC		(0x40+41)   /* ACMD41 (SDC) */
-#define CMD_SET_BLEN		(0x40+16)
-#define CMD_SEND_CSD		(0x40+9)
-#define CMD_READ_SINGLE		(0x40+17)
-#define CMD_WRITE_SINGLE	(0x40+24)
+#define	CMD_SEND_OP_SDC     (0x40+41)   /* ACMD41 (SDC) */
+#define CMD_SET_BLEN        (0x40+16)
+#define CMD_SEND_CSD        (0x40+9)
+#define CMD_READ_SINGLE     (0x40+17)
+#define CMD_WRITE_SINGLE    (0x40+24)
 #define CMD_APP             (0x40+55)   /* CMD55 */
 
 static void sdcard_read_data (int fd, unsigned offset,

@@ -52,7 +52,7 @@ struct pic32_system {
 
     unsigned start_address;         /* jump here on reset */
     unsigned boot_flash_size;       /* size of boot flash in kbytes */
-    unsigned boot_flash_address;    /* phys.address of boot flash */
+    unsigned boot_flash_address;    /* physical address of boot flash */
     char *boot_file_name;           /* image of boot flash */
 
     unsigned sdcard0_size;          /* size of SD card 0 in Mbytes */
@@ -63,7 +63,7 @@ struct pic32_system {
     char *sdcard1_file_name;        /* image of SD card 1 */
     char *sdcard2_file_name;        /* image of SD card 2 */
     char *sdcard3_file_name;        /* image of SD card 3 */
-    sdcard_t sdcard [2];
+    sdcard_t sdcard [2];            /* max number of sdcards */
 
     struct vdevice *intdev;         /* interrupt controller */
     unsigned intcon;                /* interrupt control */

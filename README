@@ -29,9 +29,8 @@ To build for the Maximite board, make the following changes to these files:
 sys/pic32/compile/Makefile
     deselect all default UBW32 options (DEFS), select all Maximite options
 
-tools/virtualmips/pic32.conf
-    deselect sdcard0 and select sdcard3
-    change uart1_type to 'none' and uart4_type to 'console'
+tools/virtualmips/Makefile
+    deselect line with -DUBW32 and select line with -DMAXIMITE
 
 Hardware changes are required to use UART4 for the console.
 Lift the resistor** (see below) going to the audio output plug and connect

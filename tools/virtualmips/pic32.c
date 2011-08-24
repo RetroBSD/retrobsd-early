@@ -180,7 +180,7 @@ static int pic32_init_platform (pic32_t *pic32)
         if (dev_pic32_flash_init (vm, "Boot flash", pic32->boot_flash_size,
                 pic32->boot_flash_address, pic32->boot_file_name) == -1)
             return (-1);
-    if (dev_pic32_uart_init (vm, "PIC32 UART", PIC32_U1MODE,
+    if (dev_pic32_uart_init (vm, "PIC32 UART1", PIC32_U1MODE,
             PIC32_IRQ_U1E, vm->vtty_con[0]) == -1)
         return (-1);
     if (dev_pic32_uart_init (vm, "PIC32 UART2", PIC32_U2MODE,
@@ -210,6 +210,8 @@ static int pic32_init_platform (pic32_t *pic32)
         return (-1);
     if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
         return (-1);
+    if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
+        return (-1);
     if (dev_pic32_spi_init (vm, "PIC32 SPI1", PIC32_SPI1CON,
             PIC32_IRQ_SPI1E) == -1)
         return (-1);
@@ -222,24 +224,25 @@ static int pic32_init_platform (pic32_t *pic32)
     if (dev_pic32_spi_init (vm, "PIC32 SPI4", PIC32_SPI4CON,
             PIC32_IRQ_SPI4E) == -1)
         return (-1);
-    if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
-        return (-1);
+#ifdef UBW32
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
             pic32->sdcard0_file_name) < 0)
         return (-1);
     if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
             pic32->sdcard1_file_name) < 0)
         return (-1);
-    // Optional ports for primary SD card
+#endif
 /*
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 2", pic32->sdcard2_size,
             pic32->sdcard2_file_name) < 0)
         return (-1);
-
+*/
+#ifdef MAXIMITE
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 3", pic32->sdcard3_size,
             pic32->sdcard3_file_name) < 0)
         return (-1);
-*/
+#endif
+
     pic32->sdcard[1].unit = 1;
     return (0);
 }
@@ -475,7 +478,11 @@ vm_instance_t *create_instance (char *configure_filename)
 
     /* Initialize default parameters for  pic32 */
     if (configure_filename == NULL)
+#ifdef UBW32
         configure_filename = "pic32.conf";
+#elif defined MAXIMITE
+        configure_filename = "pic32_max.conf";
+#endif
     vm->configure_filename = strdup (configure_filename);
     vm->ram_size = 128;         /* kilobytes */
     vm->boot_method = BOOT_BINARY;

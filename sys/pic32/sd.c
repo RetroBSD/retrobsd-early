@@ -7,6 +7,7 @@
  * 3) Wintec microSD 2Gb - type 2, 1969152 kbytes, 1923 Mbytes
  * 4) Transcend SDHC 4Gb - type 3, 3905536 kbytes, 3814 Mbytes
  * 5) Verbatim SD 2Gb    - type 2, 1927168 kbytes, 1882 Mbytes
+ * 6) SanDisk SDHC 4Gb   - type 3, 3931136 kbytes, 3833 Mbytes
  *
  * Copyright (C) 2010 Serge Vakulenko, <serge@vak.ru>
  *
