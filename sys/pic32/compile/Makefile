@@ -73,8 +73,10 @@ endif
 
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
+ifndef GCCPREFIX
     GCCPREFIX   = /usr/local/mips461/bin/mips-elf-
     LDFLAGS     =
+endif
 endif
 
 CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
