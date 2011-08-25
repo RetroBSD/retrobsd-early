@@ -3,23 +3,23 @@ This is the RetroBSD source directory.
 
 Source Roadmap:
 ---------------
-bin		User commands.
+bin         User commands.
 
-etc		Template files for /etc.
+etc         Template files for /etc.
 
-include		System include files.
+include     System include files.
 
-lib		System libraries.
+lib         System libraries.
 
-libexec		System binaries.
+libexec     System binaries.
 
-sbin		System administration commands.
+sbin        System administration commands.
 
-share		Shared resources.
+share       Shared resources.
 
-sys		Kernel sources.
+sys         Kernel sources.
 
-tools           Build tools and simulators.
+tools       Build tools and simulators.
 
 
 ***************************************************************************
@@ -27,10 +27,10 @@ tools           Build tools and simulators.
 To build for the Maximite board, make the following changes to these files:
 
 sys/pic32/compile/Makefile
-    deselect all default UBW32 options (DEFS), select all Maximite options
+    Select Maximite under section "Select target board"
 
 tools/virtualmips/Makefile
-    deselect line with -DUBW32 and select line with -DMAXIMITE
+    Select Maximite under section "Select target board"
 
 Hardware changes are required to use UART4 for the console.
 Lift the resistor** (see below) going to the audio output plug and connect

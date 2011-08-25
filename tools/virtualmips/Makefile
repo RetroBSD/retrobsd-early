@@ -19,9 +19,10 @@ endif
 CFLAGS		+= -O
 #CFLAGS		+= -O3 -fomit-frame-pointer
 
-# Microchip PIC32.
+# Select target board
 CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DUBW32
 #CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE
+
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
               pic32_dev_spi.o pic32_dev_gpio.o dev_sdcard.o \
