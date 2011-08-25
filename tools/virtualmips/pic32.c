@@ -232,11 +232,11 @@ static int pic32_init_platform (pic32_t *pic32)
             pic32->sdcard1_file_name) < 0)
         return (-1);
 #endif
-/*
+#if 0
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 2", pic32->sdcard2_size,
             pic32->sdcard2_file_name) < 0)
         return (-1);
-*/
+#endif
 #ifdef MAXIMITE
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 3", pic32->sdcard3_size,
             pic32->sdcard3_file_name) < 0)
@@ -244,7 +244,7 @@ static int pic32_init_platform (pic32_t *pic32)
 #endif
 
     pic32->sdcard[1].unit = 1;
-    return (0);
+return (0);
 }
 
 /*
