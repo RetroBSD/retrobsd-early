@@ -122,8 +122,8 @@ startup()
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
 
-        /* UBW32 board: LEDs on PORTE[0:3].
-	 * Configure LED pins as output high. */
+    /* UBW32 board: LEDs on PORTE[0:3].
+     * Configure LED pins as output high. */
 #ifndef LED_POLARITY
 #ifdef LED_TTY_PORT
 	PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
@@ -142,7 +142,7 @@ startup()
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
 #else   // LED_POLARITY
-	// Maximite board, configure LEDs as ouptut low
+	// Maximite board, configure LEDs as output low
 #ifdef LED_TTY_PORT
 	PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
 	TRIS_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
