@@ -79,8 +79,14 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
     if (op_type == MTS_READ)
         *data = 0;
     switch (offset & 0x1f0) {
+#ifdef UBW32
     case PIC32_SPI1CON & 0x1f0:         /* SPIx Control */
-        if (op_type == MTS_READ) {
+#elif defined MAXIMITE
+    case PIC32_SPI4CON & 0x1f0:
+#else
+    ERROR: pic32_dev_spi.c - SPI port not defined!
+#endif
+         if (op_type == MTS_READ) {
             *data = d->con;
         } else {
             d->con = write_op (d->con, *data, offset);
@@ -93,7 +99,11 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
+#ifdef UBW32
     case PIC32_SPI1STAT & 0x1f0:        /* SPIx Status */
+#elif defined MAXIMITE
+    case PIC32_SPI4STAT & 0x1f0:
+#endif
         if (op_type == MTS_READ) {
             *data = d->stat;
         } else {
@@ -104,7 +114,11 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
+#ifdef UBW32
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
+#elif defined MAXIMITE
+    case PIC32_SPI4BUF & 0x1ff:
+#endif
         if (op_type == MTS_READ) {
             *data = d->buf;
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
@@ -113,7 +127,11 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
             }
         } else {
             d->buf = *data;
+#ifdef UBW32
             if (dev->phys_addr == PIC32_SPI1CON)
+#elif defined MAXIMITE
+            if (dev->phys_addr == PIC32_SPI4CON)
+#endif
                 d->buf = dev_sdcard_io (cpu, d->buf);
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;
@@ -125,7 +143,11 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
+#ifdef UBW32
     case PIC32_SPI1BRG & 0x1f0:         /* SPIx Baud rate */
+#elif defined MAXIMITE
+    case PIC32_SPI4BRG & 0x1f0:
+#endif
         if (op_type == MTS_READ) {
             *data = d->brg;
         } else {
