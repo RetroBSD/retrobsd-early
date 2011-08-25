@@ -1,30 +1,37 @@
 DESTDIR		= /usr/local/lib/retrobsd
 MACHINE		= mips
 
-# MPLABX C32 on Linux - not verified yet
+# MPLABX C32 on Linux - tested
+# Fails due to missing stdarg.h and no linker support for elf32-littlemips target
 ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
     GCCPREFIX	= /opt/microchip/mplabc32/v2.00/bin/pic32-
+    INCLUDES    = -I/opt/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
 endif 
 
 # MPLABX C32 on Mac OS X - not verified yet
 ifneq (,$(wildcard /Applications/microchip/mplabc32/v2.00/bin/pic32-gcc))
     GCCPREFIX   = /Applications/microchip/mplabc32/v2.00/bin/pic32-
+    INCLUDES    = -I/Applications/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
 endif
 
 # MPLABX C32 on Windows - not verified yet
 ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
     GCCPREFIX   = /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-
+    INCLUDES    = -I/c/"Program Files"/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
 endif
 
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
+# Linux MPLABX C32 compiler doesn't support some functionality
+# we require, so allow plain GCC to rule here for now
+#ifndef GCCPREFIX
     GCCPREFIX	= /usr/local/mips461/bin/mips-elf-
+    INCLUDES    = -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
+#endif
 endif
 
-CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include \
-		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
-CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -I$(TOPSRC)/include \
-		  -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
+CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)
+CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)
 LD		= $(GCCPREFIX)ld
 AR		= $(GCCPREFIX)ar
 RANLIB          = $(GCCPREFIX)ranlib
