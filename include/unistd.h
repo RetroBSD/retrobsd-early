@@ -99,6 +99,8 @@ int     nice (int inc);
 int     setuid (uid_t uid);
 int     setgid (gid_t gid);
 int     isatty (int fd);
+int     chdir (const char *path);
+int     fchdir (int fd);
 
 struct stat;
 int     stat (const char *path, struct stat *buf);

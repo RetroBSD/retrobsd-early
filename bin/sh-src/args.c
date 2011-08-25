@@ -71,7 +71,7 @@ options(argc,argv)
 		cp = argp[1];
 		if (cp[1] == '-')
 		{
-			argp[1] = argp[0];
+			/* argp[1] = argp[0]; */
 			argc--;
 			return(argc);
 		}
@@ -102,14 +102,14 @@ options(argc,argv)
 			else if (*cp == 'c' && argc > 2 && comdiv == NIL)
 			{
 				comdiv = argp[2];
-				argp[1] = argp[0];
+				/* argp[1] = argp[0]; */
 				argp++;
 				argc--;
 			}
 			else
 				failed(argv[1],badopt);
 		}
-		argp[1] = argp[0];
+		/* argp[1] = argp[0]; */
 		argc--;
 	}
 	else if (argc > 1 && *argp[1] == '+')	/* unset flags x, k, t, n, v, e, u */
@@ -136,7 +136,7 @@ options(argc,argv)
 				}
 			}
 		}
-		argp[1] = argp[0];
+		/* argp[1] = argp[0]; */
 		argc--;
 	}
 	/*

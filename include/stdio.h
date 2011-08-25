@@ -70,6 +70,7 @@ FILE	*fdopen (int, const char *);
 FILE	*freopen (const char *, const char *, FILE *);
 FILE	*popen (const char *, const char *);
 long	ftell (FILE *);
+int     fflush (FILE *);
 int	fputc (int, FILE *);
 int	fputs (const char *, FILE *);
 int	puts (const char *);
@@ -109,4 +110,7 @@ int	_doscan (FILE *, const char *, va_list);
 #ifndef _VA_LIST_
 #undef va_list
 #endif
+
+void    perror (const char *);
+
 #endif /* _FILE */

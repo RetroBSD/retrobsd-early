@@ -13,8 +13,6 @@
  *	ps - process status
  *	Usage:  ps [ acgklnrtuwxU# ] [ corefile [ swapfile ] ]
  */
-#define PIC32MX
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pwd.h>
@@ -23,6 +21,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -101,9 +100,6 @@ typedef struct wchan {
 
 WCHAN	*wchand;
 
-char	*gettty(), *getptr(), *getchan();
-int	pscomp(), wchancomp();
-
 /*
  * 256 terminals was not only wasteful but unrealistic.  For one thing
  * 2.11BSD uses bit 7 of the minor device (for almost all terminal interfaces)
@@ -131,197 +127,13 @@ struct	winsize ws;
 struct	map datmap;
 struct	psout *outargs;		/* info for first npr processes */
 
-main (argc, argv)
-char	**argv;
-{
-	int	uid, euid, puid, nread;
-	register int i, j;
-	char	*ap;
-	register struct	proc	*procp;
-
-	if ((ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 &&
-	     ioctl(fileno(stderr), TIOCGWINSZ, &ws) != -1 &&
-	     ioctl(fileno(stdin), TIOCGWINSZ, &ws) != -1) ||
-	     ws.ws_col == 0)
-	 	twidth = 80;
-	else
-		twidth = ws.ws_col;
-
-	argc--, argv++;
-	if (argc > 0) {
-		ap = argv [0];
-		while (*ap) switch (*ap++) {
-		case '-':
-			break;
-
-		case 'a':
-			aflg++;
-			break;
-
-		case 'c':
-			cflg++;
-			break;
-
-		case 'g':
-			gflg++;
-			break;
-
-		case 'k':
-			kflg++;
-			break;
-
-		case 'l':
-			lflg	= 1;
-			break;
-
-		case 'n':
-			nflg++;
-			lflg	= 1;
-			break;
-
-		case 'r':
-			rflg++;
-			break;
-
-		case 't':
-			if (*ap)
-				tptr = ap;
-			else if ((tptr = ttyname(0)) != 0) {
-				tptr = strcpy(mytty, tptr);
-				if (strncmp(tptr, "/dev/", 5) == 0)
-					tptr += 5;
-			}
-			if (strncmp(tptr, "tty", 3) == 0)
-				tptr += 3;
-			aflg++;
-			gflg++;
-			if (tptr && *tptr == '?')
-				xflg++;
-			while (*ap)
-				ap++;
-			break;
-
-		case 'u':
-			uflg	= 1;
-			break;
-
-		case 'w':
-			if (wflg)
-				twidth	= BUFSIZ;
-			else if (twidth < 132)
-				twidth	= 132;
-			wflg++;
-			break;
-
-		case 'x':
-			xflg++;
-			break;
-
-		default:
-			if (!isdigit(ap[-1]))
-				break;
-			chkpid	= atoi(--ap);
-			*ap = '\0';
-			aflg++;
-			xflg++;
-			break;
-		}
-	}
-
-	openfiles(argc, argv);
-	getkvars(argc, argv);
-	lseek(kmem, (off_t)nl[X_PROC].n_value, 0);
-	uid = getuid();
-	euid = geteuid();
-	mytty = ttyname(0);
-	if (!strncmp(mytty,"/dev/",5)) mytty += 5;
-	if (!strncmp(mytty,"tty",3)) mytty += 3;
-	printhdr();
-	for (i = 0; i < nproc; i += 8) {
-		j = nproc - i;
-		if (j > 8)
-			j = 8;
-		j *= sizeof (struct proc);
-		if ((nread = read(kmem, (char *) proc, j)) != j) {
-                        fprintf(stderr, "ps: error reading proc table from %s\n", kmemf);
-			if (nread == -1)
-				break;
-		}
-		for (j = nread / sizeof (struct proc) - 1; j >= 0; j--) {
-			mproc	= &proc[j];
-			procp	= mproc;
-			/* skip processes that don't exist */
-			if (procp->p_stat == 0)
-				continue;
-			/* skip those without a tty unless -x */
-			if (procp->p_pgrp == 0 && xflg == 0)
-				continue;
-			/* skip group leaders on a tty unless -g, -x, or -t.. */
-			if (!tptr && !gflg && !xflg && procp->p_ppid == 1)
-				continue;
-			/* -g also skips those where **argv is "-" - see savcom */
-			puid = procp->p_uid;
-			/* skip other peoples processes unless -a or a specific pid */
-			if ((uid != puid && euid != puid && aflg == 0) ||
-			    (chkpid != 0 && chkpid != procp->p_pid))
-				continue;
-			if (savcom(puid))
-				npr++;
-		}
-	}
-	fixup(npr);
-	for (i = 0; i < npr; i++) {
-		register int	cmdwidth = twidth - cmdstart - 2;
-		register struct	psout *a = &outargs[i];
-
-		if (rflg) {
-			if (write(1, (char *) a, sizeof (*a)) != sizeof (*a))
-				perror("write");
-			continue;
-		} else if (lflg)
-			lpr(a);
-		else if (uflg)
-			upr(a);
-		else
-			spr(a);
-
-		if (cmdwidth < 0)
-			cmdwidth = 80 - cmdstart - 2;
-		if (a->o_stat == SZOMB)
-			printf("%.*s", cmdwidth, " <defunct>");
-		else if (a->o_pid == 0)
-			printf("%.*s", cmdwidth, " swapper");
-		else
-			printf(" %.*s", twidth - cmdstart - 2, cflg ?  a->o_comm : a->o_args);
-		putchar('\n');
-	}
-	exit(!npr);
-}
-
-getdev()
-{
-	register DIR *df;
-	register struct direct *dbuf;
-
-	if (chdir("/dev") < 0) {
-		perror("/dev");
-		exit(1);
-	}
-	if ((df = opendir(".")) == NULL) {
-		fprintf(stderr, "Can't open . in /dev\n");
-		exit(1);
-	}
-	while (dbuf = readdir(df))
-		maybetty(dbuf->d_name);
-	closedir(df);
-}
-
 /*
  * Attempt to avoid stats by guessing minor device
  * numbers from tty names.  Console is known,
  * know that r(hp|up|mt) are unlikely as are different mem's,
  * floppy, null, tty, etc.
  */
+void
 maybetty(cp)
 	register char *cp;
 {
@@ -351,11 +163,179 @@ maybetty(cp)
                 dp->ttyd = -1;
 }
 
+void
+getdev()
+{
+	register DIR *df;
+	register struct direct *dbuf;
+
+	if (chdir("/dev") < 0) {
+		perror("/dev");
+		exit(1);
+	}
+	if ((df = opendir(".")) == NULL) {
+		fprintf(stderr, "Can't open . in /dev\n");
+		exit(1);
+	}
+	while ((dbuf = readdir(df)))
+		maybetty(dbuf->d_name);
+	closedir(df);
+}
+
+char *
+gettty()
+{
+	register int tty_step;
+	register char *p;
+
+	if (u.u_ttyp) {
+		for (tty_step = 0; tty_step < nttys; ++tty_step) {
+			if (allttys[tty_step].ttyd == u.u_ttyd) {
+				p = allttys[tty_step].name;
+				if (strncmp(p, "tty", 3) == 0)
+					p += 3;
+				return(p);
+			}
+                }
+        }
+	return("?");
+}
+
+unsigned
+getptr(adr)
+        off_t adr;
+{
+	unsigned ptr = 0;
+
+	if (lseek(file, adr, 0) == (off_t) -1 ||
+            read (file, &ptr, sizeof(ptr)) != sizeof(ptr))
+		return 0;
+	return ptr;
+}
+
+int
+getbyte(adr)
+        register char *adr;
+{
+	char	b;
+
+	if (lseek(file, (off_t) adr, 0) == (off_t) -1 || read (file, &b, 1) < 1)
+		return(0);
+	return((unsigned) b);
+}
+
+int
+getcmd(a, addr)
+        off_t addr;
+        register struct psout *a;
+{
+	/* amount of top of stack to examine for args */
+#define ARGLIST	(DEV_BSIZE * 2)
+	char abuf [ARGLIST];
+        char cmd[82], *bp;
+	off_t ap;
+	unsigned ssize, cp;
+
+	/* in case of early return */
+        bp = a->o_args;
+        strcat(bp, " (");
+        strcat(bp, u.u_comm);
+        strcat(bp, ")");
+        bp[63] = 0;	/* max room in psout is 64 chars */
+
+        if (mproc->p_pid == 0)
+                return(1);
+
+	/* look for in-core process */
+	if (mproc->p_flag & SLOAD) {
+                addr += mproc->p_ssize; /* file offset to top of stack */
+                lseek(file, addr - sizeof (char **), 0);
+                if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
+                        return (1);
+                if (ap == 0)
+                        return(1);
+		bp = cmd;
+		while (bp < cmd + sizeof(a->o_args)) {
+			int c, nbad = 0;
+
+			cp = getptr(ap);
+			if (! cp)
+			        break;
+                        ap += sizeof(char*);
+			while ((c = getbyte(cp++)) && bp < cmd + sizeof (a->o_args)) {
+				if (c < ' ' || c > '~') {
+					if (nbad++ > 3)
+						break;
+                                        continue;
+				}
+				*bp++ = c;
+			}
+			*bp++ = ' ';
+		}
+		*bp++ = 0;
+		strcpy(a->o_args, cmd);
+		return(1);
+	}
+
+        /* process is swapped out */
+        ssize = mproc->p_ssize;
+        if (ssize <= sizeof(abuf)) {
+                lseek(file, addr, 0);
+                if (read(file, abuf, ssize) != ssize)
+                        return (1);
+        } else {
+                /* skip some blocks of stack */
+                ssize = (ssize % DEV_BSIZE) + DEV_BSIZE;
+                addr += mproc->p_ssize - ssize;
+                lseek(file, addr, 0);
+                if (read(file, abuf, sizeof(abuf)) != sizeof(abuf))
+                        return (1);
+        }
+	ap = *(unsigned*) &abuf[ssize - sizeof(unsigned)];
+        if (ap == 0)
+                return(1);
+        bp = cmd;
+        while (bp < cmd + sizeof(a->o_args)) {
+                int i, c, nbad = 0;
+
+                i = ap + ssize - USER_DATA_END;
+                if ((i & 3) || i < 0 || i >= ssize)
+                        break;
+                cp = *(unsigned*) &abuf[i];
+                if (! cp)
+                        break;
+                ap += sizeof(char*);
+                while (bp < cmd + sizeof (a->o_args)) {
+                        i = cp++ + ssize - USER_DATA_END;
+                        if (i < 0 || i >= ssize)
+                                break;
+                        c = abuf[i];
+                        if (! c)
+                                break;
+                        if (c < ' ' || c > '~') {
+                                if (nbad++ > 3)
+                                        break;
+                                continue;
+                        }
+                        *bp++ = c;
+                }
+                *bp++ = ' ';
+        }
+        *bp++ = 0;
+        if (cmd[0] > ' ' && (cmd[0] != '-' || cmd[1] > ' '))
+                strcpy(a->o_args, cmd);
+        if (xflg || gflg || tptr || cmd[0] != '-')
+                return(1);
+        return(0);
+}
+
 /*
  * Save command data to outargs[].
  * Return 1 on success.
  */
+int
 savcom(puid)
+        int puid;
 {
 	char	*tp;
 	off_t	addr;
@@ -425,30 +405,24 @@ savcom(puid)
 		return getcmd(a, saddr);
 }
 
-char *
-gettty()
+int
+pscomp(x1, x2)
+        register struct	psout *x1, *x2;
 {
-	register int tty_step;
-	register char *p;
+	register int c;
 
-	if (u.u_ttyp) {
-		for (tty_step = 0; tty_step < nttys; ++tty_step) {
-			if (allttys[tty_step].ttyd == u.u_ttyd) {
-				p = allttys[tty_step].name;
-				if (strncmp(p, "tty", 3) == 0)
-					p += 3;
-				return(p);
-			}
-                }
-        }
-	return("?");
+	c = (x1)->o_ttyd - (x2)->o_ttyd;
+	if (c == 0)
+		c = (x1)->o_pid - (x2)->o_pid;
+	return(c);
 }
 
 /*
  * fixup figures out everybodys name and sorts into a nice order.
  */
+void
 fixup(np)
-register int np;
+        register int np;
 {
 	register int i;
 	register struct	passwd	*pw;
@@ -473,19 +447,9 @@ register int np;
 	qsort(outargs, np, sizeof (outargs[0]), pscomp);
 }
 
-pscomp(x1, x2)
-register struct	psout	*x1, *x2;
-{
-	register int c;
-
-	c = (x1)->o_ttyd - (x2)->o_ttyd;
-	if (c == 0)
-		c = (x1)->o_pid - (x2)->o_pid;
-	return(c);
-}
-
+int
 wchancomp(x1, x2)
-register WCHAN	*x1, *x2;
+        register WCHAN *x1, *x2;
 {
 	if (x1->caddr > x2->caddr)
 		return(1);
@@ -495,30 +459,9 @@ register WCHAN	*x1, *x2;
 		return(-1);
 }
 
-char	*
-getptr(adr)
-char	**adr;
-{
-	char	*ptr = 0;
-
-	if (lseek(file, (off_t) adr, 0) == (off_t) -1 ||
-            read (file, &ptr, sizeof(ptr)) != sizeof(ptr))
-		return(0);
-	return(ptr);
-}
-
-getbyte(adr)
-register char	*adr;
-{
-	char	b;
-
-	if (lseek(file, (off_t) adr, 0) == (off_t) -1 || read (file, &b, 1) < 1)
-		return(0);
-	return((unsigned) b);
-}
-
+void
 addchan(name, caddr)
-	char	*name;
+	char *name;
 	unsigned caddr;
 {
 	static	int	left = 0;
@@ -546,9 +489,9 @@ addchan(name, caddr)
 	wp->caddr = caddr;
 }
 
-char	*
+char *
 getchan(chan)
-register unsigned int chan;
+        register unsigned int chan;
 {
 	register int	i;
 	register char	*prevsym;
@@ -564,15 +507,17 @@ register unsigned int chan;
 	return(prevsym);
 }
 
+void
 perrexit(msg)
-char *msg;
+        char *msg;
 {
 	perror(msg);
 	exit(1);
 }
 
+void
 openfiles(argc, argv)
-char	**argv;
+        char **argv;
 {
 	if (kflg)
 		kmemf = argc > 1 ?  argv[1] : _PATH_CORE;
@@ -592,12 +537,11 @@ char	**argv;
 		perrexit(swapf);
 }
 
+void
 getkvars(argc,argv)
-int	argc;
-char	**argv;
+        int argc;
+        char **argv;
 {
-	struct	stat	st;
-
 	knlist(nl);
 	if (! nflg) {
                 int i;
@@ -613,17 +557,18 @@ char	**argv;
 	if (nl[X_NPROC].n_value) {
 		int ret = lseek(kmem, (off_t)nl[X_NPROC].n_value, 0);
 
-		if (read(kmem,(char *)&nproc,sizeof(nproc)) != sizeof(nproc)) {
+		if (ret == -1 ||
+                    read(kmem, (char *)&nproc, sizeof(nproc)) != sizeof(nproc)) {
 			perror(kmemf);
 			exit(1);
 		}
 	} else {
-		fputs("nproc not in namelist\n",stderr);
+		fputs("nproc not in namelist\n", stderr);
 		exit(1);
 	}
 	outargs = (struct psout *)calloc(nproc, sizeof(struct psout));
 	if (!outargs) {
-		fputs("ps: not enough memory for saving info\n",stderr);
+		fputs("ps: not enough memory for saving info\n", stderr);
 		exit(1);
 	}
 
@@ -632,46 +577,9 @@ char	**argv;
 	read(kmem, (char *)&hz, sizeof(hz));
 }
 
-
-char *uhdr = "USER       PID NICE SZ TTY TIME";
-upr(a)
-register struct psout	*a;
-{
-	printf("%-8.8s%6u%4d%4d %-2.2s",a->o_uname,a->o_pid,a->o_nice,a->o_size,a->o_tty);
-	ptime(a);
-}
-
-char *shdr = "   PID TTY TIME";
-spr (a)
-register struct psout	*a;
-{
-	printf("%6u %-2.2s",a->o_pid,a->o_tty);
-	ptime(a);
-}
-
-char *lhdr = "  F S   UID   PID  PPID CPU PRI NICE  ADDR  SZ WCHAN    TTY TIME";
-lpr(a)
-register struct psout *a;
-{
-	static char	clist[] = "0SWRIZT";
-
-	printf("%3o %c%6u%6u%6u%4d%4d%4d%#7x%4d",
-                0377 & a->o_flag, clist[a->o_stat], a->o_uid, a->o_pid,
-                a->o_ppid, a->o_cpu & 0377, a->o_pri, a->o_nice,
-                a->o_addr0, a->o_size);
-	if (nflg)
-		if (a->o_wchan)
-			printf("%*.*o",NNAMESIZ, NNAMESIZ, a->o_wchan);
-		else
-			fputs("       ",stdout);
-	else
-		printf(" %-*.*s",NNAMESIZ, NNAMESIZ, getchan(a->o_wchan));
-	printf(" %-2.2s",a->o_tty);
-	ptime(a);
-}
-
+void
 ptime(a)
-struct psout	*a;
+        struct psout *a;
 {
 	time_t	tm;
 
@@ -681,97 +589,50 @@ struct psout	*a;
 	printf(tm < 10 ? "0%ld" : "%ld",tm);
 }
 
-getcmd(a, addr)
-off_t	addr;
-register struct psout	*a;
+char *uhdr = "USER       PID NICE SZ TTY TIME";
+
+void
+upr(a)
+        register struct psout *a;
 {
-	/* amount of top of stack to examine for args */
-#define ARGLIST	(1024/sizeof(int))
-	register int *ip;
-	register char	*cp, *cp1;
-	char	c, **ap;
-	int	cc, nbad, abuf [ARGLIST];
-
-	a->o_args[0] = 0;	/* in case of early return */
-        if (mproc->p_pid == 0)
-                return(1);
-
-	/* look for in-core process */
-	if (mproc->p_flag & SLOAD) {
-		char	b[82], *bp;
-
-                addr += mproc->p_ssize;
-                lseek(file, addr - sizeof (char **), 0);
-                if (read(file, (char *) &ap, sizeof (char *)) != sizeof (char *))
-                        return (1);
-                if (ap == 0)
-                        return(1);
-
-		bp = b;
-		while ((cp = getptr(ap++)) && cp && (bp < b+sizeof (a->o_args)) ) {
-			nbad	= 0;
-			while ((c = getbyte(cp++)) && (bp < b+sizeof (a->o_args))) {
-				if (c<' ' || c > '~') {
-					if (nbad++ > 3)
-						break;
-                                        continue;
-				}
-				*bp++ = c;
-			}
-			*bp++ = ' ';
-		}
-		*bp++ = 0;
-		(void)strcpy(a->o_args, b);
-		return(1);
-	}
-
-        /* process is swapped out */
-	lseek(file, addr, 0);
-	if (read(file, (char *) abuf, sizeof (abuf)) != sizeof (abuf))
-		return (1);
-	abuf[ARGLIST-1]	= 0;
-	for (ip = &abuf[ARGLIST-2]; ip > abuf;) {
-		if (*--ip == -1 || *ip == 0) {
-			cp = (char *) (ip + 1);
-			if (*cp == '\0')
-				cp++;
-			nbad = 0;
-			for (cp1 = cp; cp1 < (char *) &abuf[ARGLIST]; cp1++) {
-				cc = *cp1 & 0177;
-				if (cc == 0)
-					*cp1 = ' ';
-				else if (cc < ' ' || cc > 0176) {
-					if (++nbad >= 5) {
-						*cp1++	= ' ';
-						break;
-					}
-					*cp1 = '?';
-				} else if (cc == '=') {
-					*cp1 = '\0';
-					while (cp1 > cp && *--cp1 != ' ')
-						*cp1 = '\0';
-					break;
-				}
-			}
-			while (*--cp1 == ' ')
-				*cp1 = 0;
-			(void)strcpy(a->o_args, cp);
-garbage:
-			cp = a->o_args;
-			if (cp[0] == '-' && cp[1] <= ' ' || cp[0] == '?' || cp[0] <= ' ') {
-				strcat(cp, " (");
-				strcat(cp, u.u_comm);
-				strcat(cp, ")");
-			}
-			cp[63] = 0;	/* max room in psout is 64 chars */
-			if (xflg || gflg || tptr || cp[0] != '-')
-				return(1);
-			return(0);
-		}
-	}
-	goto garbage;
+	printf("%-8.8s%6u%4d%4d %-2.2s",a->o_uname,a->o_pid,a->o_nice,a->o_size,a->o_tty);
+	ptime(a);
 }
 
+char *shdr = "   PID TTY TIME";
+
+void
+spr (a)
+        register struct psout *a;
+{
+	printf("%6u %-2.2s",a->o_pid,a->o_tty);
+	ptime(a);
+}
+
+char *lhdr = "  F S   UID   PID  PPID CPU PRI NICE  ADDR  SZ WCHAN    TTY TIME";
+
+void
+lpr(a)
+        register struct psout *a;
+{
+	static char	clist[] = "0SWRIZT";
+
+	printf("%3o %c%6u%6u%6u%4d%4d%4d%#7x%4d",
+                0377 & a->o_flag, clist[(unsigned char)a->o_stat],
+                a->o_uid, a->o_pid, a->o_ppid, a->o_cpu & 0377,
+                a->o_pri, a->o_nice, a->o_addr0, a->o_size);
+	if (nflg)
+		if (a->o_wchan)
+			printf("%*.*x", NNAMESIZ, NNAMESIZ, (unsigned) a->o_wchan);
+		else
+			fputs("       ", stdout);
+	else
+		printf(" %-*.*s",NNAMESIZ, NNAMESIZ, getchan(a->o_wchan));
+	printf(" %-2.2s",a->o_tty);
+	ptime(a);
+}
+
+void
 printhdr()
 {
 	register char	*hdr, *cmdstr	= " COMMAND";
@@ -789,4 +650,172 @@ printhdr()
 		cmdstr = " CMD";
 	printf("%s\n", cmdstr);
 	fflush(stdout);
+}
+
+int
+main (argc, argv)
+        char **argv;
+{
+        int     uid, euid, puid, nread;
+        register int i, j;
+        char    *ap;
+        register struct proc    *procp;
+
+        if ((ioctl(fileno(stdout), TIOCGWINSZ, &ws) != -1 &&
+             ioctl(fileno(stderr), TIOCGWINSZ, &ws) != -1 &&
+             ioctl(fileno(stdin), TIOCGWINSZ, &ws) != -1) ||
+             ws.ws_col == 0)
+                twidth = 80;
+        else
+                twidth = ws.ws_col;
+
+        argc--, argv++;
+        if (argc > 0) {
+                ap = argv [0];
+                while (*ap) switch (*ap++) {
+                case '-':
+                        break;
+
+                case 'a':
+                        aflg++;
+                        break;
+
+                case 'c':
+                        cflg++;
+                        break;
+
+                case 'g':
+                        gflg++;
+                        break;
+
+                case 'k':
+                        kflg++;
+                        break;
+
+                case 'l':
+                        lflg    = 1;
+                        break;
+
+                case 'n':
+                        nflg++;
+                        lflg    = 1;
+                        break;
+
+                case 'r':
+                        rflg++;
+                        break;
+
+                case 't':
+                        if (*ap)
+                                tptr = ap;
+                        else if ((tptr = ttyname(0)) != 0) {
+                                tptr = strcpy(mytty, tptr);
+                                if (strncmp(tptr, "/dev/", 5) == 0)
+                                        tptr += 5;
+                        }
+                        if (strncmp(tptr, "tty", 3) == 0)
+                                tptr += 3;
+                        aflg++;
+                        gflg++;
+                        if (tptr && *tptr == '?')
+                                xflg++;
+                        while (*ap)
+                                ap++;
+                        break;
+
+                case 'u':
+                        uflg    = 1;
+                        break;
+
+                case 'w':
+                        if (wflg)
+                                twidth  = BUFSIZ;
+                        else if (twidth < 132)
+                                twidth  = 132;
+                        wflg++;
+                        break;
+
+                case 'x':
+                        xflg++;
+                        break;
+
+                default:
+                        if (!isdigit(ap[-1]))
+                                break;
+                        chkpid  = atoi(--ap);
+                        *ap = '\0';
+                        aflg++;
+                        xflg++;
+                        break;
+                }
+        }
+
+        openfiles(argc, argv);
+        getkvars(argc, argv);
+        lseek(kmem, (off_t)nl[X_PROC].n_value, 0);
+        uid = getuid();
+        euid = geteuid();
+        mytty = ttyname(0);
+        if (!strncmp(mytty,"/dev/",5)) mytty += 5;
+        if (!strncmp(mytty,"tty",3)) mytty += 3;
+        printhdr();
+        for (i = 0; i < nproc; i += 8) {
+                j = nproc - i;
+                if (j > 8)
+                        j = 8;
+                j *= sizeof (struct proc);
+                if ((nread = read(kmem, (char *) proc, j)) != j) {
+                        fprintf(stderr, "ps: error reading proc table from %s\n", kmemf);
+                        if (nread == -1)
+                                break;
+                }
+                for (j = nread / sizeof (struct proc) - 1; j >= 0; j--) {
+                        mproc   = &proc[j];
+                        procp   = mproc;
+                        /* skip processes that don't exist */
+                        if (procp->p_stat == 0)
+                                continue;
+                        /* skip those without a tty unless -x */
+                        if (procp->p_pgrp == 0 && xflg == 0)
+                                continue;
+                        /* skip group leaders on a tty unless -g, -x, or -t.. */
+                        if (!tptr && !gflg && !xflg && procp->p_ppid == 1)
+                                continue;
+                        /* -g also skips those where **argv is "-" - see savcom */
+                        puid = procp->p_uid;
+                        /* skip other peoples processes unless -a or a specific pid */
+                        if ((uid != puid && euid != puid && aflg == 0) ||
+                            (chkpid != 0 && chkpid != procp->p_pid))
+                                continue;
+                        if (savcom(puid))
+                                npr++;
+                }
+        }
+        fixup(npr);
+        for (i = 0; i < npr; i++) {
+                register int    cmdwidth = twidth - cmdstart - 2;
+                register struct psout *a = &outargs[i];
+
+                if (rflg) {
+                        if (write(1, (char *) a, sizeof (*a)) != sizeof (*a))
+                                perror("write");
+                        continue;
+                } else if (lflg)
+                        lpr(a);
+                else if (uflg)
+                        upr(a);
+                else
+                        spr(a);
+
+                if (cmdwidth < 0)
+                        cmdwidth = 80 - cmdstart - 2;
+                if (a->o_stat == SZOMB)
+                        printf("%.*s", cmdwidth, " <defunct>");
+                else if (a->o_pid == 0)
+                        printf("%.*s", cmdwidth, " swapper");
+                else
+                        printf(" %.*s", twidth - cmdstart - 2, cflg ? a->o_comm : a->o_args);
+                putchar('\n');
+        }
+        exit(!npr);
 }
