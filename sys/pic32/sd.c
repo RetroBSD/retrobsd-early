@@ -580,7 +580,7 @@ sdopen (dev, flag, mode)
                         printf ("sd%d: no SD/MMC card detected\n", unit);
                         return ENODEV;
                 }
-                printf ("sd%d: port %s, select at pin %c%d\n", unit,
+                printf ("sd%d: port %s, select pin %c%d\n", unit,
                         spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
                 if (card_size (unit, &nsectors)) {
                         printf ("sd%d: card type %s, size %u kbytes\n", unit,
