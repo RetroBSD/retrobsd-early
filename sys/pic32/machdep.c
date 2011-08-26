@@ -122,8 +122,8 @@ startup()
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
 
-    /* UBW32 board: LEDs on PORTE[0:3].
-     * Configure LED pins as output high. */
+        /* UBW32 board: LEDs on PORTE[0:3].
+         * Configure LED pins as output high. */
 #ifndef LED_POLARITY
 #ifdef LED_TTY_PORT
 	PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
@@ -168,28 +168,28 @@ startup()
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
 
 #if __PIC32MX__
-	/* Microchip C32 compiler generates a .dinit table with 
+	/* Microchip C32 compiler generates a .dinit table with
          * initialization values for .data segment. */
 	extern const unsigned _dinit_addr[];
         unsigned const *dinit = &_dinit_addr[0];
         for (;;) {
-            char *dst = (char*) (*dinit++);
-            if (dst == 0)
-                    break;
-                    
-            unsigned nbytes = *dinit++;
-            unsigned fmt = *dinit++;
-            if (fmt == 0) {                     /* Clear */
-                    do {
-                        *dst++ = 0;
-                    } while (--nbytes > 0);
-            } else {                            /* Copy */
-                    char *src = (char*) dinit;
-                    do {
-                        *dst++ = *src++;
-                    } while (--nbytes > 0);
-                    dinit = (unsigned*) ((unsigned) (src + 3) & ~3);
-            }
+                char *dst = (char*) (*dinit++);
+                if (dst == 0)
+                        break;
+
+                unsigned nbytes = *dinit++;
+                unsigned fmt = *dinit++;
+                if (fmt == 0) {                     /* Clear */
+                        do {
+                                *dst++ = 0;
+                        } while (--nbytes > 0);
+                } else {                            /* Copy */
+                        char *src = (char*) dinit;
+                        do {
+                                *dst++ = *src++;
+                        } while (--nbytes > 0);
+                        dinit = (unsigned*) ((unsigned) (src + 3) & ~3);
+                }
         }
 #else
 	/* Copy the .data image from flash to ram.
@@ -671,7 +671,7 @@ bcmp (const void *m1, const void *m2, size_t nbytes)
 int
 copyout (caddr_t from, caddr_t to, u_int nbytes)
 {
-//printf ("copyout (from=%p, to=%p, nbytes=%u)\n", from, to, nbytes);
+        //printf ("copyout (from=%p, to=%p, nbytes=%u)\n", from, to, nbytes);
 	if (baduaddr (to) || baduaddr (to + nbytes - 1))
 		return EFAULT;
 	bcopy (from, to, nbytes);

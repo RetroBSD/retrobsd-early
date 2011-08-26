@@ -70,8 +70,8 @@ static int dev_flash_load (char *flash_file_name, unsigned flash_len,
     fstat (fd, &sb);
     if (flash_len < sb.st_size) {
         fprintf (stderr,
-            "Too large flash file. flash len: %d M, flash file name %s, "
-            "flash file legth: %d bytes.\n", flash_len, flash_file_name,
+            "Too large flash file.\nFlash len: %d kbytes, file name %s, "
+            "file legth: %d bytes.\n", flash_len / 1024, flash_file_name,
             (int) sb.st_size);
         return (-1);
     }

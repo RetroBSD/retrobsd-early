@@ -160,7 +160,7 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
 
     if (cpu->vm->debug_level > 2) {
         extern const char *cp0reg_name (unsigned cp0reg, unsigned sel);
-        printf ("        %s = %08x\n", cp0reg_name (cp0_reg, sel), val);
+        printf ("        %s := %08x\n", cp0reg_name (cp0_reg, sel), val);
         fflush (stdout);
     }
     switch (cp0_reg) {

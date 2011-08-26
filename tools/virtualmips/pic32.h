@@ -80,6 +80,22 @@ struct pic32_system {
     unsigned bmx_ram_udba;          /* RAM user data base address */
     unsigned bmx_ram_upba;          /* RAM user program base address */
     unsigned bmx_flash_upba;        /* Flash user program base address */
+
+    struct vdevice *dmadev;         /* DMA controller */
+    unsigned dmacon;                /* DMA control */
+    unsigned dmastat;               /* DMA status */
+    unsigned dmaaddr;               /* DMA address */
+
+    struct vdevice *sysdev;         /* System controller */
+    unsigned osccon;
+    unsigned osctun;
+    unsigned ddpcon;                /* Debug data port control */
+    unsigned syskey;
+    unsigned rcon;
+    unsigned rswrst;
+
+    struct vdevice *prefetch;       /* Prefetch cache controller */
+    unsigned checon;
 };
 
 typedef struct pic32_system pic32_t;
@@ -94,6 +110,9 @@ int dev_pic32_flash_init (vm_instance_t *vm, char *name,
 int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq, struct virtual_tty *vtty);
 int dev_pic32_intcon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_dmacon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_syscon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_prefetch_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq);

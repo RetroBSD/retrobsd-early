@@ -208,6 +208,12 @@ static int pic32_init_platform (pic32_t *pic32)
 #endif
     if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
         return (-1);
+    if (dev_pic32_dmacon_init (vm, "PIC32 DMACON", PIC32_DMACON) == -1)
+        return (-1);
+    if (dev_pic32_syscon_init (vm, "PIC32 SYSCON", PIC32_OSCCON) == -1)
+        return (-1);
+    if (dev_pic32_prefetch_init (vm, "PIC32 Prefetch", PIC32_CHECON) == -1)
+        return (-1);
     if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
         return (-1);
     if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)

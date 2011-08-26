@@ -994,7 +994,7 @@ static int ins_op (cpu_mips_t * cpu, mips_insn_t insn)
     int mask = ~0U >> (31-msb+lsb) << lsb;
     cpu->gpr[rt] &= ~mask;
     cpu->gpr[rt] |= (cpu->gpr[rs] << lsb) & mask;
-    return unknown_op (cpu, insn);
+    return (0);
 }
 
 static int spec2_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1651,7 +1651,8 @@ static int wait_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     if (! (cpu->cp0.reg [MIPS_CP0_STATUS] & MIPS_CP0_STATUS_IE)) {
         /* Wait instruction with interrupts disabled - stop the simulator. */
-printf ("%08x: wait instruction with interrupts disabled - stop the simulator.\n", cpu->pc);
+        printf ("%08x: wait instruction with interrupts disabled - stop the simulator.\n",
+            cpu->pc);
         kill (0, SIGQUIT);
     }
     usleep (1000);
@@ -1665,6 +1666,15 @@ static int xor_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rd = bits (insn, 11, 15);
 
     cpu->reg_set (cpu, rd, cpu->gpr[rs] ^ cpu->gpr[rt]);
+    return (0);
+}
+
+static int wrpgpr_op (cpu_mips_t * cpu, mips_insn_t insn)
+{
+    //int rt = bits (insn, 16, 20);
+    //int rd = bits (insn, 11, 15);
+
+    printf ("%08x: unsupported WRPGPR instruction.\n", cpu->pc);
     return (0);
 }
 
@@ -1909,7 +1919,7 @@ static const struct mips64_op_desc mips_cop0_opcodes[] = {
     {"?cop0",   mfmc0_op,	0xb},
     {"?cop0",   undef_cop0,	0xc},
     {"?cop0",   undef_cop0,	0xd},
-    {"?cop0",   undef_cop0,	0xe},
+    {"wrpgpr",  wrpgpr_op,	0xe},
     {"?cop0",   undef_cop0,	0xf},
     {"tlb",		tlb_op,		0x10},      /* indexed by FUNC field */
     {"?cop0",   undef_cop0,	0x11},

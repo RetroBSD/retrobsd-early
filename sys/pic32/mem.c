@@ -23,7 +23,7 @@ mmrw (dev, uio, flag)
 	register u_int c;
 	caddr_t addr;
 
-//printf ("mmrw (dev=%u, len=%u, flag=%d)\n", dev, uio->uio_iov->iov_len, flag);
+        //printf ("mmrw (dev=%u, len=%u, flag=%d)\n", dev, uio->uio_iov->iov_len, flag);
 	while (uio->uio_resid && error == 0) {
 		iov = uio->uio_iov;
 		if (iov->iov_len == 0) {

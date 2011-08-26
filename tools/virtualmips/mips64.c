@@ -79,7 +79,7 @@ void mips64_reg_set (cpu_mips_t * cpu, u_int reg, m_reg_t val)
         ! (cpu->cp0.reg[MIPS_CP0_STATUS] & MIPS_CP0_STATUS_EXL)))
     {
         /* Print GPR values in user mode. */
-        printf ("        GPR[%d] := %08x \n", reg, val);
+        printf ("        $%d := %08x \n", reg, val);
     }
 }
 

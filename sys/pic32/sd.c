@@ -575,13 +575,13 @@ sdopen (dev, flag, mode)
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
+                printf ("sd%d: port %s, select pin %c%d\n", unit,
+                        spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
                 if (! card_init (unit)) {
                         /* Initialization failed. */
                         printf ("sd%d: no SD/MMC card detected\n", unit);
                         return ENODEV;
                 }
-                printf ("sd%d: port %s, select pin %c%d\n", unit,
-                        spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
                 if (card_size (unit, &nsectors)) {
                         printf ("sd%d: card type %s, size %u kbytes\n", unit,
                                 sd_type[unit]==3 ? "SDHC" :

@@ -247,6 +247,33 @@
 #define PIC32_VECT_U5       51  /* UART5 */
 
 /*--------------------------------------
+ * DMA controller registers.
+ */
+#define PIC32_DMACON	PIC32_R (0x83000) /* DMA Control */
+#define PIC32_DMACONCLR	PIC32_R (0x83004)
+#define PIC32_DMACONSET	PIC32_R (0x83008)
+#define PIC32_DMACONINV	PIC32_R (0x8300C)
+#define PIC32_DMASTAT	PIC32_R (0x83010) /* DMA Status */
+#define PIC32_DMAADDR	PIC32_R (0x83020) /* DMA Address */
+// TODO: other DMA registers.
+
+/*--------------------------------------
+ * System controller registers.
+ */
+#define PIC32_OSCCON	PIC32_R (0xf000)
+#define PIC32_OSCTUN	PIC32_R (0xf010)
+#define PIC32_DDPCON	PIC32_R (0xf200)  /* Debug Data Port Control */
+#define PIC32_SYSKEY	PIC32_R (0xf230)
+#define PIC32_RCON      PIC32_R (0xf600)
+#define PIC32_RSWRST	PIC32_R (0xf610)
+
+/*--------------------------------------
+ * Prefetch cache controller registers.
+ */
+#define PIC32_CHECON	PIC32_R (0x84000)   /* Prefetch cache control */
+// TODO: other prefetech registers
+
+/*--------------------------------------
  * Bus matrix control registers.
  */
 #define PIC32_BMXCON    PIC32_R (0x82000) /* Memory configuration */
