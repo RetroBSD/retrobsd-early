@@ -122,6 +122,17 @@ startup()
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
 
+        /*
+         * Setup wait states.
+         */
+        CHECON = 2;
+        BMXCONCLR = 0x40;
+        CHECONSET = 0x30;
+
+	/* Config register: enable kseg0 caching. */
+	mips_write_c0_register (C0_CONFIG, 0,
+            mips_read_c0_register (C0_CONFIG, 0) | 3);
+
         /* UBW32 board: LEDs on PORTE[0:3].
          * Configure LED pins as output high. */
 #ifndef LED_POLARITY

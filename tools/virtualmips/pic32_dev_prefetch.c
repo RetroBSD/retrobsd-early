@@ -83,7 +83,7 @@ void dev_pic32_prefetch_reset (cpu_mips_t *cpu, struct vdevice *dev)
 {
     pic32_t *pic32 = dev->priv_data;
 
-    pic32->checon = 0;
+    pic32->checon = 0x00000007;
 }
 
 int dev_pic32_prefetch_init (vm_instance_t *vm, char *name, unsigned paddr)

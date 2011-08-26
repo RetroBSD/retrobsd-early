@@ -208,7 +208,7 @@ inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
     case MIPS_CP0_CONFIG:
         if (! ((1 << sel) & cp0->config_usable))
             goto unimpl;
-        if (sel != 1 && sel != 2 && sel != 3)
+        if (sel != 0)
             fprintf (stderr,
                 "Writing to read only configure register sel %u\n", sel);
         if (sel == 0) {

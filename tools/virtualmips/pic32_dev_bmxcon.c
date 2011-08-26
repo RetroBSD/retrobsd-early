@@ -61,8 +61,12 @@ void *dev_pic32_bmxcon_access (cpu_mips_t *cpu, struct vdevice *dev,
     case PIC32_BMXCON & 0x1f0:      /* Interrupt Control */
         if (op_type == MTS_READ) {
             *data = pic32->bmxcon;
+            if (cpu->vm->debug_level > 2)
+                printf ("        read BMXCON -> %08x\n", *data);
         } else {
-            pic32->bmxcon = write_op (pic32->intcon, *data, offset);
+            pic32->bmxcon = write_op (pic32->bmxcon, *data, offset);
+            if (cpu->vm->debug_level > 2)
+                printf ("        BMXCON := %08x\n", pic32->bmxcon);
         }
         break;
 

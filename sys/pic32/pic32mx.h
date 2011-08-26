@@ -842,12 +842,18 @@
  * Prefetch cache controller registers.
  */
 #define CHECON          PIC32_R (0x84000)       /* Prefetch cache control */
+#define CHECONCLR	PIC32_R (0x84004)
+#define CHECONSET	PIC32_R (0x84008)
+#define CHECONINV	PIC32_R (0x8400C)
 // TODO: other prefetech registers
 
 /*--------------------------------------
  * Bus matrix control registers.
  */
 #define BMXCON          PIC32_R (0x82000)       /* Memory configuration */
+#define BMXCONCLR	PIC32_R (0x82004)
+#define BMXCONSET	PIC32_R (0x82008)
+#define BMXCONINV	PIC32_R (0x8200C)
 #define BMXDKPBA        PIC32_R (0x82010)       /* Data RAM kernel program base address */
 #define BMXDUDBA        PIC32_R (0x82020)       /* Data RAM user data base address */
 #define BMXDUPBA        PIC32_R (0x82030)       /* Data RAM user program base address */
