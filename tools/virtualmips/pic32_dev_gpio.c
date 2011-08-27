@@ -168,11 +168,13 @@ lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
             else
                 dev_sdcard_select (cpu, 0, 1);
 
+#ifdef UBW32
             /* Control SD card 1. */
             if (d->lat_a & MASKA_CS1)
                 dev_sdcard_select (cpu, 1, 0);
             else
                 dev_sdcard_select (cpu, 1, 1);
+#endif
 #endif
         }
         break;
