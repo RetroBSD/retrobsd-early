@@ -22,6 +22,7 @@ CFLAGS		+= -O
 # Select target board
 CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DUBW32
 #CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE
+#CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAX32
 
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \

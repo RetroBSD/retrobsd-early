@@ -79,7 +79,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
     if (op_type == MTS_READ)
         *data = 0;
     switch (offset & 0x1f0) {
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
     case PIC32_SPI1CON & 0x1f0:         /* SPIx Control */
 #elif defined MAXIMITE
     case PIC32_SPI4CON & 0x1f0:
@@ -99,7 +99,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
     case PIC32_SPI1STAT & 0x1f0:        /* SPIx Status */
 #elif defined MAXIMITE
     case PIC32_SPI4STAT & 0x1f0:
@@ -114,7 +114,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
 #elif defined MAXIMITE
     case PIC32_SPI4BUF & 0x1ff:
@@ -127,7 +127,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
             }
         } else {
             d->buf = *data;
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
             if (dev->phys_addr == PIC32_SPI1CON)
 #elif defined MAXIMITE
             if (dev->phys_addr == PIC32_SPI4CON)
@@ -143,7 +143,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
     case PIC32_SPI1BRG & 0x1f0:         /* SPIx Baud rate */
 #elif defined MAXIMITE
     case PIC32_SPI4BRG & 0x1f0:

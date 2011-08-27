@@ -230,7 +230,7 @@ static int pic32_init_platform (pic32_t *pic32)
     if (dev_pic32_spi_init (vm, "PIC32 SPI4", PIC32_SPI4CON,
             PIC32_IRQ_SPI4E) == -1)
         return (-1);
-#ifdef UBW32
+#if defined UBW32 || defined MAX32
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
             pic32->sdcard0_file_name) < 0)
         return (-1);
@@ -485,9 +485,11 @@ vm_instance_t *create_instance (char *configure_filename)
     /* Initialize default parameters for  pic32 */
     if (configure_filename == NULL)
 #ifdef UBW32
-        configure_filename = "pic32.conf";
+        configure_filename = "pic32_ubw32.conf";
 #elif defined MAXIMITE
-        configure_filename = "pic32_max.conf";
+        configure_filename = "pic32_maximite.conf";
+#elif defined MAX32
+        configure_filename = "pic32_max32.conf
 #endif
     vm->configure_filename = strdup (configure_filename);
     vm->ram_size = 128;         /* kilobytes */

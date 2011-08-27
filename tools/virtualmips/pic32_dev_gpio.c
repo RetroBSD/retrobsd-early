@@ -43,6 +43,13 @@
 #define MASKE_CS1
 #define MASKD_CD1
 #define MASKD_WE1
+#elif defined MAX32
+#define MASKA_CS0       (1 << 10)
+#define MASKG_CD0       (1 << 7)  //XXX
+#define MASKG_WE0       (1 << 6)  //XXX
+#define MASKA_CS1
+#define MASKG_CD1
+#define MASKG_WE1
 #endif
 
 struct pic32_gpio_data {
@@ -154,7 +161,7 @@ void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
             *data = d->lat_a;
         } else {
 lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
-#ifdef UBW32
+#if !defined UBW32 && !defined MAX32
             /* Control SD card 0. */
             if (d->lat_a & MASKA_CS0)
                 dev_sdcard_select (cpu, 0, 0);
@@ -407,7 +414,7 @@ lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
         break;
 
     case PIC32_PORTG & 0x1f0:             /* Port G: read inputs, write outputs */
-#ifndef UBW32
+#if !defined UBW32 && !defined MAX32
         if (op_type == MTS_READ) {
             *data = d->port_g;
         } else {
