@@ -85,9 +85,9 @@ int key_state, key_count, key_parity, key_timer;
 #define SCRL    0x7e
 
 #ifdef USASCII
-#include "usascii.map"
+#include "usascii.inc"
 #elif defined RUSSIAN
-#include "russian.map"
+#include "russian.inc"
 #endif
 
 /*
