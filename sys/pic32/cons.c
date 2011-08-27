@@ -46,7 +46,7 @@
 #   define CONSOLE_TX_IRQ   PIC32_IRQ_U5TX
 
 #elif defined (CONSOLE_UART6)
-#   define CONSOLE_PORT U6MODE
+#   define CONSOLE_PORT     U6MODE
 #   define CONSOLE_ER_IRQ   PIC32_IRQ_U6E
 #   define CONSOLE_RX_IRQ   PIC32_IRQ_U6RX
 #   define CONSOLE_TX_IRQ   PIC32_IRQ_U6TX

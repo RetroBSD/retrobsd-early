@@ -131,7 +131,7 @@ isdisk(dev, type)
 
 #define MAXDEV	7
 static const char chrtoblktbl[MAXDEV] =  {
-      /* CHR */      /* BLK */
+	/* CHR */      /* BLK */
 	/* 0 */		NODEV,
 	/* 1 */		NODEV,
 	/* 2 */		NODEV,

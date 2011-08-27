@@ -46,7 +46,7 @@ fd)
 
 sd*)
 	# The 2.11BSD sd driver doesn't support partitions.  We create
-	# a single block and charater inode pair for each unit and
+	# a single block and character inode pair for each unit and
 	# call it sdNh.
 	umask 2
         unit=`expr $i : '..\(.*\)'`
