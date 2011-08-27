@@ -40,7 +40,15 @@ LIBDIR		= lib
 SRCDIR		= tools sys etc share bin sbin
 
 FSUTIL		= tools/fsutil/fsutil
-UBW32		= tools/ubw32/ubw32
+LOADUTIL        = tools/ubw32/ubw32
+
+# Build directories for each board
+UBW32           = sys/pic32/ubw32
+MAXIMITE        = sys/pic32/maximite
+MAX32           = sys/pic32/max32
+
+# Change this line to build for your board
+TARGET          = $(UBW32)
 
 SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/init \
                   sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount sbin/newfs \
@@ -88,11 +96,11 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
 
 all:		${LIBDIR} ${SRCDIR} root.bin unix.hex
 
-unix.hex:       sys/pic32/compile/unix.hex
+unix.hex:       $(TARGET)/unix.hex
 		cp -p $? $@
 
-load:           unix.hex $(UBW32)
-		$(UBW32) -write unix.hex -reset
+load:           unix.hex $(LOADUTIL)
+		$(LOADUTIL) -write unix.hex -reset
 
 lib:		FRC
 		cd lib; make ${MFLAGS} DEFS="${DEFS}"
@@ -100,7 +108,7 @@ lib:		FRC
 ${SRCDIR}: FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
-root.bin:	$(FSUTIL) sys/pic32/compile/unix.elf $(ALLFILES)
+root.bin:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
 		rm -f $@
 		$(FSUTIL) -n16384 -s2048 $@
 		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)

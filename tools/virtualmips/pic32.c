@@ -250,7 +250,7 @@ static int pic32_init_platform (pic32_t *pic32)
 #endif
 
     pic32->sdcard[1].unit = 1;
-return (0);
+    return (0);
 }
 
 /*
