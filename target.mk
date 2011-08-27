@@ -23,6 +23,15 @@ ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
     INCLUDES    = -I/c/"Program Files"/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
 endif
 
+# Digilent MPIDE on Linux
+# Need to copy hardware/pic32/compiler/pic32-tools/pic32mx/include/stdarg.h
+# to hardware/pic32/compiler/pic32-tools/lib/gcc/pic32mx/4.5.1/include.
+#ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-gcc))
+#    GCCPREFIX   = /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-
+#    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
+#    INCLUDES    = -I/opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/lib/gcc/pic32mx/4.5.1/include
+#endif
+
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
 # Linux MPLABX C32 compiler doesn't support some functionality

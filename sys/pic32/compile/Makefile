@@ -51,6 +51,12 @@ ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
     LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
 endif
 
+# Digilent MPIDE on Linux
+#ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-gcc))
+#    GCCPREFIX   = /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-
+#    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
+#endif
+
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
 ifndef GCCPREFIX

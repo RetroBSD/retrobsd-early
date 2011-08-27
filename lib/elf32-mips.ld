@@ -53,7 +53,6 @@ SECTIONS
   .rela.dtors     : { *(.rela.dtors) }
   .rel.got        : { *(.rel.got) }
   .rela.got       : { *(.rela.got) }
-  .rel.dyn        : { *(.rel.dyn) }
   .rel.sdata      : { *(.rel.sdata .rel.sdata.* .rel.gnu.linkonce.s.*) }
   .rela.sdata     : { *(.rela.sdata .rela.sdata.* .rela.gnu.linkonce.s.*) }
   .rel.sbss       : { *(.rel.sbss .rel.sbss.* .rel.gnu.linkonce.sb.*) }
@@ -248,5 +247,6 @@ SECTIONS
   .mdebug.eabi64 : { KEEP(*(.mdebug.eabi64)) }
   .gcc_compiled_long32 : { KEEP(*(.gcc_compiled_long32)) }
   .gcc_compiled_long64 : { KEEP(*(.gcc_compiled_long64)) }
+  /DISCARD/ : { *(.rel.dyn) }
   /DISCARD/ : { *(.note.GNU-stack) *(.gnu_debuglink) }
 }

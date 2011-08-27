@@ -5,7 +5,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-#define	PIC32MX
 #include <sys/param.h>
 #define	KERNEL
 #include <sys/file.h>
