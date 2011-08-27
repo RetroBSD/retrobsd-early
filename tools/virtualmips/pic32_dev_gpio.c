@@ -432,6 +432,7 @@ lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
             else
                 d->port_g |= MASKG_WE0;
 
+#ifdef UBW32
             /* Poll SD card 1 status. */
             if (dev_sdcard_detect (cpu, 1))
                 d->port_g &= ~MASKG_CD1;
@@ -441,7 +442,7 @@ lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
                 d->port_g &= ~MASKG_WE1;
             else
                 d->port_g |= MASKG_WE1;
-
+#endif
             *data = d->port_g;
         } else {
             goto lat_g;

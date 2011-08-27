@@ -489,7 +489,7 @@ vm_instance_t *create_instance (char *configure_filename)
 #elif defined MAXIMITE
         configure_filename = "pic32_maximite.conf";
 #elif defined MAX32
-        configure_filename = "pic32_max32.conf
+        configure_filename = "pic32_max32.conf";
 #endif
     vm->configure_filename = strdup (configure_filename);
     vm->ram_size = 128;         /* kilobytes */
