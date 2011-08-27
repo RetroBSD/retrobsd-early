@@ -23,8 +23,6 @@ DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
 DEFS		+= -DCPU_KHZ=80000
 DEFS		+= -DBUS_KHZ=80000
 
-CWD		= $(shell cd .; pwd)
-
 #
 # Max32 board
 # ===========

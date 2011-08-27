@@ -161,7 +161,7 @@ void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
             *data = d->lat_a;
         } else {
 lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
-#if !defined UBW32 && !defined MAX32
+#if defined UBW32 || defined MAX32
             /* Control SD card 0. */
             if (d->lat_a & MASKA_CS0)
                 dev_sdcard_select (cpu, 0, 0);

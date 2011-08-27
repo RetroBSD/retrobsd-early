@@ -37,17 +37,17 @@ SRC_MFLAGS	= -k
 # lint(1) need their data files, etc installed first.
 
 LIBDIR		= lib
-SRCDIR		= tools sys etc share bin sbin
+SRCDIR		= tools etc share bin sbin
+SYSDIR          = sys
 
 FSUTIL		= tools/fsutil/fsutil
 LOADUTIL        = tools/ubw32/ubw32
 
-# Build directories for each board
 UBW32           = sys/pic32/ubw32
 MAXIMITE        = sys/pic32/maximite
 MAX32           = sys/pic32/max32
 
-# Change this line to build for your board
+# Select target board
 TARGET          = $(UBW32)
 
 SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/init \
@@ -94,7 +94,7 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-all:		${LIBDIR} ${SRCDIR} root.bin unix.hex
+all:		${LIBDIR} ${SRCDIR} $(SYSDIR) root.bin unix.hex
 
 unix.hex:       $(TARGET)/unix.hex
 		cp -p $? $@
@@ -105,8 +105,11 @@ load:           unix.hex $(LOADUTIL)
 lib:		FRC
 		cd lib; make ${MFLAGS} DEFS="${DEFS}"
 
-${SRCDIR}: FRC
+${SRCDIR}:      FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
+
+$(SYSDIR):      $(TARGET)
+		make -C $(TARGET) ${MFLAGS}
 
 root.bin:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
 		rm -f $@
@@ -124,7 +127,7 @@ $(FSUTIL):
 
 build:		buildlib ${SRCDIR}
 
-buildlib: FRC
+buildlib:	FRC
 		@echo installing /usr/include
 		# cd include; make ${MFLAGS} DESTDIR=${DESTDIR} install
 		@echo
@@ -176,4 +179,4 @@ tags:
 
 clean:
 		rm -f unix.hex root.bin swap.bin *~
-		for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done
+		for i in ${LIBDIR} ${SRCDIR} $(TARGET); do (cd $$i; make -k ${MFLAGS} clean); done
