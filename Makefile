@@ -94,7 +94,7 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-all:		${LIBDIR} ${SRCDIR} $(SYSDIR) root.bin unix.hex
+all:		${LIBDIR} $(SYSDIR) ${SRCDIR} root.bin unix.hex
 
 unix.hex:       $(TARGET)/unix.hex
 		cp -p $? $@
@@ -160,13 +160,13 @@ buildlib:	FRC
 FRC:
 
 install:
-		-for i in ${LIBDIR} ${SRCDIR}; do \
+		-for i in ${LIBDIR} $(TARGET) ${SRCDIR}; do \
 			(cd $$i; \
 			make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
 		done
 
 installsrc:
-		-for i in ${SRCDIR}; do \
+		-for i in $(TARGET) ${SRCDIR}; do \
 			(cd $$i; \
 			make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
 		done
@@ -179,4 +179,4 @@ tags:
 
 clean:
 		rm -f unix.hex root.bin swap.bin *~
-		for i in ${LIBDIR} ${SRCDIR} $(TARGET); do (cd $$i; make -k ${MFLAGS} clean); done
+		for i in ${LIBDIR} $(TARGET) ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done

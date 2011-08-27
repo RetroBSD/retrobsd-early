@@ -132,27 +132,27 @@ void read_kbd(void)
 {
     int data = PS2DAT;
     int clk = PS2CLK;
-	static char key_up = false;
-	static unsigned char code = 0;
-	static unsigned then = 0;
-	unsigned now = mips_read_c0_register (C0_COUNT, 0);
+    static char key_up = false;
+    static unsigned char code = 0;
+    static unsigned then = 0;
+    unsigned now = mips_read_c0_register (C0_COUNT, 0);
 
     // Is it time to poll the keyboard yet?
     if ((int) (now - then) < POLL)
         return;
      
     // Keyboard state machine
-    if (key_state) {                        // previous time clock was high key_state 1
-        if (!clk) {                         // PS2CLK == 0, falling edge detected
-            key_state = 0;                  // transition to State0
-            key_timer = TIMEOUT;            // restart the counter
+    if (key_state) {                                            // if clock was high, key_state = 1
+        if (!clk) {                                             // PS2CLK == 0, falling edge detected
+            key_state = 0;                                      // transition to state 0
+            key_timer = TIMEOUT;                                // restart the counter
         
             switch(PS2State){
             default:
             case PS2START:   
-                if(!data) {                 // PS2DAT == 0
-                    key_count = 8;          // init bit counter
-                    key_parity = 0;         // init parity check
+                if(!data) {                                     // PS2DAT == 0
+                    key_count = 8;                              // init bit counter
+                    key_parity = 0;                             // init parity check
                     code = 0;
                     PS2State = PS2BIT;
                 }
@@ -160,9 +160,11 @@ void read_kbd(void)
 
             case PS2BIT:      
                 code >>= 1;                                     // shift in data bit
-                if(data) code |= 0x80;                          // PS2DAT == 1
-                key_parity ^= code;                             // calculate parity
-                if (--key_count == 0) PS2State = PS2PARITY;     // all bit read
+                if(data)
+                    code |= 0x80;                               // PS2DAT == 1
+                key_parity ^= code;
+                if (--key_count == 0)
+                    PS2State = PS2PARITY;                       // all bits read
                 break;
 
             case PS2PARITY:         
@@ -175,53 +177,59 @@ void read_kbd(void)
 
             case PS2STOP:
                 if(data) {                                      // PS2DAT == 1
-	                if(code  == 0xf0)
+	                if(code == 0xf0)
 	                	 key_up = true;
-	                else {
+                    else {
+                        char c;
+                        static char LShift = 0;
+                        static char RShift = 0;
+                        static char LCtrl = 0;
+                        static char CapsLock = 0;
 
-						char c;
-						
-						static char LShift = 0;
-						static char RShift = 0;
-						static char LCtrl = 0;
-						static char CapsLock = 0;
-					
-						if(key_up) {
-						    if(code == L_SHF) LShift = 0;   // left shift button is released
-						    if(code == R_SHF) RShift = 0;   // right shift button is released
-						    if(code == L_CTL) LCtrl = 0;    // control button is released
-						    goto SkipOut;
-						}
-						
-					    if(code == L_SHF) { LShift = 1; goto SkipOut; }    // left shift button is pressed
-					    if(code == R_SHF) { RShift = 1; goto SkipOut; }    // right shift button is pressed
-					    if(code == L_CTL) { LCtrl = 1; goto SkipOut; }     // control button is pressed
-						if(code == CAPS)  { CapsLock = !CapsLock; goto SkipOut; }    // caps lock pressed
+                        if(key_up) {                            // check for key release
+                            switch(code) {
+                                case L_SHF: LShift = 0;
+                                case R_SHF: RShift = 0;
+                                case L_CTL: LCtrl = 0;
+                            }
+                            goto exit;
+                        } else {                                // check for key press
+						    switch (code) {
+						        case L_SHF: LShift = 1;
+					            case R_SHF: RShift = 1;
+                                case L_CTL: LCtrl = 1;
+                                case CAPS:  CapsLock = !CapsLock;
+                                default: break;
+                            }
+                            goto exit;
+                        }
 					
 					    if(LShift || RShift)
-					        c = lowerKey[code%128];                         // translate into an ASCII code
-					    else
-					        c = upperKey[code%128];
-						
-						if(!c) goto SkipOut;
-						
-						if(CapsLock && c >= 'a' && c <= 'z') c -= 32;       // adj for caps lock
-						if(LCtrl) c &= 0x1F;                                // adj for control
-						
-						in_queue[in_queue_head] = c;                        // place into the queue
-						in_queue_head = (in_queue_head + 1) % QUEUE_SIZE;   // increment the head index
-						if(c == 3) {                                        // check for CTRL-C
-							abort = true;                                   // bail out here
-							in_queue_head = in_queue_tail = 0;              // flush the input buffer
-						}
+                            c = lowerKey[code%128];             // get the ASCII code
+                        else
+                            c = upperKey[code%128];
+
+                        if(!c) goto exit;
+
+                        if(CapsLock && c >= 'a' && c <= 'z')
+                            c -= 32;                            // adjust for caps lock
+                        if(LCtrl)
+                            c &= 0x1F;                          // adj for control
+
+                        in_queue[in_queue_head] = c;                        // place into the queue
+                        in_queue_head = (in_queue_head + 1) % QUEUE_SIZE;   // increment the head index
+                        if(c == 3) {                                        // check for CTRL-C
+                            abort = true;                                   // bail out here
+                            in_queue_head = in_queue_tail = 0;              // flush the input buffer
+                        }
 
 //						PrintSignonToUSB = false;     // show that the user is using the keyboard
-						
-SkipOut:
 
-	                	key_up = false;
-	                } // if key_up	
-	            code = 0;
+exit:
+
+                    	key_up = false;
+                    } // if key_up	
+                code = 0;
                 } // if(data)   
                 PS2State = PS2START;
                 break;
@@ -229,16 +237,15 @@ SkipOut:
             } // switch(PS2State)
         } // if(!clk)
         else {                                          // clock still high, remain in State1
-            if (--key_timer == 0) PS2State = PS2START;  // timeout, reset data SM
+            if (--key_timer == 0)
+                PS2State = PS2START;                    // timeout, reset data SM
         }
     } // if(key_state)
-    else {                                              // Kstate 0
-        if(clk) {                                       // PS2CLK == 1, rising edge, transition to State1
+    else {                                              // !key_state
+        if(clk)                                         // PS2CLK == 1, rising edge, transition to state 1
             key_state = 1;
-        }
-        else {                                          // clock still low, remain in State0
-            if (--key_timer == 0) PS2State = PS2START;  // timeout, reset data SM
-        }
+        else if (--key_timer == 0)
+                PS2State = PS2START;                    // timeout, reset data SM
     }
 
 /*

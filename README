@@ -27,10 +27,10 @@ tools       Build tools and simulators.
 To build for the Maximite board, make the following changes to these files:
 
 retrobsd/Makefile
-    Select Maximite under section "Select target board"
-
-tools/virtualmips/Makefile
-    Select Maximite under section "Select target board"
+    Select Maximite under section "Select target board" by changing
+    TARGET          = $(UBW32)
+    to
+    TARGET          = $(MAXIMITE)
 
 Hardware changes are required to use UART4 for the console.
 Lift the resistor** (see below) going to the audio output plug and connect
@@ -50,6 +50,18 @@ and the 'H' (64-pin) versions of the chip, which were all missing in the origina
 configure scripts. See HardwareProfile.h for further details.
 
 Rob Judd <judd@ob-wan.com> 21 Aug 2011
+
+***************************************************************************
+
+To build for the Max32 board, make the following changes to these files:
+
+retrobsd/Makefile
+    Select Max32 under section "Select target board" by changing
+    TARGET          = $(UBW32)
+    to
+    TARGET          = $(MAX32)
+
+Rob Judd <judd@ob-wan.com> 28 Aug 2011
 
 ***************************************************************************
 

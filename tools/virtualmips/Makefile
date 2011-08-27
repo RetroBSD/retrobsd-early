@@ -19,10 +19,16 @@ endif
 CFLAGS		+= -O
 #CFLAGS		+= -O3 -fomit-frame-pointer
 
-# Select target board
+# Auto-select target board
+ifneq ($(wildcard ../../sys/pic32/ubw32/vers.o),)
 CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DUBW32
-#CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE
-#CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAX32
+endif
+ifneq ($(wildcard ../../sys/pic32/maximite/vers.o),)
+CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE
+endif
+ifneq ($(wildcard ../../sys/pic32/max32/vers.o),)
+CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAX32
+endif
 
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
