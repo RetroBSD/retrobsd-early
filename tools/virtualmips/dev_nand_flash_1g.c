@@ -8,8 +8,8 @@
 
 /*
 1G bytes nand flash emulation. Samsung K9F8G08 1GB
-1G bytes nand flash are stored in file nandflash8g.0-nandflash8g.8191(8192 blocks).
-The flash file only be created when writing to block(copy on write).
+1G bytes nand flash are stored in file nandflash8g.0-nandflash8g.8191 (8192 blocks).
+The flash file only be created when writing to block (copy on write).
 Please use tool/mknandflash to create init nand file of u-boot image.
 */
 
@@ -50,7 +50,7 @@ m_uint8_t id_info[5] = { 0xec, 0xd3, 0x51, 0x95, 0x58 };
 #define NAND_STATUS_READY       0x40
 #define NAND_STATUS_WP            0x80
 
-/*status ready & not wirte protected*/
+/*status ready & not write protected*/
 /*I am always ready. haha. Better than real nand flash :)*/
 m_uint8_t nand_status = NAND_STATUS_READY | NAND_STATUS_WP;
 

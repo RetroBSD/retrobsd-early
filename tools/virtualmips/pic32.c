@@ -407,7 +407,7 @@ static void pic32_parse_configure (pic32_t *pic32)
 
     VALID_COMMON_CONFIG_OPTION;
 
-    /*add other configure information validation here */
+    /* Add other configure information validation here */
     if (vm->jit_use) {
         ASSERT (JIT_SUPPORT == 1,
             "You must compile with JIT Support to use jit.\n");

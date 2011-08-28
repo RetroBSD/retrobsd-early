@@ -7,7 +7,7 @@
   */
 
 #ifndef  __GDB_INTERFACE_H__
-#define    __GDB_INTERFACE_H__
+#define  __GDB_INTERFACE_H__
 #include "utils.h"
 #include "mips64.h"
 

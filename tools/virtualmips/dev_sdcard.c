@@ -147,7 +147,7 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
     unsigned reply, offset;
 
     if (! d) {
-        //printf ("sdcard: unselected i/o\n");
+        TRACE ("sdcard: unselected i/o\n");
         return 0xFF;
     }
     data = (unsigned char) data;

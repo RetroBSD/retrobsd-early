@@ -59,7 +59,7 @@ void vm_debug_init (vm_instance_t * vm)
 
     vm->gdb_listen_sock = socket (PF_INET, SOCK_STREAM, 0);
     if (vm->gdb_listen_sock < 0) {
-        fprintf (stderr, "Can't open debug socket.Run without gdb debug\n");
+        fprintf (stderr, "Can't open debug socket. Run without gdb debug\n");
         vm->gdb_debug = 0;
         return;
     }

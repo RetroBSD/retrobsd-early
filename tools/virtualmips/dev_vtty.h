@@ -31,6 +31,7 @@ enum {
     VTTY_TYPE_TERM,
     VTTY_TYPE_TCP,
     VTTY_TYPE_SERIAL,
+    VTTY_TYPE_USB,
 };
 
 /* VTTY connection states (for TCP) */

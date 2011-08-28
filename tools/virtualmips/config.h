@@ -82,14 +82,14 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 		{   \
 		    ASSERT(vm->flash_type==FLASH_TYPE_NOR_FLASH,"flash_type must be 1(NOR FLASH)\n");   \
 			ASSERT(vm->flash_size!=0,"flash_size can not be 0\n");   \
-			ASSERT(vm->flash_filename!=NULL,"flashm_filename can not be NULL\n");   \
+			ASSERT(vm->flash_filename!=NULL,"flash_filename can not be NULL\n");   \
 			ASSERT(vm->flash_address!=0,"flash_address can not be 0\n");   \
 		}   \
 	  else   if (vm->boot_from==BOOT_FROM_NAND_FLASH)   \
 		 {   \
 	       ASSERT(vm->flash_type==FLASH_TYPE_NAND_FLASH,"flash_type must be 2(NAND FLASH)\n");   \
     		ASSERT(vm->flash_size!=0,"flash_size can not be 0\n");   \
-		/*ASSERT(vm->flash_filename!=NULL,"flashm_filename can not be NULL\n");   */  \
+		/*ASSERT(vm->flash_filename!=NULL,"flash_filename can not be NULL\n");   */  \
 		}   \
 		else \
 		  ASSERT(0,"error boot_from. valid value: 1:NOR FLASH 2:NAND FLASH\n");   \

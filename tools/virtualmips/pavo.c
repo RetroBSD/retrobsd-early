@@ -5,10 +5,6 @@
   * See LICENSE file for terms of the license.
   */
 
- /*Pavo emulation
-  * http://www.ingenic.cn/pfwebplus/productServ/kfyd/Hardware/pffaqQuestionContent.aspx?Category=2&Question=3
-  */
-
 #define _GNU_SOURCE
 #include<string.h>
 #include <assert.h>
@@ -53,7 +49,7 @@ int dev_jz4740_lcd_init (vm_instance_t * vm, char *name, m_pa_t paddr,
 void dev_jz4740_gpio_setirq (int irq);
 void dev_jz4740_gpio_clearirq (int irq);
 
-/* Initialize default parameters for  pavo */
+/* Initialize default parameters for pavo */
 static void pavo_init_defaults (pavo_t * pavo)
 {
     vm_instance_t *vm = pavo->vm;

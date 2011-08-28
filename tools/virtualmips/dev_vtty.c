@@ -637,6 +637,16 @@ static int vtty_tcp_read (vtty_t * vtty)
 }
 
 /*
+ * Read a character from the USB connection.
+ */
+static int vtty_usb_read (vtty_t * vtty)
+{
+    // stub
+    perror("VTTY not yet implemented on USB\n");
+    return (-1);
+}
+   
+/*
  * Read a character from the virtual TTY.
  *
  * If the VTTY is a TCP connection, restart it in case of error.
@@ -649,6 +659,8 @@ static int vtty_read (vtty_t * vtty)
         return (vtty_term_read (vtty));
     case VTTY_TYPE_TCP:
         return (vtty_tcp_read (vtty));
+    case VTTY_TYPE_USB:
+        return (vtty_usb_read (vtty));
     default:
         fprintf (stderr, "vtty_read: bad vtty type %d\n", vtty->type);
         return (-1);

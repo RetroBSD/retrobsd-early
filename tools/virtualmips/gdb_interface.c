@@ -361,7 +361,7 @@ static void attach_gdb (vm_instance_t * vm)
     }
 
     if (!vm->gdb_debug_from_poll)
-        printf ("GDB attached. Enjoy your self!\n");
+        printf ("GDB attached. Enjoy yourself!\n");
 
     /* Tell TCP not to delay small packets.  This greatly speeds up
      * interactive response. */

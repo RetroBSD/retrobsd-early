@@ -15,7 +15,7 @@ Codes are from qemu.
 yajin
 */
 #include <stdlib.h>
-#include<string.h>
+#include <string.h>
 #include "vp_timer.h"
 #include "vp_clock.h"
 
