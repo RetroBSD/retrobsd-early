@@ -73,6 +73,10 @@ int sd_type[NSD];               /* Card type */
 #define CMD_APP			55      /* CMD55 */
 #define CMD_READ_OCR		58
 
+#define DATA_START_BLOCK        0xFE    /* start data for single block */
+#define STOP_TRAN_TOKEN         0xFD    /* stop token for write multiple */
+#define WRITE_MULTIPLE_TOKEN    0xFC    /* start data for write multiple */
+
 /*
  * SPI registers.
  */
@@ -98,7 +102,7 @@ struct sdreg {
 /*
  * Send one byte of data and receive one back at the same time.
  */
-static unsigned
+static inline unsigned
 spi_io (byte)
 	unsigned byte;
 {
@@ -139,6 +143,45 @@ spi_select (unit, on)
 }
 
 /*
+ * Wait while busy, up to 300 msec.
+ */
+static void
+spi_wait_ready ()
+{
+        int i;
+
+	for (i=0; i<100000; i++)
+                if (spi_io (0xFF) == 0xFF)
+                        break;
+}
+
+static void spi_get_sector (char *data)
+{
+	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+        int i;
+
+        for (i=0; i<SECTSIZE; i++) {
+                reg->buf = 0xFF;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                *data++ = reg->buf;
+        }
+}
+
+static void spi_send_sector (char *data)
+{
+	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+        int i;
+
+        for (i=0; i<SECTSIZE; i++) {
+                reg->buf = *data++;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                (void) reg->buf;
+        }
+}
+
+/*
  * Send a command and address to SD media.
  * Return response:
  *   FF - timeout
@@ -162,9 +205,7 @@ card_cmd (cmd, addr)
 	int i, reply;
 
         /* Wait for not busy, up to 300 msec. */
-	for (i=0; i<1000; i++)
-                if (spi_io (0xFF) == 0xFF)
-                        break;
+        spi_wait_ready ();
 
 	/* Send a comand packet (6 bytes). */
 	spi_io (cmd | 0x40);
@@ -312,7 +353,7 @@ card_size (unit, nsectors)
 			return 0;
 		}
 		reply = spi_io (0xFF);
-		if (reply == 0xFE)
+		if (reply == DATA_START_BLOCK)
 			break;
 	}
 
@@ -374,7 +415,7 @@ again:
 
 	/* Wait for a response. */
 	for (i=0; ; i++) {
-		if (i >= 25000) {
+		if (i >= 250000) {
 			/* Command timed out. */
                         printf ("card_read: READ_SINGLE timed out, reply = %d\n",
                                 reply);
@@ -382,16 +423,20 @@ again:
 			return 0;
 		}
 		reply = spi_io (0xFF);
-		if (reply == 0xFE)
+		if (reply == DATA_START_BLOCK)
 			break;
 //if (reply != 0xFF) printf ("card_read: READ_SINGLE reply = %d\n", reply);
 	}
 
 	/* Read data. */
-	for (i=0; i<SECTSIZE; i++) {
-                if (i < bcount)
+        if (bcount >= SECTSIZE) {
+                spi_get_sector (data);
+                data += SECTSIZE;
+        } else {
+                i = 0;
+                while (i++ < bcount)
                         *data++ = spi_io (0xFF);
-                else
+                while (i++ <= SECTSIZE)
                         spi_io (0xFF);
         }
 	/* Ignore CRC. */
@@ -424,6 +469,7 @@ card_write (unit, offset, data, bcount)
 	printf ("sd%d: write offset %u, length %u bytes, addr %p\n",
 		unit, offset, bcount, data);
 #endif
+#if 1
 again:
 	/* Send WRITE command. */
 	spi_select (unit, 1);
@@ -435,11 +481,15 @@ again:
 	}
 
 	/* Send data. */
-	spi_io (0xFE);
-	for (i=0; i<SECTSIZE; i++) {
-	        if (i < bcount)
+	spi_io (DATA_START_BLOCK);
+        if (bcount >= SECTSIZE) {
+                spi_send_sector (data);
+                data += SECTSIZE;
+        } else {
+                i = 0;
+                while (i++ < bcount)
                         spi_io (*data++);
-                else
+                while (i++ <= SECTSIZE)
                         spi_io (0xFF);
         }
 	/* Send dummy CRC. */
@@ -468,31 +518,90 @@ again:
 
 	/* Disable the card. */
 	spi_select (unit, 0);
-#if 0
-	/* Send GET_STATUS command. */
-	spi_select (unit, 1);
-	reply = card_cmd (CMD_SEND_STATUS, offset);
-	if (reply != 0) {
-		/* Write failed. */
-printf ("card_write: SEND_STATUS failed, reply = %#x\n", reply);
-		spi_select (unit, 0);
-		return 0;
-	}
-        /* SPI mode: 16-bit reply size. */
-        reply = spi_io (0xFF);
-        reply |= spi_io (0xFF) << 8;
-	spi_select (unit, 0);
-        if (reply != 0) {
-		/* Write failed. */
-printf ("card_write: SEND_STATUS returned %#x\n", reply);
-		return 0;
-        }
-#endif
+
         if (bcount > SECTSIZE) {
                 bcount -= SECTSIZE;
                 offset += (sd_type[unit] == 3) ? 1 : SECTSIZE;
                 goto again;
         }
+#else
+	/* Send pre-erase count. */
+	spi_select (unit, 1);
+        card_cmd (CMD_APP, 0);
+	reply = card_cmd (CMD_SET_WBECNT,
+                (bcount + SECTSIZE - 1) / SECTSIZE);
+	if (reply != 0) {
+		/* Command rejected. */
+		spi_select (unit, 0);
+//printf ("card_write: bad SET_WBECNT reply = %02x, count = %u\n", reply, (bcount + SECTSIZE - 1) / SECTSIZE);
+		return 0;
+	}
+
+	/* Send write-multiple command. */
+	reply = card_cmd (CMD_WRITE_MULTIPLE, offset);
+	if (reply != 0) {
+		/* Command rejected. */
+		spi_select (unit, 0);
+//printf ("card_write: bad WRITE_MULTIPLE reply = %02x\n", reply);
+		return 0;
+	}
+	spi_select (unit, 0);
+again:
+        /* Select, wait while busy. */
+	spi_select (unit, 1);
+        spi_wait_ready ();
+
+	/* Send data. */
+	spi_io (WRITE_MULTIPLE_TOKEN);
+	i = 0;
+        if (bcount >= SECTSIZE) {
+                spi_send_sector (data);
+                data += SECTSIZE;
+        } else {
+                while (i++ < bcount)
+                        spi_io (*data++);
+                while (i++ <= SECTSIZE)
+                        spi_io (0xFF);
+        }
+	/* Send dummy CRC. */
+	spi_io (0xFF);
+	spi_io (0xFF);
+
+	/* Check if data accepted. */
+	reply = spi_io (0xFF);
+	if ((reply & 0x1f) != 0x05) {
+		/* Data rejected. */
+		spi_select (unit, 0);
+//printf ("card_write: data rejected, reply = %02x\n", reply);
+		return 0;
+	}
+
+	/* Wait for write completion. */
+	for (i=0; ; i++) {
+		if (i >= 250000) {
+			/* Write timed out. */
+			spi_select (unit, 0);
+//printf ("card_write: timed out, reply = %02x\n", reply);
+			return 0;
+		}
+		reply = spi_io (0xFF);
+		if (reply != 0)
+			break;
+	}
+	spi_select (unit, 0);
+
+        if (bcount > SECTSIZE) {
+                bcount -= SECTSIZE;
+                goto again;
+        }
+
+        /* End a write multiple blocks sequence. */
+	spi_select (unit, 1);
+        spi_wait_ready ();
+	spi_io (STOP_TRAN_TOKEN);
+        spi_wait_ready ();
+	spi_select (unit, 0);
+#endif
 	return 1;
 }
 
