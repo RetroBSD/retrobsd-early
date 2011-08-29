@@ -94,7 +94,7 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
 
-all:		${LIBDIR} $(SYSDIR) ${SRCDIR} root.bin unix.hex
+all:		${LIBDIR} ${SYSDIR} ${SRCDIR} root.bin unix.hex
 
 unix.hex:       $(TARGET)/unix.hex
 		cp -p $? $@
@@ -108,7 +108,7 @@ lib:		FRC
 ${SRCDIR}:      FRC
 		cd $@; make ${MFLAGS} ${SRC_MFLAGS}
 
-$(SYSDIR):      $(TARGET)
+${SYSDIR}:      FRC $(TARGET)
 		make -C $(TARGET) ${MFLAGS}
 
 root.bin:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)

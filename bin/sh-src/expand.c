@@ -59,13 +59,15 @@ char    *as1, *as2, *as3;
 expand(as, rcnt)
 	char    *as;
 {
-	int     count, dirf;
+	int     count;
 	BOOL    dir = 0;
 	char    *rescan = NIL;
 	register char   *s, *cs;
 	struct argnod   *schain = gchain;
 	struct stat statb;
 	BOOL    slash;
+	DIR* dirp;
+	char    *useAsDir;
 
 	if (trapnote & SIGSET)
 		return(0);
@@ -134,14 +136,11 @@ expand(as, rcnt)
 		}
 	}
 
-	if ((dirf = open(*s ? s : ".", 0)) > 0)
-	{
-		if (fstat(dirf, &statb) != -1 &&
-		    (statb.st_mode & S_IFMT) == S_IFDIR)
-			dir++;
-		else
-			close(dirf);
-	}
+	useAsDir = (*s ? s : ".");
+	if (stat(useAsDir, &statb) != -1 &&
+            (statb.st_mode & S_IFMT) == S_IFDIR &&
+            (dirp = opendir(useAsDir)) != 0)
+		dir++;
 
 	count = 0;
 	if (*cs == 0)
@@ -149,7 +148,7 @@ expand(as, rcnt)
 	if (dir)                /* check for rescan */
 	{
 		register char *rs;
-		struct direct *e;
+		struct direct *dp;
 
 		rs = cs;
 		do
@@ -162,9 +161,9 @@ expand(as, rcnt)
 			}
 		} while (*rs++);
 
-		while ((e = getdir(dirf)) && (trapnote & SIGSET) == 0)
+		while ((dp = readdir(dirp)) && (trapnote & SIGSET) == 0)
 		{
-			*(movstrn(e->d_name, entry, MAXNAMLEN)) = 0;
+			*(movstrn(dp->d_name, entry, MAXNAMLEN)) = 0;
 
 			if (entry[0] == '.' && *cs != '.')
 #ifndef BOURNE
@@ -184,7 +183,7 @@ expand(as, rcnt)
 				count++;
 			}
 		}
-		close(dirf);
+		closedir(dirp);
 
 		if (rescan)
 		{
@@ -215,49 +214,6 @@ expand(as, rcnt)
 	}
 	return(count);
 }
-
-
-reset_dir()
-{
-	nxtdir = -1;
-	maxdir = 0;
-}
-
-
-/*
- * read next directory entry
- * and ignore inode == 0
- *
- */
-
-struct direct *
-getdir(dirf)
-{
-	for (;;)
-	{
-		if (++nxtdir == maxdir)
-		{
-			int r;
-
-			r = read(dirf, dirbuf, sizeof(dirbuf)) / sizeof(struct direct);
-			if (maxdir = r)
-				nxtdir = 0;
-			else
-			{
-				nxtdir = -1;
-				return(0);
-			}
-		}
-
-		/* nxtdir is next available entry */
-		if (dirbuf[nxtdir].d_ino == 0)
-			continue;
-
-
-		return(&dirbuf[nxtdir]);
-	}
-}
-
 
 gmatch(s, p)
 register char   *s, *p;

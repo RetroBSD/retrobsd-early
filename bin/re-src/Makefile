@@ -27,4 +27,4 @@ all:            ../re ../../share/re.help
 ${OBJ}:         r.defs.h
 
 clean:
-		rm -f *.o *.elf ../re re *.elf *.dis *~
+		rm -f *.o *.elf ../re ../../share/re.help re *.elf *.dis *~
