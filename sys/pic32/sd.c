@@ -155,12 +155,28 @@ spi_wait_ready ()
                         break;
 }
 
+/*
+ * Read 512 bytes of data from SPI.
+ * As fast as possible.
+ */
 static void spi_get_sector (char *data)
 {
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
         int i;
 
-        for (i=0; i<SECTSIZE; i++) {
+        for (i=0; i<SECTSIZE; i+=4) {
+                reg->buf = 0xFF;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                *data++ = reg->buf;
+                reg->buf = 0xFF;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                *data++ = reg->buf;
+                reg->buf = 0xFF;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                *data++ = reg->buf;
                 reg->buf = 0xFF;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
@@ -168,12 +184,28 @@ static void spi_get_sector (char *data)
         }
 }
 
+/*
+ * Send 512 bytes of data to SPI.
+ * As fast as possible.
+ */
 static void spi_send_sector (char *data)
 {
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
         int i;
 
-        for (i=0; i<SECTSIZE; i++) {
+        for (i=0; i<SECTSIZE; i+=4) {
+                reg->buf = *data++;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                (void) reg->buf;
+                reg->buf = *data++;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                (void) reg->buf;
+                reg->buf = *data++;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                (void) reg->buf;
                 reg->buf = *data++;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
@@ -469,62 +501,6 @@ card_write (unit, offset, data, bcount)
 	printf ("sd%d: write offset %u, length %u bytes, addr %p\n",
 		unit, offset, bcount, data);
 #endif
-#if 1
-again:
-	/* Send WRITE command. */
-	spi_select (unit, 1);
-	reply = card_cmd (CMD_WRITE_SINGLE, offset);
-	if (reply != 0) {
-		/* Command rejected. */
-		spi_select (unit, 0);
-		return 0;
-	}
-
-	/* Send data. */
-	spi_io (DATA_START_BLOCK);
-        if (bcount >= SECTSIZE) {
-                spi_send_sector (data);
-                data += SECTSIZE;
-        } else {
-                i = 0;
-                while (i++ < bcount)
-                        spi_io (*data++);
-                while (i++ <= SECTSIZE)
-                        spi_io (0xFF);
-        }
-	/* Send dummy CRC. */
-	spi_io (0xFF);
-	spi_io (0xFF);
-
-	/* Check if data accepted. */
-	reply = spi_io (0xFF);
-	if ((reply & 0x1f) != 0x05) {
-		/* Data rejected. */
-		spi_select (unit, 0);
-		return 0;
-	}
-
-	/* Wait for write completion. */
-	for (i=0; ; i++) {
-		if (i >= 250000) {
-			/* Write timed out. */
-			spi_select (unit, 0);
-			return 0;
-		}
-		reply = spi_io (0xFF);
-		if (reply != 0)
-			break;
-	}
-
-	/* Disable the card. */
-	spi_select (unit, 0);
-
-        if (bcount > SECTSIZE) {
-                bcount -= SECTSIZE;
-                offset += (sd_type[unit] == 3) ? 1 : SECTSIZE;
-                goto again;
-        }
-#else
 	/* Send pre-erase count. */
 	spi_select (unit, 1);
         card_cmd (CMD_APP, 0);
@@ -601,7 +577,6 @@ again:
 	spi_io (STOP_TRAN_TOKEN);
         spi_wait_ready ();
 	spi_select (unit, 0);
-#endif
 	return 1;
 }
 
