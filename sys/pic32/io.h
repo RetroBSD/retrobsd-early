@@ -151,12 +151,27 @@ mips_intr_enable ()
  * Count a number of leading (most significant) zero bits in a word.
  */
 static int inline __attribute__ ((always_inline))
-mips_count_leading_zeroes (unsigned x)
+mips_clz (unsigned x)
 {
 	int n;
 
 	asm volatile ("clz	%0, %1"
 		: "=r" (n) : "r" (x));
+	return n;
+}
+
+/*
+ * Swap bytes in a word: ABCD to DCBA.
+ */
+static unsigned inline __attribute__ ((always_inline))
+mips_bswap (unsigned x)
+{
+	int n;
+
+	asm volatile (
+        "wsbh	%0, %1 \n"
+        "rotr   %0, 16"
+                : "=r" (n) : "r" (x));
 	return n;
 }
 #endif /* __ASSEMBLER__ */

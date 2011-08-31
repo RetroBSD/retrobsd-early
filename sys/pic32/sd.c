@@ -32,11 +32,7 @@
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
-#include "conf.h"
-#include "user.h"
-#include "dk.h"
-#include "syslog.h"
-#include "map.h"
+#include "errno.h"
 
 /*
  * Two SD/MMC disks on SPI.
@@ -157,60 +153,66 @@ spi_wait_ready ()
 
 /*
  * Read 512 bytes of data from SPI.
- * As fast as possible.
+ * As fast as possible: use 32-bit mode.
  */
 static void spi_get_sector (char *data)
 {
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+        int *data32 = (int*) data;
         int i;
 
-        for (i=0; i<SECTSIZE; i+=4) {
-                reg->buf = 0xFF;
+        reg->conset = PIC32_SPICON_MODE32;
+        for (i=0; i<SECTSIZE/4; i+=4) {
+                reg->buf = ~0;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
-                *data++ = reg->buf;
-                reg->buf = 0xFF;
+                *data32++ = mips_bswap (reg->buf);
+                reg->buf = ~0;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
-                *data++ = reg->buf;
-                reg->buf = 0xFF;
+                *data32++ = mips_bswap (reg->buf);
+                reg->buf = ~0;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
-                *data++ = reg->buf;
-                reg->buf = 0xFF;
+                *data32++ = mips_bswap (reg->buf);
+                reg->buf = ~0;
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
-                *data++ = reg->buf;
+                *data32++ = mips_bswap (reg->buf);
         }
+        reg->conclr = PIC32_SPICON_MODE32;
 }
 
 /*
  * Send 512 bytes of data to SPI.
- * As fast as possible.
+ * As fast as possible: use 32-bit mode.
  */
 static void spi_send_sector (char *data)
 {
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+        int *data32 = (int*) data;
         int i;
 
-        for (i=0; i<SECTSIZE; i+=4) {
-                reg->buf = *data++;
+        reg->conset = PIC32_SPICON_MODE32;
+        for (i=0; i<SECTSIZE/4; i+=4) {
+                reg->buf = mips_bswap (*data32++);
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
                 (void) reg->buf;
-                reg->buf = *data++;
+                reg->buf = mips_bswap (*data32++);
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
                 (void) reg->buf;
-                reg->buf = *data++;
+                reg->buf = mips_bswap (*data32++);
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
                 (void) reg->buf;
-                reg->buf = *data++;
+                reg->buf = mips_bswap (*data32++);
                 while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
                         continue;
                 (void) reg->buf;
         }
+        reg->conclr = PIC32_SPICON_MODE32;
 }
 
 /*
@@ -289,7 +291,6 @@ card_init (unit)
 	spi_select (unit, 0);
 	if (reply != 1) {
 		/* It must return Idle. */
-//printf ("sd%d: bad GO_IDLE reply = %d\n", unit, reply);
 		return 0;
 	}
 
@@ -300,7 +301,6 @@ card_init (unit)
                 /* Illegal command: card type 1. */
                 spi_select (unit, 0);
                 sd_type[unit] = 1;
-//printf ("sd%d: card type 1, reply=%02x\n", unit, reply);
         } else {
                 response[0] = spi_io (0xFF);
                 response[1] = spi_io (0xFF);
@@ -347,12 +347,9 @@ card_init (unit)
                 response[2] = spi_io (0xFF);
                 response[3] = spi_io (0xFF);
                 spi_select (unit, 0);
-//printf ("sd%d: READ_OCR response=%02x-%02x-%02x-%02x\n", unit, response[0], response[1], response[2], response[3]);
                 if ((response[0] & 0xC0) == 0xC0) {
                         sd_type[unit] = 3;
-//printf ("sd%d: card type SDHC\n", unit);
                 }
-//else printf ("sd%d: card type 2, reply=%02x\n", unit, reply);
         }
 	return 1;
 }
@@ -457,7 +454,6 @@ again:
 		reply = spi_io (0xFF);
 		if (reply == DATA_START_BLOCK)
 			break;
-//if (reply != 0xFF) printf ("card_read: READ_SINGLE reply = %d\n", reply);
 	}
 
 	/* Read data. */
@@ -465,10 +461,9 @@ again:
                 spi_get_sector (data);
                 data += SECTSIZE;
         } else {
-                i = 0;
-                while (i++ < bcount)
+                for (i=0; i<bcount; i++)
                         *data++ = spi_io (0xFF);
-                while (i++ <= SECTSIZE)
+                for (; i<SECTSIZE; i++)
                         spi_io (0xFF);
         }
 	/* Ignore CRC. */
@@ -509,7 +504,8 @@ card_write (unit, offset, data, bcount)
 	if (reply != 0) {
 		/* Command rejected. */
 		spi_select (unit, 0);
-//printf ("card_write: bad SET_WBECNT reply = %02x, count = %u\n", reply, (bcount + SECTSIZE - 1) / SECTSIZE);
+                printf ("card_write: bad SET_WBECNT reply = %02x, count = %u\n",
+                        reply, (bcount + SECTSIZE - 1) / SECTSIZE);
 		return 0;
 	}
 
@@ -518,7 +514,7 @@ card_write (unit, offset, data, bcount)
 	if (reply != 0) {
 		/* Command rejected. */
 		spi_select (unit, 0);
-//printf ("card_write: bad WRITE_MULTIPLE reply = %02x\n", reply);
+                printf ("card_write: bad WRITE_MULTIPLE reply = %02x\n", reply);
 		return 0;
 	}
 	spi_select (unit, 0);
@@ -529,14 +525,13 @@ again:
 
 	/* Send data. */
 	spi_io (WRITE_MULTIPLE_TOKEN);
-	i = 0;
         if (bcount >= SECTSIZE) {
                 spi_send_sector (data);
                 data += SECTSIZE;
         } else {
-                while (i++ < bcount)
+                for (i=0; i<bcount; i++)
                         spi_io (*data++);
-                while (i++ <= SECTSIZE)
+                for (; i<SECTSIZE; i++)
                         spi_io (0xFF);
         }
 	/* Send dummy CRC. */
@@ -548,7 +543,7 @@ again:
 	if ((reply & 0x1f) != 0x05) {
 		/* Data rejected. */
 		spi_select (unit, 0);
-//printf ("card_write: data rejected, reply = %02x\n", reply);
+                printf ("card_write: data rejected, reply = %02x\n", reply);
 		return 0;
 	}
 
@@ -557,7 +552,7 @@ again:
 		if (i >= 250000) {
 			/* Write timed out. */
 			spi_select (unit, 0);
-//printf ("card_write: timed out, reply = %02x\n", reply);
+                        printf ("card_write: timed out, reply = %02x\n", reply);
 			return 0;
 		}
 		reply = spi_io (0xFF);

@@ -1418,7 +1418,12 @@ static int srl_op (cpu_mips_t * cpu, mips_insn_t insn)
     int sa = bits (insn, 6, 10);
     m_uint32_t res;
 
+    /* srl */
     res = (m_uint32_t) cpu->gpr[rt] >> sa;
+    if ((insn >> 21) & 1) {
+        /* rotr */
+        res |= (m_uint32_t) cpu->gpr[rt] << (32 - sa);
+    }
     cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }
@@ -1428,9 +1433,15 @@ static int srlv_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rs = bits (insn, 21, 25);
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
-    m_uint32_t res;
+    m_uint32_t res, sa;
 
-    res = (m_uint32_t) cpu->gpr[rt] >> (cpu->gpr[rs] & 0x1f);
+    /* srlv */
+    sa = cpu->gpr[rs] & 0x1f;
+    res = (m_uint32_t) cpu->gpr[rt] >> sa;
+    if ((insn >> 6) & 1) {
+        /* rotrv */
+        res |= (m_uint32_t) cpu->gpr[rt] << (32 - sa);
+    }
     cpu->reg_set (cpu, rd, sign_extend (res, 32));
     return (0);
 }

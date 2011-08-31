@@ -55,14 +55,11 @@ struct pic32_system {
     unsigned boot_flash_address;    /* physical address of boot flash */
     char *boot_file_name;           /* image of boot flash */
 
+    unsigned sdcard_port;           /* SPI port number */
     unsigned sdcard0_size;          /* size of SD card 0 in Mbytes */
     unsigned sdcard1_size;          /* size of SD card 1 in Mbytes */
-    unsigned sdcard2_size;          /* size of SD card 2 in Mbytes */
-    unsigned sdcard3_size;          /* size of SD card 3 in Mbytes */
     char *sdcard0_file_name;        /* image of SD card 0 */
     char *sdcard1_file_name;        /* image of SD card 1 */
-    char *sdcard2_file_name;        /* image of SD card 2 */
-    char *sdcard3_file_name;        /* image of SD card 3 */
     sdcard_t sdcard [2];            /* max number of sdcards */
 
     struct vdevice *intdev;         /* interrupt controller */

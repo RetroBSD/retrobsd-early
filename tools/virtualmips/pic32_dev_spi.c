@@ -79,13 +79,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
     if (op_type == MTS_READ)
         *data = 0;
     switch (offset & 0x1f0) {
-#if defined UBW32 || defined MAX32
     case PIC32_SPI1CON & 0x1f0:         /* SPIx Control */
-#elif defined MAXIMITE
-    case PIC32_SPI4CON & 0x1f0:
-#else
-    ERROR: pic32_dev_spi.c - SPI port not defined!
-#endif
          if (op_type == MTS_READ) {
             *data = d->con;
         } else {
@@ -99,11 +93,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#if defined UBW32 || defined MAX32
     case PIC32_SPI1STAT & 0x1f0:        /* SPIx Status */
-#elif defined MAXIMITE
-    case PIC32_SPI4STAT & 0x1f0:
-#endif
         if (op_type == MTS_READ) {
             *data = d->stat;
         } else {
@@ -114,11 +104,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#if defined UBW32 || defined MAX32
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
-#elif defined MAXIMITE
-    case PIC32_SPI4BUF & 0x1ff:
-#endif
         if (op_type == MTS_READ) {
             *data = d->buf;
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
@@ -126,13 +112,36 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
                 //d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
             }
         } else {
-            d->buf = *data;
-#if defined UBW32 || defined MAX32
-            if (dev->phys_addr == PIC32_SPI1CON)
-#elif defined MAXIMITE
-            if (dev->phys_addr == PIC32_SPI4CON)
-#endif
-                d->buf = dev_sdcard_io (cpu, d->buf);
+            unsigned sdcard_port = d->pic32->sdcard_port;
+
+            /* Perform SD card i/o on configured SPI port. */
+            if ((dev->phys_addr == PIC32_SPI1CON && sdcard_port == 1) ||
+                (dev->phys_addr == PIC32_SPI2CON && sdcard_port == 2) ||
+                (dev->phys_addr == PIC32_SPI3CON && sdcard_port == 3) ||
+                (dev->phys_addr == PIC32_SPI4CON && sdcard_port == 4))
+            {
+                unsigned val = *data;
+
+                if (d->con & PIC32_SPICON_MODE32) {
+                    /* 32-bit data width */
+                    d->buf = (unsigned char) dev_sdcard_io (cpu, val >> 24) << 24;
+                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val >> 16) << 16;
+                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
+                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val);
+
+                } else if (d->con & PIC32_SPICON_MODE16) {
+                    /* 16-bit data width */
+                    d->buf = (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
+                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val);
+
+                } else {
+                    /* 8-bit data width */
+                    d->buf = (unsigned char) dev_sdcard_io (cpu, val);
+                }
+            } else {
+                /* No device */
+                d->buf = ~0;
+            }
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;
                 //d->vm->set_irq (d->vm, d->irq + IRQ_FAULT);
@@ -143,11 +152,7 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
         }
         break;
 
-#if defined UBW32 || defined MAX32
     case PIC32_SPI1BRG & 0x1f0:         /* SPIx Baud rate */
-#elif defined MAXIMITE
-    case PIC32_SPI4BRG & 0x1f0:
-#endif
         if (op_type == MTS_READ) {
             *data = d->brg;
         } else {

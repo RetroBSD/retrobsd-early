@@ -413,7 +413,7 @@ ffs (i)
 	u_long i;
 {
 	if (i != 0)
-		i = 32 - mips_count_leading_zeroes (i & -i);
+		i = 32 - mips_clz (i & -i);
 	return i;
 }
 

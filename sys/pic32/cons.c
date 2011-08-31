@@ -8,7 +8,6 @@
 #include "param.h"
 #include "conf.h"
 #include "user.h"
-#include "proc.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "systm.h"

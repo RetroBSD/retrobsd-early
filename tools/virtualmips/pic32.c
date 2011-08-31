@@ -230,24 +230,12 @@ static int pic32_init_platform (pic32_t *pic32)
     if (dev_pic32_spi_init (vm, "PIC32 SPI4", PIC32_SPI4CON,
             PIC32_IRQ_SPI4E) == -1)
         return (-1);
-#if defined UBW32 || defined MAX32
     if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
             pic32->sdcard0_file_name) < 0)
         return (-1);
     if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
             pic32->sdcard1_file_name) < 0)
         return (-1);
-#endif
-#if 0
-    if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 2", pic32->sdcard2_size,
-            pic32->sdcard2_file_name) < 0)
-        return (-1);
-#endif
-#ifdef MAXIMITE
-    if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 3", pic32->sdcard3_size,
-            pic32->sdcard3_file_name) < 0)
-        return (-1);
-#endif
 
     pic32->sdcard[1].unit = 1;
     return (0);
@@ -352,14 +340,11 @@ static void pic32_parse_configure (pic32_t *pic32)
         CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
         CFG_SIMPLE_STR ("start_address", &start_address),
         CFG_SIMPLE_STR ("trace_address", &trace_address),
+        CFG_SIMPLE_INT ("sdcard_port", &pic32->sdcard_port),
         CFG_SIMPLE_INT ("sdcard0_size", &pic32->sdcard0_size),
         CFG_SIMPLE_INT ("sdcard1_size", &pic32->sdcard1_size),
-        CFG_SIMPLE_INT ("sdcard2_size", &pic32->sdcard2_size),
-        CFG_SIMPLE_INT ("sdcard3_size", &pic32->sdcard3_size),
         CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
         CFG_SIMPLE_STR ("sdcard1_file_name", &pic32->sdcard1_file_name),
-        CFG_SIMPLE_STR ("sdcard2_file_name", &pic32->sdcard2_file_name),
-        CFG_SIMPLE_STR ("sdcard3_file_name", &pic32->sdcard3_file_name),
         CFG_SIMPLE_STR ("uart1_type", &uart_type[0]),
         CFG_SIMPLE_STR ("uart2_type", &uart_type[1]),
         CFG_SIMPLE_STR ("uart3_type", &uart_type[2]),
@@ -422,6 +407,9 @@ static void pic32_parse_configure (pic32_t *pic32)
         printf ("boot_flash_address: 0x%x\n", pic32->boot_flash_address);
         printf ("boot_file_name: %s\n", pic32->boot_file_name);
     }
+    if (pic32->sdcard_port) {
+        printf ("sdcard_port: SPI%d\n", pic32->sdcard_port);
+    }
     if (pic32->sdcard0_size > 0) {
         printf ("sdcard0_size: %dM bytes\n", pic32->sdcard0_size);
         printf ("sdcard0_file_name: %s\n", pic32->sdcard0_file_name);
@@ -429,14 +417,6 @@ static void pic32_parse_configure (pic32_t *pic32)
     if (pic32->sdcard1_size > 0) {
         printf ("sdcard1_size: %dM bytes\n", pic32->sdcard1_size);
         printf ("sdcard1_file_name: %s\n", pic32->sdcard1_file_name);
-    }
-    if (pic32->sdcard2_size > 0) {
-        printf ("sdcard2_size: %dM bytes\n", pic32->sdcard2_size);
-        printf ("sdcard2_file_name: %s\n", pic32->sdcard2_file_name);
-    }
-    if (pic32->sdcard3_size > 0) {
-        printf ("sdcard3_size: %dM bytes\n", pic32->sdcard3_size);
-        printf ("sdcard3_file_name: %s\n", pic32->sdcard3_file_name);
     }
 
     printf ("start_address: 0x%x\n", pic32->start_address);
