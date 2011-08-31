@@ -376,14 +376,14 @@ card_size (unit, nsectors)
 	}
 	/* Wait for a response. */
 	for (i=0; ; i++) {
+		reply = spi_io (0xFF);
+		if (reply == DATA_START_BLOCK)
+			break;
 		if (i >= 25000) {
 			/* Command timed out. */
 			spi_select (unit, 0);
 			return 0;
 		}
-		reply = spi_io (0xFF);
-		if (reply == DATA_START_BLOCK)
-			break;
 	}
 
 	/* Read data. */
@@ -430,30 +430,29 @@ card_read (unit, offset, data, bcount)
 	printf ("sd%d: read offset %u, length %u bytes, addr %p\n",
 		unit, offset, bcount, data);
 #endif
-again:
-	/* Send READ command. */
+	/* Send read-multiple command. */
 	spi_select (unit, 1);
-	reply = card_cmd (CMD_READ_SINGLE, offset);
+	reply = card_cmd (CMD_READ_MULTIPLE, offset);
 	if (reply != 0) {
 		/* Command rejected. */
-                printf ("card_read: bad READ_SINGLE reply = %d, offset = %08x\n",
+                printf ("card_read: bad READ_MULTIPLE reply = %d, offset = %08x\n",
                         reply, offset);
 		spi_select (unit, 0);
 		return 0;
 	}
-
+again:
 	/* Wait for a response. */
 	for (i=0; ; i++) {
+		reply = spi_io (0xFF);
+		if (reply == DATA_START_BLOCK)
+			break;
 		if (i >= 250000) {
 			/* Command timed out. */
-                        printf ("card_read: READ_SINGLE timed out, reply = %d\n",
+                        printf ("card_read: READ_MULTIPLE timed out, reply = %d\n",
                                 reply);
 			spi_select (unit, 0);
 			return 0;
 		}
-		reply = spi_io (0xFF);
-		if (reply == DATA_START_BLOCK)
-			break;
 	}
 
 	/* Read data. */
@@ -470,14 +469,15 @@ again:
         spi_io (0xFF);
         spi_io (0xFF);
 
-	/* Disable the card. */
-	spi_select (unit, 0);
-
         if (bcount > SECTSIZE) {
+                /* Next sector. */
                 bcount -= SECTSIZE;
-                offset += (sd_type[unit] == 3) ? 1 : SECTSIZE;
                 goto again;
         }
+
+        /* Stop a read-multiple sequence. */
+	card_cmd (CMD_STOP, 0);
+	spi_select (unit, 0);
 	return 1;
 }
 
@@ -517,13 +517,9 @@ card_write (unit, offset, data, bcount)
                 printf ("card_write: bad WRITE_MULTIPLE reply = %02x\n", reply);
 		return 0;
 	}
-	spi_select (unit, 0);
 again:
-        /* Select, wait while busy. */
-	spi_select (unit, 1);
-        spi_wait_ready ();
-
 	/* Send data. */
+	spi_io (0xFF);
 	spi_io (WRITE_MULTIPLE_TOKEN);
         if (bcount >= SECTSIZE) {
                 spi_send_sector (data);
@@ -548,27 +544,15 @@ again:
 	}
 
 	/* Wait for write completion. */
-	for (i=0; ; i++) {
-		if (i >= 250000) {
-			/* Write timed out. */
-			spi_select (unit, 0);
-                        printf ("card_write: timed out, reply = %02x\n", reply);
-			return 0;
-		}
-		reply = spi_io (0xFF);
-		if (reply != 0)
-			break;
-	}
-	spi_select (unit, 0);
+        spi_wait_ready ();
 
         if (bcount > SECTSIZE) {
+                /* Next sector. */
                 bcount -= SECTSIZE;
                 goto again;
         }
 
-        /* End a write multiple blocks sequence. */
-	spi_select (unit, 1);
-        spi_wait_ready ();
+        /* Stop a write-multiple sequence. */
 	spi_io (STOP_TRAN_TOKEN);
         spi_wait_ready ();
 	spi_select (unit, 0);
@@ -747,6 +731,13 @@ sdstrategy (bp)
                 (unsigned char) bp->b_addr[bp->b_bcount-3],
                 (unsigned char) bp->b_addr[bp->b_bcount-2],
                 (unsigned char) bp->b_addr[bp->b_bcount-1]);
+#endif
+#if 0
+	printf ("    %02x", (unsigned char) bp->b_addr[0]);
+        int i;
+	for (i=1; i<SECTSIZE && i<bp->b_bcount; i++)
+            printf ("-%02x", (unsigned char) bp->b_addr[i]);
+	printf ("\n");
 #endif
 	biodone (bp);
         led_control (LED_DISK, 0);

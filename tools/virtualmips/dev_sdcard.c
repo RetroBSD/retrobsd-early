@@ -34,7 +34,9 @@
 #define	CMD_SEND_OP_SDC     (0x40+41)   /* ACMD41 (SDC) */
 #define CMD_SET_BLEN        (0x40+16)
 #define CMD_SEND_CSD        (0x40+9)
+#define CMD_STOP            (0x40+12)
 #define CMD_READ_SINGLE     (0x40+17)
+#define CMD_READ_MULTIPLE   (0x40+18)
 #define CMD_SET_WBECNT      (0x40+23)   /* ACMD23 */
 #define CMD_WRITE_SINGLE    (0x40+24)
 #define CMD_WRITE_MULTIPLE  (0x40+25)
@@ -150,7 +152,7 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
     pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
     sdcard_t *d = pic32->sdcard[0].select ? &pic32->sdcard[0] :
                   pic32->sdcard[1].select ? &pic32->sdcard[1] : 0;
-    unsigned reply, offset;
+    unsigned reply;
 
     if (! d) {
         TRACE ("sdcard: unselected i/o\n");
@@ -250,14 +252,36 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             if (d->count == 7) {
                 /* Send reply */
                 reply = 0;
-                offset = d->buf[1] << 24 | d->buf[2] << 16 |
+                d->offset = d->buf[1] << 24 | d->buf[2] << 16 |
                     d->buf[3] << 8 | d->buf[4];
-                TRACE ("sdcard%d: read offset %#x, length %u kbytes\n", d->unit, offset, d->blen);
+                TRACE ("sdcard%d: read offset %#x, length %u kbytes\n",
+                    d->unit, d->offset, d->blen);
                 d->limit = d->blen + 3;
                 d->count = 1;
                 d->buf[0] = 0;
                 d->buf[1] = DATA_START_BLOCK;
-                sdcard_read_data (d->fd, offset, &d->buf[2], d->blen);
+                sdcard_read_data (d->fd, d->offset, &d->buf[2], d->blen);
+                d->buf[d->limit - 1] = 0xFF;
+                d->buf[d->limit] = 0xFF;
+            }
+            break;
+        case CMD_READ_MULTIPLE:         /* Read multiple blocks */
+            if (d->count >= 7)
+                break;
+            d->buf [d->count++] = data;
+            if (d->count == 7) {
+                /* Send reply */
+                reply = 0;
+                d->read_multiple = 1;
+                d->offset = d->buf[1] << 24 | d->buf[2] << 16 |
+                    d->buf[3] << 8 | d->buf[4];
+                TRACE ("sdcard%d: read offset %#x, length %u kbytes\n",
+                    d->unit, d->offset, d->blen);
+                d->limit = d->blen + 3;
+                d->count = 1;
+                d->buf[0] = 0;
+                d->buf[1] = DATA_START_BLOCK;
+                sdcard_read_data (d->fd, d->offset, &d->buf[2], d->blen);
                 d->buf[d->limit - 1] = 0xFF;
                 d->buf[d->limit] = 0xFF;
             }
@@ -269,16 +293,16 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             if (d->count == 7) {
                 /* Accept command */
                 reply = 0;
-                offset = d->buf[1] << 24 | d->buf[2] << 16 |
+                d->offset = d->buf[1] << 24 | d->buf[2] << 16 |
                     d->buf[3] << 8 | d->buf[4];
-                TRACE ("sdcard%d: write offset %#x\n", d->unit, offset);
+                TRACE ("sdcard%d: write offset %#x\n", d->unit, d->offset);
             } else if (d->count == 7 + d->blen + 2 + 2) {
                 if (d->buf[7] == DATA_START_BLOCK) {
                     /* Accept data */
                     reply = 0x05;
-                    offset = d->buf[1] << 24 | d->buf[2] << 16 |
+                    d->offset = d->buf[1] << 24 | d->buf[2] << 16 |
                         d->buf[3] << 8 | d->buf[4];
-                    sdcard_write_data (d->fd, offset, &d->buf[8], d->blen);
+                    sdcard_write_data (d->fd, d->offset, &d->buf[8], d->blen);
                     TRACE ("sdcard%d: write data, length %u kbytes\n", d->unit, d->blen);
                 } else {
                     /* Reject data */
@@ -294,9 +318,10 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             if (d->count == 7) {
                 /* Accept command */
                 reply = 0;
-                d->woffset = d->buf[1] << 24 | d->buf[2] << 16 |
+                d->offset = d->buf[1] << 24 | d->buf[2] << 16 |
                     d->buf[3] << 8 | d->buf[4];
-                TRACE ("sdcard%d: write multiple offset %#x\n", d->unit, d->woffset);
+                TRACE ("sdcard%d: write multiple offset %#x\n", d->unit, d->offset);
+                d->count = 0;
             }
             break;
         case WRITE_MULTIPLE_TOKEN:      /* Data for write-miltiple */
@@ -306,16 +331,31 @@ unsigned dev_sdcard_io (cpu_mips_t *cpu, unsigned data)
             if (d->count == 2 + d->blen + 2) {
                 /* Accept data */
                 reply = 0x05;
-                sdcard_write_data (d->fd, d->woffset, &d->buf[1], d->blen);
+                sdcard_write_data (d->fd, d->offset, &d->buf[1], d->blen);
                 TRACE ("sdcard%d: write sector %u, length %u kbytes\n",
-                    d->unit, d->woffset / 512, d->blen);
-                d->woffset += 512;
+                    d->unit, d->offset / 512, d->blen);
+                d->offset += 512;
+                d->count = 0;
             }
             break;
-        case 0:                         /* Reply */
-            if (d->count > d->limit)
+        case CMD_STOP:                  /* Stop read-multiple sequence */
+            if (d->count > 1)
                 break;
-            reply = d->buf [d->count++];
+            d->read_multiple = 0;
+            reply = 0;
+            break;
+        case 0:                         /* Reply */
+            if (d->count <= d->limit) {
+                reply = d->buf [d->count++];
+                break;
+            }
+            if (d->read_multiple) {
+                /* Next read-multiple block. */
+                d->offset += d->blen;
+                d->count = 1;
+                sdcard_read_data (d->fd, d->offset, &d->buf[2], d->blen);
+                reply = 0;
+            }
             break;
         default:                        /* Ignore */
             break;

@@ -16,9 +16,10 @@ struct sdcard {
     int unit;                           /* Index (sd0 or sd1) */
     int fd;                             /* Image file */
     int select;                         /* Selected */
+    int read_multiple;                  /* Read-multiple mode */
     unsigned blen;                      /* Block length */
     unsigned wbecnt;                    /* Write block erase count */
-    unsigned woffset;                   /* Write offset */
+    unsigned offset;                    /* Read/write offset */
     unsigned count;                     /* Byte count */
     unsigned limit;                     /* Reply length */
     unsigned char buf [1024 + 16];
