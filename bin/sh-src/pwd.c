@@ -148,21 +148,122 @@ cwd(dir)
 }
 
 /*
- * Find the current directory using the library function.
+ * Find the current directory the hard way.
  */
-#include <string.h>
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <sys/stat.h>
+
+static char dotdots[] =
+"../../../../../../../../../../../../../../../../../../../../../../../..";
+
+extern struct direct	*getdir();
+extern char		*movstrn();
 
 static
 pwd()
 {
-	char buffer[MAXPWD];
+	struct stat		cdir;	/* current directory status */
+	struct stat		tdir;
+	struct stat		pdir;	/* parent directory status */
+	int				pdfd;	/* parent directory file descriptor */
 
-	if (getwd(buffer)) {
-		strcpy (cwdname, buffer);
-		didpwd = TRUE;
-	} else {
-		error(buffer);
-                cwdname[0] = 0;
+	struct direct	*dir;
+	char 			*dot = dotdots + sizeof(dotdots) - 3;
+	int				index = sizeof(dotdots) - 2;
+	int				cwdindex = MAXPWD - 1;
+	int 			i;
+
+	cwdname[cwdindex] = 0;
+	dotdots[index] = 0;
+
+	if(stat(dot, &pdir) < 0)
+	{
+		error("pwd: cannot stat .");
+	}
+
+	dotdots[index] = '.';
+
+	for(;;)
+	{
+		cdir = pdir;
+
+		if ((pdfd = open(dot, 0)) < 0)
+		{
+			error("pwd: cannot open ..");
+		}
+
+		if(fstat(pdfd, &pdir) < 0)
+		{
+			close(pdfd);
+			error("pwd: cannot stat ..");
+		}
+
+		if(cdir.st_dev == pdir.st_dev)
+		{
+			if(cdir.st_ino == pdir.st_ino)
+			{
+				didpwd = TRUE;
+				close(pdfd);
+				if (cwdindex == (MAXPWD - 1))
+					cwdname[--cwdindex] = SLASH;
+
+				movstr(&cwdname[cwdindex], cwdname);
+				return;
+			}
+
+			do
+			{
+				if ((dir = getdir(pdfd)) == NIL)
+				{
+					close(pdfd);
+					reset_dir();
+					error("pwd: read error in ..");
+				}
+			}
+			while (dir->d_ino != cdir.st_ino);
+		}
+		else
+		{
+			char name[512];
+
+			movstr(dot, name);
+			i = length(name) - 1;
+
+			name[i++] = '/';
+
+			do
+			{
+				if ((dir = getdir(pdfd)) == NIL)
+				{
+					close(pdfd);
+					reset_dir();
+					error("pwd: read error in ..");
+				}
+				*(movstrn(dir->d_name, &name[i], MAXNAMLEN)) = 0;
+				stat(name, &tdir);
+			}
+			while(tdir.st_ino != cdir.st_ino || tdir.st_dev != cdir.st_dev);
+		}
+		close(pdfd);
+		reset_dir();
+
+		for (i = 0; i < MAXNAMLEN; i++)
+			if (dir->d_name[i] == 0)
+				break;
+
+		if (i > cwdindex - 1)
+				error(longpwd);
+		else
+		{
+			cwdindex -= i;
+			movstrn(dir->d_name, &cwdname[cwdindex], i);
+			cwdname[--cwdindex] = SLASH;
+		}
+
+		dot -= 3;
+		if (dot<dotdots)
+			error(longpwd);
 	}
 }
 

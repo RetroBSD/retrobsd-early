@@ -8,13 +8,11 @@
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-#define MAXDIR  64
 struct direct           *getdir();
 
-static struct direct    dirbuf[MAXDIR];
-static int              nxtdir = -1;
-static int              maxdir = 0;
 static char             entry[MAXNAMLEN+1];
+
+static DIR dirbuf;
 
 #define XXX 0200
 
@@ -59,15 +57,13 @@ char    *as1, *as2, *as3;
 expand(as, rcnt)
 	char    *as;
 {
-	int     count;
+	int     count, dirf;
 	BOOL    dir = 0;
 	char    *rescan = NIL;
 	register char   *s, *cs;
 	struct argnod   *schain = gchain;
 	struct stat statb;
 	BOOL    slash;
-	DIR* dirp;
-	char    *useAsDir;
 
 	if (trapnote & SIGSET)
 		return(0);
@@ -136,11 +132,14 @@ expand(as, rcnt)
 		}
 	}
 
-	useAsDir = (*s ? s : ".");
-	if (stat(useAsDir, &statb) != -1 &&
-            (statb.st_mode & S_IFMT) == S_IFDIR &&
-            (dirp = opendir(useAsDir)) != 0)
-		dir++;
+	if ((dirf = open(*s ? s : ".", 0)) > 0)
+	{
+		if (fstat(dirf, &statb) != -1 &&
+		    (statb.st_mode & S_IFMT) == S_IFDIR)
+			dir++;
+		else
+			close(dirf);
+	}
 
 	count = 0;
 	if (*cs == 0)
@@ -148,7 +147,7 @@ expand(as, rcnt)
 	if (dir)                /* check for rescan */
 	{
 		register char *rs;
-		struct direct *dp;
+		struct direct *e;
 
 		rs = cs;
 		do
@@ -161,9 +160,9 @@ expand(as, rcnt)
 			}
 		} while (*rs++);
 
-		while ((dp = readdir(dirp)) && (trapnote & SIGSET) == 0)
+		while ((e = getdir(dirf)) && (trapnote & SIGSET) == 0)
 		{
-			*(movstrn(dp->d_name, entry, MAXNAMLEN)) = 0;
+			*(movstrn(e->d_name, entry, MAXNAMLEN)) = 0;
 
 			if (entry[0] == '.' && *cs != '.')
 #ifndef BOURNE
@@ -183,7 +182,8 @@ expand(as, rcnt)
 				count++;
 			}
 		}
-		closedir(dirp);
+		close(dirf);
+		reset_dir();
 
 		if (rescan)
 		{
@@ -214,6 +214,46 @@ expand(as, rcnt)
 	}
 	return(count);
 }
+
+
+reset_dir()
+{
+	dirbuf.dd_loc = 0;
+}
+
+
+/*
+ * read next directory entry
+ * and ignore inode == 0
+ *
+ */
+
+struct direct *
+getdir(dirf)
+{
+	struct direct *dp;
+	for (;;) {
+		if (dirbuf.dd_loc == 0) {
+			dirbuf.dd_size = read(dirf, dirbuf.dd_buf,
+			    DIRBLKSIZ);
+			if (dirbuf.dd_size <= 0)
+				return NULL;
+		}
+		if (dirbuf.dd_loc >= dirbuf.dd_size) {
+			dirbuf.dd_loc = 0;
+			continue;
+		}
+		dp = (struct direct *)(dirbuf.dd_buf + dirbuf.dd_loc);
+		if (dp->d_reclen <= 0 ||
+		    dp->d_reclen > DIRBLKSIZ + 1 - dirbuf.dd_loc)
+			return NULL;
+		dirbuf.dd_loc += dp->d_reclen;
+		if (dp->d_ino == 0)
+			continue;
+		return (dp);
+	}
+}
+
 
 gmatch(s, p)
 register char   *s, *p;
