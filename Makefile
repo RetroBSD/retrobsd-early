@@ -179,4 +179,5 @@ tags:
 
 clean:
 		rm -f unix.hex root.bin swap.bin *~
-		for i in ${LIBDIR} $(TARGET) ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done
+		for i in ${LIBDIR} ${UBW32} ${MAXIMITE} ${MAX32} ${SRCDIR}; \
+		do (cd $$i; make -k ${MFLAGS} clean); done

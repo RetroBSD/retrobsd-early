@@ -131,8 +131,8 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 load:           unix.elf
 		$(AVRDUDE) -v -U flash:w:unix.hex:i
 
-vers.o:		$(H)/*.h $(M)/*.[ch] $(S)/*.c
-		sh newvers.sh
+vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
+		sh ../newvers.sh > vers.c
 		$(CC) -c vers.c
 
 .SUFFIXES:	.i .srec .hex .dis .cpp .cxx .bin .elf
