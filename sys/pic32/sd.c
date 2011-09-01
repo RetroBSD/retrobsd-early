@@ -517,9 +517,13 @@ card_write (unit, offset, data, bcount)
                 printf ("card_write: bad WRITE_MULTIPLE reply = %02x\n", reply);
 		return 0;
 	}
+	spi_select (unit, 0);
 again:
+        /* Select, wait while busy. */
+	spi_select (unit, 1);
+        spi_wait_ready ();
+
 	/* Send data. */
-	spi_io (0xFF);
 	spi_io (WRITE_MULTIPLE_TOKEN);
         if (bcount >= SECTSIZE) {
                 spi_send_sector (data);
@@ -545,6 +549,7 @@ again:
 
 	/* Wait for write completion. */
         spi_wait_ready ();
+	spi_select (unit, 0);
 
         if (bcount > SECTSIZE) {
                 /* Next sector. */
@@ -553,6 +558,8 @@ again:
         }
 
         /* Stop a write-multiple sequence. */
+	spi_select (unit, 1);
+        spi_wait_ready ();
 	spi_io (STOP_TRAN_TOKEN);
         spi_wait_ready ();
 	spi_select (unit, 0);
