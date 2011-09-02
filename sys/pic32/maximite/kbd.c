@@ -211,15 +211,15 @@ void read_kbd(void)
                             }
                         }
 					
-					    if(LShift || RShift)
-                            chr = lowerKey[code%128];                       // get the ASCII code
+					    if(LShift || RShift)                        // get the ASCII code
+                            chr = lowerKey[code%128];
                         else
                             chr = upperKey[code%128];
 
-                        if(!chr)                                            // it was an unmapped key
+                        if(!chr)                                    // it was an unmapped key
                             break;
 
-                        if(CapsLock && chr >= 'a' && chr <= 'z')            // check for altered keys
+                        if(CapsLock && chr >= 'a' && chr <= 'z')    // check for altered keys
                             chr -= 32;
                         if(LCtrl)
                             chr &= 0x1F;
@@ -227,12 +227,12 @@ void read_kbd(void)
                         in_queue[in_queue_head] = chr;
                         in_queue_head = (in_queue_head + 1) % QUEUE_SIZE;
 
-                        if(chr == 3) {                                      // check for CTL-C
+                        if(chr == 3) {                              // check for CTL-C
                             in_queue_head = in_queue_tail = 0;
                             abort = true;
                         }
 
-//						PrintSignonToUSB = false;         // show that the user is using the keyboard
+//						PrintSignonToUSB = false;                 // show that the keyboard is in use
 
                     } // if key_up	
 exit:
@@ -245,28 +245,10 @@ exit:
         } // if(!clock)
 
     } else // if(key_state)
-        key_state = 1;                                  // PS2CLOCK == 1, rising edge detected
+        key_state = 1;                                          // PS2CLOCK == 1, rising edge detected
 
-    if (--key_timer == 0)
-        state = PS2START;                               // timeout, reset state machine
-
-/*
-//	GS I2C Start
-		if (I2C_Timer) {
-			if (--I2C_Timer == 0) {
-				I2C_Status |= I2C_Status_Timeout;
-				mI2C1MSetIntFlag();
-			}
-		}
-		if (I2C_Status & I2C_Status_MasterCmd) {
-			if (!(I2C1STAT & _I2C1STAT_S_MASK)) {
-				I2C_Status &= ~I2C_Status_MasterCmd;
-				I2C_State = I2C_State_Start;
-				I2C1CONSET =_I2C1CON_SEN_MASK;
-			}
-		}
-//	GS I2C End
-*/
+    if ((key_timer -= POLL) <= 0)
+        state = PS2START;                                       // timeout, reset state machine
 
     return;
 }
