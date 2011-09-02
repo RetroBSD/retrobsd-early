@@ -44,7 +44,7 @@
 #define NSD		2
 #define SECTSIZE	512
 #define SLOW		250     /* 250 kHz */
-#define FAST		14000   /* 13.33 MHz */
+#define SPI_ENHANCED            /* use SPI fifo */
 
 int sd_type[NSD];               /* Card type */
 
@@ -153,14 +153,30 @@ spi_wait_ready ()
 
 /*
  * Read 512 bytes of data from SPI.
- * As fast as possible: use 32-bit mode.
+ * Use 32-bit mode and 4-word deep FIFO.
  */
 static void spi_get_sector (char *data)
 {
-	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+        register struct sdreg *reg = (struct sdreg*) &SD_PORT;
         int *data32 = (int*) data;
         int i;
 
+#ifdef SPI_ENHANCED
+        reg->conset = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
+        for (i=0; i<SECTSIZE/4; i+=4) {
+                reg->buf = ~0;
+                reg->buf = ~0;
+                reg->buf = ~0;
+                reg->buf = ~0;
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                *data32++ = mips_bswap (reg->buf);
+                *data32++ = mips_bswap (reg->buf);
+                *data32++ = mips_bswap (reg->buf);
+                *data32++ = mips_bswap (reg->buf);
+        }
+        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
+#else
         reg->conset = PIC32_SPICON_MODE32;
         for (i=0; i<SECTSIZE/4; i+=4) {
                 reg->buf = ~0;
@@ -181,11 +197,12 @@ static void spi_get_sector (char *data)
                 *data32++ = mips_bswap (reg->buf);
         }
         reg->conclr = PIC32_SPICON_MODE32;
+#endif
 }
 
 /*
  * Send 512 bytes of data to SPI.
- * As fast as possible: use 32-bit mode.
+ * Use 32-bit mode and 4-word deep FIFO.
  */
 static void spi_send_sector (char *data)
 {
@@ -193,6 +210,22 @@ static void spi_send_sector (char *data)
         int *data32 = (int*) data;
         int i;
 
+#ifdef SPI_ENHANCED
+        reg->conset = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
+        for (i=0; i<SECTSIZE/4; i+=4) {
+                reg->buf = mips_bswap (*data32++);
+                reg->buf = mips_bswap (*data32++);
+                reg->buf = mips_bswap (*data32++);
+                reg->buf = mips_bswap (*data32++);
+                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
+                        continue;
+                (void) reg->buf;
+                (void) reg->buf;
+                (void) reg->buf;
+                (void) reg->buf;
+        }
+        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
+#else
         reg->conset = PIC32_SPICON_MODE32;
         for (i=0; i<SECTSIZE/4; i+=4) {
                 reg->buf = mips_bswap (*data32++);
@@ -213,6 +246,7 @@ static void spi_send_sector (char *data)
                 (void) reg->buf;
         }
         reg->conclr = PIC32_SPICON_MODE32;
+#endif
 }
 
 /*
@@ -625,7 +659,7 @@ sdopen (dev, flag, mode)
 {
 	register int unit = minor (dev);
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
-	unsigned nsectors;
+	unsigned nsectors, brg;
 
 	if (unit >= NSD)
 		return ENXIO;
@@ -639,7 +673,7 @@ sdopen (dev, flag, mode)
 #ifdef SD_CS1_PORT
 		TRIS_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
 #endif
-                /* Slow speed: max 40 kbit/sec. */
+                /* Slow speed. */
                 reg->stat = 0;
                 reg->brg = (BUS_KHZ / SLOW + 1) / 2 - 1;
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
@@ -652,18 +686,22 @@ sdopen (dev, flag, mode)
                         printf ("sd%d: no SD/MMC card detected\n", unit);
                         return ENODEV;
                 }
-                if (card_size (unit, &nsectors)) {
-                        printf ("sd%d: card type %s, size %u kbytes\n", unit,
-                                sd_type[unit]==3 ? "SDHC" :
-                                sd_type[unit]==2 ? "II" : "I",
-                                nsectors / (DEV_BSIZE / SECTSIZE));
+                /* Fast speed. */
+                for (brg=0; brg<10; brg++) {
+                        reg->brg = brg;
+                        if (card_size (unit, &nsectors))
+                                break;
                 }
+                if (brg >= 10) {
+                        printf ("sd%d: too slow card\n", unit);
+                        return ENODEV;
+                }
+                printf ("sd%d: type %s, size %u kbytes, speed %u Mbit/sec\n", unit,
+                        sd_type[unit]==3 ? "SDHC" :
+                        sd_type[unit]==2 ? "II" : "I",
+                        nsectors / (DEV_BSIZE / SECTSIZE),
+                        CPU_KHZ / (brg+1) / 2000);
 	}
-	/* Fast speed: up to 25 Mbit/sec allowed. */
-	reg->stat = 0;
-	reg->brg = (BUS_KHZ / FAST + 1) / 2 - 1;
-	reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
-                PIC32_SPICON_ON;
 	return 0;
 }
 

@@ -546,6 +546,7 @@
 #define PIC32_SPICON_SIDL       0x00002000      /* Stop in Idle mode */
 #define PIC32_SPICON_FRZ        0x00004000      /* Freeze in Debug mode */
 #define PIC32_SPICON_ON         0x00008000      /* SPI Peripheral is enabled */
+#define PIC32_SPICON_ENHBUF     0x00010000      /* Enhanced buffer enable */
 #define PIC32_SPICON_SPIFE      0x00020000      /* Frame synchronization pulse
                                                  * coincides with the first bit clock */
 #define PIC32_SPICON_FRMPOL     0x20000000      /* Frame pulse is active-high */

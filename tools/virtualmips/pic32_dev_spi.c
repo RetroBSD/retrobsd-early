@@ -37,8 +37,11 @@ struct pic32_spi_data {
 
     unsigned        con;            /* 0x00 - Control */
     unsigned        stat;           /* 0x10 - Status */
-    unsigned        buf;            /* 0x20 - Transmit and receive buffer */
+    unsigned        buf [4];        /* 0x20 - Transmit and receive buffer */
     unsigned        brg;            /* 0x40 - Baud rate generator */
+
+    unsigned        rfifo;          /* read fifo counter */
+    unsigned        wfifo;          /* write fifo counter */
 };
 
 extern cpu_mips_t *current_cpu;
@@ -89,6 +92,9 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
                 d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
                 d->vm->clear_irq (d->vm, d->irq + IRQ_TX);
                 d->stat = PIC32_SPISTAT_SPITBE;
+            } else if (! (d->con & PIC32_SPICON_ENHBUF)) {
+                d->rfifo = 0;
+                d->wfifo = 0;
             }
         }
         break;
@@ -106,7 +112,11 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
 
     case PIC32_SPI1BUF & 0x1ff:         /* SPIx SPIx Buffer */
         if (op_type == MTS_READ) {
-            *data = d->buf;
+            *data = d->buf [d->rfifo];
+            if (d->con & PIC32_SPICON_ENHBUF) {
+                d->rfifo++;
+                d->rfifo &= 3;
+            }
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat &= ~PIC32_SPISTAT_SPIRBF;
                 //d->vm->clear_irq (d->vm, d->irq + IRQ_RX);
@@ -124,27 +134,34 @@ void *dev_pic32_spi_access (cpu_mips_t * cpu, struct vdevice *dev,
 
                 if (d->con & PIC32_SPICON_MODE32) {
                     /* 32-bit data width */
-                    d->buf = (unsigned char) dev_sdcard_io (cpu, val >> 24) << 24;
-                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val >> 16) << 16;
-                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
-                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val);
+                    d->buf [d->wfifo] = (unsigned char) dev_sdcard_io (cpu, val >> 24) << 24;
+                    d->buf [d->wfifo] |= (unsigned char) dev_sdcard_io (cpu, val >> 16) << 16;
+                    d->buf [d->wfifo] |= (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
+                    d->buf [d->wfifo] |= (unsigned char) dev_sdcard_io (cpu, val);
 
                 } else if (d->con & PIC32_SPICON_MODE16) {
                     /* 16-bit data width */
-                    d->buf = (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
-                    d->buf |= (unsigned char) dev_sdcard_io (cpu, val);
+                    d->buf [d->wfifo] = (unsigned char) dev_sdcard_io (cpu, val >> 8) << 8;
+                    d->buf [d->wfifo] |= (unsigned char) dev_sdcard_io (cpu, val);
 
                 } else {
                     /* 8-bit data width */
-                    d->buf = (unsigned char) dev_sdcard_io (cpu, val);
+                    d->buf [d->wfifo] = (unsigned char) dev_sdcard_io (cpu, val);
                 }
             } else {
                 /* No device */
-                d->buf = ~0;
+                d->buf [d->wfifo] = ~0;
             }
             if (d->stat & PIC32_SPISTAT_SPIRBF) {
                 d->stat |= PIC32_SPISTAT_SPIROV;
                 //d->vm->set_irq (d->vm, d->irq + IRQ_FAULT);
+            } else if (d->con & PIC32_SPICON_ENHBUF) {
+                d->wfifo++;
+                d->wfifo &= 3;
+                if (d->wfifo == d->rfifo) {
+                    d->stat |= PIC32_SPISTAT_SPIRBF;
+                    //d->vm->set_irq (d->vm, d->irq + IRQ_RX);
+                }
             } else {
                 d->stat |= PIC32_SPISTAT_SPIRBF;
                 //d->vm->set_irq (d->vm, d->irq + IRQ_RX);
@@ -173,7 +190,8 @@ void dev_pic32_spi_reset (cpu_mips_t *cpu, struct vdevice *dev)
 
     d->con = 0;
     d->stat = PIC32_SPISTAT_SPITBE;             /* Transmit buffer is empty */
-    d->buf = 0;
+    d->wfifo = 0;
+    d->rfifo = 0;
     d->brg = 0;
 }
 
