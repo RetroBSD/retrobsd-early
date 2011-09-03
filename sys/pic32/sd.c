@@ -162,18 +162,18 @@ static void spi_get_sector (char *data)
         int i;
 
 #ifdef SPI_ENHANCED
+        int r = 0;
+        i = SECTSIZE/4;
         reg->conset = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
-        for (i=0; i<SECTSIZE/4; i+=4) {
-                reg->buf = ~0;
-                reg->buf = ~0;
-                reg->buf = ~0;
-                reg->buf = ~0;
-                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
-                        continue;
-                *data32++ = mips_bswap (reg->buf);
-                *data32++ = mips_bswap (reg->buf);
-                *data32++ = mips_bswap (reg->buf);
-                *data32++ = mips_bswap (reg->buf);
+        while (r < SECTSIZE/4) {
+                if (i > 0 && ! (reg->stat & PIC32_SPISTAT_SPITBF)) {
+                        reg->buf = ~0;
+                        i--;
+                }
+                if (! (reg->stat & PIC32_SPISTAT_SPIRBE)) {
+                        *data32++ = mips_bswap (reg->buf);
+                        r++;
+                }
         }
         reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
 #else
@@ -211,20 +211,20 @@ static void spi_send_sector (char *data)
         int i;
 
 #ifdef SPI_ENHANCED
+        int r = 0;
+        i = SECTSIZE/4;
         reg->conset = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
-        for (i=0; i<SECTSIZE/4; i+=4) {
-                reg->buf = mips_bswap (*data32++);
-                reg->buf = mips_bswap (*data32++);
-                reg->buf = mips_bswap (*data32++);
-                reg->buf = mips_bswap (*data32++);
-                while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
-                        continue;
-                (void) reg->buf;
-                (void) reg->buf;
-                (void) reg->buf;
-                (void) reg->buf;
+        while (r < SECTSIZE/4) {
+                if (i > 0 && ! (reg->stat & PIC32_SPISTAT_SPITBF)) {
+                        reg->buf = mips_bswap (*data32++);
+                        i--;
+                }
+                if (! (reg->stat & PIC32_SPISTAT_SPIRBE)) {
+                        (void) reg->buf;
+                        r++;
+                }
         }
-        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
+        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF | PIC32_SPISTAT_SPIROV;
 #else
         reg->conset = PIC32_SPICON_MODE32;
         for (i=0; i<SECTSIZE/4; i+=4) {

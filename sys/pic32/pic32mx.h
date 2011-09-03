@@ -814,7 +814,9 @@
  * SPI Status register.
  */
 #define PIC32_SPISTAT_SPIRBF	0x00000001      /* Receive buffer is full */
+#define PIC32_SPISTAT_SPITBF	0x00000002      /* Transmit buffer is full */
 #define PIC32_SPISTAT_SPITBE	0x00000008      /* Transmit buffer is empty */
+#define PIC32_SPISTAT_SPIRBE    0x00000020      /* Receive buffer is empty */
 #define PIC32_SPISTAT_SPIROV	0x00000040      /* Receive overflow flag */
 #define PIC32_SPISTAT_SPIBUSY	0x00000800      /* SPI is busy */
 
