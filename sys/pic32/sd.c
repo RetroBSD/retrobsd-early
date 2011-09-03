@@ -700,7 +700,7 @@ sdopen (dev, flag, mode)
                         sd_type[unit]==3 ? "SDHC" :
                         sd_type[unit]==2 ? "II" : "I",
                         nsectors / (DEV_BSIZE / SECTSIZE),
-                        CPU_KHZ / (brg+1) / 2000);
+                        BUS_KHZ / (brg+1) / 2000);
 	}
 	return 0;
 }
@@ -728,7 +728,7 @@ sdstrategy (bp)
 	register struct buf *bp;
 {
 	int s, unit, retry;
-	unsigned offset;
+	unsigned offset, led = LED_DISK;
 
 	unit = minor (bp->b_dev);
 #if 0
@@ -736,7 +736,11 @@ sdstrategy (bp)
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
 #endif
-        led_control (LED_DISK, 1);
+        if (bp->b_blkno >= 257 && bp->b_blkno < 257+2048) {
+                /* Dirty hack: visualize swap */
+                led = LED_AUX;
+        }
+        led_control (led, 1);
         s = splbio();
 	if (unit >= NSD) {
 		bp->b_error = ENXIO;
@@ -785,6 +789,6 @@ sdstrategy (bp)
 	printf ("\n");
 #endif
 	biodone (bp);
-        led_control (LED_DISK, 0);
+        led_control (led, 0);
         splx (s);
 }
