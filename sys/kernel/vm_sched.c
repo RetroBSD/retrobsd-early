@@ -31,113 +31,86 @@ void
 sched()
 {
 	register struct proc *rp;
-	struct proc *p_in, *p_out;
-	int inage, maxsize, outpri;
+	struct proc *swapped_out = 0, *in_core = 0;
+	register int out_time, rptime;
 
-	/* Find user to swap in; of users ready, select one out longest. */
 	for (;;) {
-		register int l_outpri, rppri;
-		register int l_maxsize;
+	        /* Perform swap-out/swap-in action. */
+		spl0();
+		if (in_core)
+                        swapout (in_core, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
+		if (swapped_out)
+                        swapin (swapped_out);
+		splhigh();
+		in_core = 0;
+		swapped_out = 0;
 
-		(void) spl0();
-		(void) splhigh();
-
-		l_outpri = -20000;
-		p_in = 0;
+                /* Find user to swap in; of users ready,
+                 * select one out longest. */
+		out_time = -20000;
 		for (rp = allproc; rp; rp = rp->p_nxt) {
 			if (rp->p_stat != SRUN || (rp->p_flag & SLOAD))
 				continue;
-			rppri = rp->p_time - rp->p_nice * 8;
+			rptime = rp->p_time - rp->p_nice * 8;
 
 			/*
 			 * Always bring in parents ending a vfork,
 			 * to avoid deadlock
 			 */
-			if (rppri > l_outpri || (rp->p_flag & SVFPRNT)) {
-				p_in = rp;
-				l_outpri = rppri;
+			if (rptime > out_time || (rp->p_flag & SVFPRNT)) {
+				swapped_out = rp;
+				out_time = rptime;
 				if (rp->p_flag & SVFPRNT)
 					break;
 			}
 		}
 
 		/* If there is no one there, wait. */
-		if (! p_in) {
+		if (! swapped_out) {
 			++runout;
 			sleep ((caddr_t) &runout, PSWP);
 			continue;
 		}
-		outpri = l_outpri;
 
 		/*
-		 * Look around for somebody to swap out: 1) kick out dead wood
-		 * (processes asleep longer than maxslp+10); or 2) select out
-		 * of the processes sleeping interruptibly the process with
-		 * maximum f(size, slptime); or 3) if none, select the oldest.
-		 * If we can find someone to swap out we try to swap someone
-		 * else (hopefully) in, possibly causing someone else to get
-		 * swapped out.
-		 *
-		 * f(size, slptime) = size + (slptime - maxslp) * 16
-		 *
-		 * This weighting is designed to penalize linearly for size
-		 * and excessive slptime, but to reward processes which are
-		 * executing or have executed recently.
+		 * Look around for somebody to swap out.
+		 * There may be only one non-system loaded process.
 		 */
-		l_maxsize = MINFINITY;
-		inage = -1;
-		p_out = 0;
 		for (rp = allproc; rp != NULL; rp = rp->p_nxt) {
-			if (rp->p_stat == SZOMB ||
-			    (rp->p_flag & (SSYS | SLOCK | SULOCK | SLOAD)) != SLOAD)
-				continue;
-			if ((rp->p_stat == SSLEEP && (rp->p_flag & P_SINTR)) ||
-			    rp->p_stat == SSTOP) {
-				register int size;
-
-				if (rp->p_slptime > maxslp+10) {
-					p_out = rp;
-					l_maxsize = 1;
-					break;
-				}
-				size = rp->p_dsize + rp->p_ssize +
-					(rp->p_slptime - (maxslp << 4));
-				if (l_maxsize < size) {
-					p_out = rp;
-					l_maxsize = size;
-				}
-			} else if (l_maxsize == MINFINITY &&
-			    (rp->p_stat == SRUN || rp->p_stat == SSLEEP)) {
-				register int rppri;
-
-				rppri = rp->p_time + rp->p_nice;
-				if (rppri > inage) {
-					p_out = rp;
-					inage = rppri;
-				}
-			}
+			if (rp->p_stat != SZOMB &&
+			    (rp->p_flag & (SSYS | SLOAD)) == SLOAD) {
+			        in_core = rp;
+				break;
+                        }
 		}
-		maxsize = l_maxsize;
+                if (! in_core) {
+                        /* In-core memory is empty. */
+			continue;
+                }
 
-		if (p_out) {
-			/*
-			 * Swap found user out if sleeping interruptibly, or if he has spent at
-			 * least 1 second in core and the swapped-out process has spent at
-			 * least 2 seconds out.  Otherwise wait a bit and try again.
-			 */
-			if (maxsize == MINFINITY && (outpri < 2 || inage < 1)) {
-				++runin;
-				sleep ((caddr_t) &runin, PSWP);
-				continue;
-			}
-			p_out->p_flag &= ~SLOAD;
-			if (p_out->p_stat == SRUN)
-				remrq (p_out);
-			(void) spl0();
-			swapout (p_out, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
-		}
-		(void) spl0();
-		swapin (p_in);
+                /*
+                 * Swap found user out if sleeping interruptibly, or if he has spent at
+                 * least 1 second in core and the swapped-out process has spent at
+                 * least 2 seconds out.  Otherwise wait a bit and try again.
+                 */
+                if (! (in_core->p_flag & SLOCK) &&
+                    (in_core->p_stat == SSTOP ||
+                     (in_core->p_stat == SSLEEP && (in_core->p_flag & P_SINTR)) ||
+                     ((in_core->p_stat == SRUN || in_core->p_stat == SSLEEP) &&
+                      out_time >= 2 &&
+                      in_core->p_time + in_core->p_nice >= 1)))
+                {
+                        /* Swap out in-core process. */
+                        in_core->p_flag &= ~SLOAD;
+                        if (in_core->p_stat == SRUN)
+                                remrq (in_core);
+                } else {
+                        /* Nothing to swap in/out. */
+                        in_core = 0;
+                        swapped_out = 0;
+                        ++runin;
+                        sleep ((caddr_t) &runin, PSWP);
+                }
 	}
 }
 

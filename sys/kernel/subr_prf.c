@@ -534,13 +534,3 @@ panic(s)
 	printf ("panic: %s\n", s);
 	boot (rootdev, bootopt);
 }
-
-/*
- * Warn that a system table is full.
- */
-void
-tablefull (tab)
-	char *tab;
-{
-	log(LOG_ERR, "%s: table full\n", tab);
-}

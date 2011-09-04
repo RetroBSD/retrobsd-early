@@ -208,25 +208,6 @@ ucall()
 }
 
 /*
- * Lock user into core as much as possible.  Swapping may still
- * occur if core grows.
- */
-void
-lock()
-{
-	struct a {
-		int	flag;
-	};
-
-	if (!suser())
-		return;
-	if (((struct a *)u.u_arg)->flag)
-		u.u_procp->p_flag |= SULOCK;
-	else
-		u.u_procp->p_flag &= ~SULOCK;
-}
-
-/*
  * fetch the word at iaddr from flash memory.  This system call is
  * required on PIC32 because in user mode the access to flash memory
  * region is not allowed.

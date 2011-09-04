@@ -321,7 +321,7 @@ falloc()
 	for (fp = file; fp < lastf; fp++)
 		if (fp->f_count == 0)
 			goto slot;
-	tablefull("file");
+	log(LOG_ERR, "file: table full\n");
 	u.u_error = ENFILE;
 	return (NULL);
 slot:

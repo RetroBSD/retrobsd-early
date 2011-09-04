@@ -101,7 +101,6 @@ void logwakeup (int unit);
 void cninit (void);
 void cnidentify (void);
 void cnputc (char c);
-void tablefull (char *tab);		/* warn that a system table is full */
 int baduaddr (caddr_t addr);		/* detect bad user address */
 int badkaddr (caddr_t addr);		/* detect bad kernel address */
 
@@ -173,7 +172,7 @@ void	ucall (void);					/* 2BSD calls */
 
 /* 1.2 memory management */
 void	brk (void);
-void	lock (void), fetchi (void);				/* 2BSD calls */
+void	fetchi (void);                                  /* 2BSD calls */
 
 /* 1.3 signals */
 void	sigstack (void), sigreturn (void);

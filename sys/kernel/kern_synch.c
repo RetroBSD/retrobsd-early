@@ -326,7 +326,7 @@ restart:
 				 * p->p_pri is always better than curpri.
 				 */
 				runrun++;
-				if ((p->p_flag&SLOAD) == 0) {
+				if (! (p->p_flag & SLOAD)) {
 					if (runout != 0) {
 						runout = 0;
 						wakeup((caddr_t)&runout);
@@ -377,7 +377,7 @@ setrun (p)
 	splx(s);
 	if (p->p_pri < curpri)
 		runrun++;
-	if ((p->p_flag&SLOAD) == 0) {
+	if (! (p->p_flag & SLOAD)) {
 		if (runout != 0) {
 			runout = 0;
 			wakeup((caddr_t)&runout);

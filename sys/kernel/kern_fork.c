@@ -12,6 +12,7 @@
 #include "file.h"
 #include "vm.h"
 #include "kernel.h"
+#include "syslog.h"
 
 /*
  * Create a new process -- the internal version of system call fork.
@@ -213,7 +214,8 @@ fork1 (isvfork)
 	 */
 	p2 = freeproc;
 	if (p2==NULL)
-		tablefull("proc");
+                log(LOG_ERR, "proc: table full\n");
+
 	if (p2==NULL || (u.u_uid!=0 && (p2->p_nxt == NULL || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		return;

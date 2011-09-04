@@ -54,7 +54,7 @@ exit (rv)
 	struct	proc **pp;
 
 	p = u.u_procp;
-	p->p_flag &= ~(P_TRACED|SULOCK);
+	p->p_flag &= ~P_TRACED;
 	p->p_sigignore = ~0;
 	p->p_sig = 0;
 	/*
@@ -84,7 +84,8 @@ exit (rv)
 		panic("init died");
 	if ((*p->p_prev = p->p_nxt) != NULL)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
-	if ((p->p_nxt = zombproc) != NULL)		/* onto zombproc */
+	p->p_nxt = zombproc;                            /* onto zombproc */
+	if (p->p_nxt != NULL)
 		p->p_nxt->p_prev = &p->p_nxt;
 	p->p_prev = &zombproc;
 	zombproc = p;

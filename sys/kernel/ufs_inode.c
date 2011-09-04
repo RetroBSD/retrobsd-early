@@ -143,8 +143,9 @@ loop:
 			return(ip);
 		}
 
-	if ((ip = ifreeh) == NULL) {
-		tablefull("inode");
+        ip = ifreeh;
+	if (ip == NULL) {
+                log(LOG_ERR, "inode: table full\n");
 		u.u_error = ENFILE;
 		return(NULL);
 	}

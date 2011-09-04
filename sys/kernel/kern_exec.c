@@ -322,8 +322,7 @@ again:
 	cp = 0;
 	bno = malloc (swapmap, btod (NCARGS + MAXBSIZE));
 	if (bno == 0) {
-//printf ("execve: malloc failed\n");
-		swkill (u.u_procp, "exec");
+		u.u_error = ENOMEM;
 		goto done;
 	}
 	/*

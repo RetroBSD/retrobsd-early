@@ -37,13 +37,13 @@
  */
 #define	NBUF		8			/* number of i/o buffers */
 #define	MAXUSERS	1			/* number of user logins */
-#define	NPROC		8			/* number of processes */
+#define	NPROC		10			/* number of processes */
 #define NINODE		24
 #define NFILE		24
 #define NNAMECACHE	(NINODE * 11/10)
 #define NCALL		(16 + 2 * MAXUSERS)
 #define NCLIST		32                      /* number or CBSIZE blocks */
-#define SMAPSIZ		((9 * NPROC) / 10)	/* size of swap allocation map */
+#define SMAPSIZ		NPROC                   /* size of swap allocation map */
 
 /*
  * Disk blocks.

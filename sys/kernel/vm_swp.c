@@ -60,26 +60,6 @@ swap (blkno, coreaddr, count, rdflg)
 }
 
 /*
- * rout is the name of the routine where we ran out of swap space.
- */
-void
-swkill (p, rout)
-	register struct proc *p;
-	char *rout;
-{
-	tprintf(u.u_ttyp, "sorry, pid %d killed in %s: no swap space\n",
-		p->p_pid, rout);
-	/*
-	 * To be sure no looping (e.g. in vmsched trying to
-	 * swap out) mark process locked in core (as though
-	 * done by user) after killing it so noone will try
-	 * to swap it out.
-	 */
-	psignal(p, SIGKILL);
-	p->p_flag |= SULOCK;
-}
-
-/*
  * Raw I/O. The arguments are
  *	The strategy routine for the device
  *	A buffer, which may be a special buffer header
