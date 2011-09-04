@@ -18,6 +18,7 @@ vpath %.S $(M):$(S)
 
 # Kernel options.
 DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
+#DEFS		+= -I. -I$(H) -I/opt/microchip/mplabc32/v2.00/pic32mx/include -DKERNEL -DUCB_METER -DPIC32MX7
 
 # CPU frequency 80 MHz.
 DEFS		+= -DCPU_KHZ=80000
@@ -96,7 +97,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o kbd.o
+KERNOBJ		+= sd.o kbd.o #video.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
@@ -105,8 +106,8 @@ all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf
 
 clean:
-		rm -rf .deps *.o *.elf *.bin *.dis *.map *.hex *.srec core mklog assym.h vers.c \
-		genassym sys machine
+		rm -rf .deps *.o *.elf *.bin *.dis *.map *.hex *.srec core \
+		mklog assym.h vers.c version genassym sys machine
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:
