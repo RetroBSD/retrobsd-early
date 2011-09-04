@@ -108,7 +108,7 @@ all:		.deps sys machine unix.elf
 
 clean:
 		rm -rf .deps *.o *.elf *.bin *.dis *.map *.hex *.srec core \
-		mklog assym.h vers.c version genassym sys machine
+		mklog assym.h vers.c genassym sys machine
 		find ../.. -name \*~ | xargs rm -f
 
 .deps:
