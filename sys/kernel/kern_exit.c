@@ -132,7 +132,8 @@ again:
 		}
 	}
 	psignal(p->p_pptr, SIGCHLD);
-	wakeup((caddr_t)p->p_pptr);
+	wakeup((caddr_t) p->p_pptr);
+        wakeup((caddr_t) &runin);
 	swtch();
 	/* NOTREACHED */
 }

@@ -183,7 +183,10 @@ tsleep (ident, priority, timo)
 		}
 	} else
 		sig = 0;
+
 	p->p_stat = SSLEEP;
+        if (p != &proc[0])
+                wakeup((caddr_t) &runin);
 	u.u_ru.ru_nvcsw++;
 	swtch();
 resume:
