@@ -15,40 +15,35 @@
 #include <string.h>
 #include <unistd.h>
 
-struct
-{
+const struct {
 	char	*string;
-	int	speed;
+	int	bval;
+	unsigned baud;
 } speeds[] = {
-	"0",	B0,
-	"50",	B50,
-	"75",	B75,
-	"150",	B150,
-	"200",	B200,
-	"300",	B300,
-	"600",	B600,
-	"1200",	B1200,
-	"1800",	B1800,
-	"2400",	B2400,
-	"4800",	B4800,
-	"9600",	B9600,
-	"19200", B19200,
-	"38400", B38400,
-	"57600", B57600,
-	"115200", B115200,
+	"0",        B0,         0,
+	"50",       B50,        50,
+	"75",       B75,        75,
+	"150",      B150,       150,
+	"200",      B200,       200,
+	"300",      B300,       300,
+	"600",      B600,       600,
+	"1200",     B1200,      1200,
+	"1800",     B1800,      1800,
+	"2400",     B2400,      2400,
+	"4800",     B4800,      4800,
+	"9600",     B9600,      9600,
+	"19200",    B19200,     19200,
+	"38400",    B38400,     38400,
+	"57600",    B57600,     57600,
+	"115200",   B115200,    115200,
 	0,
 };
 
-unsigned	speed[] = {
-	0,50,75,110,134,150,200,300,600,1200,1800,2400,4800,9600,19200,38400
-};
-
-struct	MODES
-	{
+struct	MODES {
 	char	*string;
 	int	set;
 	int	reset;
-	};
+};
 
 struct	MODES	modes[] = {
 	"even",		EVENP, 0,
@@ -69,7 +64,7 @@ struct	MODES	modes[] = {
 	"cbreak",	CBREAK, 0,
 	"-cbreak",	0, CBREAK,
 	0
-	};
+};
 
 struct MODES lmodes[] = {
 	"rtscts",	LRTSCTS, 0,
@@ -103,7 +98,7 @@ struct MODES lmodes[] = {
 	"noflsh",	LNOFLSH, 0,
 	"-noflsh",	0, LNOFLSH,
 	0
-	};
+};
 
 struct	MODES mmodes[] = {
 	"dcd",		TIOCM_CD, 0,
@@ -296,12 +291,12 @@ args:
 		}
 		for(i=0; speeds[i].string; i++)
 			if(eq(speeds[i].string)) {
-				mode.sg_ispeed = mode.sg_ospeed = speeds[i].speed;
+				mode.sg_ispeed = mode.sg_ospeed = speeds[i].bval;
 				goto cont;
 			}
 		if (eq("speed")) {
 			for(i=0; speeds[i].string; i++)
-				if (mode.sg_ospeed == speeds[i].speed) {
+				if (mode.sg_ospeed == speeds[i].bval) {
 					printf("%s\n", speeds[i].string);
 					exit(0);
 				}
@@ -382,10 +377,10 @@ prmodes(all)
 		fprintf(stderr, "discipline %d, ");
 
 	if(mode.sg_ispeed != mode.sg_ospeed) {
-		fprintf(stderr,"input speed %u baud", speed[mode.sg_ispeed]);
-		fprintf(stderr,"output speed %u baud", speed[mode.sg_ospeed]);
+		fprintf(stderr,"input speed %u baud", speeds[mode.sg_ispeed].baud);
+		fprintf(stderr,"output speed %u baud", speeds[mode.sg_ospeed].baud);
 	} else
-		fprintf(stderr,"speed %u baud",  speed[mode.sg_ispeed]);
+		fprintf(stderr,"speed %u baud", speeds[mode.sg_ispeed].baud);
 
 	if (all)
 		fprintf(stderr, ", %d rows, %d columns", win.ws_row, win.ws_col);
