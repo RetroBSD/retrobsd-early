@@ -43,8 +43,10 @@
  */
 #define NSD		2
 #define SECTSIZE	512
-#define SLOW		250     /* 250 kHz */
 #define SPI_ENHANCED            /* use SPI fifo */
+#ifndef SD_MHZ
+#define SD_MHZ          13      /* speed 13.33 MHz */
+#endif
 
 int sd_type[NSD];               /* Card type */
 
@@ -659,7 +661,7 @@ sdopen (dev, flag, mode)
 {
 	register int unit = minor (dev);
 	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
-	unsigned nsectors, brg;
+	unsigned nsectors;
 
 	if (unit >= NSD)
 		return ENXIO;
@@ -673,9 +675,9 @@ sdopen (dev, flag, mode)
 #ifdef SD_CS1_PORT
 		TRIS_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
 #endif
-                /* Slow speed. */
+                /* Slow speed: 250 kHz */
                 reg->stat = 0;
-                reg->brg = (BUS_KHZ / SLOW + 1) / 2 - 1;
+                reg->brg = (BUS_KHZ / 250 + 1) / 2 - 1;
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
@@ -687,20 +689,16 @@ sdopen (dev, flag, mode)
                         return ENODEV;
                 }
                 /* Fast speed. */
-                for (brg=0; brg<10; brg++) {
-                        reg->brg = brg;
-                        if (card_size (unit, &nsectors))
-                                break;
-                }
-                if (brg >= 10) {
-                        printf ("sd%d: too slow card\n", unit);
+                reg->brg = (BUS_KHZ / SD_MHZ / 1000 + 1) / 2 - 1;
+                if (! card_size (unit, &nsectors)) {
+                        printf ("sd%d: cannot get card size\n", unit);
                         return ENODEV;
                 }
                 printf ("sd%d: type %s, size %u kbytes, speed %u Mbit/sec\n", unit,
                         sd_type[unit]==3 ? "SDHC" :
                         sd_type[unit]==2 ? "II" : "I",
                         nsectors / (DEV_BSIZE / SECTSIZE),
-                        BUS_KHZ / (brg+1) / 2000);
+                        BUS_KHZ / (reg->brg + 1) / 2000);
 	}
 	return 0;
 }
