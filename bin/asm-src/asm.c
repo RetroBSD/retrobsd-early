@@ -21,7 +21,10 @@
 #define TT_NUMBER 7
 #define TT_STRING 8
 #define TT_CHAR 9
-#define TT_FUNC 10
+#define TT_SHIFTLEFT 10
+#define TT_SHIFTRIGHT 11
+
+//#define TT_FUNC 10
 #define TT_LP '('
 #define TT_RP ')'
 #define TT_PLUS '+'
@@ -29,6 +32,14 @@
 #define TT_TIMES '*'
 #define TT_DIV '/'
 #define TT_COMMA ','
+#define TT_NOT '~'
+#define TT_MOD '%'
+#define TT_AND '&'
+#define TT_OR '|'
+#define TT_XOR '^'
+#define TT_LT '<'
+#define TT_GT '>'
+
 
 // Parser errors - passed as value in longjmp
 #define PE_TOKENLEN 1
@@ -44,7 +55,7 @@
 #define PE_EXPECTED_LP 10
 #define PE_INTERNAL_ERROR 11
 #define PE_SYCALL_INVALID 12
-#define PE_UNKNOWN_DIRECTIVE 13
+#define PE_UNKNOWN_COMMAND 13
 #define PE_INVALID_EXPRESSION 14
 #define PE_UNKNOWN_SYMBOL 15
 #define PE_DIVIDE_BY_ZERO 16
@@ -59,8 +70,9 @@
 static jmp_buf gFatalJmpBuf;
 static jmp_buf gParseJmpBuf;
 
-#define PARSE_ERROR( code ) gParseState.error = code; longjmp( gParseJmpBuf, code );
-#define FATAL_ERROR() gParseState.error = 1; longjmp( gFatalJmpBuf, 1 );
+#define PARSE_ERROR( code ) do { gParseState.error = code; longjmp( gParseJmpBuf, code ); } while(0)
+
+#define FATAL_ERROR() do { gParseState.error = 1; longjmp( gFatalJmpBuf, 1 ); } while(0)
 
 #define TEXT_SECTION_ID 0
 #define DATA_SECTION_ID 1
@@ -115,6 +127,9 @@ int NextChar()
 	return gParseState.c;
 }
 
+struct RegTable;
+struct RegTable* findReg( const char * p );
+
 int NextToken()
 {
 	// skip white space
@@ -134,48 +149,20 @@ int NextToken()
 	if( gParseState.c == EOF )
 	{
 		gParseState.tokenType = TT_EOF;
+		strcpy( gParseState.token, "<EOF>" );
 		gParseState.tokenLine = gParseState.line;
 		gParseState.tokenPos = gParseState.pos;
 	}
 	else if( gParseState.c == '\n' )
 	{
 		gParseState.tokenType = TT_EOL;
+		strcpy( gParseState.token, "<EOL>" );
 		gParseState.tokenLine = gParseState.line;
 		gParseState.tokenPos = gParseState.pos;
 		
 		NextChar();
 	}
-	else if( gParseState.c == '.' )
-	{
-		// directive token
-		gParseState.tokenLine = gParseState.line;
-		gParseState.tokenPos = gParseState.pos;
-
-		gParseState.token[0] = gParseState.c;
-		gParseState.tokenLen = 1;
-		
-		NextChar();
-		while( isalpha( gParseState.c ) && gParseState.tokenLen < 80 )
-		{
-			gParseState.token[ gParseState.tokenLen++ ] = gParseState.c;
-			NextChar();
-		}
-		
-		if( gParseState.tokenLen == 80 )
-		{
-			#ifdef TRACE_TOKEN
-			fputs("<ERR>",stderr);
-			#endif
-			PARSE_ERROR( PE_TOKENLEN );
-		}
-		
-		gParseState.tokenType = TT_DIRECTIVE;
-		gParseState.token[ gParseState.tokenLen ] = 0;
-		#ifdef TRACE_TOKEN
-		fputs("<DIR:",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
-		#endif
-	}
-	else if( isalpha( gParseState.c ) || gParseState.c == '_' || gParseState.c == '$' || gParseState.c == '%' )
+	else if( isalpha( gParseState.c ) || gParseState.c == '_' || gParseState.c == '$' || gParseState.c == '.' )
 	{
 		// alpha num token
 		gParseState.tokenLine = gParseState.line;
@@ -184,7 +171,7 @@ int NextToken()
 		gParseState.token[0] = gParseState.c;
 		gParseState.tokenLen = 1;
 		NextChar();
-		while( (isalpha( gParseState.c ) || isdigit( gParseState.c ) || gParseState.c == '_' ) && gParseState.tokenLen < 80 )
+		while( (isalpha( gParseState.c ) || isdigit( gParseState.c ) || gParseState.c == '_' || gParseState.c == '$' || gParseState.c == '.' ) && gParseState.tokenLen < 80 )
 		{
 			gParseState.token[ gParseState.tokenLen++ ] = gParseState.c;
 			NextChar();
@@ -199,37 +186,27 @@ int NextToken()
 		}
 		
 		gParseState.token[ gParseState.tokenLen ] = 0;
-		if( gParseState.token[0] == '$' )
+		if( gParseState.c == ':' )
 		{
-			gParseState.tokenType = TT_REG;
-			#ifdef TRACE_TOKEN
-			fputs("<REG:",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
-			#endif
-		}
-		else if( gParseState.token[0] == '%' )
-		{
-			gParseState.tokenType = TT_FUNC;
-			#ifdef TRACE_TOKEN
-			fputs("<FUNC:",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
-			#endif
+			gParseState.tokenType = TT_LABEL;
+			NextChar();
+			//#ifdef TRACE_TOKEN
+			fputs("LABEL:",stdout);fputs(gParseState.token,stdout);fputs("\n",stdout);
+			//#endif
 		}
 		else
 		{
-			if( gParseState.c == ':' )
+			if( findReg( gParseState.token ) )
 			{
-				gParseState.tokenType = TT_LABEL;
-				NextChar();
-				//#ifdef TRACE_TOKEN
-				fputs("LABEL:",stdout);fputs(gParseState.token,stdout);fputs("\n",stdout);
-				//#endif
+				gParseState.tokenType = TT_REG;
 			}
 			else
 			{
 				gParseState.tokenType = TT_WORD;
-				#ifdef TRACE_TOKEN
-				fputs("<WORD:",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
-				#endif
 			}
+			#ifdef TRACE_TOKEN
+			fputs("<WORD:",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
+			#endif
 		}
 		return gParseState.tokenType;
 	}
@@ -243,10 +220,26 @@ int NextToken()
 		gParseState.tokenLen = 1;
 		NextChar();
 		
-		while( (isdigit( gParseState.c ) ) && gParseState.tokenLen < 80 )
+		if( gParseState.token[0] == '0' && gParseState.c == 'x' )
 		{
 			gParseState.token[ gParseState.tokenLen++ ] = gParseState.c;
 			NextChar();
+			
+			while( ( isdigit( gParseState.c )
+			         || ( ( gParseState.c >= 'a' && gParseState.c <= 'f' ) || ( gParseState.c >= 'A' && gParseState.c <= 'F' ) ) )
+			      && gParseState.tokenLen < 80 )
+			{
+				gParseState.token[ gParseState.tokenLen++ ] = gParseState.c;
+				NextChar();
+			}
+		}
+		else
+		{
+			while( (isdigit( gParseState.c ) ) && gParseState.tokenLen < 80 )
+			{
+				gParseState.token[ gParseState.tokenLen++ ] = gParseState.c;
+				NextChar();
+			}
 		}
 		
 		if( gParseState.tokenLen == 80 )
@@ -270,7 +263,12 @@ int NextToken()
 	         || gParseState.c == ')' 
 	         || gParseState.c == ',' 
 	         || gParseState.c == '*'
-	         || gParseState.c == '/' )
+	         || gParseState.c == '/'
+	         || gParseState.c == '~'
+	         || gParseState.c == '%' 
+	         || gParseState.c == '&' 
+	         || gParseState.c == '|'
+	         || gParseState.c == '^')
 	{
 		gParseState.token[0] = gParseState.c;
 		gParseState.token[1] = 0;
@@ -281,6 +279,40 @@ int NextToken()
 		fputs("<",stderr);fputs(gParseState.token,stderr);fputs(">",stderr);
 		#endif
 		return '.';
+	}
+	else if( gParseState.c == '<' )
+	{
+		gParseState.token[0] = '<';
+		NextChar();
+		if( gParseState.c == '<' )
+		{
+			gParseState.token[1] = '<';
+			gParseState.token[2] = 0;
+			gParseState.tokenType = TT_SHIFTLEFT;
+			NextChar();
+			return;
+		}
+		gParseState.token[1] = 0;
+		gParseState.tokenType = '<';
+		NextChar();
+		return;
+	}
+	else if( gParseState.c == '>' )
+	{
+		gParseState.token[0] = '>';
+		NextChar();
+		if( gParseState.c == '>' )
+		{
+			gParseState.token[1] = '>';
+			gParseState.token[2] = 0;
+			gParseState.tokenType = TT_SHIFTRIGHT;
+			NextChar();
+			return;
+		}
+		gParseState.token[1] = 0;
+		gParseState.tokenType = '>';
+		NextChar();
+		return;
 	}
 	else if( gParseState.c == '"' )
 	{
@@ -373,10 +405,15 @@ void ActivateSection( struct SectionData* section )
 	//fputs( "[[seek]]", stderr );
 }
 
+//#define DEBUG1
+
 void AddWordToCurrentSection( int word )
 {
 	if( gParseState.pass == 1 )
 	{
+#ifdef DEBUG1
+		fprintf( stdout, "0x%08x  0x%08x\n", gCurrentSection->usedPass2+gCurrentSection->baseAddress, word );
+#endif
 		gCurrentSection->used += 4;
 	}
 	else
@@ -405,6 +442,8 @@ void AddByteToCurrentSection( int byte )
 struct SymbolEntry
 {
 	int isDefined;
+	
+	int isAlignmentFixed;
 	int sourceLine;
 	int sectionId;
 	int sectionOffset;
@@ -443,6 +482,7 @@ struct SymbolEntry* SymbolCreate( const char *name )
 	strncpy( p->name, name, 17 );
 	p->name[16] = 0;
 	p->isDefined = 0;
+	p->isAlignmentFixed = 0;
 	//p->sourceLine = sourceLine;
 	//p->sectionId = sectionId;
 	//p->sectionOffset = sectionOffset;
@@ -506,8 +546,52 @@ void DumpSymbols()
 	}
 }
 
+void AlignTo( int alignment )
+{
+	if( gParseState.pass == 1 )
+	{
+		int currentOffset = gCurrentSection->used;
+		int remainder = currentOffset % alignment;
+		if( remainder )
+		{
+			int adjustedOffset = currentOffset + ( alignment - remainder );
+			gCurrentSection->used = adjustedOffset;
+			struct SymbolEntry* pSym = gSymbols;
+			if( pSym && !pSym->isAlignmentFixed && pSym->sectionId == gCurrentSection->id && pSym->sectionOffset == currentOffset )
+			{
+				pSym->sectionOffset = adjustedOffset;
+				pSym = pSym->next;
+				pSym->isAlignmentFixed = 1;
+			}
+		}
+	}
+	else
+	{
+		int currentOffset = gCurrentSection->usedPass2;
+		int remainder = currentOffset % alignment;
+		if( remainder )
+		{
+			int addBytes = alignment - remainder;
+			while( addBytes-- )
+			{
+				AddByteToCurrentSection( 0 );
+			}
+		}
+	}
+}
+
+void FixLastLabel()
+{
+	struct SymbolEntry* pSym = gSymbols;
+	if( pSym )
+	{
+		pSym->isAlignmentFixed = 1;
+	}
+}
+
 void RequireCommaToken()
 {
+//fprintf(stderr,"RequireCommaToken: token=%s\n", gParseState.token );
 	if( gParseState.tokenType != TT_COMMA )
 	{
 		PARSE_ERROR( PE_EXPECTED_COMMA );
@@ -515,6 +599,16 @@ void RequireCommaToken()
 	NextToken();		
 }
 
+int TryCommaToken() 
+{
+	int result = 0;
+	if( gParseState.tokenType == TT_COMMA )
+	{
+		NextToken();
+		result = 1;
+	}
+	return result;
+}
 
 
 
@@ -536,7 +630,8 @@ int EvalConst( int* needsComma )
 	}
 	if( gParseState.tokenType == TT_NUMBER )
 	{
-		v = atoi( gParseState.token );
+		//v = atoi( gParseState.token );
+		v = strtol ( gParseState.token, 0, 0 );
 		NextToken();
 		if( m ) v = -v;
 		return v;
@@ -549,18 +644,14 @@ int EvalConst( int* needsComma )
 
 int EvalF3()
 {
-	int minus = 0;
+	int op = TT_PLUS;
 	int v = 0;
-	if( gParseState.tokenType == TT_MINUS || gParseState.tokenType == TT_PLUS )
+	if( gParseState.tokenType == TT_MINUS || gParseState.tokenType == TT_PLUS || gParseState.tokenType == TT_NOT )
 	{
 		#ifdef TRACE_EVAL
 		fprintf( stderr, "[EF3:+-:%s]\n", gParseState.token );
 		#endif
-		
-		if( gParseState.tokenType == TT_MINUS )
-		{
-			minus = 1;
-		}
+		op = gParseState.tokenType;
 		NextToken();
 	}
 	
@@ -582,7 +673,8 @@ int EvalF3()
 		#ifdef TRACE_EVAL
 		fprintf( stderr, "[EF3:NUMBER:%s]\n", gParseState.token );
 		#endif
-		v = atoi( gParseState.token );
+		//v = atoi( gParseState.token );
+		v = strtol ( gParseState.token, 0, 0 );
 		NextToken();
 	}
 	else if( gParseState.tokenType == TT_WORD )
@@ -611,37 +703,71 @@ int EvalF3()
 		PARSE_ERROR( PE_INVALID_EXPRESSION );
 	}
 	
-	if( minus ) v = -v;
+	if( op != TT_PLUS )
+	{
+		if( op == TT_MINUS )
+		{
+			v = -v;
+		}
+		else if( op == TT_NOT )
+		{
+			v = ~v;
+		}
+		else
+		{
+			PARSE_ERROR( PE_INTERNAL_ERROR );
+		}
+	}
 	return v;
 }
 
 int EvalF2()
 {
 	int v = EvalF3();
-	while( gParseState.tokenType == TT_TIMES || gParseState.tokenType == TT_DIV )
+	while( gParseState.tokenType == TT_TIMES 
+	      || gParseState.tokenType == TT_DIV
+	      || gParseState.tokenType == TT_AND
+	      || gParseState.tokenType == TT_OR
+	      || gParseState.tokenType == TT_XOR )
 	{
-		if( gParseState.tokenType == TT_TIMES )
+		switch( gParseState.tokenType )
 		{
-			NextToken();
-			v = v * EvalF3();
+			case TT_TIMES:
+				NextToken();
+				v = v * EvalF3();
+				break;
+			case TT_DIV:
+				NextToken();
+				int v1 = EvalF3();
+				if( v == 0 )
+				{
+					if( gParseState.pass == 1 )
+					{
+						v = 1;
+					}
+					else
+					{
+						PARSE_ERROR( PE_DIVIDE_BY_ZERO );
+					}
+				}
+				v = v / EvalF3();
+				break;
+				
+			case TT_AND:
+				NextToken();
+				v = v & EvalF3();
+				break;
+				
+			case TT_OR:
+				NextToken();
+				v = v | EvalF3();
+				break;
+				
+			case TT_XOR:
+				NextToken();
+				v = v ^ EvalF3();
+				break;
 		}
-		else
-		{
-			NextToken();
-			int v1 = EvalF3();
-			if( v == 0 )
-			{
-				if( gParseState.pass == 1 )
-				{
-					v = 1;
-				}
-				else
-				{
-					PARSE_ERROR( PE_DIVIDE_BY_ZERO );
-				}
-			}
-			v = v / EvalF3();
-		} 
 	}
 	return v;
 }
@@ -670,8 +796,9 @@ int EvalLabelExpression( int* needsComma )
 	if( needsComma && *needsComma )
 	{
 		RequireCommaToken();
-		*needsComma = 1;
 	}
+	if( needsComma ) *needsComma = 1;
+
 
 	int v;
 
@@ -710,8 +837,8 @@ int EvalLabelJExpression( int* needsComma )
 	if( needsComma && *needsComma )
 	{
 		RequireCommaToken();
-		*needsComma = 1;
 	}
+	if( needsComma ) *needsComma = 1;
 
 	int v;
 
@@ -763,19 +890,13 @@ int EvalExpression( int* needsComma )
 	if( needsComma && *needsComma )
 	{
 		RequireCommaToken();
-		*needsComma = 1;
 	}
+	if( needsComma ) *needsComma = 1;
 	
 	int v = EvalF1();
 
 	return v;
 }
-
-
-//int Dir_String()
-//{
-	//if( gParseState.tokenType != TT_STRINGSTART
-//}
 
 typedef void (*DirectiveFunc)();
 
@@ -788,8 +909,37 @@ typedef struct DirectiveEntryStruct
 
 void Directive_Text()
 {
+	FixLastLabel();
 	ActivateSection( &gSections[TEXT_SECTION_ID] );
+	AlignTo(4);
 	NextToken();
+}
+
+void Directive_Word()
+{
+	AlignTo(4);
+	
+	int needsComma = 0;
+	
+	NextToken();
+	
+	while(1)
+	{
+		int v = EvalExpression( &needsComma );
+		AddWordToCurrentSection( v );
+		if( gParseState.tokenType != TT_COMMA )
+		{
+			break;
+		}
+	}
+}
+
+void Directive_Align()
+{
+	NextToken();
+	
+	int v = EvalExpression( 0 );
+	AlignTo( v );
 }
 
 void Directive_Ascii()
@@ -842,10 +992,12 @@ DirectiveEntry gDirectiveTable[] =
 {
 	{".text", Directive_Text },
 	{".ascii", Directive_Ascii },
+	{".word", Directive_Word },
+	{".align", Directive_Align },
 	{0, 0 },
 };
 
-int Directive()
+int TryDirective()
 {
 	DirectiveEntry* p = gDirectiveTable;
 	while( p->name )
@@ -853,30 +1005,13 @@ int Directive()
 		if( strcmp( gParseState.token, p->name ) == 0 )
 		{
 			(*p->fp)();
-			return;
+			return 1;
 		}
 		++p;
 	}
-	fprintf( stderr, "Unknown directive: %s", gParseState.token );
-	PARSE_ERROR( PE_UNKNOWN_DIRECTIVE );
-	
-#if 0
-	if( strcmp( gParseState.token, ".text" ) == 0 )
-	{
-		ActivateSection( &TextSectionData );
-		NextToken();
-	}
-	else if( strcmp( gParseState.token, ".align" ) == 0 )
-	{
-		NextToken();
-		int c = EvalConst( 0 );
-	}
-	else if( strcmp( gParseState.token, ".ascii" ) == 0 )
-	{
-		NextToken();
-		Dir_String();
-	}
-#endif
+	//fprintf( stderr, "Unknown directive: %s", gParseState.token );
+	//PARSE_ERROR( PE_UNKNOWN_DIRECTIVE );
+	return 0;
 }
 
 int LabelCurrentAddress()
@@ -980,26 +1115,45 @@ struct RegTable gRegTable[] =
 	
 };
 
+struct RegTable* findReg( const char * name )
+{
+	struct RegTable* p = gRegTable;
+	while(p->name)
+	{
+		if( strcmp( p->name, name ) == 0 )
+		{
+			return p;
+		}
+		++p;
+	}
+	return 0;
+}
+
+int LookupRegByName( const char *name )
+{
+	struct RegTable* p = findReg( gParseState.token );
+	if( !p ) 
+	{
+		PARSE_ERROR( PE_UNKNOWN_REG );
+	}
+	return p->value;
+}
+
 int LookupReg()
 {
+	int result;
 	//fputs( "[[LookupReg]]", stderr );
 	if( gParseState.tokenType != TT_REG )
 	{
 		PARSE_ERROR( PE_EXPECTED_REG );
 	}
 	
-	struct RegTable* p = gRegTable;
-	while(p->name)
-	{
-		if( strcmp( p->name, gParseState.token ) == 0 )
-		{
-			return p->value;
-		}
-		++p;
-	}
-	
-	PARSE_ERROR( PE_UNKNOWN_REG );
+	result = LookupRegByName( gParseState.token );
+	NextToken();
+	return result;
 }
+
+
 
 struct	AOutHeader {
 	unsigned a_magic;	/* magic number */
@@ -1060,7 +1214,7 @@ struct Args
 	int rd;
 	int rs;
 	int rt;
-	int sa;
+	//int sa;
 	int immediate;
 	
 };
@@ -1076,7 +1230,7 @@ int GetRegArg( int* needsComma )
 	}
 	
 	int reg = LookupReg();
-	NextToken();
+	//NextToken();
 	
 	if( needsComma ) *needsComma = 1;
 	
@@ -1095,9 +1249,6 @@ void AssignArgsValue( int src, int used_as )
 			break;
 		case ARGSR_RD:
 			gArgs.rd = src;
-			break;
-		case ARGSR_SA:
-			gArgs.sa = src;
 			break;
 		case ARGSR_IMMEDIATE:
 			gArgs.immediate = src;
@@ -1188,7 +1339,7 @@ void GetOpArgs( int args_asked, int args_used_as )
 	gArgs.rd = 0;
 	gArgs.rs = 0;
 	gArgs.rt = 0;
-	gArgs.sa = 0;
+	//gArgs.sa = 0;
 	gArgs.immediate = 0;
 	
 	if( args_asked & ARGS_REG_1 )
@@ -1251,7 +1402,7 @@ int OpR( struct OpcodeTableEntry* te )
 
 	GetOpArgs( te->args_asked,  te->args_used_as );
 	
-	int code = ( te->code << 26 ) | ( gArgs.rs << 21 ) | ( gArgs.rt << 16 ) | ( gArgs.rd << 11 ) | ( gArgs.sa << 6 ) | te->func;
+	int code = ( te->code << 26 ) | ( gArgs.rs << 21 ) | ( gArgs.rt << 16 ) | ( gArgs.rd << 11 ) | ( (gArgs.immediate & 0x3f) << 6 ) | te->func;
 	
 	AddWordToCurrentSection( code );
 	//fprintf( stdout, "OP: %08x\n", code );
@@ -1263,7 +1414,7 @@ int OpMove( struct OpcodeTableEntry* te )
 
 	GetOpArgs( te->args_asked,  te->args_used_as );
 	
-	int code = ( te->code << 26 ) | ( gArgs.rs << 21 ) | ( gArgs.rt << 16 ) | ( gArgs.rd << 11 ) | ( gArgs.sa << 6 ) | te->func;
+	int code = ( te->code << 26 ) | ( gArgs.rs << 21 ) | ( gArgs.rt << 16 ) | ( gArgs.rd << 11 ) /*| ( gArgs.sa << 6 )*/ | te->func;
 	
 	AddWordToCurrentSection( code );
 	//fprintf( stdout, "OP: %08x\n", code );
@@ -1348,6 +1499,568 @@ int OpLa( struct OpcodeTableEntry* te )
 	//fprintf( stdout, "OP: %x\n", code );
 }
 
+#if 0
+struct OpcodeTableEntryA;
+
+typedef void (*OpcodeFuncA)( struct OpcodeTableEntryA* te );
+
+struct OpcodeTableEntryCommon
+{
+	const char *name;
+	OpcodeFuncA opcodeFunc; 
+};
+
+struct OpcodeTableEntryA
+{
+	struct OpcodeTableEntryCommon header;
+	unsigned char codeI;	// opcode for immediate form
+	unsigned char func3;	// function for 3 register form
+};
+
+#define ER_REG 1
+#define ER_INDEXREG 2
+#define ER_NUMBER 3
+#define ER_REL 4
+#define ER_UNKNOWN 5
+
+
+struct EvalResult 
+{
+	int type;
+	int value;
+	int sectionId;
+};
+
+void EvalAF1( struct EvalResult* er );
+
+void EvalATerm( struct EvalResult* er )
+{
+	//fputs( "[[EvalConst]]", stderr );
+	int v = 0;
+	int m = 0;
+	int encounteredOp = 0;
+	if( gParseState.tokenType == TT_MINUS )
+	{
+		encounteredOp = 1;
+		m = 1;
+		NextToken();
+	}
+	else if( gParseState.tokenType == TT_PLUS )
+	{
+		encounteredOp = 1;
+		NextToken();
+	}
+	else if( gParseState.tokenType == TT_NOT )
+	{
+		encounteredOp = 1;
+		m = 2;
+		NextToken();
+	}
+	
+	if( gParseState.tokenType == TT_NUMBER )
+	{
+		er->type = ER_NUMBER;
+		er->value = strtol ( gParseState.token, 0, 0 );
+		er->value = (m==1?-er->value:(m==2?~er->value:er->value));
+		er->sectionId = 0;
+	}
+	else if( gParseState.tokenType == TT_WORD )
+	{
+		struct SymbolEntry* p = SymbolFind( gParseState.token );
+		if( !p )
+		{
+			if( gParseState.pass == 1 )
+			{
+				er->type = ER_UNKNOWN;
+				er->value = 0;
+				er->sectionId = 0;
+			}
+			else
+			{
+				fprintf( stderr, "Unknown Symbol %s\n", gParseState.token );
+				PARSE_ERROR( PE_UNKNOWN_SYMBOL );
+			}
+		}
+		else
+		{
+			if( encounteredOp ) PARSE_ERROR( PE_INVALID_EXPRESSION );
+			er->type = ER_REL;
+			er->value = p->sectionOffset;
+			er->sectionId = p->sectionId;
+		}
+	}
+	else if( gParseState.tokenType == TT_REG )
+	{
+		if( encounteredOp ) PARSE_ERROR( PE_INVALID_EXPRESSION );
+		
+		er->type = ER_REG;
+		er->value = LookupRegByName( gParseState.token );
+		er->sectionId = 0;
+	}
+	else if( gParseState.tokenType == TT_LP )
+	{
+			NextToken();
+			if( gParseState.tokenType == TT_REG )
+			{
+				if( encounteredOp ) PARSE_ERROR( PE_INVALID_EXPRESSION );
+				
+				er->type = ER_INDEXREG;
+				er->value = LookupReg();
+				er->sectionId = 0;
+				if( gParseState.tokenType != TT_RP ) PARSE_ERROR( PE_EXPECTED_RP );
+			}
+			else
+			{
+				EvalAF1( er );
+				if( gParseState.tokenType != TT_RP ) PARSE_ERROR( PE_EXPECTED_RP );
+			}
+	}
+	else
+	{
+		PARSE_ERROR( PE_EXPECTED_CONST_NUMBER );
+	}
+	NextToken();
+}
+
+//#define TRACE_EVAL
+/*
+int EvalF3(struct EvalResult* er)
+{
+	int minus = 0;
+	int v = 0;
+	if( gParseState.tokenType == TT_MINUS || gParseState.tokenType == TT_PLUS )
+	{
+		#ifdef TRACE_EVAL
+		fprintf( stderr, "[EF3:+-:%s]\n", gParseState.token );
+		#endif
+		
+		if( gParseState.tokenType == TT_MINUS )
+		{
+			minus = 1;
+		}
+		NextToken();
+	}
+	
+	if( gParseState.tokenType == TT_LP )
+	{
+		#ifdef TRACE_EVAL
+		fprintf( stderr, "[EF3:(:%s]\n", gParseState.token );
+		#endif
+		NextToken();
+		v = EvalF1();
+		if( gParseState.tokenType != TT_RP )
+		{
+			PARSE_ERROR( PE_EXPECTED_RP );
+		}
+		NextToken();
+	}
+	else if( gParseState.tokenType == TT_NUMBER )
+	{
+		#ifdef TRACE_EVAL
+		fprintf( stderr, "[EF3:NUMBER:%s]\n", gParseState.token );
+		#endif
+		//v = atoi( gParseState.token );
+		v = strtol ( gParseState.token, 0, 0 );
+		NextToken();
+	}
+	else if( gParseState.tokenType == TT_WORD )
+	{
+		#ifdef TRACE_EVAL
+		fprintf( stderr, "[EF3:WORD:%s]\n", gParseState.token );
+		#endif
+		if( gParseState.pass == 1 )
+		{
+			v = 1;
+		}
+		else
+		{
+			struct SymbolEntry* p = SymbolFind( gParseState.token );
+			if( !p )
+			{
+				fprintf( stderr, "Unknown Symbol %s\n", gParseState.token );
+				PARSE_ERROR( PE_UNKNOWN_SYMBOL );
+			}
+			v = p->sectionOffset + gSections[p->sectionId].baseAddress;
+		}
+		NextToken();
+	}
+	else
+	{
+		PARSE_ERROR( PE_INVALID_EXPRESSION );
+	}
+	
+	if( minus ) v = -v;
+	return v;
+}
+*/
+
+int DoOp( int tokenType, int lhs, int rhs )
+{
+	int result;
+	switch( tokenType )
+	{
+		case TT_TIMES:
+			result = lhs * rhs;
+			break;
+		case TT_DIV:
+			if( rhs == 0 ) PARSE_ERROR( PE_DIVIDE_BY_ZERO );
+			result = lhs / rhs;
+			break;
+		case TT_MOD:
+			if( rhs == 0 ) PARSE_ERROR( PE_DIVIDE_BY_ZERO );
+			result = lhs % rhs;
+			break;
+		case TT_AND:
+			result = lhs & rhs;
+			break;
+		case TT_OR:
+			result = lhs | rhs;
+			break;
+		case TT_XOR:
+			result = lhs ^ rhs;
+			break;
+		case TT_SHIFTLEFT:
+			result = (lhs << rhs);
+			break;
+		case TT_SHIFTRIGHT:
+			result = (lhs >> rhs);
+			break;
+		case TT_PLUS:
+			result = (lhs + rhs );
+			break;
+		case TT_MINUS:
+			result = (lhs - rhs);
+			break;
+		default:
+			PARSE_ERROR( PE_INTERNAL_ERROR );
+	}
+	return result;
+}
+
+void EvalAF2( struct EvalResult* er )
+{
+	struct EvalResult lhs, rhs;
+	
+	EvalATerm( &lhs );
+	
+	//if( lhs.type == ER_REG || lhs.type == ER_INDEXREG )
+	//{
+	//	*er = lhs;
+	//	return;
+	//}
+	
+	while( gParseState.tokenType == TT_TIMES 
+	       || gParseState.tokenType == TT_DIV
+	       || gParseState.tokenType == TT_MOD
+	       || gParseState.tokenType == TT_AND
+	       || gParseState.tokenType == TT_OR
+	       || gParseState.tokenType == TT_XOR
+	       || gParseState.tokenType == TT_SHIFTLEFT
+	       || gParseState.tokenType == TT_SHIFTRIGHT )
+	{
+		int op = gParseState.tokenType;
+		
+		NextToken();
+		EvalATerm( &rhs );
+		switch( rhs.type )
+		{
+			case ER_REG:
+			case ER_INDEXREG:
+			case ER_REL:
+				PARSE_ERROR( PE_INVALID_EXPRESSION );
+				break;
+				
+			case ER_NUMBER:
+				{
+					switch( lhs.type )
+					{
+						case ER_NUMBER:
+							lhs.type = ER_NUMBER;
+							lhs.value = DoOp( op, lhs.value, rhs.value );
+							lhs.sectionId = 0;
+							break;
+							
+						case ER_REL:
+							PARSE_ERROR( PE_INVALID_EXPRESSION );
+							break;
+							
+						case ER_UNKNOWN:
+							lhs.type = ER_UNKNOWN;
+							lhs.value = 0;
+							lhs.sectionId = 0;
+							break;
+						
+						default:
+							PARSE_ERROR( PE_INTERNAL_ERROR );
+					}
+				}
+				break;
+				
+			case ER_UNKNOWN:
+				lhs.type = ER_UNKNOWN;
+				lhs.value = 0;
+				lhs.sectionId = 0;
+				break;
+		}
+	}
+	
+	*er = lhs;
+}
+
+void EvalAF1( struct EvalResult* er )
+{
+	struct EvalResult lhs, rhs;
+	
+	EvalAF2( &lhs );
+	
+
+	while( gParseState.tokenType == TT_PLUS 
+	       || gParseState.tokenType == TT_MINUS )
+	{
+		int op = gParseState.tokenType;
+		
+		NextToken();
+		EvalAF2( &rhs );
+		switch( rhs.type )
+		{
+			case ER_REG:
+			case ER_INDEXREG:
+				PARSE_ERROR( PE_INVALID_EXPRESSION );
+				break;
+				
+			case ER_NUMBER:
+				{
+					switch( lhs.type )
+					{
+						case ER_NUMBER:
+							lhs.type = ER_NUMBER;
+							lhs.value = DoOp( op, lhs.value, rhs.value );
+							lhs.sectionId = 0;
+							break;
+							
+						case ER_REL:
+							lhs.type = ER_REL;
+							lhs.value = DoOp( op, lhs.value, rhs.value );
+							//lhs.sectionId = 0;
+							break;
+							
+						case ER_UNKNOWN:
+							lhs.type = ER_UNKNOWN;
+							lhs.value = 0;
+							lhs.sectionId = 0;
+							break;
+						
+						default:
+							PARSE_ERROR( PE_INTERNAL_ERROR );
+					}
+				}
+				break;
+				
+			case ER_REL:
+				{
+					switch( lhs.type )
+					{
+						case ER_NUMBER:
+							lhs.type = ER_REL;
+							lhs.value = DoOp( gParseState.tokenType, lhs.value, rhs.value );
+							lhs.sectionId = rhs.sectionId;
+							break;
+							
+						case ER_REL:
+fprintf(stderr,"EvalAF1:lhs.sectionId=%d, rhs.sectionId=%d, op=%d\n",lhs.sectionId,rhs.sectionId,op);
+							if( lhs.sectionId != rhs.sectionId ) { PARSE_ERROR( PE_INVALID_EXPRESSION ); } 
+							if( op != TT_MINUS ) { PARSE_ERROR( PE_INVALID_EXPRESSION ); }
+							lhs.type = ER_NUMBER;
+							lhs.value = DoOp( op, lhs.value, rhs.value );
+							lhs.sectionId = 0;
+							break;
+							
+						case ER_UNKNOWN:
+							lhs.type = ER_UNKNOWN;
+							lhs.value = 0;
+							lhs.sectionId = 0;
+							break;
+						
+						default:
+							PARSE_ERROR( PE_INTERNAL_ERROR );
+					}
+				}
+				break;
+
+			case ER_UNKNOWN:
+				lhs.type = ER_UNKNOWN;
+				lhs.value = 0;
+				lhs.sectionId = 0;
+				break;
+		}
+	}
+	*er = lhs;
+fprintf(stderr,"EvalAF1:returning\n");
+
+}
+
+void EvalA( struct EvalResult* er )
+{
+	EvalAF1( er );
+/*
+fprintf(stderr,"EvalA: token=%s\n", gParseState.token );
+	if( gParseState.tokenType == TT_REG )
+	{
+		er->type = ER_REG;
+fprintf(stderr,"EvalA: calling LookupReg\n" );
+		er->value = LookupReg();
+fprintf(stderr,"EvalA: LookupReg Returned\n" );
+		//NextToken();
+		return;
+	}
+	else
+	{
+		
+fprintf(stderr,"EvalA: error expression\n" );
+		PARSE_ERROR( PE_INVALID_EXPRESSION );
+	}
+*/
+
+};
+
+void GenR( int code, int rs, int rt, int rd, int sa, int func )
+{
+	int opCode = ( code << 26 ) | ( rs << 21 ) | ( rt << 16 ) | ( rd << 11 ) | ( sa << 6 ) | func;
+	AddWordToCurrentSection( opCode );
+}
+
+void GenI( int code, int rs, int rt, int immediate )
+{
+	int opCode = ( code << 26 ) | ( rs << 21 ) | ( rt << 16 ) | (immediate & 0xffff);
+	AddWordToCurrentSection( opCode );
+}
+
+void OpA( struct OpcodeTableEntryA* te )
+{
+fprintf(stderr,"OpA: te->name=%s token=%s\n", te->header.name, gParseState.token );
+
+	struct EvalResult a1, a2, a3;
+	EvalA(&a1);
+fprintf(stderr,"OpA: a1.type=0x%08x token=%s\n", a1.type, gParseState.token );
+	if( a1.type != ER_REG )	PARSE_ERROR( PE_EXPECTED_REG );
+	RequireCommaToken();
+fprintf(stderr,"OpA: afterRequire1 token=%s\n", gParseState.token );
+	EvalA(&a2);
+fprintf(stderr,"OpA: a2.type=0x%08x token=%s\n", a2.type, gParseState.token );
+	if( TryCommaToken() )
+	{
+		EvalA(&a3);
+fprintf(stderr,"OpA: a3.type=0x%08x\n", a3.type );
+	}
+	else
+	{
+		a3 = a2;
+		a2 = a1;
+	}
+	if( a2.type != ER_REG )	PARSE_ERROR( PE_EXPECTED_REG );
+	
+	switch( a3.type )
+	{
+		case ER_REG:
+			GenR( 0, a2.value, a3.value, a1.value, 0, te->func3 );
+			break;
+			
+		case ER_NUMBER:
+fprintf(stderr,"OpA:NUM - a3.value=0x%08x\n", a3.value );
+			if( a3.value <= 0x7fff && a3.value >= -0x8000 )
+			{
+				// short_op rt, rs, immediate
+				if( te->codeI == 0 )
+				{
+					GenI( 0x0d, 0, 1, a3.value & 0xffff );
+					GenR( 0, a2.value, 1, a1.value, 0, te->func3 );
+					
+				}
+				else if( te->codeI >= 0x40 )
+				{
+					GenI( te->codeI - 0x40, a2.value, a1.value, -a3.value );
+				}
+				else
+				{
+					GenI( te->codeI, a2.value, a1.value, a3.value );
+				}
+			}
+			else
+			{
+				// lui $1, hi( value )
+				// ori $1, lo( value )
+				// op  target, $1
+				GenI( 0x0f, 0, 1, ( a3.value >> 16 ) & 0xffff );
+				GenI( 0x0d, 1, 1, a3.value & 0xffff );
+				GenR( 0, a2.value, 1, a1.value, 0, te->func3 );
+			}
+			break;
+			
+		default:
+			PARSE_ERROR( PE_INVALID_EXPRESSION );
+	}
+fprintf(stderr,"OpA: before return token=%s\n", gParseState.token );
+}
+
+struct OpcodeTableEntryA gOpcodeTableA[] =
+{
+	{ { "add",  OpA},  0x8, 0x20  }, 
+		// add rt, rs, immediate
+		// add rd, rs, rt 
+	{ { "addu",  OpA},  0x9, 0x21  }, 
+		// addu rt, rs, immediate
+		// addu rd, rs, rt 
+	{ { "and",  OpA},  0xc, 0x24  }, 
+		// and rt, rs, immediate
+		// and rd, rs, rt  (f 0x21)
+	{ { "nor",  OpA},  0, 0x27  }, 
+		// nor rt, rs, immediate 
+		// nor rd, rs, rt  
+	{ { "or",  OpA},  0xd, 0x25  }, 
+		// or rt, rs, immediate 
+		// or rd, rs, rt  
+	{ { "sub",  OpA},  0x48, 0x22  }, // fixme - there is a shorter way for small immediates (use addi with negated immediate)
+		// sub rt, rs, immediate 
+		// sub rd, rs, rt  
+	{ { "subu",  OpA},  0x49, 0x23  }, // fixme - there is a shorter way for small immediates (use addi with negated immediate)
+		// subu rt, rs, immediate 
+		// subu rd, rs, rt  
+	{ { "xor",  OpA},  0xe, 0x26  }, 
+		// xor rt, rs, immediate 
+		// xor rd, rs, rt  
+	{ { 0,  0}, 0, 0 }
+};
+	
+struct OpcodeTableEntryCommon* LookupEntry( struct OpcodeTableEntryCommon* table, int elementSize, const char *name )
+{
+	while( table->name )
+	{
+		if( strcmp( table->name, name ) == 0 )
+		{
+			return table;
+		}
+		else
+		{
+			char *p = (char*)table;
+			p += elementSize;
+			table = (struct OpcodeTableEntryCommon*)p;
+		}
+	}
+	return 0;
+}
+
+int TryOpcodeTableA()
+{
+	struct OpcodeTableEntryCommon* p = LookupEntry( (struct OpcodeTableEntryCommon*)gOpcodeTableA, sizeof( struct OpcodeTableEntryA ), gParseState.token );
+	if( p )
+	{
+		NextToken();
+		(*p->opcodeFunc)( (struct OpcodeTableEntryA *)p );
+		return 1;
+	}
+	return 0;
+}
+#endif
 
 struct OpcodeTableEntry gOpcodeTable[] =
 {
@@ -1553,8 +2266,8 @@ struct OpcodeTableEntry gOpcodeTable[] =
 		OpR }, // or rd, rs, rt
 
 	{ "sll",  0, 0x00, 
-		ARGS_REG_1 | ARGS_REG_2 | ARGS_REG_3, 
-		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_SA << ARGS_REG_3_BIT_POS ),
+		ARGS_REG_1 | ARGS_REG_2 | ARGS_IMMEDIATE, 
+		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_IMMEDIATE << ARGS_IMMEDIATE_BIT_POS ),
 		OpR }, // sll rd, rt, sa
 
 	{ "sllv",  0, 0x04, 
@@ -1573,8 +2286,8 @@ struct OpcodeTableEntry gOpcodeTable[] =
 		OpR }, // sltu rd, rs, rt
 
 	{ "sra",  0, 0x03, 
-		ARGS_REG_1 | ARGS_REG_2 | ARGS_REG_3, 
-		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_SA << ARGS_REG_3_BIT_POS ),
+		ARGS_REG_1 | ARGS_REG_2 | ARGS_IMMEDIATE, 
+		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_IMMEDIATE << ARGS_IMMEDIATE_BIT_POS ),
 		OpR }, // sra rd, rt, sa
 
 	{ "srav",  0, 0x07, 
@@ -1583,8 +2296,8 @@ struct OpcodeTableEntry gOpcodeTable[] =
 		OpR }, // srav rd, rt, rs
 
 	{ "srl",  0, 0x02, 
-		ARGS_REG_1 | ARGS_REG_2 | ARGS_REG_3, 
-		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_SA << ARGS_REG_3_BIT_POS ),
+		ARGS_REG_1 | ARGS_REG_2 | ARGS_IMMEDIATE, 
+		( ARGSR_RD << ARGS_REG_1_BIT_POS ) | ( ARGSR_RT << ARGS_REG_2_BIT_POS ) | ( ARGSR_IMMEDIATE << ARGS_IMMEDIATE_BIT_POS ),
 		OpR }, // srl rd, rt, sa
 
 	{ "srlv",  0, 0x06, 
@@ -1644,7 +2357,7 @@ struct OpcodeTableEntry gOpcodeTable[] =
 	{ 0, 		   0,   0, 0, 0, 0 }
 } ;
 
-void Op()
+int TryOp()
 {
 	//fputs( "[[Asm]]", stderr );
 	struct OpcodeTableEntry* p = gOpcodeTable;
@@ -1654,13 +2367,14 @@ void Op()
 		{
 			NextToken();
 			(*p->opcodeFunc)( p );
-			return;
+			return 1;
 		}
 		++p;
 	}
 	
-	fprintf( stderr, "Unknown opcode %s\n", gParseState.token );
-	PARSE_ERROR( PE_UNKNOWN_OPCODE );
+	//fprintf( stderr, "Unknown opcode %s\n", gParseState.token );
+	//PARSE_ERROR( PE_UNKNOWN_OPCODE );
+	return 0;
 }
 
 int ParseLine()
@@ -1670,16 +2384,18 @@ int ParseLine()
 		LabelCurrentAddress();
 		//NextToken();
 	}
-	switch( gParseState.tokenType )
+	
+	if( gParseState.tokenType == TT_WORD )
 	{
-		case TT_DIRECTIVE:
-			Directive();
-			break;
-			
-		case TT_WORD:
-			Op();
-			break;
-			
+		if( !TryOp() 
+		    && !TryDirective() )
+		{
+			PARSE_ERROR( PE_UNKNOWN_COMMAND );
+		}
+	}
+	else if( gParseState.tokenType != TT_EOL && gParseState.tokenType != TT_EOF )
+	{
+		PARSE_ERROR( PE_UNKNOWN_COMMAND );
 	}
 	
 	if( gParseState.tokenType != TT_EOL && gParseState.tokenType != TT_EOF )
@@ -1770,8 +2486,8 @@ void ReportParseError()
 			fprintf( stderr, "Sycall argument invalid." );
 			break;
 			
-		case PE_UNKNOWN_DIRECTIVE:
-			fprintf( stderr, "Uknown directive." );
+		case PE_UNKNOWN_COMMAND:
+			fprintf( stderr, "Uknown command (expected directive or opcode)." );
 			break;
 			
 		case PE_INVALID_EXPRESSION:
