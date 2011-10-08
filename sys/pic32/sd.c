@@ -734,12 +734,10 @@ sdstrategy (bp)
 		unit, (bp->b_flags & B_READ) ? "read" : "write",
 		bp->b_blkno, bp->b_bcount, bp->b_addr);
 #endif
-#ifdef LED_AUX
-        if (bp->b_blkno > 256 && bp->b_blkno < 257+2048) {
-                /* Dirty hack: visualize swap */
+        if (bp->b_blkno > swapstart && bp->b_blkno < swapstart + nswap) {
+                /* Visualize swap i/o. */
                 led = LED_AUX;
         }
-#endif
         led_control (led, 1);
         s = splbio();
 	if (unit >= NSD) {

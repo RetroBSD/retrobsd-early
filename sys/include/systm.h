@@ -57,7 +57,7 @@ char	runout;			/* scheduling flag */
 int	runrun;			/* scheduling flag */
 char	curpri;			/* more scheduling */
 
-u_int	nswap;			/* size of swap space */
+u_int	swapstart, nswap;	/* start and size of swap space */
 int	updlock;		/* lock for sync */
 daddr_t	rablock;		/* block to be read ahead */
 dev_t	rootdev;		/* device of the root */

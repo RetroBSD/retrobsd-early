@@ -155,11 +155,12 @@ main()
 
         /* Find a swap file. */
         swapdev = rootdev;
+	swapstart = fs->fs_isize;
 	nswap = fs->fs_swapsz;
 	printf ("swap size = %u kbytes\n", nswap * DEV_BSIZE / 1024);
 	if (nswap <= 0)
 		panic ("zero swap size");	/* don't want to panic, but what ? */
-	mfree (swapmap, nswap, fs->fs_isize);
+	mfree (swapmap, nswap, swapstart);
 
 	/* Kick off timeout driven events by calling first time. */
 	schedcpu (0);
