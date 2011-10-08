@@ -226,7 +226,7 @@ static void spi_send_sector (char *data)
                         r++;
                 }
         }
-        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF | PIC32_SPISTAT_SPIROV;
+        reg->conclr = PIC32_SPICON_MODE32 | PIC32_SPICON_ENHBUF;
 #else
         reg->conset = PIC32_SPICON_MODE32;
         for (i=0; i<SECTSIZE/4; i+=4) {

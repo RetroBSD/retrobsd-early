@@ -40,6 +40,13 @@ DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2
 DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
 
+#
+# USB configuration
+#
+DEFS  		+= -DUSB_SUPPORT_DEVICE
+DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3
+DEFS  		+= -DUSB_MAX_EP_NUMBER=3
+
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
@@ -86,7 +93,8 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 # Machine-dependent files:
 # startup.o MUST be loaded first.
 KERNOBJ		= startup.o clock.o devsw.o cons.o sysctl.o \
-		  signal.o machdep.o mem.o exception.o
+		  signal.o machdep.o mem.o exception.o \
+                  usb_device.o usb_function_cdc.o usb_console.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
