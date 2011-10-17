@@ -29,12 +29,16 @@ DEFS		+= -DBUS_KHZ=80000
 #
 # Console on UART1
 DEFS            += -DCONSOLE_UART1
-# SD/MMC card driver on SPI1
-DEFS            += -DSD_PORT=SPI1CON
-# /CS0 at pin A10
-DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=10
-# LED at pin A3
-DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=3
+# SD/MMC card driver on SPI4
+DEFS            += -DSD_PORT=SPI4CON
+# /CS0 at pin D3, /CS1 at pin D4
+DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=3
+DEFS            += -DSD_CS1_PORT=TRISD -DSD_CS1_PIN=4
+# LEDs at pins A10, A2, A3
+DEFS            += -DLED_POLARITY
+DEFS            += -DLED_DISK_PORT=TRISA   -DLED_DISK_PIN=10
+DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=2
+DEFS            += -DLED_TTY_PORT=TRISA    -DLED_TTY_PIN=3
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -60,10 +64,10 @@ endif
 
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
-ifndef GCCPREFIX
+#ifndef GCCPREFIX
     GCCPREFIX   = /usr/local/mips461/bin/mips-elf-
     LDFLAGS     =
-endif
+#endif
 endif
 
 CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
