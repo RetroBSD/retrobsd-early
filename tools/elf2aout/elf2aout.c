@@ -367,6 +367,9 @@ usage:                  fprintf(stderr,
 		/* Section types we can't handle... */
 		if (ph[i].p_type != PT_LOAD)
 			errx(1, "Program header %d type %d can't be converted.", i, ph[i].p_type);
+                if (verbose)
+                        printf ("Section type=%x flags=%x vaddr=%x filesz=%x\n",
+                            ph[i].p_type, ph[i].p_flags, ph[i].p_vaddr, ph[i].p_filesz);
 
 		/* Writable (data) segment? */
 		if (ph[i].p_flags & PF_W) {
@@ -408,12 +411,19 @@ usage:                  fprintf(stderr,
 		data.vaddr = text.vaddr + text.len;
 		data.len = 0;
 	}
+        if (verbose)
+                printf ("Text vaddr = %x, data vaddr = %x\n", text.vaddr, data.vaddr);
+
 	/* If there is a gap between text and data, we'll fill it when we copy
 	 * the data, so update the length of the text segment as represented
 	 * in a.out to reflect that, since a.out doesn't allow gaps in the
 	 * program address space. */
-	if (text.vaddr + text.len < data.vaddr)
+	if (text.vaddr + text.len < data.vaddr) {
+                if (verbose)
+                        printf ("Update text len = %x (was %x)\n",
+                                data.vaddr - text.vaddr, text.len);
 		text.len = data.vaddr - text.vaddr;
+        }
 
 	/* We now have enough information to cons up an a.out header... */
 	aex.a_magic = OMAGIC;

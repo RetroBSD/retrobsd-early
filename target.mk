@@ -32,14 +32,24 @@ endif
 #    INCLUDES    = -I/opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/lib/gcc/pic32mx/4.5.1/include
 #endif
 
+# chipKIT PIC32 compiler on Linux
+# Need to copy pic32-tools/pic32mx/include/stdarg.h
+# to pic32-tools/lib/gcc/pic32mx/4.5.1/include.
+ifneq (,$(wildcard /usr/local/pic32-tools/bin/pic32-gcc))
+    GCCPREFIX   = /usr/local/pic32-tools/bin/pic32-
+    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
+    INCLUDES    = -I/usr/local/pic32-tools/lib/gcc/pic32mx/4.5.1/include
+endif
+
 # Plain GCC
 ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
 # Linux MPLABX C32 compiler doesn't support some functionality
 # we require, so allow plain GCC to rule here for now
-#ifndef GCCPREFIX
+ifndef GCCPREFIX
     GCCPREFIX	= /usr/local/mips461/bin/mips-elf-
     LDFLAGS	=
     INCLUDES    = -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
+endif
 endif
 
 CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)
@@ -59,6 +69,6 @@ ELF2AOUT	= $(TOPSRC)/tools/elf2aout/elf2aout
 
 CFLAGS		= -O -g
 
-LDFLAGS		+= -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/elf32-mips.ld \
+LDFLAGS		+= -N -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/elf32-mips.ld \
 		   $(TOPSRC)/lib/crt0.o -L$(TOPSRC)/lib
 LIBS		= -lc

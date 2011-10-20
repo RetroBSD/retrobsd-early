@@ -443,7 +443,7 @@ printf(char *fmt, ...)
  * Microchip MPLABX C32 compiler generates calls to _printf_s()
  * and other strange names.
  */
-#ifdef __PIC32MX__
+#ifdef __MPLABX__
 void _printf_s(char *fmt, ...)
     __attribute__((alias ("printf")));
 void _printf_cdnopuxX(char *fmt, ...)

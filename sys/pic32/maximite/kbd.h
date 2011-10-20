@@ -18,4 +18,3 @@ extern void read_kbd(void);
 extern char write_kbd(u_char data);
 
 #endif // __KBD_H__
-

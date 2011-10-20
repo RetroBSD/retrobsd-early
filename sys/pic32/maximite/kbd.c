@@ -8,7 +8,7 @@
  * conditions for redistribution.
  *
  */
- 
+
 /*
 ../kbd.c: In function 'initKBD':
 ../kbd.c:155:8: error: request for member 'ON' in something not a structure or union
@@ -76,7 +76,7 @@ int key_state, key_count, key_parity, key_timer;
 #define BKSP    0x08
 #define TAB     0x09
 #define L_ALT   0x11
-#define L_SHF   0x12 
+#define L_SHF   0x12
 #define L_CTL   0x14
 #define CAPS    0x58
 #define R_SHF   0x59
@@ -92,9 +92,9 @@ int key_state, key_count, key_parity, key_timer;
 
 /*
     Standard PC init sequence:
-    
+
     Keyboard: AA  Self-test passed                ;Keyboard controller init
-    Host:     ED  Set/Reset Status Indicators 
+    Host:     ED  Set/Reset Status Indicators
     Keyboard: FA  Acknowledge
     Host:     00  Turn off all LEDs
     Keyboard: FA  Acknowledge
@@ -119,12 +119,12 @@ int key_state, key_count, key_parity, key_timer;
 
 char init_kbd(void)
 {
-	// enable pullups on the clock and data lines.  
+	// enable pullups on the clock and data lines.
 	// This stops them from floating and generating random chars when no keyboard is attached
 // 	CNCON.ON = 1;                           // turn on Change Notice for interrupt
 // 	CNPUE.CNPUE15 = 1;                      // turn on the pullup for pin D6 also called CN15
 // 	CNPUE.CNPUE16 = 1;                      // turn on the pullup for pin D7 also called CN16
- 	
+
  	return false;
 }
 
@@ -142,15 +142,15 @@ void read_kbd(void)
         return;
 	else
     	then = now;
-     
+
     if (key_state) {                                            // if clock was high, key_state = 1
         if (!clock) {                                           // PS2CLOCK == 0, falling edge detected
             key_state = 0;                                      // transition to state 0
             key_timer = TIMEOUT;                                // restart the counter
-        
+
             switch(state){
             default:
-            case PS2START:   
+            case PS2START:
                 if(!data) {                                     // PS2DATA == 0
                     key_count = 8;                              // init bit counter
                     key_parity = 0;                             // init parity check
@@ -159,7 +159,7 @@ void read_kbd(void)
                 }
                 break;
 
-            case PS2BIT:      
+            case PS2BIT:
                 code >>= 1;                                     // shift in data bit
                 if(data)                                        // PS2DATA == 1
                     code |= 0x80;
@@ -168,13 +168,13 @@ void read_kbd(void)
                     state = PS2PARITY;                          // all bits read
                 break;
 
-            case PS2PARITY:         
+            case PS2PARITY:
                 if(data)
                     key_parity ^= 0x80;
                 if(key_parity & 0x80)                           // parity odd, continue
                     state = PS2STOP;
-                else 
-                    state = PS2START;   
+                else
+                    state = PS2START;
                 break;
 
             case PS2STOP:
@@ -210,8 +210,8 @@ void read_kbd(void)
                             goto exit;
                             }
                         }
-					
-					    if(LShift || RShift)                        // get the ASCII code
+
+                        if(LShift || RShift)                        // get the ASCII code
                             chr = lowerKey[code%128];
                         else
                             chr = upperKey[code%128];
@@ -232,12 +232,13 @@ void read_kbd(void)
                             abort = true;
                         }
 
-//						PrintSignonToUSB = false;                 // show that the keyboard is in use
+//			PrintSignonToUSB = false;                   // show that the keyboard is in use
 
-                    } // if key_up	
+                        LAlt = LAlt;                                // not used yet
+                    } // if key_up
 exit:
                 code = 0;
-                } // if(data)   
+                } // if(data)
                 state = PS2START;
 
             } // switch(state)
@@ -260,4 +261,3 @@ char write_kbd(u_char data)
 
     return false;
 }
-

@@ -178,7 +178,7 @@ startup()
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
 
-#if __PIC32MX__
+#if __MPLABX__
 	/* Microchip C32 compiler generates a .dinit table with
          * initialization values for .data segment. */
 	extern const unsigned _dinit_addr[];

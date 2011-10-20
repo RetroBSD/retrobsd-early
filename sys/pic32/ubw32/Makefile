@@ -51,37 +51,7 @@ DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
 
-# MPLABX C32 on Linux
-ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX   = /opt/microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
-endif
-
-# MPLABX C32 on Mac OS X
-ifneq (,$(wildcard /Applications/microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX   = /Applications/microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
-endif
-
-# MPLABX C32 on Windows - not verified yet
-ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX   = /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
-endif
-
-# Digilent MPIDE on Linux
-#ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-gcc))
-#    GCCPREFIX   = /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-
-#    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
-#endif
-
-# Plain GCC
-ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
-ifndef GCCPREFIX
-    GCCPREFIX   = /usr/local/mips461/bin/mips-elf-
-    LDFLAGS     =
-endif
-endif
+include ../gcc-config.mk
 
 CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm

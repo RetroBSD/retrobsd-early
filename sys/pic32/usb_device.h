@@ -372,9 +372,7 @@ This defintions is a return value of the function USBGetDeviceState(). */
 #define USB_HANDLE volatile BDT_ENTRY*
 
 // PIC32 supports only full ping-pong mode.
-#ifdef PIC32MX
-#  define USB_PING_PONG_MODE USB_PING_PONG__FULL_PING_PONG
-#endif
+#define USB_PING_PONG_MODE USB_PING_PONG__FULL_PING_PONG
 
 /* Size of buffer for end-point EP0.
  * Valid Options: 8, 16, 32, or 64 bytes.
