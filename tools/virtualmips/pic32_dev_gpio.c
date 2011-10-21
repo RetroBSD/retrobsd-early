@@ -23,28 +23,16 @@
 #define GPIO_REG_SIZE   0x1F0
 
 #ifdef UBW32
-#define MASKA_CS0       (1 << 9)            // sd0 on SPI1
-#define MASKG_CD0       (1 << 7)
-#define MASKG_WE0       (1 << 6)
-#define MASKA_CS1       (1 << 10)           // sd1 on SPI1
-#define MASKG_CD1       (1 << 9)
-#define MASKG_WE1       (1 << 8)
+#define MASKA_CS0       (1 << 9)            // A9: sd0 on SPI1
+#define MASKA_CS1       (1 << 10)           // A10: sd1 on SPI1
 #elif defined MAXIMITE
-#define MASKE_CS0       (1 << 0)            // sd0 on SPI4
-#define MASKD_CD0       (1 << 4)
-#define MASKD_WE0       (1 << 5)
+#define MASKE_CS0       (1 << 0)            // E0: sd0 on SPI4
 #define MASKE_CS1                           // reserved
-#define MASKD_CD1
-#define MASKD_WE1
 #define MASKD_PS2C      (1 << 6)            // PS2 keyboard
 #define MASKD_PS2D      (1 << 7)
 #elif defined MAX32
-#define MASKA_CS0       (1 << 10)           // sd0 on SPI1
-#define MASKG_CD0       (1 << 7)  //XXX
-#define MASKG_WE0       (1 << 6)  //XXX
-#define MASKA_CS1                           // reserved
-#define MASKG_CD1
-#define MASKG_WE1
+#define MASKD_CS0       (1 << 3)            // D3: sd0 on SPI4
+#define MASKD_CS1       (1 << 4)            // D4: sd0 on SPI4
 #endif
 
 struct pic32_gpio_data {
@@ -156,20 +144,18 @@ void *dev_pic32_gpio_access (cpu_mips_t *cpu, struct vdevice *dev,
             *data = d->lat_a;
         } else {
 lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
-#if defined UBW32 || defined MAX32
+#ifdef UBW32
             /* Control SD card 0 */
             if (d->lat_a & MASKA_CS0)
                 dev_sdcard_select (cpu, 0, 0);
             else
                 dev_sdcard_select (cpu, 0, 1);
 
-#ifdef UBW32
             /* Control SD card 1 */
             if (d->lat_a & MASKA_CS1)
                 dev_sdcard_select (cpu, 1, 0);
             else
                 dev_sdcard_select (cpu, 1, 1);
-#endif
 #endif
         }
         break;
@@ -272,26 +258,7 @@ lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
         }
 #else
         if (op_type == MTS_READ) {
-            /* Poll SD card 0 status */
-            if (dev_sdcard_detect (cpu, 0))
-                d->port_d &= ~MASKD_CD0;
-            else
-                d->port_d |= MASKD_CD0;
-            if (dev_sdcard_writable (cpu, 0))
-                d->port_d &= ~MASKD_WE0;
-            else
-                d->port_d |= MASKD_WE0;
 #if 0
-            /* Poll SD card 1 status */
-            if (dev_sdcard_detect (cpu, 1))
-                d->port_d &= ~MASKD_CD1;
-            else
-                d->port_d |= MASKD_CD1;
-            if (dev_sdcard_writable (cpu, 1))
-                d->port_d &= ~MASKD_WE1;
-            else
-                d->port_d |= MASKD_WE1;
-
             /* Poll PS2 keyboard */
             if (dev_keyboard_clock (cpu))
                 d->port_d &= ~MASKD_PS2C;
@@ -314,6 +281,19 @@ lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
             *data = d->lat_d;
         } else {
 lat_d:      d->lat_d = write_op (d->lat_d, *data, offset);
+#ifdef MAX32
+            /* Control SD card 0 */
+            if (d->lat_d & MASKD_CS0)
+                dev_sdcard_select (cpu, 0, 0);
+            else
+                dev_sdcard_select (cpu, 0, 1);
+
+            /* Control SD card 1 */
+            if (d->lat_d & MASKD_CS1)
+                dev_sdcard_select (cpu, 1, 0);
+            else
+                dev_sdcard_select (cpu, 1, 1);
+#endif
         }
         break;
 
@@ -421,40 +401,11 @@ lat_f:      d->lat_f = write_op (d->lat_f, *data, offset);
         break;
 
     case PIC32_PORTG & 0x1f0:             /* Port G: read inputs, write outputs */
-#if !defined UBW32 && !defined MAX32
         if (op_type == MTS_READ) {
             *data = d->port_g;
         } else {
             goto lat_g;
         }
-#else
-        if (op_type == MTS_READ) {
-            /* Poll SD card 0 status */
-            if (dev_sdcard_detect (cpu, 0))
-                d->port_g &= ~MASKG_CD0;
-            else
-                d->port_g |= MASKG_CD0;
-            if (dev_sdcard_writable (cpu, 0))
-                d->port_g &= ~MASKG_WE0;
-            else
-                d->port_g |= MASKG_WE0;
-
-#ifdef UBW32
-            /* Poll SD card 1 status */
-            if (dev_sdcard_detect (cpu, 1))
-                d->port_g &= ~MASKG_CD1;
-            else
-                d->port_g |= MASKG_CD1;
-            if (dev_sdcard_writable (cpu, 1))
-                d->port_g &= ~MASKG_WE1;
-            else
-                d->port_g |= MASKG_WE1;
-#endif
-            *data = d->port_g;
-        } else {
-            goto lat_g;
-        }
-#endif
         break;
 
     case PIC32_LATG & 0x1f0:              /* Port G: read/write outputs */

@@ -114,20 +114,6 @@ int dev_sdcard_init (sdcard_t *d, char *name, unsigned mbytes, char *filename)
     return (0);
 }
 
-int dev_sdcard_detect (cpu_mips_t *cpu, int unit)
-{
-    pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
-
-    return (pic32->sdcard[unit].fd > 0);
-}
-
-int dev_sdcard_writable (cpu_mips_t *cpu, int unit)
-{
-    pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
-
-    return (pic32->sdcard[unit].fd > 0);
-}
-
 void dev_sdcard_select (cpu_mips_t *cpu, int unit, int on)
 {
     pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
