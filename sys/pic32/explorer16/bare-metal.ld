@@ -81,7 +81,7 @@ SECTIONS
     *(.gnu.warning)
     *(.glue_7t) *(.glue_7)
     __rodata_start = . ;
-    *(.rodata .rodata.* .gnu.linkonce.r.*)
+    *(.rodata .rodata.* .gnu.linkonce.r.* .rel.dyn)
     /* Align here to ensure that the .text section ends on word boundary. */
     . = ALIGN (32 / 8);
     _etext = .;

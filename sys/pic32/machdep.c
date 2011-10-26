@@ -129,6 +129,9 @@ startup()
         BMXCONCLR = 0x40;
         CHECONSET = 0x30;
 
+        /* Disable JTAG port, to use it for i/o. */
+        DDPCON = 0;
+
 	/* Config register: enable kseg0 caching. */
 	mips_write_c0_register (C0_CONFIG, 0,
             mips_read_c0_register (C0_CONFIG, 0) | 3);

@@ -22,10 +22,11 @@ DEFS		+= -DBUS_KHZ=80000
 # Console on UART2
 DEFS            += -DCONSOLE_UART2
 # SD/MMC card driver on SPI1
-DEFS            += -DSD_PORT=SPI1CON
+DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
 # /CS0 at pin B1
 DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=1
 # LEDs at pins A0, A1, A2, A3
+DEFS            += -DLED_POLARITY
 DEFS            += -DLED_DISK_PORT=TRISA   -DLED_DISK_PIN=0
 DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=1
 DEFS            += -DLED_TTY_PORT=TRISA    -DLED_TTY_PIN=2
@@ -44,9 +45,6 @@ SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
 MPIDE           = /Applications/Mpide.app/Contents/Resources/Java/
-AVRDUDE         = $(MPIDE)/hardware/tools/avr/bin/avrdude \
-                  -C $(MPIDE)/hardware/tools/avr/etc/avrdude.conf \
-                  -c stk500v2 -p pic32 -P /dev/tty.usbserial-A5004FzF -b 115200
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
@@ -72,7 +70,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 KERNOBJ		+= sd.o
 
 # Configuration-dependent files.
-KERNOBJ		+= vers.o
+KERNOBJ		+= vers.o devcfg.o
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf
@@ -95,12 +93,10 @@ unix.elf:	$(KERNOBJ) bare-metal.ld
 		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
 		chmod -x $@
 		$(OBJDUMP) -d -S $@ > unix.dis
-		$(OBJCOPY) -O binary $@ unix.bin
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
-		chmod -x $@ unix.bin
 
 load:           unix.elf
-		$(AVRDUDE) -v -U flash:w:unix.hex:i
+		pic32prog unix.hex
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c
