@@ -39,7 +39,7 @@ include ../gcc-config.mk
 
 CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map
+LDFLAGS         += -nostdlib -T bare-metal.ld -Wl,-Map=unix.map
 SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
@@ -91,7 +91,7 @@ sys:
 machine:
 		ln -s .. $@
 
-unix.elf:	$(KERNOBJ) using-bootloader.ld
+unix.elf:	$(KERNOBJ) bare-metal.ld
 		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
 		chmod -x $@
 		$(OBJDUMP) -d -S $@ > unix.dis
