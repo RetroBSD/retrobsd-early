@@ -23,121 +23,47 @@
 #include <machine/usb.h>
 #include <machine/usb_function_cdc.h>
 
-#if 0
-/*
- * Board definition.
- *
- * These defintions will tell the main() function which board is
- * currently selected.  This will allow the application to add
- * the correct configuration bits as wells use the correct
- * initialization functions for the board.  These defitions are only
- * required in the stack provided demos.  They are not required in
- * final application design.
- */
-#define mLED_1_On()		LATECLR = (1 << 3)
-#define mLED_USB_On()		LATECLR = (1 << 3)
-#define mLED_2_On()		LATECLR = (1 << 2)
-#define mLED_3_On()		LATECLR = (1 << 1)
-#define mLED_4_On()		LATECLR = (1 << 0)
-
-#define mLED_1_Off()		LATESET = (1 << 3)
-#define mLED_USB_Off()		LATESET = (1 << 3)
-#define mLED_2_Off()		LATESET = (1 << 2)
-#define mLED_3_Off()		LATESET = (1 << 1)
-#define mLED_4_Off()		LATESET = (1 << 0)
-
-#define mLED_1_Toggle()		LATEINV = (1 << 3)
-#define mLED_USB_Toggle()	LATEINV = (1 << 3)
-#define mLED_2_Toggle()		LATEINV = (1 << 2)
-#define mLED_3_Toggle()		LATEINV = (1 << 1)
-#define mLED_4_Toggle()		LATEINV = (1 << 0)
-
-/*
- * BlinkUSBStatus turns on and off LEDs
- * corresponding to the USB device state.
- *
- * mLED macros can be found in HardwareProfile.h
- * USBDeviceState is declared and updated in usb_device.c.
- */
-void BlinkUSBStatus (void)
+//
+// Check bus status and service USB interrupts.
+//
+void usb_intr()
 {
-	static unsigned led_count = 0;
+    if (! (U1PWRC & PIC32_U1PWRC_USBPWR)) {
+        /*
+         * Initialize USB module SFRs and firmware variables to known state.
+         * Enable interrupts.
+         */
+	usb_device_init();
+	IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
+    }
 
-	if (led_count == 0) {
-		led_count = 50000;
-	}
-	led_count--;
+    // Must call this function from interrupt or periodically.
+    // It will process and respond to SETUP transactions
+    // (such as during the enumeration process when you first
+    // plug in).  USB hosts require that USB devices should accept
+    // and process SETUP packets in a timely fashion.  Therefore,
+    // when using polling, this function should be called
+    // frequently (such as once about every 100 microseconds) at any
+    // time that a SETUP packet might reasonably be expected to
+    // be sent by the host to your device.  In most cases, the
+    // usb_device_tasks() function does not take very long to
+    // execute (~50 instruction cycles) before it returns.
+    usb_device_tasks();
 
-	if (USBDeviceState == CONFIGURED_STATE) {
-		if (led_count == 0) {
-			mLED_USB_Toggle();
-		}
-	}
+    // User Application USB tasks
+    if (usb_device_state >= CONFIGURED_STATE && ! (U1PWRC & PIC32_U1PWRC_USUSPEND)) {
+            unsigned nbytes_read;
+            static unsigned char inbuf[64];
+
+            // Pull in some new data if there is new data to pull in
+            nbytes_read = getsUSBUSART ((char*) inbuf, 64);
+            if (nbytes_read != 0) {
+                    printf ("Received %d bytes: %02x...\r\n", nbytes_read, inbuf[0]);
+                    putUSBUSART ("Ok\r\n", 4);
+            }
+            CDCTxService();
+    }
 }
-
-/*
- * Main program entry point.
- */
-int main (void)
-{
-	AD1PCFG = 0xFFFF;
-
-	//Initialize all of the LED pins
-	LATE |= 0x000F;
-	TRISE &= 0xFFF0;
-
-	USBDeviceInit();	//usb_device.c.  Initializes USB module SFRs and firmware
-    				//variables to known states.
-	PMCON = 0;
-
-	for (;;) {
-		// Check bus status and service USB interrupts.
-		USBDeviceTasks(); // Interrupt or polling method.  If using polling, must call
-        			  // this function periodically.  This function will take care
-        			  // of processing and responding to SETUP transactions
-        			  // (such as during the enumeration process when you first
-        			  // plug in).  USB hosts require that USB devices should accept
-        			  // and process SETUP packets in a timely fashion.  Therefore,
-        			  // when using polling, this function should be called
-        			  // frequently (such as once about every 100 microseconds) at any
-        			  // time that a SETUP packet might reasonably be expected to
-        			  // be sent by the host to your device.  In most cases, the
-        			  // USBDeviceTasks() function does not take very long to
-        			  // execute (~50 instruction cycles) before it returns.
-
-		// Application-specific tasks.
-		// Blink the LEDs according to the USB device status
-		BlinkUSBStatus();
-
-		// User Application USB tasks
-		if (USBDeviceState >= CONFIGURED_STATE && ! (U1PWRC & PIC32_U1PWRC_USUSPEND)) {
-			unsigned nbytes_read;
-			static unsigned char inbuf[64], outbuf[64];
-			static unsigned led3_count = 0;
-
-			// Pull in some new data if there is new data to pull in
-			nbytes_read = getsUSBUSART ((char*) inbuf, 64);
-			if (nbytes_read != 0) {
-				snprintf (outbuf, sizeof(outbuf),
-					"Received %d bytes: %02x...\r\n",
-					nbytes_read, inbuf[0]);
-				putUSBUSART ((char*) outbuf, strlen (outbuf));
-				mLED_2_Toggle();
-				mLED_3_On();
-				led3_count = 10000;
-			}
-			if (led3_count) {
-				// Turn off LED3 when timeout expired.
-				led3_count--;
-				if (led3_count == 0)
-					mLED_3_Off();
-			}
-
-			CDCTxService();
-		}
-	}
-}
-#endif
 
 /*
  * USB Callback Functions
@@ -617,7 +543,7 @@ const struct {
 	sizeof(sd002),
 	USB_DESCRIPTOR_STRING,
 {	'C','D','C',' ','R','S','-','2','3','2',' ',
-	'E','m','u','l','a','t','i','o','n',' ','D','e','m','o'
+	'R','e','t','r','o','B','S','D',
 }};
 
 /*

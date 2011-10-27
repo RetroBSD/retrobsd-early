@@ -39,6 +39,8 @@ DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0
 DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2
 DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
+# USB port
+DEFS            += -DUSB_CONSOLE
 
 #
 # USB configuration

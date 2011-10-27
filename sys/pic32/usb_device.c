@@ -31,7 +31,7 @@
     #error "PIC32 only supports full ping pong mode."
 #endif
 
-USB_VOLATILE unsigned char USBDeviceState;
+USB_VOLATILE unsigned char usb_device_state;
 USB_VOLATILE unsigned char USBActiveConfiguration;
 USB_VOLATILE unsigned char USBAlternateInterface[USB_MAX_NUM_INT];
 volatile BDT_ENTRY *pBDTEntryEP0OutCurrent;
@@ -69,7 +69,7 @@ volatile unsigned char CtrlTrfData[USB_EP0_BUFF_SIZE];
  * all of the internal variables, registers, and
  * interrupt flags.
  */
-void USBDeviceInit(void)
+void usb_device_init(void)
 {
     unsigned char i;
 
@@ -80,12 +80,12 @@ void USBDeviceInit(void)
     USBClearInterruptRegister(U1IR);
 
     U1EIE = 0x9F;                   // Unmask all USB error interrupts
-    U1IE = 0xFB;                    // Enable all interrupts except ACTVIE
+    U1IE = 0xFB;                    // Enable all interrupts except ACTIVE
 
-    //power up the module
+    // Power up the module
     U1PWRC |= PIC32_U1PWRC_USBPWR;
 
-    //set the address of the BDT (if applicable)
+    // Set the address of the BDT (if applicable)
     U1BDTP1 = (unsigned) BDT >> 8;
 
     // Reset all of the Ping Pong buffers
@@ -95,12 +95,11 @@ void USBDeviceInit(void)
     // Reset to default address
     U1ADDR = 0x00;
 
-    //Clear all of the endpoint control registers
+    // Clear all of the endpoint control registers
     bzero((void*) &U1EP1, USB_MAX_EP_NUMBER - 1);
 
-    //Clear all of the BDT entries
-    for(i=0;i<(sizeof(BDT)/sizeof(BDT_ENTRY));i++)
-    {
+    // Clear all of the BDT entries
+    for (i=0; i<(sizeof(BDT)/sizeof(BDT_ENTRY)); i++) {
         BDT[i].Val = 0x00;
     }
 
@@ -108,8 +107,7 @@ void USBDeviceInit(void)
     U1EP0 = EP_CTRL | USB_HANDSHAKE_ENABLED;
 
     // Flush any pending transactions
-    while (USBTransactionCompleteIF)
-    {
+    while (USBTransactionCompleteIF) {
         USBClearInterruptFlag (USBTransactionCompleteIFReg, USBTransactionCompleteIFBitNum);
     }
 
@@ -121,14 +119,14 @@ void USBDeviceInit(void)
     // Make sure packet processing is enabled
     U1CON &= ~PIC32_U1CON_PKTDIS;
 
-    //Get ready for the first packet
+    // Get ready for the first packet
     pBDTEntryIn[0] = (volatile BDT_ENTRY*) &BDT[EP0_IN_EVEN];
 
     // Clear active configuration
     USBActiveConfiguration = 0;
 
-    //Indicate that we are now in the detached state
-    USBDeviceState = DETACHED_STATE;
+    // Indicate that we are now in the detached state
+    usb_device_state = DETACHED_STATE;
 }
 
 /*
@@ -145,12 +143,12 @@ void USBDeviceInit(void)
  * be called at least as fast as the OUT data
  * expected from the PC.
  */
-void USBDeviceTasks(void)
+void usb_device_tasks(void)
 {
     unsigned char i;
 
 #ifdef USB_SUPPORT_OTG
-    //SRP Time Out Check
+    // SRP Time Out Check
     if (USBOTGSRPIsReady())
     {
         if (USBT1MSECIF && USBT1MSECIE)
@@ -166,25 +164,25 @@ void USBDeviceTasks(void)
             USBClearInterruptFlag(USBT1MSECIFReg,USBT1MSECIFBitNum);
         }
     }
-    //If Session Is Started Then
+    // If Session Is Started Then
     else {
-        //If SRP Is Ready
+        // If SRP Is Ready
         if (USBOTGSRPIsReady())
         {
-            //Clear SRPReady
+            // Clear SRPReady
             USBOTGClearSRPReady();
 
-            //Clear SRP Timeout Flag
+            // Clear SRP Timeout Flag
             USBOTGClearSRPTimeOutFlag();
 
-            //Indicate Session Started
+            // Indicate Session Started
             UART2PrintString( "\r\n***** USB OTG B Event - Session Started  *****\r\n" );
         }
     }
 #endif
 
-    //if we are in the detached state
-    if(USBDeviceState == DETACHED_STATE)
+    // if we are in the detached state
+    if (usb_device_state == DETACHED_STATE)
     {
 	// Disable module & detach from bus
         U1CON = 0;
@@ -197,20 +195,19 @@ void USBDeviceTasks(void)
 		U1CON |= PIC32_U1CON_USBEN;
 	}
 
-        //moved to the attached state
-        USBDeviceState = ATTACHED_STATE;
+        // moved to the attached state
+        usb_device_state = ATTACHED_STATE;
 
-        //Enable/set things like: pull ups, full/low-speed mode,
-        //set the ping pong mode, and set internal transceiver
+        // Enable/set things like: pull ups, full/low-speed mode,
+        // set the ping pong mode, and set internal transceiver
         SetConfigurationOptions();
 
-#ifdef  USB_SUPPORT_OTG
+#ifdef USB_SUPPORT_OTG
 	U1OTGCON = USB_OTG_DPLUS_ENABLE | USB_OTG_ENABLE;
 #endif
     }
 
-    if(USBDeviceState == ATTACHED_STATE)
-    {
+    if (usb_device_state == ATTACHED_STATE) {
         /*
          * After enabling the USB module, it takes some time for the
          * voltage on the D+ or D- line to rise high enough to get out
@@ -223,38 +220,37 @@ void USBDeviceTasks(void)
         U1IE = 0;			// Mask all USB interrupts
 	U1IE |= PIC32_U1I_URST |	// Unmask RESET interrupt
 		PIC32_U1I_IDLE;		// Unmask IDLE interrupt
-	USBDeviceState = POWERED_STATE;
+	usb_device_state = POWERED_STATE;
     }
 
-    #ifdef  USB_SUPPORT_OTG
-        //If ID Pin Changed State
-        if (USBIDIF && USBIDIE)
-        {
-            //Re-detect & Initialize
-            USBOTGInitialize();
+#ifdef USB_SUPPORT_OTG
+    // If ID Pin Changed State
+    if (USBIDIF && USBIDIE)
+    {
+        // Re-detect & Initialize
+        USBOTGInitialize();
 
-            USBClearInterruptFlag(USBIDIFReg,USBIDIFBitNum);
-        }
-    #endif
+        USBClearInterruptFlag(USBIDIFReg,USBIDIFBitNum);
+    }
+#endif
 
     /*
      * Task A: Service USB Activity Interrupt
      */
     if(USBActivityIF && USBActivityIE)
     {
-        #if defined(USB_SUPPORT_OTG)
-        USBClearInterruptFlag(USBActivityIFReg,USBActivityIFBitNum);
-            U1OTGIR = 0x10;
-        #else
-            USBWakeFromSuspend();
-        #endif
+#if defined(USB_SUPPORT_OTG)
+        USBClearInterruptFlag (USBActivityIFReg, USBActivityIFBitNum);
+        U1OTGIR = 0x10;
+#else
+        USBWakeFromSuspend();
+#endif
     }
 
     /*
      * Pointless to continue servicing if the device is in suspend mode.
      */
-    if (U1PWRC & PIC32_U1PWRC_USUSPEND)
-    {
+    if (U1PWRC & PIC32_U1PWRC_USUSPEND) {
         return;
     }
 
@@ -268,65 +264,65 @@ void USBDeviceTasks(void)
      * DETACHED_STATE or ATTACHED_STATE, and therefore cannot
      * cause a USB reset event during these two states.
      */
-    if(USBResetIF && USBResetIE)
+    if (USBResetIF && USBResetIE)
     {
-        USBDeviceInit();
-        USBDeviceState = DEFAULT_STATE;
+        usb_device_init();
+        usb_device_state = DEFAULT_STATE;
 
         /*
-        Bug Fix: Feb 26, 2007 v2.1 (#F1)
-        *********************************************************************
-        In the original firmware, if an OUT token is sent by the host
-        before a SETUP token is sent, the firmware would respond with an ACK.
-        This is not a correct response, the firmware should have sent a STALL.
-        This is a minor non-compliance since a compliant host should not
-        send an OUT before sending a SETUP token. The fix allows a SETUP
-        transaction to be accepted while stalling OUT transactions.
-        */
+         * Bug Fix: Feb 26, 2007 v2.1 (#F1)
+         *********************************************************************
+         * In the original firmware, if an OUT token is sent by the host
+         * before a SETUP token is sent, the firmware would respond with an ACK.
+         * This is not a correct response, the firmware should have sent a STALL.
+         * This is a minor non-compliance since a compliant host should not
+         * send an OUT before sending a SETUP token. The fix allows a SETUP
+         * transaction to be accepted while stalling OUT transactions.
+         * */
         BDT[EP0_OUT_EVEN].ADR = ConvertToPhysicalAddress (&SetupPkt);
         BDT[EP0_OUT_EVEN].CNT = USB_EP0_BUFF_SIZE;
         BDT[EP0_OUT_EVEN].STAT.Val &= ~_STAT_MASK;
         BDT[EP0_OUT_EVEN].STAT.Val |= _USIE|_DAT0|_DTSEN|_BSTALL;
 
-        #ifdef USB_SUPPORT_OTG
-             //Disable HNP
-             USBOTGDisableHnp();
+#ifdef USB_SUPPORT_OTG
+         // Disable HNP
+         USBOTGDisableHnp();
 
-             //Deactivate HNP
-             USBOTGDeactivateHnp();
-        #endif
+         // Deactivate HNP
+         USBOTGDeactivateHnp();
+#endif
     }
 
     /*
      * Task C: Service other USB interrupts
      */
-    if(USBIdleIF && USBIdleIE)
+    if (USBIdleIF && USBIdleIE)
     {
-        #ifdef  USB_SUPPORT_OTG
-            //If Suspended, Try to switch to Host
-            USBOTGSelectRole(ROLE_HOST);
-        #else
-            USBSuspend();
-        #endif
+#ifdef USB_SUPPORT_OTG
+        // If Suspended, Try to switch to Host
+        USBOTGSelectRole(ROLE_HOST);
+#else
+        USBSuspend();
+#endif
 
         USBClearInterruptFlag(USBIdleIFReg,USBIdleIFBitNum);
     }
 
-    if(USBSOFIF && USBSOFIE)
+    if (USBSOFIF && USBSOFIE)
     {
         USBCB_SOF_Handler();    // Required callback, see usbcallbacks.c
-        USBClearInterruptFlag(USBSOFIFReg,USBSOFIFBitNum);
+        USBClearInterruptFlag (USBSOFIFReg, USBSOFIFBitNum);
     }
 
-    if(USBStallIF && USBStallIE)
+    if (USBStallIF && USBStallIE)
     {
         USBStallHandler();
     }
 
-    if(USBErrorIF && USBErrorIE)
+    if (USBErrorIF && USBErrorIE)
     {
         USBCBErrorHandler();    // Required callback, see usbcallbacks.c
-        USBClearInterruptRegister(U1EIR);               // This clears UERRIF
+        USBClearInterruptRegister (U1EIR);  // This clears UERRIF
     }
 
     /*
@@ -334,31 +330,32 @@ void USBDeviceTasks(void)
      * Once bus reset is received, the device transitions into the DEFAULT
      * state and is ready for communication.
      */
-    if(USBDeviceState < DEFAULT_STATE) return;
+    if (usb_device_state < DEFAULT_STATE)
+        return;
 
     /*
      * Task D: Servicing USB Transaction Complete Interrupt
      */
-    if(USBTransactionCompleteIE)
+    if (USBTransactionCompleteIE)
     {
-	    for(i = 0; i < 4; i++)	//Drain or deplete the USAT FIFO entries.  If the USB FIFO ever gets full, USB bandwidth
-		{						//utilization can be compromised, and the device won't be able to receive SETUP packets.
-		    if(USBTransactionCompleteIF)
-		    {
-		        USTATcopy = U1STAT;
+        // Drain or deplete the USAT FIFO entries.
+        // If the USB FIFO ever gets full, USB bandwidth
+        // utilization can be compromised, and the device
+        // won't be able to receive SETUP packets.
+	for (i = 0; i < 4; i++) {
+	    if (! USBTransactionCompleteIF)
+	    	break;                      // USTAT FIFO must be empty.
 
-		        USBClearInterruptFlag(USBTransactionCompleteIFReg,USBTransactionCompleteIFBitNum);
+            USTATcopy = U1STAT;
+            USBClearInterruptFlag (USBTransactionCompleteIFReg, USBTransactionCompleteIFBitNum);
 
-		        /*
-		         * USBCtrlEPService only services transactions over EP0.
-		         * It ignores all other EP transactions.
-		         */
-		        USBCtrlEPService();
-		    }//end if(USBTransactionCompleteIF)
-		    else
-		    	break;	//USTAT FIFO must be empty.
-		}
-	}
+            /*
+             * USBCtrlEPService only services transactions over EP0.
+             * It ignores all other EP transactions.
+             */
+            USBCtrlEPService();
+        }
+    }
 }
 
 /*
@@ -612,16 +609,16 @@ void USBCtrlTrfInHandler(void)
     *(unsigned char*)&pBDTEntryIn[0] ^= USB_NEXT_EP0_IN_PING_PONG;
 
     //mUSBCheckAdrPendingState();       // Must check if in ADR_PENDING_STATE
-    if(USBDeviceState == ADR_PENDING_STATE)
+    if(usb_device_state == ADR_PENDING_STATE)
     {
         U1ADDR = SetupPkt.bDevADR;
         if(U1ADDR > 0)
         {
-            USBDeviceState=ADDRESS_STATE;
+            usb_device_state = ADDRESS_STATE;
         }
         else
         {
-            USBDeviceState=DEFAULT_STATE;
+            usb_device_state = DEFAULT_STATE;
         }
     }//end if
 
@@ -770,7 +767,7 @@ void USBCheckStdRequest(void)
     {
         case SET_ADR:
             inPipes[0].info.bits.busy = 1;            // This will generate a zero length packet
-            USBDeviceState = ADR_PENDING_STATE;       // Update state only
+            usb_device_state = ADR_PENDING_STATE;     // Update state only
             /* See USBCtrlTrfInHandler() for the next step */
             break;
         case GET_DSC:
@@ -1336,12 +1333,12 @@ void USBStdSetCfgHandler(void)
     if(SetupPkt.bConfigurationValue == 0)
     {
         //Go back to the addressed state
-        USBDeviceState = ADDRESS_STATE;
+        usb_device_state = ADDRESS_STATE;
     }
     else
     {
         //Otherwise go to the configured state
-        USBDeviceState = CONFIGURED_STATE;
+        usb_device_state = CONFIGURED_STATE;
         //initialize the required endpoints
         USBInitEP((const unsigned char*)(USB_CD_Ptr[USBActiveConfiguration-1]));
         USBCBInitEP();

@@ -570,10 +570,10 @@ void putrsUSBUSART(const char *data)
     <code>
     void main(void)
     {
-        USBDeviceInit();
+        usb_device_init();
         while(1)
         {
-            USBDeviceTasks();
+            usb_device_tasks();
             if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
             {
                 //Either the device is not configured or we are suspended

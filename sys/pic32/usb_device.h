@@ -441,7 +441,7 @@ extern volatile unsigned char CtrlTrfData[USB_EP0_BUFF_SIZE];
 #define RCPT_EP			2
 #define RCPT_OTH		3
 
-extern unsigned char USBDeviceState;
+extern unsigned char usb_device_state;
 extern unsigned char USBActiveConfiguration;
 extern USB_VOLATILE IN_PIPE inPipes[1];
 extern USB_VOLATILE OUT_PIPE outPipes[1];
@@ -449,7 +449,7 @@ extern volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
 
 /*
   Function:
-        void USBDeviceTasks(void)
+        void usb_device_tasks(void)
 
   Summary:
     This function is the main state machine of the USB device side stack.
@@ -475,10 +475,10 @@ extern volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
     <code>
     void main(void)
     {
-        USBDeviceInit()
+        usb_device_init();
         while(1)
         {
-            USBDeviceTasks();
+            usb_device_tasks();
             if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
             {
                 //Either the device is not configured or we are suspended
@@ -502,11 +502,11 @@ extern volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
     needs to be called periodically to respond to various situations on the
     bus but is more relaxed in its time requirements.
   */
-void USBDeviceTasks(void);
+void usb_device_tasks(void);
 
 /*
     Function:
-        void USBDeviceInit(void)
+        void usb_device_init(void)
 
     Description:
         This function initializes the device stack it in the default state. The
@@ -515,7 +515,7 @@ void USBDeviceTasks(void);
 
     Precondition:
         This function must be called before any of the other USB Device
-        functions can be called, including USBDeviceTasks().
+        functions can be called, including usb_device_tasks().
 
     Parameters:
         None
@@ -527,7 +527,7 @@ void USBDeviceTasks(void);
         None
 
   */
-void USBDeviceInit(void);
+void usb_device_init(void);
 
 /*
   Function:
@@ -609,7 +609,7 @@ void USBDeviceInit(void);
     this function returns CONFIGURED_STATE.
 
     It is also important that applications yield as much time as possible
-    to the USBDeviceTasks() function as possible while the this function
+    to the usb_device_tasks() function as possible while the this function
     \returns any value between ATTACHED_STATE through CONFIGURED_STATE.
 
     For more information about the various device states, please refer to
@@ -619,10 +619,10 @@ void USBDeviceInit(void);
     <code>
     void main(void)
     {
-        USBDeviceInit()
+        usb_device_init();
         while(1)
         {
-            USBDeviceTasks();
+            usb_device_tasks();
             if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
             {
                 //Either the device is not configured or we are suspended
@@ -657,7 +657,7 @@ void USBDeviceInit(void);
   Remarks:
     None
   */
-#define USBGetDeviceState() USBDeviceState
+#define USBGetDeviceState() usb_device_state
 
 /*
   Function:
@@ -677,10 +677,10 @@ void USBDeviceInit(void);
     <code>
        void main(void)
        {
-           USBDeviceInit()
+           usb_device_init();
            while(1)
            {
-               USBDeviceTasks();
+               usb_device_tasks();
                if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
                {
                    //Either the device is not configured or we are suspended
@@ -1030,16 +1030,16 @@ void USBCBInitEP(void);
 
     Typical Usage:
     <code>
-    if((USBDeviceState == CONFIGURED_STATE)
+    if ((usb_device_state == CONFIGURED_STATE)
         &amp;&amp; USBIsDeviceSuspended()
         &amp;&amp; (USBGetRemoteWakeupStatus() == TRUE))
     {
-        if(ButtonPressed)
+        if (ButtonPressed)
         {
-            //Wake up the USB module from suspend
+            // Wake up the USB module from suspend
             USBWakeFromSuspend();
 
-            //Issue a remote wakeup command on the bus
+            // Issue a remote wakeup command on the bus
             USBCBSendResume();
         }
     }
