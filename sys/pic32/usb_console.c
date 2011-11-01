@@ -18,25 +18,160 @@
  * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
  */
 #include <sys/param.h>
+#include <sys/conf.h>
 #include <sys/systm.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
 #include <machine/pic32mx.h>
 #include <machine/usb.h>
 #include <machine/usb_function_cdc.h>
+
+struct tty cnttys [1];
+
+void cnstart (struct tty *tp);
+
+/*
+ * Initialize USB module SFRs and firmware variables to known state.
+ * Enable interrupts.
+ */
+void cninit()
+{
+    usb_device_init();
+    IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
+
+    // TODO: wait for user connection.
+    // Blink all LEDs while waiting.
+}
+
+void cnidentify()
+{
+    printf ("console: USB\n");
+}
+
+int cnopen (dev, flag, mode)
+    dev_t dev;
+{
+    register struct tty *tp = &cnttys[0];
+
+    tp->t_oproc = cnstart;
+    if ((tp->t_state & TS_ISOPEN) == 0) {
+            ttychars(tp);
+            tp->t_state = TS_ISOPEN | TS_CARR_ON;
+            tp->t_flags = ECHO | XTABS | CRMOD | CRTBS | CRTERA | CTLECH | CRTKIL;
+    }
+    if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
+            return (EBUSY);
+
+    if (! linesw[tp->t_line].l_open)
+            return (ENODEV);
+    return (*linesw[tp->t_line].l_open) (dev, tp);
+}
+
+int cnclose (dev, flag, mode)
+    dev_t dev;
+{
+    register struct tty *tp = &cnttys[0];
+
+    if (linesw[tp->t_line].l_close)
+        (*linesw[tp->t_line].l_close) (tp, flag);
+    ttyclose (tp);
+    return 0;
+}
+
+int cnread (dev, uio, flag)
+    dev_t dev;
+    struct uio *uio;
+    int flag;
+{
+    register struct tty *tp = &cnttys[0];
+
+    if (! linesw[tp->t_line].l_read)
+        return (ENODEV);
+    return (*linesw[tp->t_line].l_read) (tp, uio, flag);
+}
+
+int cnwrite (dev, uio, flag)
+    dev_t dev;
+    struct uio *uio;
+    int flag;
+{
+    register struct tty *tp = &cnttys[0];
+
+    if (! linesw[tp->t_line].l_write)
+        return (ENODEV);
+    return (*linesw[tp->t_line].l_write) (tp, uio, flag);
+}
+
+int cnioctl (dev, cmd, addr, flag)
+    dev_t dev;
+    register u_int cmd;
+    caddr_t addr;
+{
+    register struct tty *tp = &cnttys[0];
+    register int error;
+
+    if (linesw[tp->t_line].l_ioctl) {
+        error = (*linesw[tp->t_line].l_ioctl) (tp, cmd, addr, flag);
+        if (error >= 0)
+            return error;
+    }
+    error = ttioctl (tp, cmd, addr, flag);
+    if (error < 0)
+            error = ENOTTY;
+    return error;
+}
+
+int cnselect (dev, rw)
+    register dev_t dev;
+    int rw;
+{
+    register struct tty *tp = &cnttys[0];
+
+    return ttyselect (tp, rw);
+}
+
+void cnstart (tp)
+    register struct tty *tp;
+{
+    register int s;
+
+    s = spltty();
+    if (tp->t_state & (TS_TIMEOUT | TS_BUSY | TS_TTSTOP)) {
+out:	/* Disable transmit_interrupt. */
+        led_control (LED_TTY, 0);
+        splx (s);
+        return;
+    }
+    ttyowake(tp);
+    if (tp->t_outq.c_cc == 0)
+        goto out;
+    // TODO
+#if 0
+    if (reg->sta & PIC32_USTA_TRMT) {
+        int c = getc (&tp->t_outq);
+        reg->txreg = c;
+        tp->t_state |= TS_BUSY;
+    }
+#endif
+    led_control (LED_TTY, 1);
+    splx (s);
+}
+
+/*
+ * Put a symbol on console terminal.
+ */
+void cnputc (c)
+    char c;
+{
+    // TODO
+}
 
 //
 // Check bus status and service USB interrupts.
 //
 void usb_intr()
 {
-    if (! (U1PWRC & PIC32_U1PWRC_USBPWR)) {
-        /*
-         * Initialize USB module SFRs and firmware variables to known state.
-         * Enable interrupts.
-         */
-	usb_device_init();
-	IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
-    }
-
     // Must call this function from interrupt or periodically.
     // It will process and respond to SETUP transactions
     // (such as during the enumeration process when you first
@@ -52,16 +187,21 @@ void usb_intr()
 
     // User Application USB tasks
     if (usb_device_state >= CONFIGURED_STATE && ! (U1PWRC & PIC32_U1PWRC_USUSPEND)) {
-            unsigned nbytes_read;
-            static unsigned char inbuf[64];
+        unsigned nbytes_read;
+        static unsigned char inbuf[64];
 
-            // Pull in some new data if there is new data to pull in
-            nbytes_read = getsUSBUSART ((char*) inbuf, 64);
-            if (nbytes_read != 0) {
-                    printf ("Received %d bytes: %02x...\r\n", nbytes_read, inbuf[0]);
-                    putUSBUSART ("Ok\r\n", 4);
-            }
-            CDCTxService();
+        // Pull in some new data if there is new data to pull in
+        nbytes_read = getsUSBUSART ((char*) inbuf, 64);
+        if (nbytes_read != 0) {
+            // TODO
+#if 0
+            if (linesw[tp->t_line].l_rint)
+                    (*linesw[tp->t_line].l_rint) (c, tp);
+#endif
+            printf ("Received %d bytes: %02x...\r\n", nbytes_read, inbuf[0]);
+            putUSBUSART ("Ok\r\n", 4);
+        }
+        CDCTxService();
     }
 }
 
@@ -94,7 +234,7 @@ void usb_intr()
  */
 void USBCBInitEP (void)
 {
-	CDCInitEP();
+    CDCInitEP();
 }
 
 /*
@@ -115,7 +255,7 @@ void USBCBInitEP (void)
  */
 void USBCBCheckOtherReq (void)
 {
-	USBCheckCDCRequest();
+    USBCheckCDCRequest();
 }
 
 /*
@@ -127,7 +267,7 @@ void USBCBCheckOtherReq (void)
  */
 void USBCBStdSetDscHandler(void)
 {
-	/* Must claim session ownership if supporting this request */
+    /* Must claim session ownership if supporting this request */
 }
 
 /*
@@ -140,14 +280,14 @@ void USBCBStdSetDscHandler(void)
  */
 void USBCBWakeFromSuspend(void)
 {
-	// If clock switching or other power savings measures were taken when
-	// executing the USBCBSuspend() function, now would be a good time to
-	// switch back to normal full power run mode conditions.  The host allows
-	// a few milliseconds of wakeup time, after which the device must be
-	// fully back to normal, and capable of receiving and processing USB
-	// packets.  In order to do this, the USB module must receive proper
-	// clocking (IE: 48MHz clock must be available to SIE for full speed USB
-	// operation).
+    // If clock switching or other power savings measures were taken when
+    // executing the USBCBSuspend() function, now would be a good time to
+    // switch back to normal full power run mode conditions.  The host allows
+    // a few milliseconds of wakeup time, after which the device must be
+    // fully back to normal, and capable of receiving and processing USB
+    // packets.  In order to do this, the USB module must receive proper
+    // clocking (IE: 48MHz clock must be available to SIE for full speed USB
+    // operation).
 }
 
 /*
@@ -165,8 +305,8 @@ void USBCBSuspend (void)
  */
 void USBCB_SOF_Handler(void)
 {
-	// No need to clear UIRbits.SOFIF to 0 here.
-	// Callback caller is already doing that.
+    // No need to clear UIRbits.SOFIF to 0 here.
+    // Callback caller is already doing that.
 }
 
 /*
@@ -176,24 +316,24 @@ void USBCB_SOF_Handler(void)
  */
 void USBCBErrorHandler(void)
 {
-	// No need to clear UEIR to 0 here.
-	// Callback caller is already doing that.
+    // No need to clear UEIR to 0 here.
+    // Callback caller is already doing that.
 
-	// Typically, user firmware does not need to do anything special
-	// if a USB error occurs.  For example, if the host sends an OUT
-	// packet to your device, but the packet gets corrupted (ex:
-	// because of a bad connection, or the user unplugs the
-	// USB cable during the transmission) this will typically set
-	// one or more USB error interrupt flags.  Nothing specific
-	// needs to be done however, since the SIE will automatically
-	// send a "NAK" packet to the host.  In response to this, the
-	// host will normally retry to send the packet again, and no
-	// data loss occurs.  The system will typically recover
-	// automatically, without the need for application firmware
-	// intervention.
+    // Typically, user firmware does not need to do anything special
+    // if a USB error occurs.  For example, if the host sends an OUT
+    // packet to your device, but the packet gets corrupted (ex:
+    // because of a bad connection, or the user unplugs the
+    // USB cable during the transmission) this will typically set
+    // one or more USB error interrupt flags.  Nothing specific
+    // needs to be done however, since the SIE will automatically
+    // send a "NAK" packet to the host.  In response to this, the
+    // host will normally retry to send the packet again, and no
+    // data loss occurs.  The system will typically recover
+    // automatically, without the need for application firmware
+    // intervention.
 
-	// Nevertheless, this callback function is provided, such as
-	// for debugging purposes.
+    // Nevertheless, this callback function is provided, such as
+    // for debugging purposes.
 }
 
 /*
@@ -257,13 +397,13 @@ void USBCBErrorHandler(void)
  */
 void USBCBSendResume (void)
 {
-	// Start RESUME signaling
-	U1CON |= PIC32_U1CON_RESUME;
+    // Start RESUME signaling
+    U1CON |= PIC32_U1CON_RESUME;
 
-	// Set RESUME line for 1-13 ms
-	udelay (5000);
+    // Set RESUME line for 1-13 ms
+    udelay (5000);
 
-	U1CON &= ~PIC32_U1CON_RESUME;
+    U1CON &= ~PIC32_U1CON_RESUME;
 }
 
 /*
@@ -403,20 +543,20 @@ void USBCBEP0DataReceived(void)
  * Device Descriptor
  */
 const USB_DEVICE_DESCRIPTOR device_dsc = {
-	0x12,			// Size of this descriptor in bytes
-	USB_DESCRIPTOR_DEVICE,  // DEVICE descriptor type
-	0x0200,                 // USB Spec Release Number in BCD format
-	CDC_DEVICE,             // Class Code
-	0x00,                   // Subclass code
-	0x00,                   // Protocol code
-	USB_EP0_BUFF_SIZE,      // Max packet size for EP0, see usb_config.h
-	0x04D8,                 // Vendor ID
-	0x000A,                 // Product ID: CDC RS-232 Emulation Demo
-	0x0100,                 // Device release number in BCD format
-	0x01,                   // Manufacturer string index
-	0x02,                   // Product string index
-	0x00,                   // Device serial number string index
-	0x01                    // Number of possible configurations
+    0x12,			// Size of this descriptor in bytes
+    USB_DESCRIPTOR_DEVICE,  // DEVICE descriptor type
+    0x0200,                 // USB Spec Release Number in BCD format
+    CDC_DEVICE,             // Class Code
+    0x00,                   // Subclass code
+    0x00,                   // Protocol code
+    USB_EP0_BUFF_SIZE,      // Max packet size for EP0, see usb_config.h
+    0x04D8,                 // Vendor ID
+    0x000A,                 // Product ID: CDC RS-232 Emulation Demo
+    0x0100,                 // Device release number in BCD format
+    0x01,                   // Manufacturer string index
+    0x02,                   // Product string index
+    0x00,                   // Device serial number string index
+    0x01                    // Number of possible configurations
 };
 
 /*
@@ -424,84 +564,84 @@ const USB_DEVICE_DESCRIPTOR device_dsc = {
  */
 const unsigned char configDescriptor1[] =
 {
-	/* Configuration Descriptor */
-	0x09,				// sizeof(USB_CFG_DSC)
-	USB_DESCRIPTOR_CONFIGURATION,	// CONFIGURATION descriptor type
-	67, 0,				// Total length of data for this cfg
-	2,				// Number of interfaces in this cfg
-	1,				// Index value of this configuration
-	0,				// Configuration string index
-	_DEFAULT | _SELF,		// Attributes, see usb_device.h
-	50,				// Max power consumption (2X mA)
+    /* Configuration Descriptor */
+    0x09,				// sizeof(USB_CFG_DSC)
+    USB_DESCRIPTOR_CONFIGURATION,	// CONFIGURATION descriptor type
+    67, 0,				// Total length of data for this cfg
+    2,				// Number of interfaces in this cfg
+    1,				// Index value of this configuration
+    0,				// Configuration string index
+    _DEFAULT | _SELF,		// Attributes, see usb_device.h
+    50,				// Max power consumption (2X mA)
 
-	/* Interface Descriptor */
-	9,				// sizeof(USB_INTF_DSC)
-	USB_DESCRIPTOR_INTERFACE,	// INTERFACE descriptor type
-	0,				// Interface Number
-	0,				// Alternate Setting Number
-	1,				// Number of endpoints in this intf
-	COMM_INTF,			// Class code
-	ABSTRACT_CONTROL_MODEL,		// Subclass code
-	V25TER,				// Protocol code
-	0,				// Interface string index
+    /* Interface Descriptor */
+    9,				// sizeof(USB_INTF_DSC)
+    USB_DESCRIPTOR_INTERFACE,	// INTERFACE descriptor type
+    0,				// Interface Number
+    0,				// Alternate Setting Number
+    1,				// Number of endpoints in this intf
+    COMM_INTF,			// Class code
+    ABSTRACT_CONTROL_MODEL,		// Subclass code
+    V25TER,				// Protocol code
+    0,				// Interface string index
 
-	/* CDC Class-Specific Descriptors */
-	sizeof(USB_CDC_HEADER_FN_DSC),
-	CS_INTERFACE,
-	DSC_FN_HEADER,
-	0x10,0x01,
+    /* CDC Class-Specific Descriptors */
+    sizeof(USB_CDC_HEADER_FN_DSC),
+    CS_INTERFACE,
+    DSC_FN_HEADER,
+    0x10,0x01,
 
-	sizeof(USB_CDC_ACM_FN_DSC),
-	CS_INTERFACE,
-	DSC_FN_ACM,
-	USB_CDC_ACM_FN_DSC_VAL,
+    sizeof(USB_CDC_ACM_FN_DSC),
+    CS_INTERFACE,
+    DSC_FN_ACM,
+    USB_CDC_ACM_FN_DSC_VAL,
 
-	sizeof(USB_CDC_UNION_FN_DSC),
-	CS_INTERFACE,
-	DSC_FN_UNION,
-	CDC_COMM_INTF_ID,
-	CDC_DATA_INTF_ID,
+    sizeof(USB_CDC_UNION_FN_DSC),
+    CS_INTERFACE,
+    DSC_FN_UNION,
+    CDC_COMM_INTF_ID,
+    CDC_DATA_INTF_ID,
 
-	sizeof(USB_CDC_CALL_MGT_FN_DSC),
-	CS_INTERFACE,
-	DSC_FN_CALL_MGT,
-	0x00,
-	CDC_DATA_INTF_ID,
+    sizeof(USB_CDC_CALL_MGT_FN_DSC),
+    CS_INTERFACE,
+    DSC_FN_CALL_MGT,
+    0x00,
+    CDC_DATA_INTF_ID,
 
-	/* Endpoint Descriptor */
-	0x07,				/* sizeof(USB_EP_DSC) */
-	USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
-	_EP02_IN,			// EndpointAddress
-	_INTERRUPT,			// Attributes
-	0x08, 0x00,			// size
-	0x02,				// Interval
+    /* Endpoint Descriptor */
+    0x07,				/* sizeof(USB_EP_DSC) */
+    USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
+    _EP02_IN,			// EndpointAddress
+    _INTERRUPT,			// Attributes
+    0x08, 0x00,			// size
+    0x02,				// Interval
 
-	/* Interface Descriptor */
-	9,				/* sizeof(USB_INTF_DSC) */
-	USB_DESCRIPTOR_INTERFACE,	// INTERFACE descriptor type
-	1,				// Interface Number
-	0,				// Alternate Setting Number
-	2,				// Number of endpoints in this intf
-	DATA_INTF,			// Class code
-	0,				// Subclass code
-	NO_PROTOCOL,			// Protocol code
-	0,				// Interface string index
+    /* Interface Descriptor */
+    9,				/* sizeof(USB_INTF_DSC) */
+    USB_DESCRIPTOR_INTERFACE,	// INTERFACE descriptor type
+    1,				// Interface Number
+    0,				// Alternate Setting Number
+    2,				// Number of endpoints in this intf
+    DATA_INTF,			// Class code
+    0,				// Subclass code
+    NO_PROTOCOL,			// Protocol code
+    0,				// Interface string index
 
-	/* Endpoint Descriptor */
-	0x07,				/* sizeof(USB_EP_DSC) */
-	USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
-	_EP03_OUT,			// EndpointAddress
-	_BULK,				// Attributes
-	0x40, 0x00,			// size
-	0x00,				// Interval
+    /* Endpoint Descriptor */
+    0x07,				/* sizeof(USB_EP_DSC) */
+    USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
+    _EP03_OUT,			// EndpointAddress
+    _BULK,				// Attributes
+    0x40, 0x00,			// size
+    0x00,				// Interval
 
-	/* Endpoint Descriptor */
-	0x07,				/* sizeof(USB_EP_DSC) */
-	USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
-	_EP03_IN,			// EndpointAddress
-	_BULK,				// Attributes
-	0x40, 0x00,			// size
-	0x00,				// Interval
+    /* Endpoint Descriptor */
+    0x07,				/* sizeof(USB_EP_DSC) */
+    USB_DESCRIPTOR_ENDPOINT,	// Endpoint Descriptor
+    _EP03_IN,			// EndpointAddress
+    _BULK,				// Attributes
+    0x40, 0x00,			// size
+    0x00,				// Interval
 };
 
 
@@ -509,55 +649,54 @@ const unsigned char configDescriptor1[] =
  * Language code string descriptor
  */
 const struct {
-	unsigned char bLength;
-	unsigned char bDscType;
-	unsigned short string[1];
+    unsigned char bLength;
+    unsigned char bDscType;
+    unsigned short string[1];
 } sd000 = {
-	sizeof(sd000),
-	USB_DESCRIPTOR_STRING,
-	{ 0x0409 }
+    sizeof(sd000),
+    USB_DESCRIPTOR_STRING,
+    { 0x0409 }
 };
 
 /*
  * Manufacturer string descriptor
  */
 const struct {
-	unsigned char bLength;
-	unsigned char bDscType;
-	unsigned short string[25];
+    unsigned char bLength;
+    unsigned char bDscType;
+    unsigned short string[25];
 } sd001 = {
-	sizeof(sd001),
-	USB_DESCRIPTOR_STRING,
-{	'M','i','c','r','o','c','h','i','p',' ',
-	'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.'
-}};
+    sizeof(sd001),
+    USB_DESCRIPTOR_STRING,
+    { 'M','i','c','r','o','c','h','i','p',' ',
+      'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.', },
+};
 
 /*
  * Product string descriptor
  */
 const struct {
-	unsigned char bLength;
-	unsigned char bDscType;
-	unsigned short string[25];
+    unsigned char bLength;
+    unsigned char bDscType;
+    unsigned short string[25];
 } sd002 = {
-	sizeof(sd002),
-	USB_DESCRIPTOR_STRING,
-{	'C','D','C',' ','R','S','-','2','3','2',' ',
-	'R','e','t','r','o','B','S','D',
-}};
+    sizeof(sd002),
+    USB_DESCRIPTOR_STRING,
+    { 'R','e','t','r','o','B','S','D',' ','C','o','n','s','o','l','e', },
+};
 
 /*
  * Array of configuration descriptors
  */
 const unsigned char *const USB_CD_Ptr[] = {
-	(const unsigned char *const) &configDescriptor1
+    (const unsigned char *const) &configDescriptor1
 };
 
 /*
  * Array of string descriptors
  */
 const unsigned char *const USB_SD_Ptr[USB_NUM_STRING_DESCRIPTORS] = {
-	(const unsigned char *const) &sd000,
-	(const unsigned char *const) &sd001,
-	(const unsigned char *const) &sd002
+    (const unsigned char *const) &sd000,
+    (const unsigned char *const) &sd001,
+    (const unsigned char *const) &sd002
 };

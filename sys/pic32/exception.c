@@ -296,6 +296,9 @@ printf ("\nkernel stack = %p", frame);
                         usb_intr ();
 #endif
                         break;
+#if defined(CONSOLE_UART1) || defined(CONSOLE_UART2) || \
+    defined(CONSOLE_UART3) || defined(CONSOLE_UART4) || \
+    defined(CONSOLE_UART5) || defined(CONSOLE_UART6)
 #if CONSOLE_UART1
                 case PIC32_VECT_U1:     /* UART1 */
 #endif
@@ -316,6 +319,7 @@ printf ("\nkernel stack = %p", frame);
 #endif
                         cnintr (0);
                         break;
+#endif
 #if defined(USB_CONSOLE)
                 case PIC32_VECT_USB:    /* USB */
 printf ("%");

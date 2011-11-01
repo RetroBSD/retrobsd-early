@@ -27,8 +27,8 @@ DEFS		+= -DBUS_KHZ=80000
 # UBW32 board
 # ===========
 #
-# Console on UART1
-DEFS            += -DCONSOLE_UART1
+# Console on USB
+DEFS            += -DUSB_CONSOLE
 # SD/MMC card driver on SPI1
 DEFS            += -DSD_PORT=SPI1CON
 # /CS0 at pin A9 (and optional /CS1 at pin A10)
@@ -39,8 +39,6 @@ DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0
 DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2
 DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3
-# USB port
-DEFS            += -DUSB_CONSOLE
 
 #
 # USB configuration
@@ -64,9 +62,11 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
-KERNOBJ		= startup.o clock.o devsw.o cons.o sysctl.o \
+KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
 		  signal.o machdep.o mem.o exception.o \
-                  usb_device.o usb_function_cdc.o usb_console.o
+                  usb_device.o usb_function_cdc.o
+KERNOBJ		+= usb_console.o
+#KERNOBJ	+= cons.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \

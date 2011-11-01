@@ -48,7 +48,7 @@ MAXIMITE        = sys/pic32/maximite
 MAX32           = sys/pic32/max32
 
 # Select target board
-TARGET          = $(UBW32)
+TARGET          = $(MAX32)
 
 SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/init \
                   sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount sbin/newfs \
