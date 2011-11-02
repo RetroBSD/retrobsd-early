@@ -43,25 +43,6 @@ void cninit()
 {
     usb_device_init();
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
-
-    // Wait for user connection.
-    // Blink all LEDs while waiting.
-    unsigned count = 0;
-    led_control (0xf, 1);
-    for (;;) {
-        usb_device_tasks();
-        if (usb_device_state >= CONFIGURED_STATE &&
-            ! (U1PWRC & PIC32_U1PWRC_USUSPEND))
-            break;
-
-        ++count;
-        if (count == 200000) {
-            count = 0;
-            led_control (0xf, 1);
-        } else if (count == 100000)
-            led_control (0xf, 0);
-    }
-    led_control (0xf, 0);
 }
 
 void cnidentify()
@@ -169,6 +150,7 @@ out:	/* Disable transmit_interrupt. */
     if (cdc_is_tx_ready()) {
         char c = getc (&tp->t_outq);
         cdc_put (&c, 1);
+        cdc_tx_service();
         tp->t_state |= TS_BUSY;
     }
     led_control (LED_TTY, 1);
@@ -184,16 +166,23 @@ void cnputc (c)
     register int s;
 
     s = spltty();
-    while (! cdc_is_tx_ready())
-        usb_intr();
-
+    while (! cdc_is_tx_ready()) {
+        usb_device_tasks();
+        cdc_tx_service();
+    }
     led_control (LED_TTY, 1);
+again:
     cdc_put (&c, 1);
-    if (c == '\n')
-            cnputc('\r');
+    cdc_tx_service();
 
-    while (! cdc_is_tx_ready())
-        usb_intr();
+    while (! cdc_is_tx_ready()) {
+        cdc_tx_service();
+        usb_device_tasks();
+    }
+    if (c == '\n') {
+        c = '\r';
+        goto again;
+    }
 
     led_control (LED_TTY, 0);
     splx (s);
@@ -230,14 +219,19 @@ void usb_intr()
     // Receive data from user.
     cdc_consume (cn_rx);
 
-    // Transmit data to user.
-    cdc_tx_service();
+    if (cdc_is_tx_ready()) {
+        // Transmitter empty.
+        led_control (LED_TTY, 0);
 
-    if (tp->t_state & TS_BUSY) {
+        if (tp->t_state & TS_BUSY) {
             tp->t_state &= ~TS_BUSY;
             if (linesw[tp->t_line].l_start)
                     (*linesw[tp->t_line].l_start) (tp);
+        }
     }
+
+    // Transmit data to user.
+    cdc_tx_service();
 }
 
 /*

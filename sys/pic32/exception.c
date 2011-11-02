@@ -322,7 +322,6 @@ printf ("\nkernel stack = %p", frame);
 #endif
 #if defined(USB_CONSOLE)
                 case PIC32_VECT_USB:    /* USB */
-printf ("%");
                         IFSCLR(1) = 1 << (PIC32_IRQ_USB - 32);
                         usb_intr ();
                         break;

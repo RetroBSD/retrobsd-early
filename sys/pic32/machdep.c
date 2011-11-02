@@ -96,12 +96,6 @@ startup()
 	/* Clear CAUSE register: use special interrupt vector 0x200. */
 	mips_write_c0_register (C0_CAUSE, 0, CA_IV);
 
-	/*
-	 * Setup UART registers.
-	 * Compute the divisor for 115.2 kbaud.
-	 */
-        cninit();
-
 	/* Setup memory. */
         BMXPUPBA = 256 << 10;                   /* Kernel Flash memory size */
         BMXDKPBA = 32 << 10;                    /* Kernel RAM size */
@@ -217,6 +211,12 @@ startup()
 		*dest++ = *src++;
 	}
 #endif
+	/*
+	 * Setup UART registers.
+	 * Compute the divisor for 115.2 kbaud.
+	 */
+        cninit();
+
         /* Get total RAM size. */
 	physmem = BMXDRMSZ;
 }

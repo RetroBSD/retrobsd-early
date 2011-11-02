@@ -517,6 +517,11 @@ void cdc_tx_service()
 {
     unsigned char nbytes_to_send;
 
+    // Check that USB connection is established.
+    if (usb_device_state < CONFIGURED_STATE ||
+        (U1PWRC & PIC32_U1PWRC_USUSPEND))
+        return;
+
     if (usb_handle_busy(data_in))
         return;
     /*

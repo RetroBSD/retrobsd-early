@@ -147,6 +147,6 @@ void usb_intr (void);
 #define PORT_SET(p)     (&p)[6]
 #define PORT_INV(p)     (&p)[7]
 
-#endif
+#endif /* KERNEL */
 
 #endif /* ENDIAN */
