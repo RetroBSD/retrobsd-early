@@ -132,7 +132,6 @@ typedef union __attribute__ ((packed))__BDT
     unsigned long long Val;
 } BDT_ENTRY;
 
-
 #define USTAT_EP0_PP_MASK   ~0x04
 #define USTAT_EP_MASK       0xFC
 #define USTAT_EP0_OUT       0x00
@@ -150,24 +149,6 @@ typedef union
 
 #define UEP_STALL 0x0002
 #define USB_VOLATILE
-
-typedef union _POINTER
-{
-    struct
-    {
-        unsigned char bLow;
-        unsigned char bHigh;
-        //byte bUpper;
-    };
-    unsigned short _word;	// bLow & bHigh
-
-    unsigned char *bRam;	// Ram byte pointer: 2 bytes pointer pointing
-				// to 1 byte of data
-    unsigned short *wRam;	// Ram word pointer: 2 bytes pointer pointing
-				// to 2 bytes of data
-    const unsigned char *bRom;	// Size depends on compiler setting
-    const unsigned short *wRom;
-} POINTER;
 
  //* Depricated: v2.2 - will be removed at some point of time ***
 #define _LS         0x00            // Use Low-Speed USB Mode

@@ -129,14 +129,6 @@
 #define CDC_TX_BUSY_ZLP             2       // ZLP: Zero Length Packet
 #define CDC_TX_COMPLETING           3
 
-#if defined(USB_CDC_SET_LINE_CODING_HANDLER)
-    #define LINE_CODING_TARGET &cdc_notice.SetLineCoding._byte[0]
-    #define LINE_CODING_PFUNC &USB_CDC_SET_LINE_CODING_HANDLER
-#else
-    #define LINE_CODING_TARGET &cdc_line_coding._byte[0]
-    #define LINE_CODING_PFUNC 0
-#endif
-
 #if defined(USB_CDC_SUPPORT_HARDWARE_FLOW_CONTROL)
     #define CONFIGURE_RTS(a) UART_RTS = a;
     #define CONFIGURE_DTR(a) UART_DTR = a;
@@ -194,7 +186,7 @@
 
 /*
  * Function:
- *     void cdc_set_character_format (unsigned char charFormat)
+ *     void cdc_set_character_format (unsigned charFormat)
  *
  * Summary:
  *     This macro is used manually set the character format reported back to
@@ -213,7 +205,7 @@
  *     the USB traffic to a hardware UART.
  *
  * Parameters:
- *     unsigned char charFormat - number of stop bits.  Available options are:
+ *     unsigned charFormat - number of stop bits.  Available options are:
  *      * NUM_STOP_BITS_1 - 1 Stop bit
  *      * NUM_STOP_BITS_1_5 - 1.5 Stop bits
  *      * NUM_STOP_BITS_2 - 2 Stop bits
@@ -225,7 +217,7 @@
 
 /*
  * Function:
- *     void cdc_set_parity (unsigned char parityType)
+ *     void cdc_set_parity (unsigned parityType)
  *
  * Summary:
  *     This function is used manually set the parity format reported back to
@@ -244,7 +236,7 @@
  *     the USB traffic to a hardware UART.
  *
  * Parameters:
- *     unsigned char parityType - Type of parity.  The options are the following:
+ *     unsigned parityType - Type of parity.  The options are the following:
  *         * PARITY_NONE
  *         * PARITY_ODD
  *         * PARITY_EVEN
@@ -260,7 +252,7 @@
 
 /*
  * Function:
- *     void cdc_set_data_size (unsigned char dataBits)
+ *     void cdc_set_data_size (unsigned dataBits)
  *
  * Summary:
  *     This function is used manually set the number of data bits reported back
@@ -279,13 +271,13 @@
  *     the USB traffic to a hardware UART.
  *
  * Parameters:
- *     unsigned char dataBits - number of data bits.  The options are 5, 6, 7, 8, or 16.
+ *     unsigned dataBits - number of data bits.  The options are 5, 6, 7, 8, or 16.
  */
 #define cdc_set_data_size(dataBits) { cdc_line_coding.bDataBits = dataBits; }
 
 /*
  * Function:
- *     void cdc_set_line_coding(unsigned int baud, unsigned char format, unsigned char parity, unsigned char dataSize)
+ *     void cdc_set_line_coding(unsigned int baud, unsigned format, unsigned parity, unsigned dataSize)
  *
  * Summary:
  *     This function is used to manually set the data reported back
@@ -304,18 +296,18 @@
  *     the USB traffic to a hardware UART.
  *
  * Parameters:
- *     unsigned int baud - The desired baudrate
- *     unsigned char format - number of stop bits.  Available options are:
+ *     unsigned baud - The desired baudrate
+ *     unsigned format - number of stop bits.  Available options are:
  *      * NUM_STOP_BITS_1 - 1 Stop bit
  *      * NUM_STOP_BITS_1_5 - 1.5 Stop bits
  *      * NUM_STOP_BITS_2 - 2 Stop bits
- *     unsigned char parity - Type of parity.  The options are the following:
+ *     unsigned parity - Type of parity.  The options are the following:
  *         * PARITY_NONE
  *         * PARITY_ODD
  *         * PARITY_EVEN
  *         * PARITY_MARK
  *         * PARITY_SPACE
- *     unsigned char dataSize - number of data bits.  The options are 5, 6, 7, 8, or 16.
+ *     unsigned dataSize - number of data bits.  The options are 5, 6, 7, 8, or 16.
  */
 #define cdc_set_line_coding(baud, format, parity, dataSize) {\
             cdc_set_baud_rate(baud);\
@@ -429,12 +421,10 @@ typedef union __attribute__((packed)) _CDC_NOTICE
 /*
  * E X T E R N S
  */
-extern unsigned char cdc_rx_len;
-extern unsigned char cdc_trf_state;
-extern unsigned char cdc_tx_len;
-extern unsigned char cdc_mem_type;
+extern unsigned cdc_rx_len;
+extern unsigned cdc_tx_len;
+extern unsigned cdc_trf_state;
 
-extern volatile CDC_NOTICE cdc_notice;
 extern LINE_CODING cdc_line_coding;
 
 /*
@@ -442,10 +432,11 @@ extern LINE_CODING cdc_line_coding;
  */
 void cdc_check_request (void);
 void cdc_init_ep (void);
-unsigned char cdc_gets (char *buffer, unsigned char len);
+unsigned cdc_gets (char *buffer, unsigned len);
 void cdc_putrs (const char *data);
-void cdc_put (char *data, unsigned char Length);
+void cdc_put (char *data, unsigned length);
 void cdc_puts (char *data);
 void cdc_tx_service (void);
+unsigned cdc_consume (void (*func) (int));
 
 #endif //CDC_H

@@ -1,21 +1,25 @@
 /*
- * The software supplied herewith by Microchip Technology Incorporated
- * (the 'Company') for its PIC® Microcontroller is intended and
- * supplied to you, the Company's customer, for use solely and
- * exclusively on Microchip PIC Microcontroller products. The
- * software is owned by the Company and/or its supplier, and is
- * protected under applicable copyright laws. All rights are reserved.
- * Any use in violation of the foregoing restrictions may subject the
- * user to criminal sanctions under applicable laws, as well as to
- * civil liability for the breach of the terms and conditions of this
- * license.
+ * Console driver via USB.
  *
- * THIS SOFTWARE IS PROVIDED IN AN 'AS IS' CONDITION. NO WARRANTIES,
- * WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING, BUT NOT LIMITED
- * TO, IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- * PARTICULAR PURPOSE APPLY TO THIS SOFTWARE. THE COMPANY SHALL NOT,
- * IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL OR
- * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+ * Copyright (C) 2011 Serge Vakulenko, <serge@vak.ru>
+ *
+ * Permission to use, copy, modify, and distribute this software
+ * and its documentation for any purpose and without fee is hereby
+ * granted, provided that the above copyright notice appear in all
+ * copies and that both that the copyright notice and this
+ * permission notice and warranty disclaimer appear in supporting
+ * documentation, and that the name of the author not be used in
+ * advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.
+ *
+ * The author disclaim all warranties with regard to this
+ * software, including all implied warranties of merchantability
+ * and fitness.  In no event shall the author be liable for any
+ * special, indirect or consequential damages or any damages
+ * whatsoever resulting from loss of use, data or profits, whether
+ * in an action of contract, negligence or other tortious action,
+ * arising out of or in connection with the use or performance of
+ * this software.
  */
 #include <sys/param.h>
 #include <sys/conf.h>
@@ -40,8 +44,24 @@ void cninit()
     usb_device_init();
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
 
-    // TODO: wait for user connection.
+    // Wait for user connection.
     // Blink all LEDs while waiting.
+    unsigned count = 0;
+    led_control (0xf, 1);
+    for (;;) {
+        usb_device_tasks();
+        if (usb_device_state >= CONFIGURED_STATE &&
+            ! (U1PWRC & PIC32_U1PWRC_USUSPEND))
+            break;
+
+        ++count;
+        if (count == 200000) {
+            count = 0;
+            led_control (0xf, 1);
+        } else if (count == 100000)
+            led_control (0xf, 0);
+    }
+    led_control (0xf, 0);
 }
 
 void cnidentify()
@@ -56,15 +76,15 @@ int cnopen (dev, flag, mode)
 
     tp->t_oproc = cnstart;
     if ((tp->t_state & TS_ISOPEN) == 0) {
-            ttychars(tp);
-            tp->t_state = TS_ISOPEN | TS_CARR_ON;
-            tp->t_flags = ECHO | XTABS | CRMOD | CRTBS | CRTERA | CTLECH | CRTKIL;
+        ttychars(tp);
+        tp->t_state = TS_ISOPEN | TS_CARR_ON;
+        tp->t_flags = ECHO | XTABS | CRMOD | CRTBS | CRTERA | CTLECH | CRTKIL;
     }
     if ((tp->t_state & TS_XCLUDE) && u.u_uid != 0)
-            return (EBUSY);
+        return (EBUSY);
 
     if (! linesw[tp->t_line].l_open)
-            return (ENODEV);
+        return (ENODEV);
     return (*linesw[tp->t_line].l_open) (dev, tp);
 }
 
@@ -146,14 +166,11 @@ out:	/* Disable transmit_interrupt. */
     ttyowake(tp);
     if (tp->t_outq.c_cc == 0)
         goto out;
-    // TODO
-#if 0
-    if (reg->sta & PIC32_USTA_TRMT) {
-        int c = getc (&tp->t_outq);
-        reg->txreg = c;
+    if (cdc_is_tx_ready()) {
+        char c = getc (&tp->t_outq);
+        cdc_put (&c, 1);
         tp->t_state |= TS_BUSY;
     }
-#endif
     led_control (LED_TTY, 1);
     splx (s);
 }
@@ -164,34 +181,62 @@ out:	/* Disable transmit_interrupt. */
 void cnputc (c)
     char c;
 {
-    // TODO
+    register int s;
+
+    s = spltty();
+    while (! cdc_is_tx_ready())
+        usb_intr();
+
+    led_control (LED_TTY, 1);
+    cdc_put (&c, 1);
+    if (c == '\n')
+            cnputc('\r');
+
+    while (! cdc_is_tx_ready())
+        usb_intr();
+
+    led_control (LED_TTY, 0);
+    splx (s);
 }
 
-//
-// Check bus status and service USB interrupts.
-//
+/*
+ * Receive a character from CDC.
+ */
+static void cn_rx (int c)
+{
+    register struct tty *tp = &cnttys[0];
+
+    if ((tp->t_state & TS_ISOPEN) == 0)
+        return;
+    if (linesw[tp->t_line].l_rint)
+        (*linesw[tp->t_line].l_rint) (c, tp);
+}
+
+/*
+ * Check bus status and service USB interrupts.
+ */
 void usb_intr()
 {
+    register struct tty *tp = &cnttys[0];
+
     // Must call this function from interrupt or periodically.
     usb_device_tasks();
 
-    // User application USB tasks
-    if (usb_device_state >= CONFIGURED_STATE && ! (U1PWRC & PIC32_U1PWRC_USUSPEND)) {
-        unsigned nbytes_read;
-        static unsigned char inbuf[64];
+    // Check that USB connection is established.
+    if (usb_device_state < CONFIGURED_STATE ||
+        (U1PWRC & PIC32_U1PWRC_USUSPEND))
+        return;
 
-        // Pull in some new data if there is new data to pull in
-        nbytes_read = cdc_gets ((char*) inbuf, 64);
-        if (nbytes_read != 0) {
-            // TODO
-#if 0
-            if (linesw[tp->t_line].l_rint)
-                    (*linesw[tp->t_line].l_rint) (c, tp);
-#endif
-            printf ("Received %d bytes: %02x...\r\n", nbytes_read, inbuf[0]);
-            cdc_put ("Ok\r\n", 4);
-        }
-        cdc_tx_service();
+    // Receive data from user.
+    cdc_consume (cn_rx);
+
+    // Transmit data to user.
+    cdc_tx_service();
+
+    if (tp->t_state & TS_BUSY) {
+            tp->t_state &= ~TS_BUSY;
+            if (linesw[tp->t_line].l_start)
+                    (*linesw[tp->t_line].l_start) (tp);
     }
 }
 

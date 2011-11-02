@@ -1358,7 +1358,7 @@ void usbcb_ep0_data_received (void);
 
 /*
     Function:
-        USB_HANDLE usb_tx_one_pPacket(unsigned char ep, unsigned char* data, unsigned short len)
+        USB_HANDLE usb_tx_one_packet(unsigned char ep, unsigned char* data, unsigned short len)
 
     Summary:
         Sends the specified data out the specified endpoint
@@ -1379,11 +1379,11 @@ void usbcb_ep0_data_received (void);
         None
 
  */
-#define usb_tx_one_pPacket(ep,data,len)     usb_transfer_one_packet(ep,IN_TO_HOST,data,len)
+#define usb_tx_one_packet(ep, data, len)    usb_transfer_one_packet(ep, IN_TO_HOST, data, len)
 
 /*
     Function:
-        void usb_rx_one_pPacket(unsigned char ep, unsigned char* data, unsigned short len)
+        void usb_rx_one_packet(unsigned char ep, unsigned char* data, unsigned short len)
 
     Summary:
         Receives the specified data out the specified endpoint
@@ -1403,7 +1403,7 @@ void usbcb_ep0_data_received (void);
         None
 
  */
-#define usb_rx_one_pPacket(ep,data,len)      usb_transfer_one_packet(ep,OUT_FROM_HOST,data,len)
+#define usb_rx_one_packet(ep, data, len)    usb_transfer_one_packet(ep, OUT_FROM_HOST, data, len)
 
 /*
     Function:

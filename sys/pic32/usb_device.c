@@ -23,7 +23,6 @@
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <machine/pic32mx.h>
-#include <machine/usb_ch9.h>
 #include <machine/usb_device.h>
 
 #if (USB_PING_PONG_MODE != USB_PING_PONG__FULL_PING_PONG)
@@ -1460,7 +1459,8 @@ void usb_stall_endpoint (unsigned char ep, unsigned char dir)
  *   unsigned char* data - pointer to the data to be sent
  *   unsigned char len - length of the data needing to be sent
  */
-USB_HANDLE usb_transfer_one_packet (unsigned char ep, unsigned char dir, unsigned char* data, unsigned char len)
+USB_HANDLE usb_transfer_one_packet (unsigned char ep, unsigned char dir,
+    unsigned char* data, unsigned char len)
 {
     USB_HANDLE handle;
 
