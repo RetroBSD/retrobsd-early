@@ -15,6 +15,8 @@
 #include "kernel.h"
 #include "systm.h"
 
+int	selwait;
+
 static void
 rwuio (uio)
 	register struct uio *uio;

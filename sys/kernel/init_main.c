@@ -23,6 +23,10 @@
 #include "disklabel.h"
 #include "stat.h"
 
+u_int	swapstart, nswap;	/* start and size of swap space */
+size_t	physmem;		/* total amount of physical memory */
+int	boothowto;		/* reboot flags, from boot */
+
 /*
  * Initialize hash links for buffers.
  */

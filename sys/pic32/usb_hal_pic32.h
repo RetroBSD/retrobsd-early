@@ -219,7 +219,7 @@ static inline void *ConvertToPhysicalAddress (volatile void *addr)
 /*
  * This macro is used to disable the USB module
  */
-#define USBModuleDisable() {\
+#define usb_module_disable() {\
 	U1CON = 0;\
 	U1IE = 0;\
 	U1OTGIE = 0;\

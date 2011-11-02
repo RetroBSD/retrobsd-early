@@ -154,7 +154,6 @@ static const struct {
         { "_lbolt",         (int) &lbolt        },  /* ps */
         { "_memlock",       (int) &memlock      },  /* ps */
         { "_nchstats",      (int) &nchstats     },  /* vmstat */
-        { "_ncn",           (int) &ncn          },  /* pstat */
         { "_nproc",         (int) &nproc        },  /* ps      pstat */
         { "_nswap",         (int) &nswap        },  /* pstat */
         { "_proc",          (int) &proc         },  /* ps      pstat */

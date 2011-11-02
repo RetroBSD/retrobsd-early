@@ -13,12 +13,15 @@
 #include "kernel.h"
 #include "systm.h"
 
-#define	SQSIZE	16	/* Must be power of 2 */
+#define	SQSIZE	16              /* Must be power of 2 */
 
 #define	HASH(x)	(((int)x >> 5) & (SQSIZE - 1))
 #define	SCHMAG	8/10
 
 struct	proc *slpque[SQSIZE];
+
+int	runrun;			/* scheduling flag */
+char	curpri;			/* more scheduling */
 
 /*
  * Recompute process priorities, once a second

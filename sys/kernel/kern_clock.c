@@ -11,6 +11,8 @@
 #include "kernel.h"
 #include "systm.h"
 
+int	noproc;			/* no one is running just now */
+
 struct	callout *callfree, calltodo;
 
 #ifdef UCB_METER

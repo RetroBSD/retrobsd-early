@@ -33,6 +33,9 @@
 #elif defined MAX32
 #define MASKD_CS0       (1 << 3)            // D3: sd0 on SPI4
 #define MASKD_CS1       (1 << 4)            // D4: sd0 on SPI4
+#elif defined EXPLORER16
+#define MASKB_CS0       (1 << 1)            // B1: sd0 on SPI1
+#define MASKB_CS1       (1 << 2)            // B2: sd1 on SPI1
 #endif
 
 struct pic32_gpio_data {
@@ -192,6 +195,19 @@ lat_a:      d->lat_a = write_op (d->lat_a, *data, offset);
             *data = d->lat_b;
         } else {
 lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
+#ifdef EXPLORER16
+            /* Control SD card 0 */
+            if (d->lat_b & MASKB_CS0)
+                dev_sdcard_select (cpu, 0, 0);
+            else
+                dev_sdcard_select (cpu, 0, 1);
+
+            /* Control SD card 1 */
+            if (d->lat_b & MASKB_CS1)
+                dev_sdcard_select (cpu, 1, 0);
+            else
+                dev_sdcard_select (cpu, 1, 1);
+#endif
         }
         break;
 

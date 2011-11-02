@@ -20,8 +20,8 @@ CFLAGS		+= -O
 #CFLAGS		+= -O3 -fomit-frame-pointer
 
 # Auto-select target board
-ifneq ($(wildcard ../../sys/pic32/ubw32/vers.o),)
-CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DUBW32
+ifneq ($(wildcard ../../sys/pic32/explorer16/vers.o),)
+CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DEXPLORER16
 endif
 ifneq ($(wildcard ../../sys/pic32/maximite/vers.o),)
 CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE

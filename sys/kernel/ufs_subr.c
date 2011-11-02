@@ -13,6 +13,8 @@
 #include "kernel.h"
 #include "systm.h"
 
+int	updlock;		/* lock for sync */
+
 /*
  * Go through the mount table looking for filesystems which have been modified.
  * For each "dirty" filesystem call 'ufs_sync' to flush changed inodes, data

@@ -28,7 +28,7 @@
 #define USBDEVICE_H
 
 #include <machine/usb_ch9.h>
-#include <machine/usb_hal.h>
+#include <machine/usb_hal_pic32.h>
 
 /*
  * USB Endpoint Definitions
@@ -98,7 +98,7 @@
 #define _ROM		USB_INPIPES_ROM
 #define _RAM		USB_INPIPES_RAM
 
-//These are the directional indicators used for the USBTransferOnePacket()
+//These are the directional indicators used for the usb_transfer_one_packet()
 //  function.
 #define OUT_FROM_HOST	0
 #define IN_TO_HOST	1
@@ -242,7 +242,7 @@ typedef struct __attribute__ ((packed))
         unsigned char Val;
     } info;
     unsigned short wCount;
-}IN_PIPE;
+} IN_PIPE;
 
 #define CTRL_TRF_RETURN void
 #define CTRL_TRF_PARAMS void
@@ -267,7 +267,7 @@ typedef struct __attribute__ ((packed))
     } info;
     unsigned short wCount;
     CTRL_TRF_RETURN (*pFunc)(CTRL_TRF_PARAMS);
-}OUT_PIPE;
+} OUT_PIPE;
 
 //Various options for setting the PIPES
 #define USB_INPIPES_ROM            0x00     //Data comes from RAM
@@ -309,18 +309,18 @@ typedef struct __attribute__ ((packed))
 /* Detached is the state in which the device is not attached to the bus.  When
 in the detached state a device should not have any pull-ups attached to either
 the D+ or D- line.  This defintions is a return value of the
-function USBGetDeviceState() */
+function usb_get_device_state() */
 #define DETACHED_STATE          0x00
 /* Attached is the state in which the device is attached ot the bus but the
 hub/port that it is attached to is not yet configured. This defintions is a
-return value of the function USBGetDeviceState() */
+return value of the function usb_get_device_state() */
 #define ATTACHED_STATE          0x01
 /* Powered is the state in which the device is attached to the bus and the
 hub/port that it is attached to is configured. This defintions is a return
-value of the function USBGetDeviceState() */
+value of the function usb_get_device_state() */
 #define POWERED_STATE           0x02
 /* Default state is the state after the device receives a RESET command from
-the host. This defintions is a return value of the function USBGetDeviceState()
+the host. This defintions is a return value of the function usb_get_device_state()
  */
 #define DEFAULT_STATE           0x04
 /* Address pending state is not an official state of the USB defined states.
@@ -328,16 +328,16 @@ This state is internally used to indicate that the device has received a
 SET_ADDRESS command but has not received the STATUS stage of the transfer yet.
 The device is should not switch addresses until after the STATUS stage is
 complete.  This defintions is a return value of the function
-USBGetDeviceState() */
+usb_get_device_state() */
 #define ADR_PENDING_STATE       0x08
 /* Address is the state in which the device has its own specific address on the
-bus. This defintions is a return value of the function USBGetDeviceState().*/
+bus. This defintions is a return value of the function usb_get_device_state().*/
 #define ADDRESS_STATE           0x10
 /* Configured is the state where the device has been fully enumerated and is
 operating on the bus.  The device is now allowed to excute its application
 specific tasks.  It is also allowed to increase its current consumption to the
 value specified in the configuration descriptor of the current configuration.
-This defintions is a return value of the function USBGetDeviceState(). */
+This defintions is a return value of the function usb_get_device_state(). */
 #define CONFIGURED_STATE        0x20
 
 /* UCFG Initialization Parameters */
@@ -365,10 +365,10 @@ This defintions is a return value of the function USBGetDeviceState(). */
 
 #define USB_STALL_ENDPOINT      0x02
 
-//USB_HANDLE is a pointer to an entry in the BDT.  This pointer can be used
-//  to read the length of the last transfer, the status of the last transfer,
-//  and various other information.  Insure to initialize USB_HANDLE objects
-//  to NULL so that they are in a known state during their first usage.
+// USB_HANDLE is a pointer to an entry in the BDT.  This pointer can be used
+// to read the length of the last transfer, the status of the last transfer,
+// and various other information.  Insure to initialize USB_HANDLE objects
+// to NULL so that they are in a known state during their first usage.
 #define USB_HANDLE volatile BDT_ENTRY*
 
 // PIC32 supports only full ping-pong mode.
@@ -393,25 +393,20 @@ This defintions is a return value of the function USBGetDeviceState(). */
 #   define USB_MAX_NUM_INT	1
 #endif
 
-//Definitions for the BDT
-extern volatile BDT_ENTRY BDT[(USB_MAX_EP_NUMBER + 1) * 4];
+// Definitions for the BDT
+extern volatile BDT_ENTRY usb_buffer[(USB_MAX_EP_NUMBER + 1) * 4];
 
-//Device descriptor
-extern const USB_DEVICE_DESCRIPTOR device_dsc;
+// Device descriptor
+extern const USB_DEVICE_DESCRIPTOR usb_device;
 
-//Configuration descriptor
-extern const unsigned char configDescriptor1[];
+// Array of configuration descriptors
+extern const unsigned char *const usb_config[];
 
-//Array of configuration descriptors
-extern const unsigned char *const USB_CD_Ptr[];
+// Array of string descriptors
+extern const unsigned char *const usb_string[];
 
-//Array of string descriptors
-extern const unsigned char *const USB_SD_Ptr[];
-
-//Buffer for control transfers
-extern volatile CTRL_TRF_SETUP SetupPkt;           // 8-byte only
-//Buffer for control transfer data
-extern volatile unsigned char CtrlTrfData[USB_EP0_BUFF_SIZE];
+// Buffer for control transfers
+extern volatile CTRL_TRF_SETUP usb_setup_pkt;           // 8-byte only
 
 /* Control Transfer States */
 #define WAIT_SETUP		0
@@ -442,10 +437,9 @@ extern volatile unsigned char CtrlTrfData[USB_EP0_BUFF_SIZE];
 #define RCPT_OTH		3
 
 extern unsigned char usb_device_state;
-extern unsigned char USBActiveConfiguration;
-extern USB_VOLATILE IN_PIPE inPipes[1];
-extern USB_VOLATILE OUT_PIPE outPipes[1];
-extern volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
+extern unsigned char usb_active_configuration;
+extern USB_VOLATILE IN_PIPE usb_in_pipe[1];
+extern USB_VOLATILE OUT_PIPE usb_out_pipe[1];
 
 /*
   Function:
@@ -476,18 +470,16 @@ extern volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
     void main(void)
     {
         usb_device_init();
-        while(1)
+        while (1)
         {
             usb_device_tasks();
-            if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
+            if ((usb_get_device_state() \< CONFIGURED_STATE) || usb_is_device_suspended())
             {
-                //Either the device is not configured or we are suspended
-                //  so we don't want to do execute any application code
+                // Either the device is not configured or we are suspended
+                // so we don't want to do execute any application code
                 continue;   //go back to the top of the while loop
-            }
-            else
-            {
-                //Otherwise we are free to run user application code.
+            } else {
+                // Otherwise we are free to run user application code.
                 UserApplication();
             }
         }
@@ -531,7 +523,7 @@ void usb_device_init(void);
 
 /*
   Function:
-        int USBGetRemoteWakeupStatus(void)
+        int usb_get_remote_wakeup_status(void)
 
   Summary:
     This function indicates if remote wakeup has been enabled by the host.
@@ -592,11 +584,11 @@ void usb_device_init(void);
     None
 
   */
-#define USBGetRemoteWakeupStatus() RemoteWakeup
+#define usb_get_remote_wakeup_status() usb_remote_wakeup
 
 /*
   Function:
-        unsigned char USBGetDeviceState(void)
+        unsigned char usb_get_device_state(void)
 
   Summary:
     This function will return the current state of the device on the USB.
@@ -623,7 +615,7 @@ void usb_device_init(void);
         while(1)
         {
             usb_device_tasks();
-            if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
+            if ((usb_get_device_state() \< CONFIGURED_STATE) || usb_is_device_suspended())
             {
                 //Either the device is not configured or we are suspended
                 //  so we don't want to do execute any application code
@@ -657,11 +649,11 @@ void usb_device_init(void);
   Remarks:
     None
   */
-#define USBGetDeviceState() usb_device_state
+#define usb_get_device_state() usb_device_state
 
 /*
   Function:
-        int USBGetSuspendState(void)
+        int usb_is_device_suspended(void)
 
   Summary:
     This function indicates if this device is currently suspended. When a
@@ -681,7 +673,7 @@ void usb_device_init(void);
            while(1)
            {
                usb_device_tasks();
-               if((USBGetDeviceState() \< CONFIGURED_STATE) || USBIsDeviceSuspended())
+               if ((usb_get_device_state() \< CONFIGURED_STATE) || usb_is_device_suspended())
                {
                    //Either the device is not configured or we are suspended
                    //  so we don't want to do execute any application code
@@ -703,53 +695,40 @@ void usb_device_init(void);
   Remarks:
     None
  */
-#define USBIsDeviceSuspended() (U1PWRC & PIC32_U1PWRC_USUSPEND)
+#define usb_is_device_suspended() (U1PWRC & PIC32_U1PWRC_USUSPEND)
 
+void usb_ctrl_ep_service (void);
+void usb_ctrl_trf_setup_handler (void);
+void usb_ctrl_trf_in_handler (void);
+void usb_check_std_request (void);
+void usb_std_get_dsc_handler (void);
+void usb_ctrl_ep_service_complete (void);
+void usb_ctrl_trf_tx_service (void);
+void usb_prepare_for_next_setup_trf (void);
+void usb_ctrl_trf_rx_service (void);
+void usb_std_set_cfg_handler (void);
+void usb_std_get_status_handler (void);
+void usb_std_feature_req_handler (void);
+void usb_ctrl_trf_out_handler (void);
 
-void USBSoftDetach(void);
-void USBCtrlEPService(void);
-void USBCtrlTrfSetupHandler(void);
-void USBCtrlTrfInHandler(void);
-void USBCheckStdRequest(void);
-void USBStdGetDscHandler(void);
-void USBCtrlEPServiceComplete(void);
-void USBCtrlTrfTxService(void);
-void USBPrepareForNextSetupTrf(void);
-void USBCtrlTrfRxService(void);
-void USBStdSetCfgHandler(void);
-void USBStdGetStatusHandler(void);
-void USBStdFeatureReqHandler(void);
-void USBCtrlTrfOutHandler(void);
-int USBIsTxBusy(unsigned char EPNumber);
-void USBPut(unsigned char EPNum, unsigned char Data);
-void USBEPService(void);
-void USBConfigureEndpoint(unsigned char EPNum, unsigned char direction);
-
-void USBProtocolResetHandler(void);
-void USBWakeFromSuspend(void);
-void USBSuspend(void);
-void USBStallHandler(void);
-volatile USB_HANDLE USBTransferOnePacket(unsigned char ep, unsigned char dir, unsigned char* data, unsigned char len);
-void USBEnableEndpoint(unsigned char ep, unsigned char options);
+void usb_wake_from_suspend (void);
+void usb_suspend (void);
+void usb_stall_handler (void);
+volatile USB_HANDLE usb_transfer_one_packet (unsigned char ep, unsigned char dir, unsigned char* data, unsigned char len);
+void usb_enable_endpoint (unsigned char ep, unsigned char options);
+void usb_configure_endpoint (unsigned char EPNum, unsigned char direction);
 
 #if defined(USB_DYNAMIC_EP_CONFIG)
-    void USBInitEP(unsigned char const* pConfig);
+    void usb_init_ep(unsigned char const* pConfig);
 #else
-    #define USBInitEP(a)
-#endif
-
-#if defined(ENABLE_EP0_DATA_RECEIVED_CALLBACK)
-    void USBCBEP0DataReceived(void);
-    #define USBCB_EP0_DATA_RECEIVED() USBCBEP0DataReceived()
-#else
-    #define USBCB_EP0_DATA_RECEIVED()
+    #define usb_init_ep(a)
 #endif
 
 /* Section: CALLBACKS */
 
 /*
   Function:
-      void USBCBSuspend(void)
+      void usbcb_suspend(void)
 
   Summary:
     Call back that is invoked when a USB suspend is detected.
@@ -772,11 +751,11 @@ void USBEnableEndpoint(unsigned char ep, unsigned char options);
     Sleep();
 
     //Preferrably, this should be done in the
-    //  USBCBWakeFromSuspend() function instead.
+    //  usbcb_wake_from_suspend() function instead.
     RestoreStateOfAllPreviouslySavedInterruptEnableBits();
 
     //Preferrably, this should be done in the
-    //  USBCBWakeFromSuspend() function instead.
+    //  usbcb_wake_from_suspend() function instead.
     RestoreIOPinsToNormal();
     </code>
 
@@ -792,11 +771,11 @@ void USBEnableEndpoint(unsigned char ep, unsigned char options);
 
     Remark: None
   */
-void USBCBSuspend(void);
+void usbcb_suspend (void);
 
 /*
  Function:
-   void USBCBWakeFromSuspend(void)
+   void usbcb_wake_from_suspend (void)
 
  Summary:
    This call back is invoked when a wakeup from USB suspend
@@ -812,7 +791,7 @@ void USBCBSuspend(void);
    is detected.
 
    If clock switching or other power savings measures were taken when
-   executing the USBCBSuspend() function, now would be a good time to
+   executing the usbcb_suspend() function, now would be a good time to
    switch back to normal full power run mode conditions.  The host allows
    a few milliseconds of wakeup time, after which the device must be
    fully back to normal, and capable of receiving and processing USB
@@ -828,11 +807,11 @@ void USBCBSuspend(void);
 
  Remarks:       None
  */
-void USBCBWakeFromSuspend(void);
+void usbcb_wake_from_suspend (void);
 
 /*
   Function:
-    void USBCB_SOF_Handler(void)
+    void usbcb_sof_handler (void)
 
   Summary:
     This callback is called when a SOF packet is received by the host.
@@ -859,11 +838,11 @@ void USBCBWakeFromSuspend(void);
   Remarks:
     None
  */
-void USBCB_SOF_Handler(void);
+void usbcb_sof_handler (void);
 
 /*
   Function:
-    void USBCBErrorHandler(void)
+    void usbcb_error_handler (void)
 
   Summary:
     This callback is called whenever a USB error occurs. (optional)
@@ -904,11 +883,11 @@ void USBCB_SOF_Handler(void);
     Nevertheless, this callback function is provided, such as
     for debugging purposes.
  */
-void USBCBErrorHandler(void);
+void usbcb_error_handler (void);
 
 /*
   Function:
-      void USBCBCheckOtherReq(void)
+      void usbcb_check_other_req (void)
 
   Summary:
     This function is called whenever a request comes over endpoint 0 (the
@@ -927,7 +906,7 @@ void USBCBErrorHandler(void);
 
     Typical Usage:
     <code>
-    void USBCBCheckOtherReq(void)
+    void usbcb_check_other_req (void)
     {
         //Since the stack didn't handle the request I need to check
         //  my class drivers to see if it is for them
@@ -939,17 +918,17 @@ void USBCBErrorHandler(void);
   Remarks:
     None
   */
-void USBCBCheckOtherReq(void);
+void usbcb_check_other_req (void);
 
 /*
   Function:
-    void USBCBStdSetDscHandler(void)
+    void usbcb_std_set_dsc_handler (void)
 
   Summary:
     This callback is called when a SET_DESCRIPTOR request is received (optional)
 
   Description:
-    The USBCBStdSetDscHandler() callback function is
+    The usbcb_std_set_dsc_handler() callback function is
     called when a SETUP, bRequest: SET_DESCRIPTOR request
     arrives.  Typically SET_DESCRIPTOR requests are
     not used in most applications, and it is
@@ -966,11 +945,11 @@ void USBCBCheckOtherReq(void);
 
   Remark:            None
  */
-void USBCBStdSetDscHandler(void);
+void usbcb_std_set_dsc_handler (void);
 
 /*
   Function:
-      void USBCBInitEP(void)
+      void usbcb_init_ep (void)
 
   Summary:
     This function is called whenever the device receives a
@@ -983,9 +962,9 @@ void USBCBStdSetDscHandler(void);
 
     Typical Usage:
     <code>
-    void USBCBInitEP(void)
+    void usbcb_init_ep (void)
     {
-        USBEnableEndpoint(MSD_DATA_IN_EP,USB_IN_ENABLED|USB_OUT_ENABLED|USB_HANDSHAKE_ENABLED|USB_DISALLOW_SETUP);
+        usb_enable_endpoint(MSD_DATA_IN_EP,USB_IN_ENABLED|USB_OUT_ENABLED|USB_HANDSHAKE_ENABLED|USB_DISALLOW_SETUP);
         USBMSDInit();
     }
     </code>
@@ -994,11 +973,11 @@ void USBCBStdSetDscHandler(void);
   Remarks:
     None
   */
-void USBCBInitEP(void);
+void usbcb_init_ep (void);
 
 /*
   Function:
-        void USBCBSendResume(void)
+        void usbcb_send_resume (void)
 
   Summary:
     This function should be called to initiate a remote wakeup. (optional)
@@ -1011,7 +990,7 @@ void USBCBInitEP(void);
     detect this signalling, and then send a USB "command" to the PC to wake
     up.
 
-    The USBCBSendResume() "callback" function is used to send this special
+    The usbcb_send_resume() "callback" function is used to send this special
     USB signalling which wakes up the PC. This function may be called by
     application firmware to wake up the PC. This function should only be
     called when:
@@ -1023,7 +1002,7 @@ void USBCBInitEP(void);
          _RWU)
       3. The USB host PC is currently sleeping, and has previously sent
          your device a SET FEATURE setup packet which "armed" the remote wakeup
-         capability. (see USBGetRemoteWakeupStatus())
+         capability. (see usb_get_remote_wakeup_status())
 
     This callback should send a RESUME signal that has the period of
     1-15ms.
@@ -1031,23 +1010,23 @@ void USBCBInitEP(void);
     Typical Usage:
     <code>
     if ((usb_device_state == CONFIGURED_STATE)
-        &amp;&amp; USBIsDeviceSuspended()
-        &amp;&amp; (USBGetRemoteWakeupStatus() == TRUE))
+        &amp;&amp; usb_is_device_suspended()
+        &amp;&amp; (usb_get_remote_wakeup_status() == TRUE))
     {
         if (ButtonPressed)
         {
             // Wake up the USB module from suspend
-            USBWakeFromSuspend();
+            usb_wake_from_suspend();
 
             // Issue a remote wakeup command on the bus
-            USBCBSendResume();
+            usbcb_send_resume();
         }
     }
     </code>
   Conditions:
     None
   Remarks:
-    A user can switch to primary first by calling USBCBWakeFromSuspend() if
+    A user can switch to primary first by calling usbcb_wake_from_suspend() if
     required/desired.
 
     The modifiable section in this routine should be changed to meet the
@@ -1075,11 +1054,11 @@ void USBCBInitEP(void);
       * A timer can be used in place of the blocking loop if desired.
 
 */
-void USBCBSendResume(void);
+void usbcb_send_resume (void);
 
 /*
   Function:
-    void USBCBEP0DataReceived(void)
+    void usbcb_ep0_data_received(void)
 
   Summary:
     This function is called whenever a EP0 data
@@ -1091,8 +1070,8 @@ void USBCBSendResume(void);
     thus the various class examples a way to get
     data that is received via the control endpoint.
     This function needs to be used in conjunction
-    with the USBCBCheckOtherReq() function since
-    the USBCBCheckOtherReq() function is the apps
+    with the usbcb_check_other_req() function since
+    the usbcb_check_other_req() function is the apps
     method for getting the initial control transfer
     before the data arrives.
 
@@ -1109,7 +1088,7 @@ void USBCBSendResume(void);
   Remarks:
     None
 */
-void USBCBEP0DataReceived(void);
+void usbcb_ep0_data_received (void);
 
 
 
@@ -1122,7 +1101,7 @@ void USBCBEP0DataReceived(void);
 
 /*
   Function:
-    int USBHandleBusy(USB_HANDLE handle)
+    int usb_handle_busy(USB_HANDLE handle)
 
   Summary:
     Checks to see if the input handle is busy
@@ -1133,11 +1112,11 @@ void USBCBEP0DataReceived(void);
     Typical Usage
     <code>
     //make sure that the last transfer isn't busy by checking the handle
-    if(!USBHandleBusy(USBGenericInHandle))
+    if (! usb_handle_busy(handle))
     {
         //Send the data contained in the INPacket[] array out on
         //  endpoint USBGEN_EP_NUM
-        USBGenericInHandle = USBGenWrite(USBGEN_EP_NUM,(unsigned char*)&INPacket[0],sizeof(INPacket));
+        handle = USBGenWrite (USBGEN_EP_NUM, (unsigned char*) &INPacket[0],  sizeof(INPacket));
     }
     </code>
 
@@ -1152,11 +1131,11 @@ void USBCBEP0DataReceived(void);
   Remarks:
     None
   */
-#define USBHandleBusy(handle) (handle==0?0:handle->STAT.UOWN)
+#define usb_handle_busy(handle) (handle==0 ? 0 : handle->STAT.UOWN)
 
 /*
     Function:
-        unsigned short USBHandleGetLength(USB_HANDLE handle)
+        unsigned short usb_handle_get_length(USB_HANDLE handle)
 
     Summary:
         Retrieves the length of the destination buffer of the input
@@ -1183,11 +1162,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBHandleGetLength(handle) (handle->CNT)
+#define usb_handle_get_length(handle) (handle->CNT)
 
 /*
     Function:
-        unsigned short USBHandleGetAddr(USB_HANDLE)
+        unsigned short usb_handle_get_addr(USB_HANDLE)
 
     Summary:
         Retrieves the address of the destination buffer of the input
@@ -1212,11 +1191,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBHandleGetAddr(handle) (handle->ADR)
+#define usb_handle_get_addr(handle) (handle->ADR)
 
 /*
     Function:
-        void USBEP0SetSourceRAM(unsigned char* src)
+        void usb_ep0_set_source_ram(unsigned char* src)
 
     Summary:
         Sets the address of the data to send over the
@@ -1235,11 +1214,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0SetSourceRAM(src) inPipes[0].pSrc.bRam = src
+#define usb_ep0_set_source_ram(src) usb_in_pipe[0].pSrc.bRam = src
 
 /*
     Function:
-        void USBEP0SetSourceROM(unsigned char* src)
+        void usb_ep0_set_source_rom(unsigned char* src)
 
     Summary:
         Sets the address of the data to send over the
@@ -1258,11 +1237,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0SetSourceROM(src) inPipes[0].pSrc.bRom = src
+#define usb_ep0_set_source_rom(src) usb_in_pipe[0].pSrc.bRom = src
 
 /*
     Function:
-        void USBEP0Transmit(unsigned char options)
+        void usb_ep0_transmit(unsigned char options)
 
     Summary:
         Sets the address of the data to send over the
@@ -1288,11 +1267,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0Transmit(options) inPipes[0].info.Val = options | USB_INPIPES_BUSY
+#define usb_ep0_transmit(options) usb_in_pipe[0].info.Val = options | USB_INPIPES_BUSY
 
 /*
     Function:
-        void USBEP0SetSize(unsigned short size)
+        void usb_ep0_set_size(unsigned short size)
 
     Summary:
         Sets the size of the data to send over the
@@ -1311,11 +1290,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0SetSize(size) inPipes[0].wCount = size
+#define usb_ep0_set_size(size) usb_in_pipe[0].wCount = size
 
 /*
     Function:
-        void USBEP0SendRAMPtr(unsigned char* src, unsigned short size, unsigned char Options)
+        void usb_ep0_send_ram_ptr(unsigned char* src, unsigned short size, unsigned char Options)
 
     Summary:
         Sets the source, size, and options of the data
@@ -1343,11 +1322,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0SendRAMPtr(src,size,options)  {USBEP0SetSourceRAM(src);USBEP0SetSize(size);USBEP0Transmit(options | USB_EP0_RAM);}
+#define usb_ep0_send_ram_ptr(src,size,options)  {usb_ep0_set_source_ram(src);usb_ep0_set_size(size);usb_ep0_transmit(options | USB_EP0_RAM);}
 
 /*
     Function:
-        void USBEP0SendROMPtr(unsigned char* src, unsigned short size, unsigned char Options)
+        void usb_ep0_send_rom_ptr(unsigned char* src, unsigned short size, unsigned char Options)
 
     Summary:
         Sets the source, size, and options of the data
@@ -1375,11 +1354,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBEP0SendROMPtr(src,size,options)  {USBEP0SetSourceROM(src);USBEP0SetSize(size);USBEP0Transmit(options | USB_EP0_ROM);}
+#define usb_ep0_send_rom_ptr(src,size,options)  {usb_ep0_set_source_rom(src);usb_ep0_set_size(size);usb_ep0_transmit(options | USB_EP0_ROM);}
 
 /*
     Function:
-        USB_HANDLE USBTxOnePacket(unsigned char ep, unsigned char* data, unsigned short len)
+        USB_HANDLE usb_tx_one_pPacket(unsigned char ep, unsigned char* data, unsigned short len)
 
     Summary:
         Sends the specified data out the specified endpoint
@@ -1400,11 +1379,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBTxOnePacket(ep,data,len)     USBTransferOnePacket(ep,IN_TO_HOST,data,len)
+#define usb_tx_one_pPacket(ep,data,len)     usb_transfer_one_packet(ep,IN_TO_HOST,data,len)
 
 /*
     Function:
-        void USBRxOnePacket(unsigned char ep, unsigned char* data, unsigned short len)
+        void usb_rx_one_pPacket(unsigned char ep, unsigned char* data, unsigned short len)
 
     Summary:
         Receives the specified data out the specified endpoint
@@ -1424,56 +1403,11 @@ void USBCBEP0DataReceived(void);
         None
 
  */
-#define USBRxOnePacket(ep,data,len)      USBTransferOnePacket(ep,OUT_FROM_HOST,data,len)
+#define usb_rx_one_pPacket(ep,data,len)      usb_transfer_one_packet(ep,OUT_FROM_HOST,data,len)
 
 /*
     Function:
-        void USBClearInterruptFlag(unsigned short reg, unsigned char flag)
-
-    Summary:
-        Clears the specified interrupt flag
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned short reg - the register name holding the interrupt flag
-        unsigned char flag - the bit number needing to be cleared
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- */
-void USBClearInterruptFlag(unsigned char* reg, unsigned char flag);
-
-/*
-    Function:
-        void USBClearInterruptRegister(unsigned short reg)
-
-    Summary:
-        Clears the specified interrupt register
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned short reg - the register name that needs to be cleared
-
-    Return Values:
-        None
-
-    Remarks:
-        None
- */
-
-#define USBClearInterruptRegister(reg) reg = 0xFF;
-
-/*
-    Function:
-        void USBStallEndpoint(unsigned char ep, unsigned char dir)
+        void usb_stall_endpoint(unsigned char ep, unsigned char dir)
 
     Summary:
          STALLs the specified endpoint
@@ -1491,7 +1425,7 @@ void USBClearInterruptFlag(unsigned char* reg, unsigned char flag);
     Remarks:
         None
  */
-void USBStallEndpoint(unsigned char ep, unsigned char dir);
+void usb_stall_endpoint(unsigned char ep, unsigned char dir);
 
 #if (USB_PING_PONG_MODE == USB_PING_PONG__NO_PING_PONG)
     #define USB_NEXT_EP0_OUT_PING_PONG 0x0000   // Used in USB Device Mode only
@@ -1788,6 +1722,6 @@ void USBStallEndpoint(unsigned char ep, unsigned char dir);
     #error "No ping pong mode defined."
 #endif
 
-extern USB_VOLATILE int RemoteWakeup;
+extern USB_VOLATILE int usb_remote_wakeup;
 
 #endif //USBD_H

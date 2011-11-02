@@ -28,24 +28,18 @@ int	fc, fm;
 struct nlist nl[] = {
 #define	SINODE	0
 	{ "_inode" },
-#define	SPROC	2
+#define	SPROC	1
 	{ "_proc" },
-#define	SKL	5
+#define	SKL	2
 	{ "_cnttys" },
-#define	SFIL	6
+#define	SFIL	3
 	{ "_file" },
-#define	SNSWAP	7
+#define	SNSWAP	4
 	{ "_nswap" },
-#define	SNKL	8
-	{ "_ncn" },
-#define	SWAPMAP	9
+#define	SWAPMAP	5
 	{ "_swapmap" },
-#define	SNPROC	12
+#define	SNPROC	6
 	{ "_nproc" },
-#define	SPTY	16
-	{ "_pt_tty" },
-#define	SNPTY	17
-	{ "_npty" },
 	{ "" }
 };
 
@@ -312,32 +306,19 @@ dotty()
 		printf("pstat: out of memory\n");
 		return;
 	}
-	dottytype("cn", SKL, SNKL);
-	if (nl[SNPTY].n_type != 0)
-		dottytype("pty", SPTY, SNPTY);
+	dottytype("cn", SKL);
 }
 
-dottytype(name, type, number)
+dottytype(name, type)
 char *name;
 {
-	int ntty;
 	register struct tty *tp;
 
-	lseek(fc, (long)nl[number].n_value, 0);
-	read(fc, &ntty, sizeof(ntty));
-	printf("%d %s lines\n", ntty, name);
-	if (ntty > ttyspace) {
-		ttyspace = ntty;
-		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
-			printf("pstat: out of memory\n");
-			return;
-		}
-	}
+	printf("%s line\n", name);
 	lseek(fc, (long)nl[type].n_value, 0);
-	read(fc, tty, ntty * sizeof(struct tty));
+	read(fc, tty, sizeof(struct tty));
 	printf(mesg);
-	for (tp = tty; tp < &tty[ntty]; tp++)
-		ttyprt(tp, tp - tty);
+	ttyprt(tty, 0);
 }
 
 ttyprt(atp, line)

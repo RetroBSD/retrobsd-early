@@ -21,6 +21,8 @@
 #include "systm.h"
 #include "syslog.h"
 
+daddr_t	rablock;		/* block to be read ahead */
+
 int
 ino_rw(fp, uio)
 	struct file *fp;

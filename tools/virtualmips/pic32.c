@@ -466,6 +466,8 @@ vm_instance_t *create_instance (char *configure_filename)
     if (configure_filename == NULL)
 #ifdef UBW32
         configure_filename = "pic32_ubw32.conf";
+#elif defined EXPLORER16
+        configure_filename = "pic32_explorer16.conf";
 #elif defined MAXIMITE
         configure_filename = "pic32_maximite.conf";
 #elif defined MAX32

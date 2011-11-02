@@ -13,6 +13,8 @@
 #define	MINFINITY	-32767		/* minus infinity */
 
 int	maxslp = MAXSLP;
+char	runin;                          /* scheduling flag */
+char	runout;                         /* scheduling flag */
 
 /*
  * The main loop of the scheduling (swapping) process.

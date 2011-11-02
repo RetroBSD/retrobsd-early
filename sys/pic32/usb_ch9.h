@@ -240,7 +240,7 @@ typedef struct __attribute__ ((packed)) _USB_DEVICE_QUALIFIER_DESCRIPTOR
 // Note: Refer to the USB 2.0 specification for additional details on the
 // usage of the setup packet and standard device requests.
 
-typedef struct __attribute__ ((packed)) SetupPkt
+typedef struct __attribute__ ((packed))
 {
 	union					// offset   description
 	{					// ------   ------------------------

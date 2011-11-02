@@ -39,35 +39,35 @@ extern const char version[];	/* system version */
  * Nblkdev is the number of entries (rows) in the block switch.
  * Used in bounds checking on major device numbers.
  */
-const int nblkdev;
+extern const int nblkdev;
 
 /*
  * Number of character switch entries.
  */
-const int nchrdev;
+extern const int nchrdev;
 
 /*
  * Number of system call entries.
  */
-const int nsysent;
+extern const int nsysent;
 
-int	mpid;			/* generic for unique process id's */
-char	runin;			/* scheduling flag */
-char	runout;			/* scheduling flag */
-int	runrun;			/* scheduling flag */
-char	curpri;			/* more scheduling */
+extern int	mpid;			/* generic for unique process id's */
+extern char	runin;			/* scheduling flag */
+extern char	runout;			/* scheduling flag */
+extern int	runrun;			/* scheduling flag */
+extern char	curpri;			/* more scheduling */
 
-u_int	swapstart, nswap;	/* start and size of swap space */
-int	updlock;		/* lock for sync */
-daddr_t	rablock;		/* block to be read ahead */
-dev_t	rootdev;		/* device of the root */
-dev_t	dumpdev;		/* device to take dumps on */
-long	dumplo;			/* offset into dumpdev */
-dev_t	swapdev;		/* swapping device */
-dev_t	pipedev;		/* pipe device */
+extern u_int	swapstart, nswap;	/* start and size of swap space */
+extern int	updlock;		/* lock for sync */
+extern daddr_t	rablock;		/* block to be read ahead */
+extern dev_t	rootdev;		/* device of the root */
+extern dev_t	dumpdev;		/* device to take dumps on */
+extern long	dumplo;			/* offset into dumpdev */
+extern dev_t	swapdev;		/* swapping device */
+extern dev_t	pipedev;		/* pipe device */
 
-extern	const char icode[];	/* user init code */
-extern	const char icodeend[];	/* its end */
+extern	const char icode[];             /* user init code */
+extern	const char icodeend[];          /* its end */
 
 struct inode;
 daddr_t bmap (struct inode *ip, daddr_t bn, int rwflg, int flags);
@@ -83,11 +83,11 @@ extern const struct sysent
 
 extern const char *syscallnames[];
 
-int	noproc;			/* no one is running just now */
-char	*panicstr;
-int	boothowto;		/* reboot flags, from boot */
-int	selwait;
-size_t	physmem;		/* total amount of physical memory */
+extern int	noproc;			/* no one is running just now */
+extern char	*panicstr;
+extern int	boothowto;		/* reboot flags, from boot */
+extern int	selwait;
+extern size_t	physmem;		/* total amount of physical memory */
 
 void panic (char *msg);
 void printf (char *fmt, ...);
@@ -149,7 +149,6 @@ void wakeup (caddr_t chan);
  * Allocate iostat disk monitoring slots for a driver.
  */
 void dk_alloc (int *dkn, int slots, char *name, long wps);
-
 
 /*
  * Initialize callouts.
@@ -232,7 +231,6 @@ int sdopen (dev_t dev, int flag, int mode);
 void sdstrategy (struct buf *bp);
 daddr_t sdsize (dev_t dev);
 
-int ncn;
 int cnopen (dev_t dev, int flag, int mode);
 int cnclose (dev_t dev, int flag, int mode);
 int cnread (dev_t dev, struct uio *uio, int flag);

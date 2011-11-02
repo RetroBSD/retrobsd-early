@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #define	MSG_MAGIC	0x063061
-#define	MSG_BSIZE	2048
+#define	MSG_BSIZE	1600
 
 struct	msgbuf {
 	long	msg_magic;

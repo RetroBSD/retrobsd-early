@@ -14,6 +14,8 @@
 #include "kernel.h"
 #include "syslog.h"
 
+int	mpid;			/* generic for unique process id's */
+
 /*
  * Create a new process -- the internal version of system call fork.
  * It returns 1 in the new process, 0 in the old.

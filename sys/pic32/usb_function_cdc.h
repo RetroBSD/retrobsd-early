@@ -133,7 +133,7 @@
     #define LINE_CODING_TARGET &cdc_notice.SetLineCoding._byte[0]
     #define LINE_CODING_PFUNC &USB_CDC_SET_LINE_CODING_HANDLER
 #else
-    #define LINE_CODING_TARGET &line_coding._byte[0]
+    #define LINE_CODING_TARGET &cdc_line_coding._byte[0]
     #define LINE_CODING_PFUNC 0
 #endif
 
@@ -167,336 +167,188 @@
     USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D1_VAL |\
     USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D0_VAL
 
-/******************************************************************************
-    Function:
-        void CDCSetBaudRate(unsigned int baudRate)
+/*
+ * Function:
+ *     void cdc_set_baud_rate(unsigned int baudRate)
+ *
+ * Summary:
+ *     This macro is used set the baud rate reported back to the host during
+ *     a get line coding request. (optional)
+ *
+ * Description:
+ *     This macro is used set the baud rate reported back to the host during
+ *     a get line coding request.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         cdc_set_baud_rate(19200);
+ *     </code>
+ *
+ *     This function is optional for CDC devices that do not actually convert
+ *     the USB traffic to a hardware UART.
+ *
+ * Parameters:
+ *     unsigned int baudRate - The desired baudrate
+ */
+#define cdc_set_baud_rate(baudRate) { cdc_line_coding.dwDTERate.Val = baudRate; }
 
-    Summary:
-        This macro is used set the baud rate reported back to the host during
-        a get line coding request. (optional)
+/*
+ * Function:
+ *     void cdc_set_character_format (unsigned char charFormat)
+ *
+ * Summary:
+ *     This macro is used manually set the character format reported back to
+ *     the host during a get line coding request. (optional)
+ *
+ * Description:
+ *     This macro is used manually set the character format reported back to
+ *     the host during a get line coding request.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         cdc_set_character_format(NUM_STOP_BITS_1);
+ *     </code>
+ *
+ *     This function is optional for CDC devices that do not actually convert
+ *     the USB traffic to a hardware UART.
+ *
+ * Parameters:
+ *     unsigned char charFormat - number of stop bits.  Available options are:
+ *      * NUM_STOP_BITS_1 - 1 Stop bit
+ *      * NUM_STOP_BITS_1_5 - 1.5 Stop bits
+ *      * NUM_STOP_BITS_2 - 2 Stop bits
+ */
+#define cdc_set_character_format(charFormat) { cdc_line_coding.bCharFormat = charFormat; }
+#define NUM_STOP_BITS_1     0   // 1 stop bit
+#define NUM_STOP_BITS_1_5   1   // 1.5 stop bit
+#define NUM_STOP_BITS_2     2   // 2 stop bit
 
-    Description:
-        This macro is used set the baud rate reported back to the host during
-        a get line coding request.
+/*
+ * Function:
+ *     void cdc_set_parity (unsigned char parityType)
+ *
+ * Summary:
+ *     This function is used manually set the parity format reported back to
+ *     the host during a get line coding request. (optional)
+ *
+ * Description:
+ *     This macro is used manually set the parity format reported back to
+ *     the host during a get line coding request.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         cdc_set_parity(PARITY_NONE);
+ *     </code>
+ *
+ *     This function is optional for CDC devices that do not actually convert
+ *     the USB traffic to a hardware UART.
+ *
+ * Parameters:
+ *     unsigned char parityType - Type of parity.  The options are the following:
+ *         * PARITY_NONE
+ *         * PARITY_ODD
+ *         * PARITY_EVEN
+ *         * PARITY_MARK
+ *         * PARITY_SPACE
+ */
+#define cdc_set_parity(parityType) { cdc_line_coding.bParityType = parityType; }
+#define PARITY_NONE     0   // no parity
+#define PARITY_ODD      1   // odd parity
+#define PARITY_EVEN     2   // even parity
+#define PARITY_MARK     3   // mark parity
+#define PARITY_SPACE    4   // space parity
 
-        Typical Usage:
-        <code>
-            CDCSetBaudRate(19200);
-        </code>
+/*
+ * Function:
+ *     void cdc_set_data_size (unsigned char dataBits)
+ *
+ * Summary:
+ *     This function is used manually set the number of data bits reported back
+ *     to the host during a get line coding request. (optional)
+ *
+ * Description:
+ *     This function is used manually set the number of data bits reported back
+ *     to the host during a get line coding request.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         cdc_set_data_size(8);
+ *     </code>
+ *
+ *     This function is optional for CDC devices that do not actually convert
+ *     the USB traffic to a hardware UART.
+ *
+ * Parameters:
+ *     unsigned char dataBits - number of data bits.  The options are 5, 6, 7, 8, or 16.
+ */
+#define cdc_set_data_size(dataBits) { cdc_line_coding.bDataBits = dataBits; }
 
-        This function is optional for CDC devices that do not actually convert
-        the USB traffic to a hardware UART.
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned int baudRate - The desired baudrate
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define CDCSetBaudRate(baudRate) {line_coding.dwDTERate.Val=baudRate;}
-
-/******************************************************************************
-    Function:
-        void CDCSetCharacterFormat (unsigned char charFormat)
-
-    Summary:
-        This macro is used manually set the character format reported back to
-        the host during a get line coding request. (optional)
-
-    Description:
-        This macro is used manually set the character format reported back to
-        the host during a get line coding request.
-
-        Typical Usage:
-        <code>
-            CDCSetCharacterFormat(19200);
-        </code>
-
-        This function is optional for CDC devices that do not actually convert
-        the USB traffic to a hardware UART.
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned char charFormat - number of stop bits.  Available options are:
-         * NUM_STOP_BITS_1 - 1 Stop bit
-         * NUM_STOP_BITS_1_5 - 1.5 Stop bits
-         * NUM_STOP_BITS_2 - 2 Stop bits
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define CDCSetCharacterFormat(charFormat) {line_coding.bCharFormat=charFormat;}
-#define NUM_STOP_BITS_1     0   //1 stop bit - used by CDCSetLineCoding() and CDCSetCharacterFormat()
-#define NUM_STOP_BITS_1_5   1   //1.5 stop bit - used by CDCSetLineCoding() and CDCSetCharacterFormat()
-#define NUM_STOP_BITS_2     2   //2 stop bit - used by CDCSetLineCoding() and CDCSetCharacterFormat()
-
-/******************************************************************************
-    Function:
-        void CDCSetParity (unsigned char parityType)
-
-    Summary:
-        This function is used manually set the parity format reported back to
-        the host during a get line coding request. (optional)
-
-    Description:
-        This macro is used manually set the parity format reported back to
-        the host during a get line coding request.
-
-        Typical Usage:
-        <code>
-            CDCSetParity(PARITY_NONE);
-        </code>
-
-        This function is optional for CDC devices that do not actually convert
-        the USB traffic to a hardware UART.
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned char parityType - Type of parity.  The options are the following:
-            * PARITY_NONE
-            * PARITY_ODD
-            * PARITY_EVEN
-            * PARITY_MARK
-            * PARITY_SPACE
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define CDCSetParity(parityType) {line_coding.bParityType=parityType;}
-#define PARITY_NONE     0 //no parity - used by CDCSetLineCoding() and CDCSetParity()
-#define PARITY_ODD      1 //odd parity - used by CDCSetLineCoding() and CDCSetParity()
-#define PARITY_EVEN     2 //even parity - used by CDCSetLineCoding() and CDCSetParity()
-#define PARITY_MARK     3 //mark parity - used by CDCSetLineCoding() and CDCSetParity()
-#define PARITY_SPACE    4 //space parity - used by CDCSetLineCoding() and CDCSetParity()
-
-/******************************************************************************
-    Function:
-        void CDCSetDataSize (unsigned char dataBits)
-
-    Summary:
-        This function is used manually set the number of data bits reported back
-        to the host during a get line coding request. (optional)
-
-    Description:
-        This function is used manually set the number of data bits reported back
-        to the host during a get line coding request.
-
-        Typical Usage:
-        <code>
-            CDCSetDataSize(8);
-        </code>
-
-        This function is optional for CDC devices that do not actually convert
-        the USB traffic to a hardware UART.
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned char dataBits - number of data bits.  The options are 5, 6, 7, 8, or 16.
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define CDCSetDataSize(dataBits) {line_coding.bDataBits=dataBits;}
-
-/******************************************************************************
-    Function:
-        void CDCSetLineCoding(unsigned int baud, unsigned char format, unsigned char parity, unsigned char dataSize)
-
-    Summary:
-        This function is used to manually set the data reported back
-        to the host during a get line coding request. (optional)
-
-    Description:
-        This function is used to manually set the data reported back
-        to the host during a get line coding request.
-
-        Typical Usage:
-        <code>
-            CDCSetLineCoding(19200, NUM_STOP_BITS_1, PARITY_NONE, 8);
-        </code>
-
-        This function is optional for CDC devices that do not actually convert
-        the USB traffic to a hardware UART.
-
-    PreCondition:
-        None
-
-    Parameters:
-        unsigned int baud - The desired baudrate
-        unsigned char format - number of stop bits.  Available options are:
-         * NUM_STOP_BITS_1 - 1 Stop bit
-         * NUM_STOP_BITS_1_5 - 1.5 Stop bits
-         * NUM_STOP_BITS_2 - 2 Stop bits
-        unsigned char parity - Type of parity.  The options are the following:
-            * PARITY_NONE
-            * PARITY_ODD
-            * PARITY_EVEN
-            * PARITY_MARK
-            * PARITY_SPACE
-        unsigned char dataSize - number of data bits.  The options are 5, 6, 7, 8, or 16.
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define CDCSetLineCoding(baud,format,parity,dataSize) {\
-            CDCSetBaudRate(baud);\
-            CDCSetCharacterFormat(format);\
-            CDCSetParity(parity);\
-            CDCSetDataSize(dataSize);\
+/*
+ * Function:
+ *     void cdc_set_line_coding(unsigned int baud, unsigned char format, unsigned char parity, unsigned char dataSize)
+ *
+ * Summary:
+ *     This function is used to manually set the data reported back
+ *     to the host during a get line coding request. (optional)
+ *
+ * Description:
+ *     This function is used to manually set the data reported back
+ *     to the host during a get line coding request.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         cdc_set_line_coding(19200, NUM_STOP_BITS_1, PARITY_NONE, 8);
+ *     </code>
+ *
+ *     This function is optional for CDC devices that do not actually convert
+ *     the USB traffic to a hardware UART.
+ *
+ * Parameters:
+ *     unsigned int baud - The desired baudrate
+ *     unsigned char format - number of stop bits.  Available options are:
+ *      * NUM_STOP_BITS_1 - 1 Stop bit
+ *      * NUM_STOP_BITS_1_5 - 1.5 Stop bits
+ *      * NUM_STOP_BITS_2 - 2 Stop bits
+ *     unsigned char parity - Type of parity.  The options are the following:
+ *         * PARITY_NONE
+ *         * PARITY_ODD
+ *         * PARITY_EVEN
+ *         * PARITY_MARK
+ *         * PARITY_SPACE
+ *     unsigned char dataSize - number of data bits.  The options are 5, 6, 7, 8, or 16.
+ */
+#define cdc_set_line_coding(baud, format, parity, dataSize) {\
+            cdc_set_baud_rate(baud);\
+            cdc_set_character_format(format);\
+            cdc_set_parity(parity);\
+            cdc_set_data_size(dataSize);\
         }
 
-/******************************************************************************
-    Function:
-        bool_t USBUSARTIsTxTrfReady(void)
+/*
+ * Function:
+ *     bool_t cdc_is_tx_ready(void)
+ *
+ * Summary:
+ *     This macro is used to check if the CDC class is ready
+ *     to send more data.
+ *
+ * Description:
+ *     This macro is used to check if the CDC class is ready
+ *     to send more data.
+ *
+ *     Typical Usage:
+ *     <code>
+ *         if (cdc_is_tx_ready())
+ *         {
+ *             cdc_putrs ("Hello World");
+ *         }
+ *     </code>
+ */
+#define cdc_is_tx_ready()   (cdc_trf_state == CDC_TX_READY)
 
-    Summary:
-        This macro is used to check if the CDC class is ready
-        to send more data.
-
-    Description:
-        This macro is used to check if the CDC class is ready
-        to send more data.
-
-        Typical Usage:
-        <code>
-            if(USBUSARTIsTxTrfReady())
-            {
-                putrsUSBUSART("Hello World");
-            }
-        </code>
-
-    PreCondition:
-        None
-
-    Parameters:
-        None
-
-    Return Values:
-        None
-
-    Remarks:
-        None
-
- *****************************************************************************/
-#define USBUSARTIsTxTrfReady()      (cdc_trf_state == CDC_TX_READY)
-
-/******************************************************************************
-    Function:
-        void mUSBUSARTTxRam (unsigned char *pData, unsigned char len)
-
-    Description:
-        Depricated in MCHPFSUSB v2.3.  This macro has been replaced by
-        USBUSARTIsTxTrfReady().
- *****************************************************************************/
-#define mUSBUSARTIsTxTrfReady()     USBUSARTIsTxTrfReady()
-
-/******************************************************************************
-    Function:
-        void mUSBUSARTTxRam (unsigned char *pData, unsigned char len)
-
-    Description:
-        Use this macro to transfer data located in data memory.
-        Use this macro when:
-            1. Data stream is not null-terminated
-            2. Transfer length is known
-        Remember: cdc_trf_state must == CDC_TX_READY
-        Unlike putsUSBUSART, there is not code double checking
-        the transfer state. Unexpected behavior will occur if
-        this function is called when cdc_trf_state != CDC_TX_READY
-
-    PreCondition:
-        cdc_trf_state must be in the CDC_TX_READY state.
-        Value of 'len' must be equal to or smaller than 255 bytes.
-
-    Paramters:
-        pDdata  : Pointer to the starting location of data bytes
-        len     : Number of bytes to be transferred
-
-    Return Values:
-        None
-
-    Remarks:
-        This macro only handles the setup of the transfer. The
-        actual transfer is handled by CDCTxService().
-
- *****************************************************************************/
-#define mUSBUSARTTxRam(pData,len)   \
-{                                   \
-    pCDCSrc.bRam = pData;           \
-    cdc_tx_len = len;               \
-    cdc_mem_type = _RAM;            \
-    cdc_trf_state = CDC_TX_BUSY;    \
-}
-
-/******************************************************************************
-    Function:
-        void mUSBUSARTTxRom (const unsigned char *pData, unsigned char len)
-
-    Description:
-        Use this macro to transfer data located in program memory.
-        Use this macro when:
-            1. Data stream is not null-terminated
-            2. Transfer length is known
-
-        Remember: cdc_trf_state must == CDC_TX_READY
-        Unlike putrsUSBUSART, there is not code double checking
-        the transfer state. Unexpected behavior will occur if
-        this function is called when cdc_trf_state != CDC_TX_READY
-
-    PreCondition:
-        cdc_trf_state must be in the CDC_TX_READY state.
-        Value of 'len' must be equal to or smaller than 255 bytes.
-
-    Parameters:
-        pDdata  : Pointer to the starting location of data bytes
-        len     : Number of bytes to be transferred
-
-    Return Values:
-        None
-
-    Remarks:
-        This macro only handles the setup of the transfer. The
-        actual transfer is handled by CDCTxService().
-
- *****************************************************************************/
-#define mUSBUSARTTxRom(pData,len)   \
-{                                   \
-    pCDCSrc.bRom = pData;           \
-    cdc_tx_len = len;               \
-    cdc_mem_type = _ROM;            \
-    cdc_trf_state = CDC_TX_BUSY;    \
-}
-
-/** S T R U C T U R E S ******************************************************/
+/*
+ * S T R U C T U R E S
+ */
 
 /* Line Coding Structure */
 #define LINE_CODING_LENGTH          0x07
@@ -574,25 +426,26 @@ typedef union __attribute__((packed)) _CDC_NOTICE
     unsigned char packet[CDC_COMM_IN_EP_SIZE];
 } CDC_NOTICE, *PCDC_NOTICE;
 
-/** E X T E R N S *********************************************************** */
+/*
+ * E X T E R N S
+ */
 extern unsigned char cdc_rx_len;
-extern USB_HANDLE lastTransmission;
-
 extern unsigned char cdc_trf_state;
-extern POINTER pCDCSrc;
 extern unsigned char cdc_tx_len;
 extern unsigned char cdc_mem_type;
 
 extern volatile CDC_NOTICE cdc_notice;
-extern LINE_CODING line_coding;
+extern LINE_CODING cdc_line_coding;
 
-/** Public Prototypes ************************************************ */
-void USBCheckCDCRequest(void);
-void CDCInitEP(void);
-unsigned char getsUSBUSART(char *buffer, unsigned char len);
-void putrsUSBUSART(const char *data);
-void putUSBUSART(char *data, unsigned char Length);
-void putsUSBUSART(char *data);
-void CDCTxService(void);
+/*
+ * Public Prototypes
+ */
+void cdc_check_request (void);
+void cdc_init_ep (void);
+unsigned char cdc_gets (char *buffer, unsigned char len);
+void cdc_putrs (const char *data);
+void cdc_put (char *data, unsigned char Length);
+void cdc_puts (char *data);
+void cdc_tx_service (void);
 
 #endif //CDC_H
