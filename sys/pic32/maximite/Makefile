@@ -18,7 +18,6 @@ vpath %.S $(M):$(S)
 
 # Kernel options.
 DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
-#DEFS		+= -I. -I$(H) -I/opt/microchip/mplabc32/v2.00/pic32mx/include -DKERNEL -DUCB_METER -DPIC32MX7
 
 # CPU frequency 80 MHz.
 DEFS		+= -DCPU_KHZ=80000
@@ -28,8 +27,8 @@ DEFS		+= -DBUS_KHZ=80000
 # Maximite board
 # ==============
 #
-# Console on UART4
-DEFS            += -DCONSOLE_UART4
+# Console on USB
+DEFS            += -DCONSOLE_USB
 # SD/MMC card driver on SPI4
 DEFS            += -DSD_PORT=SPI4CON
 # /CS0 at pin E0
@@ -38,6 +37,13 @@ DEFS            += -DSD_CS0_PORT=TRISE -DSD_CS0_PIN=0
 DEFS            += -DLED_POLARITY
 DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISF -DLED_KERNEL_PIN=0
+
+#
+# USB configuration
+#
+DEFS  		+= -DUSB_SUPPORT_DEVICE
+DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3
+DEFS  		+= -DUSB_MAX_EP_NUMBER=3
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -54,8 +60,9 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
-KERNOBJ		= startup.o clock.o devsw.o cons.o sysctl.o \
-		  signal.o machdep.o mem.o exception.o
+KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
+		  signal.o machdep.o mem.o exception.o \
+                  usb_device.o usb_function_cdc.o usb_console.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \

@@ -79,22 +79,20 @@ void cdc_check_request()
 
     switch (usb_setup_pkt.bRequest)
     {
-    //****** These commands are required *//
     case SEND_ENCAPSULATED_COMMAND:
-     //send the packet
+        // send the packet
         usb_in_pipe[0].pSrc.bRam = (unsigned char*) &dummy_encapsulated_cmd_response;
         usb_in_pipe[0].wCount = DUMMY_LENGTH;
         usb_in_pipe[0].info.bits.ctrl_trf_mem = USB_INPIPES_RAM;
         usb_in_pipe[0].info.bits.busy = 1;
         break;
+
     case GET_ENCAPSULATED_RESPONSE:
         // Populate dummy_encapsulated_cmd_response first.
         usb_in_pipe[0].pSrc.bRam = (unsigned char*) &dummy_encapsulated_cmd_response;
         usb_in_pipe[0].info.bits.busy = 1;
         break;
-    //****** End of required commands *//
 
-#ifdef USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D1
     case SET_LINE_CODING:
         usb_out_pipe[0].wCount = usb_setup_pkt.wLength;
         usb_out_pipe[0].pDst.bRam = (unsigned char*) &cdc_line_coding._byte[0];
@@ -112,27 +110,6 @@ void cdc_check_request()
         CONFIGURE_RTS(control_signal_bitmap.CARRIER_CONTROL);
         CONFIGURE_DTR(control_signal_bitmap.DTE_PRESENT);
         usb_in_pipe[0].info.bits.busy = 1;
-        break;
-#endif
-
-#ifdef USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D2
-    case SEND_BREAK:            // Optional
-        usb_in_pipe[0].info.bits.busy = 1;
-        if (usb_setup_pkt.wValue == 0xFFFF) {
-            UART_ENABLE = 0;    // turn off USART
-            UART_TRISTx = 0;    // Make TX pin an output
-            UART_Tx = 0;        // make it low
-        }
-        else if (usb_setup_pkt.wValue == 0x0000) {
-            UART_ENABLE = 1;    // turn on USART
-            UART_TRISTx = 1;    // Make TX pin an input
-        }
-        else {
-            UART_SEND_BREAK();
-        }
-        break;
-#endif
-    default:
         break;
     }
 }
@@ -184,62 +161,9 @@ void cdc_init_ep()
     data_in = 0;
 }
 
-#if 0
 /*
- * cdc_gets copies a string of BYTEs received through USB CDC Bulk OUT
- * endpoint to a user's specified location. It is a non-blocking function.
- * It does not wait for data if there is no data available. Instead it
- * returns '0' to notify the caller that there is no data available.
- *
- * Usage:
- *       unsigned char numBytes;
- *       unsigned char buffer[64]
- *
- *       numBytes = cdc_gets(buffer,sizeof(buffer)); //until the buffer is free.
- *       if (numBytes > 0)
- *       {
- *           // we received numBytes bytes of data and they are copied into
- *           // the "buffer" variable.  We can do something with the data here.
- *       }
- *
- * Conditions:
- *   Value of input argument 'len' should be smaller than the maximum
- *   endpoint size responsible for receiving bulk data from USB host for CDC
- *   class. Input argument 'buffer' should point to a buffer area that is
- *   bigger or equal to the size specified by 'len'.
- * Input:
- *   buffer -  Pointer to where received BYTEs are to be stored
- *   len -     The number of BYTEs expected.
+ * Get received data.
  */
-unsigned cdc_gets(char *buffer, unsigned len)
-{
-    unsigned n;
-
-    if (usb_handle_busy (data_out))
-        return 0;
-    /*
-     * Adjust the expected number of BYTEs to equal
-     * the actual number of BYTEs received.
-     */
-    n = usb_handle_get_length (data_out);
-    if (len > n)
-        len = n;
-
-    /*
-     * Copy data from dual-ram buffer to user's buffer
-     */
-    for (n=0; n<len; n++)
-        buffer[n] = cdc_data_rx[n];
-
-    /*
-     * Prepare dual-ram buffer for next OUT transaction
-     */
-    data_out = usb_rx_one_packet (CDC_DATA_EP,
-            (unsigned char*) &cdc_data_rx, sizeof(cdc_data_rx));
-    return n;
-}
-#endif
-
 unsigned cdc_consume (void (*func) (int))
 {
     unsigned n, len;
@@ -321,169 +245,6 @@ void cdc_put (char *data, unsigned length)
         cdc_tx_len = length;
         cdc_trf_state = CDC_TX_BUSY;
     }
-}
-
-/*
- * cdc_puts writes a string of data to the USB including the null
- * character. Use this version, 'puts', to transfer data from a RAM buffer.
- *
- * Usage:
- *       if (cdc_is_tx_ready())
- *       {
- *           char data[] = "Hello World";
- *           cdc_puts(data);
- *       }
- *
- * The transfer mechanism for device-to-host(put) is more flexible than
- * host-to-device(get). It can handle a string of data larger than the
- * maximum size of bulk IN endpoint. A state machine is used to transfer a
- * \long string of data over multiple USB transactions. cdc_tx_service()
- * must be called periodically to keep sending blocks of data to the host.
- *
- * Conditions:
- *   cdc_is_tx_ready() must return TRUE. This indicates that the last
- *   transfer is complete and is ready to receive a new block of data. The
- *   string of characters pointed to by 'data' must equal to or smaller than
- *   255 BYTEs.
- *
- * Input:
- *   char *data -  null\-terminated string of constant data. If a
- *                           null character is not found, 255 BYTEs of data
- *                           will be transferred to the host.
- */
-void cdc_puts(char *data)
-{
-    unsigned char len;
-    char *pData;
-
-    /*
-     * User should have checked that cdc_trf_state is in CDC_TX_READY state
-     * before calling this function.
-     * As a safety precaution, this fuction checks the state one more time
-     * to make sure it does not override any pending transactions.
-     *
-     * Currently it just quits the routine without reporting any errors back
-     * to the user.
-     *
-     * Bottomline: User MUST make sure that cdc_is_tx_ready()==1
-     *             before calling this function!
-     * Example:
-     * if (cdc_is_tx_ready())
-     *     cdc_puts(pData, Length);
-     *
-     * IMPORTANT: Never use the following blocking while loop to wait:
-     * while (!cdc_is_tx_ready())
-     *     cdc_puts(pData);
-     *
-     * The whole firmware framework is written based on cooperative
-     * multi-tasking and a blocking code is not acceptable.
-     * Use a state machine instead.
-     */
-    if (cdc_trf_state != CDC_TX_READY)
-        return;
-
-    /*
-     * While loop counts the number of BYTEs to send including the
-     * null character.
-     */
-    len = 0;
-    pData = data;
-    do {
-        len++;
-        if (len == 255)
-            break;       // Break loop once max len is reached.
-    } while (*pData++);
-
-    /*
-     * Second piece of information (length of data to send) is ready.
-     * Call tx_ram to setup the transfer.
-     * The actual transfer process will be handled by cc_tx_service(),
-     * which should be called once per Main Program loop.
-     */
-    cdc_src = data;
-    cdc_tx_len = len;
-    cdc_trf_state = CDC_TX_BUSY;
-}
-
-/*
- * cdc_putrs writes a string of data to the USB including the null
- * character. Use this version, 'putrs', to transfer data literals and
- * data located in program memory.
- *
- * Usage:
- *       if (cdc_is_tx_ready())
- *       {
- *           cdc_putrs("Hello World");
- *       }
- *
- * The transfer mechanism for device-to-host(put) is more flexible than
- * host-to-device(get). It can handle a string of data larger than the
- * maximum size of bulk IN endpoint. A state machine is used to transfer a
- * long string of data over multiple USB transactions. cdc_tx_service()
- * must be called periodically to keep sending blocks of data to the host.
- *
- * Conditions:
- *   cdc_is_tx_ready() must return TRUE. This indicates that the last
- *   transfer is complete and is ready to receive a new block of data. The
- *   string of characters pointed to by 'data' must equal to or smaller than
- *   255 BYTEs.
- *
- * Input:
- *   const char *data -  null\-terminated string of constant data. If a
- *                       null character is not found, 255 BYTEs of data
- *                       will be transferred to the host.
- */
-void cdc_putrs(const char *data)
-{
-    unsigned char len;
-    const char *pData;
-
-    /*
-     * User should have checked that cdc_trf_state is in CDC_TX_READY state
-     * before calling this function.
-     * As a safety precaution, this fuction checks the state one more time
-     * to make sure it does not override any pending transactions.
-     *
-     * Currently it just quits the routine without reporting any errors back
-     * to the user.
-     *
-     * Bottomline: User MUST make sure that cdc_is_tx_ready()
-     *             before calling this function!
-     * Example:
-     * if (cdc_is_tx_ready())
-     *     cdc_puts(pData);
-     *
-     * IMPORTANT: Never use the following blocking while loop to wait:
-     * while (cdc_trf_state != CDC_TX_READY)
-     *     cdc_puts(pData);
-     *
-     * The whole firmware framework is written based on cooperative
-     * multi-tasking and a blocking code is not acceptable.
-     * Use a state machine instead.
-     */
-    if (cdc_trf_state != CDC_TX_READY)
-        return;
-
-    /*
-     * While loop counts the number of BYTEs to send including the
-     * null character.
-     */
-    len = 0;
-    pData = data;
-    do {
-        len++;
-        if (len == 255)
-            break;       // Break loop once max len is reached.
-    } while (*pData++);
-
-    /*
-     * Second piece of information (length of data to send) is ready.
-     * The actual transfer process will be handled by cdc_tx_service(),
-     * which should be called once per Main Program loop.
-     */
-    cdc_src = data;
-    cdc_tx_len = len;
-    cdc_trf_state = CDC_TX_BUSY;
 }
 
 /*
