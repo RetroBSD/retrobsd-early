@@ -135,7 +135,6 @@ void clkstart (void);
 #define LED_KERNEL      1
 
 void led_control (int mask, int on);
-void usb_intr (void);
 
 /*
  * Port i/o access, relative to TRIS base.

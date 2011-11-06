@@ -29,21 +29,16 @@ DEFS		+= -DBUS_KHZ=80000
 #
 # Console on USB
 DEFS            += -DCONSOLE_USB
-# SD/MMC card driver on SPI4
-DEFS            += -DSD_PORT=SPI4CON
-# /CS0 at pin E0
-DEFS            += -DSD_CS0_PORT=TRISE -DSD_CS0_PIN=0
-# LEDs at pins E1, F0 and opposite polarity to UBW32
-DEFS            += -DLED_POLARITY
-DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
-DEFS            += -DLED_KERNEL_PORT=TRISF -DLED_KERNEL_PIN=0
+DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
-#
-# USB configuration
-#
-DEFS  		+= -DUSB_SUPPORT_DEVICE
-DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3
-DEFS  		+= -DUSB_MAX_EP_NUMBER=3
+# SD/MMC card driver on SPI4
+# /CS0 at pin E0
+DEFS            += -DSD_PORT=SPI4CON
+DEFS            += -DSD_CS0_PORT=TRISE -DSD_CS0_PIN=0
+
+# LEDs at pins E1, F0
+DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1
+DEFS            += -DLED_KERNEL_PORT=TRISF -DLED_KERNEL_PIN=0 -DLED_KERNEL_INVERT
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)

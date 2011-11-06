@@ -26,7 +26,6 @@ DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
 # /CS0 at pin B1
 DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=1
 # LEDs at pins A0, A1, A2, A3
-DEFS            += -DLED_POLARITY
 DEFS            += -DLED_DISK_PORT=TRISA   -DLED_DISK_PIN=0
 DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=1
 DEFS            += -DLED_TTY_PORT=TRISA    -DLED_TTY_PIN=2

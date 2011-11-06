@@ -292,9 +292,6 @@ printf ("\nkernel stack = %p", frame);
 
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         hardclock ((caddr_t) frame [FRAME_PC], status);
-#if defined(USB_CONSOLE)
-                        usb_intr ();
-#endif
                         break;
 #if defined(CONSOLE_UART1) || defined(CONSOLE_UART2) || \
     defined(CONSOLE_UART3) || defined(CONSOLE_UART4) || \
@@ -320,10 +317,10 @@ printf ("\nkernel stack = %p", frame);
                         cnintr (0);
                         break;
 #endif
-#if defined(USB_CONSOLE)
+#ifdef CONSOLE_USB
                 case PIC32_VECT_USB:    /* USB */
                         IFSCLR(1) = 1 << (PIC32_IRQ_USB - 32);
-                        usb_intr ();
+                        cnintr (0);
                         break;
 #endif
                 default:

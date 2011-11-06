@@ -21,6 +21,35 @@
 #include "mount.h"
 #include "systm.h"
 
+#ifdef LED_TTY_INVERT
+#define LED_TTY_ON()   PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN
+#define LED_TTY_OFF()  PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN
+#else
+#define LED_TTY_ON()   PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN
+#define LED_TTY_OFF()  PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN
+#endif
+#ifdef LED_DISK_INVERT
+#define LED_DISK_ON()   PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN
+#define LED_DISK_OFF()  PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN
+#else
+#define LED_DISK_ON()   PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN
+#define LED_DISK_OFF()  PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN
+#endif
+#ifdef LED_KERNEL_INVERT
+#define LED_KERNEL_ON()   PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
+#define LED_KERNEL_OFF()  PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
+#else
+#define LED_KERNEL_ON()   PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
+#define LED_KERNEL_OFF()  PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
+#endif
+#ifdef LED_AUX_INVERT
+#define LED_AUX_ON()   PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN
+#define LED_AUX_OFF()  PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN
+#else
+#define LED_AUX_ON()   PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN
+#define LED_AUX_OFF()  PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN
+#endif
+
 int	hz = HZ;
 int	usechz = (1000000L + HZ - 1) / HZ;
 struct	timezone tz = { 8*60, 1 };
@@ -130,44 +159,25 @@ startup()
 	mips_write_c0_register (C0_CONFIG, 0,
             mips_read_c0_register (C0_CONFIG, 0) | 3);
 
-        /* UBW32 board: LEDs on PORTE[0:3].
-         * Configure LED pins as output high. */
-#ifndef LED_POLARITY
-#ifdef LED_TTY_PORT
-	PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+	/*
+         * Configure LED pins.
+         */
+#ifdef LED_TTY_PORT                             /* Terminal i/o */
+        LED_TTY_OFF();
 	TRIS_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
 #endif
-#ifdef LED_DISK_PORT
-	PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+#ifdef LED_DISK_PORT                            /* Disk i/o */
+        LED_DISK_OFF();
 	TRIS_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
 #endif
-#ifdef LED_KERNEL_PORT
-	PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+#ifdef LED_KERNEL_PORT                          /* Kernel activity */
+        LED_KERNEL_OFF();
 	TRIS_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
 #endif
-#ifdef LED_AUX_PORT
-	PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+#ifdef LED_AUX_PORT                             /* Auxiliary */
+        LED_AUX_OFF();
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
-#else   // LED_POLARITY
-	// Maximite board, configure LEDs as output low
-#ifdef LED_TTY_PORT
-	PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-	TRIS_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-#endif
-#ifdef LED_DISK_PORT
-	PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-	TRIS_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-#endif
-#ifdef LED_KERNEL_PORT
-	PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-	TRIS_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-#endif
-#ifdef LED_AUX_PORT
-	PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-	TRIS_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-#endif
-#endif  // LED_POLARITY
 
 	/* Kernel mode, interrupts disabled.  */
 	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
@@ -318,83 +328,30 @@ udelay (usec)
  */
 void led_control (int mask, int on)
 {
-        /* UBW32 board: LEDs on PORTE[0:3]. */
-#ifndef LED_POLARITY
 #ifdef LED_AUX_PORT
-        if (mask & LED_AUX) {           /* LED3 on PE0: yellow */
-                if (on) PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-                else    PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+        if (mask & LED_AUX) {           /* Auxiliary */
+                if (on) LED_AUX_ON();
+                else    LED_AUX_OFF();
         }
 #endif
 #ifdef LED_DISK_PORT
-        if (mask & LED_DISK) {          /* LED2 on PE1: red */
-                if (on) PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-                else    PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
+        if (mask & LED_DISK) {          /* Disk i/o */
+                if (on) LED_DISK_ON();
+                else    LED_DISK_OFF();
         }
 #endif
 #ifdef LED_KERNEL_PORT
-        if (mask & LED_KERNEL) {        /* LED1 on PE2: white */
-                if (on) PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-                else    PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
+        if (mask & LED_KERNEL) {        /* Kernel activity */
+                if (on) LED_KERNEL_ON();
+                else    LED_KERNEL_OFF();
         }
 #endif
 #ifdef LED_TTY_PORT
-        if (mask & LED_TTY) {           /* LED USB on PE3: green */
-                if (on) PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-                else    PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
+        if (mask & LED_TTY) {           /* Terminal i/o */
+                if (on) LED_TTY_ON();
+                else    LED_TTY_OFF();
         }
 #endif
-#else   // LED_POLARITY
-        // Maximite board
-#ifdef LED_AUX_PORT
-        if (mask & LED_AUX) {
-                if (on)
-		{
-			PORT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-			TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-                } else {
-			PORT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-			TRIS_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN;
-		}
-         }
-#endif
-#ifdef LED_DISK_PORT
-        if (mask & LED_DISK) {          /* LED on PE1: red */
-                if (on)
-		{
-			PORT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-			TRIS_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-                } else {
-			PORT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-			TRIS_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN;
-		}
-         }
-#endif
-#ifdef LED_KERNEL_PORT
-        if (mask & LED_KERNEL) {        /* LED on PF0: green */
-                if (on)
-		{
-			PORT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-			TRIS_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-                } else {
-			PORT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-			TRIS_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
-		}
-         }
-#endif
-#ifdef LED_TTY_PORT
-        if (mask & LED_TTY) {
-                if (on)
-		{
-			PORT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-			TRIS_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-                } else {
-			PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-			TRIS_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN;
-		}
-         }
-#endif
-#endif  // LED_POLARITY
 }
 
 /*

@@ -204,7 +204,7 @@ static void cn_rx (int c)
 /*
  * Check bus status and service USB interrupts.
  */
-void usb_intr()
+void cnintr (int chan)
 {
     register struct tty *tp = &cnttys[0];
 
