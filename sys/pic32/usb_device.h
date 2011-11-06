@@ -307,37 +307,49 @@ typedef struct __attribute__ ((packed))
 /* Section: USB Device States - To be used with [BYTE usb_device_state] */
 
 /* Detached is the state in which the device is not attached to the bus.  When
-in the detached state a device should not have any pull-ups attached to either
-the D+ or D- line.  This defintions is a return value of the
-function usb_get_device_state() */
+ * in the detached state a device should not have any pull-ups attached to either
+ * the D+ or D- line.  This defintions is a return value of the
+ * function usb_get_device_state()
+ */
 #define DETACHED_STATE          0x00
+
 /* Attached is the state in which the device is attached ot the bus but the
-hub/port that it is attached to is not yet configured. This defintions is a
-return value of the function usb_get_device_state() */
+ * hub/port that it is attached to is not yet configured. This defintions is a
+ * return value of the function usb_get_device_state()
+ */
 #define ATTACHED_STATE          0x01
+
 /* Powered is the state in which the device is attached to the bus and the
-hub/port that it is attached to is configured. This defintions is a return
-value of the function usb_get_device_state() */
+ * hub/port that it is attached to is configured. This defintions is a return
+ * value of the function usb_get_device_state()
+ */
 #define POWERED_STATE           0x02
+
 /* Default state is the state after the device receives a RESET command from
-the host. This defintions is a return value of the function usb_get_device_state()
+ * the host. This defintions is a return value of the function usb_get_device_state()
  */
 #define DEFAULT_STATE           0x04
+
 /* Address pending state is not an official state of the USB defined states.
-This state is internally used to indicate that the device has received a
-SET_ADDRESS command but has not received the STATUS stage of the transfer yet.
-The device is should not switch addresses until after the STATUS stage is
-complete.  This defintions is a return value of the function
-usb_get_device_state() */
+ * This state is internally used to indicate that the device has received a
+ * SET_ADDRESS command but has not received the STATUS stage of the transfer yet.
+ * The device is should not switch addresses until after the STATUS stage is
+ * complete.  This defintions is a return value of the function
+ * usb_get_device_state()
+ */
 #define ADR_PENDING_STATE       0x08
+
 /* Address is the state in which the device has its own specific address on the
-bus. This defintions is a return value of the function usb_get_device_state().*/
+ * bus. This defintions is a return value of the function usb_get_device_state().
+ */
 #define ADDRESS_STATE           0x10
+
 /* Configured is the state where the device has been fully enumerated and is
-operating on the bus.  The device is now allowed to excute its application
-specific tasks.  It is also allowed to increase its current consumption to the
-value specified in the configuration descriptor of the current configuration.
-This defintions is a return value of the function usb_get_device_state(). */
+ * operating on the bus.  The device is now allowed to excute its application
+ * specific tasks.  It is also allowed to increase its current consumption to the
+ * value specified in the configuration descriptor of the current configuration.
+ * This defintions is a return value of the function usb_get_device_state().
+ */
 #define CONFIGURED_STATE        0x20
 
 /* UCFG Initialization Parameters */
@@ -436,8 +448,8 @@ extern volatile CTRL_TRF_SETUP usb_setup_pkt;           // 8-byte only
 #define RCPT_EP			2
 #define RCPT_OTH		3
 
-extern unsigned char usb_device_state;
-extern unsigned char usb_active_configuration;
+extern unsigned usb_device_state;
+extern unsigned usb_active_configuration;
 extern USB_VOLATILE IN_PIPE usb_in_pipe[1];
 extern USB_VOLATILE OUT_PIPE usb_out_pipe[1];
 
@@ -588,7 +600,7 @@ void usb_device_init(void);
 
 /*
   Function:
-        unsigned char usb_get_device_state(void)
+        unsigned usb_get_device_state(void)
 
   Summary:
     This function will return the current state of the device on the USB.
@@ -714,9 +726,9 @@ void usb_ctrl_trf_out_handler (void);
 void usb_wake_from_suspend (void);
 void usb_suspend (void);
 void usb_stall_handler (void);
-volatile USB_HANDLE usb_transfer_one_packet (unsigned char ep, unsigned char dir, unsigned char* data, unsigned char len);
-void usb_enable_endpoint (unsigned char ep, unsigned char options);
-void usb_configure_endpoint (unsigned char EPNum, unsigned char direction);
+volatile USB_HANDLE usb_transfer_one_packet (unsigned ep, unsigned dir, unsigned char* data, unsigned len);
+void usb_enable_endpoint (unsigned ep, unsigned options);
+void usb_configure_endpoint (unsigned EPNum, unsigned direction);
 
 #if defined(USB_DYNAMIC_EP_CONFIG)
     void usb_init_ep(unsigned char const* pConfig);
@@ -1407,7 +1419,7 @@ void usbcb_ep0_data_received (void);
 
 /*
     Function:
-        void usb_stall_endpoint(unsigned char ep, unsigned char dir)
+        void usb_stall_endpoint(unsigned ep, unsigned dir)
 
     Summary:
          STALLs the specified endpoint
@@ -1425,7 +1437,7 @@ void usbcb_ep0_data_received (void);
     Remarks:
         None
  */
-void usb_stall_endpoint(unsigned char ep, unsigned char dir);
+void usb_stall_endpoint(unsigned ep, unsigned dir);
 
 #if (USB_PING_PONG_MODE == USB_PING_PONG__NO_PING_PONG)
     #define USB_NEXT_EP0_OUT_PING_PONG 0x0000   // Used in USB Device Mode only

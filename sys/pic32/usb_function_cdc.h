@@ -116,7 +116,6 @@
 
 /* CDC Bulk IN transfer states */
 #define CDC_TX_READY                0
-#define CDC_TX_BUSY                 1
 #define CDC_TX_BUSY_ZLP             2       // ZLP: Zero Length Packet
 #define CDC_TX_COMPLETING           3
 
@@ -403,11 +402,8 @@ extern LINE_CODING cdc_line_coding;
  */
 void cdc_check_request (void);
 void cdc_init_ep (void);
-unsigned cdc_gets (char *buffer, unsigned len);
-void cdc_putrs (const char *data);
-void cdc_put (char *data, unsigned length);
-void cdc_puts (char *data);
 void cdc_tx_service (void);
-unsigned cdc_consume (void (*func) (int));
+int cdc_putc (int c);
+int cdc_consume (void (*func) (int));
 
 #endif //CDC_H

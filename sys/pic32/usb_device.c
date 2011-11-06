@@ -29,16 +29,16 @@
     #error "PIC32 only supports full ping pong mode."
 #endif
 
-USB_VOLATILE unsigned char usb_device_state;
-USB_VOLATILE unsigned char usb_active_configuration;
+USB_VOLATILE unsigned usb_device_state;
+USB_VOLATILE unsigned usb_active_configuration;
 static USB_VOLATILE unsigned char usb_alternate_interface[USB_MAX_NUM_INT];
 static volatile BDT_ENTRY *pBDTEntryEP0OutCurrent;
 static volatile BDT_ENTRY *pBDTEntryEP0OutNext;
 static volatile BDT_ENTRY *pBDTEntryOut[USB_MAX_EP_NUMBER+1];
 static volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
-static USB_VOLATILE unsigned char short_packet_status;
-static USB_VOLATILE unsigned char control_transfer_state;
-static USB_VOLATILE unsigned char ustat_saved;
+static USB_VOLATILE unsigned short_packet_status;
+static USB_VOLATILE unsigned control_transfer_state;
+static USB_VOLATILE unsigned ustat_saved;
 USB_VOLATILE IN_PIPE usb_in_pipe[1];
 USB_VOLATILE OUT_PIPE usb_out_pipe[1];
 USB_VOLATILE int usb_remote_wakeup;
@@ -68,7 +68,7 @@ static volatile unsigned char ctrl_trf_data [USB_EP0_BUFF_SIZE];
  */
 void usb_device_init(void)
 {
-    unsigned char i;
+    unsigned i;
 
     // Clear all USB error flags
     U1EIR = 0xFF;
@@ -142,7 +142,7 @@ void usb_device_init(void)
  */
 void usb_device_tasks(void)
 {
-    unsigned char i;
+    unsigned i;
 
 #ifdef USB_SUPPORT_OTG
     // SRP Time Out Check
@@ -596,7 +596,7 @@ void usb_ctrl_trf_out_handler(void)
  */
 void usb_ctrl_trf_in_handler(void)
 {
-    unsigned char lastDTS;
+    unsigned lastDTS;
 
     lastDTS = pBDTEntryIn[0]->STAT.DTS;
 
@@ -677,7 +677,7 @@ void usb_prepare_for_next_setup_trf(void)
        (pBDTEntryEP0OutCurrent->STAT.PID == SETUP_TOKEN) &&
        (pBDTEntryEP0OutNext->STAT.UOWN == 0))
     {
-        unsigned char setup_cnt;
+        unsigned setup_cnt;
 
         pBDTEntryEP0OutNext->ADR = ConvertToPhysicalAddress(&usb_setup_pkt);
 
@@ -1230,8 +1230,7 @@ void usb_ctrl_trf_tx_service(void)
  */
 void usb_ctrl_trf_rx_service(void)
 {
-    unsigned char byteToRead;
-    unsigned char i;
+    unsigned byteToRead, i;
 
     byteToRead = pBDTEntryEP0OutCurrent->CNT;
 
@@ -1316,23 +1315,22 @@ void usb_std_set_cfg_handler(void)
 /*
  * This function will configure the specified endpoint.
  *
- * Input: unsigned char EPNum - the endpoint to be configured
- *        unsigned char direction - the direction to be configured
+ * Input: unsigned EPNum - the endpoint to be configured
+ *        unsigned direction - the direction to be configured
  */
-void usb_configure_endpoint (unsigned char EPNum, unsigned char direction)
+void usb_configure_endpoint (unsigned epnum, unsigned direction)
 {
     volatile BDT_ENTRY* handle;
 
     handle = (volatile BDT_ENTRY*) &usb_buffer[EP0_OUT_EVEN];
-    handle += BD(EPNum,direction,0)/sizeof(BDT_ENTRY);
+    handle += BD(epnum, direction, 0) / sizeof(BDT_ENTRY);
 
     handle->STAT.UOWN = 0;
 
-    if (direction == 0)
-    {
-        pBDTEntryOut[EPNum] = handle;
+    if (direction == 0) {
+        pBDTEntryOut[epnum] = handle;
     } else {
-        pBDTEntryIn[EPNum] = handle;
+        pBDTEntryIn[epnum] = handle;
     }
 
 #if (USB_PING_PONG_MODE == USB_PING_PONG__FULL_PING_PONG)
@@ -1343,12 +1341,12 @@ void usb_configure_endpoint (unsigned char EPNum, unsigned char direction)
     //when transmitting is toggle the bit
     handle->STAT.DTS = 1;
 #elif (USB_PING_PONG_MODE == USB_PING_PONG__EP0_OUT_ONLY)
-    if (EPNum != 0)
+    if (epnum != 0)
     {
         handle->STAT.DTS = 1;
     }
 #elif (USB_PING_PONG_MODE == USB_PING_PONG__ALL_BUT_EP0)
-    if (EPNum != 0)
+    if (epnum != 0)
     {
         handle->STAT.DTS = 0;
         (handle+1)->STAT.DTS = 1;
@@ -1375,8 +1373,8 @@ void usb_configure_endpoint (unsigned char EPNum, unsigned char direction)
  * explicitly disable SETUP packets on this endpoint.
  *
  * Input:
- *   unsigned char ep -       the endpoint to be configured
- *   unsigned char options -  optional settings for the endpoint. The options should
+ *   unsigned ep -       the endpoint to be configured
+ *   unsigned options -  optional settings for the endpoint. The options should
  *                   be ORed together to form a single options string. The
  *                   available optional settings for the endpoint. The
  *                   options should be ORed together to form a single options
@@ -1393,16 +1391,12 @@ void usb_configure_endpoint (unsigned char EPNum, unsigned char direction)
  *                   * USB_DISALLOW_SETUP disables control transfers
  *                   * USB_STALL_ENDPOINT STALLs this endpoint
  */
-void usb_enable_endpoint (unsigned char ep, unsigned char options)
+void usb_enable_endpoint (unsigned ep, unsigned options)
 {
-    //Set the options to the appropriate endpoint control register
-    //*((unsigned char*)(&U1EP0+ep)) = options;
-    {
-        unsigned int* p;
+    // Set the options to the appropriate endpoint control register
+    unsigned int *p = (unsigned int*) (&U1EP0 + (4 * ep));
 
-        p = (unsigned int*)(&U1EP0+(4*ep));
-        *p = options;
-    }
+    *p = options;
 
     if (options & USB_OUT_ENABLED) {
         usb_configure_endpoint(ep, 0);
@@ -1416,10 +1410,10 @@ void usb_enable_endpoint (unsigned char ep, unsigned char options)
  * STALLs the specified endpoint
  *
  * Input:
- *   unsigned char ep - the endpoint the data will be transmitted on
- *   unsigned char dir - the direction of the transfer
+ *   unsigned ep - the endpoint the data will be transmitted on
+ *   unsigned dir - the direction of the transfer
  */
-void usb_stall_endpoint (unsigned char ep, unsigned char dir)
+void usb_stall_endpoint (unsigned ep, unsigned dir)
 {
     BDT_ENTRY *p;
 
@@ -1453,14 +1447,14 @@ void usb_stall_endpoint (unsigned char ep, unsigned char dir)
  * Transfers one packet over the USB.
  *
  * Input:
- *   unsigned char ep - the endpoint the data will be transmitted on
- *   unsigned char dir - the direction of the transfer
- *                       This value is either OUT_FROM_HOST or IN_TO_HOST
+ *   unsigned ep - the endpoint the data will be transmitted on
+ *   unsigned dir - the direction of the transfer
+ *                  This value is either OUT_FROM_HOST or IN_TO_HOST
  *   unsigned char* data - pointer to the data to be sent
- *   unsigned char len - length of the data needing to be sent
+ *   unsigned len - length of the data needing to be sent
  */
-USB_HANDLE usb_transfer_one_packet (unsigned char ep, unsigned char dir,
-    unsigned char* data, unsigned char len)
+USB_HANDLE usb_transfer_one_packet (unsigned ep, unsigned dir,
+    unsigned char* data, unsigned len)
 {
     USB_HANDLE handle;
 

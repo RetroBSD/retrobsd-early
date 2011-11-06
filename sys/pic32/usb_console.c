@@ -43,6 +43,10 @@ void cninit()
 {
     usb_device_init();
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
+
+    /* Wait for any user input. */
+    while (! cdc_consume(0))
+        usb_device_tasks();
 }
 
 void cnidentify()
@@ -148,8 +152,11 @@ out:	/* Disable transmit_interrupt. */
     if (tp->t_outq.c_cc == 0)
         goto out;
     if (cdc_is_tx_ready()) {
-        char c = getc (&tp->t_outq);
-        cdc_put (&c, 1);
+        while (tp->t_outq.c_cc != 0) {
+            int c = getc (&tp->t_outq);
+            if (cdc_putc (c) == 0)
+                break;
+        }
         cdc_tx_service();
         tp->t_state |= TS_BUSY;
     }
@@ -172,7 +179,7 @@ void cnputc (c)
     }
     led_control (LED_TTY, 1);
 again:
-    cdc_put (&c, 1);
+    cdc_putc (c);
     cdc_tx_service();
 
     while (! cdc_is_tx_ready()) {
