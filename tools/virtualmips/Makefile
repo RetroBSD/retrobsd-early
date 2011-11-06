@@ -1,8 +1,16 @@
 #
 # Build VirtualMIPS simulator.
 #
+
+# Select target board:
+# chipKIT Max32
+CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DMAX32
+
+# Microchip Explorer 16
+#CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DEXPLORER16
+
 CC          = gcc -g
-CFLAGS		= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
+CFLAGS		+= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
 LIBS		= -lconfuse -lpthread -lelf
 
 ifneq ($(wildcard /usr/lib/librt.a),)
@@ -18,17 +26,6 @@ endif
 # Optimization.
 CFLAGS		+= -O
 #CFLAGS		+= -O3 -fomit-frame-pointer
-
-# Auto-select target board
-ifneq ($(wildcard ../../sys/pic32/explorer16/vers.o),)
-CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DEXPLORER16
-endif
-ifneq ($(wildcard ../../sys/pic32/maximite/vers.o),)
-CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAXIMITE
-endif
-ifneq ($(wildcard ../../sys/pic32/max32/vers.o),)
-CFLAGS		+= -DSIM_PIC32 -DPIC32MX7 -DMAX32
-endif
 
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
