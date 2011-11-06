@@ -28,6 +28,7 @@ DEFS		+= -DBUS_KHZ=80000
 # ===========
 #
 # Console on USB
+# For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
 DEFS            += -DCONSOLE_USB
 DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 

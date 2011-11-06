@@ -28,7 +28,9 @@ DEFS		+= -DBUS_KHZ=80000
 # ==============
 #
 # Console on USB
-DEFS            += -DCONSOLE_USB
+# For Windows, use the driver:
+# http://geoffg.net/Downloads/BoatComputer/Silicon_Chip_USB_Serial_Port_Driver.zip
+DEFS            += -DCONSOLE_USB -DCONSOLE_PID=0xFD52
 DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
 # SD/MMC card driver on SPI4

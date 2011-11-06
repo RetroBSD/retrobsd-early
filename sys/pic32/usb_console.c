@@ -310,19 +310,26 @@ void usb_send_resume (void)
     U1CON &= ~PIC32_U1CON_RESUME;
 }
 
+#ifndef CONSOLE_VID
+#   define CONSOLE_VID 0x04D8   // Vendor ID: Microchip
+#endif
+#ifndef CONSOLE_PID
+#   define CONSOLE_PID 0x000A   // Product ID: CDC RS-232 Emulation Demo
+#endif
+
 /*
  * Device Descriptor
  */
 const USB_DEVICE_DESCRIPTOR usb_device = {
-    0x12,			// Size of this descriptor in bytes
+    sizeof(usb_device),     // Size of this descriptor in bytes
     USB_DESCRIPTOR_DEVICE,  // DEVICE descriptor type
     0x0200,                 // USB Spec Release Number in BCD format
     CDC_DEVICE,             // Class Code
     0x00,                   // Subclass code
     0x00,                   // Protocol code
     USB_EP0_BUFF_SIZE,      // Max packet size for EP0, see usb_config.h
-    0x04D8,                 // Vendor ID
-    0x000A,                 // Product ID: CDC RS-232 Emulation Demo
+    CONSOLE_VID,            // Vendor ID
+    CONSOLE_PID,            // Product ID
     0x0100,                 // Device release number in BCD format
     0x01,                   // Manufacturer string index
     0x02,                   // Product string index
@@ -336,7 +343,7 @@ const USB_DEVICE_DESCRIPTOR usb_device = {
 static const unsigned char config1_descriptor[] =
 {
     /* Configuration Descriptor */
-    0x09,				// sizeof(USB_CFG_DSC)
+    9,                                  // sizeof(USB_CFG_DSC)
     USB_DESCRIPTOR_CONFIGURATION,	// CONFIGURATION descriptor type
     67, 0,				// Total length of data for this cfg
     2,                                  // Number of interfaces in this cfg
@@ -380,7 +387,7 @@ static const unsigned char config1_descriptor[] =
     CDC_DATA_INTF_ID,
 
     /* Endpoint Descriptor */
-    0x07,				/* sizeof(USB_EP_DSC) */
+    7,                                  // sizeof(USB_EP_DSC)
     USB_DESCRIPTOR_ENDPOINT,	        // Endpoint Descriptor
     _EP02_IN,			        // EndpointAddress
     _INTERRUPT,			        // Attributes
@@ -388,7 +395,7 @@ static const unsigned char config1_descriptor[] =
     0x02,				// Interval
 
     /* Interface Descriptor */
-    9,				        /* sizeof(USB_INTF_DSC) */
+    9,				        // sizeof(USB_INTF_DSC)
     USB_DESCRIPTOR_INTERFACE,	        // INTERFACE descriptor type
     1,				        // Interface Number
     0,				        // Alternate Setting Number
@@ -399,7 +406,7 @@ static const unsigned char config1_descriptor[] =
     0,				        // Interface string index
 
     /* Endpoint Descriptor */
-    0x07,				/* sizeof(USB_EP_DSC) */
+    7,                                  // sizeof(USB_EP_DSC)
     USB_DESCRIPTOR_ENDPOINT,	        // Endpoint Descriptor
     _EP03_OUT,			        // EndpointAddress
     _BULK,				// Attributes
@@ -407,7 +414,7 @@ static const unsigned char config1_descriptor[] =
     0x00,				// Interval
 
     /* Endpoint Descriptor */
-    0x07,				/* sizeof(USB_EP_DSC) */
+    7,                                  // sizeof(USB_EP_DSC)
     USB_DESCRIPTOR_ENDPOINT,	        // Endpoint Descriptor
     _EP03_IN,			        // EndpointAddress
     _BULK,				// Attributes
@@ -440,7 +447,8 @@ static const struct {
     sizeof(string1_descriptor),
     USB_DESCRIPTOR_STRING,
     { 'M','i','c','r','o','c','h','i','p',' ',
-      'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.', },
+      'T','e','c','h','n','o','l','o','g','y',
+      ' ','I','n','c','.', },
 };
 
 /*
@@ -449,11 +457,12 @@ static const struct {
 static const struct {
     unsigned char bLength;
     unsigned char bDscType;
-    unsigned short string[25];
+    unsigned short string[16];
 } string2_descriptor = {
     sizeof(string2_descriptor),
     USB_DESCRIPTOR_STRING,
-    { 'R','e','t','r','o','B','S','D',' ','C','o','n','s','o','l','e', },
+    { 'R','e','t','r','o','B','S','D',' ','C',
+      'o','n','s','o','l','e', },
 };
 
 /*
