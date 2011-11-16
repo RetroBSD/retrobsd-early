@@ -43,9 +43,15 @@ SYSDIR          = sys
 FSUTIL		= tools/fsutil/fsutil
 LOADUTIL        = tools/ubw32/ubw32
 
-UBW32           = sys/pic32/ubw32
-MAXIMITE        = sys/pic32/maximite
+#
+# Supported boards
+#
 MAX32           = sys/pic32/max32
+UBW32           = sys/pic32/ubw32
+UBW32UART       = sys/pic32/ubw32-uart
+MAXIMITE        = sys/pic32/maximite
+EXPLORER16      = sys/pic32/explorer16
+STARTERKIT      = sys/pic32/starter-kit
 
 # Select target board
 TARGET          = $(MAX32)
@@ -179,5 +185,5 @@ tags:
 
 clean:
 		rm -f unix.hex root.bin swap.bin *~
-		for i in ${LIBDIR} ${UBW32} ${MAXIMITE} ${MAX32} ${SRCDIR}; \
+		for i in ${LIBDIR} ${UBW32} ${UBW32UART} ${MAXIMITE} ${MAX32} ${EXPLORER16} ${STARTERKIT} ${SRCDIR}; \
 		do (cd $$i; make -k ${MFLAGS} clean); done

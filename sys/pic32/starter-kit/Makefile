@@ -47,10 +47,10 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
 DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=1
 
-# LEDs at pins D0, D1, D2
-DEFS            += -DLED_DISK_PORT=TRISD   -DLED_DISK_PIN=0   -DLED_DISK_INVERT
-DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=1 -DLED_KERNEL_INVERT
-DEFS            += -DLED_TTY_PORT=TRISD    -DLED_TTY_PIN=2    -DLED_TTY_INVERT
+# LEDs at pins D0 (red), D1 (yellow), D2 (green)
+DEFS            += -DLED_TTY_PORT=TRISD    -DLED_TTY_PIN=0
+DEFS            += -DLED_DISK_PORT=TRISD   -DLED_DISK_PIN=1
+DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=2
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -120,7 +120,7 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 		chmod -x $@ unix.bin
 
 load:           unix.elf
-		ubw32 -write unix.hex -reset
+		pic32prog unix.hex
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c
