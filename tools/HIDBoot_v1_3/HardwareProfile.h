@@ -3,7 +3,7 @@
  Dependencies:	See INCLUDES section
  Processor:		PIC18 or PIC24 USB Microcontrollers
  Hardware:		The code is natively intended to be used on the following
- 				hardware platforms: PICDEM™ FS USB Demo Board, 
+ 				hardware platforms: PICDEM™ FS USB Demo Board,
  				PIC18F87J50 FS USB Plug-In Module, or
  				Explorer 16 + PIC24 USB PIM.  The firmware may be
  				modified for use on other USB platforms by editing this
@@ -52,13 +52,13 @@
        || defined(__32MX695F512H__) || defined(__32MX795F512H__)
 			#ifdef MAXIMITE
                 #include "HardwareProfile - MAXIMITE.h"
-			#else
-            #if defined (UBW32_MAXXWAVE)
+			#elif defined EFLIGHTWORKS_DIP
+				#include "HardwareProfile - DIP.h"
+			#elif defined UBW32_MAXXWAVE
 				#include "HardwareProfile - UBW32_MaxxWave.h"
 			#else
 				#include "HardwareProfile - UBW32.h"
 			#endif
-            #endif
         #endif
     #endif
 
