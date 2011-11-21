@@ -595,18 +595,18 @@ core()
 		goto out;
 	}
 	itrunc(ip, (u_long)0, 0);
-	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) &u, USIZE, (off_t) 0,
-		IO_UNIT, (int*) 0);
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) &u,
+                USIZE, (off_t) 0, IO_UNIT, (int*) 0);
 	if (u.u_error)
 		goto out;
 
-	u.u_error = rdwri (UIO_WRITE, ip, 0, u.u_dsize, (off_t) USIZE,
-		IO_UNIT, (int*) 0);
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) USER_DATA_START,
+                u.u_dsize, (off_t) USIZE, IO_UNIT, (int*) 0);
 	if (u.u_error)
 		goto out;
 
-	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) -u.u_ssize, u.u_ssize,
-		(off_t) USIZE + (off_t) u.u_dsize,
+	u.u_error = rdwri (UIO_WRITE, ip, (caddr_t) USER_DATA_END - u.u_ssize,
+                u.u_ssize, (off_t) USIZE + u.u_dsize,
 		IO_UNIT, (int*) 0);
 out:
 	iput(ip);

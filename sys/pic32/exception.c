@@ -207,7 +207,7 @@ exception (frame)
 {
 	register int i;
 	time_t syst;
-	unsigned c, irq, status, cause;
+	unsigned c, irq, status, cause, sp;
 
         led_control (LED_KERNEL, 1);
         if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
@@ -357,6 +357,21 @@ printf ("\nkernel stack = %p", frame);
 		u.u_error = 0;
                 u.u_frame = frame;
                 u.u_code = frame [FRAME_PC];            /* For signal handler */
+
+                /* Check stack. */
+                sp = frame [FRAME_SP];
+                if (sp < u.u_procp->p_daddr + u.u_dsize) {
+                        /* Process has trashed its stack; give it an illegal
+                         * instruction violation to halt it in its tracks. */
+                        i = SIGSEGV;
+                        break;
+                }
+                if (u.u_procp->p_ssize < USER_DATA_END - sp) {
+                        /* Expand stack. */
+                        u.u_procp->p_ssize = USER_DATA_END - sp;
+                        u.u_procp->p_saddr = sp;
+                        u.u_ssize = u.u_procp->p_ssize;
+                }
 
 		/* Original pc for restarting syscalls */
 		int opc = frame [FRAME_PC];		/* opc now points at syscall */

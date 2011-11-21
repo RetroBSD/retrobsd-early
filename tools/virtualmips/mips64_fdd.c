@@ -194,6 +194,8 @@ start_cpu:
         if (unlikely (res == 1)) {
             /*exception when fetching instruction */
             printf ("%08x: exception when fetching instruction\n", cpu->pc);
+            if (cpu->pc == 0)
+                exit(-1);
             continue;
         }
         if (unlikely ((cpu->vm->mipsy_debug_mode)
