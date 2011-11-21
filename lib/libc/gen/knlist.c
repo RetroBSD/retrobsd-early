@@ -4,6 +4,7 @@
 #include <sys/sysctl.h>
 #include <machine/cpu.h>
 
+int
 knlist(list)
 	struct nlist *list;
 {
@@ -22,8 +23,11 @@ knlist(list)
 	for (p=list; p->n_name && p->n_name[0]; ++p) {
                 size = sizeof(p->n_value);
                 if (sysctl(mib, 2, &p->n_value, &size,
-                    p->n_name, 1 + strlen(p->n_name)) < 0)
+                    p->n_name, 1 + strlen(p->n_name)) < 0) {
                         p->n_value = 0;
+                        continue;
+                }
+                ++entries;
 	}
 	return entries;
 }

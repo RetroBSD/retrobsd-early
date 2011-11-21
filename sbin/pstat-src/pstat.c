@@ -99,7 +99,7 @@ char **argv;
 				break;
 			argc--;
 			usrf++;
-			sscanf( *argv++, "%lo", &ubase);
+			sscanf( *argv++, "%lx", &ubase);
 			break;
 
 		case 'f':
@@ -126,15 +126,13 @@ char **argv;
 		exit(1);
 	}
 	knlist(nl);
-	if (nl[0].n_type == 0) {
-		printf("no namelist, n_type: %d n_value: %o n_name: %s\n", nl[0].n_type, nl[0].n_value, nl[0].n_name);
+	if (nl[0].n_value == 0) {
+		printf("no namelist, n_type: %d n_value: %x n_name: %s\n", nl[0].n_type, nl[0].n_value, nl[0].n_name);
 		exit(1);
 	}
-	allflags = filf | totflg | inof | prcf | ttyf | usrf | swpf;
-	if (allflags == 0) {
-		printf("pstat: one or more of -[aixptfsu] is required\n");
-		exit(1);
-	}
+	if (! (filf | totflg | inof | prcf | ttyf | usrf | swpf))
+		filf++;
+
 	if (filf||totflg)
 		dofile();
 	if (inof||totflg)
@@ -178,11 +176,11 @@ doinode()
 		return;
 	}
 	printf("%d/%d active inodes\n", nin, NINODE);
-printf("   LOC      FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/DEV FS\n");
+printf("   LOC       FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/DEV FS\n");
 	for (ip = xinode; ip < &xinode[NINODE]; ip++) {
 		if (ip->i_count == 0)
 			continue;
-		printf("%7.1o ", ainode + (ip - xinode)*sizeof (*ip));
+		printf("%08x ", ainode + (ip - xinode)*sizeof (*ip));
 		putf((long)ip->i_flag&ILOCKED, 'L');
 		putf((long)ip->i_flag&IUPD, 'U');
 		putf((long)ip->i_flag&IACC, 'A');
@@ -209,7 +207,7 @@ printf("   LOC      FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/
 			printf("%6d,%3d", major(ip->i_rdev), minor(ip->i_rdev));
 		else
 			printf("%10ld", ip->i_size);
-		printf(" %2d", ip->i_fs);
+		printf(" %08x", ip->i_fs);
 		printf("\n");
 	}
 	free(xinode);
@@ -266,11 +264,11 @@ doproc()
 		return;
 	}
 	printf("%d/%d processes\n", np, nproc);
-printf("   LOC   S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   PPID    ADDR   SADDR   DADDR    SIZE   WCHAN    LINK   TEXTP SIGM\n");
+        printf("   LOC    S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   PPID     ADDR    SADDR    DADDR     SIZE   WCHAN    LINK     SIGM\n");
 	for (pp=xproc; pp<&xproc[nproc]; pp++) {
 		if (pp->p_stat==0 && allflg==0)
 			continue;
-		printf("%7.1o", aproc + (pp - xproc)*sizeof (*pp));
+		printf("%08x", aproc + (pp - xproc)*sizeof (*pp));
 		printf(" %2d", pp->p_stat);
 		printf(" %7.1x", pp->p_flag);
 		printf(" %3d", pp->p_pri);
@@ -283,20 +281,18 @@ printf("   LOC   S       F PRI      SIG   UID SLP TIM  CPU  NI   PGRP    PID   P
 		printf(" %6d", pp->p_pgrp);
 		printf(" %6d", pp->p_pid);
 		printf(" %6d", pp->p_ppid);
-		printf(" %7.1o", pp->p_addr);
-		printf(" %7.1o", pp->p_saddr);
-		printf(" %7.1o", pp->p_daddr);
-		printf(" %7.1o", pp->p_dsize+pp->p_ssize);
-		printf(" %7.1o", pp->p_wchan);
-		printf(" %7.1o", pp->p_link);
+		printf(" %8x", pp->p_addr);
+		printf(" %8x", pp->p_saddr);
+		printf(" %8x", pp->p_daddr);
+		printf(" %6x", pp->p_dsize+pp->p_ssize);
+		printf(" %8x", pp->p_wchan);
+		printf(" %8x", pp->p_link);
 		printf(" %8.1lx", pp->p_sigmask);
 		printf("\n");
 	}
 	free(xproc);
 }
 
-static char mesg[] =
-" # RAW CAN OUT         MODE    ADDR  DEL  COL      STATE       PGRP DISC\n";
 static int ttyspace = 64;
 static struct tty *tty;
 
@@ -317,7 +313,7 @@ char *name;
 	printf("%s line\n", name);
 	lseek(fc, (long)nl[type].n_value, 0);
 	read(fc, tty, sizeof(struct tty));
-	printf(mesg);
+	printf(" # RAW CAN OUT         MODE     ADDR  DEL  COL     STATE       PGRP DISC\n");
 	ttyprt(tty, 0);
 }
 
@@ -330,7 +326,7 @@ struct tty *atp;
 	tp = atp;
 
 	printf("%4d%4d", tp->t_rawq.c_cc, tp->t_canq.c_cc);
-	printf("%4d %12.1lo %7.1o %4d %4d ", tp->t_outq.c_cc, tp->t_flags,
+	printf("%4d %12.1lo %8x %4d %4d ", tp->t_outq.c_cc, tp->t_flags,
 		tp->t_addr, tp->t_delct, tp->t_col);
 	putf(tp->t_state&TS_TIMEOUT, 'T');
 	putf(tp->t_state&TS_WOPEN, 'W');
@@ -382,7 +378,7 @@ dousr()
 	long	*ip;
 	register i, j;
 
-	lseek(fm, ubase << 6, 0);
+	lseek(fm, ubase, 0);
 	read(fm, &U, sizeof(U));
 	printf("procp\t%p\n", U.u_procp);
 	printf("frame\t%p\n", U.u_frame);
@@ -404,43 +400,43 @@ dousr()
 		if (i%8 == 7) printf("\n");
 	}
 	if (i%8) printf("\n");
-	printf("tsize\t%.1o\n", U.u_tsize);
-	printf("dsize\t%.1o\n", U.u_dsize);
-	printf("ssize\t%.1o\n", U.u_ssize);
+	printf("tsize\t%.1x\n", U.u_tsize);
+	printf("dsize\t%.1x\n", U.u_dsize);
+	printf("ssize\t%.1x\n", U.u_ssize);
 	printf("ssave\t");
 	for (i = 0; i < sizeof (label_t) / sizeof (int); i++)
-		printf("%.1o ", U.u_ssave.val[i]);
+		printf("%.1x ", U.u_ssave.val[i]);
 	printf("\n");
 	printf("rsave\t");
 	for	(i = 0; i < sizeof (label_t) / sizeof (int); i++)
-		printf("%.1o ", U.u_rsave.val[i]);
+		printf("%.1x ", U.u_rsave.val[i]);
 	printf("\n");
 	printf("signal");
 	for (i = 0; i < NSIG; i++) {
 		if (i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_signal[i]);
+		printf("%.1x ", U.u_signal[i]);
 		if (i%8 == 7) printf("\n");
 	}
 	if (i%8) printf("\n");
 	printf("sigmask");
 	for (i = 0; i < NSIG; i++) {
 		if (i%8 == 0) printf("\t");
-		printf("%.1lo ", U.u_sigmask[i]);
+		printf("%.1lx ", U.u_sigmask[i]);
 		if (i%8 == 7) printf("\n");
 	}
 	if (i%8) printf("\n");
-	printf("sigonstack\t%.1lo\n", U.u_sigonstack);
-	printf("sigintr\t%.1lo\n", U.u_sigintr);
-	printf("oldmask\t%.1lo\n", U.u_oldmask);
-	printf("code\t%u\n", U.u_code);
+	printf("sigonstack\t%.1lx\n", U.u_sigonstack);
+	printf("sigintr\t%.1lx\n", U.u_sigintr);
+	printf("oldmask\t%.1lx\n", U.u_oldmask);
+	printf("code\t%08x\n", U.u_code);
 	printf("psflags\t%d\n", U.u_psflags);
-	printf("ss_base\t%.1o ss_size %.1o ss_flags %.1o\n",
+	printf("ss_base\t%.1x ss_size %.1x ss_flags %.1x\n",
 		U.u_sigstk.ss_base, U.u_sigstk.ss_size, U.u_sigstk.ss_flags);
 	printf("ofile");
 	for	(i = 0; i < NOFILE; i++)
 		{
 		if	(i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_ofile[i]);
+		printf("%.1x ", U.u_ofile[i]);
 		if	(i%8 == 7) printf("\n");
 		}
 	if	(i%8) printf("\n");
@@ -448,16 +444,16 @@ dousr()
 	for	(i = 0; i < NOFILE; i++)
 		{
 		if	(i%8 == 0) printf("\t");
-		printf("%.1o ", U.u_pofile[i]);
+		printf("%.1x ", U.u_pofile[i]);
 		if	(i%8 == 7) printf("\n");
 		}
 	if	(i%8) printf("\n");
 	printf("lastfile\t%d\n", U.u_lastfile);
-	printf("cdir\t%.1o\n", U.u_cdir);
-	printf("rdir\t%.1o\n", U.u_rdir);
-	printf("ttyp\t%.1o\n", U.u_ttyp);
+	printf("cdir\t%.1x\n", U.u_cdir);
+	printf("rdir\t%.1x\n", U.u_rdir);
+	printf("ttyp\t%.1x\n", U.u_ttyp);
 	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
-	printf("cmask\t%.1o\n", U.u_cmask);
+	printf("cmask\t%.1x\n", U.u_cmask);
 	printf("ru\t");
 	ip = (long *)&U.u_ru;
 	for	(i = 0; i < sizeof (U.u_ru) / sizeof (long); i++)
@@ -471,8 +467,8 @@ dousr()
 	printf("timer\t%ld %ld %ld %ld\n", U.u_timer[0].it_interval,
 		U.u_timer[0].it_value, U.u_timer[1].it_interval,
 		U.u_timer[1].it_value);
-	printf("start\t%ld\n", U.u_start);
-	printf("prof\t%.1o %u %u %u\n", U.u_prof.pr_base, U.u_prof.pr_size,
+	printf("start\t%08x\n", U.u_start);
+	printf("prof\t%.1x %u %u %u\n", U.u_prof.pr_base, U.u_prof.pr_size,
 		U.u_prof.pr_off, U.u_prof.pr_scale);
 	printf("rlimit cur\t");
 	for	(i = 0; i < RLIM_NLIMITS; i++)
@@ -533,13 +529,13 @@ dofile()
 		return;
 	}
 	printf("%d/%d open files\n", nf, NFILE);
-	printf("   LOC   TYPE   FLG        CNT  MSG   DATA    OFFSET\n");
+	printf("   LOC   TYPE    FLG        CNT  MSG  DATA      OFFSET\n");
 	loc = afile;
 	for	(fp=xfile; fp < &xfile[NFILE]; fp++, loc += sizeof (*fp))
 		{
 		if (fp->f_count==0)
 			continue;
-		printf("%7.1o ", loc);
+		printf("%08x ", loc);
 		if (fp->f_type <= DTYPE_PIPE)
 			printf("%-8.8s", dtypes[fp->f_type]);
 		else
@@ -555,9 +551,9 @@ dofile()
 		putf((long)fp->f_flag&FDEFER, 'd');
 		printf("  %3d", fp->f_count);
 		printf("  %3d", fp->f_msgcount);
-		printf("  %7.1o", fp->f_data);
+		printf("  %08x", fp->f_data);
 		if (fp->f_offset < 0)
-			printf("  0%lo\n", fp->f_offset);
+			printf("  0x%lx\n", fp->f_offset);
 		else
 			printf("  %ld\n", fp->f_offset);
 	}

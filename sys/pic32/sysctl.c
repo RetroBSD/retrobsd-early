@@ -268,10 +268,14 @@ cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 		for (i=0; nlist[i].name; i++) {
 		        if (strncmp (newp, nlist[i].name, newlen) == 0) {
 			        int addr = nlist[i].addr;
-                                return sysctl_int (oldp, oldlenp, 0, 0, &addr);
+                                if (! oldp)
+                                        return 0;
+                                if (*oldlenp < sizeof(int))
+                                        return ENOMEM;
+                                *oldlenp = sizeof(int);
+                                return copyout ((caddr_t) &addr, (caddr_t) oldp, sizeof(int));
 			}
 		}
-printf ("symbol %s not found\n", newp);
 		return EOPNOTSUPP;
 
 	default:
