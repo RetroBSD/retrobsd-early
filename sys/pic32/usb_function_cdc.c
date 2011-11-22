@@ -21,8 +21,7 @@
  * IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL OR
  * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
  */
-#include <sys/param.h>
-#include <sys/systm.h>
+#include <machine/pic32mx.h>
 #include <machine/usb_device.h>
 #include <machine/usb_function_cdc.h>
 

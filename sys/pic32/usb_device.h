@@ -413,6 +413,7 @@ extern const USB_DEVICE_DESCRIPTOR usb_device;
 
 // Array of configuration descriptors
 extern const unsigned char *const usb_config[];
+extern const unsigned char usb_config1_descriptor[];
 
 // Array of string descriptors
 extern const unsigned char *const usb_string[];

@@ -347,7 +347,7 @@ const USB_DEVICE_DESCRIPTOR usb_device = {
 /*
  * Configuration 1 Descriptor
  */
-static const unsigned char config1_descriptor[] =
+const unsigned char usb_config1_descriptor[] =
 {
     /* Configuration Descriptor */
     9,                                  // sizeof(USB_CFG_DSC)
@@ -476,7 +476,7 @@ static const struct {
  * Array of configuration descriptors
  */
 const unsigned char *const usb_config[] = {
-    (const unsigned char *const) &config1_descriptor,
+    (const unsigned char *const) &usb_config1_descriptor,
 };
 
 /*

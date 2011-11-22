@@ -20,8 +20,6 @@
  * IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL OR
  * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
  */
-#include <sys/param.h>
-#include <sys/systm.h>
 #include <machine/pic32mx.h>
 #include <machine/usb_device.h>
 
@@ -57,6 +55,8 @@ volatile CTRL_TRF_SETUP usb_setup_pkt;           // 8-byte only
 
 // Buffer for control transfer data
 static volatile unsigned char ctrl_trf_data [USB_EP0_BUFF_SIZE];
+
+extern void bzero (void *dst, unsigned nbytes);
 
 /*
  * This function initializes the device stack
