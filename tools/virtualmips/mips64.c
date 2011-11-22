@@ -149,7 +149,6 @@ int mips64_reset (cpu_mips_t * cpu)
 /* Initialize a MIPS64 processor */
 int mips64_init (cpu_mips_t * cpu)
 {
-
     /* Set the CPU methods */
     cpu->reg_get = (void *) mips64_reg_get;
     cpu->reg_set = (void *) mips64_reg_set;
@@ -171,11 +170,10 @@ int mips64_load_elf_image (cpu_mips_t * cpu, char *filename,
     Elf_Scn *scn;
     Elf *img_elf;
     size_t len, clen;
-    char *name;
     int i, fd;
     FILE *bfd;
 
-    if (!filename)
+    if (! filename)
         return (-1);
 
 #ifdef __CYGWIN__
@@ -216,7 +214,6 @@ int mips64_load_elf_image (cpu_mips_t * cpu, char *filename,
         scn = elf_getscn (img_elf, i);
 
         shdr = elf32_getshdr (scn);
-        name = elf_strptr (img_elf, ehdr->e_shstrndx, (size_t) shdr->sh_name);
         len = shdr->sh_size;
 
         if (!(shdr->sh_flags & SHF_ALLOC) || !len)

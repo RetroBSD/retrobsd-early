@@ -391,7 +391,7 @@ static void scan_pass2 (fs_t *fs, unsigned inum);
  */
 static int pass2 (fs_t *fs, fs_dirent_t *dirp)
 {
-	int inum, n, ret = KEEPON;
+	int inum, ret = KEEPON;
 	fs_inode_t inode;
 
 	inum = dirp->ino;
@@ -403,7 +403,6 @@ static int pass2 (fs_t *fs, fs_dirent_t *dirp)
 	strcpy (pathp, dirp->name);
 	pathp += strlen (pathp);
 /*printf ("%s  %d\n", pathname, inum);*/
-	n = 0;
 	if (inum > (fs->isize - 1) * BSDFS_INODES_PER_BLOCK ||
 	    inum < BSDFS_ROOT_INODE)
 		print_dir_error (fs, inum, "I OUT OF RANGE");

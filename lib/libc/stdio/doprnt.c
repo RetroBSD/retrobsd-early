@@ -38,6 +38,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <float.h>
+#include <math.h>
 
 /* Max number conversion buffer length: a long in base 2, plus NUL byte. */
 #define MAXNBUF	(sizeof(long) * 8 + 1)
@@ -46,10 +48,8 @@ static unsigned char *ksprintn (unsigned char *buf, unsigned long v, unsigned ch
 	int width, unsigned char *lp);
 static unsigned char mkhex (unsigned char ch);
 
-#if ARCH_HAVE_FPU
 static int cvt (double number, int prec, int sharpflag, unsigned char *negp,
 	unsigned char fmtch, unsigned char *startp, unsigned char *endp);
-#endif
 
 int
 _doprnt (char const *fmt, va_list ap, FILE *stream)
@@ -354,7 +354,7 @@ number:		if (sign && ((long) ul != 0L)) {
 					PUTC (' ');
 				} while (--width > 0);
 			break;
-#if ARCH_HAVE_FPU
+
 		case 'e':
 		case 'E':
 		case 'f':
@@ -387,7 +387,7 @@ number:		if (sign && ((long) ul != 0L)) {
 			 * if the first char isn't NULL, it did.
 			 */
 			if (isnan (d) || isinf (d)) {
-				strcpy_flash (nbuf, isnan (d) ? "NaN" : "Inf");
+				strcpy (nbuf, isnan (d) ? "NaN" : "Inf");
 				size = 3;
 				extrazeros = 0;
 				s = nbuf;
@@ -438,7 +438,6 @@ number:		if (sign && ((long) ul != 0L)) {
 				} while (--width > 0);
 			break;
 		}
-#endif
 		default:
 			PUTC ('%');
 			if (lflag)
@@ -485,7 +484,6 @@ mkhex (unsigned char ch)
 	return ch + '0';
 }
 
-#if ARCH_HAVE_FPU
 static unsigned char *
 cvtround (double fract, int *exp, unsigned char *start, unsigned char *end, unsigned char ch,
 	unsigned char *negp)
@@ -778,6 +776,5 @@ eformat:	if (expcnt) {
 			}
 		}
 	}
-	return(t - startp);
+	return t - startp;
 }
-#endif /* ARCH_HAVE_FPU */

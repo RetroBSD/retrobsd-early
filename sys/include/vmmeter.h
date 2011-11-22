@@ -16,7 +16,6 @@ struct vmrate
 	u_short	v_intr;		/* device interrupts */
 	u_short	v_soft;		/* software interrupts */
 	u_short	v_pdma;		/* pseudo-dma interrupts */
-	u_short	v_ovly;		/* overlay emts */
 	u_short	v_fpsim;	/* floating point simulator faults */
 	u_short	v_pswpin;	/* pages swapped in */
 	u_short	v_pswpout;	/* pages swapped out */
@@ -35,7 +34,6 @@ struct vmsum
 	long	v_intr;		/* device interrupts */
 	long	v_soft;		/* software interrupts */
 	long	v_pdma;		/* pseudo-dma interrupts */
-	long	v_ovly;		/* overlay emts */
 	long	v_fpsim;	/* floating point simulator faults */
 	long	v_pswpin;	/* pages swapped in */
 	long	v_pswpout;	/* pages swapped out */

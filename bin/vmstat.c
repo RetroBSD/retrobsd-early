@@ -27,25 +27,25 @@ struct nlist nl[] = {
 	{ "_rate" },
 #define X_TOTAL		2
 	{ "_total" },
-#define	X_FORKSTAT	4
+#define	X_FORKSTAT	3
 	{ "_forkstat" },
-#define X_SUM		5
+#define X_SUM		4
 	{ "_sum" },
-#define	X_BOOTTIME	8
+#define	X_BOOTTIME	5
 	{ "_boottime" },
-#define	X_DKXFER	9
+#define	X_DKXFER	6
 	{ "_dk_xfer" },
-#define X_HZ		12
+#define X_HZ		7
 	{ "_hz" },
-#define X_NCHSTATS	14
+#define X_NCHSTATS	8
 	{ "_nchstats" },
-#define	X_DK_NDRIVE	19
+#define	X_DK_NDRIVE	9
 	{ "_dk_ndrive" },
-#define	X_DK_NAME	21
+#define	X_DK_NAME	10
 	{ "_dk_name" },
-#define	X_DK_UNIT	22
+#define	X_DK_UNIT	11
 	{ "_dk_unit" },
-#define X_FREEMEM	23
+#define X_FREEMEM	12
 	{ "_freemem" },
 	{ "" },
 };
@@ -96,7 +96,7 @@ void printhdr(sig)
 	if (flag29)
 	    printf(" procs       memory      swap      ");
 	else
-	    printf(" procs     memory              page           ");
+	    printf(" procs     memory   ");
 
 	i = (ndrives * 3 - 6) / 2;
 	if (i < 0)
@@ -110,20 +110,19 @@ void printhdr(sig)
 
 	if (flag29) {
 		printf("              cpu\n");
-		printf(" r b w   avm  tx   fre   i  o   ");
-	}
-	else {
+		printf(" r b w    avm  tx   fre   i  o   ");
+	} else {
 		printf("               cpu\n");
-		printf(" r b w   avm   fre  ti tc  pi  po  fr  fc  ov ");
+		printf(" r b w    avm   fre ");
 	}
 
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
 			printf("%c%c ", dr_name[i][0], dr_name[i][2]);
 	if (flag29)
-	    printf(" pd  in  sy  tr  ov  cs us ni sy id\n");
+	    printf(" pd  in  sy  tr  cs  us  ni  sy  id\n");
 	else
-            printf(" in  sy  cs us sy id\n");
+            printf(" in  sy  cs  us  sy  id\n");
 	lines = 19;
 }
 
@@ -138,7 +137,7 @@ main(argc, argv)
 	char *arg, **cp, buf[BUFSIZ];
 
 	knlist(nl);
-	if(nl[0].n_type == 0) {
+	if(nl[0].n_value == 0) {
 		fprintf(stderr, "no /vmunix namelist\n");
 		exit(1);
 	}
@@ -278,13 +277,11 @@ loop:
 		rate.v_syscall = sum.v_syscall;
 		rate.v_intr = sum.v_intr;
 		rate.v_pdma = sum.v_pdma;
-		rate.v_ovly = sum.v_ovly;
 		rate.v_pgin = sum.v_pgin;
 		rate.v_pgout = sum.v_pgout;
 		rate.v_swpin = sum.v_swpin;
 		rate.v_swpout = sum.v_swpout;
-	}
-	else {
+	} else {
 		lseek(mf, (long)nl[X_RATE].n_value, L_SET);
 		read(mf, &rate, sizeof rate);
 		lseek(mf, (long)nl[X_SUM].n_value, L_SET);
@@ -318,38 +315,37 @@ loop:
 	 * We don't use total.t_free because it slops around too much
 	 * within this kernel
 	 */
-	printf("%6D", total.t_avm);
+	printf("%7d", total.t_avm);
 	if (flag29)
-		printf("%4D",
+		printf("%4d",
 		    total.t_avm ? (total.t_avmtxt * 100) / total.t_avm : 0);
 	printf("%6d", pfree);
 
-	if (flag29)
-		printf("%4D%3D  ", rate.v_swpin / nintv, rate.v_swpout / nintv);
-	else {
-                // TODO
-		printf("%4D", rate.v_ovly / nintv);
+	if (flag29) {
+		printf("%4d%3d  ", rate.v_swpin / nintv, rate.v_swpout / nintv);
 	}
 
 	etime /= (float)hz;
-	for (i = 0; i < dk_ndrive; i++)
+	for (i = 0; i < dk_ndrive; i++) {
 		if (dr_select[i])
 			stats(i);
+        }
 	if (flag29)
-		printf("%4D%4D%4D%4D%4D%4D",
+		printf("%4d%4d%4d%4d%4d",
 		    rate.v_pdma / nintv, INTS(rate.v_intr / nintv),
 		    rate.v_syscall / nintv, rate.v_trap / nintv,
-		    rate.v_ovly / nintv, rate.v_swtch / nintv);
+		    rate.v_swtch / nintv);
 	else
-                printf("%4D%4D%4D", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
+                printf("%4d%4d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
                     rate.v_swtch/nintv);
+
 	for(i=0; i<CPUSTATES; i++) {
 		float f = stat1(i);
 		if (!flag29 && i == 0) {   	/* US+NI */
 			i++;
 			f += stat1(i);
 		}
-		printf("%3.0f", f);
+		printf(" %3.0f", f);
 	}
 	printf("\n");
 	fflush(stdout);
@@ -372,29 +368,28 @@ dosum()
 
 	lseek(mf, (long)nl[X_SUM].n_value, L_SET);
 	read(mf, &sum, sizeof sum);
-	printf("%9D swap ins\n", sum.v_swpin);
-	printf("%9D swap outs\n", sum.v_swpout);
-	printf("%9D pages swapped in\n", sum.v_pswpin);
-	printf("%9D pages swapped out\n", sum.v_pswpout);
-	printf("%9D page ins\n", sum.v_pgin);
-	printf("%9D page outs\n", sum.v_pgout);
-	printf("%9D cpu context switches\n", sum.v_swtch);
-	printf("%9D device interrupts\n", sum.v_intr);
-	printf("%9D software interrupts\n", sum.v_soft);
-	printf("%9D pseudo-dma dz interrupts\n", sum.v_pdma);
-	printf("%9D traps\n", sum.v_trap);
-	printf("%9D overlay emts\n", sum.v_ovly);
-	printf("%9D system calls\n", sum.v_syscall);
+	printf("%9d swap ins\n", sum.v_swpin);
+	printf("%9d swap outs\n", sum.v_swpout);
+	printf("%9d pages swapped in\n", sum.v_pswpin);
+	printf("%9d pages swapped out\n", sum.v_pswpout);
+	printf("%9d page ins\n", sum.v_pgin);
+	printf("%9d page outs\n", sum.v_pgout);
+	printf("%9d cpu context switches\n", sum.v_swtch);
+	printf("%9d device interrupts\n", sum.v_intr);
+	printf("%9d software interrupts\n", sum.v_soft);
+	printf("%9d pseudo-dma dz interrupts\n", sum.v_pdma);
+	printf("%9d traps\n", sum.v_trap);
+	printf("%9d system calls\n", sum.v_syscall);
 #define	nz(x)	((x) ? (x) : 1)
 	lseek(mf, (long)nl[X_NCHSTATS].n_value, 0);
 	read(mf, &nchstats, sizeof nchstats);
 	nchtotal = nchstats.ncs_goodhits + nchstats.ncs_badhits +
 	    nchstats.ncs_falsehits + nchstats.ncs_miss + nchstats.ncs_long;
-	printf("%9D total name lookups", nchtotal);
-	printf(" (cache hits %D%% system %D%% per-process)\n",
+	printf("%9d total name lookups", nchtotal);
+	printf(" (cache hits %d%% system %d%% per-process)\n",
 	    nchstats.ncs_goodhits * 100 / nz(nchtotal),
 	    nchstats.ncs_pass2 * 100 / nz(nchtotal));
-	printf("%9s badhits %D, falsehits %D, toolong %D\n", "",
+	printf("%9s badhits %d, falsehits %d, toolong %d\n", "",
 	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
 }
 
@@ -404,10 +399,10 @@ doforkst()
 {
 	lseek(mf, (long)nl[X_FORKSTAT].n_value, L_SET);
 	read(mf, &forkstat, sizeof forkstat);
-	printf("%D forks, %D %s, average=%.2f\n",
+	printf("%d forks, %d %s, average=%.2f\n",
 		forkstat.cntfork, forkstat.sizfork, Pages,
 		(float) forkstat.sizfork / forkstat.cntfork);
-	printf("%D vforks, %D %s, average=%.2f\n",
+	printf("%d vforks, %d %s, average=%.2f\n",
 		forkstat.cntvfork, forkstat.sizvfork, Pages,
 		(float)forkstat.sizvfork / forkstat.cntvfork);
 }

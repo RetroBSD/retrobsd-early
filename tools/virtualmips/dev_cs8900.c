@@ -11,11 +11,11 @@
   * (jz4740 driver).
   * Only works in linux 2.6.24/2.6.22/2.4.20
   * uboot can not use it.
-  * 
+  *
   * Please use TCP instead of UDP when using NFS.
   * Throughput is about 50k-100k bytes per second when downloading a file from host using http.
   * Maybe improved when JIT is implemented in the future.
-  * 
+  *
   */
 
 #include <stdio.h>
@@ -289,9 +289,6 @@ static inline int cs8900_handle_len (struct cs8900_data *d, m_uint8_t * pkt,
     ssize_t pkt_len)
 {
     /*we do not check CRC !!!! */
-
-    m_uint8_t *ram_base;
-    ram_base = (m_uint8_t *) (&(d->internal_ram[0]));
     if (pkt_len < CS8900_MIN_PKT_SIZE)
         return FALSE;
 
@@ -301,7 +298,6 @@ static inline int cs8900_handle_len (struct cs8900_data *d, m_uint8_t * pkt,
     /*64<LEN<1518 */
 
     return TRUE;
-
 }
 
 /* Check if a packet must be delivered to the emulated chip */
@@ -511,9 +507,9 @@ void dev_cs8900_cb (void *opaque)
          * If CS8900_MAX_RX_TIMEOUT is big, that means rx packets slow. This will decrease network throughtput and
          * some applications will complain about rx timeout.
          * So I adjut the CS8900_MAX_RX_TIMEOUT dynamicly when receiving a packet .
-         * 
+         *
          * Please use TCP protocol instead of UDP when mounting directory using nfs.
-         * 
+         *
          */
         if (cs8900a_rx_timeout >= CS8900_MAX_RX_TIMEOUT)
             status = 1;

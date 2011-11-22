@@ -79,19 +79,9 @@ char *vm_get_platform_type (vm_instance_t * vm)
 /* Generate a filename for use by the instance */
 static char *vm_build_filename (vm_instance_t * vm, char *name)
 {
-    char *filename, *machine;
+    char *filename;
 
-    machine = vm_get_type (vm);
-
-    /*switch(vm_file_naming_type) {
-     * case 1:
-     * filename = dyn_sprintf("%s_i%u_%s",machine,vm->instance_id,name);
-     * break; */
-    //    case 0:
-    //    default:
     filename = dyn_sprintf ("%s-%s", vm->name, name);
-    //      break;
-    //}
 
     assert (filename != NULL);
     return filename;

@@ -98,7 +98,7 @@ main(argc, argv)
 	char *arg, **cp, name[6], buf[BUFSIZ];
 
 	knlist(nl);
-	if(nl[X_DK_BUSY].n_type == 0) {
+	if(nl[X_DK_BUSY].n_value == 0) {
 		printf("dk_busy not found in /vmunix namelist\n");
 		exit(1);
 	}

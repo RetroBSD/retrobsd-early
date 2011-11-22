@@ -611,10 +611,6 @@ Simdebug_result Simdebug_run (vm_instance_t * vm, int sig)
 
         case 'q':
             {
-                char *cmd_tmp;
-
-                cmd_tmp = cmd_buf;
-
                 if (strncmp (cmd_buf, QSYMBOL, strlen (QSYMBOL)) == 0)
                     write_ok (cmd_buf);
                 else if (strncmp (cmd_buf, QC, strlen (QC)) == 0) {
