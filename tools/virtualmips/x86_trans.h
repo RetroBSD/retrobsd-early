@@ -31,11 +31,11 @@ static forced_inline void x86_atomic_and (m_uint32_t * v, m_uint32_t m)
 }
 
 /* Wrappers to x86-codegen functions */
-#define mips64_jit_tcb_set_patch x86_patch
-#define mips64_jit_tcb_set_jump  x86_jump_code
+#define mips_jit_tcb_set_patch x86_patch
+#define mips_jit_tcb_set_jump  x86_jump_code
 
 /* Push epilog for an x86 instruction block */
-static forced_inline void mips64_jit_tcb_push_epilog (mips64_jit_tcb_t *
+static forced_inline void mips_jit_tcb_push_epilog (mips_jit_tcb_t *
     block)
 {
     x86_ret (block->jit_ptr);
@@ -43,12 +43,12 @@ static forced_inline void mips64_jit_tcb_push_epilog (mips64_jit_tcb_t *
 
 /* Translated block function pointer */
 typedef void (*insn_tblock_fptr) (void);
-void fastcall mips64_exec_single_step (cpu_mips_t * cpu,
+void fastcall mips_exec_single_step (cpu_mips_t * cpu,
     mips_insn_t instruction);
 
 /* Execute JIT code */
 static forced_inline
-    void mips64_jit_tcb_exec (cpu_mips_t * cpu, mips64_jit_tcb_t * block)
+    void mips_jit_tcb_exec (cpu_mips_t * cpu, mips_jit_tcb_t * block)
 {
     insn_tblock_fptr jit_code;
     m_uint32_t offset;
@@ -57,7 +57,7 @@ static forced_inline
     jit_code = (insn_tblock_fptr) block->jit_insn_ptr[offset];
 
     if (unlikely (!jit_code)) {
-        mips64_exec_single_step (cpu, vmtoh32 (block->mips_code[offset]));
+        mips_exec_single_step (cpu, vmtoh32 (block->mips_code[offset]));
         return;
     }
 
@@ -65,10 +65,10 @@ static forced_inline
     jit_code ();
 }
 
-void mips64_set_pc (mips64_jit_tcb_t * b, m_va_t new_pc);
-void mips64_emit_single_step (mips64_jit_tcb_t * b, mips_insn_t insn);
-void mips64_check_cpu_pausing (mips64_jit_tcb_t * b);
-void mips64_check_pending_irq (mips64_jit_tcb_t * b);
+void mips_set_pc (mips_jit_tcb_t * b, m_va_t new_pc);
+void mips_emit_single_step (mips_jit_tcb_t * b, mips_insn_t insn);
+void mips_check_cpu_pausing (mips_jit_tcb_t * b);
+void mips_check_pending_irq (mips_jit_tcb_t * b);
 
 #endif
 

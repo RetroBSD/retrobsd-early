@@ -107,7 +107,7 @@ static int beq_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = (cpu->gpr[rs] == cpu->gpr[rt]);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
     if (likely (!ins_res)) {
         if (res)
             cpu->pc = new_pc;
@@ -134,7 +134,7 @@ static int beql_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        int ins_res = mips64_exec_bdslot (cpu);
+        int ins_res = mips_exec_bdslot (cpu);
         if (likely (!ins_res))
             cpu->pc = new_pc;
     } else
@@ -158,7 +158,7 @@ static int bgez_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* exec the instruction in the delay slot */
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -187,7 +187,7 @@ static int bgezal_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = ((m_ireg_t) cpu->gpr[rs] >= 0);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -217,7 +217,7 @@ static int bgezall_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -241,7 +241,7 @@ static int bgezl_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -264,7 +264,7 @@ static int bgtz_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = ((m_ireg_t) cpu->gpr[rs] > 0);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -291,7 +291,7 @@ static int bgtzl_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -313,7 +313,7 @@ static int blez_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = ((m_ireg_t) cpu->gpr[rs] <= 0);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -340,7 +340,7 @@ static int blezl_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -362,7 +362,7 @@ static int bltz_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = ((m_ireg_t) cpu->gpr[rs] < 0);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -391,7 +391,7 @@ static int bltzal_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = ((m_ireg_t) cpu->gpr[rs] < 0);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -421,7 +421,7 @@ static int bltzall_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -444,7 +444,7 @@ static int bltzl_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -467,7 +467,7 @@ static int bne_op (cpu_mips_t * cpu, mips_insn_t insn)
     res = (cpu->gpr[rs] != cpu->gpr[rt]);
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
 
     if (likely (!ins_res)) {
         /* take the branch if the test result is true */
@@ -496,7 +496,7 @@ static int bnel_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     /* take the branch if the test result is true */
     if (res) {
-        mips64_exec_bdslot (cpu);
+        mips_exec_bdslot (cpu);
         cpu->pc = new_pc;
     } else
         cpu->pc += 8;
@@ -507,7 +507,7 @@ static int break_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
     u_int code = bits (insn, 6, 25);
 
-    mips64_exec_break (cpu, code);
+    mips_exec_break (cpu, code);
     return (1);
 }
 
@@ -517,7 +517,7 @@ static int cache_op (cpu_mips_t * cpu, mips_insn_t insn)
     int op = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_CACHE, base, offset, op,
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_CACHE, base, offset, op,
             FALSE));
 }
 
@@ -553,7 +553,7 @@ static int cop0_op (cpu_mips_t * cpu, mips_insn_t insn)
 static int cop1_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
 #if SOFT_FPU
-    mips64_exec_soft_fpu (cpu);
+    mips_exec_soft_fpu (cpu);
     return (1);
 #else
     return unknown_op (cpu, insn);
@@ -563,7 +563,7 @@ static int cop1_op (cpu_mips_t * cpu, mips_insn_t insn)
 static int cop1x_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
 #if SOFT_FPU
-    mips64_exec_soft_fpu (cpu);
+    mips_exec_soft_fpu (cpu);
     return (1);
 #else
     return unknown_op (cpu, insn);
@@ -728,7 +728,7 @@ static int eret_op (cpu_mips_t * cpu, mips_insn_t insn)
             printf ("    syscall failed, errno %u\n", uerror);
     }
 #endif
-    mips64_exec_eret (cpu);
+    mips_exec_eret (cpu);
     return (1);
 }
 
@@ -742,7 +742,7 @@ static int j_op (cpu_mips_t * cpu, mips_insn_t insn)
     new_pc |= instr_index << 2;
 
     /* exec the instruction in the delay slot */
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
     if (likely (!ins_res))
         cpu->pc = new_pc;
     return (1);
@@ -760,7 +760,7 @@ static int jal_op (cpu_mips_t * cpu, mips_insn_t insn)
     /* set the return address (instruction after the delay slot) */
     cpu->reg_set (cpu, MIPS_GPR_RA, cpu->pc + 8);
 
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
     if (likely (!ins_res))
         cpu->pc = new_pc;
 
@@ -779,7 +779,7 @@ static int jalr_op (cpu_mips_t * cpu, mips_insn_t insn)
     /* get the new pc */
     new_pc = cpu->gpr[rs];
 
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
     if (likely (!ins_res))
         cpu->pc = new_pc;
     return (1);
@@ -794,7 +794,7 @@ static int jr_op (cpu_mips_t * cpu, mips_insn_t insn)
     /* get the new pc */
     new_pc = cpu->gpr[rs];
 
-    int ins_res = mips64_exec_bdslot (cpu);
+    int ins_res = mips_exec_bdslot (cpu);
     if (likely (!ins_res))
         cpu->pc = new_pc;
     return (1);
@@ -807,7 +807,7 @@ static int lb_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LB, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LB, base, offset, rt, TRUE));
 }
 
 static int lbu_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -816,7 +816,7 @@ static int lbu_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LBU, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LBU, base, offset, rt, TRUE));
 }
 
 static int ld_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -850,7 +850,7 @@ static int lh_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LH, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LH, base, offset, rt, TRUE));
 }
 
 static int lhu_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -859,7 +859,7 @@ static int lhu_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LHU, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LHU, base, offset, rt, TRUE));
 }
 
 static int ll_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -868,7 +868,7 @@ static int ll_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LL, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LL, base, offset, rt, TRUE));
 }
 
 static int lld_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -891,14 +891,14 @@ static int lw_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LW, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LW, base, offset, rt, TRUE));
 
 }
 
 static int lwc1_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
 #if SOFT_FPU
-    mips64_exec_soft_fpu (cpu);
+    mips_exec_soft_fpu (cpu);
     return (1);
 #else
     return unknown_op (cpu, insn);
@@ -917,7 +917,7 @@ static int lwl_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LWL, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LWL, base, offset, rt, TRUE));
 
 }
 
@@ -927,7 +927,7 @@ static int lwr_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LWR, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LWR, base, offset, rt, TRUE));
 }
 
 static int lwu_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -936,7 +936,7 @@ static int lwu_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_LWU, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_LWU, base, offset, rt, TRUE));
 }
 
 static int spec3_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1048,7 +1048,7 @@ static int mfc0_op (cpu_mips_t * cpu, mips_insn_t insn)
     int sel = bits (insn, 0, 2);
     //mfc rt,rd
 
-    mips64_cp0_exec_mfc0 (cpu, rt, rd, sel);
+    mips_cp0_exec_mfc0 (cpu, rt, rd, sel);
     return (0);
 }
 
@@ -1147,7 +1147,7 @@ static int mtc0_op (cpu_mips_t * cpu, mips_insn_t insn)
     int sel = bits (insn, 0, 2);
 
     //printf("cpu->pc %x insn %x\n",cpu->pc,insn);
-    mips64_cp0_exec_mtc0 (cpu, rt, rd, sel);
+    mips_cp0_exec_mtc0 (cpu, rt, rd, sel);
     return (0);
 }
 
@@ -1247,7 +1247,7 @@ static int sb_op (cpu_mips_t * cpu, mips_insn_t insn)
     int base = bits (insn, 21, 25);
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SB, base, offset, rt, FALSE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SB, base, offset, rt, FALSE));
 }
 
 static int sc_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1256,7 +1256,7 @@ static int sc_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SC, base, offset, rt, TRUE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SC, base, offset, rt, TRUE));
 }
 
 static int scd_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1272,7 +1272,7 @@ static int sd_op (cpu_mips_t * cpu, mips_insn_t insn)
 static int sdc1_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
 #if SOFT_FPU
-    mips64_exec_soft_fpu (cpu);
+    mips_exec_soft_fpu (cpu);
     return (1);
 #else
     return unknown_op (cpu, insn);
@@ -1300,7 +1300,7 @@ static int sh_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SH, base, offset, rt, FALSE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SH, base, offset, rt, FALSE));
 }
 
 static int sll_op (cpu_mips_t * cpu, mips_insn_t insn)
@@ -1476,13 +1476,13 @@ static int sw_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SW, base, offset, rt, FALSE));
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SW, base, offset, rt, FALSE));
 }
 
 static int swc1_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
 #if SOFT_FPU
-    mips64_exec_soft_fpu (cpu);
+    mips_exec_soft_fpu (cpu);
     return (1);
 #else
     return unknown_op (cpu, insn);
@@ -1500,7 +1500,7 @@ static int swl_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SWL, base, offset, rt,
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SWL, base, offset, rt,
             FALSE));
 }
 
@@ -1510,7 +1510,7 @@ static int swr_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
     int offset = bits (insn, 0, 15);
 
-    return (mips64_exec_memop2 (cpu, MIPS_MEMOP_SWR, base, offset, rt,
+    return (mips_exec_memop2 (cpu, MIPS_MEMOP_SWR, base, offset, rt,
             FALSE));
 }
 
@@ -1521,7 +1521,7 @@ static int sync_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int syscall_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    mips64_exec_syscall (cpu);
+    mips_exec_syscall (cpu);
     return (1);
 }
 
@@ -1531,7 +1531,7 @@ static int teq_op (cpu_mips_t * cpu, mips_insn_t insn)
     int rt = bits (insn, 16, 20);
 
     if (unlikely (cpu->gpr[rs] == cpu->gpr[rt])) {
-        mips64_trigger_trap_exception (cpu);
+        mips_trigger_trap_exception (cpu);
         return (1);
     }
     return (0);
@@ -1544,7 +1544,7 @@ static int teqi_op (cpu_mips_t * cpu, mips_insn_t insn)
     m_reg_t val = sign_extend (imm, 16);
 
     if (unlikely (cpu->gpr[rs] == val)) {
-        mips64_trigger_trap_exception (cpu);
+        mips_trigger_trap_exception (cpu);
         return (1);
     }
     return (0);
@@ -1578,25 +1578,25 @@ static int tlb_op (cpu_mips_t * cpu, mips_insn_t insn)
 
 static int tlbp_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    mips64_cp0_exec_tlbp (cpu);
+    mips_cp0_exec_tlbp (cpu);
     return (0);
 }
 
 static int tlbr_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    mips64_cp0_exec_tlbr (cpu);
+    mips_cp0_exec_tlbr (cpu);
     return (0);
 }
 
 static int tlbwi_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    mips64_cp0_exec_tlbwi (cpu);
+    mips_cp0_exec_tlbwi (cpu);
     return (0);
 }
 
 static int tlbwr_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    mips64_cp0_exec_tlbwr (cpu);
+    mips_cp0_exec_tlbwr (cpu);
     return (0);
 }
 
@@ -1647,7 +1647,7 @@ static int tne_op (cpu_mips_t * cpu, mips_insn_t insn)
 
     if ((m_ireg_t) cpu->gpr[rs] != (m_ireg_t) cpu->gpr[rt]) {
         /*take a trap */
-        mips64_trigger_trap_exception (cpu);
+        mips_trigger_trap_exception (cpu);
         return (1);
     } else
         return (0);
@@ -1737,7 +1737,7 @@ static int undef_tlb (cpu_mips_t * cpu, mips_insn_t insn)
 /*
  * Main instruction table.
  */
-static const struct mips64_op_desc mips_opcodes[] = {
+static const struct mips_op_desc mips_opcodes[] = {
     {"spec",    spec_op,    0x00},      /* indexed by FUNC field */
     {"bcond",   bcond_op,   0x01},      /* indexed by RT field */
     {"j",       j_op,       0x02},
@@ -1807,7 +1807,7 @@ static const struct mips64_op_desc mips_opcodes[] = {
 /*
  * SPEC opcode: indexed by FUNC field.
  */
-static const struct mips64_op_desc mips_spec_opcodes[] = {
+static const struct mips_op_desc mips_spec_opcodes[] = {
     {"sll",     sll_op,     0x00},
     {"movc",	movc_op,	0x01},
     {"srl",		srl_op,		0x02},
@@ -1877,7 +1877,7 @@ static const struct mips64_op_desc mips_spec_opcodes[] = {
 /*
  * BCOND opcode: indexed by RT field.
  */
-static const struct mips64_op_desc mips_bcond_opcodes[] = {
+static const struct mips_op_desc mips_bcond_opcodes[] = {
     {"bltz",	bltz_op,	0x00},
     {"bgez",	bgez_op,	0x01},
     {"bltzl",	bltzl_op,	0x02},
@@ -1915,7 +1915,7 @@ static const struct mips64_op_desc mips_bcond_opcodes[] = {
 /*
  * COP0 opcode: indexed by RS field.
  */
-static const struct mips64_op_desc mips_cop0_opcodes[] = {
+static const struct mips_op_desc mips_cop0_opcodes[] = {
     {"mfc0",	mfc0_op,	0x0},
     {"dmfc0",	dmfc0_op,	0x1},
     {"cfc0",	cfc0_op,	0x2},
@@ -1953,7 +1953,7 @@ static const struct mips64_op_desc mips_cop0_opcodes[] = {
 /*
  * SPEC2 opcode: indexed by FUNC field.
  */
-static const struct mips64_op_desc mips_spec2_opcodes[] = {
+static const struct mips_op_desc mips_spec2_opcodes[] = {
     {"madd",	madd_op,	0x0},
     {"maddu",	maddu_op,	0x1},
     {"mul",		mul_op,		0x2},
@@ -2023,7 +2023,7 @@ static const struct mips64_op_desc mips_spec2_opcodes[] = {
 /*
  * SPEC3 opcode: indexed by FUNC field.
  */
-static const struct mips64_op_desc mips_spec3_opcodes[] = {
+static const struct mips_op_desc mips_spec3_opcodes[] = {
     {"ext",		ext_op,     0x0},
     {"?spec3",	undef_spec3,0x1},
     {"?spec3",	undef_spec3,0x2},
@@ -2093,7 +2093,7 @@ static const struct mips64_op_desc mips_spec3_opcodes[] = {
 /*
  * TLB opcode: indexed by FUNC field.
  */
-static const struct mips64_op_desc mips_tlb_opcodes[] = {
+static const struct mips_op_desc mips_tlb_opcodes[] = {
     {"?tlb",	undef_tlb,	0x0},
     {"tlbr",	tlbr_op,	0x1},
     {"tlbwi",	tlbwi_op,	0x2},

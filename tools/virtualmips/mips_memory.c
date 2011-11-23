@@ -18,24 +18,24 @@
 
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
 #include "utils.h"
-#include "mips64_cp0.h"
+#include "mips_cp0.h"
 #include "gdb_interface.h"
-#include "mips64_jit.h"
+#include "mips_jit.h"
 
 void bad_memory_access (cpu_mips_t * cpu, m_va_t vaddr)
 {
     mips_insn_t insn;
 
     printf ("*** %08x: bad memory reference\n", vaddr);
-    if (mips64_fetch_instruction (cpu, cpu->pc, &insn) == 0) {
+    if (mips_fetch_instruction (cpu, cpu->pc, &insn) == 0) {
         printf ("*** %08x: %08x ", cpu->pc, insn);
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
     }
-    if (mips64_fetch_instruction (cpu, cpu->pc + 4, &insn) == 0) {
+    if (mips_fetch_instruction (cpu, cpu->pc + 4, &insn) == 0) {
         printf ("*** %08x: %08x ", cpu->pc + 4, insn);
         print_insn_mips (cpu->pc, insn, stdout);
         printf ("\n");
@@ -71,9 +71,9 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
             cpu->cp0.reg[MIPS_CP0_BADVADDR] = vaddr;
             //clear vpn of entry hi
             cpu->cp0.reg[MIPS_CP0_TLB_HI] &=
-                ~(mips64_cp0_get_vpn2_mask (cpu));
+                ~(mips_cp0_get_vpn2_mask (cpu));
             //set VPN of entryhi
-            vpn = vaddr & mips64_cp0_get_vpn2_mask (cpu);
+            vpn = vaddr & mips_cp0_get_vpn2_mask (cpu);
             cpu->cp0.reg[MIPS_CP0_TLB_HI] |= vpn;
 
             //set context register
@@ -102,7 +102,7 @@ void mips_access_special (cpu_mips_t * cpu, m_va_t vaddr, m_uint32_t mask,
             } else
                 assert (0);
 #endif
-            mips64_trigger_exception (cpu, exc_code, cpu->is_in_bdslot);
+            mips_trigger_exception (cpu, exc_code, cpu->is_in_bdslot);
         }
         *exc = 1;
         break;
@@ -1212,7 +1212,7 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
         map.mapped = FALSE;
 #else
         /* trigger TLB exception if no matching entry found */
-        if (! mips64_cp0_tlb_lookup (cpu, vaddr, &map))
+        if (! mips_cp0_tlb_lookup (cpu, vaddr, &map))
             goto err_tlb;
 
         if ((map.valid & 0x1) != 0x1)
@@ -1259,7 +1259,7 @@ static mts32_entry_t *mips_mts32_slow_lookup (cpu_mips_t * cpu,
 #else
         //ASSERT(0,"not implemented upper 1G memory space \n");
         /* trigger TLB exception if no matching entry found */
-        if (! mips64_cp0_tlb_lookup (cpu, vaddr, &map))
+        if (! mips_cp0_tlb_lookup (cpu, vaddr, &map))
             goto err_tlb;
         if ((map.valid & 0x1) != 0x1)
             goto err_tlb;

@@ -441,14 +441,14 @@ struct cpu_mips {
     u_int compiled_pages;
 
     /* Code page translation cache */
-    mips64_jit_tcb_t **exec_blk_map;
+    mips_jit_tcb_t **exec_blk_map;
     void *exec_page_area;
     size_t exec_page_area_size; /*M bytes */
     size_t exec_page_count, exec_page_alloc;
     insn_exec_page_t *exec_page_free_list;
     insn_exec_page_t *exec_page_array;
     /* Current and free lists of translated code blocks */
-    mips64_jit_tcb_t *tcb_list, *tcb_last, *tcb_free_list;
+    mips_jit_tcb_t *tcb_list, *tcb_last, *tcb_free_list;
     /* Direct block jump.Optimization */
     u_int exec_blk_direct_jump;
 
@@ -457,32 +457,32 @@ struct cpu_mips {
 };
 
 /* Register names */
-extern char *mips64_gpr_reg_names[];
+extern char *mips_gpr_reg_names[];
 
 #define MAJOR_OP(_inst) (((uint)_inst >> 26) & 0x3f )
 
 int mips_load_elf_image (cpu_mips_t * cpu, char *filename,
     m_va_t * entry_point);
 
-int mips64_get_reg_index (char *name);
-int mips64_cca_cached (m_uint8_t val);
-void mips64_dump_regs (cpu_mips_t * cpu);
-void mips64_delete (cpu_mips_t * cpu);
-int mips64_reset (cpu_mips_t * cpu);
-int mips64_init (cpu_mips_t * cpu);
-int mips64_load_elf_image (cpu_mips_t * cpu, char *filename,
+int mips_get_reg_index (char *name);
+int mips_cca_cached (m_uint8_t val);
+void mips_dump_regs (cpu_mips_t * cpu);
+void mips_delete (cpu_mips_t * cpu);
+int mips_reset (cpu_mips_t * cpu);
+int mips_init (cpu_mips_t * cpu);
+int mips_load_elf_image (cpu_mips_t * cpu, char *filename,
     m_va_t * entry_point);
-void mips64_delete (cpu_mips_t * cpu);
-int fastcall mips64_update_irq_flag (cpu_mips_t * cpu);
-void mips64_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot);
-void fastcall mips64_exec_soft_fpu (cpu_mips_t * cpu);
-void fastcall mips64_exec_eret (cpu_mips_t * cpu);
-void fastcall mips64_exec_break (cpu_mips_t * cpu, u_int code);
-void fastcall mips64_trigger_trap_exception (cpu_mips_t * cpu);
-void fastcall mips64_exec_syscall (cpu_mips_t * cpu);
-void fastcall mips64_trigger_irq (cpu_mips_t * cpu);
-void mips64_set_irq (cpu_mips_t * cpu, m_uint8_t irq);
-void mips64_clear_irq (cpu_mips_t * cpu, m_uint8_t irq);
+void mips_delete (cpu_mips_t * cpu);
+int fastcall mips_update_irq_flag (cpu_mips_t * cpu);
+void mips_trigger_exception (cpu_mips_t * cpu, u_int exc_code, int bd_slot);
+void fastcall mips_exec_soft_fpu (cpu_mips_t * cpu);
+void fastcall mips_exec_eret (cpu_mips_t * cpu);
+void fastcall mips_exec_break (cpu_mips_t * cpu, u_int code);
+void fastcall mips_trigger_trap_exception (cpu_mips_t * cpu);
+void fastcall mips_exec_syscall (cpu_mips_t * cpu);
+void fastcall mips_trigger_irq (cpu_mips_t * cpu);
+void mips_set_irq (cpu_mips_t * cpu, m_uint8_t irq);
+void mips_clear_irq (cpu_mips_t * cpu, m_uint8_t irq);
 
 /* Control timer interrupt */
 void set_timer_irq (cpu_mips_t *cpu);
@@ -493,7 +493,7 @@ int print_insn_mips (unsigned memaddr, unsigned long int word, FILE *stream);
 
 const char *cp0reg_name (unsigned cp0reg, unsigned sel);
 
-int mips64_fetch_instruction (cpu_mips_t * cpu,
+int mips_fetch_instruction (cpu_mips_t * cpu,
     m_va_t pc, mips_insn_t * insn);
 void *mips_mts32_access (cpu_mips_t * cpu, m_va_t vaddr,
     u_int op_code, u_int op_size,

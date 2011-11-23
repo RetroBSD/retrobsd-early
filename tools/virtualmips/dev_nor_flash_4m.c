@@ -24,7 +24,7 @@ See flash datasheet for details.
 #include<fcntl.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 
 #define ROM_INIT_STATE              0
 

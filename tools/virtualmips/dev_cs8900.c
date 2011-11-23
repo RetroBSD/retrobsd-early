@@ -31,7 +31,7 @@
 #include "utils.h"
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
 #include "net.h"
 #include "net_io.h"

@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -16,7 +16,7 @@
 #include <string.h>
 
 #include "vm.h"
-#include "mips64.h"
+#include "mips.h"
 #include "utils.h"
 #include "debug.h"
 

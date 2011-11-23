@@ -16,13 +16,13 @@
 
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_exec.h"
-#include "mips64_memory.h"
-#include "mips64.h"
-#include "mips64_cp0.h"
+#include "mips_exec.h"
+#include "mips_memory.h"
+#include "mips.h"
+#include "mips_cp0.h"
 #include "debug.h"
 #include "vp_timer.h"
-#include "mips64_hostalarm.h"
+#include "mips_hostalarm.h"
 
 /*code from qemu*/
 
@@ -229,7 +229,7 @@ static struct qemu_alarm_timer alarm_timers[] = {
 };
 
 /*host alarm*/
-void mips64_init_host_alarm (void)
+void mips_init_host_alarm (void)
 {
     struct qemu_alarm_timer *t;
     int i, err = -1;

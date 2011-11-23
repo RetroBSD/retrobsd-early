@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008<yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -21,7 +21,7 @@ TODO:
 #include<string.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "cpu.h"
 #include "jz4740.h"
 

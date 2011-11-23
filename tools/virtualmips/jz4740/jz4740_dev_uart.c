@@ -38,7 +38,7 @@
 #include<string.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "jz4740.h"
 #include "cpu.h"
 #include "vp_timer.h"

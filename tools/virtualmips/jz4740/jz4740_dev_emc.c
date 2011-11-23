@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -17,7 +17,7 @@
 #include<string.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "cpu.h"
 #include "jz4740.h"
 
@@ -50,8 +50,8 @@ void *dev_jz4740_emc_access (cpu_mips_t * cpu, struct vdevice *dev,
         return NULL;
     }
     /*FIXME:
-     * currently we do not support nand flash rc check. just set 
-     * EMC_NFINTS_DECF(bit 3) and EMC_NFINTS_ENCF(bit 2). to tell uboot and decoding and Encoding finished 
+     * currently we do not support nand flash rc check. just set
+     * EMC_NFINTS_DECF(bit 3) and EMC_NFINTS_ENCF(bit 2). to tell uboot and decoding and Encoding finished
      * set EMC_NFINTS_ERR(bit 0)=0 : no error */
     if (offset == EMC_NFINTS) {
         jz4740_emc_table[EMC_NFINTS / 4] |= 0xc;

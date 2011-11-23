@@ -17,11 +17,11 @@
 #include <pthread.h>
 
 #include "cpu.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
-#include "mips64.h"
-#include "mips64_cp0.h"
-#include "mips64_exec.h"
+#include "mips.h"
+#include "mips_cp0.h"
+#include "mips_exec.h"
 #include "vm.h"
 
 #define LOG_ENABLE 0
@@ -90,7 +90,7 @@ cpu_mips_t *cpu_create (vm_instance_t * vm, u_int type, u_int id)
     cpu->type = type;
     cpu->state = CPU_STATE_SUSPENDED;
     cpu->vm = vm;
-    mips64_init (cpu);
+    mips_init (cpu);
     return cpu;
 }
 
@@ -103,7 +103,7 @@ void cpu_delete (cpu_mips_t * cpu)
         /* Stop activity of this CPU */
         cpu_stop (cpu);
         pthread_join (cpu->cpu_thread, NULL);
-        mips64_delete (cpu);
+        mips_delete (cpu);
         free (cpu);
     }
 }

@@ -12,10 +12,10 @@
 #include <signal.h>
 
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "device.h"
 #include "vm.h"
-#include "mips64_exec.h"
+#include "mips_exec.h"
 #include "vp_timer.h"
 #include "crc.h"
 #include "net_io.h"

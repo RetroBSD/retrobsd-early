@@ -22,16 +22,16 @@
 #include <stdio.h>
 #include <memory.h>
 #include <string.h>
-#include<unistd.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/signal.h>
-#include<sys/types.h>
+#include <sys/types.h>
 #include <assert.h>
 
 #include "vm.h"
-#include "mips64.h"
+#include "mips.h"
 #include "gdb_interface.h"
 #include "utils.h"
 #include "debug.h"

@@ -15,7 +15,7 @@
 #include<string.h>
 
 #include "vm.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
 
 /* RAM private data */

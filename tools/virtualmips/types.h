@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -84,7 +84,7 @@ enum result_t { SUCCESS, FAILURE, STALL, BUSERROR, SCFAILURE };
 typedef struct cpu_mips cpu_mips_t;
 typedef struct vm_instance vm_instance_t;
 typedef struct vdevice vdevice_t;
-typedef struct mips64_jit_tcb mips64_jit_tcb_t;
+typedef struct mips_jit_tcb mips_jit_tcb_t;
 typedef struct insn_exec_page insn_exec_page_t;
 
 #endif

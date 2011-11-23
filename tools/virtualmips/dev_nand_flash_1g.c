@@ -38,11 +38,11 @@ supported operation:
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <errno.h>
-#include<fcntl.h>
+#include <fcntl.h>
 #include <dirent.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "dev_nand_flash_1g.h"
 
 m_uint8_t id_info[5] = { 0xec, 0xd3, 0x51, 0x95, 0x58 };

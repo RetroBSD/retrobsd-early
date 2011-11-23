@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -12,10 +12,10 @@
 #include <confuse.h>
 
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "vm.h"
 #include "cpu.h"
-#include "mips64_exec.h"
+#include "mips_exec.h"
 #include "debug.h"
 
 #include "jz4740.h"
@@ -64,7 +64,7 @@ int jz4740_reset (vm_instance_t * vm)
 
     /* Reset the boot CPU */
     cpu = (vm->boot_cpu);
-    mips64_reset (cpu);
+    mips_reset (cpu);
 
     /*set configure register */
     cpu->cp0.config_usable = 0x83;      /* configure sel 0 1 7 is valid */
@@ -82,11 +82,11 @@ int jz4740_reset (vm_instance_t * vm)
 #ifdef _USE_JIT_
     /*if jit is used. flush all jit buffer */
     if (vm->jit_use)
-        mips64_jit_flush (cpu, 0);
+        mips_jit_flush (cpu, 0);
 #endif
     /*If we boot from elf kernel image, load the image and set pc to elf entry */
     if (vm->boot_method == BOOT_ELF) {
-        if (mips64_load_elf_image (cpu, vm->kernel_filename,
+        if (mips_load_elf_image (cpu, vm->kernel_filename,
                 &kernel_entry_point) == -1)
             return (-1);
         cpu->pc = kernel_entry_point;

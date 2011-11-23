@@ -15,7 +15,7 @@
 #include<string.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "adm5120.h"
 #include "cpu.h"
 

@@ -13,16 +13,16 @@
 
 #include "vp_lock.h"
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "vm.h"
 #include "cpu.h"
-#include "mips64_exec.h"
+#include "mips_exec.h"
 #include "debug.h"
 
 #include "pavo.h"
 #include "device.h"
 #include "dev_cs8900.h"
-#include "mips64_jit.h"
+#include "mips_jit.h"
 
 #define MIPS_TIMER_INTERRUPT    7
 
@@ -129,7 +129,7 @@ static int pavo_init_platform (pavo_t * pavo)
     cpu_group_add (vm->cpu_group, cpu0);
     vm->boot_cpu = cpu0;
 
-    cpu_run_fn = (void *) mips64_exec_run_cpu;
+    cpu_run_fn = (void *) mips_exec_run_cpu;
     /* create the CPU thread execution */
     if (pthread_create (&cpu0->cpu_thread, NULL, cpu_run_fn, cpu0) != 0) {
         fprintf (stderr, "cpu_create: unable to create thread for CPU%u\n",
@@ -274,8 +274,8 @@ void pavo_set_irq (vm_instance_t * vm, u_int irq)
          */
         jz4740_int_table[INTC_IPR / 4] = irq_mask;
 
-        mips64_set_irq (vm->boot_cpu, JZ4740_INT_TO_MIPS);
-        mips64_update_irq_flag (vm->boot_cpu);
+        mips_set_irq (vm->boot_cpu, JZ4740_INT_TO_MIPS);
+        mips_update_irq_flag (vm->boot_cpu);
     }
 }
 
@@ -339,8 +339,8 @@ static void pavo_parse_configure (pavo_t * pavo)
 /* Clear timer interrupt */
 void clear_timer_irq (cpu_mips_t *cpu)
 {
-    mips64_clear_irq (cpu, MIPS_TIMER_INTERRUPT);
-    mips64_update_irq_flag (cpu);
+    mips_clear_irq (cpu, MIPS_TIMER_INTERRUPT);
+    mips_update_irq_flag (cpu);
 }
 
 /* Create a router instance */

@@ -48,14 +48,14 @@ OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
 
 # Use JIT compiler.
 #CFLAGS		+= -D_USE_JIT_
-#OBJS		+= mips64_jit.o x86_trans.o
+#OBJS		+= mips_jit.o x86_trans.o
 
 # Common files.
 OBJS		+= dev_cs8900.o dev_nand_flash_1g.o dev_ram.o \
-               dev_vtty.o device.o vm.o cpu.o mips64.o mips64_cp0.o \
-               mips64_exec.o mips64_fdd.o crc.o mips64_hostalarm.o \
+               dev_vtty.o device.o vm.o cpu.o mips.o mips_cp0.o \
+               mips_exec.o mips_fdd.o crc.o mips_hostalarm.o \
                mempool.o sbox.o utils.o vp_clock.o vp_timer.o net_io.o \
-               mips64_memory.o debug.o gdb_interface.o main.o \
+               mips_memory.o debug.o gdb_interface.o main.o \
                mips-dis.o
 
 all:		.deps $(PROG)

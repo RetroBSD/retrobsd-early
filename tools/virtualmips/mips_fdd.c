@@ -21,23 +21,23 @@
 
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_exec.h"
-#include "mips64_memory.h"
-#include "mips64.h"
-#include "mips64_cp0.h"
+#include "mips_exec.h"
+#include "mips_memory.h"
+#include "mips.h"
+#include "mips_cp0.h"
 #include "debug.h"
 #include "vp_timer.h"
-#include "mips64_hostalarm.h"
+#include "mips_hostalarm.h"
 
 //#ifdef  _USE_FDD_
 
-static const struct mips64_op_desc mips_opcodes[];
-static const struct mips64_op_desc mips_spec_opcodes[];
-static const struct mips64_op_desc mips_bcond_opcodes[];
-static const struct mips64_op_desc mips_cop0_opcodes[];
-static const struct mips64_op_desc mips_spec2_opcodes[];
-static const struct mips64_op_desc mips_spec3_opcodes[];
-static const struct mips64_op_desc mips_tlb_opcodes[];
+static const struct mips_op_desc mips_opcodes[];
+static const struct mips_op_desc mips_spec_opcodes[];
+static const struct mips_op_desc mips_bcond_opcodes[];
+static const struct mips_op_desc mips_cop0_opcodes[];
+static const struct mips_op_desc mips_spec2_opcodes[];
+static const struct mips_op_desc mips_spec3_opcodes[];
+static const struct mips_op_desc mips_tlb_opcodes[];
 
 extern cpu_mips_t *current_cpu;
 
@@ -49,7 +49,7 @@ float timeuse, performance;
 m_uint64_t instructions_executed = 0;
 #endif
 
-static void forced_inline mips64_main_loop_wait (cpu_mips_t * cpu,
+static void forced_inline mips_main_loop_wait (cpu_mips_t * cpu,
     int timeout)
 {
     vp_run_timers (&active_timers[VP_TIMER_REALTIME],
@@ -57,7 +57,7 @@ static void forced_inline mips64_main_loop_wait (cpu_mips_t * cpu,
 }
 
 /* Execute a memory operation (2) */
-static int forced_inline mips64_exec_memop2 (cpu_mips_t * cpu, int memop,
+static int forced_inline mips_exec_memop2 (cpu_mips_t * cpu, int memop,
     m_va_t base, int offset, u_int dst_reg, int keep_ll_bit)
 {
     m_va_t vaddr = cpu->gpr[base] + sign_extend (offset, 16);
@@ -70,7 +70,7 @@ static int forced_inline mips64_exec_memop2 (cpu_mips_t * cpu, int memop,
 }
 
 /* Fetch an instruction */
-int mips64_fetch_instruction (cpu_mips_t * cpu,
+int mips_fetch_instruction (cpu_mips_t * cpu,
     m_va_t pc, mips_insn_t * insn)
 {
     m_va_t exec_page;
@@ -92,7 +92,7 @@ int mips64_fetch_instruction (cpu_mips_t * cpu,
 }
 
 /* Execute a single instruction */
-static forced_inline int mips64_exec_single_instruction (cpu_mips_t * cpu,
+static forced_inline int mips_exec_single_instruction (cpu_mips_t * cpu,
     mips_insn_t instruction)
 {
 #ifdef DEBUG_MHZ
@@ -117,12 +117,12 @@ static forced_inline int mips64_exec_single_instruction (cpu_mips_t * cpu,
 }
 
 /* Single-step execution */
-void fastcall mips64_exec_single_step (cpu_mips_t * cpu,
+void fastcall mips_exec_single_step (cpu_mips_t * cpu,
     mips_insn_t instruction)
 {
     int res;
 
-    res = mips64_exec_single_instruction (cpu, instruction);
+    res = mips_exec_single_instruction (cpu, instruction);
     /* Normal flow ? */
     if (likely (!res))
         cpu->pc += 4;
@@ -152,7 +152,7 @@ void dumpregs (cpu_mips_t *cpu)
 /*
  * MIPS64 fetch->decode->dispatch main loop
  */
-void *mips64_cpu_fdd (cpu_mips_t * cpu)
+void *mips_cpu_fdd (cpu_mips_t * cpu)
 {
     mips_insn_t insn = 0;
     int res;
@@ -160,7 +160,7 @@ void *mips64_cpu_fdd (cpu_mips_t * cpu)
     cpu->cpu_thread_running = TRUE;
     current_cpu = cpu;
 
-    mips64_init_host_alarm ();
+    mips_init_host_alarm ();
 
 start_cpu:
     for (;;) {
@@ -177,11 +177,11 @@ start_cpu:
 
         /* Check IRQ */
         if (unlikely (cpu->irq_pending)) {
-            mips64_trigger_irq (cpu);
+            mips_trigger_irq (cpu);
             continue;
         }
         /* Fetch  the instruction */
-        res = mips64_fetch_instruction (cpu, cpu->pc, &insn);
+        res = mips_fetch_instruction (cpu, cpu->pc, &insn);
 
         if (cpu->vm->trace_address == cpu->pc) {
             /* Trace address. */
@@ -228,7 +228,7 @@ start_cpu:
             }
 #endif
         }
-        res = mips64_exec_single_instruction (cpu, insn);
+        res = mips_exec_single_instruction (cpu, insn);
 
         /* Normal flow ? */
         if (likely (!res))
@@ -250,7 +250,7 @@ start_cpu:
             break;
         case CPU_STATE_PAUSING:
             /*main loop must wait for me. heihei :) */
-            mips64_main_loop_wait (cpu, 0);
+            mips_main_loop_wait (cpu, 0);
             cpu->state = CPU_STATE_RUNNING;
             cpu->pause_request &= ~CPU_INTERRUPT_EXIT;
             /*start cpu again */
@@ -262,14 +262,14 @@ start_cpu:
 }
 
 /* Execute the instruction in delay slot */
-static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
+static forced_inline int mips_exec_bdslot (cpu_mips_t * cpu)
 {
     mips_insn_t insn;
     int res = 0;
     cpu->is_in_bdslot = 1;
 
     /* Fetch the instruction in delay slot */
-    res = mips64_fetch_instruction (cpu, cpu->pc + 4, &insn);
+    res = mips_fetch_instruction (cpu, cpu->pc + 4, &insn);
     if (res == 1) {
         /*exception when fetching instruction */
         cpu->is_in_bdslot = 0;
@@ -289,11 +289,11 @@ static forced_inline int mips64_exec_bdslot (cpu_mips_t * cpu)
     }
 
     /* Execute the instruction */
-    res = mips64_exec_single_instruction (cpu, insn);
+    res = mips_exec_single_instruction (cpu, insn);
     cpu->is_in_bdslot = 0;
     return res;
 }
 
-#include "mips64_codetable.c"
+#include "mips_codetable.c"
 
 //#endif

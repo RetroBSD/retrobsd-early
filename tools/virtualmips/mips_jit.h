@@ -43,8 +43,8 @@ Many optimation chances exist.
 #include "system.h"
 #include "utils.h"
 #include "sbox.h"
-#include "mips64.h"
-#include "mips64_memory.h"
+#include "mips.h"
+#include "mips_memory.h"
 
 #ifndef _USE_JIT_
 #define JIT_SUPPORT 0
@@ -73,7 +73,7 @@ Many optimation chances exist.
 #define MIPS_JIT_PC_HASH_SIZE   (1 << MIPS_JIT_PC_HASH_BITS)
 
 /* Instruction jump patch */
-struct mips64_insn_patch {
+struct mips_insn_patch {
     u_char *jit_insn;
     m_uint64_t mips_pc;
 };
@@ -81,10 +81,10 @@ struct mips64_insn_patch {
 /* Instruction patch table */
 #define MIPS64_INSN_PATCH_TABLE_SIZE  32
 
-struct mips64_jit_patch_table {
-    struct mips64_insn_patch patches[MIPS64_INSN_PATCH_TABLE_SIZE];
+struct mips_jit_patch_table {
+    struct mips_insn_patch patches[MIPS64_INSN_PATCH_TABLE_SIZE];
     u_int cur_patch;
-    struct mips64_jit_patch_table *next;
+    struct mips_jit_patch_table *next;
 };
 
 /* Host executable page */
@@ -94,7 +94,7 @@ struct insn_exec_page {
 };
 
 /* MIPS64 translated code block */
-struct mips64_jit_tcb {
+struct mips_jit_tcb {
     /*start pc in tcb */
     m_va_t start_pc;
     m_uint32_t asid;
@@ -109,27 +109,27 @@ struct mips64_jit_tcb {
     u_char *jit_ptr;
     insn_exec_page_t *jit_buffer;
     insn_exec_page_t *jit_chunks[MIPS_JIT_MAX_CHUNKS];
-    struct mips64_jit_patch_table *patch_table;
-    mips64_jit_tcb_t *prev, *next;
+    struct mips_jit_patch_table *patch_table;
+    mips_jit_tcb_t *prev, *next;
 };
 
-int mips64_jit_init (cpu_mips_t * cpu);
-int mips64_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold);
-void mips64_jit_shutdown (cpu_mips_t * cpu);
-int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
-    mips64_jit_tcb_t * block, int delay_slot);
+int mips_jit_init (cpu_mips_t * cpu);
+int mips_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold);
+void mips_jit_shutdown (cpu_mips_t * cpu);
+int mips_jit_fetch_and_emit (cpu_mips_t * cpu,
+    mips_jit_tcb_t * block, int delay_slot);
 
-int mips64_jit_tcb_record_patch (mips64_jit_tcb_t * block, u_char * jit_ptr,
+int mips_jit_tcb_record_patch (mips_jit_tcb_t * block, u_char * jit_ptr,
     m_va_t vaddr);
-void mips64_jit_tcb_free (cpu_mips_t * cpu, mips64_jit_tcb_t * block,
+void mips_jit_tcb_free (cpu_mips_t * cpu, mips_jit_tcb_t * block,
     int list_removal);
 
-void *mips64_jit_run_cpu (cpu_mips_t * cpu);
+void *mips_jit_run_cpu (cpu_mips_t * cpu);
 
 /*-----------inline functions-----------------------------*/
 /* Get the JIT instruction pointer in a translated block */
 static forced_inline
-    u_char * mips64_jit_tcb_get_host_ptr (mips64_jit_tcb_t * b, m_va_t vaddr)
+    u_char * mips_jit_tcb_get_host_ptr (mips_jit_tcb_t * b, m_va_t vaddr)
 {
     m_uint32_t offset;
 
@@ -139,11 +139,11 @@ static forced_inline
 
 /* Check if the specified address belongs to the specified block */
 static forced_inline
-    int mips64_jit_tcb_local_addr (mips64_jit_tcb_t * block, m_va_t vaddr,
+    int mips_jit_tcb_local_addr (mips_jit_tcb_t * block, m_va_t vaddr,
     u_char ** jit_addr)
 {
     if ((vaddr & MIPS_MIN_PAGE_MASK) == block->start_pc) {
-        *jit_addr = mips64_jit_tcb_get_host_ptr (block, vaddr);
+        *jit_addr = mips_jit_tcb_get_host_ptr (block, vaddr);
         return (1);
     }
 
@@ -154,7 +154,7 @@ extern int test33;
 
 /* Check if PC register matches the compiled block virtual address */
 static forced_inline
-    int mips64_jit_tcb_match (cpu_mips_t * cpu, mips64_jit_tcb_t * block,
+    int mips_jit_tcb_match (cpu_mips_t * cpu, mips_jit_tcb_t * block,
     m_va_t vaddr)
 {
     m_va_t vpage;
@@ -176,7 +176,7 @@ static forced_inline
 /*TODO: Add asid as a hash key.
 Currently same pc of different asid will get the same hash value.
 */
-static forced_inline m_uint32_t mips64_jit_get_pc_hash (cpu_mips_t * cpu,
+static forced_inline m_uint32_t mips_jit_get_pc_hash (cpu_mips_t * cpu,
     m_va_t pc)
 {
     m_uint32_t page_hash;
@@ -191,13 +191,13 @@ static forced_inline void jit_handle_self_write (cpu_mips_t * cpu,
     m_va_t vaddr)
 {
     m_uint32_t pc_hash;
-    mips64_jit_tcb_t *block;
+    mips_jit_tcb_t *block;
 
-    pc_hash = mips64_jit_get_pc_hash (cpu, vaddr);
+    pc_hash = mips_jit_get_pc_hash (cpu, vaddr);
     block = cpu->exec_blk_map[pc_hash];
     if (block != NULL) {
-        if (unlikely (mips64_jit_tcb_match (cpu, block, vaddr))) {
-            mips64_jit_tcb_free (cpu, block, TRUE);
+        if (unlikely (mips_jit_tcb_match (cpu, block, vaddr))) {
+            mips_jit_tcb_free (cpu, block, TRUE);
             cpu->exec_blk_map[pc_hash] = NULL;
         }
     }
@@ -260,7 +260,7 @@ static forced_inline int insn_is_jmp (unsigned int insn)
 }
 
 /* Check if an instruction is in a delay slot or not */
-static forced_inline int mips64_jit_is_delay_slot (mips64_jit_tcb_t * b,
+static forced_inline int mips_jit_is_delay_slot (mips_jit_tcb_t * b,
     m_va_t pc)
 {
     m_uint32_t offset, insn;

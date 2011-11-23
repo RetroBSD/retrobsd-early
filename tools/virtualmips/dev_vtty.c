@@ -37,13 +37,13 @@
 #include <arpa/telnet.h>
 
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "vm.h"
 
-#include "mips64_exec.h"
+#include "mips_exec.h"
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "dev_vtty.h"
 
 /* VTTY list */
@@ -645,7 +645,7 @@ static int vtty_usb_read (vtty_t * vtty)
     perror("VTTY not yet implemented on USB\n");
     return (-1);
 }
-   
+
 /*
  * Read a character from the virtual TTY.
  *
@@ -672,7 +672,7 @@ static int vtty_read (vtty_t * vtty)
 
 #if 0
 /* Remote control for MIPS64 processors */
-static int remote_control_mips64 (vtty_t * vtty, char c, cpu_mips_t * cpu)
+static int remote_control_mips (vtty_t * vtty, char c, cpu_mips_t * cpu)
 {
     switch (c) {
         /* Show information about JIT compiled pages */
@@ -685,7 +685,7 @@ static int remote_control_mips64 (vtty_t * vtty, char c, cpu_mips_t * cpu)
 
         /* Non-JIT mode statistics */
     case 'j':
-        // mips64_dump_stats(cpu);
+        // mips_dump_stats(cpu);
         break;
 
     default:

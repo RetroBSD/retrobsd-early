@@ -5,9 +5,9 @@
 
   /*
    * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-   *     
-   * This file is part of the virtualmips distribution. 
-   * See LICENSE file for terms of the license. 
+   *
+   * This file is part of the virtualmips distribution.
+   * See LICENSE file for terms of the license.
    *
    */
 
@@ -24,7 +24,7 @@
 
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
 
 #define DEBUG_DEV_ACCESS  0

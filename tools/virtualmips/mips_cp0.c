@@ -18,14 +18,14 @@
 #include<stdlib.h>
 #include <assert.h>
 
-#include "mips64.h"
-#include "mips64_memory.h"
-#include "mips64_cp0.h"
+#include "mips.h"
+#include "mips_memory.h"
+#include "mips_cp0.h"
 #include "cpu.h"
 #include "vm.h"
 
 /* MIPS cp0 registers names */
-char *mips64_cp0_reg_names[MIPS64_CP0_REG_NR] = {
+char *mips_cp0_reg_names[MIPS64_CP0_REG_NR] = {
     "index",
     "random",
     "entry_lo",
@@ -61,7 +61,7 @@ char *mips64_cp0_reg_names[MIPS64_CP0_REG_NR] = {
 };
 
 /* Get value of random register */
-static inline u_int mips64_cp0_get_random_reg (cpu_mips_t * cpu)
+static inline u_int mips_cp0_get_random_reg (cpu_mips_t * cpu)
 {
     int random_value;
     random_value =
@@ -70,14 +70,14 @@ static inline u_int mips64_cp0_get_random_reg (cpu_mips_t * cpu)
 }
 
 /* Get a cp0 register (fast version) */
-static inline m_cp0_reg_t mips64_cp0_get_reg_fast (cpu_mips_t * cpu,
+static inline m_cp0_reg_t mips_cp0_get_reg_fast (cpu_mips_t * cpu,
     u_int cp0_reg, u_int sel)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
     switch (cp0_reg) {
 
     case MIPS_CP0_RANDOM:
-        return (mips64_cp0_get_random_reg (cpu));
+        return (mips_cp0_get_random_reg (cpu));
     case MIPS_CP0_CONFIG:
         if (! ((1 << sel) & cp0->config_usable)) {
 unimpl:     fprintf (stderr,
@@ -113,47 +113,47 @@ unimpl:     fprintf (stderr,
 }
 
 /* Get a cp0 register */
-m_cp0_reg_t mips64_cp0_get_reg (cpu_mips_t * cpu, u_int cp0_reg)
+m_cp0_reg_t mips_cp0_get_reg (cpu_mips_t * cpu, u_int cp0_reg)
 {
-    return (mips64_cp0_get_reg_fast (cpu, cp0_reg, 0));
+    return (mips_cp0_get_reg_fast (cpu, cp0_reg, 0));
 }
 
-void fastcall mips64_cp0_exec_mfc0_fastcall (cpu_mips_t * cpu,
+void fastcall mips_cp0_exec_mfc0_fastcall (cpu_mips_t * cpu,
     mips_insn_t insn)
 {
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
     int sel = bits (insn, 0, 2);
 
-    cpu->reg_set (cpu, rt, sign_extend (mips64_cp0_get_reg_fast (cpu, rd, sel), 32));
+    cpu->reg_set (cpu, rt, sign_extend (mips_cp0_get_reg_fast (cpu, rd, sel), 32));
 }
 
 /* MFC0 */
-void mips64_cp0_exec_mfc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
+void mips_cp0_exec_mfc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
     u_int sel)
 {
     cpu->reg_set (cpu, gp_reg,
-        sign_extend (mips64_cp0_get_reg_fast (cpu, cp0_reg, sel), 32));
+        sign_extend (mips_cp0_get_reg_fast (cpu, cp0_reg, sel), 32));
 }
 
-void fastcall mips64_cp0_exec_mtc0_fastcall (cpu_mips_t * cpu,
+void fastcall mips_cp0_exec_mtc0_fastcall (cpu_mips_t * cpu,
     mips_insn_t insn)
 {
     int rt = bits (insn, 16, 20);
     int rd = bits (insn, 11, 15);
     int sel = bits (insn, 0, 2);
 
-    mips64_cp0_set_reg (cpu, rd, sel, cpu->gpr[rt] & 0xffffffff);
+    mips_cp0_set_reg (cpu, rd, sel, cpu->gpr[rt] & 0xffffffff);
 }
 
-void mips64_cp0_exec_mtc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
+void mips_cp0_exec_mtc0 (cpu_mips_t * cpu, u_int gp_reg, u_int cp0_reg,
     u_int sel)
 {
-    mips64_cp0_set_reg (cpu, cp0_reg, sel, cpu->gpr[gp_reg] & 0xffffffff);
+    mips_cp0_set_reg (cpu, cp0_reg, sel, cpu->gpr[gp_reg] & 0xffffffff);
 }
 
 /* Set a cp0 register */
-inline void mips64_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
+inline void mips_cp0_set_reg (cpu_mips_t * cpu, u_int cp0_reg, u_int sel,
     m_uint32_t val)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
@@ -232,7 +232,7 @@ unimpl:     fprintf (stderr,
 }
 
 /* Get the VPN2 mask */
-m_cp0_reg_t mips64_cp0_get_vpn2_mask (cpu_mips_t * cpu)
+m_cp0_reg_t mips_cp0_get_vpn2_mask (cpu_mips_t * cpu)
 {
     if (cpu->addr_mode == 64)
         return ((m_cp0_reg_t) MIPS_TLB_VPN2_MASK_64);
@@ -241,7 +241,7 @@ m_cp0_reg_t mips64_cp0_get_vpn2_mask (cpu_mips_t * cpu)
 }
 
 /* TLBP: Probe a TLB entry */
-void fastcall mips64_cp0_exec_tlbp (cpu_mips_t * cpu)
+void fastcall mips_cp0_exec_tlbp (cpu_mips_t * cpu)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
 
@@ -249,7 +249,7 @@ void fastcall mips64_cp0_exec_tlbp (cpu_mips_t * cpu)
     tlb_entry_t *entry;
     u_int asid;
     int i;
-    vpn2_mask = mips64_cp0_get_vpn2_mask (cpu);
+    vpn2_mask = mips_cp0_get_vpn2_mask (cpu);
     hi_reg = cp0->reg[MIPS_CP0_TLB_HI];
     asid = hi_reg & MIPS_TLB_ASID_MASK;
     vpn2 = hi_reg & vpn2_mask;
@@ -258,7 +258,7 @@ void fastcall mips64_cp0_exec_tlbp (cpu_mips_t * cpu)
     for (i = 0; i < cp0->tlb_entries; i++) {
         entry = &cp0->tlb[i];
         page_mask = ~(entry->mask + 0x1FFF);
-        hi_addr = entry->hi & mips64_cp0_get_vpn2_mask (cpu);
+        hi_addr = entry->hi & mips_cp0_get_vpn2_mask (cpu);
         if (((vpn2 & page_mask) == (hi_addr & page_mask)) &&
             (((entry->hi & MIPS_TLB_G_MASK))
                 || ((entry->hi & MIPS_TLB_ASID_MASK) == asid))) {
@@ -278,7 +278,7 @@ static inline m_uint32_t get_page_size (m_uint32_t page_mask)
     return ((page_mask + 0x2000) >> 1);
 }
 
-void mips64_cp0_unmap_tlb_to_mts (cpu_mips_t * cpu, int index)
+void mips_cp0_unmap_tlb_to_mts (cpu_mips_t * cpu, int index)
 {
     m_va_t v0_addr, v1_addr;
     m_uint32_t page_size;
@@ -287,7 +287,7 @@ void mips64_cp0_unmap_tlb_to_mts (cpu_mips_t * cpu, int index)
     entry = &cpu->cp0.tlb[index];
 
     page_size = get_page_size (entry->mask);
-    v0_addr = entry->hi & mips64_cp0_get_vpn2_mask (cpu);
+    v0_addr = entry->hi & mips_cp0_get_vpn2_mask (cpu);
     v1_addr = v0_addr + page_size;
 
     if (entry->lo0 & MIPS_TLB_V_MASK)
@@ -298,7 +298,7 @@ void mips64_cp0_unmap_tlb_to_mts (cpu_mips_t * cpu, int index)
 }
 
 /* TLBW: Write a TLB entry */
-static forced_inline void mips64_cp0_exec_tlbw (cpu_mips_t * cpu, u_int index)
+static forced_inline void mips_cp0_exec_tlbw (cpu_mips_t * cpu, u_int index)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
     tlb_entry_t *entry;
@@ -307,7 +307,7 @@ static forced_inline void mips64_cp0_exec_tlbw (cpu_mips_t * cpu, u_int index)
         entry = &cp0->tlb[index];
 
         /* Unmap the old entry if it was valid */
-        mips64_cp0_unmap_tlb_to_mts (cpu, index);
+        mips_cp0_unmap_tlb_to_mts (cpu, index);
 
         entry->mask = cp0->reg[MIPS_CP0_PAGEMASK];
         entry->hi = cp0->reg[MIPS_CP0_TLB_HI];
@@ -324,7 +324,7 @@ static forced_inline void mips64_cp0_exec_tlbw (cpu_mips_t * cpu, u_int index)
 }
 
 /* TLBWI: Write Indexed TLB entry */
-void fastcall mips64_cp0_exec_tlbwi (cpu_mips_t * cpu)
+void fastcall mips_cp0_exec_tlbwi (cpu_mips_t * cpu)
 {
     m_uint32_t index;
 
@@ -347,23 +347,23 @@ void fastcall mips64_cp0_exec_tlbwi (cpu_mips_t * cpu)
 	 */
 
     if (cpu->cp0.reg[MIPS_CP0_INDEX] & 0x80000000) {
-        mips64_cp0_exec_tlbwr (cpu);
+        mips_cp0_exec_tlbwr (cpu);
     } else {
 
         index = cpu->cp0.reg[MIPS_CP0_INDEX];
-        mips64_cp0_exec_tlbw (cpu, index);
+        mips_cp0_exec_tlbw (cpu, index);
     }
 
 }
 
 /* TLBWR: Write Random TLB entry */
-void fastcall mips64_cp0_exec_tlbwr (cpu_mips_t * cpu)
+void fastcall mips_cp0_exec_tlbwr (cpu_mips_t * cpu)
 {
-    mips64_cp0_exec_tlbw (cpu, mips64_cp0_get_random_reg (cpu));
+    mips_cp0_exec_tlbw (cpu, mips_cp0_get_random_reg (cpu));
 }
 
 /* TLBR: Read Indexed TLB entry */
-void fastcall mips64_cp0_exec_tlbr (cpu_mips_t * cpu)
+void fastcall mips_cp0_exec_tlbr (cpu_mips_t * cpu)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
     tlb_entry_t *entry;
@@ -392,7 +392,7 @@ void fastcall mips64_cp0_exec_tlbr (cpu_mips_t * cpu)
 }
 
 #ifndef SIM_PIC32
-int mips64_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
+int mips_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
 {
     mips_cp0_t *cp0 = &cpu->cp0;
 
@@ -401,13 +401,13 @@ int mips64_cp0_tlb_lookup (cpu_mips_t *cpu, m_va_t vaddr, mts_map_t *res)
     u_int asid;
     int i;
 
-    vpn_addr = vaddr & mips64_cp0_get_vpn2_mask (cpu);
+    vpn_addr = vaddr & mips_cp0_get_vpn2_mask (cpu);
 
     asid = cp0->reg[MIPS_CP0_TLB_HI] & MIPS_TLB_ASID_MASK;
     for (i = 0; i < cp0->tlb_entries; i++) {
         entry = &cp0->tlb[i];
         page_mask = ~(entry->mask + 0x1FFF);
-        hi_addr = entry->hi & mips64_cp0_get_vpn2_mask (cpu);
+        hi_addr = entry->hi & mips_cp0_get_vpn2_mask (cpu);
 
         if (((vpn_addr & page_mask) == (hi_addr & page_mask)) &&
             ((entry->hi & MIPS_TLB_G_MASK)
@@ -474,7 +474,7 @@ static char *get_page_size_str (char *buffer, size_t len,
 }
 
 /* Dump the specified TLB entry */
-void mips64_tlb_dump_entry (cpu_mips_t * cpu, u_int index)
+void mips_tlb_dump_entry (cpu_mips_t * cpu, u_int index)
 {
     tlb_entry_t *entry;
     char buffer[256];
@@ -483,7 +483,7 @@ void mips64_tlb_dump_entry (cpu_mips_t * cpu, u_int index)
 
     /* virtual Address */
     printf (" %2d: vaddr=0x%8.8" LL "x ", index,
-        entry->hi & mips64_cp0_get_vpn2_mask (cpu));
+        entry->hi & mips_cp0_get_vpn2_mask (cpu));
 
     /* global or ASID */
     if ((entry->lo0 & MIPS_TLB_G_MASK) && ((entry->lo1 & MIPS_TLB_G_MASK)))
@@ -518,20 +518,20 @@ void mips64_tlb_dump_entry (cpu_mips_t * cpu, u_int index)
 }
 
 /* Human-Readable dump of the TLB */
-void mips64_tlb_dump (cpu_mips_t * cpu)
+void mips_tlb_dump (cpu_mips_t * cpu)
 {
     cpu_mips_t *mcpu = (cpu);
     u_int i;
 
     printf ("TLB dump:\n");
     for (i = 0; i < mcpu->cp0.tlb_entries; i++)
-        mips64_tlb_dump_entry (mcpu, i);
+        mips_tlb_dump_entry (mcpu, i);
 
     printf ("\n");
 }
 
 /* Raw dump of the TLB */
-void mips64_tlb_raw_dump (cpu_mips_t * cpu)
+void mips_tlb_raw_dump (cpu_mips_t * cpu)
 {
     cpu_mips_t *mcpu = (cpu);
     tlb_entry_t *entry;

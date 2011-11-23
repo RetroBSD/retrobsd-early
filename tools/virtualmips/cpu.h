@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -12,7 +12,7 @@
 #include <pthread.h>
 
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "system.h"
 
 /* Possible CPU types */

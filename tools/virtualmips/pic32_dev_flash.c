@@ -19,7 +19,7 @@
 #include <fcntl.h>
 
 #include "device.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "pic32.h"
 
 /* flash private data */

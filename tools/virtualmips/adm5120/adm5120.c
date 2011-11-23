@@ -14,10 +14,10 @@
 
 #include "utils.h"
 #include "adm5120.h"
-#include "mips64.h"
+#include "mips.h"
 #include "vm.h"
 #include "cpu.h"
-#include "mips64_exec.h"
+#include "mips_exec.h"
 #include "debug.h"
 #include "vp_lock.h"
 
@@ -67,7 +67,7 @@ static int adm5120_init_platform (adm5120_t * adm5120)
     cpu_group_add (vm->cpu_group, cpu0);
     vm->boot_cpu = cpu0;
 
-    cpu_run_fn = (void *) mips64_exec_run_cpu;
+    cpu_run_fn = (void *) mips_exec_run_cpu;
     /* create the CPU thread execution */
     if (pthread_create (&cpu0->cpu_thread, NULL, cpu_run_fn, cpu0) != 0) {
         fprintf (stderr, "cpu_create: unable to create thread for CPU%u\n",
@@ -153,7 +153,7 @@ static int adm5120_boot (adm5120_t * adm5120)
 
     /* Reset the boot CPU */
     cpu = (vm->boot_cpu);
-    mips64_reset (cpu);
+    mips_reset (cpu);
 
     /*set configure register */
     cpu->cp0.config_usable = 0x3;       /*only configure sel 0 and 1 is valid */
@@ -166,7 +166,7 @@ static int adm5120_boot (adm5120_t * adm5120)
     cpu->pc = ADM5120_ROM_PC;
     /*If we boot from elf kernel image, load the image and set pc to elf entry */
     if (vm->boot_method == BOOT_ELF) {
-        if (mips64_load_elf_image (cpu, vm->kernel_filename,
+        if (mips_load_elf_image (cpu, vm->kernel_filename,
                 &kernel_entry_point) == -1)
             return (-1);
         adm5120_reg_default_value (adm5120);
@@ -249,7 +249,7 @@ void adm5120_clear_irq (vm_instance_t * vm, u_int irq)
         intctrl_table[IRQ_STATUS_REG / 4] &= ~int_bit_mask;
     }
     irq = mips_irq_no;
-    mips64_clear_irq (vm->boot_cpu, irq);
+    mips_clear_irq (vm->boot_cpu, irq);
 
 }
 
@@ -279,8 +279,8 @@ void adm5120_set_irq (vm_instance_t * vm, u_int irq)
     }
 
     irq = mips_irq_no;
-    mips64_set_irq (vm->boot_cpu, irq);
-    mips64_update_irq_flag (vm->boot_cpu);
+    mips_set_irq (vm->boot_cpu, irq);
+    mips_update_irq_flag (vm->boot_cpu);
 
 }
 

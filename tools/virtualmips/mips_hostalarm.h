@@ -11,6 +11,6 @@ struct qemu_alarm_timer {
     void *priv;
 };
 
-void mips64_init_host_alarm (void);
+void mips_init_host_alarm (void);
 
 #endif

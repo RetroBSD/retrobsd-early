@@ -14,15 +14,15 @@
 
 #include "vp_lock.h"
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 #include "vm.h"
 #include "cpu.h"
-#include "mips64_exec.h"
+#include "mips_exec.h"
 #include "debug.h"
 
 #include "pic32.h"
 #include "device.h"
-#include "mips64_jit.h"
+#include "mips_jit.h"
 
 /*
  * Translate IRQ number to interrupt vector.
@@ -158,7 +158,7 @@ static int pic32_init_platform (pic32_t *pic32)
     vm->boot_cpu = cpu0;
 
     /* create the CPU thread execution */
-    cpu_run_fn = (void *) mips64_exec_run_cpu;
+    cpu_run_fn = (void *) mips_exec_run_cpu;
     if (pthread_create (&cpu0->cpu_thread, NULL, cpu_run_fn, cpu0) != 0) {
         fprintf (stderr, "cpu_create: unable to create thread for CPU%u\n",
             0);
@@ -284,7 +284,7 @@ void pic32_update_irq_flag (pic32_t *pic32)
     }
 /*else printf ("-- no irq pending\n");*/
 
-    mips64_update_irq_flag (cpu);
+    mips_update_irq_flag (cpu);
 }
 
 void pic32_clear_irq (vm_instance_t *vm, u_int irq)
@@ -515,7 +515,7 @@ int init_instance (vm_instance_t * vm)
 
     /* Reset the boot CPU */
     cpu = vm->boot_cpu;
-    mips64_reset (cpu);
+    mips_reset (cpu);
 
     /* Set config0-config3 registers. */
     cpu->cp0.config_usable = 0x0f;
@@ -536,7 +536,7 @@ int init_instance (vm_instance_t * vm)
 #ifdef _USE_JIT_
     /* if jit is used. flush all jit buffer */
     if (vm->jit_use)
-        mips64_jit_flush (cpu, 0);
+        mips_jit_flush (cpu, 0);
 #endif
 
     /* Launch the simulation */

@@ -1,15 +1,15 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
 #ifndef  __GDB_INTERFACE_H__
 #define  __GDB_INTERFACE_H__
 #include "utils.h"
-#include "mips64.h"
+#include "mips.h"
 
 typedef enum Simdebug_result {
     SD_CONTINUE = -2,
@@ -19,7 +19,7 @@ typedef enum Simdebug_result {
 typedef struct virtualBreakpoint {
     m_uint32_t addr;
     char *save;
-    //int cpuno; 
+    //int cpuno;
     int len;                    /*break point instruction len */
     struct virtualBreakpoint *next;
 } virtual_breakpoint_t;

@@ -1,8 +1,8 @@
  /*
   * Copyright (C) yajin 2008 <yajinzhou@gmail.com >
-  *     
-  * This file is part of the virtualmips distribution. 
-  * See LICENSE file for terms of the license. 
+  *
+  * This file is part of the virtualmips distribution.
+  * See LICENSE file for terms of the license.
   *
   */
 
@@ -16,7 +16,7 @@
 
 #include "device.h"
 #include "adm5120.h"
-#include "mips64.h"
+#include "mips.h"
 
 #define ADM_FREQ  175000000     /*175MHZ */
 
@@ -30,7 +30,7 @@ extern cpu_mips_t *current_cpu;
 
 void uart_set_interrupt (cpu_mips_t * cpu, int channel);
 /*ADM5120 use host_alarm_handler to process all the things,
-This method is deprecated. 
+This method is deprecated.
 JZ4740 uses a timer method, which is more flexible.
 See jz4740_host_alam.c */
 
@@ -61,7 +61,7 @@ void host_alarm_handler (int host_signum)
     }
 
     /*check count and compare */
-    /*Why 2*1000? CPU is 175MHZ, we assume CPI(cycle per instruction)=2 
+    /*Why 2*1000? CPU is 175MHZ, we assume CPI(cycle per instruction)=2
      * see arch/mips/adm5120/setup.c for more information
      * 49 void __init mips_time_init(void)
      */
@@ -69,8 +69,8 @@ void host_alarm_handler (int host_signum)
     if (current_cpu->cp0.reg[MIPS_CP0_COMPARE] != 0) {
         if (current_cpu->cp0.reg[MIPS_CP0_COUNT] >=
             current_cpu->cp0.reg[MIPS_CP0_COMPARE]) {
-            mips64_set_irq (current_cpu, MIPS_TIMER_INTERRUPT);
-            mips64_update_irq_flag (current_cpu);
+            mips_set_irq (current_cpu, MIPS_TIMER_INTERRUPT);
+            mips_update_irq_flag (current_cpu);
         }
     }
 

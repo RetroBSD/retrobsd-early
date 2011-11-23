@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 #include "vm.h"
-#include "mips64_memory.h"
+#include "mips_memory.h"
 #include "device.h"
 #include "dev_sdcard.h"
 

@@ -22,22 +22,22 @@
 
 #include "cpu.h"
 #include "vm.h"
-#include "mips64_exec.h"
-#include "mips64_memory.h"
-#include "mips64.h"
-#include "mips64_cp0.h"
+#include "mips_exec.h"
+#include "mips_memory.h"
+#include "mips.h"
+#include "mips_cp0.h"
 #include "debug.h"
 #include "vp_timer.h"
-#include "mips64_hostalarm.h"
+#include "mips_hostalarm.h"
 #include "x86_trans.h"
 
 #ifdef _USE_JIT_
 
-extern struct mips64_jit_desc mips_jit[];
+extern struct mips_jit_desc mips_jit[];
 extern cpu_mips_t *current_cpu;
 
 jmp_buf run_jmp;
-static void forced_inline mips64_main_loop_wait (cpu_mips_t * cpu,
+static void forced_inline mips_main_loop_wait (cpu_mips_t * cpu,
     int timeout)
 {
     vp_run_timers (&active_timers[VP_TIMER_REALTIME],
@@ -45,7 +45,7 @@ static void forced_inline mips64_main_loop_wait (cpu_mips_t * cpu,
 }
 
 /* Initialize the JIT structure */
-int mips64_jit_init (cpu_mips_t * cpu)
+int mips_jit_init (cpu_mips_t * cpu)
 {
     insn_exec_page_t *cp;
     u_char *cp_addr;
@@ -69,7 +69,7 @@ int mips64_jit_init (cpu_mips_t * cpu)
 
     if (!cpu->exec_page_area) {
         fprintf (stderr,
-            "mips64_jit_init: unable to create exec area (size %lu)\n",
+            "mips_jit_init: unable to create exec area (size %lu)\n",
             (u_long) cpu->exec_page_area_size);
         return (-1);
     }
@@ -82,7 +82,7 @@ int mips64_jit_init (cpu_mips_t * cpu)
 
     if (!cpu->exec_page_array) {
         fprintf (stderr,
-            "mips64_jit_init: unable to create exec page array\n");
+            "mips_jit_init: unable to create exec page array\n");
         return (-1);
     }
 
@@ -104,9 +104,9 @@ int mips64_jit_init (cpu_mips_t * cpu)
 }
 
 /* Flush the JIT */
-int mips64_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold)
+int mips_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold)
 {
-    mips64_jit_tcb_t *p, *next;
+    mips_jit_tcb_t *p, *next;
     m_uint32_t pc_hash;
     u_int count = 0;
     m_uint32_t flush_threadhold = 0;
@@ -116,9 +116,9 @@ int mips64_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold)
     for (p = cpu->tcb_list; p; p = next) {
         next = p->next;
         if ((m_uint32_t) p->acc_count <= flush_threadhold) {
-            pc_hash = mips64_jit_get_pc_hash (cpu, p->start_pc);
+            pc_hash = mips_jit_get_pc_hash (cpu, p->start_pc);
             cpu->exec_blk_map[pc_hash] = NULL;
-            mips64_jit_tcb_free (cpu, p, TRUE);
+            mips_jit_tcb_free (cpu, p, TRUE);
             count++;
         }
     }
@@ -128,12 +128,12 @@ int mips64_jit_flush (cpu_mips_t * cpu, m_uint32_t threshold)
 }
 
 /* Shutdown the JIT */
-void mips64_jit_shutdown (cpu_mips_t * cpu)
+void mips_jit_shutdown (cpu_mips_t * cpu)
 {
-    mips64_jit_tcb_t *p, *next;
+    mips_jit_tcb_t *p, *next;
 
     /* Flush the JIT */
-    mips64_jit_flush (cpu, 0);
+    mips_jit_flush (cpu, 0);
 
     /* Free the instruction blocks */
     for (p = cpu->tcb_free_list; p; p = next) {
@@ -161,11 +161,11 @@ static forced_inline insn_exec_page_t *exec_page_alloc (cpu_mips_t * cpu)
     /* If the free list is empty, flush JIT */
     if (unlikely (!cpu->exec_page_free_list)) {
         if (cpu->jit_flush_method) {
-            mips64_jit_flush (cpu, 0);
+            mips_jit_flush (cpu, 0);
         } else {
-            count = mips64_jit_flush (cpu, 100);
+            count = mips_jit_flush (cpu, 100);
             if (!cpu->exec_page_free_list)
-                mips64_jit_flush (cpu, 0);
+                mips_jit_flush (cpu, 0);
         }
 
         /* Use both methods alternatively */
@@ -194,13 +194,13 @@ static forced_inline void exec_page_free (cpu_mips_t * cpu,
 }
 
 /* Fetch a MIPS instruction */
-static forced_inline mips_insn_t insn_fetch (mips64_jit_tcb_t * b)
+static forced_inline mips_insn_t insn_fetch (mips_jit_tcb_t * b)
 {
     return (vmtoh32 (b->mips_code[b->mips_trans_pos]));
 }
 
 #ifdef DEBUG_JIT
-void fastcall jit_debug (cpu_mips_t * cpu, mips64_jit_tcb_t * block)
+void fastcall jit_debug (cpu_mips_t * cpu, mips_jit_tcb_t * block)
 {
     /*Put the debug code here. */
 }
@@ -217,8 +217,8 @@ Search the whole project and you will find delay_slot can be 0/1/2.
 */
 
 /* Fetch a MIPS instruction and emit corresponding translated code */
-int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
-    mips64_jit_tcb_t * block, int delay_slot)
+int mips_jit_fetch_and_emit (cpu_mips_t * cpu,
+    mips_jit_tcb_t * block, int delay_slot)
 {
     mips_insn_t code;
     register uint op;
@@ -230,9 +230,9 @@ int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
     if ((block->mips_trans_pos == (MIPS_INSN_PER_PAGE - 1))
         && (insn_is_jmp (code))) {
         block->jit_insn_ptr[block->mips_trans_pos] = block->jit_ptr;
-        mips64_set_pc (block, block->start_pc + (block->mips_trans_pos << 2));
-        mips64_emit_single_step (block, code);
-        mips64_jit_tcb_push_epilog (block);
+        mips_set_pc (block, block->start_pc + (block->mips_trans_pos << 2));
+        mips_emit_single_step (block, code);
+        mips_jit_tcb_push_epilog (block);
         block->mips_trans_pos++;
         return (0);
     }
@@ -253,18 +253,18 @@ int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
         jit_pc, 4);
     x86_mov_reg_reg (block->jit_ptr, X86_EAX, X86_EDI, 4);
     x86_mov_reg_imm (block->jit_ptr, X86_EDX, block);
-    mips64_emit_basic_c_call (block, jit_debug);
+    mips_emit_basic_c_call (block, jit_debug);
 #endif
 
     if (delay_slot && insn_is_jmp (code)) {
         /*why a jump instruction in a delay slot???   yajin
-         * 
+         *
          * ---------
          * |CODE    |
          * |-------|
          * | DATA   |
          * ---------
-         * 
+         *
          * When data and code is in one page and we translate a page once.
          * Emulator does not know where is data and where is code. So it just translate the whole
          * page.
@@ -273,7 +273,7 @@ int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
          * So 54535251 is in delay slot of 504f4e4d.
          * We just  add mips_trans_pos and return.
          * TODO: a better method is to stop tranlating the page.
-         * 
+         *
          */
         if (delay_slot == 1)
             block->mips_trans_pos++;
@@ -283,8 +283,8 @@ int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
     if (!delay_slot) {
         /* Check for IRQs and cpu pausing before jumps */
         if (insn_is_jmp (code)) {
-            mips64_check_cpu_pausing (block);
-            mips64_check_pending_irq (block);
+            mips_check_cpu_pausing (block);
+            mips_check_pending_irq (block);
         }
     }
 /*set is_in_bdslot*/
@@ -304,18 +304,18 @@ int mips64_jit_fetch_and_emit (cpu_mips_t * cpu,
 }
 
 /* Add end of JIT block */
-static forced_inline void mips64_jit_tcb_add_end (mips64_jit_tcb_t * b)
+static forced_inline void mips_jit_tcb_add_end (mips_jit_tcb_t * b)
 {
-    mips64_set_pc (b, b->start_pc + (b->mips_trans_pos << 2));
-    mips64_jit_tcb_push_epilog (b);
+    mips_set_pc (b, b->start_pc + (b->mips_trans_pos << 2));
+    mips_jit_tcb_push_epilog (b);
 }
 
 /* Record a patch to apply in a compiled block */
-int mips64_jit_tcb_record_patch (mips64_jit_tcb_t * block, u_char * jit_ptr,
+int mips_jit_tcb_record_patch (mips_jit_tcb_t * block, u_char * jit_ptr,
     m_va_t vaddr)
 {
-    struct mips64_jit_patch_table *ipt = block->patch_table;
-    struct mips64_insn_patch *patch;
+    struct mips_jit_patch_table *ipt = block->patch_table;
+    struct mips_insn_patch *patch;
 
     /* pc must be 32-bit aligned */
     if (vaddr & 0x03) {
@@ -353,18 +353,18 @@ int mips64_jit_tcb_record_patch (mips64_jit_tcb_t * block, u_char * jit_ptr,
 }
 
 /* Apply all patches */
-static int mips64_jit_tcb_apply_patches (cpu_mips_t * cpu,
-    mips64_jit_tcb_t * block)
+static int mips_jit_tcb_apply_patches (cpu_mips_t * cpu,
+    mips_jit_tcb_t * block)
 {
-    struct mips64_jit_patch_table *ipt;
-    struct mips64_insn_patch *patch;
+    struct mips_jit_patch_table *ipt;
+    struct mips_insn_patch *patch;
     u_char *jit_dst;
     int i;
 
     for (ipt = block->patch_table; ipt; ipt = ipt->next)
         for (i = 0; i < ipt->cur_patch; i++) {
             patch = &ipt->patches[i];
-            jit_dst = mips64_jit_tcb_get_host_ptr (block, patch->mips_pc);
+            jit_dst = mips_jit_tcb_get_host_ptr (block, patch->mips_pc);
 
             if (jit_dst) {
 #if DEBUG_BLOCK_PATCH
@@ -373,7 +373,7 @@ static int mips64_jit_tcb_apply_patches (cpu_mips_t * cpu,
                     block->start_pc, patch->jit_insn, patch->mips_pc,
                     jit_dst);
 #endif
-                mips64_jit_tcb_set_patch (patch->jit_insn, jit_dst);
+                mips_jit_tcb_set_patch (patch->jit_insn, jit_dst);
             }
         }
 
@@ -381,9 +381,9 @@ static int mips64_jit_tcb_apply_patches (cpu_mips_t * cpu,
 }
 
 /* Free the patch table */
-static void mips64_jit_tcb_free_patches (mips64_jit_tcb_t * block)
+static void mips_jit_tcb_free_patches (mips_jit_tcb_t * block)
 {
-    struct mips64_jit_patch_table *p, *next;
+    struct mips_jit_patch_table *p, *next;
 
     for (p = block->patch_table; p; p = next) {
         next = p->next;
@@ -394,8 +394,8 @@ static void mips64_jit_tcb_free_patches (mips64_jit_tcb_t * block)
 }
 
 /* Adjust the JIT buffer if its size is not sufficient */
-static int mips64_jit_tcb_adjust_buffer (cpu_mips_t * cpu,
-    mips64_jit_tcb_t * block)
+static int mips_jit_tcb_adjust_buffer (cpu_mips_t * cpu,
+    mips_jit_tcb_t * block)
 {
     insn_exec_page_t *new_buffer;
 
@@ -420,16 +420,16 @@ static int mips64_jit_tcb_adjust_buffer (cpu_mips_t * cpu,
     block->jit_buffer = new_buffer;
 
     /* jump to the new exec page (link) */
-    mips64_jit_tcb_set_jump (block->jit_ptr, new_buffer->ptr);
+    mips_jit_tcb_set_jump (block->jit_ptr, new_buffer->ptr);
     block->jit_ptr = new_buffer->ptr;
 
     return (0);
 }
 
 /* Allocate an instruction block */
-static inline mips64_jit_tcb_t *mips64_jit_tcb_alloc (cpu_mips_t * cpu)
+static inline mips_jit_tcb_t *mips_jit_tcb_alloc (cpu_mips_t * cpu)
 {
-    mips64_jit_tcb_t *p;
+    mips_jit_tcb_t *p;
 
     if (cpu->tcb_free_list) {
         p = cpu->tcb_free_list;
@@ -446,7 +446,7 @@ static inline mips64_jit_tcb_t *mips64_jit_tcb_alloc (cpu_mips_t * cpu)
 }
 
 /* Free an instruction block */
-void mips64_jit_tcb_free (cpu_mips_t * cpu, mips64_jit_tcb_t * block,
+void mips_jit_tcb_free (cpu_mips_t * cpu, mips_jit_tcb_t * block,
     int list_removal)
 {
     int i;
@@ -466,7 +466,7 @@ void mips64_jit_tcb_free (cpu_mips_t * cpu, mips64_jit_tcb_t * block,
         }
 
         /* Free the patch tables */
-        mips64_jit_tcb_free_patches (block);
+        mips_jit_tcb_free_patches (block);
 
         /* Free code pages */
         for (i = 0; i < MIPS_JIT_MAX_CHUNKS; i++)
@@ -486,7 +486,7 @@ void mips64_jit_tcb_free (cpu_mips_t * cpu, mips64_jit_tcb_t * block,
 
 #ifdef DEBUG_JIT
 /*get the tcb count*/
-static void mips64_jit_count_tcb (cpu_mips_t * cpu)
+static void mips_jit_count_tcb (cpu_mips_t * cpu)
 {
 
     unsigned int i = 0;
@@ -499,7 +499,7 @@ static void mips64_jit_count_tcb (cpu_mips_t * cpu)
     printf ("FREE PAGES %x  \n", i);
 
     i = 0;
-    mips64_jit_tcb_t *tcb1;
+    mips_jit_tcb_t *tcb1;
     tcb1 = cpu->tcb_list;
     while (tcb1 != NULL) {
         tcb1 = tcb1->next;
@@ -518,13 +518,13 @@ static void mips64_jit_count_tcb (cpu_mips_t * cpu)
 }
 #endif
 /* Create an instruction block */
-static mips64_jit_tcb_t *mips64_jit_tcb_create (cpu_mips_t * cpu,
+static mips_jit_tcb_t *mips_jit_tcb_create (cpu_mips_t * cpu,
     m_va_t vaddr)
 {
-    mips64_jit_tcb_t *block = NULL;
+    mips_jit_tcb_t *block = NULL;
     m_uint32_t asid;
 
-    if (!(block = mips64_jit_tcb_alloc (cpu)))
+    if (!(block = mips_jit_tcb_alloc (cpu)))
         goto err_block_alloc;
 
     block->start_pc = vaddr;
@@ -556,9 +556,9 @@ static mips64_jit_tcb_t *mips64_jit_tcb_create (cpu_mips_t * cpu,
         case 0x6:
         case 0x7:
             /*Return the tcb to tcb free list */
-            cpu->exec_blk_map[mips64_jit_get_pc_hash (cpu, block->start_pc)] =
+            cpu->exec_blk_map[mips_jit_get_pc_hash (cpu, block->start_pc)] =
                 NULL;
-            mips64_jit_tcb_free (cpu, block, FALSE);
+            mips_jit_tcb_free (cpu, block, FALSE);
             longjmp (run_jmp, 1);
             break;
         default:
@@ -574,7 +574,7 @@ static mips64_jit_tcb_t *mips64_jit_tcb_create (cpu_mips_t * cpu,
 
   err_lookup:
   err_jit_alloc:
-    mips64_jit_tcb_free (cpu, block, FALSE);
+    mips_jit_tcb_free (cpu, block, FALSE);
   err_block_alloc:
     fprintf (stderr,
         "%% Unable to create instruction block for vaddr=0x%" LL "x\n",
@@ -584,15 +584,15 @@ static mips64_jit_tcb_t *mips64_jit_tcb_create (cpu_mips_t * cpu,
 
 /* Compile a MIPS instruction page */
 static inline
-    mips64_jit_tcb_t * mips64_jit_tcb_compile (cpu_mips_t * cpu, m_va_t vaddr)
+    mips_jit_tcb_t * mips_jit_tcb_compile (cpu_mips_t * cpu, m_va_t vaddr)
 {
-    mips64_jit_tcb_t *block;
+    mips_jit_tcb_t *block;
     m_uint64_t page_addr;
     size_t len;
 
     page_addr = vaddr & ~(m_uint64_t) MIPS_MIN_PAGE_IMASK;
 
-    if (unlikely (!(block = mips64_jit_tcb_create (cpu, page_addr)))) {
+    if (unlikely (!(block = mips_jit_tcb_create (cpu, page_addr)))) {
         fprintf (stderr, "insn_page_compile: unable to create JIT block.\n");
         return NULL;
     }
@@ -610,7 +610,7 @@ static inline
     block->mips_trans_pos = 0;
 
     while (block->mips_trans_pos < MIPS_INSN_PER_PAGE) {
-        if (unlikely ((mips64_jit_fetch_and_emit (cpu, block, 0) == -1))) {
+        if (unlikely ((mips_jit_fetch_and_emit (cpu, block, 0) == -1))) {
             fprintf (stderr,
                 "insn_page_compile: unable to fetch instruction.\n");
             goto error;
@@ -620,12 +620,12 @@ static inline
             block->start_pc, tag->mask, tag->value);
 #endif
 
-        mips64_jit_tcb_adjust_buffer (cpu, block);
+        mips_jit_tcb_adjust_buffer (cpu, block);
     }
 
-    mips64_jit_tcb_add_end (block);
-    mips64_jit_tcb_apply_patches (cpu, block);
-    mips64_jit_tcb_free_patches (block);
+    mips_jit_tcb_add_end (block);
+    mips_jit_tcb_apply_patches (cpu, block);
+    mips_jit_tcb_free_patches (block);
 
     /* Add the block to the linked list */
     block->next = cpu->tcb_list;
@@ -642,35 +642,35 @@ static inline
     return block;
 
   error:
-    mips64_jit_tcb_free (cpu, block, FALSE);
+    mips_jit_tcb_free (cpu, block, FALSE);
     return NULL;
 }
 
 /* Run a compiled MIPS instruction block */
 static forced_inline
-    void mips64_jit_tcb_run (cpu_mips_t * cpu, mips64_jit_tcb_t * block)
+    void mips_jit_tcb_run (cpu_mips_t * cpu, mips_jit_tcb_t * block)
 {
 
     if (unlikely (cpu->pc & 0x03)) {
-        fprintf (stderr, "mips64_jit_tcb_run: Invalid PC 0x%" LL "x.\n",
+        fprintf (stderr, "mips_jit_tcb_run: Invalid PC 0x%" LL "x.\n",
             cpu->pc);
         cpu_stop (cpu);
         return;
     }
     /* Execute JIT compiled code */
-    mips64_jit_tcb_exec (cpu, block);
+    mips_jit_tcb_exec (cpu, block);
 }
 
-void *mips64_jit_run_cpu (cpu_mips_t * cpu)
+void *mips_jit_run_cpu (cpu_mips_t * cpu)
 {
 
     m_uint32_t pc_hash;
-    mips64_jit_tcb_t *block;
+    mips_jit_tcb_t *block;
 
     cpu->cpu_thread_running = TRUE;
     current_cpu = cpu;
 
-    mips64_init_host_alarm ();
+    mips_init_host_alarm ();
 
     setjmp (run_jmp);
 
@@ -689,23 +689,23 @@ void *mips64_jit_run_cpu (cpu_mips_t * cpu)
 
         /* Check IRQ */
         if (unlikely (cpu->irq_pending)) {
-            mips64_trigger_irq (cpu);
+            mips_trigger_irq (cpu);
             //continue;
         }
 
-        pc_hash = mips64_jit_get_pc_hash (cpu, cpu->pc);
+        pc_hash = mips_jit_get_pc_hash (cpu, cpu->pc);
         block = cpu->exec_blk_map[pc_hash];
 
         /* No block found, compile the page */
         if (unlikely (!block)
-            || unlikely (!mips64_jit_tcb_match (cpu, block, cpu->pc))) {
+            || unlikely (!mips_jit_tcb_match (cpu, block, cpu->pc))) {
 
             if (block != NULL) {
-                mips64_jit_tcb_free (cpu, block, TRUE);
+                mips_jit_tcb_free (cpu, block, TRUE);
                 cpu->exec_blk_map[pc_hash] = NULL;
             }
 
-            block = mips64_jit_tcb_compile (cpu, cpu->pc);
+            block = mips_jit_tcb_compile (cpu, cpu->pc);
             if (unlikely (!block)) {
                 fprintf (stderr,
                     "VM '%s': unable to compile block for CPU%u PC=0x%" LL
@@ -716,7 +716,7 @@ void *mips64_jit_run_cpu (cpu_mips_t * cpu)
             block->acc_count++;
             cpu->exec_blk_map[pc_hash] = block;
         }
-        mips64_jit_tcb_run (cpu, block);
+        mips_jit_tcb_run (cpu, block);
 
     }
 
@@ -735,7 +735,7 @@ void *mips64_jit_run_cpu (cpu_mips_t * cpu)
             break;
         case CPU_STATE_PAUSING:
             /*main loop must wait for me. heihei :) */
-            mips64_main_loop_wait (cpu, 0);
+            mips_main_loop_wait (cpu, 0);
             cpu->state = CPU_STATE_RUNNING;
             cpu->pause_request &= ~CPU_INTERRUPT_EXIT;
             /*start cpu again */
