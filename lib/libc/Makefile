@@ -33,7 +33,7 @@ ALL		= gen stdio stdlib string inet compat ${MACHINE}
 		rm -rf tmp
 		mkdir tmp
 		cd tmp; for i in ${ALL}; do $(AR) x ../$$i/$$i.a; done; \
-			$(AR) cr ../$@ `../../../bin/lorder.sh *.o | tsort`
+			$(AR) cr ../$@ `sh ../../../bin/lorder.sh *.o | tsort`
 		rm -rf tmp
 
 ${ALL}:		FRC

@@ -63,8 +63,19 @@ ${SUBDIR}:	FRC
 
 FRC:
 
-${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip:
+# ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip
+%: %.c
 		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $@.c ${LIBS}
+		${OBJDUMP} -S $@.elf > $@.dis
+		${SIZE} $@.elf
+		${ELF2AOUT} $@.elf $@
+
+# Files listed in ${NSTD} have explicit make lines given below.
+
+# bc egrep expr
+%: %.y
+		${YACC} ${YFLAGS} $@.y
+		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf y.tab.c ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
 		${ELF2AOUT} $@.elf $@
@@ -110,14 +121,5 @@ depend:		expr.c
 		echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 		echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 		echo '# see make depend above' >> Makefile
-
-# Files listed in ${NSTD} have explicit make lines given below.
-
-bc egrep expr:
-		${YACC} ${YFLAGS} $@.y
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf y.tab.c ${LIBS}
-		${OBJDUMP} -S $@.elf > $@.dis
-		${SIZE} $@.elf
-		${ELF2AOUT} $@.elf $@
 
 # DO NOT DELETE THIS LINE -- make depend uses it

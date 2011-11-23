@@ -1,67 +1,125 @@
 This is the RetroBSD source directory.
 
 
-Source Roadmap:
----------------
-bin         User commands.
-
-etc         Template files for /etc.
-
-include     System include files.
-
-lib         System libraries.
-
-libexec     System binaries.
-
-sbin        System administration commands.
-
-share       Shared resources.
-
-sys         Kernel sources.
-
-tools       Build tools and simulators.
+Source Roadmap
+~~~~~~~~~~~~~~
+    bin         User commands.
+    etc         Template files for /etc.
+    include     System include files.
+    lib         System libraries.
+    libexec     System binaries.
+    sbin        System administration commands.
+    share       Shared resources.
+    sys         Kernel sources.
+    tools       Build tools and simulators.
 
 
-***************************************************************************
+Supported hardware
+~~~~~~~~~~~~~~~~~~
+ * chipKIT Max32 board.
+ * Sparkfun UBW32 board.
+ * Maximite computer.
+ * Microchip Explorer 16 board, with PIC32 CAN-USB plug-in module and SD & MMC pictail.
+ * Microchip PIC32 USB or Ethernet Starter Kit, with I/O Expansion board and SD & MMC pictail.
 
-To build for the Maximite board, make the following changes to these files:
 
-retrobsd/Makefile
-    Select Maximite under section "Select target board" by changing
-    TARGET          = $(UBW32)
-    to
-    TARGET          = $(MAXIMITE)
+Build
+~~~~~
+By default, the system is configured for the Max32 board.
+To select another target board, edit a top-level Makefile
+and change a TARGET value under section "Select target board":
 
-Hardware changes are required to use UART4 for the console.
-Lift the resistor** (see below) going to the audio output plug and connect
-a MAX232 between the (now isolated) trace to pin 49 and the trace to
-pin 43/RD9. These two pins are respectively the TX and RX pins of UART4.
+    TARGET = $(UBW32)       # for the UBW32 board with USB console
 
-** On the original Silicon Chip PCB as sold by Altronics this resistor is
-R6 (5k6 through-hole). Pick up pin 43/RD9 at the rear connector.
-** On the Dontronics SM1 version of the PCB this resistor is R8 (2k7 SMD).
-A convenient pickup point for pin 43 is the feedthrough adjacent the PIC32.
+    TARGET = $(UBW32UART)   # for the UBW32 board with UART console
 
-For the bootloader, see the tools/HIDBoot_v1_3 directory. This will build under
-Windows XP with both MPLAB 8.70 and MPLABX, the former makes a much smaller file.
-The build can also be configured for UBW32 by undefining MAXIMITE in the compiler
-build options. Provision has also been made for the 32MX695F512 (no CAN controller)
-and the 'H' (64-pin) versions of the chip, which were all missing in the original
-configure scripts. See HardwareProfile.h for further details.
+    TARGET = $(MAXIMITE)    # for the Maximite board
 
-Rob Judd <judd@ob-wan.com> 21 Aug 2011
+    TARGET = $(EXPLORER16)  # for the Explorer 16 board
 
-***************************************************************************
+    TARGET = $(STARTERKIT)  # for the PIC32 USB or Ethernet Starter Kit
 
-To build for the Max32 board, make the following changes to these files:
+    TARGET = $(MAX32)       # default
 
-retrobsd/Makefile
-    Select Max32 under section "Select target board" by changing
-    TARGET          = $(UBW32)
-    to
-    TARGET          = $(MAX32)
+You can also change a desired filesystem size and swap area size,
+as required.  Default is:
 
-Rob Judd <judd@ob-wan.com> 28 Aug 2011
+    FS_KBYTES   = 16384
+    SWAP_KBYTES = 2048
 
-***************************************************************************
+To compile the kernel and build a filesystem image, run:
 
+    make
+
+A resulting root filesystem image is in file `filesys.img`.
+A kernel is in file `unix.hex` in your target board subdirectory.
+
+
+Filesystem image
+~~~~~~~~~~~~~~~~
+You need to put a filesystem image on a SD card.  On Windows, use
+Win32DiskImager utility (https://launchpad.net/win32-image-writer/+download).
+On Linux, run:
+
+    sudo dd if=filesys.img of=/dev/XYZ
+
+Here `XYZ` is a device name of SD card, as recognized by Linux (sdb in my case).
+
+
+Install kernel
+~~~~~~~~~~~~~~
+Kernel image should be written to PIC32 flash memory.  The procedure depends
+on a board used.
+
+Max32 board:
+    cd sys/pic32/ubw32
+    AVRTOOLS=/Applications/Mpide.app/Contents/Resources/Java/hardware/tools
+    $AVRTOOLS/bin/avrdude -C$AVRTOOLS/etc/avrdude.conf -c stk500v2 -p pic32 \
+        -P /dev/tty.usbserial-* -b 115200 -v -U flash:w:unix.hex:i
+
+    Here you need to change AVRTOOLS path and tty name according to your system.
+
+UBW32 board:
+    tools/ubw32/ubw32 -write sys/pic32/ubw32/unix.hex -reset
+
+Maximite:
+    Use the bootload program for Windows, available for download by link:
+    http://geoffg.net/Downloads/Maximite/Maximite_Update_V2.7B.zip
+
+Explorer 16 board:
+    There is an auxiliary PIC18 chip on the Explorer 16 board, which can be
+    used as a built-in programmer device.  You will need a PICkit 2 adapter
+    to install a needed firmware, as described in article:
+    http://www.paintyourdragon.com/?p=51
+    (section "Hack #2: Lose the PICkit 2, Save $35").
+    This should be done only once.
+
+    Then, you can use a pic32prog utility (http://code.google.com/p/pic32prog/)
+    and a USB cable to install a kernel:
+
+    pic32prog sys/pic32/explorer16/unix.hex
+
+PIC32 Starter Kit:
+    Use PICkit 2 adapter and software to install a boot loader from
+    file `sys/pic32/starter-kit/boot.hex`.  This should be done only once.
+
+    Then, you can use a pic32prog utility (http://code.google.com/p/pic32prog/)
+    and a USB cable to install a kernel:
+
+    pic32prog sys/pic32/starter-kit/unix.hex
+
+
+Simulator
+~~~~~~~~~
+You can use a MIPS32 simulator to develop a debug a RetroBSD software,
+without a need for hardware board.  By default, a simulator is configured
+to imitate a Max32 board.  To build it:
+
+    cd tools/virtualmips
+    make
+
+Run it:
+
+    ./pic32
+
+Configuration of simulated board is stored in file `pic32_max32.conf`.
