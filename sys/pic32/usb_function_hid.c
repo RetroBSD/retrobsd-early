@@ -47,7 +47,7 @@ volatile unsigned char hid_report_feature [HID_FEATURE_REPORT_BYTES];
 static unsigned char report_supported (void)
 {
     // Find out if an Output or Feature report has arrived on the control pipe.
-    USBDeviceTasks();
+    usb_device_tasks();
 
     switch (usb_setup_pkt.W_Value >> 8) {
     case 0x01:                  // Input report
@@ -147,7 +147,7 @@ void hid_check_request (void)
         switch (usb_setup_pkt.bDescriptorType) {
         case DSC_HID:
             if (usb_active_configuration == 1) {
-                USBEP0SendROMPtr ((const unsigned char*)
+                usb_ep0_send_rom_ptr ((const unsigned char*)
                     &usb_config1_descriptor + 18,
                     sizeof(USB_HID_DSC)+3,
                     USB_EP0_INCLUDE_ZERO);
@@ -155,14 +155,14 @@ void hid_check_request (void)
             break;
         case DSC_RPT:
             if (usb_active_configuration == 1) {
-                USBEP0SendROMPtr ((const unsigned char*)
+                usb_ep0_send_rom_ptr ((const unsigned char*)
                     &hid_rpt01[0],
                     HID_RPT01_SIZE,     // See target.cfg
                     USB_EP0_INCLUDE_ZERO);
             }
             break;
         case DSC_PHY:
-            USBEP0Transmit (USB_EP0_NO_DATA);
+            usb_ep0_transmit (USB_EP0_NO_DATA);
             break;
         }
     }
@@ -204,17 +204,17 @@ void hid_check_request (void)
         }
         break;
     case GET_IDLE:
-        USBEP0SendRAMPtr (&hid_idle_rate, 1, USB_EP0_INCLUDE_ZERO);
+        usb_ep0_send_ram_ptr (&hid_idle_rate, 1, USB_EP0_INCLUDE_ZERO);
         break;
     case SET_IDLE:
-        USBEP0Transmit (USB_EP0_NO_DATA);
+        usb_ep0_transmit (USB_EP0_NO_DATA);
         hid_idle_rate = usb_setup_pkt.W_Value >> 8;
         break;
     case GET_PROTOCOL:
-        USBEP0SendRAMPtr (&hid_active_protocol, 1, USB_EP0_NO_OPTIONS);
+        usb_ep0_send_ram_ptr (&hid_active_protocol, 1, USB_EP0_NO_OPTIONS);
         break;
     case SET_PROTOCOL:
-        USBEP0Transmit (USB_EP0_NO_DATA);
+        usb_ep0_transmit (USB_EP0_NO_DATA);
         hid_active_protocol = usb_setup_pkt.W_Value & 0xff;
         break;
     }

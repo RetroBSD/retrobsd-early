@@ -922,19 +922,11 @@ void usb_std_get_dsc_handler(void)
         switch(usb_setup_pkt.bDescriptorType)
         {
             case USB_DESCRIPTOR_DEVICE:
-                #if !defined(USB_USER_DEVICE_DESCRIPTOR)
-                    usb_in_pipe[0].pSrc.bRom = (const unsigned char*)&usb_device;
-                #else
-                    usb_in_pipe[0].pSrc.bRom = (const unsigned char*)USB_USER_DEVICE_DESCRIPTOR;
-                #endif
+                usb_in_pipe[0].pSrc.bRom = (const unsigned char*) &usb_device;
                 usb_in_pipe[0].wCount = sizeof(usb_device);
                 break;
             case USB_DESCRIPTOR_CONFIGURATION:
-                #if !defined(USB_USER_CONFIG_DESCRIPTOR)
-                    usb_in_pipe[0].pSrc.bRom = usb_config [usb_setup_pkt.bDscIndex];
-                #else
-                    usb_in_pipe[0].pSrc.bRom = *(USB_USER_CONFIG_DESCRIPTOR + usb_setup_pkt.bDscIndex);
-                #endif
+                usb_in_pipe[0].pSrc.bRom = usb_config [usb_setup_pkt.bDscIndex];
                 usb_in_pipe[0].wCount = *(usb_in_pipe[0].pSrc.wRom+1);                // Set data count
                 break;
             case USB_DESCRIPTOR_STRING:

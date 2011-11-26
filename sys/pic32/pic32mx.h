@@ -839,7 +839,23 @@
 #define DDPCON          PIC32_R (0xf200)        /* Debug Data Port Control */
 #define SYSKEY          PIC32_R (0xf230)
 #define RCON            PIC32_R (0xf600)
+#define RCONCLR         PIC32_R (0xf604)
+#define RCONSET         PIC32_R (0xf608)
+#define RCONINV         PIC32_R (0xf60C)
 #define RSWRST          PIC32_R (0xf610)
+
+/*
+ * Reset control register.
+ */
+#define PIC32_RCON_POR          0x00000001
+#define PIC32_RCON_BOR          0x00000002
+#define PIC32_RCON_IDLE         0x00000004
+#define PIC32_RCON_SLEEP        0x00000008
+#define PIC32_RCON_WDTO         0x00000010
+#define PIC32_RCON_SWR          0x00000040
+#define PIC32_RCON_EXTR         0x00000080
+#define PIC32_RCON_VREGS        0x00000100
+#define PIC32_RCON_CMR          0x00000200
 
 /*--------------------------------------
  * Prefetch cache controller registers.
@@ -864,6 +880,28 @@
 #define BMXPUPBA        PIC32_R (0x82050)       /* Program Flash user program base address */
 #define BMXPFMSZ        PIC32_R (0x82060)       /* Program Flash size */
 #define BMXBOOTSZ       PIC32_R (0x82070)       /* Boot Flash size */
+
+/*--------------------------------------
+ * Non-volatile memory control registers.
+ */
+#define NVMCON          PIC32_R (0x0F400)
+#define NVMCONCLR       PIC32_R (0x0F404)
+#define NVMCONSET       PIC32_R (0x0F408)
+#define NVMCONINV       PIC32_R (0x0F40C)
+#define NVMKEY          PIC32_R (0x0F410)
+#define NVMADDR         PIC32_R (0x0F420)
+#define NVMADDRCLR      PIC32_R (0x0F424)
+#define NVMADDRSET      PIC32_R (0x0F428)
+#define NVMADDRINV      PIC32_R (0x0F42C)
+#define NVMDATA         PIC32_R (0x0F430)
+#define NVMSRCADDR      PIC32_R (0x0F440)
+
+#define PIC32_NVMCON_NVMOP      0x0000000F
+#define PIC32_NVMCON_LVDSTAT    0x00000800
+#define PIC32_NVMCON_LVDERR     0x00001000
+#define PIC32_NVMCON_WRERR      0x00002000
+#define PIC32_NVMCON_WREN       0x00004000
+#define PIC32_NVMCON_WR         0x00008000
 
 /*--------------------------------------
  * Configuration registers.

@@ -203,6 +203,12 @@ typedef struct __attribute__ ((packed)) _USB_STRING_DSC
 
 } USB_STRING_DESCRIPTOR;
 
+#define USB_STRING_INIT(nchars) struct {\
+	unsigned char bLength;          \
+	unsigned char bDescriptorType;	\
+        unsigned short string[nchars];  \
+}
+
 
 // ******************************************************************
 // Section: USB Device Qualifier Descriptor Structure
