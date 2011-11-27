@@ -843,6 +843,9 @@
 #define RCONSET         PIC32_R (0xf608)
 #define RCONINV         PIC32_R (0xf60C)
 #define RSWRST          PIC32_R (0xf610)
+#define RSWRSTCLR       PIC32_R (0xf614)
+#define RSWRSTSET       PIC32_R (0xf618)
+#define RSWRSTINV       PIC32_R (0xf61C)
 
 /*
  * Reset control register.
@@ -897,6 +900,11 @@
 #define NVMSRCADDR      PIC32_R (0x0F440)
 
 #define PIC32_NVMCON_NVMOP      0x0000000F
+#define PIC32_NVMCON_NOP                 0 /* No operation */
+#define PIC32_NVMCON_WORD_PGM            1 /* Word program */
+#define PIC32_NVMCON_ROW_PGM             3 /* Row program */
+#define PIC32_NVMCON_PAGE_ERASE          4 /* Page erase */
+
 #define PIC32_NVMCON_LVDSTAT    0x00000800
 #define PIC32_NVMCON_LVDERR     0x00001000
 #define PIC32_NVMCON_WRERR      0x00002000

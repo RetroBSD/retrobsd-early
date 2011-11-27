@@ -433,11 +433,7 @@ const unsigned char usb_config1_descriptor[] =
 /*
  * Language code string descriptor.
  */
-static const struct {
-    unsigned char bLength;
-    unsigned char bDscType;
-    unsigned short string[1];
-} string0_descriptor = {
+static const USB_STRING_INIT(1) string0_descriptor = {
     sizeof(string0_descriptor),
     USB_DESCRIPTOR_STRING,
     { 0x0409 }                          /* US English */
@@ -446,11 +442,7 @@ static const struct {
 /*
  * Manufacturer string descriptor
  */
-static const struct {
-    unsigned char bLength;
-    unsigned char bDscType;
-    unsigned short string[25];
-} string1_descriptor = {
+static const USB_STRING_INIT(25) string1_descriptor = {
     sizeof(string1_descriptor),
     USB_DESCRIPTOR_STRING,
     { 'M','i','c','r','o','c','h','i','p',' ',
@@ -461,11 +453,7 @@ static const struct {
 /*
  * Product string descriptor
  */
-static const struct {
-    unsigned char bLength;
-    unsigned char bDscType;
-    unsigned short string[16];
-} string2_descriptor = {
+static const USB_STRING_INIT(16) string2_descriptor = {
     sizeof(string2_descriptor),
     USB_DESCRIPTOR_STRING,
     { 'R','e','t','r','o','B','S','D',' ','C',
