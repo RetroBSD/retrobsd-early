@@ -129,7 +129,7 @@ static USB_HANDLE in_handle;
 unsigned int reset_key
      __attribute__((section(".sdata")));
 
-static int active_state;
+static int packet_received;
 static unsigned int buf [32];
 static unsigned int buf_index;
 static unsigned int base_address;
@@ -348,38 +348,12 @@ static void write_flash_block()
 }
 
 /*
- * This function is a place holder for other user routines.
- * It is a mixture of both USB and non-USB tasks.
+ * A command packet was received from PC.
+ * Process it and send a reply.
  */
-static void boot_application()
+static void handle_packet()
 {
-    unsigned int i;
-
-    if (! active_state) {
-        // Are we done sending the last response.  We need to be before we
-        // receive the next command because we clear the send buffer
-        // once we receive a command
-        if (! usb_handle_busy (in_handle)) {
-            if (! usb_handle_busy (out_handle)) { // Did we receive a command?
-                for (i = 0; i < PACKET_SIZE; i++)
-                {
-                    receive.Contents[i] = receive_buffer.Contents[i];
-                }
-
-                out_handle = usb_transfer_one_packet (HID_EP, OUT_FROM_HOST,
-                    (unsigned char*) &receive_buffer, PACKET_SIZE);
-                active_state = 1;
-
-                // Prepare the next packet we will send to the host, by initializing the entire packet to 0x00.
-                for (i = 0; i < PACKET_SIZE; i++)
-                {
-                    // This saves code space, since we don't have to do it independently in the QUERY_DEVICE and GET_DATA cases.
-                    send.Contents[i] = 0;
-                }
-            }
-        }
-        return;
-    }
+    int i;
 
     switch (receive.Command) {
     case QUERY_DEVICE:
@@ -399,12 +373,12 @@ static void boot_application()
         if (! usb_handle_busy (in_handle)) {
             in_handle = usb_transfer_one_packet (HID_EP, IN_TO_HOST,
                 (unsigned char*) &send, PACKET_SIZE);
-            active_state = 0;
+            packet_received = 0;
         }
         break;
 
     case UNLOCK_CONFIG:
-        active_state = 0;
+        packet_received = 0;
         break;
 
     case ERASE_DEVICE:
@@ -421,7 +395,7 @@ static void boot_application()
         // not expecting to do erase/write operations,
         // further reducing probability of accidental activation.
         NVMCONCLR = PIC32_NVMCON_WREN;
-        active_state = 0;
+        packet_received = 0;
         break;
 
     case PROGRAM_DEVICE:
@@ -447,7 +421,7 @@ static void boot_application()
         // else host sent us a non-contiguous packet address...
         // to make this firmware simpler, host should not do this without
         // sending a PROGRAM_COMPLETE command in between program sections.
-        active_state = 0;
+        packet_received = 0;
         break;
 
     case PROGRAM_COMPLETE:
@@ -456,7 +430,7 @@ static void boot_application()
         // Reinitialize pointer to an invalid range, so we know the next
         // PROGRAM_DEVICE will be the start address of a contiguous section.
         base_address = 0;
-        active_state = 0;
+        packet_received = 0;
         break;
 
     case GET_DATA:
@@ -479,7 +453,7 @@ static void boot_application()
 
             in_handle = usb_transfer_one_packet (HID_EP,  IN_TO_HOST,
                 (unsigned char*) &send.Contents[0], PACKET_SIZE);
-            active_state = 0;
+            packet_received = 0;
         }
         break;
 
@@ -502,10 +476,22 @@ static void boot_application()
  */
 int main()
 {
-    // The PRG switch is tied high, so when it is not pressed it will read 1.
-    // To call the normal application (i.e. don't go into the bootloader)
-    // we need to make sure that the PRG button is not pressed, and that we
-    // don't have a software reset
+    /*
+     * Setup wait states.
+     */
+    CHECON = 2;
+    BMXCONCLR = 0x40;
+    CHECONSET = 0x30;
+
+    /* Config register: enable kseg0 caching. */
+    mips_write_c0_register (C0_CONFIG, 0,
+        mips_read_c0_register (C0_CONFIG, 0) | 3);
+
+    /*
+     * To call the normal application (i.e. don't go into the bootloader)
+     * we need to make sure that the PRG button is not pressed, and that we
+     * don't have a software reset.
+     */
     if (! button_pressed() &&
         (! (RCON & PIC32_RCON_SWR) || reset_key != 0x12345678))
     {
@@ -551,7 +537,37 @@ int main()
         if (usb_device_state < CONFIGURED_STATE || usb_is_device_suspended())
             continue;
 
-        boot_application();
+        if (packet_received) {
+            handle_packet();
+            continue;
+        }
+
+        // Are we done sending the last response.  We need to be before we
+        // receive the next command because we clear the send buffer
+        // once we receive a command
+        if (usb_handle_busy (in_handle))
+            continue;
+
+        // Did we receive a command?
+        if (usb_handle_busy (out_handle))
+            continue;
+
+        // Make a copy of received data.
+        int i;
+        for (i = 0; i < PACKET_SIZE; i++) {
+            receive.Contents[i] = receive_buffer.Contents[i];
+        }
+
+        // Restart receiver, to be ready for a next packet.
+        out_handle = usb_transfer_one_packet (HID_EP, OUT_FROM_HOST,
+            (unsigned char*) &receive_buffer, PACKET_SIZE);
+
+        // Prepare the next packet we will send to the host,
+        // by initializing the entire packet to 0x00.
+        for (i = 0; i < PACKET_SIZE; i++) {
+            send.Contents[i] = 0;
+        }
+        packet_received = 1;
     }
 }
 
