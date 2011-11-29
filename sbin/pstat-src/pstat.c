@@ -149,7 +149,7 @@ char **argv;
 
 usage()
 {
-	printf("usage: pstat -[aixptfs] [-u [ubase]] [core]\n");
+	printf("usage: pstat -[aikptfsT] [-u [ubase]] [core]\n");
 }
 
 doinode()

@@ -97,10 +97,10 @@ again:
 #ifdef UCB_METER
 	if (isvfork) {
 		forkstat.cntvfork++;
-		forkstat.sizvfork += parent->p_dsize + parent->p_ssize;
+		forkstat.sizvfork += (parent->p_dsize + parent->p_ssize) >> 10;
 	} else {
 		forkstat.cntfork++;
-		forkstat.sizfork += parent->p_dsize + parent->p_ssize;
+		forkstat.sizfork += (parent->p_dsize + parent->p_ssize) >> 10;
 	}
 #endif
 	child->p_wchan = 0;

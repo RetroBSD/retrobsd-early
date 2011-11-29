@@ -120,7 +120,7 @@ void printhdr(sig)
 		if (dr_select[i])
 			printf("%c%c ", dr_name[i][0], dr_name[i][2]);
 	if (flag29)
-	    printf(" pd  in  sy  tr  cs  us  ni  sy  id\n");
+	    printf(" in  sy  tr  cs  us  ni  sy  id\n");
 	else
             printf(" in  sy  cs  us  sy  id\n");
 	lines = 19;
@@ -276,9 +276,6 @@ loop:
 		rate.v_trap = sum.v_trap;
 		rate.v_syscall = sum.v_syscall;
 		rate.v_intr = sum.v_intr;
-		rate.v_pdma = sum.v_pdma;
-		rate.v_pgin = sum.v_pgin;
-		rate.v_pgout = sum.v_pgout;
 		rate.v_swpin = sum.v_swpin;
 		rate.v_swpout = sum.v_swpout;
 	} else {
@@ -331,8 +328,8 @@ loop:
 			stats(i);
         }
 	if (flag29)
-		printf("%4d%4d%4d%4d%4d",
-		    rate.v_pdma / nintv, INTS(rate.v_intr / nintv),
+		printf("%4d%4d%4d%4d",
+		    INTS(rate.v_intr / nintv),
 		    rate.v_syscall / nintv, rate.v_trap / nintv,
 		    rate.v_swtch / nintv);
 	else
@@ -370,14 +367,11 @@ dosum()
 	read(mf, &sum, sizeof sum);
 	printf("%9d swap ins\n", sum.v_swpin);
 	printf("%9d swap outs\n", sum.v_swpout);
-	printf("%9d pages swapped in\n", sum.v_pswpin);
-	printf("%9d pages swapped out\n", sum.v_pswpout);
-	printf("%9d page ins\n", sum.v_pgin);
-	printf("%9d page outs\n", sum.v_pgout);
+	printf("%9d kbytes swapped in\n", sum.v_kbin);
+	printf("%9d kbytes swapped out\n", sum.v_kbout);
 	printf("%9d cpu context switches\n", sum.v_swtch);
 	printf("%9d device interrupts\n", sum.v_intr);
 	printf("%9d software interrupts\n", sum.v_soft);
-	printf("%9d pseudo-dma dz interrupts\n", sum.v_pdma);
 	printf("%9d traps\n", sum.v_trap);
 	printf("%9d system calls\n", sum.v_syscall);
 #define	nz(x)	((x) ? (x) : 1)
@@ -393,18 +387,18 @@ dosum()
 	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
 }
 
-char Pages[] = "pages";
-
 doforkst()
 {
 	lseek(mf, (long)nl[X_FORKSTAT].n_value, L_SET);
 	read(mf, &forkstat, sizeof forkstat);
-	printf("%d forks, %d %s, average=%.2f\n",
-		forkstat.cntfork, forkstat.sizfork, Pages,
-		(float) forkstat.sizfork / forkstat.cntfork);
-	printf("%d vforks, %d %s, average=%.2f\n",
-		forkstat.cntvfork, forkstat.sizvfork, Pages,
-		(float)forkstat.sizvfork / forkstat.cntvfork);
+        if (forkstat.cntfork != 0)
+                printf("%d forks, %d kbytes, average=%.2f\n",
+                        forkstat.cntfork, forkstat.sizfork,
+                        (float) forkstat.sizfork / forkstat.cntfork);
+        if (forkstat.cntvfork != 0)
+                printf("%d vforks, %d kbytes, average=%.2f\n",
+                        forkstat.cntvfork, forkstat.sizvfork,
+                        (float) forkstat.sizvfork / forkstat.cntvfork);
 }
 
 stats(dn)

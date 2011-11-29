@@ -15,15 +15,12 @@ struct vmrate
 	u_short	v_syscall;	/* calls to syscall() */
 	u_short	v_intr;		/* device interrupts */
 	u_short	v_soft;		/* software interrupts */
-	u_short	v_pdma;		/* pseudo-dma interrupts */
 	u_short	v_fpsim;	/* floating point simulator faults */
-	u_short	v_pswpin;	/* pages swapped in */
-	u_short	v_pswpout;	/* pages swapped out */
-	u_short	v_pgin;		/* pageins */
-	u_short	v_pgout;	/* pageouts */
-#define	v_last	v_pswpout
+	u_short	v_kbin;         /* kbytes swapped in */
+	u_short	v_kbout;	/* kbytes swapped out */
 	u_short	v_swpin;	/* swapins */
 	u_short	v_swpout;	/* swapouts */
+#define	v_last	v_swpout
 };
 
 struct vmsum
@@ -33,12 +30,9 @@ struct vmsum
 	long	v_syscall;	/* calls to syscall() */
 	long	v_intr;		/* device interrupts */
 	long	v_soft;		/* software interrupts */
-	long	v_pdma;		/* pseudo-dma interrupts */
 	long	v_fpsim;	/* floating point simulator faults */
-	long	v_pswpin;	/* pages swapped in */
-	long	v_pswpout;	/* pages swapped out */
-	long	v_pgin;		/* pageins */
-	long	v_pgout;	/* pageouts */
+	long	v_kbin;         /* kbytes swapped in */
+	long	v_kbout;	/* kbytes swapped out */
 	long	v_swpin;	/* swapins */
 	long	v_swpout;	/* swapouts */
 };

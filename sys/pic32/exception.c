@@ -216,9 +216,6 @@ printf ("\nkernel stack = %p", frame);
 		panic ("stack overflow");
 		/*NOTREACHED*/
         }
-#ifdef UCB_METER
-	cnt.v_trap++;
-#endif
 	status = frame [FRAME_STATUS];
 	cause = mips_read_c0_register (C0_CAUSE, 0);
 	cause &= CA_EXC_CODE;
@@ -229,49 +226,52 @@ printf ("\nkernel stack = %p", frame);
 	switch (cause) {
 
 	/*
-	 * Exception not expected.  Usually a kernel mode bus error.
+	 * Exception.
 	 */
 	default:
-		dumpregs (frame);
-		panic ("unexpected exception");
-		/*NOTREACHED*/
-#if 1
-	case CA_IBE + USER:		/* Bus error, instruction fetch */
-	case CA_DBE + USER:		/* Bus error, load or store */
-		i = SIGBUS;
-		break;
-
-	case CA_RI + USER:		/* Reserved instruction */
-		i = SIGILL;
-		break;
-
-	case CA_Bp + USER:		/* Breakpoint */
-		i = SIGTRAP;
-		break;
-
-	case CA_Tr + USER:		/* Trap */
-		i = SIGIOT;
-		break;
-
-	case CA_CPU + USER:		/* Coprocessor unusable */
-		i = SIGEMT;
-		break;
-
-	case CA_Ov:			/* Arithmetic overflow */
-	case CA_Ov + USER:
-		i = SIGFPE;
-		break;
-
-	case CA_AdEL + USER:		/* Address error, load or instruction fetch */
-	case CA_AdES + USER:		/* Address error, store */
-		i = SIGSEGV;
-		break;
+#ifdef UCB_METER
+                cnt.v_trap++;
 #endif
+                switch (cause) {
+                default:                /* Unknown exception: fatal kernel error */
+                        dumpregs (frame);
+                        panic ("unexpected exception");
+                        /*NOTREACHED*/
+                case CA_IBE + USER:	/* Bus error, instruction fetch */
+                case CA_DBE + USER:	/* Bus error, load or store */
+                        i = SIGBUS;
+                        break;
+                case CA_RI + USER:	/* Reserved instruction */
+                        i = SIGILL;
+                        break;
+                case CA_Bp + USER:	/* Breakpoint */
+                        i = SIGTRAP;
+                        break;
+                case CA_Tr + USER:	/* Trap */
+                        i = SIGIOT;
+                        break;
+                case CA_CPU + USER:	/* Coprocessor unusable */
+                        i = SIGEMT;
+                        break;
+                case CA_Ov:		/* Arithmetic overflow */
+                case CA_Ov + USER:
+                        i = SIGFPE;
+                        break;
+                case CA_AdEL + USER:	/* Address error, load or instruction fetch */
+                case CA_AdES + USER:	/* Address error, store */
+                        i = SIGSEGV;
+                        break;
+                }
+                break;
+
 	/*
 	 * Hardware interrupt.
 	 */
 	case CA_Int:			/* Interrupt */
 	case CA_Int + USER:
+#ifdef UCB_METER
+                cnt.v_intr++;
+#endif
 		/* Get the current irq number */
 		c = INTSTAT;
 		if ((c & PIC32_INTSTAT_SRIPL_MASK) == 0) {

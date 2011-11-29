@@ -28,12 +28,9 @@ swap (blkno, coreaddr, count, rdflg)
 //printf ("swap (%u, %08x, %d, %s)\n", blkno, coreaddr, count, rdflg ? "R" : "W");
 #ifdef UCB_METER
 	if (rdflg) {
-		cnt.v_pswpin += count;
-		cnt.v_pgin++;
-	}
-	else {
-		cnt.v_pswpout += count;
-		cnt.v_pgout++;
+		cnt.v_kbin += (count + 1023) / 1024;
+	} else {
+		cnt.v_kbout += (count + 1023) / 1024;
 	}
 #endif
 	bp = geteblk();			/* allocate a buffer header */
