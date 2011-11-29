@@ -65,7 +65,7 @@ FRC:
 
 # ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip
 %: %.c
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $@.c ${LIBS}
+		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $< ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
 		${ELF2AOUT} $@.elf $@
@@ -73,12 +73,9 @@ FRC:
 # Files listed in ${NSTD} have explicit make lines given below.
 
 # bc egrep expr
-%: %.y
-		${YACC} ${YFLAGS} $@.y
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf y.tab.c ${LIBS}
-		${OBJDUMP} -S $@.elf > $@.dis
-		${SIZE} $@.elf
-		${ELF2AOUT} $@.elf $@
+%.c: %.y
+		${YACC} ${YFLAGS} $<
+		-/bin/mv y.tab.c $@
 
 ${SCRIPT}:
 		install -c $@.sh $@
