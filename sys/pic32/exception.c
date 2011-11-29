@@ -374,8 +374,8 @@ printf ("kernel stack = %p\n", frame);
                 }
 
 		/* Original pc for restarting syscalls */
-		int opc = frame [FRAME_PC];		/* opc now points at syscall */
-		frame [FRAME_PC] = opc + 3*NBPW;        /* no errors - skip 2 next instructions */
+		int opc = frame [FRAME_PC];		/* opc points at syscall */
+                frame [FRAME_PC] = opc + 3*NBPW;        /* no errors - skip 2 next instructions */
 
 		const struct sysent *callp = &sysent[0];
 		int code = (*(u_int*) opc >> 6) & 0377;	/* bottom 8 bits are index */
@@ -399,7 +399,8 @@ printf ("kernel stack = %p\n", frame);
 			}
 		}
 #ifdef TRACE_EXCEPTIONS
-                printf ("--- syscall: %s (", syscallnames [code >= nsysent ? 0 : code]);
+                printf ("--- (%u)syscall: %s (", u.u_procp->p_pid,
+                        syscallnames [code >= nsysent ? 0 : code]);
                 if (callp->sy_narg > 0)
                         print_args (callp->sy_narg, u.u_arg[0], u.u_arg[1],
                         u.u_arg[2], u.u_arg[3], u.u_arg[4], u.u_arg[5]);
@@ -409,23 +410,32 @@ printf ("kernel stack = %p\n", frame);
 		if (setjmp (&u.u_qsave) == 0) {
 			(*callp->sy_call) ();
 		}
-		frame [FRAME_R8] = u.u_error;		/* $t0 - errno */
 		switch (u.u_error) {
 		case 0:
 #ifdef TRACE_EXCEPTIONS
-                        printf ("    syscall returned %u\n", u.u_rval);
+                        printf ("    (%u)syscall returned %u\n", u.u_procp->p_pid, u.u_rval);
 #endif
-			frame [FRAME_R2] = u.u_rval;	/* $v0 */
+			frame [FRAME_R2] = u.u_rval;	/* $v0 - result */
 			break;
 		case ERESTART:
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    (%u)syscall restarted at %#x\n", u.u_procp->p_pid, opc);
+#endif
 			frame [FRAME_PC] = opc;		/* return to syscall */
+			break;
+		case EJUSTRETURN:                       /* return from signal handler */
+#ifdef TRACE_EXCEPTIONS
+                        printf ("    (%u)jump to %#x, stack %#x\n", u.u_procp->p_pid, frame [FRAME_PC], frame [FRAME_SP]);
+#endif
 			break;
 		default:
 #ifdef TRACE_EXCEPTIONS
-                        printf ("    syscall failed, errno %u\n", u.u_error);
+                        printf ("    (%u)syscall failed, errno %d\n", u.u_procp->p_pid, u.u_error);
 #endif
 			frame [FRAME_PC] = opc + NBPW;	/* return to next instruction */
-			frame [FRAME_R2] = -1;		/* $v0 */
+			frame [FRAME_R2] = -1;		/* $v0 - result */
+                        frame [FRAME_R8] = u.u_error;	/* $t0 - errno */
+			break;
 		}
 		goto out;
 	}

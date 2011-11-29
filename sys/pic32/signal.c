@@ -39,8 +39,8 @@ sendsig (p, sig, mask)
 	int oonstack;
 
 #ifdef DIAGNOSTIC
-	printf("sendsig %d to pid %d, mask=%#x, handler=%#x, tramp=%#x\n", sig, u.u_procp->p_pid,
-		mask, p, u.u_sigtramp);
+	printf("(%u)sendsig %d, mask=%#x, handler=%#x, tramp=%#x\n",
+                u.u_procp->p_pid, sig, mask, p, u.u_sigtramp);
 #endif
 	oonstack = u.u_sigstk.ss_flags & SA_ONSTACK;
 
@@ -118,6 +118,11 @@ sendsig (p, sig, mask)
 	regs [FRAME_RA] = (int) u.u_sigtramp;   /* $ra - sigtramp */
 	regs [FRAME_SP] = (int) sfp;
 	regs [FRAME_PC] = (int) p;
+#ifdef DIAGNOSTIC
+	printf("    ...call handler %p (sig=%d, code=%#x, context=%p)\n",
+	    p, sig, u.u_code, &sfp->sf_sc);
+	printf("    ...stack=%p, return to %p\n", sfp, u.u_sigtramp);
+#endif
 }
 
 /*
@@ -138,7 +143,8 @@ sigreturn()
                 (struct sigcontext*) (regs [FRAME_SP] + 16);
 
 #ifdef DIAGNOSTIC
-	printf("sigreturn %p\n", scp);
+	printf("(%u)sigreturn stack=%#x, context=%p\n",
+                u.u_procp->p_pid, regs [FRAME_SP], scp);
 #endif
 	if (baduaddr ((caddr_t) scp) ||
             baduaddr ((caddr_t) scp + sizeof(*scp))) {
@@ -185,4 +191,7 @@ sigreturn()
         regs [FRAME_LO] = scp->sc_lo;
         regs [FRAME_HI] = scp->sc_hi;
         regs [FRAME_PC] = scp->sc_pc;
+#ifdef DIAGNOSTIC
+	printf("    ...to %#x, stack %#x\n", regs[FRAME_PC], regs[FRAME_SP]);
+#endif
 }
