@@ -16,8 +16,8 @@
  * error logging daemon.
  */
 
-#define	NLOG	3
-int	nlog = NLOG;
+#define	NLOG	1
+int	nlog = 1;
 
 #include "param.h"
 #include "user.h"
@@ -60,8 +60,6 @@ logopen(dev, mode, unused)
 		return(EBUSY);
 	if (msgbuf[unit].msg_bufc == 0)		/* no buffer allocated */
 		return(ENOMEM);
-	if (unit == logACCT)
-		return(ENODEV);			/* log to accounting not supported */
 	logsoftc[unit].sc_state |= LOG_OPEN;
 	logsoftc[unit].sc_pgid = u.u_procp->p_pid;  /* signal process only */
 	logsoftc[unit].sc_overrun = 0;

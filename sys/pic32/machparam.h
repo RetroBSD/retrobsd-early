@@ -35,7 +35,7 @@
 /*
  * System parameter formulae.
  */
-#define	NBUF		8			/* number of i/o buffers */
+#define	NBUF		10			/* number of i/o buffers */
 #define	MAXUSERS	1			/* number of user logins */
 #define	NPROC		10			/* number of processes */
 #define NINODE		24

@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #define	MSG_MAGIC	0x063061
-#define	MSG_BSIZE	1600
+#define	MSG_BSIZE	2048
 
 struct	msgbuf {
 	long	msg_magic;
@@ -14,8 +14,6 @@ struct	msgbuf {
 };
 
 #define	logMSG	0		/* /dev/klog */
-#define	logDEV	1		/* /dev/erlg */
-#define	logACCT	2		/* /dev/acct */
 
 #ifdef KERNEL
 /*
