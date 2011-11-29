@@ -176,7 +176,7 @@ doinode()
 		return;
 	}
 	printf("%d/%d active inodes\n", nin, NINODE);
-printf("   LOC       FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/DEV FS\n");
+        printf("   LOC       FLAGS      CNT  DEVICE  RDC WRC  INO   MODE  NLK  UID  SIZE/DEV FS\n");
 	for (ip = xinode; ip < &xinode[NINODE]; ip++) {
 		if (ip->i_count == 0)
 			continue;
@@ -574,8 +574,8 @@ doswap()
 	swp = (struct mapent *)calloc(num, sizeof (*swp));
 	lseek(fc, (off_t)smap.m_map, 0);
 	read(fc, swp, num * sizeof (*swp));
-	for	(used = 0, i = 0; swp[i].m_size; i++)
+	for (used = 0, i = 0; swp[i].m_size; i++)
 		used += swp[i].m_size;
 	printf("%d/%d swapmap entries\n", i, num);
-	printf("%u kbytes swap used, %u kbytes free\n", (nswap-used)/2, used/2);
+	printf("%u kbytes swap used, %u kbytes free\n", nswap - used, used);
 }
