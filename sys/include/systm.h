@@ -148,7 +148,7 @@ void wakeup (caddr_t chan);
 /*
  * Allocate iostat disk monitoring slots for a driver.
  */
-void dk_alloc (int *dkn, int slots, char *name, long wps);
+void dk_alloc (int *dkn, int slots, char *name);
 
 /*
  * Initialize callouts.

@@ -295,7 +295,29 @@ boot (dev, howto)
                          */
                         (*dump) (dumpdev);
                 }
-                /* TODO: restart from dev, howto */
+                /* Restart from dev, howto */
+#ifdef USB_NUM_STRING_DESCRIPTORS
+                /* Disable USB module, and wait awhile for the USB cable
+                 * capacitance to discharge down to disconnected (SE0) state.
+                 */
+                U1CON = 0x0000;
+                udelay (1000);
+
+                /* Stop DMA */
+                if (! (DMACON & 0x1000)) {
+                        DMACONSET = 0x1000;
+                        while (DMACON & 0x800)
+                                continue;
+                }
+#endif
+                /* Unlock access to reset register */
+                SYSKEY = 0;
+                SYSKEY = 0xaa996655;
+                SYSKEY = 0x556699aa;
+
+                /* Reset microcontroller */
+                RSWRSTSET = 1;
+                (void) RSWRST;
         }
 	printf ("halted\n");
 	for (;;) {
@@ -359,7 +381,17 @@ void led_control (int mask, int on)
  */
 void addupc (caddr_t pc, struct uprof *pbuf, int ticks)
 {
-	/* TODO: profiling */
+        unsigned indx;
+
+        if (pc < (caddr_t) pbuf->pr_off)
+                return;
+
+        indx = pc - (caddr_t) pbuf->pr_off;
+        indx = (indx * pbuf->pr_scale) >> 16;
+        if (indx >= pbuf->pr_size)
+                return;
+
+        pbuf->pr_base[indx] += ticks;
 }
 
 /*
@@ -447,6 +479,9 @@ badkaddr (addr)
 {
 	if (addr >= (caddr_t) KERNEL_DATA_START &&
 	    addr < (caddr_t) KERNEL_DATA_END)
+		return 0;
+	if (addr >= (caddr_t) KERNEL_FLASH_START &&
+	    addr < (caddr_t) KERNEL_FLASH_START + FLASH_SIZE)
 		return 0;
 	return 1;
 }

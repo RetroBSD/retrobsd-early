@@ -32,7 +32,7 @@ gatherstats(pc, ps)
 	caddr_t pc;
 	int ps;
 {
-	register int cpstate, s;
+	register int cpstate;
 
 	/*
 	 * Determine what state the cpu is in.
@@ -67,9 +67,6 @@ gatherstats(pc, ps)
 	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
 	 */
 	cp_time[cpstate]++;
-	for (s = 0; s < DK_NDRIVE; s++)
-		if (dk_busy & (1 << s))
-			dk_time[s]++;
 }
 #endif /* UCB_METER */
 

@@ -57,16 +57,14 @@ disksort (dp, bp)
  * ignore it.
  */
 void
-dk_alloc (dkn, slots, name, kbps)
+dk_alloc (dkn, slots, name)
 	int *dkn;	/* pointer to number for iostat */
 	int slots;	/* number of iostat slots requested */
 	char *name;	/* name of device */
-	long kbps;	/* kbytes per second transfer rate */
 {
 	int i;
 	register char **np;
 	register int *up;
-	register long *wp;
 
 	if (*dkn < 0 && dk_n + slots <= DK_NDRIVE) {
 		/*
@@ -75,13 +73,11 @@ dk_alloc (dkn, slots, name, kbps)
 		*dkn = dk_n;
 		np = &dk_name[dk_n];
 		up = &dk_unit[dk_n];
-		wp = &dk_kbps[dk_n];
 		dk_n += slots;
 
 		for (i = 0; i < slots; i++) {
 			*np++ = name;
 			*up++ = i;
-			*wp++ = kbps;
 		}
 	}
 }

@@ -98,15 +98,11 @@ void printhdr(sig)
 	else
 	    printf("-procs- ---memory-- ");
 
-	i = (ndrives * 3 - 6);
-	if (i < 0)
-		i = 0;
-	for (j = 0; j < i; j++)
-		putchar(' ');
+	printf("-----disks----- ");
 
 	if (flag29) {
-		printf("-----faults---- ----cpu----\n");
-		printf(" r b w    avm  tx   fre   i  o   ");
+		printf("-----faults---- ------cpu------\n");
+		printf(" r b w    avm  tx   fre   i  o  ");
 	} else {
 		printf("---faults-- ----cpu----\n");
 		printf(" r b w    avm   fre ");
@@ -114,7 +110,8 @@ void printhdr(sig)
 
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			printf("%c%c ", dr_name[i][0], dr_name[i][2]);
+			printf("%c%c%c ",
+                                dr_name[i][0], dr_name[i][1], dr_name[i][2]);
 	if (flag29)
 	    printf(" in  sy  tr  cs  us  ni  sy  id\n");
 	else
@@ -315,7 +312,7 @@ loop:
 	printf("%6d", pfree);
 
 	if (flag29) {
-		printf("%4d%3d  ", rate.v_swpin / nintv, rate.v_swpout / nintv);
+		printf("%4d%3d ", rate.v_swpin / nintv, rate.v_swpout / nintv);
 	}
 
 	etime /= (float)hz;
@@ -400,10 +397,10 @@ doforkst()
 stats(dn)
 {
 	if (dn >= dk_ndrive) {
-		printf("  0");
+		printf("   0");
 		return;
 	}
-	printf("%3.0f", s.xfer[dn]/etime);
+	printf("%4.0f", s.xfer[dn]/etime);
 }
 
 double

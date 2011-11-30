@@ -13,12 +13,13 @@ all:            ../reboot reboot.0
 		${OBJDUMP} -S reboot.elf > reboot.dis
 		${SIZE} reboot.elf
 		${ELF2AOUT} reboot.elf $@
+		ln -f $@ ../halt
 
 reboot.0:       ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ *.elf *.dis ${MAN} ../reboot tags
+		rm -f *.o *~ *.elf *.dis ${MAN} ../reboot ../halt tags
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

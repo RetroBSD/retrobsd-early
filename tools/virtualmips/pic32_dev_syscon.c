@@ -23,6 +23,20 @@
 
 extern cpu_mips_t *current_cpu;
 
+static int syskey_unlock;
+
+static void soft_reset (cpu_mips_t *cpu)
+{
+    pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
+
+    mips_reset (cpu);
+    cpu->pc = pic32->start_address;
+
+    /* reset all devices */
+    dev_reset_all (cpu->vm);
+    dev_sdcard_reset (cpu);
+}
+
 void *dev_pic32_syscon_access (cpu_mips_t *cpu, struct vdevice *dev,
     m_uint32_t offset, u_int op_size, u_int op_type, m_reg_t *data,
     m_uint8_t *has_set_value)
@@ -81,6 +95,25 @@ void *dev_pic32_syscon_access (cpu_mips_t *cpu, struct vdevice *dev,
             pic32->syskey = *data;
             if (cpu->vm->debug_level > 2)
                 printf ("        SYSKEY := %08x\n", *data);
+
+            /* Unlock state machine. */
+            switch (syskey_unlock) {
+            case 0:
+                if (pic32->syskey == 0xaa996655)
+                    syskey_unlock = 1;
+                else
+                    syskey_unlock = 0;
+                break;
+            case 1:
+                if (pic32->syskey == 0x556699aa)
+                    syskey_unlock = 2;
+                else
+                    syskey_unlock = 0;
+                break;
+            default:
+                syskey_unlock = 0;
+                break;
+            }
         }
         break;
     case PIC32_RCON & 0xff0:
@@ -103,6 +136,9 @@ void *dev_pic32_syscon_access (cpu_mips_t *cpu, struct vdevice *dev,
             pic32->rswrst = *data;
             if (cpu->vm->debug_level > 2)
                 printf ("        RSWRST := %08x\n", *data);
+
+            if (syskey_unlock == 2 && (pic32->rswrst & 1))
+                soft_reset (cpu);
         }
         break;
 
@@ -123,6 +159,7 @@ void dev_pic32_syscon_reset (cpu_mips_t *cpu, struct vdevice *dev)
     pic32->syskey = 0;
     pic32->rcon = 0;
     pic32->rswrst = 0;
+    syskey_unlock = 0;
 }
 
 int dev_pic32_syscon_init (vm_instance_t *vm, char *name, unsigned paddr)

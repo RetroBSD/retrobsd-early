@@ -139,11 +139,8 @@ static const struct {
         { "_dk_busy",       (int) &dk_busy      },  /* iostat */
         { "_dk_name",       (int) &dk_name      },  /* iostat  vmstat */
         { "_dk_ndrive",     (int) &dk_ndrive    },  /* iostat  vmstat */
-        { "_dk_seek",       (int) &dk_seek      },  /* iostat */
-        { "_dk_time",       (int) &dk_time      },  /* iostat */
         { "_dk_unit",       (int) &dk_unit      },  /* iostat  vmstat */
         { "_dk_bytes",      (int) &dk_bytes     },  /* iostat */
-        { "_dk_kbps",       (int) &dk_kbps      },  /* iostat */
         { "_dk_xfer",       (int) &dk_xfer      },  /* iostat  vmstat */
         { "_file",          (int) &file         },  /* pstat */
         { "_forkstat",      (int) &forkstat     },  /* vmstat */
@@ -214,8 +211,19 @@ ucall()
 void
 fetchi()
 {
-        /* TODO: check address and root privileges */
-	u.u_rval = *(unsigned*) u.u_arg;
+        unsigned *addr = (unsigned*) u.u_arg;
+
+        /* Check root privileges */
+	if (! suser())
+		return;
+
+        /* Check address */
+	if ((unsigned) addr < KERNEL_FLASH_START ||
+	    (unsigned) addr >= KERNEL_FLASH_START + FLASH_SIZE) {
+                u.u_error = EFAULT;
+		return;
+        }
+	u.u_rval = *addr;
 }
 
 /*

@@ -20,11 +20,8 @@
 long	cp_time[CPUSTATES];	/* number of ticks spent in each cpu state */
 int	dk_ndrive;		/* number of drives being monitored */
 int	dk_busy;		/* bit array of drive busy flags */
-long	dk_time[DK_NDRIVE];	/* ticks spent with drive busy */
-long	dk_seek[DK_NDRIVE];	/* number of seeks */
 long	dk_xfer[DK_NDRIVE];	/* number of transfers */
 long	dk_bytes[DK_NDRIVE];	/* number of bytes transfered */
-long	dk_kbps[DK_NDRIVE];	/* kbytes per second */
 char	*dk_name[DK_NDRIVE];	/* names of monitored drives */
 int	dk_unit[DK_NDRIVE];	/* unit numbers of monitored drives */
 int	dk_n;			/* number of dk numbers assigned so far */
