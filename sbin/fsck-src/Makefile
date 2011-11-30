@@ -11,7 +11,7 @@ OBJS		= main.o
 #include $(TOPSRC)/cross.mk
 #OBJS		= cross.o
 
-CFLAGS		+= -g -Werror
+CFLAGS		+= -g -Werror -Wall -Os
 
 # The program itself
 #

@@ -4,54 +4,20 @@
  * specifies the terms and conditions for redistribution.
  */
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <pwd.h>
+#include <time.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
 #include "fsck.h"
 
-ckinode(dp, idesc)
-	DINODE *dp;
-	register struct inodesc *idesc;
-{
-	register daddr_t *ap;
-	int ret, n;
-	DINODE dino;
-
-	idesc->id_fix = DONTKNOW;
-	idesc->id_entryno = 0;
-	idesc->id_filesize = dp->di_size;
-	if (SPECIAL(dp))
-		return (KEEPON);
-	dino = *dp;
-	for (ap = &dino.di_addr[0]; ap < &dino.di_addr[NDADDR]; ap++) {
-		if (*ap == 0)
-			continue;
-		idesc->id_blkno = *ap;
-		if (idesc->id_type == ADDR)
-			ret = (*idesc->id_func)(idesc);
-		else
-			ret = dirscan(idesc);
-		if (ret & STOP)
-			return (ret);
-	}
-	for (ap = &dino.di_addr[NDADDR], n = 1; n <= NIADDR; ap++, n++) {
-		if (*ap) {
-			idesc->id_blkno = *ap;
-			ret = iblock(idesc, n,
-				dino.di_size - DEV_BSIZE * NDADDR);
-			if (ret & STOP)
-				return (ret);
-		}
-	}
-	return (KEEPON);
-}
-
+int
 iblock(idesc, ilevel, isize)
 	struct inodesc *idesc;
-	register ilevel;
+	register int ilevel;
 	long isize;
 {
 	register daddr_t *ap;
@@ -60,7 +26,6 @@ iblock(idesc, ilevel, isize)
 	long sizepb;
 	BUFAREA ib;
 	char buf[128];
-	extern int pass1check(), dirscan();
 
 	if (idesc->id_type == ADDR) {
 		func = idesc->id_func;
@@ -108,6 +73,45 @@ iblock(idesc, ilevel, isize)
 	return (KEEPON);
 }
 
+int
+ckinode(dp, idesc)
+	DINODE *dp;
+	register struct inodesc *idesc;
+{
+	register daddr_t *ap;
+	int ret, n;
+	DINODE dino;
+
+	idesc->id_fix = DONTKNOW;
+	idesc->id_entryno = 0;
+	idesc->id_filesize = dp->di_size;
+	if (SPECIAL(dp))
+		return (KEEPON);
+	dino = *dp;
+	for (ap = &dino.di_addr[0]; ap < &dino.di_addr[NDADDR]; ap++) {
+		if (*ap == 0)
+			continue;
+		idesc->id_blkno = *ap;
+		if (idesc->id_type == ADDR) {
+			ret = (*idesc->id_func)(idesc);
+		} else {
+			ret = dirscan(idesc);
+                }
+		if (ret & STOP)
+			return (ret);
+	}
+	for (ap = &dino.di_addr[NDADDR], n = 1; n <= NIADDR; ap++, n++) {
+		if (*ap) {
+			idesc->id_blkno = *ap;
+			ret = iblock(idesc, n,
+				dino.di_size - DEV_BSIZE * NDADDR);
+			if (ret & STOP)
+				return (ret);
+		}
+	}
+	return (KEEPON);
+}
+
 DINODE *
 ginode(inumber)
 	register ino_t inumber;
@@ -131,6 +135,7 @@ ginode(inumber)
 	return (dp + itoo(inumber));
 }
 
+void
 clri(idesc, s, flg)
 	register struct inodesc *idesc;
 	char *s;
@@ -154,6 +159,7 @@ clri(idesc, s, flg)
 	}
 }
 
+int
 findname(idesc)
 	struct inodesc *idesc;
 {
@@ -165,6 +171,7 @@ findname(idesc)
 	return (STOP);
 }
 
+int
 findino(idesc)
 	struct inodesc *idesc;
 {
@@ -180,13 +187,13 @@ findino(idesc)
 	return (KEEPON);
 }
 
+void
 pinode(ino)
 	ino_t ino;
 {
 	register DINODE *dp;
 	register char *p;
 	struct passwd *pw;
-	char *ctime();
 
 	printf(" I=%u ", ino);
 	if (ino < ROOTINO || ino > imax)
@@ -205,6 +212,7 @@ pinode(ino)
 	printf("MTIME=%12.12s %4.4s ", p+4, p+20);
 }
 
+void
 blkerr(ino, s, blk)
 	ino_t ino;
 	char *s;
@@ -228,7 +236,7 @@ blkerr(ino, s, blk)
 		return;
 
 	default:
-		errexit("BAD STATE %d TO BLKERR", getstate(ino));
+		errexit("BAD STATE %d TO BLKERR\n", getstate(ino));
 		/* NOTREACHED */
 	}
 }
@@ -282,11 +290,11 @@ allocino(request, type)
 /*
  * deallocate an inode
  */
+void
 freeino(ino)
 	ino_t ino;
 {
 	struct inodesc idesc;
-	extern int pass4check();
 	DINODE *dp;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));

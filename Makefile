@@ -78,13 +78,13 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
                   var/log/messages var/log/wtmp .profile share/re.help
-ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/ u
 
-BDEVS           = dev/sd0h!b0:0 dev/sd1h!b0:1
+BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
                   dev/tty!c2:0 \
-                  dev/rsd0h!c3:0 dev/rsd1h!c3:1 dev/swap!c3:0 \
+                  dev/rsd0!c3:0 dev/rsd1!c3:1 dev/swap!c3:0 \
                   dev/klog!c4:0 \
                   dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
@@ -111,6 +111,10 @@ filesys.img:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)
+
+user.img:	$(FSUTIL)
+		rm -f $@
+		$(FSUTIL) -n$(FS_KBYTES) $@
 
 $(FSUTIL):
 		cd tools/fsutil; $(MAKE)

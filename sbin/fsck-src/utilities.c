@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <stdarg.h>
+#include <unistd.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -21,6 +23,7 @@
 
 int	returntosingle;
 
+int
 ftypeok(dp)
 	DINODE *dp;
 {
@@ -41,6 +44,7 @@ ftypeok(dp)
 	}
 }
 
+int
 reply(s)
 	char *s;
 {
@@ -67,11 +71,12 @@ reply(s)
 		return (0);
 }
 
+int
 getlin(fp, loc, maxlen)
 	FILE *fp;
 	char *loc;
 {
-	register n;
+	register int n;
 	register char *p, *lastloc;
 
 	p = loc;
@@ -87,20 +92,38 @@ getlin(fp, loc, maxlen)
 }
 
 BUFAREA *
+search(blk)
+        daddr_t blk;
+{
+	register BUFAREA *pbp = 0, *bp;
+
+	for (bp = (BUFAREA *) &poolhead; bp->b_next; ) {
+		pbp = bp;
+		bp = pbp->b_next;
+		if (bp->b_bno == blk)
+			break;
+	}
+	if (pbp != 0)
+            pbp->b_next = bp->b_next;
+	bp->b_next = poolhead;
+	poolhead = bp;
+	return(bp);
+}
+
+BUFAREA *
 getblk(bp, blk)
 	register BUFAREA *bp;
 	daddr_t blk;
 {
 	register struct filecntl *fcp;
-	extern BUFAREA *search();
 
-	if(bp == NULL) {
+	if (bp == NULL) {
 		bp = search(blk);
 		fcp = &sfile;
-	}
-	else
+	} else
 		fcp = &dfile;
-	if(bp->b_bno == blk)
+
+	if (bp->b_bno == blk)
 		return(bp);
 	flush(fcp,bp);
 	bp->b_errs = bread(fcp,bp->b_un.b_buf,blk,DEV_BSIZE);
@@ -109,6 +132,7 @@ getblk(bp, blk)
 	return(bp);
 }
 
+void
 flush(fcp, bp)
 	struct filecntl *fcp;
 	register BUFAREA *bp;
@@ -126,11 +150,11 @@ flush(fcp, bp)
 		bwrite(fcp, bp->b_un.b_buf, bp->b_bno, DEV_BSIZE);
 }
 
+void
 rwerr(s, blk)
 	char *s;
 	daddr_t blk;
 {
-
 	if (preen == 0)
 		printf("\n");
 	pfatal("CANNOT %s: BLK %ld", s, blk);
@@ -138,6 +162,7 @@ rwerr(s, blk)
 		errexit("Program terminated\n");
 }
 
+void
 ckfini()
 {
 	flush(&dfile, &fileblk);
@@ -158,6 +183,7 @@ ckfini()
 		(void)close(sfile.wfdes);
 }
 
+int
 bread(fcp, buf, blk, size)
 	register struct filecntl *fcp;
 	char *buf;
@@ -189,6 +215,7 @@ bread(fcp, buf, blk, size)
 	return (errs);
 }
 
+void
 bwrite(fcp, buf, blk, size)
 	register struct filecntl *fcp;
 	char *buf;
@@ -237,20 +264,9 @@ allocblk()
 }
 
 /*
- * Free a previously allocated block
- */
-fr_blk(blkno)
-	daddr_t blkno;
-{
-	struct inodesc idesc;
-
-	idesc.id_blkno = blkno;
-	pass4check(&idesc);
-}
-
-/*
  * Find a pathname
  */
+void
 getpathname(namebuf, curdir, ino)
 	char *namebuf;
 	ino_t curdir, ino;
@@ -258,7 +274,6 @@ getpathname(namebuf, curdir, ino)
 	int len, st;
 	register char *cp;
 	struct inodesc idesc;
-	extern int findname();
 
 	st = getstate(ino);
 	if (st != DSTATE && st != DFOUND) {
@@ -337,6 +352,7 @@ voidquit (sig)
 /*
  * determine whether an inode should be fixed.
  */
+int
 dofix(idesc, msg)
 	register struct inodesc *idesc;
 	char *msg;
@@ -371,13 +387,18 @@ dofix(idesc, msg)
 		errexit("UNKNOWN INODESC FIX MODE %d\n", idesc->id_fix);
 	}
 	/* NOTREACHED */
+	return (0);
 }
 
-/* VARARGS1 */
-errexit(s1, s2, s3, s4)
-	char *s1;
+void
+errexit(char *fmt, ...)
 {
-	printf(s1, s2, s3, s4);
+        va_list ap;
+
+        va_start(ap, fmt);
+	vprintf(fmt, ap);
+        va_end(ap);
+
 	exit(8);
 }
 
@@ -385,35 +406,42 @@ errexit(s1, s2, s3, s4)
  * An inconsistency occured which shouldn't during normal operations.
  * Die if preening, otherwise just printf.
  */
-/* VARARGS1 */
-pfatal(s, a1, a2, a3, a4)
-	char *s;
+void
+pfatal(char *fmt, ...)
 {
+        va_list ap;
 
+        va_start(ap, fmt);
 	if (preen) {
 		printf("%s: ", devnam);
-		printf(s, a1, a2, a3, a4);
+		vprintf(fmt, ap);
+                va_end(ap);
 		printf("\n");
 		printf("%s: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.\n",
 			devnam);
 		exit(8);
 	}
-	printf(s, a1, a2, a3, a4);
+	vprintf(fmt, ap);
+        va_end(ap);
 }
 
 /*
  * Pwarn is like printf when not preening,
  * or a warning (preceded by filename) when preening.
  */
-/* VARARGS1 */
-pwarn(s, a1, a2, a3, a4, a5, a6)
-	char *s;
+void
+pwarn(char *fmt, ...)
 {
+        va_list ap;
+
+        va_start(ap, fmt);
 	if (preen)
 		printf("%s: ", devnam);
-	printf(s, a1, a2, a3, a4, a5, a6);
+	vprintf(fmt, ap);
+        va_end(ap);
 }
 
+int
 dostate(ino, s,flg)
 	ino_t ino;
 	int s, flg;
@@ -424,33 +452,32 @@ dostate(ino, s,flg)
 
 	byte = ino / STATEPB;
 	shift = LSTATE * (ino % STATEPB);
-	if(statemap != NULL) {
+	if (statemap != NULL) {
 		bp = NULL;
 		p = &statemap[byte];
-	}
-	else {
+	} else {
 		bp = getblk(NULL,(daddr_t)(smapblk+(byte/DEV_BSIZE)));
 		if (bp->b_errs)
 			errexit("Fatal I/O error\n");
-		else
-			p = &bp->b_un.b_buf[byte%DEV_BSIZE];
+		p = &bp->b_un.b_buf[byte%DEV_BSIZE];
 	}
-	switch(flg) {
-		case 0:
-			*p &= ~(SMASK<<(shift));
-			*p |= s << shift;
-			if(bp != NULL)
-				dirty(bp);
-			return(s);
-		case 1:
-			return((*p >> shift) & SMASK);
+	switch (flg) {
+        case 0:
+                *p &= ~(SMASK<<(shift));
+                *p |= s << shift;
+                if (bp != NULL)
+                        dirty(bp);
+                return(s);
+        case 1:
+                return((*p >> shift) & SMASK);
 	}
 	return(USTATE);
 }
 
-domap(blk,flg)
-daddr_t blk;
-int flg;
+int
+domap(blk, flg)
+        daddr_t blk;
+        int flg;
 {
 	register char *p;
 	register unsigned n;
@@ -459,94 +486,72 @@ int flg;
 
 	byte = blk >> BITSHIFT;
 	n = 1<<((unsigned)(blk & BITMASK));
-	if(flg & 04) {
+	if (flg & 04) {
 		p = freemap;
 		blk = fmapblk;
-	}
-	else {
+	} else {
 		p = blockmap;
 		blk = bmapblk;
 	}
-	if(p != NULL) {
+	if (p != NULL) {
 		bp = NULL;
 		p += (unsigned)byte;
-	}
-	else {
+	} else {
 		bp = getblk((BUFAREA *)NULL,blk+(byte>>DEV_BSHIFT));
 		if (bp->b_errs)
 			errexit("Fatal I/O error\n");
-		else
-			p = &bp->b_un.b_buf[(unsigned)(byte&DEV_BMASK)];
+		p = &bp->b_un.b_buf[(unsigned)(byte&DEV_BMASK)];
 	}
-	switch(flg&03) {
-		case 0:
-			*p |= n;
-			break;
-		case 1:
-			n &= *p;
-			bp = NULL;
-			break;
-		case 2:
-			*p &= ~n;
+	switch (flg&03) {
+        case 0:
+                *p |= n;
+                break;
+        case 1:
+                n &= *p;
+                bp = NULL;
+                break;
+        case 2:
+                *p &= ~n;
 	}
-	if(bp != NULL)
+	if (bp != NULL)
 		dirty(bp);
 	return(n);
 }
 
+int
 dolncnt(ino, flg, val)
-ino_t ino;
-short val, flg;
+        ino_t ino;
+        short val, flg;
 {
 	register short *sp;
 	register BUFAREA *bp;
 
-	if(lncntp != NULL) {
+	if (lncntp != NULL) {
 		bp = NULL;
 		sp = &lncntp[ino];
-	}
-	else {
+	} else {
 		bp = getblk((BUFAREA *)NULL,(daddr_t)(lncntblk+(ino/SPERB)));
 		if (bp->b_errs)
 			errexit("Fatal I/O error\n");
-		else
-			sp = &bp->b_un.b_lnks[ino%SPERB];
+		sp = &bp->b_un.b_lnks[ino%SPERB];
 	}
-	switch(flg) {
-		case 0:
-			*sp = val;
-			break;
-		case 1:
-			bp = NULL;
-			break;
-		case 2:
-			(*sp)--;
-			break;
-		case 3:
-			(*sp)++;
-			break;
-		default:
-			abort();
+	switch (flg) {
+        case 0:
+                *sp = val;
+                break;
+        case 1:
+                bp = NULL;
+                break;
+        case 2:
+                (*sp)--;
+                break;
+        case 3:
+                (*sp)++;
+                break;
+        default:
+                abort();
 	}
-	if(bp != NULL)
+	if (bp != NULL)
 		dirty(bp);
 	return(*sp);
-}
-
-BUFAREA *
-search(blk)
-daddr_t blk;
-{
-	register BUFAREA *pbp, *bp;
-
-	for(bp = (BUFAREA *) &poolhead; bp->b_next; ) {
-		pbp = bp;
-		bp = pbp->b_next;
-		if(bp->b_bno == blk)
-			break;
-	}
-	pbp->b_next = bp->b_next;
-	bp->b_next = poolhead;
-	poolhead = bp;
-	return(bp);
 }

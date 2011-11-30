@@ -40,19 +40,18 @@ void
 setbuffer(fp, buf, size)
 	register FILE *fp;
 	char *buf;
-	int size;
+	size_t size;
 {
-
-	(void)setvbuf(fp, buf, buf ? _IOFBF : _IONBF, size);
+	setvbuf(fp, buf, buf ? _IOFBF : _IONBF, size);
 }
 
 /*
  * set line buffering
  */
-int
+void
 setlinebuf(fp)
 	FILE *fp;
 {
 
-	return (setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0));
+	setvbuf(fp, (char *)NULL, _IOLBF, (size_t)0);
 }

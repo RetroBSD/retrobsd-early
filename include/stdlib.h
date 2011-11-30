@@ -66,6 +66,7 @@ void	free (void *);
 char	*getenv();
 void	*malloc (size_t);
 char	*mktemp (char *);
+int     mkstemp (char *);
 void	qsort();
 int	rand();
 void	*realloc (void*, size_t);

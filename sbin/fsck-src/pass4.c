@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include <stdio.h>
 #include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include "fsck.h"
 
-int	pass4check();
-
+void
 pass4()
 {
 	register ino_t inumber, *zp;
@@ -55,12 +55,13 @@ pass4()
 			break;
 
 		default:
-			errexit("BAD STATE %d FOR INODE I=%u",
+			errexit("BAD STATE %d FOR INODE I=%u\n",
 			    getstate(inumber), inumber);
 		}
 	}
 }
 
+int
 pass4check(idesc)
 	register struct inodesc *idesc;
 {

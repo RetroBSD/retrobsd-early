@@ -2,8 +2,6 @@
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)fsck.h	5.1 (Berkeley) 6/5/85
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -12,8 +10,6 @@
 #define	STEPSIZE	7	/* default step for freelist spacing */
 #define	CYLSIZE		400	/* default cyl size for spacing */
 #define	MAXCYL		500	/* maximum cylinder size */
-
-typedef	int	(*SIG_TYP)();
 
 #ifndef BUFSIZ
 #define BUFSIZ 1024
@@ -140,7 +136,7 @@ daddr_t	*muldup;		/* multiple dups part of table */
 ino_t	zlnlist[MAXLNCNT];	/* zero link count table */
 ino_t	*zlnp;
 
-#define	MAXDATA	((unsigned)56 * 1024)
+#define	MAXDATA	(90 * 1024)
 #define	MEMUNIT	64
 #define	NINOBLK	4		/* number of blocks of inodes to read at once */
 
@@ -214,9 +210,50 @@ struct	dinode	zino;
 #define	SKIP	02
 #define	STOP	01
 
-DINODE	*ginode();
-BUFAREA	*getblk();
-int	findino();
-daddr_t	allocblk();
+DINODE  *ginode (ino_t);
+BUFAREA *getblk (BUFAREA *, daddr_t);
+daddr_t allocblk (void);
+int     findino (struct inodesc *);
 
 void	catch (int), catchquit (int), voidquit (int);
+
+void    errexit (char *, ...);
+int     setup (char *);
+void    pfatal (char *, ...);
+void    pwarn (char *, ...);
+void    flush (struct filecntl *, BUFAREA *);
+int     dostate (ino_t, int, int);
+int     reply (char *);
+int     dofix (struct inodesc *, char *);
+int     ftypeok (DINODE *);
+int     dolncnt (ino_t, short, short);
+void    bwrite (struct filecntl *, char *, daddr_t, int);
+int     bread (struct filecntl *, char *, daddr_t, int);
+int     domap (daddr_t, int);
+void    getpathname (char *, ino_t, ino_t);
+int     getlin (FILE *, char *, int);
+
+void    pass1 (void);
+void    pass1b (void);
+void    pass2 (void);
+void    pass3 (void);
+void    pass4 (void);
+void    pass5 (void);
+void    ckfini (void);
+
+void    direrr (ino_t, char *);
+int     ckinode (DINODE *, struct inodesc *);
+void    pinode (ino_t);
+int     linkup (ino_t, ino_t);
+void    clri (struct inodesc *, char *, int);
+int     allocdir (ino_t, ino_t);
+int     pass1check (struct inodesc *);
+int     pass4check (struct inodesc *);
+void    freeino (ino_t);
+ino_t   allocino (ino_t, int);
+int     dirscan (struct inodesc *);
+void    blkerr (ino_t, char *, daddr_t);
+void    descend (struct inodesc *, ino_t);
+int     pass2check (struct inodesc *);
+void    adjust (struct inodesc *, short);
+int     findname (struct inodesc *);

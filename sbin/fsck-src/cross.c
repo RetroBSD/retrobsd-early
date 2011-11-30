@@ -48,7 +48,7 @@ main(argc, argv)
 
 		case 't':
 			if (**++argv == '-' || --argc <= 0)
-				errexit("Bad -t option");
+				errexit("Bad -t option\n");
 			strcpy(scrfile, *argv);
 			break;
 

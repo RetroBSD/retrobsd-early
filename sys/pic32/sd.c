@@ -312,6 +312,10 @@ card_init (unit)
 {
 	int i, reply;
         unsigned char response[4];
+	register struct	sdreg *reg = (struct sdreg*) &SD_PORT;
+
+        /* Slow speed: 250 kHz */
+        reg->brg = (BUS_KHZ / 250 + 1) / 2 - 1;
 
 	/* Unselect the card. */
 	spi_select (unit, 0);
@@ -387,6 +391,8 @@ card_init (unit)
                         sd_type[unit] = 3;
                 }
         }
+        /* Fast speed. */
+        reg->brg = (BUS_KHZ / SD_MHZ / 1000 + 1) / 2 - 1;
 	return 1;
 }
 
@@ -675,21 +681,20 @@ sdopen (dev, flag, mode)
 #ifdef SD_CS1_PORT
 		TRIS_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
 #endif
-                /* Slow speed: 250 kHz */
                 reg->stat = 0;
-                reg->brg = (BUS_KHZ / 250 + 1) / 2 - 1;
+                reg->brg = (BUS_KHZ / SD_MHZ / 1000 + 1) / 2 - 1;
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
                 printf ("sd%d: port %s, select pin %c%d\n", unit,
                         spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
+        }
+        if (! sd_type[unit]) {
+                /* Detect a card. */
                 if (! card_init (unit)) {
-                        /* Initialization failed. */
                         printf ("sd%d: no SD/MMC card detected\n", unit);
                         return ENODEV;
                 }
-                /* Fast speed. */
-                reg->brg = (BUS_KHZ / SD_MHZ / 1000 + 1) / 2 - 1;
                 if (! card_size (unit, &nsectors)) {
                         printf ("sd%d: cannot get card size\n", unit);
                         return ENODEV;

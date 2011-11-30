@@ -62,6 +62,8 @@ int fs_inode_get (fs_t *fs, fs_inode_t *inode, unsigned inum)
 	if (! fs_read32 (fs, (unsigned*) &inode->ctime))
 		return 0;			/* creation time */
 /*if (inode->mode) { fs_inode_print (inode, stdout); printf ("---\n"); }*/
+        if (verbose > 3)
+                printf ("get inode %u\n", inode->number);
 	return 1;
 }
 
@@ -166,6 +168,8 @@ int fs_inode_save (fs_inode_t *inode, int force)
 		return 0;
 
 	inode->dirty = 0;
+        if (verbose > 3)
+                printf ("save inode %u\n", inode->number);
 	return 1;
 }
 

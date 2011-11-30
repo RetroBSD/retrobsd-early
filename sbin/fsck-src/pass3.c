@@ -3,14 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include <stdio.h>
 #include <strings.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include "fsck.h"
 
-int	pass2check();
-
+void
 pass3()
 {
 	register DINODE *dp;

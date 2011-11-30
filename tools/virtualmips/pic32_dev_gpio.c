@@ -32,7 +32,7 @@
 #define MASKD_PS2D      (1 << 7)
 #elif defined MAX32
 #define MASKD_CS0       (1 << 3)            // D3: sd0 on SPI4
-#define MASKD_CS1       (1 << 4)            // D4: sd0 on SPI4
+#define MASKD_CS1       (1 << 4)            // D4: sd1 on SPI4
 #elif defined EXPLORER16
 #define MASKB_CS0       (1 << 1)            // B1: sd0 on SPI1
 #define MASKB_CS1       (1 << 2)            // B2: sd1 on SPI1

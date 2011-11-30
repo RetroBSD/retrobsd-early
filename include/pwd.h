@@ -35,4 +35,5 @@ struct passwd {
 
 struct passwd *getpwent(), *getpwuid(), *getpwnam();
 void endpwent(), setpwfile();
-int setpassent(), setpwent();
+int setpwent();
+int setpassent (int);

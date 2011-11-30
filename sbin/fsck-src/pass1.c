@@ -10,8 +10,7 @@
 #include <sys/fs.h>
 #include "fsck.h"
 
-int pass1check();
-
+void
 pass1()
 {
 	register int j;
@@ -82,6 +81,8 @@ pass1()
 			}
 		}
 		for (lj = ndb; lj < NDADDR; lj++) {
+                        if (lj == 1 && SPECIAL(dp))
+                                continue;
 			j = lj;
 			if (dp->di_addr[j] != 0) {
 				if (debug)
@@ -127,6 +128,7 @@ unknown:
 	}
 }
 
+int
 pass1check(idesc)
 	register struct inodesc *idesc;
 {

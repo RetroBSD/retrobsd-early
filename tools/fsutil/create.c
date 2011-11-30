@@ -371,7 +371,7 @@ int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
 		return 0;
 
 	/* swap file */
-	if (! create_swap_file (fs))
+	if (fs->swapsz != 0 && ! create_swap_file (fs))
 		return 0;
 
 	/* build a list of free inodes */

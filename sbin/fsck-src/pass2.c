@@ -12,8 +12,7 @@
 #include <sys/dir.h>
 #include "fsck.h"
 
-int	pass2check();
-
+void
 pass2()
 {
 	register DINODE *dp;
@@ -74,10 +73,11 @@ pass2()
 		break;
 
 	default:
-		errexit("BAD STATE %d FOR ROOT INODE", getstate(ROOTINO));
+		errexit("BAD STATE %d FOR ROOT INODE\n", getstate(ROOTINO));
 	}
 }
 
+int
 pass2check(idesc)
 	struct inodesc *idesc;
 {
@@ -245,12 +245,12 @@ again:
 				dirp->d_ino = 0;
 				ret |= ALTERED;
 			} else
-				errexit("BAD RETURN STATE %d FROM DESCEND",
+				errexit("BAD RETURN STATE %d FROM DESCEND\n",
 				    getstate(dirp->d_ino));
 			break;
 
 		default:
-			errexit("BAD STATE %d FOR INODE I=%u",
+			errexit("BAD STATE %d FOR INODE I=%u\n",
 			    getstate(dirp->d_ino), dirp->d_ino);
 		}
 	}

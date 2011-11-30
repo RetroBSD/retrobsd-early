@@ -71,6 +71,7 @@ FILE	*freopen (const char *, const char *, FILE *);
 FILE	*popen (const char *, const char *);
 long	ftell (FILE *);
 int     fflush (FILE *);
+int     fgetc (FILE *);
 int	fputc (int, FILE *);
 int	fputs (const char *, FILE *);
 int	puts (const char *);
@@ -78,6 +79,8 @@ char	*fgets (char *, int, FILE *);
 char	*gets (char *);
 FILE	*_findiop (void);
 int     _flsbuf(unsigned char, FILE *);
+void    setbuffer (FILE *, char *, size_t);
+void    setlinebuf (FILE *);
 
 size_t	fread (void *, size_t, size_t, FILE *);
 size_t	fwrite (const void *, size_t, size_t, FILE *);

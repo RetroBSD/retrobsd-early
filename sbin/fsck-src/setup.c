@@ -10,6 +10,9 @@
 #endif
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/inode.h>
@@ -17,6 +20,7 @@
 #include <sys/stat.h>
 #include "fsck.h"
 
+int
 setup(dev)
 	char *dev;
 {
@@ -26,8 +30,7 @@ setup(dev)
 	struct stat statb;
 	u_int msize;
 	char *mbase;
-	int i, j, n;
-	long size;
+	int n;
 	BUFAREA *bp;
 	char junk[80 + sizeof (".XXXXX") + 1];
 
@@ -82,7 +85,7 @@ setup(dev)
 	fsmin = (daddr_t)sblock.fs_isize;	/* first data blk num */
 	fsmax = sblock.fs_fsize;		/* first invalid blk num */
 	startib = fsmax;
-	if(fsmin >= fsmax ||
+	if (fsmin >= fsmax ||
 		(imax/INOPB) != ((ino_t)sblock.fs_isize-(SUPERB+1))) {
 		pfatal("Size check: fsize %ld isize %d",
 			sblock.fs_fsize,sblock.fs_isize);
@@ -98,7 +101,7 @@ setup(dev)
 	bmapsz = roundup (howmany (fsmax, BITSPB), sizeof (*lncntp));
 	smapsz = roundup (howmany ((long) (imax+1), STATEPB), sizeof (*lncntp));
 	lncntsz = (long) (imax+1) * sizeof (*lncntp);
-	if(bmapsz > smapsz+lncntsz)
+	if (bmapsz > smapsz+lncntsz)
 		smapsz = bmapsz-lncntsz;
 	totsz = bmapsz+smapsz+lncntsz;
 	msize = memsize;
@@ -107,16 +110,16 @@ setup(dev)
 	muldup = enddup = duplist;
 	zlnp = zlnlist;
 
-	if((off_t)msize < totsz) {
+	if ((off_t)msize < totsz) {
 		bmapsz = roundup(bmapsz,DEV_BSIZE);
 		smapsz = roundup(smapsz,DEV_BSIZE);
 		lncntsz = roundup(lncntsz,DEV_BSIZE);
 		nscrblk = (bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
-		if(scrfile[0] == 0) {
+		if (scrfile[0] == 0) {
 			pfatal("\nNEED SCRATCH FILE (%ld BLKS)\n",nscrblk);
 			do {
 				printf("ENTER FILENAME:  ");
-				if((n = getlin(stdin, scrfile,
+				if ((n = getlin(stdin, scrfile,
 						sizeof(scrfile) - 6)) == EOF)
 					errexit("\n");
 			} while(n == 0);
@@ -154,8 +157,7 @@ setup(dev)
 		smapblk = bmapblk + bmapsz / DEV_BSIZE;
 		lncntblk = smapblk + smapsz / DEV_BSIZE;
 		fmapblk = smapblk;
-	}
-	else {
+	} else {
 		poolhead = NULL;
 		blockmap = mbase;
 		statemap = &mbase[bmapsz];

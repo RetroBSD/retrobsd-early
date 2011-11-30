@@ -15,7 +15,7 @@ TAGSFILE	= tags
 MANROFF		= nroff -man -h
 ELF2AOUT	= cp
 
-CFLAGS		= -O -DCROSS -I/usr/include #-I$(TOPSRC)/include
+CFLAGS		= -O -DCROSS -I/usr/include -I$(TOPSRC)/include
 
 LDFLAGS		=
 
