@@ -20,7 +20,7 @@ struct nlist nl[] = {
 #define	X_DK_TIME	1
 	{ "_dk_xfer" },
 #define	X_DK_XFER	2
-	{ "_dk_wds" },
+	{ "_dk_bytes" },
 #define	X_DK_WDS	3
 	{ "_tk_nin" },
 #define	X_TK_NIN	4
@@ -30,7 +30,7 @@ struct nlist nl[] = {
 #define	X_DK_SEEK	6
 	{ "_cp_time" },
 #define	X_CP_TIME	7
-	{ "_dk_wps" },
+	{ "_dk_kbps" },
 #define	X_DK_WPS	8
 	{ "_hz" },
 #define	X_HZ		9
@@ -47,8 +47,8 @@ char	**dr_name;
 char	**dk_name;
 int	*dr_select;
 int	*dk_unit;
-long	*dk_wps;
-float	*dk_mspw;
+long	*dk_kbps;
+float	*dk_mspkb;
 int	dk_ndrive;
 int	ndrives = 0;
 char	*defdrives[] = { "rp0", "rp1", "rp2",  0 };
@@ -57,7 +57,7 @@ struct {
 	int	dk_busy;
 	long	cp_time[CPUSTATES];
 	long	*dk_time;
-	long	*dk_wds;
+	long	*dk_bytes;
 	long	*dk_seek;
 	long	*dk_xfer;
 	long	tk_nin;
@@ -82,7 +82,7 @@ void printhdr(sig)
 	printf(" tin tout");
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_select[i])
-			printf(" bps tps msps ");
+			printf(" kbps tps msps ");
 	printf(" us ni sy id\n");
 	tohdr = 19;
 }
@@ -122,14 +122,14 @@ main(argc, argv)
 	}
 	dr_select = (int *)calloc(dk_ndrive, sizeof (int));
 	dr_name = (char **)calloc(dk_ndrive, sizeof (char *));
-	dk_mspw = (float *)calloc(dk_ndrive, sizeof (float));
+	dk_mspkb = (float *)calloc(dk_ndrive, sizeof (float));
 	dk_name = (char **)calloc(dk_ndrive, sizeof (char *));
 	dk_unit = (int *)calloc(dk_ndrive, sizeof (int));
-	dk_wps = (long *)calloc(dk_ndrive, sizeof (long));
+	dk_kbps = (long *)calloc(dk_ndrive, sizeof (long));
 	s.dk_time = (long *)calloc(dk_ndrive, sizeof (long));
 	s1.dk_time = (long *)calloc(dk_ndrive, sizeof (long));
-	s.dk_wds = (long *)calloc(dk_ndrive, sizeof (long));
-	s1.dk_wds = (long *)calloc(dk_ndrive, sizeof (long));
+	s.dk_bytes = (long *)calloc(dk_ndrive, sizeof (long));
+	s1.dk_bytes = (long *)calloc(dk_ndrive, sizeof (long));
 	s.dk_seek = (long *)calloc(dk_ndrive, sizeof (long));
 	s1.dk_seek = (long *)calloc(dk_ndrive, sizeof (long));
 	s.dk_xfer = (long *)calloc(dk_ndrive, sizeof (long));
@@ -143,11 +143,11 @@ main(argc, argv)
 	lseek(mf, (long)nl[X_HZ].n_value, L_SET);
 	read(mf, &hz, sizeof hz);
 	lseek(mf, (long)nl[X_DK_WPS].n_value, L_SET);
-	read(mf, dk_wps, dk_ndrive * sizeof (long));
+	read(mf, dk_kbps, dk_ndrive * sizeof (long));
 	for (i = 0; i < dk_ndrive; i++) {
-		if (dk_wps[i] == 0)
+		if (dk_kbps[i] == 0)
 			continue;
-		dk_mspw[i] = 1000.0 / dk_wps[i];
+		dk_mspkb[i] = 1000.0 / dk_kbps[i];
 	}
 
 	/*
@@ -168,7 +168,7 @@ main(argc, argv)
 		argc--, argv++;
 	}
 	for (i = 0; i < dk_ndrive && ndrives < 4; i++) {
-		if (dr_select[i] || dk_mspw[i] == 0.0)
+		if (dr_select[i] || dk_mspkb[i] == 0.0)
 			continue;
 		for (cp = defdrives; *cp; cp++)
 			if (strcmp(dr_name[i], *cp) == 0) {
@@ -196,7 +196,7 @@ loop:
  	lseek(mf, (long)nl[X_DK_XFER].n_value, L_SET);
  	read(mf, s.dk_xfer, dk_ndrive*sizeof (long));
  	lseek(mf, (long)nl[X_DK_WDS].n_value, L_SET);
- 	read(mf, s.dk_wds, dk_ndrive*sizeof (long));
+ 	read(mf, s.dk_bytes, dk_ndrive*sizeof (long));
 	lseek(mf, (long)nl[X_DK_SEEK].n_value, L_SET);
 	read(mf, s.dk_seek, dk_ndrive*sizeof (long));
  	lseek(mf, (long)nl[X_TK_NIN].n_value, L_SET);
@@ -209,7 +209,7 @@ loop:
 		if (!dr_select[i])
 			continue;
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
-		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
+		X(dk_xfer); X(dk_seek); X(dk_bytes); X(dk_time);
 	}
 	t = s.tk_nin; s.tk_nin -= s1.tk_nin; s1.tk_nin = t;
 	t = s.tk_nout; s.tk_nout -= s1.tk_nout; s1.tk_nout = t;
@@ -238,26 +238,40 @@ contin:
 
 stats(dn)
 {
-	register i;
-	double atime, words, xtime, itime;
+	double kbytes;
 
-	if (dk_mspw[dn] == 0.0) {
-		printf("%4.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
+	if (dk_mspkb[dn] == 0.0) {
+		printf("%5.0f%4.0f%5.1f ", 0.0, 0.0, 0.0);
 		return;
 	}
-	atime = s.dk_time[dn];
-	atime /= (float) hz; /* time controller busy, seconds */
-	words = (double)s.dk_wds[dn]*32.0;	/* number of words transferred */
-	xtime = (double)dk_mspw[dn]*words/1000.;/* transfer time , seconds */
-	itime = atime - xtime;	/* time busy but not transferring , seconds */
-	if (xtime < 0)
-		itime += xtime, xtime = 0;
-	if (itime < 0)
-		xtime += itime, itime = 0;
-	printf("%4.0f", words/512/etime);
-	printf("%4.0f", (double)s.dk_xfer[dn]/etime);
-	printf("%5.1f ",
-	    s.dk_seek[dn] ? itime*1000./(double)s.dk_seek[dn] : 0.0);
+        /* number of bytes transferred */
+	kbytes = (double) s.dk_bytes[dn] / 1024;
+
+	printf("%5.0f", kbytes / etime);
+	printf("%4.0f", (double) s.dk_xfer[dn] / etime);
+
+	if (s.dk_seek[dn] == 0) {
+                printf("%5.1f ", 0.0);
+        } else {
+                double atime, xtime, itime;
+
+                /* time controller busy, seconds */
+                atime = s.dk_time[dn];
+                atime /= (float) hz;
+
+                /* transfer time, seconds */
+                xtime = (double) dk_mspkb[dn] * kbytes / 1000.0;
+
+                /* time busy but not transferring, seconds */
+                itime = atime - xtime;
+
+                if (xtime < 0)
+                        itime += xtime, xtime = 0;
+                if (itime < 0)
+                        xtime += itime, itime = 0;
+                printf("%5.1f ", s.dk_seek[dn] ?
+                        itime * 1000.0 / (double) s.dk_seek[dn] : 0.0);
+        }
 }
 
 stat1(o)

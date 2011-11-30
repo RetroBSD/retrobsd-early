@@ -33,6 +33,7 @@
 #include "systm.h"
 #include "buf.h"
 #include "errno.h"
+#include "dk.h"
 
 /*
  * Two SD/MMC disks on SPI.
@@ -47,8 +48,10 @@
 #ifndef SD_MHZ
 #define SD_MHZ          13      /* speed 13.33 MHz */
 #endif
+#define SD_KBPS         500     /* estimated kbytes per second */
 
 int sd_type[NSD];               /* Card type */
+int sd_dkn = -1;                /* Statistics slot number */
 
 /*
  * Definitions for MMC/SDC commands.
@@ -688,6 +691,10 @@ sdopen (dev, flag, mode)
 
                 printf ("sd%d: port %s, select pin %c%d\n", unit,
                         spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
+#ifdef UCB_METER
+                /* Allocate statistics slots */
+                dk_alloc (&sd_dkn, NSD, "sd", SD_KBPS);
+#endif
         }
         if (! sd_type[unit]) {
                 /* Detect a card. */
@@ -748,10 +755,17 @@ sdstrategy (bp)
 	if (unit >= NSD) {
 		bp->b_error = ENXIO;
 		bp->b_flags |= B_ERROR;
-		biodone (bp);
-                splx (s);
-		return;
+		goto done;
 	}
+#ifdef UCB_METER
+#endif
+#ifdef UCB_METER
+	if (sd_dkn >= 0) {
+                dk_busy |= 1 << (sd_dkn + unit);
+		dk_xfer[sd_dkn + unit]++;
+		dk_bytes[sd_dkn + unit] += bp->b_bcount;
+	}
+#endif
 	for (retry=0; ; retry++) {
 	        if (retry >= 3) {
                         bp->b_flags |= B_ERROR;
@@ -788,10 +802,15 @@ sdstrategy (bp)
 	printf ("    %02x", (unsigned char) bp->b_addr[0]);
         int i;
 	for (i=1; i<SECTSIZE && i<bp->b_bcount; i++)
-            printf ("-%02x", (unsigned char) bp->b_addr[i]);
+                printf ("-%02x", (unsigned char) bp->b_addr[i]);
 	printf ("\n");
 #endif
+done:
 	biodone (bp);
         led_control (led, 0);
         splx (s);
+#ifdef UCB_METER
+	if (sd_dkn >= 0)
+                dk_busy &= ~(1 << (sd_dkn + unit));
+#endif
 }

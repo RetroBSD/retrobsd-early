@@ -142,8 +142,8 @@ static const struct {
         { "_dk_seek",       (int) &dk_seek      },  /* iostat */
         { "_dk_time",       (int) &dk_time      },  /* iostat */
         { "_dk_unit",       (int) &dk_unit      },  /* iostat  vmstat */
-        { "_dk_wds",        (int) &dk_wds       },  /* iostat */
-        { "_dk_wps",        (int) &dk_wps       },  /* iostat */
+        { "_dk_bytes",      (int) &dk_bytes     },  /* iostat */
+        { "_dk_kbps",       (int) &dk_kbps      },  /* iostat */
         { "_dk_xfer",       (int) &dk_xfer      },  /* iostat  vmstat */
         { "_file",          (int) &file         },  /* pstat */
         { "_forkstat",      (int) &forkstat     },  /* vmstat */

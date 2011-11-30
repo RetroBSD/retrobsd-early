@@ -94,25 +94,21 @@ void printhdr(sig)
 	register int i, j;
 
 	if (flag29)
-	    printf(" procs       memory      swap      ");
+	    printf("-procs- -----memory----- -swap- ");
 	else
-	    printf(" procs     memory   ");
+	    printf("-procs- ---memory-- ");
 
-	i = (ndrives * 3 - 6) / 2;
+	i = (ndrives * 3 - 6);
 	if (i < 0)
 		i = 0;
 	for (j = 0; j < i; j++)
 		putchar(' ');
-	printf("faults");
-	i = ndrives * 3 - 6 - i;
-	for (j = 0; j < i; j++)
-		putchar(' ');
 
 	if (flag29) {
-		printf("              cpu\n");
+		printf("-----faults---- ----cpu----\n");
 		printf(" r b w    avm  tx   fre   i  o   ");
 	} else {
-		printf("               cpu\n");
+		printf("---faults-- ----cpu----\n");
 		printf(" r b w    avm   fre ");
 	}
 
