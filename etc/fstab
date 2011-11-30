@@ -1,2 +1,2 @@
 /dev/sd0	/	ufs	rw,async	1	1
-/dev/sd1	/u	ufs	rw,async	1	2
+#/dev/sd1	/u	ufs	rw,async	1	2

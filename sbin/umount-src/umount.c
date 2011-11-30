@@ -41,7 +41,7 @@
 
 typedef enum { MNTON, MNTFROM } mntwhat;
 
-int	fake, fflag, vflag, *typelist;
+int	fake, fflag, vflag, allflag, *typelist;
 char	*nfshost;
 
 int	 fsnametotype();
@@ -58,16 +58,15 @@ main(argc, argv)
 	int argc;
 	register char *argv[];
 {
-	int all, ch, errs;
+	int ch, errs;
 
 	/* Start disks transferring immediately. */
 	sync();
 
-	all = 0;
 	while ((ch = getopt(argc, argv, "aFft:v")) != EOF)
 		switch (ch) {
 		case 'a':
-			all = 1;
+			allflag = 1;
 			break;
 		case 'F':
 			fake = 1;
@@ -90,10 +89,10 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 0 && !all || argc != 0 && all)
+	if (argc == 0 && !allflag || argc != 0 && allflag)
 		usage();
 
-	if (all) {
+	if (allflag) {
 		if (setfsent() == 0)
 			err(1, "%s", _PATH_FSTAB);
 		errs = umountall();
@@ -168,7 +167,8 @@ umountfs(name)
 	} else if ((sb.st_mode & S_IFMT) == S_IFDIR) {
 		mntpt = name;
 		if ((name = getmntname(mntpt, MNTFROM, &type)) == NULL) {
-			warnx("%s: not currently mounted", mntpt);
+		        if (! allflag || vflag)
+                                warnx("%s: not currently mounted", mntpt);
 			return (1);
 		}
 	} else {

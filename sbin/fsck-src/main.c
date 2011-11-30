@@ -83,16 +83,15 @@ retry:
 			printf("Can't stat %s\n", raw);
 			return (0);
 		}
-		if (stchar.st_mode & S_IFCHR) {
-			if (stslash.st_dev == stblock.st_rdev) {
-				hotroot++;
-				raw = unrawname(name);
-			}
-			return (raw);
-		} else {
+		if (! (stchar.st_mode & S_IFCHR)) {
 			printf("%s is not a character device\n", raw);
 			return (0);
 		}
+                if (stslash.st_dev == stblock.st_rdev) {
+                        hotroot++;
+                        raw = unrawname(name);
+                }
+                return (raw);
 	} else if (stblock.st_mode & S_IFCHR) {
 		if (looped) {
 			printf("Can't make sense out of name %s\n", name);

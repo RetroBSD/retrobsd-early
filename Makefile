@@ -78,7 +78,7 @@ BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
                   var/log/messages var/log/wtmp .profile share/re.help
-ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/ u
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/ u/
 
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1
 CDEVS           = dev/console!c0:0 \
@@ -102,7 +102,7 @@ all:
 		$(MAKE) -C $(LIBDIR) DEFS="$(DEFS)"
 		$(MAKE) -C $(TARGET)
 		for dir in $(SRCDIR); do $(MAKE) -C $$dir $(SRC_MFLAGS); done
-		$(MAKE) filesys.img
+		$(MAKE) filesys.img user.img
 
 filesys.img:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
 		rm -f $@
