@@ -51,10 +51,7 @@ LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map
 SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
-MPIDE           = /Applications/Mpide.app/Contents/Resources/Java/
-AVRDUDE         = $(MPIDE)/hardware/tools/avr/bin/avrdude \
-                  -C $(MPIDE)/hardware/tools/avr/etc/avrdude.conf \
-                  -c stk500v2 -p pic32 -P /dev/tty.usbserial-A5004FzF -b 115200
+PROGTOOL        = $(AVRDUDE) -c stk500v2 -p pic32 -b 115200
 
 # Machine-dependent files:
 # startup.o MUST be loaded first.
@@ -108,7 +105,7 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 		chmod -x $@ unix.bin
 
 load:           unix.elf
-		$(AVRDUDE) -v -U flash:w:unix.hex:i
+		$(PROGTOOL) -v -U flash:w:unix.hex:i
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c

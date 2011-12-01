@@ -36,7 +36,7 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 # /CS0 at pin A9 (and optional /CS1 at pin A10)
 DEFS            += -DSD_PORT=SPI1CON
 DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
-#DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
+DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
 
 # LEDs at pins E0, E1, E2, E3
 DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0    -DLED_AUX_INVERT

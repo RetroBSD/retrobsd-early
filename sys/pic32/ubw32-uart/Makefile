@@ -32,9 +32,9 @@ DEFS            += -DCONSOLE_UART1
 
 # SD/MMC card driver on SPI1
 # /CS0 at pin A9 (and optional /CS1 at pin A10)
-DEFS            += -DSD_PORT=SPI1CON
+DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=8
 DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
-#DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
+DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
 
 # LEDs at pins E0, E1, E2, E3
 DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0    -DLED_AUX_INVERT
