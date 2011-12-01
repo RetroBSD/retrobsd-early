@@ -329,7 +329,7 @@ int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
 	 * and inode block size */
         bytes = (off_t) kbytes * 1024ULL;
 	fs->fsize = bytes / BSDFS_BSIZE;
-	fs->isize = 1 + (fs->fsize / 4 + BSDFS_INODES_PER_BLOCK - 1) /
+	fs->isize = 1 + (fs->fsize / 8 + BSDFS_INODES_PER_BLOCK - 1) /
 		BSDFS_INODES_PER_BLOCK;
 	if (fs->isize < 2)
 		return 0;

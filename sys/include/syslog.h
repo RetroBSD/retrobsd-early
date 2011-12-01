@@ -146,6 +146,7 @@ CODE facilitynames[] = {
 #else
 void syslog (int pri, const char *fmt, ...);
 void openlog (const char *ident, int logstat, int logfac);
+void closelog (void);
 #endif
 
 /*

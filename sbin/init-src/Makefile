@@ -1,6 +1,8 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
+CFLAGS          += -Wall -Werror
+
 SRCS		= init.c
 OBJS		= init.o
 MAN		= init.0

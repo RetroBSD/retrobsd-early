@@ -2,8 +2,6 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)ttyent.h	5.1 (Berkeley) 5/30/85
  */
 
 struct	ttyent { /* see getttyent(3) */
@@ -18,5 +16,7 @@ struct	ttyent { /* see getttyent(3) */
 #define TTY_ON		0x1	/* enable logins (startup getty) */
 #define TTY_SECURE	0x2	/* allow root to login */
 
-extern struct ttyent *getttyent();
-extern struct ttyent *getttynam();
+struct ttyent *getttyent (void);
+struct ttyent *getttynam (const char *name);
+int setttyent (void);
+int endttyent (void);

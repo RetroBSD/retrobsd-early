@@ -139,6 +139,8 @@ vsyslog(pri, fmt, ap)
 	/* Get connected, output the message to the local logger. */
 	if (!connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
+        (void)strcat(tbuf, "\r\n");
+        cnt += 2;
 	if (write(LogFile, tbuf, cnt) == cnt)
 		return;
 
@@ -159,8 +161,6 @@ vsyslog(pri, fmt, ap)
 			return;
 		if (pid == 0) {
 	   		fd = open(_PATH_CONSOLE, O_WRONLY, 0);
-			(void)strcat(tbuf, "\r\n");
-			cnt += 2;
 			p = index(tbuf, '>') + 1;
 			(void)write(fd, p, cnt - (p - tbuf));
 			(void)close(fd);

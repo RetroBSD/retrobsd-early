@@ -17,7 +17,6 @@
 #include "reboot.h"
 #include "msgbuf.h"
 #include "namei.h"
-#include "disklabel.h"
 #include "mount.h"
 #include "systm.h"
 

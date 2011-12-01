@@ -33,6 +33,7 @@
 #include <sys/param.h>
 #include <signal.h>
 
+int
 sigvec(signo, sv, osv)
 	int signo;
 	register struct sigvec *sv, *osv;
@@ -47,9 +48,9 @@ sigvec(signo, sv, osv)
 	return(ret);
 }
 
-long
+int
 sigsetmask(mask)
-	long mask;
+	int mask;
 {
 	long omask;
 	int n;
@@ -60,9 +61,9 @@ sigsetmask(mask)
 	return(omask);
 }
 
-long
+int
 sigblock(mask)
-	long mask;
+	int mask;
 {
 	long omask;
 	int n;
@@ -73,8 +74,9 @@ sigblock(mask)
 	return(omask);
 }
 
+int
 sigpause(mask)
-	long mask;
+	int mask;
 {
 	return(sigsuspend((sigset_t *)&mask));
 }

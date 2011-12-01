@@ -65,8 +65,6 @@ typedef struct {
 	long		utime;		/* current date of last update */
 	unsigned	tfree;		/* total free blocks */
 	unsigned	tinode;		/* total free inodes */
-	int		step;		/* optimal step in free list pattern */
-	int		cyl;		/* number of blocks per pattern */
 	char		fsmnt [MAXMNTLEN]; /* ordinary file mounted on */
 	unsigned	lasti;		/* start place for circular search */
 	unsigned	nbehind;	/* est # free inodes before s_lasti */

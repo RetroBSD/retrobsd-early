@@ -54,8 +54,6 @@ struct	fs
 	time_t	fs_time;		/* last super block update */
 	daddr_t	fs_tfree;		/* total free blocks */
 	ino_t	fs_tinode;		/* total free inodes */
-	int	fs_step;		/* optimal step in free list pattern */
-	int	fs_cyl;			/* number of blocks per pattern */
 	char	fs_fsmnt [MAXMNTLEN];	/* ordinary file mounted on */
 	ino_t	fs_lasti;		/* start place for circular search */
 	ino_t	fs_nbehind;		/* est # free inodes before s_lasti */

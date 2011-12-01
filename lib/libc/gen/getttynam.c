@@ -7,7 +7,7 @@
 
 struct ttyent *
 getttynam(tty)
-	char *tty;
+	const char *tty;
 {
 	register struct ttyent *t;
 

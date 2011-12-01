@@ -55,7 +55,7 @@ FSUTIL		= tools/fsutil/fsutil
 # Filesystem contents.
 #
 SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/halt sbin/init \
-                  sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount sbin/newfs \
+                  sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount \
                   sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
                   sbin/update sbin/vipw
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \

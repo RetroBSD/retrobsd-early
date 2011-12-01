@@ -178,10 +178,6 @@ int fs_open (fs_t *fs, const char *filename, int writable)
 		return 0;
 	if (! fs_read32 (fs, &fs->tinode))	/* total free inodes */
 		return 0;
-	if (! fs_read32 (fs, (unsigned*) &fs->step))
-		return 0;			/* optimal step in free list pattern */
-	if (! fs_read32 (fs, (unsigned*) &fs->cyl))
-		return 0;			/* number of blocks per pattern */
 	if (! fs_read (fs, (unsigned char*) fs->fsmnt, MAXMNTLEN))
 		return 0;			/* ordinary file mounted on */
 	if (! fs_read32 (fs, &fs->lasti))	/* start place for circular search */
@@ -237,10 +233,6 @@ int fs_sync (fs_t *fs, int force)
 		return 0;
 	if (! fs_write32 (fs, fs->tinode))	/* total free inodes */
 		return 0;
-	if (! fs_write32 (fs, fs->step))
-		return 0;			/* optimal step in free list pattern */
-	if (! fs_write32 (fs, fs->cyl))
-		return 0;			/* number of blocks per pattern */
 	if (! fs_write (fs, (unsigned char*) fs->fsmnt, MAXMNTLEN))
 		return 0;			/* ordinary file mounted on */
 	if (! fs_write32 (fs, 0))		/* lasti*/
@@ -289,8 +281,6 @@ void fs_print (fs_t *fs, FILE *out)
 //		fprintf (out, "     Inode list lock: %u\n", fs->ilock);
 //		fprintf (out, "Super block modified: %u\n", fs->fmod);
 //		fprintf (out, "   Mounted read-only: %u\n", fs->ronly);
-		fprintf (out, "   Step in free list: %u\n", fs->step);
-		fprintf (out, "  Blocks per pattern: %u\n", fs->cyl);
 //		fprintf (out, "   Circ.search start: %u\n", fs->lasti);
 //		fprintf (out, "  Circ.search behind: %u\n", fs->nbehind);
 //		fprintf (out, "         Mount flags: 0x%x\n", fs->flags);

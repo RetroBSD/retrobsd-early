@@ -93,11 +93,8 @@ freechk()
 void
 makefree()
 {
-        register int i, cyl, step;
-	int j;
-	char flg[MAXCYL];
-	short addr[MAXCYL];
-	daddr_t blk, baseblk;
+        register int i;
+	daddr_t blk;
 
 	sblock.fs_nfree = 0;
 	sblock.fs_flock = 0;
@@ -106,47 +103,21 @@ makefree()
 	sblock.fs_ninode = 0;
 	sblock.fs_ilock = 0;
 	sblock.fs_ronly = 0;
-	if (cylsize == 0 || stepsize == 0) {
-		step = sblock.fs_step;
-		cyl = sblock.fs_cyl;
-	} else {
-		step = stepsize;
-		cyl = cylsize;
-	}
-	if (step > cyl || step <= 0 || cyl <= 0 || cyl > MAXCYL) {
-		printf("Default free list spacing assumed\n");
-		step = STEPSIZE;
-		cyl = CYLSIZE;
-	}
-	sblock.fs_step = step;
-	sblock.fs_cyl = cyl;
-	bzero(flg,sizeof(flg));
-	i = 0;
-	for (j = 0; j < cyl; j++) {
-		while (flg[i])
-			i = (i + 1) % cyl;
-		addr[j] = i + 1;
-		flg[i]++;
-		i = (i + step) % cyl;
-	}
-	baseblk = (daddr_t) roundup (fsmax, cyl);
-	bzero((char *)&freeblk,DEV_BSIZE);
+	bzero((char *)&freeblk, DEV_BSIZE);
 	freeblk.df_nfree++;
-	for ( ; baseblk > 0; baseblk -= cyl)
-		for (i = 0; i < cyl; i++) {
-			blk = baseblk - addr[i];
-			if (!outrange(blk) && !getbmap(blk)) {
-				sblock.fs_tfree++;
-				if (freeblk.df_nfree >= NICFREE) {
-					fbdirty();
-					fileblk.b_bno = blk;
-					flush(&dfile,&fileblk);
-					bzero((char *)&freeblk,DEV_BSIZE);
-				}
-				freeblk.df_free[freeblk.df_nfree] = blk;
-				freeblk.df_nfree++;
-			}
-		}
+	for (blk = fsmax-1; ! outrange(blk); blk--) {
+                if (! getbmap(blk)) {
+                        sblock.fs_tfree++;
+                        if (freeblk.df_nfree >= NICFREE) {
+                                fbdirty();
+                                fileblk.b_bno = blk;
+                                flush(&dfile, &fileblk);
+                                bzero((char *)&freeblk, DEV_BSIZE);
+                        }
+                        freeblk.df_free[freeblk.df_nfree] = blk;
+                        freeblk.df_nfree++;
+                }
+        }
 	sblock.fs_nfree = freeblk.df_nfree;
 	for (i = 0; i < NICFREE; i++)
 		sblock.fs_free[i] = freeblk.df_free[i];

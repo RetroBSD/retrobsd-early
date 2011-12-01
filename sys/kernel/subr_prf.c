@@ -524,7 +524,7 @@ void
 panic(s)
 	char *s;
 {
-	int bootopt = RB_AUTOBOOT | RB_DUMP;
+	int bootopt = RB_HALT | RB_DUMP;
 
 	if (panicstr) {
 		bootopt |= RB_NOSYNC;

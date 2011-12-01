@@ -249,7 +249,7 @@ void onsusp (sig)
     signal (SIGTSTP, onsusp);
     set_tty ();
     if (inwait)
-	    longjmp (restore);
+	    longjmp (restore, 1);
 }
 
 main(argc, argv)

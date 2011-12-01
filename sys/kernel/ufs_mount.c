@@ -14,7 +14,6 @@
 #include "namei.h"
 #include "conf.h"
 #include "stat.h"
-#include "disklabel.h"
 #include "ioctl.h"
 #include "proc.h"
 
@@ -188,33 +187,12 @@ mountfs (dev, flags, ip)
 	register int error;
 	int ronly = flags & MNT_RDONLY;
 	int needclose = 0;
-	int chrdev, (*ioctl)();
-	struct	partinfo dpart;
 
 	error = (*bdevsw[major(dev)].d_open) (dev,
 		ronly ? FREAD : (FREAD | FWRITE), S_IFBLK);
 	if (error)
 		goto out;
-	/*
-	 * Now make a check that the partition is really a filesystem if the
-	 * underlying driver supports disklabels (there is an ioctl entry point
-	 * and calling it does not return an error).
-	 *
-	 * XXX - Check for NODEV because BLK only devices (i.e. the 'ram' driver) do not
-	 * XXX - have a CHR counterpart.  Such drivers can not support labels due to
-	 * XXX - the lack of an ioctl entry point.
-	 */
-	chrdev = blktochr (dev);
-	if (chrdev == NODEV)
-		ioctl = NULL;
-	else
-		ioctl = cdevsw[chrdev].d_ioctl;
-	if (ioctl && ! (*ioctl) (dev, DIOCGPART, &dpart, FREAD)) {
-		if (dpart.part->p_fstype != FS_V71K) {
-			error = EINVAL;
-			goto out;
-		}
-	}
+
 	needclose = 1;
 	tp = bread (dev, SUPERB);
 	if (tp->b_flags & B_ERROR)

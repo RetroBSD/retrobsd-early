@@ -23,8 +23,7 @@ struct	proc {
 	short	p_pid;		/* unique process id */
 	short	p_ppid;		/* process id of parent */
 	long	p_sig;		/* signals pending to this process */
-	char	p_stat;
-	char	p_dummy;	/* room for one more, here */
+	int	p_stat;
 
 	/*
 	 * Union to overwrite information no longer needed by ZOMBIED
@@ -56,7 +55,7 @@ struct	proc {
 		struct	k_itimerval P_realtimer;
 	    } p_alive;
 	    struct {
-		short	P_xstat;	/* exit status for wait */
+		int	P_xstat;	/* exit status for wait */
 		struct k_rusage P_ru;	/* exit information */
 	    } p_dead;
 	} p_un;

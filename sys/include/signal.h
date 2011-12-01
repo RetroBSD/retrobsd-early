@@ -47,11 +47,6 @@ typedef	void (*sig_t) (int);	/* type of signal function */
 #define	SIG_DFL		(sig_t) 0
 #define	SIG_IGN		(sig_t) 1
 
-#ifndef KERNEL
-sig_t   signal (int, sig_t);
-int     kill (pid_t pid, int sig);
-#endif
-
 typedef unsigned long sigset_t;
 
 /*
@@ -175,7 +170,12 @@ void sendsig (sig_t p, int sig, long mask);
 
 #else /* KERNEL */
 
-extern long sigblock(), sigsetmask();
+sig_t   signal (int, sig_t);
+int     sigvec (int sig, struct sigvec *vec, struct sigvec *ovec);
+int     kill (pid_t pid, int sig);
+int     sigpause (int mask);
+int     sigblock (int mask);
+int     sigsetmask (int mask);
 
 #define	BADSIG	SIG_ERR
 

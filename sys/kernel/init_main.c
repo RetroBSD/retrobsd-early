@@ -20,7 +20,6 @@
 #include "systm.h"
 #include "kernel.h"
 #include "namei.h"
-#include "disklabel.h"
 #include "stat.h"
 
 u_int	swapstart, nswap;	/* start and size of swap space */
