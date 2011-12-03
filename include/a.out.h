@@ -60,4 +60,22 @@
 #define	_AOUT_INCLUDE_
 #include <nlist.h>
 
+/* Relocations */
+#define RSMASK  070             /* bitmask for segments */
+#define RABS    0
+#define RTEXT   020
+#define RDATA   030
+#define RBSS    040
+#define RSTRNG  060             /* for assembler */
+#define REXT    070             /* externals and bitmask */
+
+#define RFMASK  07              /* bitmask for format */
+#define RSHIFT  04
+#define RTRUNC  05
+#define RLONG   06
+#define RSHORT  07
+
+#define RINDEX(h) ((h)>>6)
+#define RSETINDEX(h) ((h)<<6)
+
 #endif	/* !_AOUT_H_ */

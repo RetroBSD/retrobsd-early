@@ -1,7 +1,8 @@
 #include <stdio.h>
 
+void
 rewind(iop)
-register FILE *iop;
+        register FILE *iop;
 {
 	fflush(iop);
 	lseek(fileno(iop), 0L, 0);

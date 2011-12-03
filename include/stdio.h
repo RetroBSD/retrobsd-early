@@ -78,9 +78,12 @@ int	puts (const char *);
 char	*fgets (char *, int, FILE *);
 char	*gets (char *);
 FILE	*_findiop (void);
-int     _flsbuf(unsigned char, FILE *);
+int     _filbuf (FILE *);
+int     _flsbuf (unsigned char, FILE *);
 void    setbuffer (FILE *, char *, size_t);
 void    setlinebuf (FILE *);
+int     fseek (FILE *, long, int);
+void    rewind (FILE *stream);
 
 size_t	fread (void *, size_t, size_t, FILE *);
 size_t	fwrite (const void *, size_t, size_t, FILE *);
