@@ -2,95 +2,94 @@
  * Assembler for MIPS.
  */
 #include </usr/include/stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
 #include <a.out.h>
 
-#define W 8                    /* длина слова в байтах */
+#define USER_CODE_START 0x7f008000
+#define WORDSZ          4               /* длина слова в байтах */
 
 /* типы лексем */
 
-#define LEOF   1
-#define LEOL   2
-#define LNAME  3
-#define LCMD   4
-#define LACMD  5
-#define LNUM   6
-#define LLCMD  7
-#define LSCMD  8
-#define LLSHIFT 9
-#define LRSHIFT 10
-#define LINCR  11
-#define LDECR  12
+#define LEOF            1
+#define LEOL            2
+#define LNAME           3
+#define LCMD            4
+#define LACMD           5
+#define LNUM            6
+#define LLCMD           7
+#define LSCMD           8
+#define LLSHIFT         9
+#define LRSHIFT         10
+#define LINCR           11
+#define LDECR           12
 
 /* номера сегментов */
 
-#define SCONST 0
-#define STEXT  1
-#define SDATA  2
-#define SSTRNG 3
-#define SBSS   4
-#define SEXT   6
-#define SABS   7               /* вырожденный случай для getexpr */
+#define SCONST          0
+#define STEXT           1
+#define SDATA           2
+#define SSTRNG          3
+#define SBSS            4
+#define SEXT            6
+#define SABS            7               /* вырожденный случай для getexpr */
 
 /* директивы ассемблера */
 
-#define ASCII  0
-#define BSS    1
-#define COMM   2
-#define DATA   3
-#define GLOBL  4
-#define HALF   5
-#define STRNG  6
-#define TEXT   7
-#define EQU    8
-#define WORD   9
+#define ASCII           0
+#define BSS             1
+#define COMM            2
+#define DATA            3
+#define GLOBL           4
+#define SHORT            5
+#define STRNG           6
+#define TEXT            7
+#define EQU             8
+#define WORD            9
 
 /* типы команд */
 
-#define TLONG  01                      /* длинноадресная команда */
-#define TALIGN 02                      /* после команды делать выравнивание */
-#define TLIT   04                      /* команда имеет литеральный аналог */
-#define TINT   010                     /* команда имеет целочисленный режим */
-#define TCOMP  020                     /* из команды можно сделать компонентную */
+#define TLONG           01              /* длинноадресная команда */
+#define TALIGN          02              /* после команды делать выравнивание */
+#define TLIT            04              /* команда имеет литеральный аналог */
+#define TINT            010             /* команда имеет целочисленный режим */
+#define TCOMP           020             /* из команды можно сделать компонентную */
 
 /* длины таблиц */
 /* хэш-длины должны быть степенями двойки! */
 
-#define HASHSZ 2048                    /* длина хэша таблицы имен */
-#define HCONSZ 256                     /* длина хэша сегмента констант */
-#define HCMDSZ 1024                    /* длина хэша команд ассемблера */
+#define HASHSZ          2048            /* длина хэша таблицы имен */
+#define HCMDSZ          1024            /* длина хэша команд ассемблера */
 
-#define STSIZE (HASHSZ*9/10)           /* длина таблицы имен */
-#define SPACESZ (STSIZE*8)             /* длина массива под имена */
+#define STSIZE          (HASHSZ*9/10)   /* длина таблицы имен */
+#define SPACESZ         (STSIZE*8)      /* длина массива под имена */
 
-#define SEGMTYPE(s)    segmtype[s]     /* номер сегмента в тип символа */
-#define TYPESEGM(s)    typesegm[s]     /* тип символа в номер сегмента */
-#define TYPEREL(s)     typerel((int) s) /* тип символа в тип настройки */
-#define SEGMREL(s)     segmrel[s]      /* номер сегмента в тип настройки */
-
-#define EMPCOM         0x3a00000L      /* пустая команда - заполнитель */
-#define UTCCOM         0x3a00000L      /* команда <> */
-#define WTCCOM         0x3b00000L      /* команда [] */
+#define EMPCOM          0x3a00000L      /* пустая команда - заполнитель */
+#define UTCCOM          0x3a00000L      /* команда <> */
+#define WTCCOM          0x3b00000L      /* команда [] */
 
 /* превращение команды в компонентную */
 
-#define MAKECOMP(c)    ((c) & 0x2000000L ? (c)|0x4800000L : (c)|0x6000000L)
+#define MAKECOMP(c)     ((c) & 0x2000000L ? (c)|0x4800000L : (c)|0x6000000L)
 
 /* оптимальное значение хэш-множителя для 32-битного слова == 011706736335L */
 /* то же самое для 16-битного слова = 067433 */
 
-#define SUPERHASH(key,mask) (((short)(key) * (short)067433) & (short)(mask))
+#define SUPERHASH(key,mask) (((key) * 067433) & (mask))
 
-#define ISHEX(c)       (ctype[(c)&0377] & 1)
-#define ISOCTAL(c)     (ctype[(c)&0377] & 2)
-#define ISDIGIT(c)     (ctype[(c)&0377] & 4)
-#define ISLETTER(c)    (ctype[(c)&0377] & 8)
+#define ISHEX(c)        (ctype[(c)&0377] & 1)
+#define ISOCTAL(c)      (ctype[(c)&0377] & 2)
+#define ISDIGIT(c)      (ctype[(c)&0377] & 4)
+#define ISLETTER(c)     (ctype[(c)&0377] & 8)
 
 /* на втором проходе hashtab не нужна, используем ее под именем
  * newindex для переиндексации настройки в случае флагов x или X */
 
 #define newindex hashtab
 
-short ctype [256] = {
+const char ctype [256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
     0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
@@ -101,694 +100,271 @@ short ctype [256] = {
     8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,
 };
 
-short segmtype [] = {   /* преобразование номера сегмента в тип символа */
-    N_TEXT,         /* STEXT */
-    N_DATA,         /* SDATA */
-    N_STRNG,        /* SSTRNG */
-    N_BSS,          /* SBSS */
-    N_UNDF,         /* SEXT */
-    N_ABS,          /* SABS */
-};
-
-short segmrel [] = {    /* преобразование номера сегмента в тип настройки */
-    RTEXT,          /* STEXT */
-    RDATA,          /* SDATA */
-    RSTRNG,         /* SSTRNG */
-    RBSS,           /* SBSS */
-    REXT,           /* SEXT */
-    RABS,           /* SABS */
-};
-
-short typesegm [] = {   /* преобразование типа символа в номер сегмента */
-    SEXT,           /* N_UNDF */
-    SABS,           /* N_ABS */
-    STEXT,          /* N_TEXT */
-    SDATA,          /* N_DATA */
-    SBSS,           /* N_BSS */
-    SSTRNG,         /* N_STRNG */
+/*
+ * преобразование номера сегмента в тип символа
+ */
+const int segmtype [] = {
+    N_TEXT,             /* STEXT */
+    N_DATA,             /* SDATA */
+    N_STRNG,            /* SSTRNG */
+    N_BSS,              /* SBSS */
+    N_UNDF,             /* SEXT */
+    N_ABS,              /* SABS */
 };
 
 /*
- * Следующие команды имеют разный смысл
- * в ассемблерах Рачинского и Балакирева:
- *
- *      вд, вр, врм, вч, пф, счк, ур
- *
- * Они вынесены в отдельную таблицу
+ * преобразование номера сегмента в тип настройки
  */
+const int segmrel [] = {
+    RTEXT,              /* STEXT */
+    RDATA,              /* SDATA */
+    RSTRNG,             /* SSTRNG */
+    RBSS,               /* SBSS */
+    REXT,               /* SEXT */
+    RABS,               /* SABS */
+};
+
+/*
+ * преобразование типа символа в номер сегмента
+ */
+const int typesegm [] = {
+    SEXT,               /* N_UNDF */
+    SABS,               /* N_ABS */
+    STEXT,              /* N_TEXT */
+    SDATA,              /* N_DATA */
+    SBSS,               /* N_BSS */
+    SSTRNG,             /* N_STRNG */
+};
 
 struct table {
-    long val;
-    char *name;
-    short type;
-} table [] = {
-    0x0000000L,     "зп",           TLONG|TCOMP,
-    0x0000000L,     "зч",           TLONG|TCOMP,
-    0x0000000L,     "atx",          TLONG|TCOMP,
-    0x0100000L,     "зм",           TLONG|TCOMP,
-    0x0100000L,     "зпм",          TLONG|TCOMP,
-    0x0100000L,     "stx",          TLONG|TCOMP,
-    0x0200000L,     "сн",           TLONG|TLIT|TCOMP,
-    0x0200000L,     "счн",          TLONG|TLIT|TCOMP,
-    0x0200000L,     "xtna",         TLONG|TLIT|TCOMP,
-    0x0200000L,     "xtra",         TLONG|TLIT|TCOMP,
-    0x0300000L,     "см",           TLONG|TLIT|TCOMP,
-    0x0300000L,     "счм",          TLONG|TLIT|TCOMP,
-    0x0300000L,     "xts",          TLONG|TLIT|TCOMP,
-    0x0400000L,     "ас",           TLONG|TLIT|TINT|TCOMP,
-    0x0400000L,     "сл",           TLONG|TLIT|TINT|TCOMP,
-    0x0400000L,     "aadx",         TLONG|TLIT|TINT|TCOMP,
-    0x0400000L,     "apx",          TLONG|TLIT|TINT|TCOMP,
-    0x0500000L,     "ав",           TLONG|TLIT|TINT|TCOMP,
-    0x0500000L,     "вч",           TLONG|TLIT|TINT|TCOMP,
-    0x0500000L,     "asux",         TLONG|TLIT|TINT|TCOMP,
-    0x0500000L,     "asx",          TLONG|TLIT|TINT|TCOMP,
-    0x0600000L,     "вчоб",         TLONG|TLIT|TINT|TCOMP,
-    0x0600000L,     "ов",           TLONG|TLIT|TINT|TCOMP,
-    0x0600000L,     "xsa",          TLONG|TLIT|TINT|TCOMP,
-    0x0600000L,     "xsua",         TLONG|TLIT|TINT|TCOMP,
-    0x0700000L,     "вчаб",         TLONG|TLIT|TCOMP,
-    0x0700000L,     "мв",           TLONG|TLIT|TCOMP,
-    0x0700000L,     "amsx",         TLONG|TLIT|TCOMP,
-    0x0800000L,     "сч",           TLONG|TLIT|TCOMP,
-    0x0800000L,     "xta",          TLONG|TLIT|TCOMP,
-    0x0900000L,     "и",            TLONG|TLIT|TCOMP,
-    0x0900000L,     "лу",           TLONG|TLIT|TCOMP,
-    0x0900000L,     "aax",          TLONG|TLIT|TCOMP,
-    0x0a00000L,     "нтж",          TLONG|TLIT|TCOMP,
-    0x0a00000L,     "ср",           TLONG|TLIT|TCOMP,
-    0x0a00000L,     "aex",          TLONG|TLIT|TCOMP,
-    0x0b00000L,     "слк",          TLONG|TLIT|TCOMP,
-    0x0b00000L,     "цс",           TLONG|TLIT|TCOMP,
-    0x0b00000L,     "arx",          TLONG|TLIT|TCOMP,
-    0x0c00000L,     "из",           TLONG|TLIT|TINT|TCOMP,
-    0x0c00000L,     "avx",          TLONG|TLIT|TINT|TCOMP,
-    0x0d00000L,     "или",          TLONG|TLIT|TCOMP,
-    0x0d00000L,     "лс",           TLONG|TLIT|TCOMP,
-    0x0d00000L,     "aox",          TLONG|TLIT|TCOMP,
-    0x0e00000L,     "ад",           TLONG|TCOMP,
-    0x0e00000L,     "дел",          TLONG|TCOMP,
-    0x0e00000L,     "adx",          TLONG|TCOMP,
-    0x0f00000L,     "ау",           TLONG|TLIT|TINT|TCOMP,
-    0x0f00000L,     "умн",          TLONG|TLIT|TINT|TCOMP,
-    0x0f00000L,     "amux",         TLONG|TLIT|TINT|TCOMP,
-    0x0f00000L,     "amx",          TLONG|TLIT|TINT|TCOMP,
-    0x1000000L,     "сбр",          TLONG|TLIT|TCOMP,
-    0x1000000L,     "сб",           TLONG|TLIT|TCOMP,
-    0x1000000L,     "apkx",         TLONG|TLIT|TCOMP,
-    0x1100000L,     "рб",           TLONG|TLIT|TCOMP,
-    0x1100000L,     "рзб",          TLONG|TLIT|TCOMP,
-    0x1100000L,     "aux",          TLONG|TLIT|TCOMP,
-    0x1200000L,     "чед",          TLONG|TLIT|TCOMP,
-    0x1200000L,     "acx",          TLONG|TLIT|TCOMP,
-    0x1300000L,     "вн",           TLONG|TLIT|TCOMP,
-    0x1300000L,     "нед",          TLONG|TLIT|TCOMP,
-    0x1300000L,     "anx",          TLONG|TLIT|TCOMP,
-    0x1400000L,     "слпп",         TLONG|TCOMP,
-    0x1400000L,     "сп",           TLONG|TCOMP,
-    0x1400000L,     "eax",          TLONG|TCOMP,
-    0x1400000L,     "epx",          TLONG|TCOMP,
-    0x1500000L,     "вп",           TLONG|TCOMP,
-    0x1500000L,     "вчпп",         TLONG|TCOMP,
-    0x1500000L,     "esx",          TLONG|TCOMP,
-    0x1600000L,     "сдпп",         TLONG|TCOMP,
-    0x1600000L,     "ск",           TLONG|TCOMP,
-    0x1600000L,     "asrx",         TLONG|TCOMP,
-    0x1700000L,     "рк",           TLONG,
-    0x1700000L,     "уржп",         TLONG,
-    0x1700000L,     "xtr",          TLONG,
-    0x1800000L,     "пб",           TLONG,
-    0x1800000L,     "uj",           TLONG,
-    0x1800000L,     "xj",           TLONG,
-    0x1900000L,     "пв",           TLONG|TALIGN,
-    0x1900000L,     "vjm",          TLONG|TALIGN,
-    0x1a00000L,     "уц",           TLONG,
-    0x1a00000L,     "циклу",        TLONG,
-    0x1a00000L,     "vgm",          TLONG,
-    0x1b00000L,     "кц",           TLONG,
-    0x1b00000L,     "цикл",         TLONG,
-    0x1b00000L,     "vlm",          TLONG,
-    0x1e00000L,     "ок",           TLONG|TCOMP,
-    0x1e00000L,     "сдлп",         TLONG|TCOMP,
-    0x1e00000L,     "alx",          TLONG|TCOMP,
-    0x1e00000L,     "aslx",         TLONG|TCOMP,
-    0x2000000L,     "ир",           TLONG,
-    0x2000000L,     "пирв",         TLONG,
-    0x2000000L,     "vzm",          TLONG,
-    0x2100000L,     "ин",           TLONG,
-    0x2100000L,     "пинр",         TLONG,
-    0x2100000L,     "vim",          TLONG,
-    0x2200000L,     "ибр",          TLONG,
-    0x2200000L,     "пибр",         TLONG,
-    0x2200000L,     "vpzm",         TLONG,
-    0x2300000L,     "име",          TLONG,
-    0x2300000L,     "пимн",         TLONG,
-    0x2300000L,     "vnm",          TLONG,
-    0x2400000L,     "имр",          TLONG,
-    0x2400000L,     "пимр",         TLONG,
-    0x2400000L,     "vnzm",         TLONG,
-    0x2500000L,     "иб",           TLONG,
-    0x2500000L,     "пибл",         TLONG,
-    0x2500000L,     "vpm",          TLONG,
-    0x2800000L,     "прв",          TLONG,
-    0x2800000L,     "uz",           TLONG,
-    0x2800000L,     "xz",           TLONG,
-    0x2900000L,     "пнр",          TLONG,
-    0x2900000L,     "ун",           TLONG,
-    0x2900000L,     "ui",           TLONG,
-    0x2900000L,     "xi",           TLONG,
-    0x2a00000L,     "пбр",          TLONG,
-    0x2a00000L,     "убр",          TLONG,
-    0x2a00000L,     "upz",          TLONG,
-    0x2a00000L,     "xpz",          TLONG,
-    0x2b00000L,     "пмн",          TLONG,
-    0x2b00000L,     "уме",          TLONG,
-    0x2b00000L,     "un",           TLONG,
-    0x2b00000L,     "xn1",          TLONG,
-    0x2c00000L,     "пмр",          TLONG,
-    0x2c00000L,     "умр",          TLONG,
-    0x2c00000L,     "unz",          TLONG,
-    0x2c00000L,     "xnz",          TLONG,
-    0x2d00000L,     "пбл",          TLONG,
-    0x2d00000L,     "убл",          TLONG,
-    0x2d00000L,     "up",           TLONG,
-    0x2d00000L,     "xp1",          TLONG,
-    0x2e00000L,     "пос",          TLONG,
-    0x2e00000L,     "ус",           TLONG,
-    0x2e00000L,     "uiv",          TLONG,
-    0x2e00000L,     "xv1",          TLONG,
-    0x2f00000L,     "пно",          TLONG,
-    0x2f00000L,     "унс",          TLONG,
-    0x2f00000L,     "uzv",          TLONG,
-    0x2f00000L,     "xvz",          TLONG,
-    0x3000000L,     "ст",           TLONG|TCOMP,
-    0x3000000L,     "счт",          TLONG|TCOMP,
-    0x3000000L,     "xtga",         TLONG|TCOMP,
-    0x3000000L,     "xtwa",         TLONG|TCOMP,
-    0x3100000L,     "сем",          TLONG|TCOMP,
-    0x3100000L,     "сс",           TLONG|TCOMP,
-    0x3100000L,     "xtqa",         TLONG|TCOMP,
-    0x3100000L,     "xtsa",         TLONG|TCOMP,
-    0x3200000L,     "сх",           TLONG,
-    0x3200000L,     "счх",          TLONG,
-    0x3200000L,     "xtha",         TLONG,
-    0x3300000L,     "счк",          TLONG,
-    0x3300000L,     "тс",           TLONG,
-    0x3300000L,     "xtta",         TLONG,
-    0x3400000L,     "зн",           TLONG|TCOMP,
-    0x3400000L,     "зпн",          TLONG|TCOMP,
-    0x3400000L,     "ztx",          TLONG|TCOMP,
-    0x3500000L,     "зк",           TLONG,
-    0x3500000L,     "зпк",          TLONG,
-    0x3500000L,     "atcx",         TLONG,
-    0x3600000L,     "зпх",          TLONG,
-    0x3600000L,     "зх",           TLONG,
-    0x3600000L,     "ath",          TLONG,
-    0x3700000L,     "зпт",          TLONG|TCOMP,
-    0x3700000L,     "зт",           TLONG|TCOMP,
-    0x3700000L,     "atgx",         TLONG|TCOMP,
-    0x3700000L,     "atwx",         TLONG|TCOMP,
-    0x3800000L,     "где",          TLONG,
-    0x3800000L,     "уа",           TLONG,
-    0x3800000L,     "pctm",         TLONG,
-    0x3800000L,     "vtdm",         TLONG,
-    0x3900000L,     "ка",           TLONG,
-    0x3900000L,     "пфс",          TLONG,
-    0x3900000L,     "atc",          TLONG,
-    0x3a00000L,     "пфа",          TLONG,
-    0x3a00000L,     "utcs",         TLONG,
-    0x3a00000L,     "xtpc",         TLONG,
-    0x3b00000L,     "ик",           TLONG,
-    0x3b00000L,     "пф",           TLONG,
-    0x3b00000L,     "wtc",          TLONG,
-    0x3b00000L,     "xtc",          TLONG,
-    0x3c00000L,     "па",           TLONG,
-    0x3c00000L,     "уиа",          TLONG,
-    0x3c00000L,     "vtm",          TLONG,
-    0x3d00000L,     "са",           TLONG,
-    0x3d00000L,     "слиа",         TLONG,
-    0x3d00000L,     "utm",          TLONG,
-    0x3d00000L,     "xtm",          TLONG,
-    0x3e00000L,     "груп",         TLONG,
-    0x3e00000L,     "уг",           TLONG,
-    0x3e00000L,     "do",           TLONG,
-    0x3f00000L,     "эк",           TALIGN,
-    0x3f00000L,     "ex",           TALIGN,
-    0x3f01000L,     "вт",           TALIGN,
-    0x3f01000L,     "выт",          TALIGN,
-    0x3f01000L,     "pop",          TALIGN,
-    0x3f02000L,     "врг",          0,
-    0x3f02000L,     "чр",           0,
-    0x3f02000L,     "rmod",         0,
-    0x3f03000L,     "вых",          TALIGN,
-    0x3f03000L,     "ij",           TALIGN,
-    0x3f06000L,     "зр",           0,
-    0x3f06000L,     "ург",          0,
-    0x3f06000L,     "wmod",         0,
-    0x3f07000L,     "ост",          TALIGN,
-    0x3f07000L,     "стоп",         TALIGN,
-    0x3f07000L,     "halt",         TALIGN,
-    0x3f11000L,     "вдп",          0,
-    0x3f11000L,     "мм",           0,
-    0x3f11000L,     "yma",          0,
-    0x3f14000L,     "кор",          0,
-    0x3f14000L,     "кп",           0,
-    0x3f14000L,     "ecn",          0,
-    0x3f16000L,     "сдп",          0,
-    0x3f16000L,     "сд",           0,
-    0x3f16000L,     "asn",          0,
-    0x3f18000L,     "врж",          0,
-    0x3f18000L,     "rta",          0,
-    0x3f19000L,     "вд",           0,
-    0x3f19000L,     "мр",           0,
-    0x3f19000L,     "yta",          0,
-    0x3f1a000L,     "нс",           0,
-    0x3f1a000L,     "нтжп",         0,
-    0x3f1a000L,     "een",          0,
-    0x3f1b000L,     "упр",          0,
-    0x3f1b000L,     "уп",           0,
-    0x3f1b000L,     "set",          0,
-    0x3f1c000L,     "кс",           0,
-    0x3f1c000L,     "слп",          0,
-    0x3f1c000L,     "ean",          0,
-    0x3f1d000L,     "вчп",          0,
-    0x3f1d000L,     "кв",           0,
-    0x3f1d000L,     "esn",          0,
-    0x3f1e000L,     "од",           0,
-    0x3f1e000L,     "сдл",          0,
-    0x3f1e000L,     "aln",          0,
-    0x3f1f000L,     "ра",           0,
-    0x3f1f000L,     "урж",          0,
-    0x3f1f000L,     "ntr",          0,
-    0x3f20000L,     "уи",           0,
-    0x3f20000L,     "ati",          0,
-    0x3f21000L,     "уим",          0,
-    0x3f21000L,     "ум",           0,
-    0x3f21000L,     "sti",          0,
-    0x3f22000L,     "ви",           0,
-    0x3f22000L,     "ita",          0,
-    0x3f23000L,     "виц",          0,
-    0x3f23000L,     "вц",           0,
-    0x3f23000L,     "iita",         0,
-    0x3f24000L,     "пи",           0,
-    0x3f24000L,     "уии",          0,
-    0x3f24000L,     "mtj",          0,
-    0x3f25000L,     "си",           0,
-    0x3f25000L,     "сли",          0,
-    0x3f25000L,     "jam",          0,
-    0x3f26000L,     "вчиоб",        0,
-    0x3f26000L,     "ми",           0,
-    0x3f26000L,     "msj",          0,
-    0x3f27000L,     "вчи",          0,
-    0x3f27000L,     "им",           0,
-    0x3f27000L,     "jsm",          0,
-    0x3f28000L,     "иу",           0,
-    0x3f28000L,     "ур",           0,
-    0x3f28000L,     "ato",          0,
-    0x3f29000L,     "му",           0,
-    0x3f29000L,     "урм",          0,
-    0x3f29000L,     "sto",          0,
-    0x3f2a000L,     "вр",           0,
-    0x3f2a000L,     "ив",           0,
-    0x3f2a000L,     "ota",          0,
-    0x3f2c000L,     "ип",           0,
-    0x3f2c000L,     "ури",          0,
-    0x3f2c000L,     "mto",          0,
-    0x3f34000L,     "ца",           0,
-    0x3f34000L,     "цела",         0,
-    0x3f34000L,     "ent",          0,
-    0x3f35000L,     "целф",         0,
-    0x3f35000L,     "цф",           0,
-    0x3f35000L,     "int",          0,
-    0x3f36000L,     "мд",           0,
-    0x3f36000L,     "сдпд",         0,
-    0x3f36000L,     "asy",          0,
-    0x3f38000L,     "кч",           0,
-    0x3f38000L,     "уисч",         0,
-    0x3f38000L,     "atia",         0,
-    0x3f3c000L,     "инв",          0,
-    0x3f3c000L,     "пд",           0,
-    0x3f3c000L,     "aca",          0,
-    0x3f3e000L,     "рд",           0,
-    0x3f3e000L,     "сдлд",         0,
-    0x3f3e000L,     "aly",          0,
-    0x3f3f000L,     "лог",          0,
-    0x3f3f000L,     "уу",           0,
-    0x3f3f000L,     "tst",          0,
-    0x3f51000L,     "вдпм",         0,
-    0x3f51000L,     "ммм",          0,
-    0x3f51000L,     "yms",          0,
-    0x3f54000L,     "корм",         0,
-    0x3f54000L,     "кпм",          0,
-    0x3f54000L,     "ecns",         0,
-    0x3f56000L,     "сдм",          0,
-    0x3f56000L,     "сдпм",         0,
-    0x3f56000L,     "asns",         0,
-    0x3f58000L,     "вржм",         0,
-    0x3f58000L,     "rts",          0,
-    0x3f59000L,     "вдм",          0,
-    0x3f59000L,     "мрм",          0,
-    0x3f59000L,     "yts",          0,
-    0x3f5a000L,     "нсм",          0,
-    0x3f5a000L,     "нтжпм",        0,
-    0x3f5a000L,     "eens",         0,
-    0x3f5c000L,     "ксм",          0,
-    0x3f5c000L,     "слпм",         0,
-    0x3f5c000L,     "eans",         0,
-    0x3f5d000L,     "вчпм",         0,
-    0x3f5d000L,     "квм",          0,
-    0x3f5d000L,     "esns",         0,
-    0x3f5e000L,     "одм",          0,
-    0x3f5e000L,     "сдлм",         0,
-    0x3f5e000L,     "alns",         0,
-    0x3f5f000L,     "рам",          0,
-    0x3f5f000L,     "уржм",         0,
-    0x3f5f000L,     "ntrs",         0,
-    0x3f62000L,     "вим",          0,
-    0x3f62000L,     "its",          0,
-    0x3f63000L,     "вицм",         0,
-    0x3f63000L,     "вцм",          0,
-    0x3f63000L,     "iits",         0,
-    0x3f6a000L,     "врм",          0,
-    0x3f6a000L,     "ивм",          0,
-    0x3f6a000L,     "ots",          0,
-    0x3f74000L,     "цам",          0,
-    0x3f74000L,     "целам",        0,
-    0x3f74000L,     "ents",         0,
-    0x3f75000L,     "целфм",        0,
-    0x3f75000L,     "цфм",          0,
-    0x3f75000L,     "ints",         0,
-    0x3f76000L,     "мдм",          0,
-    0x3f76000L,     "сдпдм",        0,
-    0x3f76000L,     "asys",         0,
-    0x3f78000L,     "кчм",          0,
-    0x3f78000L,     "уисчм",        0,
-    0x3f78000L,     "atis",         0,
-    0x3f7c000L,     "инвм",         0,
-    0x3f7c000L,     "пдм",          0,
-    0x3f7c000L,     "acs",          0,
-    0x3f7e000L,     "рдм",          0,
-    0x3f7e000L,     "сдлдм",        0,
-    0x3f7e000L,     "alys",         0,
-    0x3f7f000L,     "логм",         0,
-    0x3f7f000L,     "уум",          0,
-    0x3f7f000L,     "tsts",         0,
-    0x4000000L,     "счц",          TLONG,
-    0x4000000L,     "xtal",         TLONG,
-    0x4100000L,     "смц",          TLONG,
-    0x4100000L,     "счцм",         TLONG,
-    0x4100000L,     "xtsl",         TLONG,
-    0x4200000L,     "снц",          TLONG,
-    0x4200000L,     "счнц",         TLONG,
-    0x4200000L,     "utra",         TLONG,
-    0x4200000L,     "xtnal",        TLONG,
-    0x4300000L,     "смл",          TLONG,
-    0x4300000L,     "счлм",         TLONG,
-    0x4300000L,     "uts",          TLONG,
-    0x4300000L,     "xtsu",         TLONG,
-    0x4400000L,     "асц",          TLONG,
-    0x4400000L,     "слц",          TLONG,
-    0x4400000L,     "aadu",         TLONG,
-    0x4500000L,     "авц",          TLONG,
-    0x4500000L,     "вчц",          TLONG,
-    0x4500000L,     "asuu",         TLONG,
-    0x4600000L,     "вчобц",        TLONG,
-    0x4600000L,     "овц",          TLONG,
-    0x4600000L,     "usua",         TLONG,
-    0x4700000L,     "вчабц",        TLONG,
-    0x4700000L,     "мвц",          TLONG,
-    0x4700000L,     "amu",          TLONG,
-    0x4800000L,     "счл",          TLONG,
-    0x4800000L,     "uta",          TLONG,
-    0x4800000L,     "xtau",         TLONG,
-    0x4900000L,     "ил",           TLONG,
-    0x4900000L,     "лул",          TLONG,
-    0x4900000L,     "aau",          TLONG,
-    0x4a00000L,     "нтжл",         TLONG,
-    0x4a00000L,     "срл",          TLONG,
-    0x4a00000L,     "aeu",          TLONG,
-    0x4b00000L,     "слкл",         TLONG,
-    0x4b00000L,     "цсл",          TLONG,
-    0x4b00000L,     "aru",          TLONG,
-    0x4c00000L,     "изц",          TLONG,
-    0x4c00000L,     "avu",          TLONG,
-    0x4d00000L,     "илил",         TLONG,
-    0x4d00000L,     "лсл",          TLONG,
-    0x4d00000L,     "aou",          TLONG,
-    0x4f00000L,     "аул",          TLONG,
-    0x4f00000L,     "умнц",         TLONG,
-    0x4f00000L,     "amuu",         TLONG,
-    0x5000000L,     "сбл",          TLONG,
-    0x5000000L,     "сбрл",         TLONG,
-    0x5000000L,     "apu",          TLONG,
-    0x5100000L,     "рбл",          TLONG,
-    0x5100000L,     "рзбл",         TLONG,
-    0x5100000L,     "auu",          TLONG,
-    0x5200000L,     "вчл",          TLONG,
-    0x5200000L,     "чедл",         TLONG,
-    0x5200000L,     "acu",          TLONG,
-    0x5300000L,     "внл",          TLONG,
-    0x5300000L,     "недл",         TLONG,
-    0x5300000L,     "anu",          TLONG,
-    0x5400000L,     "асф",          TLONG,
-    0x5400000L,     "слф",          TLONG,
-    0x5500000L,     "авф",          TLONG,
-    0x5500000L,     "вчф",          TLONG,
-    0x5600000L,     "вчобф",        TLONG,
-    0x5600000L,     "овф",          TLONG,
-    0x5700000L,     "вчабф",        TLONG,
-    0x5700000L,     "мвф",          TLONG,
-    0x5c00000L,     "изф",          TLONG,
-    0x5f00000L,     "ауф",          TLONG,
-    0x5f00000L,     "умнф",         TLONG,
-    0x6000000L,     "зп.",          TLONG,
-    0x6000000L,     "зчк",          TLONG,
-    0x6000000L,     "atk",          TLONG,
-    0x6100000L,     "змк",          TLONG,
-    0x6100000L,     "зпм.",         TLONG,
-    0x6100000L,     "stk",          TLONG,
-    0x6200000L,     "снк",          TLONG,
-    0x6200000L,     "счн.",         TLONG,
-    0x6200000L,     "ktra",         TLONG,
-    0x6300000L,     "смк",          TLONG,
-    0x6300000L,     "счм.",         TLONG,
-    0x6300000L,     "kts",          TLONG,
-    0x6400000L,     "аск",          TLONG,
-    0x6400000L,     "сл.",          TLONG,
-    0x6400000L,     "aadk",         TLONG,
-    0x6500000L,     "авк",          TLONG,
-    0x6500000L,     "вч.",          TLONG,
-    0x6500000L,     "asuk",         TLONG,
-    0x6600000L,     "вчоб.",        TLONG,
-    0x6600000L,     "овк",          TLONG,
-    0x6600000L,     "ksua",         TLONG,
-    0x6700000L,     "вчаб.",        TLONG,
-    0x6700000L,     "мвк",          TLONG,
-    0x6700000L,     "amk",          TLONG,
-    0x6800000L,     "сч.",          TLONG,
-    0x6800000L,     "kta",          TLONG,
-    0x6900000L,     "и.",           TLONG,
-    0x6900000L,     "лук",          TLONG,
-    0x6900000L,     "aak",          TLONG,
-    0x6a00000L,     "нтж.",         TLONG,
-    0x6a00000L,     "срк",          TLONG,
-    0x6a00000L,     "aek",          TLONG,
-    0x6b00000L,     "слк.",         TLONG,
-    0x6b00000L,     "цск",          TLONG,
-    0x6b00000L,     "ark",          TLONG,
-    0x6c00000L,     "изк",          TLONG,
-    0x6c00000L,     "из.",          TLONG,
-    0x6c00000L,     "avk",          TLONG,
-    0x6d00000L,     "или.",         TLONG,
-    0x6d00000L,     "лск",          TLONG,
-    0x6d00000L,     "aok",          TLONG,
-    0x6e00000L,     "адк",          TLONG,
-    0x6e00000L,     "дел.",         TLONG,
-    0x6e00000L,     "adk",          TLONG,
-    0x6f00000L,     "аук",          TLONG,
-    0x6f00000L,     "умн.",         TLONG,
-    0x6f00000L,     "amuk",         TLONG,
-    0x7000000L,     "сбк",          TLONG,
-    0x7000000L,     "сбр.",         TLONG,
-    0x7000000L,     "apk",          TLONG,
-    0x7100000L,     "рбк.",         TLONG,
-    0x7100000L,     "рзб.",         TLONG,
-    0x7100000L,     "auk",          TLONG,
-    0x7200000L,     "вчк",          TLONG,
-    0x7200000L,     "чед.",         TLONG,
-    0x7200000L,     "ack",          TLONG,
-    0x7300000L,     "внк",          TLONG,
-    0x7300000L,     "нед.",         TLONG,
-    0x7300000L,     "ank",          TLONG,
-    0x7400000L,     "слпп.",        TLONG,
-    0x7400000L,     "спк",          TLONG,
-    0x7400000L,     "eak",          TLONG,
-    0x7500000L,     "впк",          TLONG,
-    0x7500000L,     "вчпп.",        TLONG,
-    0x7500000L,     "esk",          TLONG,
-    0x7600000L,     "сдпп.",        TLONG,
-    0x7600000L,     "скк",          TLONG,
-    0x7600000L,     "ask",          TLONG,
-    0x7800000L,     "стк",          TLONG,
-    0x7800000L,     "счт.",         TLONG,
-    0x7800000L,     "ktga",         TLONG,
-    0x7900000L,     "сем.",         TLONG,
-    0x7900000L,     "сск",          TLONG,
-    0x7900000L,     "ktsa",         TLONG,
-    0x7a00000L,     "схк",          TLONG,
-    0x7a00000L,     "счх.",         TLONG,
-    0x7a00000L,     "ktha",         TLONG,
-    0x7b00000L,     "счк.",         TLONG,
-    0x7b00000L,     "тск",          TLONG,
-    0x7b00000L,     "ktta",         TLONG,
-    0x7c00000L,     "знк",          TLONG,
-    0x7c00000L,     "зпн.",         TLONG,
-    0x7c00000L,     "ztk",          TLONG,
-    0x7d00000L,     "зкк",          TLONG,
-    0x7d00000L,     "зпк.",         TLONG,
-    0x7d00000L,     "atck",         TLONG,
-    0x7e00000L,     "окк",          TLONG,
-    0x7e00000L,     "сдлп.",        TLONG,
-    0x7e00000L,     "alk",          TLONG,
-    0x7f00000L,     "зпт.",         TLONG,
-    0x7f00000L,     "зтк",          TLONG,
-    0x7f00000L,     "atgk",         TLONG,
-
-    0,              0L,             0,
+    unsigned val;
+    const char *name;
+    unsigned type;
 };
 
-/*
- * Таблица для Балакирева
- */
-
-struct table btable [] = {
-    0x1200000L,     "вч",           TLONG|TLIT|TCOMP,
-    0x2800000L,     "ур",           TLONG,
-    0x3a00000L,     "пф",           TLONG,
-    0x3f03000L,     "вд",           TALIGN,
-    0x3f18000L,     "вр",           0,
-    0x3f58000L,     "врм",          0,
-    0x6800000L,     "счк",          TLONG,
-
-    0,              0L,             0,
+const struct table table [] = {
+    /* TODO */
+    { 0x00000000,   "add",      0 },
+    { 0x00000000,   "addi",     0 },
+    { 0x00000000,   "addiu",    0 },
+    { 0x00000000,   "addiupc",  0 },
+    { 0x00000000,   "addu",     0 },
+    { 0x00000000,   "and",      0 },
+    { 0x00000000,   "andi",     0 },
+    { 0x00000000,   "b",        0 },
+    { 0x00000000,   "bal",      0 },
+    { 0x00000000,   "beq",      0 },
+    { 0x00000000,   "beql",	0 },
+    { 0x00000000,   "bgez",	0 },
+    { 0x00000000,   "bgezal",	0 },
+    { 0x00000000,   "bgezall",	0 },
+    { 0x00000000,   "bgezl",	0 },
+    { 0x00000000,   "bgtz",	0 },
+    { 0x00000000,   "bgtzl",	0 },
+    { 0x00000000,   "blez",	0 },
+    { 0x00000000,   "blezl",	0 },
+    { 0x00000000,   "bltz",	0 },
+    { 0x00000000,   "bltzal",	0 },
+    { 0x00000000,   "bltzall",	0 },
+    { 0x00000000,   "bltzl",	0 },
+    { 0x00000000,   "bne",	0 },
+    { 0x00000000,   "bnel",	0 },
+    { 0x00000000,   "break",	0 },
+    { 0x00000000,   "clo",	0 },
+    { 0x00000000,   "clz",	0 },
+    { 0x00000000,   "cop0",	0 },
+    { 0x00000000,   "deret",	0 },
+    { 0x00000000,   "di",	0 },
+    { 0x00000000,   "div",	0 },
+    { 0x00000000,   "divu",	0 },
+    { 0x00000000,   "ehb",	0 },
+    { 0x00000000,   "ei",	0 },
+    { 0x00000000,   "eret",	0 },
+    { 0x00000000,   "ext",	0 },
+    { 0x00000000,   "ins",	0 },
+    { 0x00000000,   "j",	0 },
+    { 0x00000000,   "jal",	0 },
+    { 0x00000000,   "jalr",	0 },
+    { 0x00000000,   "jalr.hb",	0 },
+    { 0x00000000,   "jalrc",	0 },
+    { 0x00000000,   "jr",	0 },
+    { 0x00000000,   "jr.hb",	0 },
+    { 0x00000000,   "jrc",	0 },
+    { 0x00000000,   "lb",	0 },
+    { 0x00000000,   "lbu",	0 },
+    { 0x00000000,   "lh",	0 },
+    { 0x00000000,   "lhu",	0 },
+    { 0x00000000,   "ll",	0 },
+    { 0x00000000,   "lui",	0 },
+    { 0x00000000,   "lw",	0 },
+    { 0x00000000,   "lwl",	0 },
+    { 0x00000000,   "lwpc",	0 },
+    { 0x00000000,   "lwr",	0 },
+    { 0x00000000,   "madd",	0 },
+    { 0x00000000,   "maddu",	0 },
+    { 0x00000000,   "mfc0",	0 },
+    { 0x00000000,   "mfhi",	0 },
+    { 0x00000000,   "mflo",	0 },
+    { 0x00000000,   "movn",	0 },
+    { 0x00000000,   "movz",	0 },
+    { 0x00000000,   "msub",	0 },
+    { 0x00000000,   "msubu",	0 },
+    { 0x00000000,   "mtc0",	0 },
+    { 0x00000000,   "mthi",	0 },
+    { 0x00000000,   "mtlo",	0 },
+    { 0x00000000,   "mul",	0 },
+    { 0x00000000,   "mult",	0 },
+    { 0x00000000,   "multu",	0 },
+    { 0x00000000,   "nop",	0 },
+    { 0x00000000,   "nor",	0 },
+    { 0x00000000,   "or",	0 },
+    { 0x00000000,   "ori",	0 },
+    { 0x00000000,   "rdhwr",	0 },
+    { 0x00000000,   "rdpgpr",	0 },
+    { 0x00000000,   "restore",	0 },
+    { 0x00000000,   "rotr",	0 },
+    { 0x00000000,   "rotrv",	0 },
+    { 0x00000000,   "save",	0 },
+    { 0x00000000,   "sb",	0 },
+    { 0x00000000,   "sc",	0 },
+    { 0x00000000,   "sdbbp",	0 },
+    { 0x00000000,   "seb",	0 },
+    { 0x00000000,   "seh",	0 },
+    { 0x00000000,   "sh",	0 },
+    { 0x00000000,   "sll",	0 },
+    { 0x00000000,   "sllv",	0 },
+    { 0x00000000,   "slt",	0 },
+    { 0x00000000,   "slti",	0 },
+    { 0x00000000,   "sltiu",	0 },
+    { 0x00000000,   "sltu",	0 },
+    { 0x00000000,   "sra",	0 },
+    { 0x00000000,   "srav",	0 },
+    { 0x00000000,   "srl",	0 },
+    { 0x00000000,   "srlv",	0 },
+    { 0x00000000,   "ssnop",	0 },
+    { 0x00000000,   "sub",	0 },
+    { 0x00000000,   "subu",	0 },
+    { 0x00000000,   "sw",	0 },
+    { 0x00000000,   "swl",	0 },
+    { 0x00000000,   "swr",	0 },
+    { 0x00000000,   "sync",	0 },
+    { 0x00000000,   "syscall",	0 },
+    { 0x00000000,   "teq",	0 },
+    { 0x00000000,   "teqi",	0 },
+    { 0x00000000,   "tge",	0 },
+    { 0x00000000,   "tgei",	0 },
+    { 0x00000000,   "tgeiu",	0 },
+    { 0x00000000,   "tgeu",	0 },
+    { 0x00000000,   "tlt",	0 },
+    { 0x00000000,   "tlti",	0 },
+    { 0x00000000,   "tltiu",	0 },
+    { 0x00000000,   "tltu",	0 },
+    { 0x00000000,   "tne",	0 },
+    { 0x00000000,   "tnei",	0 },
+    { 0x00000000,   "wait",	0 },
+    { 0x00000000,   "wrpgpr",	0 },
+    { 0x00000000,   "wsbh",	0 },
+    { 0x00000000,   "xor",	0 },
+    { 0x00000000,   "xori",	0 },
+    { 0x00000000,   "zeb",	0 },
+    { 0x00000000,   "zeh",	0 },
+    { 0,            0,          0 },
 };
 
 FILE *sfile [SABS], *rfile [SABS];
-long count [SABS];
-short segm;
+unsigned count [SABS];
+int segm;
 char *infile, *outfile = "a.out";
 char *tfilename = "/tmp/asXXXXXX";
-short line;                             /* номер текущей строки */
-short debug;                            /* флаг отладки */
-short xflags, Xflag, uflag;
-short stlength;                         /* длина таблицы символов в байтах */
-short stalign;                          /* выравнивание таблицы символов */
-long tbase, dbase, adbase, bbase;
+int line;                             /* номер текущей строки */
+int debug;                            /* флаг отладки */
+int xflags, Xflag, uflag;
+int stlength;                         /* длина таблицы символов в байтах */
+int stalign;                          /* выравнивание таблицы символов */
+unsigned tbase, dbase, adbase, bbase;
 struct nlist stab [STSIZE];
-short stabfree;
+int stabfree;
 char space [SPACESZ];                   /* место под имена символов */
-short lastfree;                         /* счетчик занятого места */
-short regleft;                          /* номер регистра слева от команды */
+int lastfree;                         /* счетчик занятого места */
+int regleft;                          /* номер регистра слева от команды */
 char name [256];
-struct word { long left, right; } intval;
-short extref;
-short blexflag, backlex, blextype;
+unsigned intval;
+int extref;
+int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
-short hashconst [HCONSZ];
-short aflag;                            /* не выравнивать на границу слова */
+int aflag;                            /* не выравнивать на границу слова */
 
-long fgeth (), getexpr (), makehalf (), relhalf ();
-char *alloc ();
-extern char *mktemp (), *strcpy ();
+void getbitnum (int c);
+void getbitmask (void);
+unsigned getexpr (int *s);
 
-int main (argc, argv)
-    register char *argv[];
+void uerror (char *fmt, ...)
 {
-    register short i;
-    register char *cp;
-    int ofile = 0;
+    va_list ap;
 
-    /* разбор флагов */
-
-    for (i=1; i<argc; i++) switch (argv[i][0]) {
-    case '-':
-        for (cp=argv[i]; *cp; cp++) switch (*cp) {
-        case 'd':       /* флаг отладки */
-            debug++;
-            break;
-        case 'b':       /* мнемоника Балакирева */
-            setbtable ();
-            break;
-        case 'X':
-            Xflag++;
-        case 'x':
-            xflags++;
-            break;
-        case 'a':       /* не выравнивать на границу слова */
-            aflag++;
-            break;
-        case 'u':
-            uflag++;
-            break;
-        case 'o':       /* выходной файл */
-            if (ofile)
-                uerror ("too many -o flags");
-            ofile = 1;
-            if (cp [1]) {
-                /* -ofile */
-                outfile = cp+1;
-                while (*++cp);
-                --cp;
-            } else if (i+1 < argc)
-                /* -o file */
-                outfile = argv[++i];
-            break;
-        }
-        break;
-    default:
-        if (infile)
-            uerror ("too many input files");
-        infile = argv[i];
-        break;
-    }
-
-    /* настройка ввода-вывода */
-
-    if (infile && ! freopen (infile, "r", stdin))
-        uerror ("cannot open %s", infile);
-    if (! freopen (outfile, "w", stdout))
-        uerror ("cannot open %s", outfile);
-
-    i = getchar ();
-    ungetc (i=='#' ? ';' : i, stdin);
-
-    startup ();     /* открытие временных файлов */
-    hashinit ();    /* инициализация хэш-таблиц */
-    pass1 ();       /* первый проход */
-    middle ();      /* промежуточные действия */
-    makeheader ();  /* запись заголовка */
-    pass2 ();       /* второй проход */
-    makereloc ();   /* запись файлов настройки */
-    makesymtab ();  /* запись таблицы символов */
-    exit (0);
-}
-
-/* VARARGS1 */
-
-void uerror (s, a, b, c)
-    char *s;
-{
+    va_start (ap, fmt);
     fprintf (stderr, "as: ");
-    if (infile) fprintf (stderr, "%s, ", infile);
+    if (infile)
+        fprintf (stderr, "%s, ", infile);
     fprintf (stderr, "%d: ", line);
-    fprintf (stderr, s, a, b, c);
+    vfprintf (stderr, fmt, ap);
+    va_end (ap);
     fprintf (stderr, "\n");
     exit (1);
 }
 
+unsigned int fgetword (f)
+    register FILE *f;
+{
+    register unsigned int h;
+
+    h = getc (f);
+    h |= getc (f) << 8;
+    h |= getc (f) << 16;
+    h |= getc (f) << 24;
+    return h;
+}
+
+void fputword (h, f)
+    register unsigned int h;
+    register FILE *f;
+{
+    putc (h, f);
+    putc (h >> 8, f);
+    putc (h >> 16, f);
+    putc (h >> 24, f);
+}
+
+void fputhdr (filhdr, coutb)
+    register struct exec *filhdr;
+    register FILE *coutb;
+{
+    fputword (filhdr->a_magic, coutb);
+    fputword (filhdr->a_text, coutb);
+    fputword (filhdr->a_data, coutb);
+    fputword (filhdr->a_bss, coutb);
+    fputword (filhdr->a_syms, coutb);
+    fputword (filhdr->a_entry, coutb);
+    fputword (0, coutb);
+    fputword (filhdr->a_flag, coutb);
+}
+
+void fputsym (s, file)
+    register struct nlist *s;
+    register FILE *file;
+{
+	register int i;
+
+	putc (s->n_len, file);
+	putc (s->n_type, file);
+	fputword (s->n_value, file);
+	for (i=0; i<s->n_len; i++)
+		putc (s->n_name[i], file);
+}
+
 void startup ()
 {
-    register short i;
+    register int i;
 
     mktemp (tfilename);
     for (i=STEXT; i<SBSS; i++) {
@@ -802,99 +378,703 @@ void startup ()
     line = 1;
 }
 
-void middle ()
+int chash (s)
+    register const char *s;
 {
-    register short i, snum;
+    register int h, c;
 
-    align (STEXT);
-    align (SDATA);
-    align (SSTRNG);
-    stlength = 0;
-    for (snum=0, i=0; i<stabfree; i++) {
-        /* если не установлен флаг uflag,
-        /* неопределенное имя считается внешним */
-        if (stab[i].n_type == N_UNDF)
-            if (uflag)
-                uerror ("name undefined", stab[i].n_name);
-            else stab[i].n_type |= N_EXT;
-        if (xflags) newindex[i] = snum;
-        if (!xflags || (stab[i].n_type & N_EXT) || Xflag &&
-            stab[i].n_name[0] != 'L')
-        {
-            stlength += 2 + W/2 + stab[i].n_len;
-            snum++;
+    h = 12345;
+    while ((c = *s++) != 0)
+        h += h + c;
+    return (SUPERHASH (h, HCMDSZ-1));
+}
+
+void hashinit ()
+{
+    register int i, h;
+    register const struct table *p;
+
+    for (i=0; i<HCMDSZ; i++)
+        hashctab[i] = -1;
+    for (p=table; p->name; p++) {
+        h = chash (p->name);
+        while (hashctab[h] != -1)
+            if (--h < 0)
+                h += HCMDSZ;
+        hashctab[h] = p - table;
+    }
+    for (i=0; i<HASHSZ; i++)
+        hashtab[i] = -1;
+}
+
+int hexdig (c)
+    register int c;
+{
+    if (c <= '9')
+        return (c - '0');
+    else if (c <= 'F')
+        return (c - 'A' + 10);
+    else
+        return (c - 'a' + 10);
+}
+
+/*
+ * считать шестнадцатеричное число 'ZZZ
+ */
+void getlhex ()
+{
+    register int c;
+    register char *cp, *p;
+
+    c = getchar ();
+    for (cp=name; ISHEX(c); c=getchar())
+        *cp++ = hexdig (c);
+    ungetc (c, stdin);
+    intval = 0;
+    p = name;
+    for (c=28; c>=0; c-=4, ++p) {
+        if (p >= cp)
+            return;
+        intval |= *p << c;
+    }
+}
+
+/*
+ * считать шестнадцатеричное число 0xZZZ
+ */
+void gethnum ()
+{
+    register int c;
+    register char *cp;
+
+    c = getchar ();
+    for (cp=name; ISHEX(c); c=getchar())
+        *cp++ = hexdig (c);
+    ungetc (c, stdin);
+    intval = 0;
+    for (c=0; c<32; c+=4) {
+        if (--cp < name)
+            return;
+        intval |= *cp << c;
+    }
+}
+
+void getnum (c)
+    register int c;
+{
+    register char *cp;
+    int leadingzero;
+    /* считать число */
+    /* 1234 1234d 1234D - десятичное */
+    /* 01234 1234. 1234o 1234O - восьмеричное */
+    /* 1234' 1234h 1234H - шестнадцатеричное */
+
+    leadingzero = (c=='0');
+    for (cp=name; ISHEX(c); c=getchar())
+        *cp++ = hexdig (c);
+    intval = 0;
+    if (c=='.' || c=='o' || c=='O') {
+octal:
+        for (c=0; c<=27; c+=3) {
+            if (--cp < name)
+                return;
+            intval |= *cp << c;
+        }
+        if (--cp < name)
+            return;
+        intval |= *cp << 30;
+        return;
+    } else if (c=='h' || c=='H' || c=='\'') {
+        for (c=0; c<32; c+=4) {
+            if (--cp < name)
+                return;
+            intval |= *cp << c;
+        }
+        return;
+    } else if (c!='d' && c!='D') {
+        ungetc (c, stdin);
+        if (leadingzero)
+            goto octal;
+    }
+    for (c=1; ; c*=10) {
+        if (--cp < name)
+            return;
+        intval += *cp * c;
+    }
+}
+
+void getname (c)
+    register int c;
+{
+    register char *cp;
+
+    for (cp=name; ISLETTER (c) || ISDIGIT (c); c=getchar())
+        *cp++ = c;
+    *cp = 0;
+    ungetc (c, stdin);
+}
+
+int lookacmd ()
+{
+    switch (name [1]) {
+    case 'a':
+        if (! strcmp (".ascii", name)) return (ASCII);
+        break;
+    case 'b':
+        if (! strcmp (".bss", name)) return (BSS);
+        break;
+    case 'c':
+        if (! strcmp (".comm", name)) return (COMM);
+        break;
+    case 'd':
+        if (! strcmp (".data", name)) return (DATA);
+        break;
+    case 'e':
+        if (! strcmp (".equ", name)) return (EQU);
+        break;
+    case 'g':
+        if (! strcmp (".globl", name)) return (GLOBL);
+        break;
+    case 's':
+        if (! strcmp (".short", name)) return (SHORT);
+        if (! strcmp (".strng", name)) return (STRNG);
+        break;
+    case 't':
+        if (! strcmp (".text", name)) return (TEXT);
+        break;
+    case 'w':
+        if (! strcmp (".word", name)) return (WORD);
+        break;
+    }
+    return (-1);
+}
+
+int lookcmd ()
+{
+    register int i, h;
+
+    h = chash (name);
+    while ((i = hashctab[h]) != -1) {
+        if (!strcmp (table[i].name, name))
+            return (i);
+        if (--h < 0)
+            h += HCMDSZ;
+    }
+    return (-1);
+}
+
+int hash (s)
+    register char *s;
+{
+    register int h, c;
+
+    h = 12345;
+    while ((c = *s++) != 0)
+        h += h + c;
+    return (SUPERHASH (h, HASHSZ-1));
+}
+
+char *alloc (len)
+{
+    register int r;
+
+    r = lastfree;
+    if ((lastfree += len) > SPACESZ)
+        uerror ("out of memory");
+    return (space + r);
+}
+
+int lookname ()
+{
+    register int i, h;
+
+    h = hash (name);
+    while ((i = hashtab[h]) != -1) {
+        if (! strcmp (stab[i].n_name, name))
+            return (i);
+        if (--h < 0)
+            h += HASHSZ;
+    }
+
+    /* занесение в таблицу нового символа */
+
+    if ((i = stabfree++) >= STSIZE)
+        uerror ("symbol table overflow");
+    stab[i].n_len = strlen (name);
+    stab[i].n_name = alloc (1 + stab[i].n_len);
+    strcpy (stab[i].n_name, name);
+    stab[i].n_value = 0;
+    stab[i].n_type = 0;
+    hashtab[h] = i;
+    return (i);
+}
+
+/*
+ * int getlex (int *val) - считать лексему, вернуть тип лексемы,
+ * записать в *val ее значение.
+ * Возвращаемые типы лексем:
+ *      LEOL    - конец строки. Значение - номер начавшейся строки.
+ *      LEOF    - конец файла.
+ *      LNUM    - целое число. Значение - в intval, *val не определено.
+ *      LCMD    - машинная команда. Значение - ее индекс в table.
+ *      LNAME   - идентификатор. Значение - индекс в stab.
+ *      LACMD   - инструкция ассемблера. Значение - тип.
+ *      LLCMD   - длинноадресная команда. Значение - код.
+ *      LSCMD   - короткоадресная команда. Значение - код.
+ */
+int getlex (pval)
+    register int *pval;
+{
+    register int c;
+
+    if (blexflag) {
+        blexflag = 0;
+        *pval = blextype;
+        return (backlex);
+    }
+    for (;;) {
+        switch (c = getchar()) {
+        case ';':
+skiptoeol:  while ((c = getchar()) != '\n')
+                if (c == EOF)
+                    return (LEOF);
+        case '\n':
+            c = getchar ();
+            if (c == '#')
+                goto skiptoeol;
+            ungetc (c, stdin);
+            *pval = ++line;
+            return (LEOL);
+        case ' ':
+        case '\t':
+            continue;
+        case EOF:
+            return (LEOF);
+        case '\\':
+            c = getchar ();
+            if (c=='<')
+                return (LLSHIFT);
+            if (c=='>')
+                return (LRSHIFT);
+            ungetc (c, stdin);
+            return ('\\');
+        case '+':
+            if ((c = getchar ()) == '+')
+                return (LINCR);
+            ungetc (c, stdin);
+            return ('+');
+        case '-':
+            if ((c = getchar ()) == '-')
+                return (LINCR);
+            ungetc (c, stdin);
+            return ('-');
+        case '^':       case '&':       case '|':       case '~':
+        case '#':       case '*':       case '/':       case '%':
+        case '"':       case ',':       case '[':       case ']':
+        case '(':       case ')':       case '{':       case '}':
+        case '<':       case '>':       case '=':       case ':':
+            return (c);
+        case '\'':
+            getlhex (c);
+            return (LNUM);
+        case '0':
+            if ((c = getchar ()) == 'x' || c=='X') {
+                gethnum ();
+                return (LNUM);
+            }
+            ungetc (c, stdin);
+            c = '0';
+        case '1':       case '2':       case '3':
+        case '4':       case '5':       case '6':       case '7':
+        case '8':       case '9':
+            getnum (c);
+            return (LNUM);
+        case '@':
+        case '$':
+            *pval = hexdig (getchar ());
+            *pval = *pval<<4 | hexdig (getchar ());
+            return (c=='$' ? LSCMD : LLCMD);
+        default:
+            if (!ISLETTER (c))
+                uerror ("bad character: \\%o", c & 0377);
+            if (c=='.') {
+                c = getchar();
+                if (c == '[') {
+                    getbitmask ();
+                    return (LNUM);
+                } else if (ISOCTAL (c)) {
+                    getbitnum (c);
+                    return (LNUM);
+                }
+                ungetc (c, stdin);
+                c = '.';
+            }
+            getname (c);
+            if (name[0]=='.') {
+                if (name[1] == 0)
+                    return ('.');
+                if ((*pval = lookacmd()) != -1)
+                    return (LACMD);
+            }
+            if ((*pval = lookcmd()) != -1)
+                return (LCMD);
+            *pval = lookname ();
+            return (LNAME);
         }
     }
-    stalign = W - stlength % W;
-    stlength += stalign;
 }
 
-void makeheader ()
+void ungetlex (val, type)
 {
-    struct exec hdr;
-
-    hdr.a_magic = FMAGIC;
-    hdr.a_text = count [STEXT] * (W/2);
-    hdr.a_data = (count [SDATA] + count [SSTRNG]) * (W/2);
-    hdr.a_bss = count [SBSS] * (W/2);
-    hdr.a_syms = stlength;
-    hdr.a_entry = HDRSZ/W + count [SCONST] / (W/2);
-    hdr.a_flag = 0;
-    fputhdr (&hdr, stdout);
+    blexflag = 1;
+    backlex = val;
+    blextype = type;
 }
 
-void makereloc ()
+int getterm ()
 {
-    register short i;
-    register long len;
+    register int ty;
+    int cval, s;
 
-    for (segm=STEXT; segm<SBSS; segm++) {
-        rewind (rfile [segm]);
-        len = count [segm];
-        while (len--) fputh (relhalf (fgeth (rfile[segm])), stdout);
+    switch (getlex (&cval)) {
+    default:
+        uerror ("operand missed");
+    case LNUM:
+        return (SABS);
+    case LNAME:
+        intval = 0;
+        ty = stab[cval].n_type & N_TYPE;
+        if (ty==N_UNDF || ty==N_COMM) {
+            extref = cval;
+            return (SEXT);
+        }
+        intval = stab[cval].n_value;
+        return (typesegm [ty]);
+    case '.':
+        intval = count[segm];
+        return (segm);
+    case '(':
+        getexpr (&s);
+        if (getlex (&cval) != ')')
+            uerror ("bad () syntax");
+        return (s);
     }
 }
 
-long relhalf (hr)
-    register long hr;
+/*
+ * считать число .N, где N - номер бита
+ */
+void getbitnum (c)
+    register int c;
 {
-    register short i;
-
-    switch ((int) hr & REXT) {
-    case RSTRNG:
-        hr = RDATA | hr & RSHORT;
-        break;
-    case REXT:
-        i = RGETIX (hr);
-        if (stab[i].n_type == N_EXT+N_UNDF ||
-            stab[i].n_type == N_EXT+N_COMM)
-        {
-            /* переиндексация */
-            if (xflags)
-                hr = hr & (RSHORT|REXT) | RPUTIX (newindex [i]);
-        } else
-            hr = hr & RSHORT | TYPEREL (stab[i].n_type);
-        break;
-    }
-    return (hr);
+    getnum (c);
+    c = intval;
+    if (c < 0 || c >= 64)
+        uerror ("bit number out of range 0..31");
+    intval = 1 << c;
 }
 
-void makesymtab ()
+/*
+ * считать число .[a:b], где a, b - номер бита
+ * или .[a=b]
+ */
+void getbitmask ()
 {
-    register short i;
+    register int c, a, b;
+    int v, compl;
 
-    for (i=0; i<stabfree; i++)
-        if (!xflags || stab[i].n_type & N_EXT || Xflag &&
-            stab[i].n_name[0] != 'L')
-            fputsym (&stab[i], stdout);
-    while (stalign--) putchar (0);
+    a = getexpr (&v) - 1;
+    if (v != SABS)
+        uerror ("illegal expression in bit mask");
+    c = getlex (&v);
+    if (c != ':' && c != '=')
+        uerror ("illegal bit mask delimiter");
+    compl = c == '=';
+    b = getexpr (&v) - 1;
+    if (v != SABS)
+        uerror ("illegal expression in bit mask");
+    c = getlex (&v);
+    if (c != ']')
+        uerror ("illegal bit mask delimiter");
+    if (a<0 || a>=64 || b<0 || b>=64)
+        uerror ("bit number out of range 1..64");
+    if (a < b)
+        c = a, a = b, b = c;
+    if (compl && --a < ++b) {
+        intval = ~0;
+        return;
+    }
+    /* a greater than or equal to b */
+    intval = (unsigned) ~0 >> (31-a+b) << b;
+    if (compl)
+        intval ^= ~0;
+}
+
+/*
+ * unsigned getexpr (int *s) - считать выражение.
+ * Вернуть значение, номер базового сегмента записать в *s.
+ * Возвращаются 4 младших байта значения,
+ * полная копия остается в intval.
+ *
+ * выражение    = [операнд] {операция операнд}...
+ * операнд      = LNAME | LNUM | "." | "(" выражение ")" | "{" выражение "}"
+ * операция     = "+" | "-" | "&" | "|" | "^" | "~" | "\" | "/" | "*" | "%"
+ */
+unsigned getexpr (s)
+    register int *s;
+{
+    register int clex;
+    int cval, s2;
+    unsigned rez;
+
+    /* смотрим первую лексему */
+    switch (clex = getlex (&cval)) {
+    default:
+        ungetlex (clex, cval);
+        rez = 0;
+        *s = SABS;
+        break;
+    case LNUM:
+    case LNAME:
+    case '.':
+    case '(':
+    case '{':
+        ungetlex (clex, cval);
+        *s = getterm ();
+        rez = intval;
+        break;
+    }
+    for (;;) {
+        switch (clex = getlex (&cval)) {
+        case '+':
+            s2 = getterm ();
+            if (*s == SABS)
+                *s = s2;
+            else if (s2 != SABS)
+                uerror ("too complex expression");
+            rez += intval;
+            break;
+        case '-':
+            s2 = getterm ();
+            if (s2 != SABS)
+                uerror ("too complex expression");
+            rez -= intval;
+            break;
+        case '&':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez &= intval;
+            break;
+        case '|':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez |= intval;
+            break;
+        case '^':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez ^= intval;
+            break;
+        case '~':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez ^= ~intval;
+            break;
+        case LLSHIFT:           /* сдвиг влево */
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez <<= intval & 037;
+            break;
+        case LRSHIFT:           /* сдвиг вправо */
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez >>= intval & 037;
+            break;
+        case '*':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            rez *= intval;
+            break;
+        case '/':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            if (intval == 0)
+                uerror ("division by zero");
+            rez /= intval;
+            break;
+        case '%':
+            s2 = getterm ();
+            if (*s != SABS || s2 != SABS)
+                uerror ("too complex expression");
+            if (intval == 0)
+                uerror ("division (%%) by zero");
+            rez %= intval;
+            break;
+        default:
+            ungetlex (clex, cval);
+            intval = rez;
+            return (rez);
+        }
+    }
+    /* NOTREACHED */
+}
+
+void emitword (w, r)
+    register unsigned w;
+    register unsigned r;
+{
+    fputword (w, sfile[segm]);
+    fputword (r, rfile[segm]);
+    count[segm] += WORDSZ;
+}
+
+void makecmd (val, type)
+    unsigned val;
+{
+    register int clex, index, incr;
+    register unsigned addr, reltype;
+    int cval, segment;
+
+    index = regleft;
+    reltype = RABS;
+    for (;;) {
+        switch (clex = getlex (&cval)) {
+        case LEOF:
+        case LEOL:
+            ungetlex (clex, cval);
+            addr = 0;
+            goto putcom;
+        case '[':
+            makecmd (WTCCOM, TLONG);
+            if (getlex (&cval) != ']')
+                uerror ("bad [] syntax");
+            continue;
+        case '<':
+            makecmd (UTCCOM, TLONG);
+            if (getlex (&cval) != '>')
+                uerror ("bad <> syntax");
+            continue;
+        default:
+            ungetlex (clex, cval);
+            addr = getexpr (&segment);
+            reltype = segmrel [segment];
+            if (reltype == REXT)
+                reltype |= RSETINDEX (extref);
+            break;
+        }
+        break;
+    }
+    if ((clex = getlex (&cval)) == ',') {
+        index = getexpr (&segment);
+        if (segment != SABS)
+            uerror ("bad register number");
+        if ((type & TCOMP) && addr==0 && reltype==RABS) {
+            if ((clex = getlex (&cval)) == LINCR || clex==LDECR) {
+                incr = getexpr (&segment);
+                if (segment != SABS)
+                    uerror ("bad register increment");
+                if (incr == 0)
+                    incr = 1;
+                /* делаем компонентную команду */
+                addr = clex==LINCR ? incr : -incr;
+                val = MAKECOMP (val);
+            } else
+                ungetlex (clex, cval);
+        }
+    } else
+        ungetlex (clex, cval);
+putcom:
+    if (type & TLONG) {
+        addr &= 0xfffff;
+        emitword ((index << 28) | val | (addr & 0xfffff),
+            reltype | RLONG);
+    } else {
+        emitword ((index << 28) | val | (addr & 07777),
+            reltype | RSHORT);
+    }
+}
+
+void makeascii ()
+{
+    register int c, n;
+    int cval;
+
+    c = getlex (&cval);
+    if (c != '"')
+        uerror ("no .ascii parameter");
+    n = 0;
+    for (;;) {
+        switch (c = getchar ()) {
+        case EOF:
+            uerror ("EOF in text string");
+        case '"':
+            break;
+        case '\\':
+            switch (c = getchar ()) {
+            case EOF:
+                uerror ("EOF in text string");
+            case '\n':
+                continue;
+            case '0': case '1': case '2': case '3':
+            case '4': case '5': case '6': case '7':
+                cval = c & 07;
+                c = getchar ();
+                if (c>='0' && c<='7') {
+                    cval = (cval << 3) | (c & 7);
+                    c = getchar ();
+                    if (c>='0' && c<='7') {
+                        cval = (cval << 3) | (c & 7);
+                    } else
+                        ungetc (c, stdin);
+                } else
+                    ungetc (c, stdin);
+                c = cval;
+                break;
+            case 't':
+                c = '\t';
+                break;
+            case 'b':
+                c = '\b';
+                break;
+            case 'r':
+                c = '\r';
+                break;
+            case 'n':
+                c = '\n';
+                break;
+            case 'f':
+                c = '\f';
+                break;
+            }
+        default:
+            fputc (c, sfile[segm]);
+            n++;
+            continue;
+        }
+        break;
+    }
+    c = WORDSZ - n % WORDSZ;
+    count[segm] += n + c;
+    n = (n + c) / WORDSZ;
+    while (c--)
+        fputc (0, sfile[segm]);
+    while (n--)
+        fputword (0L, rfile[segm]);
 }
 
 void pass1 ()
 {
-    register short clex;
+    register int clex;
     int cval, tval, csegm;
-    register long addr;
+    register unsigned addr;
 
     segm = STEXT;
     while ((clex = getlex (&cval)) != LEOF) {
@@ -905,28 +1085,26 @@ void pass1 ()
             regleft = 0;
             continue;
         case ':':
-            align (segm);
             continue;
         case LNUM:
             ungetlex (clex, cval);
             getexpr (&cval);
             if (cval != SABS)
                 uerror ("bad register number");
-            regleft = intval.right & 017;
+            regleft = intval & 017;
             continue;
         case LCMD:
             makecmd (table[cval].val, table[cval].type);
             break;
         case LSCMD:
-            makecmd ((long) cval<<12 | 0x3f00000L, 0);
+            makecmd (cval << 12 | 0x3f00000L, 0);
             break;
         case LLCMD:
-            makecmd ((long) cval<<20, TLONG);
+            makecmd (cval << 20, TLONG);
             break;
         case '.':
             if (getlex (&cval) != '=')
                 uerror ("bad command");
-            align (segm);
             addr = 2 * getexpr (&csegm);
             if (csegm != segm)
                 uerror ("bad count assignment");
@@ -934,36 +1112,37 @@ void pass1 ()
                 uerror ("negative count increment");
             if (segm == SBSS)
                 count [segm] = addr;
-            else while (count[segm] < addr) {
-                fputh (segm==STEXT? EMPCOM: 0L, sfile[segm]);
-                fputh (0L, rfile[segm]);
-                count[segm]++;
+            else {
+                while (count[segm] < addr) {
+                    fputword (segm==STEXT? EMPCOM: 0L, sfile[segm]);
+                    fputword (0L, rfile[segm]);
+                    count[segm]++;
+                }
             }
             break;
         case LNAME:
             if ((clex = getlex (&tval)) == ':') {
-                align (segm);
                 stab[cval].n_value = count[segm] / 2;
                 stab[cval].n_type &= ~N_TYPE;
-                stab[cval].n_type |= SEGMTYPE (segm);
+                stab[cval].n_type |= segmtype [segm];
                 continue;
-            } else if (clex=='=' || clex==LACMD && tval==EQU) {
+            } else if (clex=='=' || (clex==LACMD && tval==EQU)) {
                 stab[cval].n_value = getexpr (&csegm);
                 if (csegm == SEXT)
                     uerror ("indirect equivalence");
                 stab[cval].n_type &= N_EXT;
-                stab[cval].n_type |= SEGMTYPE (csegm);
+                stab[cval].n_type |= segmtype [csegm];
                 break;
             } else if (clex==LACMD && tval==COMM) {
                 /* name .comm len */
                 if (stab[cval].n_type != N_UNDF &&
                     stab[cval].n_type != (N_EXT|N_COMM))
                     uerror ("name already defined");
-                stab[cval].n_type = N_EXT | N_COMM);
+                stab[cval].n_type = N_EXT | N_COMM;
                 getexpr (&tval);
                 if (tval != SABS)
                     uerror ("bad length .comm");
-                stab[cval].n_value = intval.right;
+                stab[cval].n_value = intval;
                 break;
             }
             uerror ("bad command");
@@ -981,13 +1160,13 @@ void pass1 ()
             case BSS:
                 segm = SBSS;
                 break;
-            case HALF:
+            case SHORT:
                 for (;;) {
                     getexpr (&cval);
-                    addr = SEGMREL (cval);
+                    addr = segmrel [cval];
                     if (cval == SEXT)
-                        addr |= RPUTIX (extref);
-                    puthr (intval.right, addr);
+                        addr |= RSETINDEX (extref);
+                    emitword (intval, addr);
                     if ((clex = getlex (&cval)) != ',') {
                         ungetlex (clex, cval);
                         break;
@@ -995,16 +1174,13 @@ void pass1 ()
                 }
                 break;
             case WORD:
-                align (segm);
                 for (;;) {
                     getexpr (&cval);
-                    addr = SEGMREL (cval);
+                    addr = segmrel [cval];
                     if (cval == SEXT)
-                        addr |= RPUTIX (extref);
-                    fputh (intval.right, sfile[segm]);
-                    fputh (addr, rfile[segm]);
-                    fputh (intval.left, sfile[segm]);
-                    fputh (0L, rfile[segm]);
+                        addr |= RSETINDEX (extref);
+                    fputword (intval, sfile[segm]);
+                    fputword (addr, rfile[segm]);
                     count[segm] += 2;
                     if ((clex = getlex (&cval)) != ',') {
                         ungetlex (clex, cval);
@@ -1013,7 +1189,6 @@ void pass1 ()
                 }
                 break;
             case ASCII:
-                align (segm);
                 makeascii ();
                 break;
             case GLOBL:
@@ -1042,188 +1217,67 @@ void pass1 ()
                         uerror ("bad length .comm");
                 } else {
                     ungetlex (clex, cval);
-                    intval.right = 1;
+                    intval = 1;
                 }
-                stab[cval].n_value = intval.right;
+                stab[cval].n_value = intval;
                 break;
             }
             break;
         default:
             uerror ("bad syntax");
         }
-        if ((clex = getlex (&cval)) != LEOL)
-            if (clex == LEOF) return;
-            else uerror ("bad command end");
+        if ((clex = getlex (&cval)) != LEOL) {
+            if (clex == LEOF)
+                return;
+            uerror ("bad command end");
+        }
         regleft = 0;
     }
 }
 
-void makecmd (val, type)
-    long val;
+void middle ()
 {
-    register short clex, index, incr;
-    register long addr, reltype;
-    int cval, segment;
+    register int i, snum;
 
-    index = regleft;
-    reltype = RABS;
-    for (;;) {
-        switch (clex = getlex (&cval)) {
-        case LEOF:
-        case LEOL:
-            ungetlex (clex, cval);
-            addr = 0;
-            goto putcom;
-        case '[':
-            makecmd (WTCCOM, TLONG);
-            if (getlex (&cval) != ']')
-                uerror ("bad [] syntax");
-            continue;
-        case '<':
-            makecmd (UTCCOM, TLONG);
-            if (getlex (&cval) != '>')
-                uerror ("bad <> syntax");
-            continue;
-        default:
-            ungetlex (clex, cval);
-            addr = getexpr (&segment);
-            reltype = SEGMREL (segment);
-            if (reltype == REXT)
-                reltype |= RPUTIX (extref);
-            break;
+    stlength = 0;
+    for (snum=0, i=0; i<stabfree; i++) {
+        /* если не установлен флаг uflag,
+         * неопределенное имя считается внешним */
+        if (stab[i].n_type == N_UNDF) {
+            if (uflag)
+                uerror ("name undefined", stab[i].n_name);
+            stab[i].n_type |= N_EXT;
         }
-        break;
-    }
-    if ((clex = getlex (&cval)) == ',') {
-        index = getexpr (&segment);
-        if (segment != SABS)
-            uerror ("bad register number");
-        if ((type & TCOMP) && addr==0 && reltype==RABS) {
-            if ((clex = getlex (&cval)) == LINCR || clex==LDECR) {
-                incr = getexpr (&segment);
-                if (segment != SABS)
-                    uerror ("bad register increment");
-                if (incr == 0)
-                    incr = 1;
-                /* делаем компонентную команду */
-                addr = clex==LINCR ? incr : -incr;
-                val = MAKECOMP (val);
-            } else
-                ungetlex (clex, cval);
+        if (xflags)
+            newindex[i] = snum;
+        if (! xflags || (stab[i].n_type & N_EXT) ||
+            (Xflag && stab[i].n_name[0] != 'L'))
+        {
+            stlength += 2 + WORDSZ + stab[i].n_len;
+            snum++;
         }
-    } else
-        ungetlex (clex, cval);
-putcom:
-    if (type & TLONG) {
-        addr &= 0xfffff;
-        puthr ((long) index<<28 | val | addr & 0xfffff,
-            reltype | RLONG);
-    } else {
-        puthr ((long) index<<28 | val | addr & 07777,
-            reltype | RSHORT);
     }
-    if (! aflag && (type & TALIGN))
-        align (segm);
+    stalign = WORDSZ - stlength % WORDSZ;
+    stlength += stalign;
 }
 
-void puthr (h, r)
-    register long h, r;
+void makeheader ()
 {
-    static long sh, sr;
+    struct exec hdr;
 
-    if (count[segm] & 01) {
-        fputh (h, sfile[segm]);
-        fputh (r, rfile[segm]);
-        fputh (sh, sfile[segm]);
-        fputh (sr, rfile[segm]);
-    } else {
-        sh = h;
-        sr = r;
-    }
-    count[segm]++;
+    hdr.a_magic = OMAGIC;
+    hdr.a_text = count [STEXT];
+    hdr.a_data = count [SDATA] + count [SSTRNG];
+    hdr.a_bss = count [SBSS];
+    hdr.a_syms = stlength;
+    hdr.a_entry = USER_CODE_START;
+    hdr.a_flag = 0;
+    fputhdr (&hdr, stdout);
 }
 
-void makeascii ()
-{
-    register short c, n;
-    int cval;
-
-    c = getlex (&cval);
-    if (c != '"')
-        uerror ("no .ascii parameter");
-    n = 0;
-    for (;;) {
-        switch (c = getchar ()) {
-        case EOF:
-            uerror ("EOF in text string");
-        case '"':
-            break;
-        case '\\':
-            switch (c = getchar ()) {
-            case EOF:
-                uerror ("EOF in text string");
-            case '\n':
-                continue;
-            case '0': case '1': case '2': case '3':
-            case '4': case '5': case '6': case '7':
-                cval = c & 07;
-                c = getchar ();
-                if (c>='0' && c<='7') {
-                    cval = cval<<3 | c&7;
-                    c = getchar ();
-                    if (c>='0' && c<='7') {
-                        cval = cval<<3 | c&7;
-                    } else ungetc (c, stdin);
-                } else ungetc (c, stdin);
-                c = cval;
-                break;
-            case 't':
-                c = '\t';
-                break;
-            case 'b':
-                c = '\b';
-                break;
-            case 'r':
-                c = '\r';
-                break;
-            case 'n':
-                c = '\n';
-                break;
-            case 'f':
-                c = '\f';
-                break;
-            }
-        default:
-            fputc (c, sfile[segm]);
-            n++;
-            continue;
-        }
-        break;
-    }
-    c = W - n % W;
-    n = (n + c) / (W/2);
-    count[segm] += n;
-    while (c--) fputc (0, sfile[segm]);
-    while (n--) fputh (0L, rfile[segm]);
-}
-
-void align (s)
-    register s;
-{
-    register short save;
-
-    if (s != segm) {
-        save = segm;
-        segm = s;
-    } else save = -1;
-    if (count[s] & 01)
-        puthr (s==STEXT ? EMPCOM : 0L, (long) RABS);
-    if (save >= 0) segm = save;
-}
-
-long adjust (h, a, hr)
-    register long h, a;
-    register hr;
+unsigned adjust (h, a, hr)
+    register unsigned h, a;
+    register int hr;
 {
     switch (hr & RSHORT) {
     case 0:
@@ -1250,10 +1304,40 @@ rlong:  a += h & 0xfffff;
     return (h);
 }
 
+unsigned makeword (h, hr)
+    register unsigned h, hr;
+{
+    register int i;
+
+    switch ((int) hr & REXT) {
+    case RABS:
+        break;
+    case RTEXT:
+        h = adjust (h, tbase, (int) hr);
+        break;
+    case RDATA:
+        h = adjust (h, dbase, (int) hr);
+        break;
+    case RSTRNG:
+        h = adjust (h, adbase, (int) hr);
+        break;
+    case RBSS:
+        h = adjust (h, bbase, (int) hr);
+        break;
+    case REXT:
+        i = RINDEX (hr);
+        if (stab[i].n_type != N_EXT+N_UNDF &&
+            stab[i].n_type != N_EXT+N_COMM)
+            h = adjust (h, stab[i].n_value, (int) hr);
+        break;
+    }
+    return (h);
+}
+
 void pass2 ()
 {
-    register short i;
-    register long h;
+    register int i;
+    register unsigned h;
 
     tbase = 0x7f008000; // TODO: user code start
     dbase = tbase + count[STEXT]/2;
@@ -1287,656 +1371,9 @@ void pass2 ()
         rewind (sfile [segm]);
         rewind (rfile [segm]);
         h = count [segm];
-        while (h--) fputh (makehalf (fgeth (sfile[segm]),
-            fgeth (rfile[segm])), stdout);
-    }
-}
-
-long makehalf (h, hr)
-    register long h, hr;
-{
-    register short i;
-
-    switch ((int) hr & REXT) {
-    case RABS:
-        break;
-    case RTEXT:
-        h = adjust (h, tbase, (int) hr);
-        break;
-    case RDATA:
-        h = adjust (h, dbase, (int) hr);
-        break;
-    case RSTRNG:
-        h = adjust (h, adbase, (int) hr);
-        break;
-    case RBSS:
-        h = adjust (h, bbase, (int) hr);
-        break;
-    case REXT:
-        i = RGETIX (hr);
-        if (stab[i].n_type != N_EXT+N_UNDF &&
-            stab[i].n_type != N_EXT+N_COMM)
-            h = adjust (h, stab[i].n_value, (int) hr);
-        break;
-    }
-    return (h);
-}
-
-/*
- * int getlex (int *val) - считать лексему, вернуть тип лексемы,
- * записать в *val ее значение.
- * Возвращаемые типы лексем:
- *      LEOL    - конец строки. Значение - номер начавшейся строки.
- *      LEOF    - конец файла.
- *      LNUM    - целое число. Значение - в intval, *val не определено.
- *      LCMD    - машинная команда. Значение - ее индекс в table.
- *      LNAME   - идентификатор. Значение - индекс в stab.
- *      LACMD   - инструкция ассемблера. Значение - тип.
- *      LLCMD   - длинноадресная команда. Значение - код.
- *      LSCMD   - короткоадресная команда. Значение - код.
- */
-int getlex (pval)
-    register *pval;
-{
-    register short c;
-
-    if (blexflag) {
-        blexflag = 0;
-        *pval = blextype;
-        return (backlex);
-    }
-    for (;;) switch (c = getchar()) {
-    case ';':
-skiptoeol:      while ((c = getchar()) != '\n')
-            if (c == EOF) return (LEOF);
-    case '\n':
-        c = getchar ();
-        if (c == '#')
-            goto skiptoeol;
-        ungetc (c, stdin);
-        *pval = ++line;
-        return (LEOL);
-    case ' ':
-    case '\t':
-        continue;
-    case EOF:
-        return (LEOF);
-    case '\\':
-        c = getchar ();
-        if (c=='<')
-            return (LLSHIFT);
-        if (c=='>')
-            return (LRSHIFT);
-        ungetc (c, stdin);
-        return ('\\');
-    case '+':
-        if ((c = getchar ()) == '+')
-            return (LINCR);
-        ungetc (c, stdin);
-        return ('+');
-    case '-':
-        if ((c = getchar ()) == '-')
-            return (LINCR);
-        ungetc (c, stdin);
-        return ('-');
-    case '^':       case '&':       case '|':       case '~':
-    case '#':       case '*':       case '/':       case '%':
-    case '"':       case ',':       case '[':       case ']':
-    case '(':       case ')':       case '{':       case '}':
-    case '<':       case '>':       case '=':       case ':':
-        return (c);
-    case '\'':
-        getlhex (c);
-        return (LNUM);
-    case '0':
-        if ((c = getchar ()) == 'x' || c=='X') {
-            gethnum ();
-            return (LNUM);
-        }
-        ungetc (c, stdin);
-        c = '0';
-    case '1':       case '2':       case '3':
-    case '4':       case '5':       case '6':       case '7':
-    case '8':       case '9':
-        getnum (c);
-        return (LNUM);
-    case '@':
-    case '$':
-        *pval = hexdig (getchar ());
-        *pval = *pval<<4 | hexdig (getchar ());
-        return (c=='$' ? LSCMD : LLCMD);
-    default:
-        if (!ISLETTER (c))
-            uerror ("bad character: \\%o", c & 0377);
-        if (c=='.') {
-            c = getchar();
-            if (c == '[') {
-                getbitmask ();
-                return (LNUM);
-            } else if (ISOCTAL (c)) {
-                getbitnum (c);
-                return (LNUM);
-            }
-            ungetc (c, stdin);
-            c = '.';
-        }
-        getname (c);
-        if (name[0]=='.') {
-            if (name[1]==0) return ('.');
-            if ((*pval = lookacmd()) != -1) return (LACMD);
-        }
-        if ((*pval = lookcmd()) != -1) return (LCMD);
-        *pval = lookname ();
-        return (LNAME);
-    }
-}
-
-void ungetlex (val, type)
-{
-    blexflag = 1;
-    backlex = val;
-    blextype = type;
-}
-
-int hexdig (c)
-    register int c;
-{
-    if (c <= '9')
-        return (c - '0');
-    else if (c <= 'F')
-        return (c - 'A' + 10);
-    else
-        return (c - 'a' + 10);
-}
-
-void getbitnum (c)
-    register int c;
-{
-    /* считать число .N, где N - номер бита */
-
-    getnum (c);
-    c = intval.right - 1;
-    if (c < 0 || c >= 64)
-        uerror ("bit number out of range 1..64");
-    if (c >= 32) {
-        intval.left = 1 << (c-32);
-        intval.right = 0;
-    } else {
-        intval.right = 1 << c;
-        intval.left = 0;
-    }
-}
-
-void getbitmask ()
-{
-    /* считать число .[a:b], где a, b - номер бита */
-    /* или .[a=b] */
-    register c, a, b;
-    int v, compl;
-
-    a = getexpr (&v) - 1;
-    if (v != SABS)
-        uerror ("illegal expression in bit mask");
-    c = getlex (&v);
-    if (c != ':' && c != '=')
-        uerror ("illegal bit mask delimiter");
-    compl = c == '=';
-    b = getexpr (&v) - 1;
-    if (v != SABS)
-        uerror ("illegal expression in bit mask");
-    c = getlex (&v);
-    if (c != ']')
-        uerror ("illegal bit mask delimiter");
-    if (a<0 || a>=64 || b<0 || b>=64)
-        uerror ("bit number out of range 1..64");
-    if (a < b)
-        c = a, a = b, b = c;
-    if (compl && --a < ++b) {
-        intval.left = 0xffffffff;
-        intval.right = 0xffffffff;
-        return;
-    }
-    /* a greater than or equal to b */
-    if (a >= 32) {
-        if (b >= 32) {
-            intval.left = (unsigned long) ~0L >> (63-a+b-32) << (b-32);
-            intval.right = 0;
-        } else {
-            intval.left = (unsigned long) ~0L >> (63-a);
-            intval.right = (unsigned long) ~0L << b;
-        }
-    } else {
-        intval.left = 0;
-        intval.right = (unsigned long) ~0L >> (31-a+b) << b;
-    }
-    intval.left &= 0xffffffff;
-    intval.right &= 0xffffffff;
-    if (compl) {
-        intval.left ^= 0xffffffff;
-        intval.right ^= 0xffffffff;
-    }
-}
-
-void getlhex ()
-{
-    register c;
-    register char *cp, *p;
-
-    /* считать шестнадцатеричное число 'ZZZ */
-
-    c = getchar ();
-    for (cp=name; ISHEX(c); c=getchar()) *cp++ = hexdig (c);
-    ungetc (c, stdin);
-    intval.left = 0;
-    intval.right = 0;
-    p = name;
-    for (c=28; c>=0; c-=4, ++p) {
-        if (p >= cp) return;
-        intval.left |= (long) *p << c;
-    }
-    for (c=28; c>=0; c-=4, ++p) {
-        if (p >= cp) return;
-        intval.right |= (long) *p << c;
-    }
-}
-
-void gethnum ()
-{
-    register c;
-    register char *cp;
-
-    /* считать шестнадцатеричное число 0xZZZ */
-
-    c = getchar ();
-    for (cp=name; ISHEX(c); c=getchar()) *cp++ = hexdig (c);
-    ungetc (c, stdin);
-    intval.left = 0;
-    intval.right = 0;
-    for (c=0; c<32; c+=4) {
-        if (--cp < name) return;
-        intval.right |= (long) *cp << c;
-    }
-    for (c=0; c<32; c+=4) {
-        if (--cp < name) return;
-        intval.left |= (long) *cp << c;
-    }
-}
-
-void getnum (c)
-    register int c;
-{
-    register char *cp;
-    int leadingzero;
-    /* считать число */
-    /* 1234 1234d 1234D - десятичное */
-    /* 01234 1234. 1234o 1234O - восьмеричное */
-    /* 1234' 1234h 1234H - шестнадцатеричное */
-
-    leadingzero = (c=='0');
-    for (cp=name; ISHEX(c); c=getchar()) *cp++ = hexdig (c);
-    intval.left = 0;
-    intval.right = 0;
-    if (c=='.' || c=='o' || c=='O') {
-octal:
-        for (c=0; c<=27; c+=3) {
-            if (--cp < name) return;
-            intval.right |= (long) *cp << c;
-        }
-        if (--cp < name) return;
-        intval.right |= (long) *cp << 30;
-        intval.left = (long) *cp >> 2;
-        for (c=1; c<=31; c+=3) {
-            if (--cp < name) return;
-            intval.left |= (long) *cp << c;
-        }
-        return;
-    } else if (c=='h' || c=='H' || c=='\'') {
-        for (c=0; c<32; c+=4) {
-            if (--cp < name) return;
-            intval.right |= (long) *cp << c;
-        }
-        for (c=0; c<32; c+=4) {
-            if (--cp < name) return;
-            intval.left |= (long) *cp << c;
-        }
-        return;
-    } else if (c!='d' && c!='D') {
-        ungetc (c, stdin);
-        if (leadingzero)
-            goto octal;
-    }
-    for (c=1; ; c*=10) {
-        if (--cp < name) return;
-        intval.right += (long) *cp * c;
-    }
-}
-
-void getname (c)
-    register c;
-{
-    register char *cp;
-
-    for (cp=name; ISLETTER (c) || ISDIGIT (c); c=getchar())
-        *cp++ = c;
-    *cp = 0;
-    ungetc (c, stdin);
-}
-
-int lookacmd ()
-{
-    switch (name [1]) {
-    case 'a':
-        if (! strcmp (".ascii", name)) return (ASCII);
-        break;
-    case 'b':
-        if (! strcmp (".bss", name)) return (BSS);
-        break;
-    case 'c':
-        if (! strcmp (".comm", name)) return (COMM);
-        break;
-    case 'd':
-        if (! strcmp (".data", name)) return (DATA);
-        break;
-    case 'e':
-        if (! strcmp (".equ", name)) return (EQU);
-        break;
-    case 'g':
-        if (! strcmp (".globl", name)) return (GLOBL);
-        break;
-    case 'h':
-        if (! strcmp (".half", name)) return (HALF);
-        break;
-    case 's':
-        if (! strcmp (".strng", name)) return (STRNG);
-        break;
-    case 't':
-        if (! strcmp (".text", name)) return (TEXT);
-        break;
-    case 'w':
-        if (! strcmp (".word", name)) return (WORD);
-        break;
-    }
-    return (-1);
-}
-
-void hashinit ()
-{
-    register short i, h;
-    register struct table *p;
-
-    for (i=0; i<HCONSZ; i++)
-        hashconst[i] = -1;
-    for (i=0; i<HCMDSZ; i++)
-        hashctab[i] = -1;
-    for (p=table; p->name; p++) {
-        h = chash (p->name);
-        while (hashctab[h] != -1)
-            if (--h < 0)
-                h += HCMDSZ;
-        hashctab[h] = p - table;
-    }
-    for (i=0; i<HASHSZ; i++)
-        hashtab[i] = -1;
-}
-
-int lookcmd ()
-{
-    register short i, h;
-
-    h = chash (name);
-    while ((i = hashctab[h]) != -1) {
-        if (!strcmp (table[i].name, name)) return (i);
-        if (--h < 0) h += HCMDSZ;
-    }
-    return (-1);
-}
-
-int hash (s)
-    register char *s;
-{
-    register short h, c;
-
-    h = 12345;
-    while (c = *s++) h += h + c;
-    return (SUPERHASH (h, HASHSZ-1));
-}
-
-int chash (s)
-    register char *s;
-{
-    register short h, c;
-
-    h = 12345;
-    while (c = *s++) h += h + c;
-    return (SUPERHASH (h, HCMDSZ-1));
-}
-
-int lookname ()
-{
-    register short i, h;
-
-    h = hash (name);
-    while ((i = hashtab[h]) != -1) {
-        if (!strcmp (stab[i].n_name, name)) return (i);
-        if (--h < 0) h += HASHSZ;
-    }
-
-    /* занесение в таблицу нового символа */
-
-    if ((i = stabfree++) >= STSIZE)
-        uerror ("symbol table overflow");
-    stab[i].n_len = strlen (name);
-    stab[i].n_name = alloc (1 + stab[i].n_len);
-    strcpy (stab[i].n_name, name);
-    stab[i].n_value = 0;
-    stab[i].n_type = 0;
-    hashtab[h] = i;
-    return (i);
-}
-
-char *alloc (len)
-{
-    register short r;
-
-    r = lastfree;
-    if ((lastfree += len) > SPACESZ)
-        uerror ("out of memory");
-    return (space + r);
-}
-
-/*
- * long getexpr (int *s) - считать выражение.
- * Вернуть значение, номер базового сегмента записать в *s.
- * Возвращаются 4 младших байта значения,
- * полная копия остается в intval.
- *
- * выражение    = [операнд] {операция операнд}...
- * операнд      = LNAME | LNUM | "." | "(" выражение ")" | "{" выражение "}"
- * операция     = "+" | "-" | "&" | "|" | "^" | "~" | "\" | "/" | "*" | "%"
- */
-long getexpr (s)
-    register *s;
-{
-    register short clex;
-    int cval, s2;
-    struct word rez;
-
-    /* смотрим первую лексему */
-    switch (clex = getlex (&cval)) {
-    default:
-        ungetlex (clex, cval);
-        rez.left = rez.right = 0;
-        *s = SABS;
-        break;
-    case LNUM:
-    case LNAME:
-    case '.':
-    case '(':
-    case '{':
-        ungetlex (clex, cval);
-        *s = getterm ();
-        rez = intval;
-        break;
-    }
-    for (;;) {
-        switch (clex = getlex (&cval)) {
-            register long t;
-        case '+':
-            s2 = getterm ();
-            if (*s == SABS) *s = s2;
-            else if (s2 != SABS)
-                uerror ("too complex expression");
-            t = rez.right>>16 & 0xffff;
-            rez.right &= 0xffff;
-            rez.right += intval.right & 0xffff;
-            if (rez.right & ~0xffff) t++;
-            rez.right &= 0xffff;
-            t += intval.right>>16 & 0xffff;
-            rez.right |= t << 16;
-            rez.left += intval.left;
-            if (t & ~0xffff) rez.left++;
-            break;
-        case '-':
-            s2 = getterm ();
-            if (s2 != SABS)
-                uerror ("too complex expression");
-            t = rez.right>>16 & 0xffff;
-            rez.right &= 0xffff;
-            rez.right -= intval.right & 0xffff;
-            if (rez.right & ~0xffff) t--;
-            rez.right &= 0xffff;
-            t -= intval.right>>16 & 0xffff;
-            rez.right |= t << 16;
-            rez.left -= intval.left;
-            if (t & ~0xffff) rez.left--;
-            break;
-        case '&':
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left &= intval.left;
-            rez.right &= intval.right;
-            break;
-        case '|':
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left |= intval.left;
-            rez.right |= intval.right;
-            break;
-        case '^':
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left ^= intval.left;
-            rez.right ^= intval.right;
-            break;
-        case '~':
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left ^= ~intval.left;
-            rez.right ^= ~intval.right;
-            break;
-        case LLSHIFT:           /* сдвиг влево */
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            clex = intval.right & 077;
-            if (clex<32) {
-                rez.left <<= clex;
-                rez.left |= rez.right >> (32-clex);
-                rez.right <<= clex;
-            } else {
-                rez.left = rez.right << (clex-32);
-                rez.right = 0;
-            }
-            break;
-        case LRSHIFT:           /* сдвиг вправо */
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            clex = intval.right & 077;
-            if (clex<32) {
-                rez.right >>= clex;
-                rez.right |= rez.left << (32-clex);
-                rez.left >>= clex;
-            } else {
-                rez.right = rez.left >> (clex-32);
-                rez.left = 0;
-            }
-            break;
-        case '*':       /* 31-битная операция */
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left = 0;
-            rez.right *= intval.right;
-            break;
-        case '/':       /* 31-битная операция */
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left = 0;
-            if (intval.right)
-                rez.right /= intval.right;
-            else
-                uerror ("division by zero");
-            break;
-        case '%':       /* 31-битная операция */
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            rez.left = 0;
-            if (intval.right)
-                rez.right %= intval.right;
-            else
-                uerror ("division (%%) by zero");
-            break;
-        default:
-            ungetlex (clex, cval);
-            intval = rez;
-            return (rez.right);
-        }
-    }
-    /* NOTREACHED */
-}
-
-int getterm ()
-{
-    register ty;
-    int cval, s;
-
-    switch (getlex (&cval)) {
-    default:
-        uerror ("operand missed");
-    case LNUM:
-        return (SABS);
-    case LNAME:
-        intval.left = intval.right = 0;
-        ty = stab[cval].n_type & N_TYPE;
-        if (ty==N_UNDF || ty==N_COMM) {
-            extref = cval;
-            return (SEXT);
-        }
-        intval.right = stab[cval].n_value;
-        return (TYPESEGM (ty));
-    case '.':
-        intval.left = 0;
-        intval.right = count[segm] / 2;
-        return (segm);
-    case '(':
-        getexpr (&s);
-        if (getlex (&cval) != ')')
-            uerror ("bad () syntax");
-        return (s);
-    case '{':
-        /* обрезание порядка */
-        getexpr (&s);
-        if (getlex (&cval) != '}')
-            uerror ("bad () syntax");
-        intval.left &= 07777777L;
-        return (s);
+        while (h--)
+            fputword (makeword (fgetword (sfile[segm]),
+                fgetword (rfile[segm])), stdout);
     }
 }
 
@@ -1958,13 +1395,128 @@ int typerel (t)
     }
 }
 
-void setbtable ()
+unsigned relword (hr)
+    register long hr;
 {
-    /* установить мнемонику Балакирева */
-    register struct table *p, *b;
+    register int i;
 
-    for (b=btable; b->name; ++b)
-        for (p=table; p->name; ++p)
-            if (! strcmp (b->name, p->name))
-                *p = *b;
+    switch ((int) hr & REXT) {
+    case RSTRNG:
+        hr = RDATA | (hr & RSHORT);
+        break;
+    case REXT:
+        i = RINDEX (hr);
+        if (stab[i].n_type == N_EXT+N_UNDF ||
+            stab[i].n_type == N_EXT+N_COMM)
+        {
+            /* переиндексация */
+            if (xflags)
+                hr = (hr & (RSHORT|REXT)) | RSETINDEX (newindex [i]);
+        } else
+            hr = (hr & RSHORT) | typerel (stab[i].n_type);
+        break;
+    }
+    return (hr);
+}
+
+void makereloc ()
+{
+    register unsigned len;
+
+    for (segm=STEXT; segm<SBSS; segm++) {
+        rewind (rfile [segm]);
+        len = count [segm];
+        while (len--)
+            fputword (relword (fgetword (rfile[segm])), stdout);
+    }
+}
+
+void makesymtab ()
+{
+    register int i;
+
+    for (i=0; i<stabfree; i++) {
+        if (! xflags || (stab[i].n_type & N_EXT) ||
+            (Xflag && stab[i].n_name[0] != 'L'))
+        {
+            fputsym (&stab[i], stdout);
+        }
+    }
+    while (stalign--)
+        putchar (0);
+}
+
+int main (argc, argv)
+    register char *argv[];
+{
+    register int i;
+    register char *cp;
+    int ofile = 0;
+
+    /*
+     * разбор флагов
+     */
+    for (i=1; i<argc; i++) {
+        switch (argv[i][0]) {
+        case '-':
+            for (cp=argv[i]; *cp; cp++) {
+                switch (*cp) {
+                case 'd':       /* флаг отладки */
+                    debug++;
+                    break;
+                case 'X':
+                    Xflag++;
+                case 'x':
+                    xflags++;
+                    break;
+                case 'a':       /* не выравнивать на границу слова */
+                    aflag++;
+                    break;
+                case 'u':
+                    uflag++;
+                    break;
+                case 'o':       /* выходной файл */
+                    if (ofile)
+                        uerror ("too many -o flags");
+                    ofile = 1;
+                    if (cp [1]) {
+                        /* -ofile */
+                        outfile = cp+1;
+                        while (*++cp);
+                        --cp;
+                    } else if (i+1 < argc)
+                        /* -o file */
+                        outfile = argv[++i];
+                    break;
+                }
+            }
+            break;
+        default:
+            if (infile)
+                uerror ("too many input files");
+            infile = argv[i];
+            break;
+        }
+    }
+
+    /*
+     * настройка ввода-вывода
+     */
+    if (infile && ! freopen (infile, "r", stdin))
+        uerror ("cannot open %s", infile);
+    if (! freopen (outfile, "w", stdout))
+        uerror ("cannot open %s", outfile);
+
+    i = getchar ();
+    ungetc (i=='#' ? ';' : i, stdin);
+
+    startup ();     /* открытие временных файлов */
+    hashinit ();    /* инициализация хэш-таблиц */
+    pass1 ();       /* первый проход */
+    middle ();      /* промежуточные действия */
+    makeheader ();  /* запись заголовка */
+    pass2 ();       /* второй проход */
+    makereloc ();   /* запись файлов настройки */
+    makesymtab ();  /* запись таблицы символов */
+    exit (0);
 }
