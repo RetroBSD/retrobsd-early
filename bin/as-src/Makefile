@@ -8,6 +8,7 @@ include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -Werror -Wall -Os
 LDFLAGS         += -g
+AS              = /usr/local/pic32-tools/bin/pic32-as
 
 OBJS		= aout.o mips-dis.o
 
@@ -24,3 +25,6 @@ clean:
 
 #dis:            dis.o fgethdr.o fgeth.o
 #		$(CC) $(LDFLAGS) dis.o -o dis fgethdr.o fgeth.o
+
+test:
+		$(AS) -al example.s 

@@ -9,89 +9,96 @@
 #include <a.out.h>
 
 #define USER_CODE_START 0x7f008000
-#define WORDSZ          4               /* длина слова в байтах */
+#define WORDSZ          4               /* word size in bytes */
 
-/* типы лексем */
+/*
+ * Types of lexemes.
+ */
+enum {
+    LEOF = 1,           /* end of file */
+    LEOL,               /* end of line */
+    LNAME,              /* identifier */
+    LCMD,               /* machine instruction */
+    LREG,               /* machine register */
+    LNUM,               /* integer number */
+    LLSHIFT,            /* << */
+    LRSHIFT,            /* >> */
+    LASCII,             /* .ascii */
+    LBSS,               /* .bss */
+    LCOMM,              /* .comm */
+    LDATA,              /* .data */
+    LGLOBL,             /* .globl */
+    LSHORT,             /* .short */
+    LSTRNG,             /* .strng */
+    LTEXT,              /* .text */
+    LEQU,               /* .equ */
+    LWORD,              /* .word */
+};
 
-#define LEOF            1
-#define LEOL            2
-#define LNAME           3
-#define LCMD            4
-#define LACMD           5
-#define LNUM            6
-#define LLCMD           7
-#define LSCMD           8
-#define LLSHIFT         9
-#define LRSHIFT         10
-#define LINCR           11
-#define LDECR           12
+/*
+ * Segment ids.
+ */
+enum {
+    STEXT,
+    SDATA,
+    SSTRNG,
+    SBSS,
+    SEXT,
+    SABS,               /* special case for getexpr() */
+};
 
-/* номера сегментов */
+/*
+ * Instruction formats.
+ */
+enum {
+    FMT_CODE = 1,
+    FMT_OFF18,
+    FMT_OFF28,
+    FMT_RD,
+    FMT_RD_RS,
+    FMT_RD_RS_RT,
+    FMT_RD_RT,
+    FMT_RD_RT_RS,
+    FMT_RD_RT_SA,
+    FMT_RR_RS_IMM16,
+    FMT_RS,
+    FMT_RS_IMM16,
+    FMT_RS_OFF18,
+    FMT_RS_RT,
+    FMT_RS_RT_OFF18,
+    FMT_RT,
+    FMT_RT_IMM16,
+    FMT_RT_OFF16_RS,
+    FMT_RT_RD,
+    FMT_RT_RD_SEL,
+    FMT_RT_RS_POS_SIZE,
+};
 
-#define SCONST          0
-#define STEXT           1
-#define SDATA           2
-#define SSTRNG          3
-#define SBSS            4
-#define SEXT            6
-#define SABS            7               /* вырожденный случай для getexpr */
+/*
+ * Sizes of tables.
+ * Hash sizes should be powers of 2!
+ */
+#define HASHSZ          2048            /* symbol name hash table size */
+#define HCMDSZ          1024            /* instruction hash table size */
+#define STSIZE          (HASHSZ*9/10)   /* symbol name table size */
 
-/* директивы ассемблера */
-
-#define ASCII           0
-#define BSS             1
-#define COMM            2
-#define DATA            3
-#define GLOBL           4
-#define SHORT            5
-#define STRNG           6
-#define TEXT            7
-#define EQU             8
-#define WORD            9
-
-/* типы команд */
-
-#define TLONG           01              /* длинноадресная команда */
-#define TALIGN          02              /* после команды делать выравнивание */
-#define TLIT            04              /* команда имеет литеральный аналог */
-#define TINT            010             /* команда имеет целочисленный режим */
-#define TCOMP           020             /* из команды можно сделать компонентную */
-
-/* длины таблиц */
-/* хэш-длины должны быть степенями двойки! */
-
-#define HASHSZ          2048            /* длина хэша таблицы имен */
-#define HCMDSZ          1024            /* длина хэша команд ассемблера */
-
-#define STSIZE          (HASHSZ*9/10)   /* длина таблицы имен */
-#define SPACESZ         (STSIZE*8)      /* длина массива под имена */
-
-#define EMPCOM          0x3a00000L      /* пустая команда - заполнитель */
-#define UTCCOM          0x3a00000L      /* команда <> */
-#define WTCCOM          0x3b00000L      /* команда [] */
-
-/* превращение команды в компонентную */
-
-#define MAKECOMP(c)     ((c) & 0x2000000L ? (c)|0x4800000L : (c)|0x6000000L)
-
-/* оптимальное значение хэш-множителя для 32-битного слова == 011706736335L */
-/* то же самое для 16-битного слова = 067433 */
-
-#define SUPERHASH(key,mask) (((key) * 067433) & (mask))
+#define SUPERHASH(key,mask) (((key) * 011706736335) & (mask))
 
 #define ISHEX(c)        (ctype[(c)&0377] & 1)
 #define ISOCTAL(c)      (ctype[(c)&0377] & 2)
 #define ISDIGIT(c)      (ctype[(c)&0377] & 4)
 #define ISLETTER(c)     (ctype[(c)&0377] & 8)
 
-/* на втором проходе hashtab не нужна, используем ее под именем
- * newindex для переиндексации настройки в случае флагов x или X */
-
+/*
+ * On second pass, hashtab[] is not needed.
+ * We use it under name newindex[] to reindex symbol references
+ * when -x or -X options are enabled.
+ */
 #define newindex hashtab
 
 const char ctype [256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
+    0,0,0,0,8,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
     0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
     0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -101,7 +108,7 @@ const char ctype [256] = {
 };
 
 /*
- * преобразование номера сегмента в тип символа
+ * Convert segment index to symbol type.
  */
 const int segmtype [] = {
     N_TEXT,             /* STEXT */
@@ -113,7 +120,7 @@ const int segmtype [] = {
 };
 
 /*
- * преобразование номера сегмента в тип настройки
+ * Convert segment index to relocation type.
  */
 const int segmrel [] = {
     RTEXT,              /* STEXT */
@@ -125,7 +132,7 @@ const int segmrel [] = {
 };
 
 /*
- * преобразование типа символа в номер сегмента
+ * Convert symbol type to segment index.
  */
 const int typesegm [] = {
     SEXT,               /* N_UNDF */
@@ -136,138 +143,128 @@ const int typesegm [] = {
     SSTRNG,             /* N_STRNG */
 };
 
-struct table {
-    unsigned val;
+struct optable {
+    unsigned opcode;
     const char *name;
     unsigned type;
 };
 
-const struct table table [] = {
-    /* TODO */
-    { 0x00000000,   "add",      0 },
-    { 0x00000000,   "addi",     0 },
-    { 0x00000000,   "addiu",    0 },
-    { 0x00000000,   "addiupc",  0 },
-    { 0x00000000,   "addu",     0 },
-    { 0x00000000,   "and",      0 },
-    { 0x00000000,   "andi",     0 },
-    { 0x00000000,   "b",        0 },
-    { 0x00000000,   "bal",      0 },
-    { 0x00000000,   "beq",      0 },
-    { 0x00000000,   "beql",	0 },
-    { 0x00000000,   "bgez",	0 },
-    { 0x00000000,   "bgezal",	0 },
-    { 0x00000000,   "bgezall",	0 },
-    { 0x00000000,   "bgezl",	0 },
-    { 0x00000000,   "bgtz",	0 },
-    { 0x00000000,   "bgtzl",	0 },
-    { 0x00000000,   "blez",	0 },
-    { 0x00000000,   "blezl",	0 },
-    { 0x00000000,   "bltz",	0 },
-    { 0x00000000,   "bltzal",	0 },
-    { 0x00000000,   "bltzall",	0 },
-    { 0x00000000,   "bltzl",	0 },
-    { 0x00000000,   "bne",	0 },
-    { 0x00000000,   "bnel",	0 },
-    { 0x00000000,   "break",	0 },
-    { 0x00000000,   "clo",	0 },
-    { 0x00000000,   "clz",	0 },
-    { 0x00000000,   "cop0",	0 },
+const struct optable optable [] = {
+    { 0x00000000,   "add",      FMT_RD_RS_RT },
+    { 0x00000000,   "addi",     FMT_RR_RS_IMM16 },
+    { 0x00000000,   "addiu",    FMT_RR_RS_IMM16 },
+    { 0x00000000,   "addu",     FMT_RD_RS_RT },
+    { 0x00000000,   "and",      FMT_RD_RS_RT },
+    { 0x00000000,   "andi",     FMT_RR_RS_IMM16 },
+    { 0x00000000,   "b",        FMT_OFF18 },            // 16 bits << 2
+    { 0x00000000,   "bal",      FMT_OFF18 },
+    { 0x00000000,   "beq",      FMT_RS_RT_OFF18 },
+    { 0x00000000,   "beql",	FMT_RS_RT_OFF18 },
+    { 0x00000000,   "bgez",	FMT_RS_OFF18 },
+    { 0x00000000,   "bgezal",	FMT_RS_OFF18 },
+    { 0x00000000,   "bgezall",	FMT_RS_OFF18 },
+    { 0x00000000,   "bgezl",	FMT_RS_OFF18 },
+    { 0x00000000,   "bgtz",	FMT_RS_OFF18 },
+    { 0x00000000,   "bgtzl",	FMT_RS_OFF18 },
+    { 0x00000000,   "blez",	FMT_RS_OFF18 },
+    { 0x00000000,   "blezl",	FMT_RS_OFF18 },
+    { 0x00000000,   "bltz",	FMT_RS_OFF18 },
+    { 0x00000000,   "bltzal",	FMT_RS_OFF18 },
+    { 0x00000000,   "bltzall",	FMT_RS_OFF18 },
+    { 0x00000000,   "bltzl",	FMT_RS_OFF18 },
+    { 0x00000000,   "bne",	FMT_RS_RT_OFF18 },
+    { 0x00000000,   "bnel",	FMT_RS_RT_OFF18 },
+    { 0x00000000,   "break",	FMT_CODE },
+    { 0x00000000,   "clo",	FMT_RD_RS },
+    { 0x00000000,   "clz",	FMT_RD_RS },
     { 0x00000000,   "deret",	0 },
-    { 0x00000000,   "di",	0 },
-    { 0x00000000,   "div",	0 },
-    { 0x00000000,   "divu",	0 },
+    { 0x00000000,   "di",	FMT_RT },
+    { 0x00000000,   "div",	FMT_RS_RT },
+    { 0x00000000,   "divu",	FMT_RS_RT },
     { 0x00000000,   "ehb",	0 },
-    { 0x00000000,   "ei",	0 },
+    { 0x00000000,   "ei",	FMT_RT },
     { 0x00000000,   "eret",	0 },
-    { 0x00000000,   "ext",	0 },
-    { 0x00000000,   "ins",	0 },
-    { 0x00000000,   "j",	0 },
-    { 0x00000000,   "jal",	0 },
-    { 0x00000000,   "jalr",	0 },
-    { 0x00000000,   "jalr.hb",	0 },
-    { 0x00000000,   "jalrc",	0 },
-    { 0x00000000,   "jr",	0 },
-    { 0x00000000,   "jr.hb",	0 },
-    { 0x00000000,   "jrc",	0 },
-    { 0x00000000,   "lb",	0 },
-    { 0x00000000,   "lbu",	0 },
-    { 0x00000000,   "lh",	0 },
-    { 0x00000000,   "lhu",	0 },
-    { 0x00000000,   "ll",	0 },
-    { 0x00000000,   "lui",	0 },
-    { 0x00000000,   "lw",	0 },
-    { 0x00000000,   "lwl",	0 },
-    { 0x00000000,   "lwpc",	0 },
-    { 0x00000000,   "lwr",	0 },
-    { 0x00000000,   "madd",	0 },
-    { 0x00000000,   "maddu",	0 },
-    { 0x00000000,   "mfc0",	0 },
-    { 0x00000000,   "mfhi",	0 },
-    { 0x00000000,   "mflo",	0 },
-    { 0x00000000,   "movn",	0 },
-    { 0x00000000,   "movz",	0 },
-    { 0x00000000,   "msub",	0 },
-    { 0x00000000,   "msubu",	0 },
-    { 0x00000000,   "mtc0",	0 },
-    { 0x00000000,   "mthi",	0 },
-    { 0x00000000,   "mtlo",	0 },
-    { 0x00000000,   "mul",	0 },
-    { 0x00000000,   "mult",	0 },
-    { 0x00000000,   "multu",	0 },
+    { 0x00000000,   "ext",	FMT_RT_RS_POS_SIZE },
+    { 0x00000000,   "ins",	FMT_RT_RS_POS_SIZE },
+    { 0x00000000,   "j",	FMT_OFF28 },            // 26 bits << 2
+    { 0x00000000,   "jal",	FMT_OFF28 },
+    { 0x00000000,   "jalr",	FMT_RD_RS },
+    { 0x00000000,   "jalr.hb",	FMT_RD_RS },
+    { 0x00000000,   "jr",	FMT_RS },
+    { 0x00000000,   "jr.hb",	FMT_RS },
+    { 0x00000000,   "lb",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lbu",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lh",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lhu",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "ll",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lui",	FMT_RT_IMM16 },
+    { 0x00000000,   "lw",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lwl",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "lwr",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "madd",	FMT_RS_RT },
+    { 0x00000000,   "maddu",	FMT_RS_RT },
+    { 0x00000000,   "mfc0",	FMT_RT_RD_SEL },
+    { 0x00000000,   "mfhi",	FMT_RD },
+    { 0x00000000,   "mflo",	FMT_RD },
+    { 0x00000000,   "movn",	FMT_RD_RS_RT },
+    { 0x00000000,   "movz",	FMT_RD_RS_RT },
+    { 0x00000000,   "msub",	FMT_RS_RT },
+    { 0x00000000,   "msubu",	FMT_RS_RT },
+    { 0x00000000,   "mtc0",	FMT_RT_RD_SEL },
+    { 0x00000000,   "mthi",	FMT_RS },
+    { 0x00000000,   "mtlo",	FMT_RS },
+    { 0x00000000,   "mul",	FMT_RD_RS_RT },
+    { 0x00000000,   "mult",	FMT_RS_RT },
+    { 0x00000000,   "multu",	FMT_RS_RT },
     { 0x00000000,   "nop",	0 },
-    { 0x00000000,   "nor",	0 },
-    { 0x00000000,   "or",	0 },
-    { 0x00000000,   "ori",	0 },
-    { 0x00000000,   "rdhwr",	0 },
-    { 0x00000000,   "rdpgpr",	0 },
-    { 0x00000000,   "restore",	0 },
-    { 0x00000000,   "rotr",	0 },
-    { 0x00000000,   "rotrv",	0 },
-    { 0x00000000,   "save",	0 },
-    { 0x00000000,   "sb",	0 },
-    { 0x00000000,   "sc",	0 },
-    { 0x00000000,   "sdbbp",	0 },
-    { 0x00000000,   "seb",	0 },
-    { 0x00000000,   "seh",	0 },
-    { 0x00000000,   "sh",	0 },
-    { 0x00000000,   "sll",	0 },
-    { 0x00000000,   "sllv",	0 },
-    { 0x00000000,   "slt",	0 },
-    { 0x00000000,   "slti",	0 },
-    { 0x00000000,   "sltiu",	0 },
-    { 0x00000000,   "sltu",	0 },
-    { 0x00000000,   "sra",	0 },
-    { 0x00000000,   "srav",	0 },
-    { 0x00000000,   "srl",	0 },
-    { 0x00000000,   "srlv",	0 },
+    { 0x00000000,   "nor",	FMT_RD_RS_RT },
+    { 0x00000000,   "or",	FMT_RD_RS_RT },
+    { 0x00000000,   "ori",	FMT_RR_RS_IMM16 },
+    { 0x00000000,   "rdhwr",	FMT_RT_RD },
+    { 0x00000000,   "rdpgpr",	FMT_RD_RT },
+    { 0x00000000,   "rotr",	FMT_RD_RT_SA },
+    { 0x00000000,   "rotrv",	FMT_RD_RT_RS },
+    { 0x00000000,   "sb",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "sc",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "sdbbp",	FMT_CODE },
+    { 0x00000000,   "seb",	FMT_RD_RT },
+    { 0x00000000,   "seh",	FMT_RD_RT },
+    { 0x00000000,   "sh",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "sll",	FMT_RD_RT_SA },
+    { 0x00000000,   "sllv",	FMT_RD_RT_RS },
+    { 0x00000000,   "slt",	FMT_RD_RS_RT },
+    { 0x00000000,   "slti",	FMT_RR_RS_IMM16 },
+    { 0x00000000,   "sltiu",	FMT_RR_RS_IMM16 },
+    { 0x00000000,   "sltu",	FMT_RD_RS_RT },
+    { 0x00000000,   "sra",	FMT_RD_RT_SA },
+    { 0x00000000,   "srav",	FMT_RD_RT_RS },
+    { 0x00000000,   "srl",	FMT_RD_RT_SA },
+    { 0x00000000,   "srlv",	FMT_RD_RT_RS },
     { 0x00000000,   "ssnop",	0 },
-    { 0x00000000,   "sub",	0 },
-    { 0x00000000,   "subu",	0 },
-    { 0x00000000,   "sw",	0 },
-    { 0x00000000,   "swl",	0 },
-    { 0x00000000,   "swr",	0 },
-    { 0x00000000,   "sync",	0 },
-    { 0x00000000,   "syscall",	0 },
-    { 0x00000000,   "teq",	0 },
-    { 0x00000000,   "teqi",	0 },
-    { 0x00000000,   "tge",	0 },
-    { 0x00000000,   "tgei",	0 },
-    { 0x00000000,   "tgeiu",	0 },
-    { 0x00000000,   "tgeu",	0 },
-    { 0x00000000,   "tlt",	0 },
-    { 0x00000000,   "tlti",	0 },
-    { 0x00000000,   "tltiu",	0 },
-    { 0x00000000,   "tltu",	0 },
-    { 0x00000000,   "tne",	0 },
-    { 0x00000000,   "tnei",	0 },
-    { 0x00000000,   "wait",	0 },
-    { 0x00000000,   "wrpgpr",	0 },
-    { 0x00000000,   "wsbh",	0 },
-    { 0x00000000,   "xor",	0 },
-    { 0x00000000,   "xori",	0 },
-    { 0x00000000,   "zeb",	0 },
-    { 0x00000000,   "zeh",	0 },
+    { 0x00000000,   "sub",	FMT_RD_RS_RT },
+    { 0x00000000,   "subu",	FMT_RD_RS_RT },
+    { 0x00000000,   "sw",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "swl",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "swr",	FMT_RT_OFF16_RS },
+    { 0x00000000,   "sync",	FMT_CODE },
+    { 0x00000000,   "syscall",	FMT_CODE },
+    { 0x00000000,   "teq",	FMT_RS_RT },
+    { 0x00000000,   "teqi",	FMT_RS_IMM16 },
+    { 0x00000000,   "tge",	FMT_RS_RT },
+    { 0x00000000,   "tgei",	FMT_RS_IMM16 },
+    { 0x00000000,   "tgeiu",	FMT_RS_IMM16 },
+    { 0x00000000,   "tgeu",	FMT_RS_RT },
+    { 0x00000000,   "tlt",	FMT_RS_RT },
+    { 0x00000000,   "tlti",	FMT_RS_IMM16 },
+    { 0x00000000,   "tltiu",	FMT_RS_IMM16 },
+    { 0x00000000,   "tltu",	FMT_RS_RT },
+    { 0x00000000,   "tne",	FMT_RS_RT },
+    { 0x00000000,   "tnei",	FMT_RS_IMM16 },
+    { 0x00000000,   "wait",	FMT_CODE },
+    { 0x00000000,   "wrpgpr",	FMT_RD_RT },
+    { 0x00000000,   "wsbh",	FMT_RD_RT },
+    { 0x00000000,   "xor",	FMT_RD_RS_RT },
+    { 0x00000000,   "xori",	FMT_RR_RS_IMM16 },
     { 0,            0,          0 },
 };
 
@@ -275,26 +272,22 @@ FILE *sfile [SABS], *rfile [SABS];
 unsigned count [SABS];
 int segm;
 char *infile, *outfile = "a.out";
-char *tfilename = "/tmp/asXXXXXX";
-int line;                             /* номер текущей строки */
-int debug;                            /* флаг отладки */
+char tfilename[] = "/tmp/asXXXXXX";
+int line;                               /* Source line number */
 int xflags, Xflag, uflag;
-int stlength;                         /* длина таблицы символов в байтах */
-int stalign;                          /* выравнивание таблицы символов */
+int stlength;                           /* Symbol table size in bytes */
+int stalign;                            /* Symbol table alignment */
 unsigned tbase, dbase, adbase, bbase;
 struct nlist stab [STSIZE];
 int stabfree;
-char space [SPACESZ];                   /* место под имена символов */
-int lastfree;                         /* счетчик занятого места */
-int regleft;                          /* номер регистра слева от команды */
+char space [STSIZE*8];                  /* Area for symbol names */
+int lastfree;                           /* Free space offset */
 char name [256];
 unsigned intval;
 int extref;
 int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
-int aflag;                            /* не выравнивать на границу слова */
 
-void getbitnum (int c);
 void getbitmask (void);
 unsigned getexpr (int *s);
 
@@ -378,30 +371,36 @@ void startup ()
     line = 1;
 }
 
-int chash (s)
+/*
+ * Suboptimal 32-bit hash function.
+ * Copyright (C) 2006 Serge Vakulenko.
+ */
+unsigned hash_rot13 (s)
     register const char *s;
 {
-    register int h, c;
+    register unsigned hash, c;
 
-    h = 12345;
-    while ((c = *s++) != 0)
-        h += h + c;
-    return (SUPERHASH (h, HCMDSZ-1));
+    hash = 0;
+    while ((c = (unsigned char) *s++) != 0) {
+        hash += c;
+        hash -= (hash << 13) | (hash >> 19);
+    }
+    return hash;
 }
 
 void hashinit ()
 {
     register int i, h;
-    register const struct table *p;
+    register const struct optable *p;
 
     for (i=0; i<HCMDSZ; i++)
         hashctab[i] = -1;
-    for (p=table; p->name; p++) {
-        h = chash (p->name);
+    for (p=optable; p->name; p++) {
+        h = hash_rot13 (p->name) & (HCMDSZ-1);
         while (hashctab[h] != -1)
             if (--h < 0)
                 h += HCMDSZ;
-        hashctab[h] = p - table;
+        hashctab[h] = p - optable;
     }
     for (i=0; i<HASHSZ; i++)
         hashtab[i] = -1;
@@ -419,7 +418,7 @@ int hexdig (c)
 }
 
 /*
- * считать шестнадцатеричное число 'ZZZ
+ * Get hexadecimal number 'ZZZ
  */
 void getlhex ()
 {
@@ -440,7 +439,7 @@ void getlhex ()
 }
 
 /*
- * считать шестнадцатеричное число 0xZZZ
+ * Get hexadecimal number 0xZZZ
  */
 void gethnum ()
 {
@@ -459,15 +458,17 @@ void gethnum ()
     }
 }
 
+/*
+ * Get a number.
+ * 1234 1234d 1234D - decimal
+ * 01234 1234. 1234o 1234O - octal
+ * 1234' 1234h 1234H - hexadecimal
+ */
 void getnum (c)
     register int c;
 {
     register char *cp;
     int leadingzero;
-    /* считать число */
-    /* 1234 1234d 1234D - десятичное */
-    /* 01234 1234. 1234o 1234O - восьмеричное */
-    /* 1234' 1234h 1234H - шестнадцатеричное */
 
     leadingzero = (c=='0');
     for (cp=name; ISHEX(c); c=getchar())
@@ -518,44 +519,141 @@ int lookacmd ()
 {
     switch (name [1]) {
     case 'a':
-        if (! strcmp (".ascii", name)) return (ASCII);
+        if (! strcmp (".ascii", name)) return (LASCII);
         break;
     case 'b':
-        if (! strcmp (".bss", name)) return (BSS);
+        if (! strcmp (".bss", name)) return (LBSS);
         break;
     case 'c':
-        if (! strcmp (".comm", name)) return (COMM);
+        if (! strcmp (".comm", name)) return (LCOMM);
         break;
     case 'd':
-        if (! strcmp (".data", name)) return (DATA);
+        if (! strcmp (".data", name)) return (LDATA);
         break;
     case 'e':
-        if (! strcmp (".equ", name)) return (EQU);
+        if (! strcmp (".equ", name)) return (LEQU);
         break;
     case 'g':
-        if (! strcmp (".globl", name)) return (GLOBL);
+        if (! strcmp (".globl", name)) return (LGLOBL);
         break;
     case 's':
-        if (! strcmp (".short", name)) return (SHORT);
-        if (! strcmp (".strng", name)) return (STRNG);
+        if (! strcmp (".short", name)) return (LSHORT);
+        if (! strcmp (".strng", name)) return (LSTRNG);
         break;
     case 't':
-        if (! strcmp (".text", name)) return (TEXT);
+        if (! strcmp (".text", name)) return (LTEXT);
         break;
     case 'w':
-        if (! strcmp (".word", name)) return (WORD);
+        if (! strcmp (".word", name)) return (LWORD);
         break;
     }
     return (-1);
+}
+
+int lookreg ()
+{
+    int val;
+    char *cp;
+
+    switch (name [1]) {
+    case '0': case '1': case '2': case '3': case '4':
+    case '5': case '6': case '7': case '8': case '9':
+        val = 0;
+        for (cp=name+1; ISDIGIT (*cp); cp++) {
+            val *= 10;
+            val += *cp - '0';
+        }
+        if (*cp != 0)
+            break;
+        return val;
+        break;
+    case 'a':
+        if (name[3] == 0) {
+            switch (name[2]) {
+            case '0': return 4;         /* $a0 */
+            case '1': return 5;         /* $a1 */
+            case '2': return 6;         /* $a2 */
+            case '3': return 7;         /* $a3 */
+            case 't': return 1;         /* $at */
+            }
+        }
+        break;
+    case 'f':
+        if (name[3] == 0 && name[2] == 'p')
+            return 30;                  /* $fp */
+        break;
+    case 'g':
+        if (name[3] == 0 && name[2] == 'p')
+            return 28;                  /* $gp */
+        break;
+    case 'k':
+        if (name[3] == 0) {
+            switch (name[2]) {
+            case '0': return 26;        /* $k0 */
+            case '1': return 27;        /* $k1 */
+            }
+        }
+        break;
+    case 'r':
+        if (name[3] == 0 && name[2] == 'a')
+            return 31;                  /* $ra */
+        break;
+    case 's':
+        if (name[3] == 0) {
+            switch (name[2]) {
+            case '0': return 16;        /* $s0 */
+            case '1': return 17;        /* $s1 */
+            case '2': return 18;        /* $s2 */
+            case '3': return 19;        /* $s3 */
+            case '4': return 20;        /* $s4 */
+            case '5': return 21;        /* $s5 */
+            case '6': return 22;        /* $s6 */
+            case '7': return 23;        /* $s7 */
+            case '8': return 30;        /* $s8 */
+            case 'p': return 29;        /* $sp */
+            }
+        }
+        break;
+    case 't':
+        if (name[3] == 0) {
+            switch (name[2]) {
+            case '0': return 8;         /* $t0 */
+            case '1': return 9;         /* $t1 */
+            case '2': return 10;        /* $t2 */
+            case '3': return 11;        /* $t3 */
+            case '4': return 12;        /* $t4 */
+            case '5': return 13;        /* $t5 */
+            case '6': return 14;        /* $t6 */
+            case '7': return 15;        /* $t7 */
+            case '8': return 24;        /* $t8 */
+            case '9': return 25;        /* $t9 */
+            }
+        }
+        break;
+    case 'v':
+        if (name[3] == 0) {
+            switch (name[2]) {
+            case '0': return 2;         /* $v0 */
+            case '1': return 3;         /* $v1 */
+            }
+        }
+        break;
+    case 'z':
+        if (! strcmp (name+2, "ero"))
+            return 0;                   /* $zero */
+        break;
+    }
+    uerror ("bad register name '%s'", name);
+    return 0;
 }
 
 int lookcmd ()
 {
     register int i, h;
 
-    h = chash (name);
+    h = hash_rot13 (name) & (HCMDSZ-1);
     while ((i = hashctab[h]) != -1) {
-        if (!strcmp (table[i].name, name))
+        if (! strcmp (optable[i].name, name))
             return (i);
         if (--h < 0)
             h += HCMDSZ;
@@ -563,23 +661,13 @@ int lookcmd ()
     return (-1);
 }
 
-int hash (s)
-    register char *s;
-{
-    register int h, c;
-
-    h = 12345;
-    while ((c = *s++) != 0)
-        h += h + c;
-    return (SUPERHASH (h, HASHSZ-1));
-}
-
 char *alloc (len)
 {
     register int r;
 
     r = lastfree;
-    if ((lastfree += len) > SPACESZ)
+    lastfree += len;
+    if (lastfree > sizeof(space))
         uerror ("out of memory");
     return (space + r);
 }
@@ -588,7 +676,8 @@ int lookname ()
 {
     register int i, h;
 
-    h = hash (name);
+    /* Search for symbol name. */
+    h = hash_rot13 (name) & (HASHSZ-1);
     while ((i = hashtab[h]) != -1) {
         if (! strcmp (stab[i].n_name, name))
             return (i);
@@ -596,8 +685,7 @@ int lookname ()
             h += HASHSZ;
     }
 
-    /* занесение в таблицу нового символа */
-
+    /* Add a new symbol to table. */
     if ((i = stabfree++) >= STSIZE)
         uerror ("symbol table overflow");
     stab[i].n_len = strlen (name);
@@ -610,17 +698,26 @@ int lookname ()
 }
 
 /*
- * int getlex (int *val) - считать лексему, вернуть тип лексемы,
- * записать в *val ее значение.
- * Возвращаемые типы лексем:
- *      LEOL    - конец строки. Значение - номер начавшейся строки.
- *      LEOF    - конец файла.
- *      LNUM    - целое число. Значение - в intval, *val не определено.
- *      LCMD    - машинная команда. Значение - ее индекс в table.
- *      LNAME   - идентификатор. Значение - индекс в stab.
- *      LACMD   - инструкция ассемблера. Значение - тип.
- *      LLCMD   - длинноадресная команда. Значение - код.
- *      LSCMD   - короткоадресная команда. Значение - код.
+ * Read a lexical element, return it's type and store a value into *val.
+ * Returned type codes:
+ * LEOL    - End of line.  Value is a line number.
+ * LEOF    - End of file.
+ * LNUM    - Integer value (into intval), *val undefined.
+ * LCMD    - Machine opcode.  Value is optable[] index.
+ * LNAME   - Identifier.  Value is stab[] index.
+ * LREG    - Machine register.  Value is a register number.
+ * LLSHIFT - << operator.
+ * LRSHIFT - >> operator.
+ * LASCII  - .ascii assembler instruction.
+ * LBSS    - .bss assembler instruction.
+ * LCOMM   - .comm assembler instruction.
+ * LDATA   - .data assembler instruction.
+ * LGLOBL  - .globl assembler instruction.
+ * LSHORT  - .short assembler instruction.
+ * LSTRNG  - .strng assembler instruction.
+ * LTEXT   - .text assembler instruction.
+ * LEQU    - .equ assembler instruction.
+ * LWORD   - .word assembler instruction.
  */
 int getlex (pval)
     register int *pval;
@@ -634,7 +731,7 @@ int getlex (pval)
     }
     for (;;) {
         switch (c = getchar()) {
-        case ';':
+        case '#':
 skiptoeol:  while ((c = getchar()) != '\n')
                 if (c == EOF)
                     return (LEOF);
@@ -658,18 +755,9 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 return (LRSHIFT);
             ungetc (c, stdin);
             return ('\\');
-        case '+':
-            if ((c = getchar ()) == '+')
-                return (LINCR);
-            ungetc (c, stdin);
-            return ('+');
-        case '-':
-            if ((c = getchar ()) == '-')
-                return (LINCR);
-            ungetc (c, stdin);
-            return ('-');
+        case '+':       case '-':
         case '^':       case '&':       case '|':       case '~':
-        case '#':       case '*':       case '/':       case '%':
+        case ';':       case '*':       case '/':       case '%':
         case '"':       case ',':       case '[':       case ']':
         case '(':       case ')':       case '{':       case '}':
         case '<':       case '>':       case '=':       case ':':
@@ -689,34 +777,40 @@ skiptoeol:  while ((c = getchar()) != '\n')
         case '8':       case '9':
             getnum (c);
             return (LNUM);
-        case '@':
-        case '$':
-            *pval = hexdig (getchar ());
-            *pval = *pval<<4 | hexdig (getchar ());
-            return (c=='$' ? LSCMD : LLCMD);
         default:
-            if (!ISLETTER (c))
+            if (! ISLETTER (c))
                 uerror ("bad character: \\%o", c & 0377);
-            if (c=='.') {
+            if (c == '.') {
                 c = getchar();
                 if (c == '[') {
                     getbitmask ();
                     return (LNUM);
                 } else if (ISOCTAL (c)) {
-                    getbitnum (c);
+                    getnum (c);
+                    c = intval;
+                    if (c < 0 || c >= 32)
+                        uerror ("bit number out of range 0..31");
+                    intval = 1 << c;
                     return (LNUM);
                 }
                 ungetc (c, stdin);
                 c = '.';
             }
             getname (c);
-            if (name[0]=='.') {
+            if (name[0] == '.') {
                 if (name[1] == 0)
                     return ('.');
-                if ((*pval = lookacmd()) != -1)
-                    return (LACMD);
+                *pval = lookacmd();
+                if (*pval != -1)
+                    return (*pval);
             }
-            if ((*pval = lookcmd()) != -1)
+            if (name[0] == '$') {
+                *pval = lookreg();
+                if (*pval != -1)
+                    return (LREG);
+            }
+            *pval = lookcmd();
+            if (*pval != -1)
                 return (LCMD);
             *pval = lookname ();
             return (LNAME);
@@ -762,63 +856,41 @@ int getterm ()
 }
 
 /*
- * считать число .N, где N - номер бита
- */
-void getbitnum (c)
-    register int c;
-{
-    getnum (c);
-    c = intval;
-    if (c < 0 || c >= 64)
-        uerror ("bit number out of range 0..31");
-    intval = 1 << c;
-}
-
-/*
- * считать число .[a:b], где a, b - номер бита
- * или .[a=b]
+ * Get a number .[a:b], where a, b are bit numbers 0..31
  */
 void getbitmask ()
 {
     register int c, a, b;
-    int v, compl;
+    int v;
 
     a = getexpr (&v) - 1;
     if (v != SABS)
         uerror ("illegal expression in bit mask");
     c = getlex (&v);
-    if (c != ':' && c != '=')
+    if (c != ':')
         uerror ("illegal bit mask delimiter");
-    compl = c == '=';
     b = getexpr (&v) - 1;
     if (v != SABS)
         uerror ("illegal expression in bit mask");
     c = getlex (&v);
     if (c != ']')
         uerror ("illegal bit mask delimiter");
-    if (a<0 || a>=64 || b<0 || b>=64)
-        uerror ("bit number out of range 1..64");
+    if (a<0 || a>=32 || b<0 || b>=32)
+        uerror ("bit number out of range 0..31");
     if (a < b)
         c = a, a = b, b = c;
-    if (compl && --a < ++b) {
-        intval = ~0;
-        return;
-    }
     /* a greater than or equal to b */
-    intval = (unsigned) ~0 >> (31-a+b) << b;
-    if (compl)
-        intval ^= ~0;
+    intval = (unsigned) ~0 >> (31 - a + b) << b;
 }
 
 /*
- * unsigned getexpr (int *s) - считать выражение.
- * Вернуть значение, номер базового сегмента записать в *s.
- * Возвращаются 4 младших байта значения,
- * полная копия остается в intval.
+ * Get an expression.
+ * Return a value, put a base segment index to *s.
+ * A copy of value is saved in intval.
  *
- * выражение    = [операнд] {операция операнд}...
- * операнд      = LNAME | LNUM | "." | "(" выражение ")" | "{" выражение "}"
- * операция     = "+" | "-" | "&" | "|" | "^" | "~" | "\" | "/" | "*" | "%"
+ * expression = [term] {op term}...
+ * term       = LNAME | LNUM | "." | "(" expression ")"
+ * op         = "+" | "-" | "&" | "|" | "^" | "~" | "\" | "/" | "*" | "%"
  */
 unsigned getexpr (s)
     register int *s;
@@ -827,7 +899,7 @@ unsigned getexpr (s)
     int cval, s2;
     unsigned rez;
 
-    /* смотрим первую лексему */
+    /* look a first lexeme */
     switch (clex = getlex (&cval)) {
     default:
         ungetlex (clex, cval);
@@ -838,7 +910,6 @@ unsigned getexpr (s)
     case LNAME:
     case '.':
     case '(':
-    case '{':
         ungetlex (clex, cval);
         *s = getterm ();
         rez = intval;
@@ -936,15 +1007,20 @@ void emitword (w, r)
     count[segm] += WORDSZ;
 }
 
-void makecmd (val, type)
-    unsigned val;
+/*
+ * Build and emit a machine instruction code.
+ */
+void makecmd (opcode, type)
+    unsigned opcode;
 {
-    register int clex, index, incr;
+    register int clex, reg;
     register unsigned addr, reltype;
     int cval, segment;
 
-    index = regleft;
+    reg = 0;
     reltype = RABS;
+
+    /* TODO */
     for (;;) {
         switch (clex = getlex (&cval)) {
         case LEOF:
@@ -952,16 +1028,6 @@ void makecmd (val, type)
             ungetlex (clex, cval);
             addr = 0;
             goto putcom;
-        case '[':
-            makecmd (WTCCOM, TLONG);
-            if (getlex (&cval) != ']')
-                uerror ("bad [] syntax");
-            continue;
-        case '<':
-            makecmd (UTCCOM, TLONG);
-            if (getlex (&cval) != '>')
-                uerror ("bad <> syntax");
-            continue;
         default:
             ungetlex (clex, cval);
             addr = getexpr (&segment);
@@ -972,34 +1038,24 @@ void makecmd (val, type)
         }
         break;
     }
-    if ((clex = getlex (&cval)) == ',') {
-        index = getexpr (&segment);
+    clex = getlex (&cval);
+    if (clex == ',') {
+        reg = getexpr (&segment);
         if (segment != SABS)
             uerror ("bad register number");
-        if ((type & TCOMP) && addr==0 && reltype==RABS) {
-            if ((clex = getlex (&cval)) == LINCR || clex==LDECR) {
-                incr = getexpr (&segment);
-                if (segment != SABS)
-                    uerror ("bad register increment");
-                if (incr == 0)
-                    incr = 1;
-                /* делаем компонентную команду */
-                addr = clex==LINCR ? incr : -incr;
-                val = MAKECOMP (val);
-            } else
-                ungetlex (clex, cval);
-        }
     } else
         ungetlex (clex, cval);
 putcom:
+#if 0
     if (type & TLONG) {
         addr &= 0xfffff;
-        emitword ((index << 28) | val | (addr & 0xfffff),
-            reltype | RLONG);
-    } else {
-        emitword ((index << 28) | val | (addr & 07777),
-            reltype | RSHORT);
-    }
+        opcode |= (reg << 28) | (addr & 0xfffff);
+        reltype |= RLONG;
+    } else
+#endif
+    opcode |= (reg << 28) | (addr & 07777);
+
+    emitword (opcode, reltype);
 }
 
 void makeascii ()
@@ -1082,29 +1138,15 @@ void pass1 ()
         case LEOF:
             return;
         case LEOL:
-            regleft = 0;
             continue;
         case ':':
             continue;
-        case LNUM:
-            ungetlex (clex, cval);
-            getexpr (&cval);
-            if (cval != SABS)
-                uerror ("bad register number");
-            regleft = intval & 017;
-            continue;
         case LCMD:
-            makecmd (table[cval].val, table[cval].type);
-            break;
-        case LSCMD:
-            makecmd (cval << 12 | 0x3f00000L, 0);
-            break;
-        case LLCMD:
-            makecmd (cval << 20, TLONG);
+            makecmd (optable[cval].opcode, optable[cval].type);
             break;
         case '.':
             if (getlex (&cval) != '=')
-                uerror ("bad command");
+                uerror ("bad instruction");
             addr = 2 * getexpr (&csegm);
             if (csegm != segm)
                 uerror ("bad count assignment");
@@ -1114,26 +1156,27 @@ void pass1 ()
                 count [segm] = addr;
             else {
                 while (count[segm] < addr) {
-                    fputword (segm==STEXT? EMPCOM: 0L, sfile[segm]);
+                    fputword (0, sfile[segm]);
                     fputword (0L, rfile[segm]);
                     count[segm]++;
                 }
             }
             break;
         case LNAME:
-            if ((clex = getlex (&tval)) == ':') {
+            clex = getlex (&tval);
+            if (clex == ':') {
                 stab[cval].n_value = count[segm] / 2;
                 stab[cval].n_type &= ~N_TYPE;
                 stab[cval].n_type |= segmtype [segm];
                 continue;
-            } else if (clex=='=' || (clex==LACMD && tval==EQU)) {
+            } else if (clex=='=' || clex==LEQU) {
                 stab[cval].n_value = getexpr (&csegm);
                 if (csegm == SEXT)
                     uerror ("indirect equivalence");
                 stab[cval].n_type &= N_EXT;
                 stab[cval].n_type |= segmtype [csegm];
                 break;
-            } else if (clex==LACMD && tval==COMM) {
+            } else if (clex==LCOMM) {
                 /* name .comm len */
                 if (stab[cval].n_type != N_UNDF &&
                     stab[cval].n_type != (N_EXT|N_COMM))
@@ -1145,93 +1188,93 @@ void pass1 ()
                 stab[cval].n_value = intval;
                 break;
             }
-            uerror ("bad command");
-        case LACMD:
-            switch (cval) {
-            case TEXT:
-                segm = STEXT;
-                break;
-            case DATA:
-                segm = SDATA;
-                break;
-            case STRNG:
-                segm = SSTRNG;
-                break;
-            case BSS:
-                segm = SBSS;
-                break;
-            case SHORT:
-                for (;;) {
-                    getexpr (&cval);
-                    addr = segmrel [cval];
-                    if (cval == SEXT)
-                        addr |= RSETINDEX (extref);
-                    emitword (intval, addr);
-                    if ((clex = getlex (&cval)) != ',') {
-                        ungetlex (clex, cval);
-                        break;
-                    }
-                }
-                break;
-            case WORD:
-                for (;;) {
-                    getexpr (&cval);
-                    addr = segmrel [cval];
-                    if (cval == SEXT)
-                        addr |= RSETINDEX (extref);
-                    fputword (intval, sfile[segm]);
-                    fputword (addr, rfile[segm]);
-                    count[segm] += 2;
-                    if ((clex = getlex (&cval)) != ',') {
-                        ungetlex (clex, cval);
-                        break;
-                    }
-                }
-                break;
-            case ASCII:
-                makeascii ();
-                break;
-            case GLOBL:
-                for (;;) {
-                    if ((clex = getlex (&cval)) != LNAME)
-                        uerror ("bad parameter .globl");
-                    stab[cval].n_type |= N_EXT;
-                    if ((clex = getlex (&cval)) != ',') {
-                        ungetlex (clex, cval);
-                        break;
-                    }
-                }
-                break;
-            case COMM:
-                /* .comm name,len */
-                tval = cval;
-                if (getlex (&cval) != LNAME)
-                    uerror ("bad parameter .comm");
-                if (stab[cval].n_type != N_UNDF &&
-                    stab[cval].n_type != (N_EXT|N_COMM))
-                    uerror ("name already defined");
-                stab[cval].n_type = N_EXT | N_COMM;
-                if ((clex = getlex (&tval)) == ',') {
-                    getexpr (&tval);
-                    if (tval != SABS)
-                        uerror ("bad length .comm");
-                } else {
+            uerror ("bad instruction");
+        case LTEXT:
+            segm = STEXT;
+            break;
+        case LDATA:
+            segm = SDATA;
+            break;
+        case LSTRNG:
+            segm = SSTRNG;
+            break;
+        case LBSS:
+            segm = SBSS;
+            break;
+        case LSHORT:
+            for (;;) {
+                getexpr (&cval);
+                addr = segmrel [cval];
+                if (cval == SEXT)
+                    addr |= RSETINDEX (extref);
+                emitword (intval, addr);
+                clex = getlex (&cval);
+                if (clex != ',') {
                     ungetlex (clex, cval);
-                    intval = 1;
+                    break;
                 }
-                stab[cval].n_value = intval;
-                break;
             }
+            break;
+        case LWORD:
+            for (;;) {
+                getexpr (&cval);
+                addr = segmrel [cval];
+                if (cval == SEXT)
+                    addr |= RSETINDEX (extref);
+                fputword (intval, sfile[segm]);
+                fputword (addr, rfile[segm]);
+                count[segm] += 2;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+            break;
+        case LASCII:
+            makeascii ();
+            break;
+        case LGLOBL:
+            for (;;) {
+                clex = getlex (&cval);
+                if (clex != LNAME)
+                    uerror ("bad parameter .globl");
+                stab[cval].n_type |= N_EXT;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+            break;
+        case LCOMM:
+            /* .comm name,len */
+            if (getlex (&cval) != LNAME)
+                uerror ("bad parameter .comm");
+            if (stab[cval].n_type != N_UNDF &&
+                stab[cval].n_type != (N_EXT|N_COMM))
+                uerror ("name already defined");
+            stab[cval].n_type = N_EXT | N_COMM;
+            clex = getlex (&tval);
+            if (clex == ',') {
+                getexpr (&tval);
+                if (tval != SABS)
+                    uerror ("bad length .comm");
+            } else {
+                ungetlex (clex, cval);
+                intval = 1;
+            }
+            stab[cval].n_value = intval;
             break;
         default:
             uerror ("bad syntax");
         }
-        if ((clex = getlex (&cval)) != LEOL) {
+        clex = getlex (&cval);
+        if (clex != LEOL) {
             if (clex == LEOF)
                 return;
-            uerror ("bad command end");
+            uerror ("bad instruction arguments");
         }
-        regleft = 0;
     }
 }
 
@@ -1241,8 +1284,7 @@ void middle ()
 
     stlength = 0;
     for (snum=0, i=0; i<stabfree; i++) {
-        /* если не установлен флаг uflag,
-         * неопределенное имя считается внешним */
+        /* Without -u option, undefined symbol is considered external */
         if (stab[i].n_type == N_UNDF) {
             if (uflag)
                 uerror ("name undefined", stab[i].n_name);
@@ -1344,7 +1386,7 @@ void pass2 ()
     adbase = dbase + count[SDATA]/2;
     bbase = adbase + count[SSTRNG]/2;
 
-    /* обработка таблицы символов */
+    /* Adjust indexes in symbol name */
     for (i=0; i<stabfree; i++) {
         h = stab[i].n_value;
         switch (stab[i].n_type & N_TYPE) {
@@ -1378,7 +1420,7 @@ void pass2 ()
 }
 
 /*
- * преобразование типа символа в тип настройки
+ * Convert symbol type to relocation type.
  */
 int typerel (t)
 {
@@ -1409,7 +1451,7 @@ unsigned relword (hr)
         if (stab[i].n_type == N_EXT+N_UNDF ||
             stab[i].n_type == N_EXT+N_COMM)
         {
-            /* переиндексация */
+            /* Reindexing */
             if (xflags)
                 hr = (hr & (RSHORT|REXT)) | RSETINDEX (newindex [i]);
         } else
@@ -1454,28 +1496,22 @@ int main (argc, argv)
     int ofile = 0;
 
     /*
-     * разбор флагов
+     * Parse options.
      */
     for (i=1; i<argc; i++) {
         switch (argv[i][0]) {
         case '-':
             for (cp=argv[i]; *cp; cp++) {
                 switch (*cp) {
-                case 'd':       /* флаг отладки */
-                    debug++;
-                    break;
-                case 'X':
+                case 'X':       /* strip L* locals */
                     Xflag++;
-                case 'x':
+                case 'x':       /* strip local symbols */
                     xflags++;
                     break;
-                case 'a':       /* не выравнивать на границу слова */
-                    aflag++;
-                    break;
-                case 'u':
+                case 'u':       /* treat undefines as error */
                     uflag++;
                     break;
-                case 'o':       /* выходной файл */
+                case 'o':       /* output file name */
                     if (ofile)
                         uerror ("too many -o flags");
                     ofile = 1;
@@ -1500,23 +1536,20 @@ int main (argc, argv)
     }
 
     /*
-     * настройка ввода-вывода
+     * Setup input-output.
      */
     if (infile && ! freopen (infile, "r", stdin))
         uerror ("cannot open %s", infile);
     if (! freopen (outfile, "w", stdout))
         uerror ("cannot open %s", outfile);
 
-    i = getchar ();
-    ungetc (i=='#' ? ';' : i, stdin);
-
-    startup ();     /* открытие временных файлов */
-    hashinit ();    /* инициализация хэш-таблиц */
-    pass1 ();       /* первый проход */
-    middle ();      /* промежуточные действия */
-    makeheader ();  /* запись заголовка */
-    pass2 ();       /* второй проход */
-    makereloc ();   /* запись файлов настройки */
-    makesymtab ();  /* запись таблицы символов */
+    startup ();     /* Open temporary files */
+    hashinit ();    /* Initialize hash tables */
+    pass1 ();       /* First pass */
+    middle ();      /* Prepare symbol table */
+    makeheader ();  /* Write a.out header */
+    pass2 ();       /* Second pass */
+    makereloc ();   /* Emit relocation data */
+    makesymtab ();  /* Emit symbol table */
     exit (0);
 }
