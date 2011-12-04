@@ -6,7 +6,7 @@ TOPSRC		= $(shell cd ../..; pwd)
 #include $(TOPSRC)/target.mk
 include $(TOPSRC)/cross.mk
 
-CFLAGS		+= -Werror -Wall -Os
+CFLAGS		+= -Werror -Wall
 LDFLAGS         += -g
 AS              = /usr/local/pic32-tools/bin/pic32-as
 
@@ -27,4 +27,4 @@ clean:
 #		$(CC) $(LDFLAGS) dis.o -o dis fgethdr.o fgeth.o
 
 test:
-		$(AS) -al example.s 
+		$(AS) -al example.s

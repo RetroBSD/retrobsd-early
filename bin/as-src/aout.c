@@ -56,11 +56,10 @@ void prrel (r)
     case REXT:      printf ("%d", indx);
     }
     switch ((int) r & RFMASK) {
-    case RLONG:     putchar ('l');  break;
-    case RSHORT:    putchar ('s');  break;
-    case RSHIFT:    putchar ('h');  break;
-    case RTRUNC:    putchar ('t');  break;
-    case 0:         putchar ('a');  break;
+    case RWORD26:   putchar ('j');  break;
+    case RWORD16:   putchar ('w');  break;
+    case RHIGH16:   putchar ('h');  break;
+    case 0:         putchar ('b');  break;
     default:        putchar ('?');  break;
     }
     printf ("(%d %d", (int) (r & RSMASK) >> 3, (int) (r & RFMASK));

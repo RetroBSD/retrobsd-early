@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <a.out.h>
 
-#define USER_CODE_START 0x7f008000
 #define WORDSZ          4               /* word size in bytes */
 
 /*
@@ -48,46 +47,34 @@ enum {
 };
 
 /*
- * Instruction formats.
+ * Flags of instruction formats.
  */
-enum {
-    FMT_CODE = 1,
-    FMT_OFF18,
-    FMT_OFF28,
-    FMT_RD,
-    FMT_RD_RS,
-    FMT_RD_RS_RT,
-    FMT_RD_RT,
-    FMT_RD_RT_RS,
-    FMT_RD_RT_SA,
-    FMT_RR_RS_IMM16,
-    FMT_RS,
-    FMT_RS_IMM16,
-    FMT_RS_OFF18,
-    FMT_RS_RT,
-    FMT_RS_RT_OFF18,
-    FMT_RT,
-    FMT_RT_IMM16,
-    FMT_RT_OFF16_RS,
-    FMT_RT_RD,
-    FMT_RT_RD_SEL,
-    FMT_RT_RS_POS_SIZE,
-};
+#define FRD1    (1 << 0)        /* rd, ... */
+#define FRD2    (1 << 1)        /* .., rd, ... */
+#define FRT1    (1 << 2)        /* rt, ... */
+#define FRT2    (1 << 3)        /* .., rt, ... */
+#define FRT3    (1 << 4)        /* .., .., rt */
+#define FRS1    (1 << 5)        /* rs, ... */
+#define FRS2    (1 << 6)        /* .., rs, ... */
+#define FRS3    (1 << 7)        /* .., .., rs */
+#define FRSB    (1 << 8)        /* ... (rs) */
+#define FCODE   (1 << 9)        /* immediate shifted <<6 */
+#define FOFF16  (1 << 11)       /* 16-bit relocatable offset */
+#define FHIGH16 (1 << 12)       /* high 16-bit relocatable offset */
+#define FOFF18  (1 << 13)       /* 18-bit relocatable offset shifted >>2 */
+#define FAOFF18 (1 << 14)       /* 18-bit relocatable absolute offset shifted >>2 */
+#define FAOFF28 (1 << 15)       /* 28-bit relocatable absolute offset shifted >>2 */
+#define FSA     (1 << 16)       /* 5-bit shift amount */
+#define FSEL    (1 << 17)       /* optional 3-bit COP0 register select */
+#define FSIZE   (1 << 18)       /* bit field size */
 
 /*
  * Sizes of tables.
  * Hash sizes should be powers of 2!
  */
-#define HASHSZ          2048            /* symbol name hash table size */
-#define HCMDSZ          1024            /* instruction hash table size */
-#define STSIZE          (HASHSZ*9/10)   /* symbol name table size */
-
-#define SUPERHASH(key,mask) (((key) * 011706736335) & (mask))
-
-#define ISHEX(c)        (ctype[(c)&0377] & 1)
-#define ISOCTAL(c)      (ctype[(c)&0377] & 2)
-#define ISDIGIT(c)      (ctype[(c)&0377] & 4)
-#define ISLETTER(c)     (ctype[(c)&0377] & 8)
+#define HASHSZ  2048            /* symbol name hash table size */
+#define HCMDSZ  1024            /* instruction hash table size */
+#define STSIZE  (HASHSZ*9/10)   /* symbol name table size */
 
 /*
  * On second pass, hashtab[] is not needed.
@@ -96,19 +83,8 @@ enum {
  */
 #define newindex hashtab
 
-const char ctype [256] = {
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,8,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
-    0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
-    0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
-    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,
-};
-
 /*
- * Convert segment index to symbol type.
+ * Convert segment id to symbol type.
  */
 const int segmtype [] = {
     N_TEXT,             /* STEXT */
@@ -120,7 +96,7 @@ const int segmtype [] = {
 };
 
 /*
- * Convert segment index to relocation type.
+ * Convert segment id to relocation type.
  */
 const int segmrel [] = {
     RTEXT,              /* STEXT */
@@ -132,7 +108,7 @@ const int segmrel [] = {
 };
 
 /*
- * Convert symbol type to segment index.
+ * Convert symbol type to segment id.
  */
 const int typesegm [] = {
     SEXT,               /* N_UNDF */
@@ -150,122 +126,141 @@ struct optable {
 };
 
 const struct optable optable [] = {
-    { 0x00000000,   "add",      FMT_RD_RS_RT },
-    { 0x00000000,   "addi",     FMT_RR_RS_IMM16 },
-    { 0x00000000,   "addiu",    FMT_RR_RS_IMM16 },
-    { 0x00000000,   "addu",     FMT_RD_RS_RT },
-    { 0x00000000,   "and",      FMT_RD_RS_RT },
-    { 0x00000000,   "andi",     FMT_RR_RS_IMM16 },
-    { 0x00000000,   "b",        FMT_OFF18 },            // 16 bits << 2
-    { 0x00000000,   "bal",      FMT_OFF18 },
-    { 0x00000000,   "beq",      FMT_RS_RT_OFF18 },
-    { 0x00000000,   "beql",	FMT_RS_RT_OFF18 },
-    { 0x00000000,   "bgez",	FMT_RS_OFF18 },
-    { 0x00000000,   "bgezal",	FMT_RS_OFF18 },
-    { 0x00000000,   "bgezall",	FMT_RS_OFF18 },
-    { 0x00000000,   "bgezl",	FMT_RS_OFF18 },
-    { 0x00000000,   "bgtz",	FMT_RS_OFF18 },
-    { 0x00000000,   "bgtzl",	FMT_RS_OFF18 },
-    { 0x00000000,   "blez",	FMT_RS_OFF18 },
-    { 0x00000000,   "blezl",	FMT_RS_OFF18 },
-    { 0x00000000,   "bltz",	FMT_RS_OFF18 },
-    { 0x00000000,   "bltzal",	FMT_RS_OFF18 },
-    { 0x00000000,   "bltzall",	FMT_RS_OFF18 },
-    { 0x00000000,   "bltzl",	FMT_RS_OFF18 },
-    { 0x00000000,   "bne",	FMT_RS_RT_OFF18 },
-    { 0x00000000,   "bnel",	FMT_RS_RT_OFF18 },
-    { 0x00000000,   "break",	FMT_CODE },
-    { 0x00000000,   "clo",	FMT_RD_RS },
-    { 0x00000000,   "clz",	FMT_RD_RS },
+    { 0x00000000,   "add",      FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "addi",     FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "addiu",    FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "addu",     FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "and",      FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "andi",     FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "b",        FAOFF18 },
+    { 0x00000000,   "bal",      FAOFF18 },
+    { 0x00000000,   "beq",      FRS1 | FRT2 | FOFF18 },
+    { 0x00000000,   "beql",	FRS1 | FRT2 | FOFF18 },
+    { 0x00000000,   "bgez",	FRS1 | FOFF18 },
+    { 0x00000000,   "bgezal",	FRS1 | FOFF18 },
+    { 0x00000000,   "bgezall",	FRS1 | FOFF18 },
+    { 0x00000000,   "bgezl",	FRS1 | FOFF18 },
+    { 0x00000000,   "bgtz",	FRS1 | FOFF18 },
+    { 0x00000000,   "bgtzl",	FRS1 | FOFF18 },
+    { 0x00000000,   "blez",	FRS1 | FOFF18 },
+    { 0x00000000,   "blezl",	FRS1 | FOFF18 },
+    { 0x00000000,   "bltz",	FRS1 | FOFF18 },
+    { 0x00000000,   "bltzal",	FRS1 | FOFF18 },
+    { 0x00000000,   "bltzall",	FRS1 | FOFF18 },
+    { 0x00000000,   "bltzl",	FRS1 | FOFF18 },
+    { 0x00000000,   "bne",	FRS1 | FRT2 | FOFF18 },
+    { 0x00000000,   "bnel",	FRS1 | FRT2 | FOFF18 },
+    { 0x00000000,   "break",	FCODE },
+    { 0x00000000,   "clo",	FRD1 | FRS2 },
+    { 0x00000000,   "clz",	FRD1 | FRS2 },
     { 0x00000000,   "deret",	0 },
-    { 0x00000000,   "di",	FMT_RT },
-    { 0x00000000,   "div",	FMT_RS_RT },
-    { 0x00000000,   "divu",	FMT_RS_RT },
+    { 0x00000000,   "di",	FRT1 },
+    { 0x00000000,   "div",	FRS1 | FRT2 },
+    { 0x00000000,   "divu",	FRS1 | FRT2 },
     { 0x00000000,   "ehb",	0 },
-    { 0x00000000,   "ei",	FMT_RT },
+    { 0x00000000,   "ei",	FRT1 },
     { 0x00000000,   "eret",	0 },
-    { 0x00000000,   "ext",	FMT_RT_RS_POS_SIZE },
-    { 0x00000000,   "ins",	FMT_RT_RS_POS_SIZE },
-    { 0x00000000,   "j",	FMT_OFF28 },            // 26 bits << 2
-    { 0x00000000,   "jal",	FMT_OFF28 },
-    { 0x00000000,   "jalr",	FMT_RD_RS },
-    { 0x00000000,   "jalr.hb",	FMT_RD_RS },
-    { 0x00000000,   "jr",	FMT_RS },
-    { 0x00000000,   "jr.hb",	FMT_RS },
-    { 0x00000000,   "lb",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lbu",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lh",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lhu",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "ll",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lui",	FMT_RT_IMM16 },
-    { 0x00000000,   "lw",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lwl",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "lwr",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "madd",	FMT_RS_RT },
-    { 0x00000000,   "maddu",	FMT_RS_RT },
-    { 0x00000000,   "mfc0",	FMT_RT_RD_SEL },
-    { 0x00000000,   "mfhi",	FMT_RD },
-    { 0x00000000,   "mflo",	FMT_RD },
-    { 0x00000000,   "movn",	FMT_RD_RS_RT },
-    { 0x00000000,   "movz",	FMT_RD_RS_RT },
-    { 0x00000000,   "msub",	FMT_RS_RT },
-    { 0x00000000,   "msubu",	FMT_RS_RT },
-    { 0x00000000,   "mtc0",	FMT_RT_RD_SEL },
-    { 0x00000000,   "mthi",	FMT_RS },
-    { 0x00000000,   "mtlo",	FMT_RS },
-    { 0x00000000,   "mul",	FMT_RD_RS_RT },
-    { 0x00000000,   "mult",	FMT_RS_RT },
-    { 0x00000000,   "multu",	FMT_RS_RT },
+    { 0x00000000,   "ext",	FRT1 | FRS2 | FSA | FSIZE },
+    { 0x00000000,   "ins",	FRT1 | FRS2 | FSA | FSIZE },
+    { 0x00000000,   "j",	FAOFF28 },
+    { 0x00000000,   "jal",	FAOFF28 },
+    { 0x00000000,   "jalr",	FRD1 | FRS2 },
+    { 0x00000000,   "jalr.hb",	FRD1 | FRS2 },
+    { 0x00000000,   "jr",	FRS1 },
+    { 0x00000000,   "jr.hb",	FRS1 },
+    { 0x00000000,   "lb",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lbu",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lh",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lhu",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "ll",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lui",	FRT1 | FHIGH16 },
+    { 0x00000000,   "lw",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lwl",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "lwr",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "madd",	FRS1 | FRT2 },
+    { 0x00000000,   "maddu",	FRS1 | FRT2 },
+    { 0x00000000,   "mfc0",	FRT1 | FRD2 | FSEL },
+    { 0x00000000,   "mfhi",	FRD1 },
+    { 0x00000000,   "mflo",	FRD1 },
+    { 0x00000000,   "movn",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "movz",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "msub",	FRS1 | FRT2 },
+    { 0x00000000,   "msubu",	FRS1 | FRT2 },
+    { 0x00000000,   "mtc0",	FRT1 | FRD2 | FSEL },
+    { 0x00000000,   "mthi",	FRS1 },
+    { 0x00000000,   "mtlo",	FRS1 },
+    { 0x00000000,   "mul",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "mult",	FRS1 | FRT2 },
+    { 0x00000000,   "multu",	FRS1 | FRT2 },
     { 0x00000000,   "nop",	0 },
-    { 0x00000000,   "nor",	FMT_RD_RS_RT },
-    { 0x00000000,   "or",	FMT_RD_RS_RT },
-    { 0x00000000,   "ori",	FMT_RR_RS_IMM16 },
-    { 0x00000000,   "rdhwr",	FMT_RT_RD },
-    { 0x00000000,   "rdpgpr",	FMT_RD_RT },
-    { 0x00000000,   "rotr",	FMT_RD_RT_SA },
-    { 0x00000000,   "rotrv",	FMT_RD_RT_RS },
-    { 0x00000000,   "sb",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "sc",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "sdbbp",	FMT_CODE },
-    { 0x00000000,   "seb",	FMT_RD_RT },
-    { 0x00000000,   "seh",	FMT_RD_RT },
-    { 0x00000000,   "sh",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "sll",	FMT_RD_RT_SA },
-    { 0x00000000,   "sllv",	FMT_RD_RT_RS },
-    { 0x00000000,   "slt",	FMT_RD_RS_RT },
-    { 0x00000000,   "slti",	FMT_RR_RS_IMM16 },
-    { 0x00000000,   "sltiu",	FMT_RR_RS_IMM16 },
-    { 0x00000000,   "sltu",	FMT_RD_RS_RT },
-    { 0x00000000,   "sra",	FMT_RD_RT_SA },
-    { 0x00000000,   "srav",	FMT_RD_RT_RS },
-    { 0x00000000,   "srl",	FMT_RD_RT_SA },
-    { 0x00000000,   "srlv",	FMT_RD_RT_RS },
+    { 0x00000000,   "nor",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "or",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "ori",	FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "rdhwr",	FRT1 | FRD2 },
+    { 0x00000000,   "rdpgpr",	FRD1 | FRT2 },
+    { 0x00000000,   "rotr",	FRD1 | FRT2 | FSA },
+    { 0x00000000,   "rotrv",	FRD1 | FRT2 | FRS3 },
+    { 0x00000000,   "sb",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "sc",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "sdbbp",	FCODE },
+    { 0x00000000,   "seb",	FRD1 | FRT2 },
+    { 0x00000000,   "seh",	FRD1 | FRT2 },
+    { 0x00000000,   "sh",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "sll",	FRD1 | FRT2 | FSA },
+    { 0x00000000,   "sllv",	FRD1 | FRT2 | FRS3 },
+    { 0x00000000,   "slt",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "slti",	FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "sltiu",	FRT1 | FRS2 | FOFF16 },
+    { 0x00000000,   "sltu",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "sra",	FRD1 | FRT2 | FSA },
+    { 0x00000000,   "srav",	FRD1 | FRT2 | FRS3 },
+    { 0x00000000,   "srl",	FRD1 | FRT2 | FSA },
+    { 0x00000000,   "srlv",	FRD1 | FRT2 | FRS3 },
     { 0x00000000,   "ssnop",	0 },
-    { 0x00000000,   "sub",	FMT_RD_RS_RT },
-    { 0x00000000,   "subu",	FMT_RD_RS_RT },
-    { 0x00000000,   "sw",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "swl",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "swr",	FMT_RT_OFF16_RS },
-    { 0x00000000,   "sync",	FMT_CODE },
-    { 0x00000000,   "syscall",	FMT_CODE },
-    { 0x00000000,   "teq",	FMT_RS_RT },
-    { 0x00000000,   "teqi",	FMT_RS_IMM16 },
-    { 0x00000000,   "tge",	FMT_RS_RT },
-    { 0x00000000,   "tgei",	FMT_RS_IMM16 },
-    { 0x00000000,   "tgeiu",	FMT_RS_IMM16 },
-    { 0x00000000,   "tgeu",	FMT_RS_RT },
-    { 0x00000000,   "tlt",	FMT_RS_RT },
-    { 0x00000000,   "tlti",	FMT_RS_IMM16 },
-    { 0x00000000,   "tltiu",	FMT_RS_IMM16 },
-    { 0x00000000,   "tltu",	FMT_RS_RT },
-    { 0x00000000,   "tne",	FMT_RS_RT },
-    { 0x00000000,   "tnei",	FMT_RS_IMM16 },
-    { 0x00000000,   "wait",	FMT_CODE },
-    { 0x00000000,   "wrpgpr",	FMT_RD_RT },
-    { 0x00000000,   "wsbh",	FMT_RD_RT },
-    { 0x00000000,   "xor",	FMT_RD_RS_RT },
-    { 0x00000000,   "xori",	FMT_RR_RS_IMM16 },
+    { 0x00000000,   "sub",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "subu",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "sw",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "swl",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "swr",	FRT1 | FOFF16 | FRSB },
+    { 0x00000000,   "sync",	FCODE },
+    { 0x00000000,   "syscall",	FCODE },
+    { 0x00000000,   "teq",	FRS1 | FRT2 },
+    { 0x00000000,   "teqi",	FRS1 | FOFF16 },
+    { 0x00000000,   "tge",	FRS1 | FRT2 },
+    { 0x00000000,   "tgei",	FRS1 | FOFF16 },
+    { 0x00000000,   "tgeiu",	FRS1 | FOFF16 },
+    { 0x00000000,   "tgeu",	FRS1 | FRT2 },
+    { 0x00000000,   "tlt",	FRS1 | FRT2 },
+    { 0x00000000,   "tlti",	FRS1 | FOFF16 },
+    { 0x00000000,   "tltiu",	FRS1 | FOFF16 },
+    { 0x00000000,   "tltu",	FRS1 | FRT2 },
+    { 0x00000000,   "tne",	FRS1 | FRT2 },
+    { 0x00000000,   "tnei",	FRS1 | FOFF16 },
+    { 0x00000000,   "wait",	FCODE },
+    { 0x00000000,   "wrpgpr",	FRD1 | FRT2 },
+    { 0x00000000,   "wsbh",	FRD1 | FRT2 },
+    { 0x00000000,   "xor",	FRD1 | FRS2 | FRT3 },
+    { 0x00000000,   "xori",	FRT1 | FRS2 | FOFF16 },
     { 0,            0,          0 },
+};
+
+/*
+ * Character classes.
+ */
+#define ISHEX(c)        (ctype[(c)&0377] & 1)
+#define ISOCTAL(c)      (ctype[(c)&0377] & 2)
+#define ISDIGIT(c)      (ctype[(c)&0377] & 4)
+#define ISLETTER(c)     (ctype[(c)&0377] & 8)
+
+const char ctype [256] = {
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,8,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
+    0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
+    0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+    8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,
 };
 
 FILE *sfile [SABS], *rfile [SABS];
@@ -736,11 +731,12 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 if (c == EOF)
                     return (LEOF);
         case '\n':
+            ++line;
             c = getchar ();
             if (c == '#')
                 goto skiptoeol;
             ungetc (c, stdin);
-            *pval = ++line;
+            *pval = line;
             return (LEOL);
         case ' ':
         case '\t':
@@ -885,7 +881,7 @@ void getbitmask ()
 
 /*
  * Get an expression.
- * Return a value, put a base segment index to *s.
+ * Return a value, put a base segment id to *s.
  * A copy of value is saved in intval.
  *
  * expression = [term] {op term}...
@@ -1013,49 +1009,166 @@ void emitword (w, r)
 void makecmd (opcode, type)
     unsigned opcode;
 {
-    register int clex, reg;
-    register unsigned addr, reltype;
+    register int clex;
+    register unsigned offset, relinfo;
     int cval, segment;
 
-    reg = 0;
-    reltype = RABS;
+    offset = 0;
+    relinfo = RABS;
 
-    /* TODO */
-    for (;;) {
-        switch (clex = getlex (&cval)) {
-        case LEOF:
-        case LEOL:
+    /*
+     * First register.
+     */
+    if (type & FRD1) {
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rd register");
+        opcode |= cval << 11;           /* rd, ... */
+    }
+    if (type & FRT1) {
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rt register");
+        opcode |= cval << 16;           /* rt, ... */
+    }
+    if (type & FRS1) {
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rs register");
+        opcode |= cval << 21;           /* rs, ... */
+    }
+
+
+    /*
+     * Second register.
+     */
+    if (type & FRD2) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rd register");
+        opcode |= cval << 11;           /* .., rd, ... */
+    }
+    if (type & FRT2) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rt register");
+        opcode |= cval << 16;           /* .., rt, ... */
+    }
+    if (type & FRS2) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rs register");
+        opcode |= cval << 21;           /* .., rs, ... */
+    }
+
+    /*
+     * Third register.
+     */
+    if (type & FRT3) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rt register");
+        opcode |= cval << 16;           /* .., .., rt */
+    }
+    if (type & FRS3) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rs register");
+        opcode |= cval << 21;           /* .., .., rs */
+    }
+
+    /*
+     * Immediate argument.
+     */
+    if (type & FSEL) {
+        /* optional COP0 register select */
+        clex = getlex (&cval);
+        if (getlex (&cval) == ',') {
+            offset = getexpr (&segment);
+            if (segment != SABS)
+                uerror ("absolute value required");
+            opcode |= offset & 7;
+        } else
             ungetlex (clex, cval);
-            addr = 0;
-            goto putcom;
-        default:
-            ungetlex (clex, cval);
-            addr = getexpr (&segment);
-            reltype = segmrel [segment];
-            if (reltype == REXT)
-                reltype |= RSETINDEX (extref);
+
+    } else if (type & (FCODE | FSA)) {
+        /* Non-relocatable offset */
+        if ((type & FSA) && getlex (&cval) != ',')
+            uerror ("comma expected");
+        offset = getexpr (&segment);
+        if (segment != SABS)
+            uerror ("absolute value required");
+        switch (type & (FCODE | FOFF16 | FSA | FSEL)) {
+        case FCODE:                     /* immediate shifted <<6 */
+            opcode |= offset << 6;
+            break;
+        case FSA:                       /* shift amount */
+            opcode |= (offset & 0x1f) << 6;
             break;
         }
-        break;
+    } else if (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28)) {
+        /* Relocatable offset */
+        if ((type & (FOFF16 | FOFF18)) && getlex (&cval) != ',')
+            uerror ("comma expected");
+        offset = getexpr (&segment);
+        relinfo = segmrel [segment];
+        if (relinfo == REXT)
+            relinfo |= RSETINDEX (extref);
+        switch (type & (FCODE | FOFF16 | FSA | FSEL)) {
+        case FOFF16:                    /* low 16-bit byte address */
+            opcode |= offset & 0xffff;
+            break;
+        case FHIGH16:                   /* high 16-bit byte address */
+            opcode |= (offset >> 16) & 0xffff;
+            relinfo |= RHIGH16;
+            /* TODO: keep full offset in relinfo value */
+            break;
+        case FOFF18:                    /* 18-bit word address */
+        case FAOFF18:
+            opcode |= (offset >> 2) & 0xffff;
+            relinfo |= RWORD16;
+            break;
+        case FAOFF28:                   /* 28-bit word address */
+            opcode |= (offset >> 2) & 0x3ffffff;
+            relinfo |= RWORD26;
+            break;
+        }
     }
-    clex = getlex (&cval);
-    if (clex == ',') {
-        reg = getexpr (&segment);
-        if (segment != SABS)
-            uerror ("bad register number");
-    } else
-        ungetlex (clex, cval);
-putcom:
-#if 0
-    if (type & TLONG) {
-        addr &= 0xfffff;
-        opcode |= (reg << 28) | (addr & 0xfffff);
-        reltype |= RLONG;
-    } else
-#endif
-    opcode |= (reg << 28) | (addr & 07777);
 
-    emitword (opcode, reltype);
+    /*
+     * Last argument.
+     */
+    if (type & FRSB) {
+        if (getlex (&cval) != '(')
+            uerror ("left par expected");
+        clex = getlex (&cval);
+        if (clex != LREG)
+            uerror ("bad rs register");
+        if (getlex (&cval) != ')')
+            uerror ("right par expected");
+        opcode |= cval << 21;           /* ... (rs) */
+    }
+    if (type & FSIZE) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        offset = getexpr (&segment);
+        if (segment != SABS)
+            uerror ("absolute value required");
+        opcode |= ((offset - 1) & 0x1f) << 11; /* bit field size */
+    }
+
+    /* Output resulting values. */
+    emitword (opcode, relinfo);
 }
 
 void makeascii ()
@@ -1123,7 +1236,7 @@ void makeascii ()
     while (c--)
         fputc (0, sfile[segm]);
     while (n--)
-        fputword (0L, rfile[segm]);
+        fputword (0, rfile[segm]);
 }
 
 void pass1 ()
@@ -1312,65 +1425,66 @@ void makeheader ()
     hdr.a_data = count [SDATA] + count [SSTRNG];
     hdr.a_bss = count [SBSS];
     hdr.a_syms = stlength;
-    hdr.a_entry = USER_CODE_START;
+    hdr.a_entry = 0;
     hdr.a_flag = 0;
     fputhdr (&hdr, stdout);
 }
 
-unsigned adjust (h, a, hr)
-    register unsigned h, a;
-    register int hr;
+unsigned relocate (opcode, offset, relinfo)
+    register unsigned opcode, offset;
+    register int relinfo;
 {
-    switch (hr & RSHORT) {
-    case 0:
-        a += h & 0777777777;
-        h &= ~0777777777;
-        h |= a & 0777777777;
+    switch (relinfo & RFMASK) {
+    case 0:                             /* low 16 bits of byte address */
+        offset += opcode & 0xffff;
+        opcode &= ~0xffff;
+        opcode |= offset & 0xffff;
         break;
-    case RSHORT:
-        a += h & 07777;
-        h &= ~07777;
-        h |= a & 07777;
+    case RHIGH16:                       /* high 16 bits of byte address */
+        /* TODO: keep full 32-offset in relinfo */
+        offset += (opcode & 0xffff) << 16;
+        opcode &= ~0xffff;
+        opcode |= (offset >> 16) & 0xffff;
         break;
-    case RSHIFT:
-        a >>= 12;
-        goto rlong;
-    case RTRUNC:
-        a &= 07777;
-    case RLONG:
-rlong:  a += h & 0xfffff;
-        h &= ~0xfffff;
-        h |= a & 0xfffff;
+    case RWORD16:                       /* 16 bits of word address */
+        offset += (opcode & 0xffff) << 2;
+        opcode &= ~0xffff;
+        opcode |= (offset >> 2) & 0xffff;
+        break;
+    case RWORD26:                       /* 26 bits of word address */
+        offset += (opcode & 0x3ffffff) << 2;
+        opcode &= ~0x3ffffff;
+        opcode |= (offset >> 2) & 0x3ffffff;
         break;
     }
-    return (h);
+    return (opcode);
 }
 
-unsigned makeword (h, hr)
-    register unsigned h, hr;
+unsigned makeword (h, relinfo)
+    register unsigned h, relinfo;
 {
     register int i;
 
-    switch ((int) hr & REXT) {
+    switch ((int) relinfo & REXT) {
     case RABS:
         break;
     case RTEXT:
-        h = adjust (h, tbase, (int) hr);
+        h = relocate (h, tbase, (int) relinfo);
         break;
     case RDATA:
-        h = adjust (h, dbase, (int) hr);
+        h = relocate (h, dbase, (int) relinfo);
         break;
     case RSTRNG:
-        h = adjust (h, adbase, (int) hr);
+        h = relocate (h, adbase, (int) relinfo);
         break;
     case RBSS:
-        h = adjust (h, bbase, (int) hr);
+        h = relocate (h, bbase, (int) relinfo);
         break;
     case REXT:
-        i = RINDEX (hr);
+        i = RINDEX (relinfo);
         if (stab[i].n_type != N_EXT+N_UNDF &&
             stab[i].n_type != N_EXT+N_COMM)
-            h = adjust (h, stab[i].n_value, (int) hr);
+            h = relocate (h, stab[i].n_value, (int) relinfo);
         break;
     }
     return (h);
@@ -1381,7 +1495,7 @@ void pass2 ()
     register int i;
     register unsigned h;
 
-    tbase = 0x7f008000; // TODO: user code start
+    tbase = 0;
     dbase = tbase + count[STEXT]/2;
     adbase = dbase + count[SDATA]/2;
     bbase = adbase + count[SSTRNG]/2;
@@ -1394,17 +1508,17 @@ void pass2 ()
         case N_ABS:
             break;
         case N_TEXT:
-            h = adjust (h, tbase, 0);
+            h = relocate (h, tbase, 0);
             break;
         case N_DATA:
-            h = adjust (h, dbase, 0);
+            h = relocate (h, dbase, 0);
             break;
         case N_STRNG:
-            h = adjust (h, adbase, 0);
+            h = relocate (h, adbase, 0);
             stab[i].n_type += N_DATA - N_STRNG;
             break;
         case N_BSS:
-            h = adjust (h, bbase, 0);
+            h = relocate (h, bbase, 0);
             break;
         }
         stab[i].n_value = h;
@@ -1412,8 +1526,7 @@ void pass2 ()
     for (segm=STEXT; segm<SBSS; segm++) {
         rewind (sfile [segm]);
         rewind (rfile [segm]);
-        h = count [segm];
-        while (h--)
+        for (h=count[segm]; h>0; h-=WORDSZ)
             fputword (makeword (fgetword (sfile[segm]),
                 fgetword (rfile[segm])), stdout);
     }
@@ -1437,28 +1550,28 @@ int typerel (t)
     }
 }
 
-unsigned relword (hr)
-    register long hr;
+unsigned relword (relinfo)
+    register long relinfo;
 {
     register int i;
 
-    switch ((int) hr & REXT) {
+    switch ((int) relinfo & REXT) {
     case RSTRNG:
-        hr = RDATA | (hr & RSHORT);
+        relinfo = RDATA | (relinfo & RFMASK);
         break;
     case REXT:
-        i = RINDEX (hr);
+        i = RINDEX (relinfo);
         if (stab[i].n_type == N_EXT+N_UNDF ||
             stab[i].n_type == N_EXT+N_COMM)
         {
             /* Reindexing */
             if (xflags)
-                hr = (hr & (RSHORT|REXT)) | RSETINDEX (newindex [i]);
+                relinfo = (relinfo & (RFMASK | REXT)) | RSETINDEX (newindex [i]);
         } else
-            hr = (hr & RSHORT) | typerel (stab[i].n_type);
+            relinfo = (relinfo & RFMASK) | typerel (stab[i].n_type);
         break;
     }
-    return (hr);
+    return (relinfo);
 }
 
 void makereloc ()

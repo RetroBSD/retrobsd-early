@@ -70,10 +70,9 @@
 #define REXT    070             /* externals and bitmask */
 
 #define RFMASK  07              /* bitmask for format */
-#define RSHIFT  04
-#define RTRUNC  05
-#define RLONG   06
-#define RSHORT  07
+#define RHIGH16 02
+#define RWORD16 03
+#define RWORD26 04
 
 #define RINDEX(h) ((h)>>6)
 #define RSETINDEX(h) ((h)<<6)
