@@ -157,9 +157,15 @@ main()
 	boottime = time;
 
         /* Find a swap file. */
+#ifdef SWAPDEV
+        swapdev = SWAPDEV;
+	swapstart = 0;
+	nswap = SWAPSZ;
+#else
         swapdev = rootdev;
 	swapstart = fs->fs_isize;
 	nswap = fs->fs_swapsz;
+#endif
 	printf ("swap size = %u kbytes\n", nswap * DEV_BSIZE / 1024);
 	if (nswap <= 0)
 		panic ("zero swap size");	/* don't want to panic, but what ? */

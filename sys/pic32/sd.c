@@ -757,8 +757,6 @@ sdstrategy (bp)
 		goto done;
 	}
 #ifdef UCB_METER
-#endif
-#ifdef UCB_METER
 	if (sd_dkn >= 0) {
                 dk_busy |= 1 << (sd_dkn + unit);
 		dk_xfer[sd_dkn + unit]++;

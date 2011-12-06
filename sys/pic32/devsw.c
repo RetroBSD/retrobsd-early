@@ -58,6 +58,9 @@ const struct bdevsw	bdevsw[] = {
 { /* sd = 0 */
 	sdopen,		nulldev,	sdstrategy,
 	noroot,		sdsize,		0 },
+{ /* sw = 1 */
+	swopen,		nulldev,	swstrategy,
+	noroot,		0,		0 },
 };
 const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
 
@@ -86,8 +89,11 @@ const struct cdevsw	cdevsw[] = {
 	fdopen,		nulldev,	norw,		norw,
 	noioctl,	nulldev,	0,		seltrue,
 	nostrategy,	},
+{ /* sw = 6 */
+	swopen,		nulldev,	rawrw,		rawrw,
+	noioctl,	nulldev,	0,		seltrue,
+	swstrategy,	},
 };
-
 const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 
 /*
@@ -116,10 +122,12 @@ isdisk(dev, type)
 {
 	switch (major(dev)) {
 	case 0:			/* sd */
+	case 1:			/* sw */
 		if (type == IFBLK)
 			return (1);
 		return (0);
 	case 3:			/* rsd */
+	case 6:			/* rsw */
 		if (type == IFCHR)
 			return (1);
 		/* fall through */
@@ -138,7 +146,7 @@ static const char chrtoblktbl[MAXDEV] =  {
 	/* 3 */		0,		/* sd */
 	/* 4 */		NODEV,
 	/* 5 */		NODEV,
-	/* 6 */		NODEV,
+	/* 6 */		1,
 };
 
 /*

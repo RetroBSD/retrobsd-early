@@ -42,6 +42,17 @@ DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1   -DLED_DISK_INVERT
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2 -DLED_KERNEL_INVERT
 DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3    -DLED_TTY_INVERT
 
+# Swap on external device, 2 Mbytes
+#   data at E0-E7
+#     rd at E8
+#     wr at E9
+# ldaddr at C1
+DEFS            += -DSWAPDEV=0x0100 -DSWAPSZ=2048
+DEFS            += -DSW_DATA_PORT=TRISE -DSW_DATA_PIN=0
+DEFS            += -DSW_RD_PORT=TRISE   -DSW_RD_PIN=8
+DEFS            += -DSW_WR_PORT=TRISE   -DSW_WR_PIN=9
+DEFS            += -DSW_LDA_PORT=TRISC  -DSW_LDA_PIN=1
+
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
@@ -59,7 +70,7 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 # startup.o MUST be loaded first.
 KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
 		  signal.o machdep.o mem.o exception.o
-KERNOBJ		+= cons.o
+KERNOBJ		+= cons.o swap.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
