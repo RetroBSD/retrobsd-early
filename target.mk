@@ -1,55 +1,18 @@
 DESTDIR		= /usr/local/lib/retrobsd
 MACHINE		= mips
 
-# MPLABX C32 on Linux - tested
-# Fails due to missing stdarg.h and no linker support for elf32-littlemips target
-ifneq (,$(wildcard /opt/microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX	= /opt/microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS	= -Wl,--no-data-init
-    INCLUDES    = -I/opt/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
-endif
-
-# MPLABX C32 on Mac OS X - not verified yet
-ifneq (,$(wildcard /Applications/microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX   = /Applications/microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS	= -Wl,--no-data-init
-    INCLUDES    = -I/Applications/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
-endif
-
-# MPLABX C32 on Windows - not verified yet
-ifneq (,$(wildcard /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-gcc))
-    GCCPREFIX   = /c/"Program Files"/Microchip/mplabc32/v2.00/bin/pic32-
-    LDFLAGS	= -Wl,--no-data-init
-    INCLUDES    = -I/c/"Program Files"/microchip/mplabc32/v2.00/lib/gcc/pic32mx/4.5.1/include
-endif
-
-# Digilent MPIDE on Linux
-# Need to copy hardware/pic32/compiler/pic32-tools/pic32mx/include/stdarg.h
-# to hardware/pic32/compiler/pic32-tools/lib/gcc/pic32mx/4.5.1/include.
-#ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-gcc))
-#    GCCPREFIX   = /opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/bin/pic32-
-#    LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
-#    INCLUDES    = -I/opt/mpide-0022-linux32-20110822/hardware/pic32/compiler/pic32-tools/lib/gcc/pic32mx/4.5.1/include
-#endif
-
 # chipKIT PIC32 compiler on Linux
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Download from https://github.com/jasonkajita/chipKIT-cxx/downloads
+# and unzip to /usr/local.
 # Need to copy pic32-tools/pic32mx/include/stdarg.h
 # to pic32-tools/lib/gcc/pic32mx/4.5.1/include.
-ifneq (,$(wildcard /usr/local/pic32-tools/bin/pic32-gcc))
+# MPLABX C32 compiler doesn't support some functionality
+# we need, so use chipKIT compiler by default.
+ifndef GCCPREFIX
     GCCPREFIX   = /usr/local/pic32-tools/bin/pic32-
     LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
     INCLUDES    = -I/usr/local/pic32-tools/lib/gcc/pic32mx/4.5.1/include
-endif
-
-# Plain GCC
-ifneq (,$(wildcard /usr/local/mips461/bin/mips-elf-gcc))
-# Linux MPLABX C32 compiler doesn't support some functionality
-# we require, so allow plain GCC to rule here for now
-ifndef GCCPREFIX
-    GCCPREFIX	= /usr/local/mips461/bin/mips-elf-
-    LDFLAGS	=
-    INCLUDES    = -I/usr/local/mips461/lib/gcc/mips-elf/4.6.1/include
-endif
 endif
 
 CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)

@@ -504,7 +504,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (knlist(nl) == -1 || !nl[0].n_type) {
+	if (knlist(nl) == -1 || !nl[0].n_value) {
 		fprintf(stderr, "%s: No namelist\n", N_UNIX);
 		exit(1);
 	}
