@@ -33,26 +33,18 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-char copyright[] =
-"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
- All rights reserved.\n";
-
-static char sccsid[] = "@(#)ar.c	5.11 (Berkeley) 3/21/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <sys/dir.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <ar.h>
 #include <string.h>
 #include <paths.h>
 #include "archive.h"
 #include "extern.h"
 
-extern char *malloc();
 extern int errno;
 
 CHDR chdr;
@@ -66,6 +58,7 @@ static void badoptions(), usage();
  *	functions.  Some hacks that let us be backward compatible with 4.3 ar
  *	option parsing and sanity checking.
  */
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -73,7 +66,7 @@ main(argc, argv)
 	extern int optind;
 	int c;
 	char *p;
-	int (*fcall)(), append(), contents(), delete(), extract(),
+	int (*fcall)() = 0, append(), contents(), delete(), extract(),
 	    move(), print(), replace();
 
 	if (argc < 3)
@@ -209,7 +202,8 @@ main(argc, argv)
 		(void)fprintf(stderr, "ar: no archive members specified.\n");
 		usage();
 	}
-
+        if (! fcall)
+                exit(1);
 	exit((*fcall)(argv));
 }
 
@@ -235,4 +229,4 @@ usage()
 	(void)fprintf(stderr, "\tar -t [-Tv] archive [file ...]\n");
 	(void)fprintf(stderr, "\tar -x [-ouTv] archive [file ...]\n");
 	exit(1);
-}	
+}

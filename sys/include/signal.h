@@ -176,6 +176,7 @@ int     kill (pid_t pid, int sig);
 int     sigpause (int mask);
 int     sigblock (int mask);
 int     sigsetmask (int mask);
+int     sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 
 #define	BADSIG	SIG_ERR
 

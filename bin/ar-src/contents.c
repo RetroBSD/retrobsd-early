@@ -33,11 +33,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)contents.c	5.6 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -58,13 +53,14 @@ extern char *archive;			/* archive name */
  *	Handles t[v] option - opens the archive and then reads headers,
  *	skipping member contents.
  */
+int
 contents(argv)
 	register char **argv;
 {
 	register int afd, all;
 	struct tm *tp;
 	char *file, buf[25];
-	
+
 	afd = open_archive(O_RDONLY);
 
 	for (all = !*argv; get_arobj(afd);) {
@@ -102,7 +98,7 @@ contents(argv)
 		if (!all && !*argv)
 			break;
 next:		skip_arobj(afd);
-	} 
+	}
 	close_archive(afd);
 
 	if (*argv) {

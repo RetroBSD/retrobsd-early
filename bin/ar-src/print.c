@@ -33,11 +33,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)print.c	5.6 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -53,6 +48,7 @@ extern char *archive;			/* archive name */
  *	Prints archive members on stdout - if member names given only
  *	print those members, otherwise print all members.
  */
+int
 print(argv)
 	char **argv;
 {

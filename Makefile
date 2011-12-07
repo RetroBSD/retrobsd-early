@@ -60,7 +60,7 @@ SBIN_FILES	= sbin/chown sbin/chroot sbin/fsck sbin/halt sbin/init \
                   sbin/update sbin/vipw
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells
-BIN_FILES	= bin/apropos bin/basename bin/bc bin/cal bin/cat bin/cb \
+BIN_FILES	= bin/apropos bin/ar bin/awk bin/basename bin/bc bin/cal bin/cat bin/cb \
                   bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
                   bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \

@@ -33,11 +33,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)extract.c	5.5 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -45,6 +40,7 @@ static char sccsid[] = "@(#)extract.c	5.5 (Berkeley) 3/12/91";
 #include <errno.h>
 #include <sys/dir.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include "archive.h"
 #include "extern.h"
@@ -61,6 +57,7 @@ extern char *archive;			/* archive name */
  *	members date otherwise date is time of extraction.  Does not modify
  *	archive.
  */
+int
 extract(argv)
 	char **argv;
 {
@@ -124,4 +121,4 @@ extract(argv)
 		return(1);
 	}
 	return(0);
-}	
+}

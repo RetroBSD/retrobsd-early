@@ -32,8 +32,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)archive.h	5.8 (Berkeley) 4/12/91
  */
 
 /* Ar(1) options. */
@@ -95,7 +93,7 @@ typedef struct {
 
 void	close_archive();
 void	skip_arobj();
-int	copy_ar();
+void	copy_ar();
 int	get_arobj();
 int	open_archive();
-int	put_arobj();
+void	put_arobj();

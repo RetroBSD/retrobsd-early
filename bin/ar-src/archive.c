@@ -33,11 +33,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)archive.c	5.7 (Berkeley) 3/21/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -45,7 +40,11 @@ static char sccsid[] = "@(#)archive.c	5.7 (Berkeley) 3/21/91";
 #include <sys/file.h>
 #include <ar.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "archive.h"
 #include "extern.h"
 
@@ -56,12 +55,13 @@ extern int errno;
 typedef struct ar_hdr HDR;
 static char hb[sizeof(HDR) + 1];	/* real header */
 
+int
 open_archive(mode)
 	int mode;
 {
 	int created, fd, nr;
 	char buf[SARMAG];
-	
+
 	created = 0;
 	if (mode & O_CREAT) {
 		mode |= O_EXCL;
@@ -80,14 +80,14 @@ open_archive(mode)
 	if ((fd = open(archive, mode, 0666)) < 0)
 		error(archive);
 
-	/* 
-	 * Attempt to place a lock on the opened file - if we get an 
+	/*
+	 * Attempt to place a lock on the opened file - if we get an
 	 * error then someone is already working on this library (or
 	 * it's going across NFS).
 	 */
-opened:	if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
+opened: if (flock(fd, LOCK_EX|LOCK_NB) && errno != EOPNOTSUPP)
 		error(archive);
-	
+
 	/*
 	 * If not created, O_RDONLY|O_RDWR indicates that it has to be
 	 * in archive format.
@@ -123,6 +123,7 @@ close_archive(fd)
  * get_arobj --
  *	read the archive header for this member
  */
+int
 get_arobj(fd)
 	int fd;
 {
@@ -188,9 +189,65 @@ get_arobj(fd)
 static int already_written;
 
 /*
+ * copy_ar --
+ *	Copy size bytes from one file to another - taking care to handle the
+ *	extra byte (for odd size files) when reading archives and writing an
+ *	extra byte if necessary when adding files to archive.  The length of
+ *	the object is the long name plus the object itself; the variable
+ *	already_written gets set if a long name was written.
+ *
+ *	The padding is really unnecessary, and is almost certainly a remnant
+ *	of early archive formats where the header included binary data which
+ *	a PDP-11 required to start on an even byte boundary.  (Or, perhaps,
+ *	because 16-bit word addressed copies were faster?)  Anyhow, it should
+ *	have been ripped out long ago.
+ */
+void
+copy_ar(cfp, size)
+	CF *cfp;
+	off_t size;
+{
+	static char pad = '\n';
+	off_t sz;
+	register int from, nr, nw, off, to;
+#ifdef	pdp11
+	char buf[2*1024];
+#else
+	char buf[8*1024];
+#endif
+
+	if (!(sz = size))
+		return;
+
+	from = cfp->rfd;
+	to = cfp->wfd;
+	while (sz && (nr = read(from, buf, (size_t)(MIN(sz, sizeof(buf))))) > 0) {
+		sz -= nr;
+		for (off = 0; off < nr; nr -= off, off += nw)
+			if ((nw = write(to, buf + off, (size_t)nr)) < 0)
+				error(cfp->wname);
+	}
+	if (sz) {
+		if (nr == 0)
+			badfmt();
+		error(cfp->rname);
+	}
+
+	if (cfp->flags & RPAD && size & 1 && (nr = read(from, buf, 1)) != 1) {
+		if (nr == 0)
+			badfmt();
+		error(cfp->rname);
+	}
+	if (cfp->flags & WPAD && (size + already_written) & 1 &&
+	    write(to, &pad, 1) != 1)
+		error(cfp->wname);
+}
+
+/*
  * put_arobj --
  *	Write an archive member to a file.
  */
+void
 put_arobj(cfp, sb)
 	CF *cfp;
 	struct stat *sb;
@@ -254,60 +311,6 @@ put_arobj(cfp, sb)
 }
 
 /*
- * copy_ar --
- *	Copy size bytes from one file to another - taking care to handle the
- *	extra byte (for odd size files) when reading archives and writing an
- *	extra byte if necessary when adding files to archive.  The length of
- *	the object is the long name plus the object itself; the variable
- *	already_written gets set if a long name was written.
- *
- *	The padding is really unnecessary, and is almost certainly a remnant
- *	of early archive formats where the header included binary data which
- *	a PDP-11 required to start on an even byte boundary.  (Or, perhaps,
- *	because 16-bit word addressed copies were faster?)  Anyhow, it should
- *	have been ripped out long ago.
- */
-copy_ar(cfp, size)
-	CF *cfp;
-	off_t size;
-{
-	static char pad = '\n';
-	off_t sz;
-	register int from, nr, nw, off, to;
-#ifdef	pdp11
-	char buf[2*1024];
-#else
-	char buf[8*1024];
-#endif
-	
-	if (!(sz = size))
-		return;
-
-	from = cfp->rfd;
-	to = cfp->wfd;
-	while (sz && (nr = read(from, buf, (size_t)(MIN(sz, sizeof(buf))))) > 0) {
-		sz -= nr;
-		for (off = 0; off < nr; nr -= off, off += nw)
-			if ((nw = write(to, buf + off, (size_t)nr)) < 0)
-				error(cfp->wname);
-	}
-	if (sz) {
-		if (nr == 0)
-			badfmt();
-		error(cfp->rname);
-	}
-
-	if (cfp->flags & RPAD && size & 1 && (nr = read(from, buf, 1)) != 1) {
-		if (nr == 0)
-			badfmt();
-		error(cfp->rname);
-	}
-	if (cfp->flags & WPAD && (size + already_written) & 1 &&
-	    write(to, &pad, 1) != 1)
-		error(cfp->wname);
-}
-
-/*
  * skip_arobj -
  *	Skip over an object -- taking care to skip the pad bytes.
  */
@@ -317,7 +320,7 @@ skip_arobj(fd)
 {
 	off_t len;
 
-	len = chdr.size + (chdr.size + chdr.lname & 1);
+	len = chdr.size + (chdr.size + (chdr.lname & 1));
 	if (lseek(fd, len, L_INCR) == (off_t)-1)
 		error(archive);
 }

@@ -2,8 +2,6 @@
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)time.h	1.3 (2.11BSD) 2000/4/21
  */
 
 #ifndef	_SYS_TIME_H_
@@ -90,6 +88,9 @@ int hzto (struct timeval *tv);
 
 #else
 #include <time.h>
+
+int utimes(const char *filename, const struct timeval times[2]);
+
 #endif
 
 /*

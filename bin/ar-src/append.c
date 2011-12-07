@@ -33,16 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)append.c	5.6 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include "archive.h"
@@ -56,6 +53,7 @@ extern int errno;
  *	Append files to the archive - modifies original archive or creates
  *	a new archive if named archive does not exist.
  */
+int
 append(argv)
 	char **argv;
 {
@@ -71,7 +69,7 @@ append(argv)
 
 	/* Read from disk, write to an archive; pad on write. */
 	SETCF(0, 0, afd, archive, WPAD);
-	for (eval = 0; file = *argv++;) {
+	for (eval = 0; (file = *argv++) != 0;) {
 		if ((fd = open(file, O_RDONLY)) < 0) {
 			(void)fprintf(stderr,
 			    "ar: %s: %s.\n", file, strerror(errno));
@@ -86,5 +84,5 @@ append(argv)
 		(void)close(fd);
 	}
 	close_archive(afd);
-	return(eval);	
+	return(eval);
 }

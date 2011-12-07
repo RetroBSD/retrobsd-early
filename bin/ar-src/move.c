@@ -33,17 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)move.c	5.6 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <ar.h>
 #include "archive.h"
 #include "extern.h"
@@ -60,6 +56,7 @@ extern char *tname;                     /* temporary file "name" */
  *	option selected members go after 'posname'.  If no options, members
  *	are moved to end of archive.
  */
+int
 move(argv)
 	char **argv;
 {
@@ -86,7 +83,7 @@ move(argv)
 
 	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, 0, tname, RPAD|WPAD);
-	for (curfd = tfd1; get_arobj(afd);) {	
+	for (curfd = tfd1; get_arobj(afd);) {
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("m - %s\n", file);
@@ -139,4 +136,4 @@ move(argv)
 		return(1);
 	}
 	return(0);
-}	
+}

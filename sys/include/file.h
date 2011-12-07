@@ -85,6 +85,10 @@ void ino_unlock (struct file *fp, int kind);
 
 int ino_ioctl (struct file *fp, u_int com, caddr_t data);
 
+#else /* KERNEL */
+
+int flock(int fd, int operation);
+
 #endif /* KERNEL */
 
 /*

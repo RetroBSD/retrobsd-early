@@ -30,11 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strmode.c	5.3.2 (2.11BSD GTE) 1996/1/27";
-#endif /* LIBC_SCCS and not lint */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 

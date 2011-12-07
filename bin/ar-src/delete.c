@@ -33,17 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)delete.c	5.6 (Berkeley) 3/12/91";
-#endif
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <ar.h>
 #include "archive.h"
 #include "extern.h"
@@ -57,6 +53,7 @@ extern char *tname;                     /* temporary file "name" */
  * delete --
  *	Deletes named members from the archive.
  */
+int
 delete(argv)
 	register char **argv;
 {
@@ -94,4 +91,4 @@ delete(argv)
 		return(1);
 	}
 	return(0);
-}	
+}

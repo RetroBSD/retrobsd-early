@@ -33,17 +33,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)misc.c	5.7.1 (2.11BSD) 1999/10/25";
-#endif
-
 #include <sys/param.h>
 #include <sys/errno.h>
 #include <signal.h>
 #include <sys/dir.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "archive.h"
 #include "extern.h"
 #include "pathnames.h"
@@ -52,6 +50,7 @@ extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
 char *tname = "temporary file";		/* temporary file "name" */
 
+int
 tmp()
 {
 	extern char *envtmp;
@@ -69,7 +68,7 @@ tmp()
 		(void)sprintf(path, "%s/%s", envtmp, _NAME_ARTMP);
 	else
 		bcopy(_PATH_ARTMP, path, sizeof(_PATH_ARTMP));
-	
+
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set,  &oset);
 	if ((fd = mkstemp(path)) == -1)
@@ -94,7 +93,8 @@ files(argv)
 	for (list = argv; *list; ++list)
 		if (compare(*list)) {
 			p = *list;
-			for (; list[0] = list[1]; ++list);
+			while ((list[0] = list[1]) != 0)
+                            list++;
 			return(p);
 		}
 	return(NULL);
@@ -118,6 +118,7 @@ rname(path)
 	return((ind = rindex(path, '/')) ? ind + 1 : path);
 }
 
+int
 compare(dest)
 	char *dest;
 {
