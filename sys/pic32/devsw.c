@@ -15,6 +15,11 @@
 #include "tty.h"
 #include "systm.h"
 
+#ifndef SWAPDEV
+#define swopen      nulldev
+#define swstrategy  nostrategy
+#endif
+
 /*
  * Null routine; placed in insignificant entries
  * in the bdevsw and cdevsw tables.
