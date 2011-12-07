@@ -39,11 +39,11 @@
  * nlist.h can initialize nlist structures statically.
  */
 struct	nlist {
+	char    *n_name;	/* In memory address of symbol name,
+	                           or string table offset (file) */
 	u_short	n_len;		/* Length of name in bytes */
 	u_short	n_type;		/* Type of symbol - see below */
 	u_int	n_value;	/* Symbol value */
-	char    *n_name;	/* In memory address of symbol name,
-	                           or string table offset (file) */
 };
 
 /*

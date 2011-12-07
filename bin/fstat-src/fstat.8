@@ -21,7 +21,7 @@ fstat \- file status
 user ] [
 .B \-p
 pid ] [
-.B filename... 
+.B filename...
 ]
 .SH DESCRIPTION
 .I Fstat
@@ -46,7 +46,7 @@ Restrict reports to the specified files.
 If the file is a block special file,
 .I fstat
 additionally reports on any open files on that device,
-treating it as a mounted file system.  
+treating it as a mounted file system.
 .PP
 The following fields are printed
 .TP 6
@@ -85,7 +85,7 @@ The size in bytes of the file.
 The type of the file. (see sys/file.h)
 .PP
 Sockets
-.sp1 6
+.sp 1 6
 The formating of open sockets depends on the protocol domain.  In
 all cases the first field is the domain name, the second field
 is the socket type (stream, dgram, etc), and the third is the socket
@@ -102,7 +102,6 @@ with sockets, a pipe appears as a connected unix domain stream socket.
 A unidirectional unix domain socket indicates the direction of
 flow with an arrow ("<-" or "->"), and a full duplex socket shows
 a double arrow ("<->").
-.dt
 .SH BUGS
 Socket information clutters the output.
 .PP

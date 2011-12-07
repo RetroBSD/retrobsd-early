@@ -1,9 +1,10 @@
-#ifndef lint
-static char sccsid[] = "@(#)proc.c	4.3 8/11/83";
-#endif
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "awk.h"
-#define NULL 0
+
+#include "token.c"
+
 struct xx
 {	int token;
 	char *name;
@@ -60,9 +61,13 @@ struct xx
 	{ GETLINE, "getline", "getline"},
 	{ 0, ""},
 };
+
 #define SIZE	LASTTOKEN - FIRSTTOKEN
+
 char *table[SIZE];
 char *names[SIZE];
+
+int
 main()
 {	struct xx *p;
 	int i;

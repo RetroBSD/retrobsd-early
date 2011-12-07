@@ -53,8 +53,7 @@ extern cell	*nfloc;		/* NF */
 
 awkfloat setfval(), getfval();
 char	*setsval(), *getsval();
-char	*tostring(), *tokname(), *malloc();
-double	log(), sqrt(), exp(), atof();
+char	*tostring(), *tokname();
 
 /* function types */
 #define	FLENGTH	1
@@ -89,7 +88,7 @@ extern node	*nullstat;
 
 /* cell subtypes */
 #define CTEMP	4
-#define CNAME	3 
+#define CNAME	3
 #define CVAR	2
 #define CFLD	1
 #define CCON	0

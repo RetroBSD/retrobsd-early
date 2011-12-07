@@ -49,7 +49,6 @@ extern	struct	_iobuf {
 
 #ifndef lint
 #define	getc(p)		(--(p)->_cnt>=0? (int)(*(unsigned char *)(p)->_ptr++):_filbuf(p))
-#define	ungetc(c,p)	(++(p)->_cnt, *--(p)->_ptr = (c))
 #define putc(x, p)	(--(p)->_cnt >= 0 ?\
 	(int)(*(unsigned char *)(p)->_ptr++ = (x)) :\
 	(((p)->_flag & _IOLBF) && -(p)->_cnt < (p)->_bufsiz ?\
@@ -73,6 +72,7 @@ FILE	*popen (const char *, const char *);
 long	ftell (FILE *);
 int     fflush (FILE *);
 int     fgetc (FILE *);
+int     ungetc (int, FILE *);
 int	fputc (int, FILE *);
 int	fputs (const char *, FILE *);
 int	puts (const char *);

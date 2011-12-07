@@ -1,11 +1,10 @@
-#ifndef lint
-static char sccsid[] = "@(#)run.c	4.5 12/4/84";
-#endif
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include "awk.def"
-#include	"math.h"
 #include "awk.h"
-#include "stdio.h"
+
 #define RECSIZE BUFSIZ
 
 #define FILENUM	10

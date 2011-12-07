@@ -23,3 +23,9 @@ int isinf(double x);
 
 float modff(float x, float *iptr);
 double modf(double x, double *iptr);
+
+float frexpf(float x, int *exp);
+double frexp(double x, int *exp);
+
+float ldexpf(float x, int exp);
+double ldexp(double x, int exp);

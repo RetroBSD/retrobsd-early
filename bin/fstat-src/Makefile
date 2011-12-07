@@ -4,12 +4,12 @@
 TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		+= -Werror
+CFLAGS		+= -Werror -Wall
 
 SRCS		= fstat.c
 OBJS		= fstat.o
 MAN		= fstat.0
-MANSRC		= fstat.1
+MANSRC		= fstat.8
 
 all:            ../fstat fstat.0
 

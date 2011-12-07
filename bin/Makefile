@@ -10,12 +10,12 @@ CFLAGS          += -Werror
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= chflags-src chpass-src dc-src diff-src find-src \
+SUBDIR		= chflags-src chpass-src dc-src diff-src find-src fstat-src \
                   hostname-src id-src la-src ls-src login-src man-src \
                   more-src nm-src passwd-src printf-src re-src renice-src \
                   sed-src sh-src stty-src sysctl-src test-src uname-src \
                   xargs-src zmodem-src
-# TODO: ar-src awk-src fstat-src lex-src ld-src
+# TODO: ar-src awk-src ld-src lex-src
 # make-src m4-src pcc-src ranlib-src yacc-src
 
 # Shell scripts that need only be installed and are never removed.

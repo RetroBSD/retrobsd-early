@@ -5,7 +5,7 @@
 %{
 #include	"awk.h"
 #include	"awk.def"
-#undef	input	/* defeat lex */
+#define YY_NO_INPUT	/* defeat lex */
 extern int	yylval;
 extern int	mustfld;
 extern int	ldbg;
@@ -24,14 +24,15 @@ D	[0-9]
 WS	[ \t]
 
 %%
-	switch (yybgin-yysvec-1) {	/* witchcraft */
+        /* witchcraft */
+        /* switch (yybgin-yysvec-1) {
 	case 0:
 		BEGIN A;
 		break;
 	case sc:
 		BEGIN A;
 		RETURN('}');
-	}
+	} */
 
 <A>^\n		lineno++;
 <A>^{WS}*#.*\n	lineno++;	/* strip comment lines */
@@ -153,9 +154,7 @@ input()
 	register c;
 	extern char *lexprog;
 
-	if (yysptr > yysbuf)
-		c = U(*--yysptr);
-	else if (yyin == NULL)
+	if (yyin == NULL)
 		c = *lexprog++;
 	else
 		c = getc(yyin);
@@ -177,7 +176,7 @@ ptoken(n)
 		char *tnm;
 		int yval;
 	} tok[];
-	extern char yytext[];
+//	extern char yytext[];
 	extern int yylval;
 
 	printf("lex:");

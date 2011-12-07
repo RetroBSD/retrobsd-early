@@ -1,9 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)main.c	4.4 (Berkeley) 12/8/84";
-#endif
-
-#include "stdio.h"
-#include "ctype.h"
+#include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
 #include "awk.def"
 #include "awk.h"
 #define TOLOWER(c)	(isupper(c) ? tolower(c) : c) /* ugh!!! */
