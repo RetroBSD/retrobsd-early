@@ -49,6 +49,7 @@
 #define	AR_U	0x0800
 #define	AR_V	0x1000
 #define	AR_X	0x2000
+
 extern u_int options;
 
 /* Set up file copy. */
@@ -89,7 +90,6 @@ typedef struct {
 
 #define	OLDARMAXNAME	15
 #define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10ld%2s"
-
 
 void	close_archive();
 void	skip_arobj();

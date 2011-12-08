@@ -39,12 +39,11 @@
 #include <sys/dir.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <paths.h>
 #include "archive.h"
 #include "extern.h"
-#include "pathnames.h"
 
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
@@ -56,6 +55,7 @@ tmp()
 	extern char *envtmp;
 	sigset_t set, oset;
 	static int first;
+	static const char *artmp = _PATH_ARTMP;
 	int fd;
 	char path[MAXPATHLEN];
 
@@ -64,14 +64,16 @@ tmp()
 		first = 1;
 	}
 
-	if (envtmp)
-		(void)sprintf(path, "%s/%s", envtmp, _NAME_ARTMP);
-	else
-		bcopy(_PATH_ARTMP, path, sizeof(_PATH_ARTMP));
-
+	if (envtmp) {
+		strcpy(path, envtmp);
+		strcat(path, strrchr (artmp, '/'));
+	} else {
+		strcpy(path, artmp);
+        }
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set,  &oset);
-	if ((fd = mkstemp(path)) == -1)
+	fd = mkstemp(path);
+	if (fd == -1)
 		error(tname);
         (void)unlink(path);
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
@@ -115,7 +117,8 @@ rname(path)
 {
 	register char *ind;
 
-	return((ind = rindex(path, '/')) ? ind + 1 : path);
+	ind = strrchr(path, '/');
+	return(ind ? ind + 1 : path);
 }
 
 int

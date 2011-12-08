@@ -32,16 +32,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ar.h	5.4 (Berkeley) 4/3/91
  */
 
 #ifndef _AR_H_
 #define	_AR_H_
-
-/* Pre-4BSD archives had these magic numbers in them. */
-#define	OARMAG1	0177555
-#define	OARMAG2	0177545
 
 #define	ARMAG		"!<arch>\n"	/* ar "magic number" */
 #define	SARMAG		8		/* strlen(ARMAG); */
@@ -58,5 +52,7 @@ struct ar_hdr {
 #define	ARFMAG	"`\n"
 	char ar_fmag[2];		/* consistency check */
 };
+
+#define	ARHDRSZ	60
 
 #endif /* !_AR_H_ */

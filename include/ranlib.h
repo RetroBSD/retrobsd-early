@@ -29,8 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)ranlib.h	5.2 (Berkeley) 4/3/91
  */
 
 #ifndef _RANLIB_H_
@@ -40,11 +38,9 @@
 #define	RANLIBSKEW	3		/* creation time offset */
 
 struct ranlib {
-	union {
-		off_t ran_strx;		/* string table index */
-		char *ran_name;		/* in memory symbol name */
-	} ran_un;
-	off_t ran_off;			/* archive file offset */
+	int ran_len;                    /* 1 byte - name length in bytes */
+	off_t ran_off;			/* 4 bytes - file offset */
+	char *ran_name;                 /* in memory symbol name */
 };
 
 #endif /* !_RANLIB_H_ */

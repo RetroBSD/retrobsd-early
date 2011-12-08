@@ -41,7 +41,6 @@
 #include <unistd.h>
 #include <ar.h>
 #include <string.h>
-#include <paths.h>
 #include "archive.h"
 #include "extern.h"
 

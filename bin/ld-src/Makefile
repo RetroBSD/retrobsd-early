@@ -1,25 +1,30 @@
+#
 # Version 2.2 January 24, 1998
+#
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
 
-SRCS=	ld.c
-OBJS=	ld.o
-MAN=	ld.0
-MANSRC=	ld.1
-CFLAGS=	-O -I../ar -DNUM_VM_PAGES=20
+CFLAGS		+= -Werror #-Wall
 
-all:	ld ld.0
+SRCS		= ld.c
+OBJS            = ld.o
+MAN		= ld.0
+MANSRC		= ld.1
 
-ld: ${OBJS}
-	cc -i -o ld ${OBJS} -lvmf
+all:            ../ld $(MAN)
 
-install: all
-	install -c -s -o bin -g bin -m 755 ld ${DESTDIR}/bin/ld
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+../ld:          ${OBJS}
+		${CC} ${LDFLAGS} -o ld.elf ${OBJS} ${LIBS} #-lvmf
+		${OBJDUMP} -S ld.elf > ld.dis
+		${SIZE} ld.elf
+		${ELF2AOUT} ld.elf $@
 
-lint:
-	lint -havx -I../ar ${SRCS}
+ld.0:           ld.1
+		${MANROFF} $< > $@
 
 clean:
-	rm -f ${OBJS} ${MAN} ld
+		rm -f *.o *.0 *.elf ${MAN} ../ld *.elf *.dis tags *~
 
-${MAN}: ${MANSRC}
-	/usr/man/manroff ${MANSRC} > ${MAN}
+#install:        all
+#		install -c -s -o bin -g bin -m 755 ld ${DESTDIR}/bin/ld
+#		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1

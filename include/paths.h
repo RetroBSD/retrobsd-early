@@ -48,6 +48,7 @@
 #define _PATH_VARRUN	"/var/run/"
 #define _PATH_DEVDB	"/var/run/dev"
 #define _PATH_UTMP      "/var/run/utmp"
+#define _PATH_ARTMP     "/tmp/ar.XXXXXX"
 
 #define _PATH_STDPATH   "/bin"
 #define _PATH_SYSPATH   "/bin:/sbin:/local"

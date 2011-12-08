@@ -66,7 +66,7 @@ BIN_FILES	= bin/apropos bin/ar bin/awk bin/basename bin/bc bin/cal bin/cat bin/c
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
                   bin/file bin/find bin/fstat bin/grep bin/groups bin/head \
                   bin/hostid bin/hostname bin/id bin/iostat bin/join \
-                  bin/kill bin/la bin/last bin/ln bin/ls bin/login \
+                  bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login \
                   bin/mail bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/pr bin/printf bin/ps bin/pwd bin/re bin/renice bin/rev bin/rm \

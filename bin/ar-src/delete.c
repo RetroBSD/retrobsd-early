@@ -43,7 +43,6 @@
 #include <ar.h>
 #include "archive.h"
 #include "extern.h"
-#include "pathnames.h"
 
 extern CHDR chdr;			/* converted header */
 extern char *archive;			/* archive name */
