@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include "awk.def"
+#include "awk.def.h"
 #include "awk.h"
 
 FILE	*infile	= NULL;

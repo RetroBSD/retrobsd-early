@@ -2,29 +2,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "awk.def"
+#include "awk.def.h"
 #include "awk.h"
 
 #define RECSIZE BUFSIZ
 
 #define FILENUM	10
+#define PA2NUM	29
+#define MAXTMP  20
+
 struct
 {
 	FILE *fp;
 	int type;
 	char *fname;
 } files[FILENUM];
-FILE *popen();
 
 extern obj execute(), nodetoobj(), fieldel(), dopa2(), gettemp();
-#define PA2NUM	29
+
 int pairstack[PA2NUM], paircnt;
+
 node *winner = (node *)NULL;
-#define MAXTMP 20
+
 cell tmps[MAXTMP];
-static cell nullval ={EMPTY,EMPTY,0.0,NUM,0};
-obj	true	={ OBOOL, BTRUE, 0 };
-obj	false	={ OBOOL, BFALSE, 0 };
+
+static cell nullval = { EMPTY, EMPTY, 0.0, NUM, 0 };
+
+obj	true	= { OBOOL, BTRUE, 0 };
+obj	false	= { OBOOL, BFALSE, 0 };
 
 run()
 {
@@ -43,7 +48,6 @@ obj execute(u) node *u;
 	register obj (*proc)();
 	obj x;
 	node *a;
-	extern char *printname[];
 
 	if (u==(node *)NULL)
 		return(true);

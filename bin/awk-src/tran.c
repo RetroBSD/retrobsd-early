@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "awk.def"
+#include "awk.def.h"
 #include "awk.h"
 
 cell *symtab[MAXSYM];	/* symbol table pointers */

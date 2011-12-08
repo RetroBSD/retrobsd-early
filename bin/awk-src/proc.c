@@ -3,7 +3,12 @@
 #include <string.h>
 #include "awk.h"
 
-#include "token.c"
+struct tok
+{	char *tnm;
+	int yval;
+} tok[]	= {
+#include "token.h"
+};
 
 struct xx
 {	int token;
@@ -67,28 +72,28 @@ struct xx
 char *table[SIZE];
 char *names[SIZE];
 
+char *tokname(n)
+{
+	if (n<=256 || n >= LASTTOKEN)
+		n = 257;
+	return(tok[n-257].tnm);
+}
+
 int
 main()
 {	struct xx *p;
 	int i;
-	printf("#include \"awk.def\"\n");
+	printf("#include \"awk.def.h\"\n");
 	printf("obj nullproc();\n");
 	for(p=proc;p->token!=0;p++)
 		if(p==proc || strcmp(p->name, (p-1)->name))
 			printf("extern obj %s();\n",p->name);
 	for(p=proc;p->token!=0;p++)
 		table[p->token-FIRSTTOKEN]=p->name;
-	printf("obj (*proctab[%d])() = {\n", SIZE);
+	printf("const objfunc proctab[%d] = {\n", SIZE);
 	for(i=0;i<SIZE;i++)
 		if(table[i]==0) printf("/*%s*/\tnullproc,\n",tokname(i+FIRSTTOKEN));
 		else printf("/*%s*/\t%s,\n",tokname(i+FIRSTTOKEN),table[i]);
-	printf("};\n");
-	printf("char *printname[%d] = {\n", SIZE);
-	for(p=proc; p->token!=0; p++)
-		names[p->token-FIRSTTOKEN] = p->pname;
-	for(i=0; i<SIZE; i++)
-		printf("/*%s*/\t\"%s\",\n",tokname(i+FIRSTTOKEN),
-						names[i]?names[i]:"");
 	printf("};\n");
 	exit(0);
 }

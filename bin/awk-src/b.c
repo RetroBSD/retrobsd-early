@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "awk.def"
+#include "awk.def.h"
 #include "awk.h"
 
 extern node *op2();

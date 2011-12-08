@@ -1,16 +1,16 @@
 /*	awk.def	4.3	83/12/09	*/
 
-#define hack	int
+#define hack            int
 #define	AWKFLOAT	float
 #define	xfree(a)	{ if(a!=NULL) { yfree(a); a=NULL;} }
 #define	strfree(a)	{ if(a!=NULL && a!=EMPTY) { yfree(a);} a=EMPTY; }
-#define yfree free
+#define yfree           free
 #define	isnull(x)	((x) == EMPTY || (x) == NULL)
 
-#ifdef	DEBUG
-#	define	dprintf	if(dbg)printf
+#ifdef DEBUG
+#   define dprintf	if(dbg)printf
 #else
-#	define	dprintf(x1, x2, x3, x4)
+#   define dprintf(x1, x2, x3, x4)
 #endif
 typedef	AWKFLOAT	awkfloat;
 
@@ -109,7 +109,8 @@ extern node	*nullstat;
 #define NEXPR	3
 #define NPA2	4
 
-extern obj	(*proctab[])();
+typedef obj	(*objfunc)();
+extern const objfunc proctab[];
 extern obj	true, false;
 extern int	pairstack[], paircnt;
 
