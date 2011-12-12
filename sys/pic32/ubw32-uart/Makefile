@@ -113,7 +113,7 @@ machine:
 unix.elf:	$(KERNOBJ) using-bootloader.ld
 		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
 		chmod -x $@
-		$(OBJDUMP) -d -S $@ > unix.dis
+		$(OBJDUMP) -d -S -z $@ > unix.dis
 		$(OBJCOPY) -O binary $@ unix.bin
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
 		chmod -x $@ unix.bin

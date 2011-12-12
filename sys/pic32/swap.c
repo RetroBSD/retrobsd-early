@@ -62,10 +62,20 @@ static inline void lda_pulse ()
 
 /*
  * Set RD high.
+ * Minimal time between rising edge of RD to data valid is 30ns.
  */
 static inline void rd_high ()
 {
         PORT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
+
+        /* TODO: This needs to be adusted
+         * using oscilloscope on a real hardware. */
+#if BUS_KHZ > 33000
+        asm volatile ("nop");
+#endif
+#if BUS_KHZ > 66000
+        asm volatile ("nop");
+#endif
 }
 
 /*
@@ -78,10 +88,23 @@ static inline void rd_low ()
 
 /*
  * Send WR pulse: low-high-low.
+ * It shall be minimally 40ns.
  */
 static inline void wr_pulse ()
 {
         PORT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
+
+        /* TODO: This needs to be adusted
+         * using oscilloscope on a real hardware. */
+#if BUS_KHZ > 25000
+        asm volatile ("nop");
+#endif
+#if BUS_KHZ > 50000
+        asm volatile ("nop");
+#endif
+#if BUS_KHZ > 75000
+        asm volatile ("nop");
+#endif
         PORT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 }
 
