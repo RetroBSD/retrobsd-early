@@ -8,7 +8,7 @@
  *  ldaddr    - write address from data[7:0] in 3 steps: low-middle-high
  *
  * Signals rd, wr, ldadr are low idle.
- * To activate, you need to toggle it low-high-low.
+ * To activate, you need to pulse it low-high-low.
  */
 #include "param.h"
 #include "systm.h"
@@ -19,6 +19,73 @@
 int sw_dkn = -1;                /* Statistics slot number */
 
 /*
+ * Switch data bus to input.
+ */
+static inline void data_switch_input ()
+{
+        TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+}
+
+/*
+ * Switch data bus to output.
+ */
+static inline void data_switch_output ()
+{
+        TRIS_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+}
+
+/*
+ * Set data output value.
+ */
+static inline void data_set (unsigned char byte)
+{
+        PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        PORT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
+}
+
+/*
+ * Get data input value.
+ */
+static inline unsigned char data_get ()
+{
+        return PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
+}
+
+/*
+ * Send LDA pulse: low-high-low.
+ */
+static inline void lda_pulse ()
+{
+        PORT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+}
+
+/*
+ * Set RD high.
+ */
+static inline void rd_high ()
+{
+        PORT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
+}
+
+/*
+ * Set RD low.
+ */
+static inline void rd_low ()
+{
+        PORT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
+}
+
+/*
+ * Send WR pulse: low-high-low.
+ */
+static inline void wr_pulse ()
+{
+        PORT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
+        PORT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
+}
+
+/*
  * Load the 24 bit address to ramdisk.
  * Leave data bus in output mode.
  */
@@ -26,26 +93,16 @@ static void
 dev_load_address (addr)
         unsigned addr;
 {
-        /* Switch data bus to output. */
-        TRIS_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        data_switch_output();           /* switch data bus to output */
 
-        /* Send lower 8 bits, toggle ldaddr. */
-        PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-        PORT_SET(SW_DATA_PORT) = (addr & 0xff) << SW_DATA_PIN;
-        PORT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-        PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        data_set (addr);                /* send lower 8 bits */
+        lda_pulse();                    /* pulse ldaddr */
 
-        /* Send middle 8 bits, toggle ldaddr. */
-        PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-        PORT_SET(SW_DATA_PORT) = ((addr >> 8) & 0xff) << SW_DATA_PIN;
-        PORT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-        PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        data_set (addr >> 8);           /* send middle 8 bits */
+        lda_pulse();                    /* pulse ldaddr */
 
-        /* Send high 8 bits, toggle ldaddr. */
-        PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-        PORT_SET(SW_DATA_PORT) = ((addr >> 16) & 0xff) << SW_DATA_PIN;
-        PORT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-        PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        data_set (addr >> 16);          /* send high 8 bits */
+        lda_pulse();                    /* pulse ldaddr */
 }
 
 /*
@@ -63,17 +120,15 @@ dev_read (blockno, data, nbytes)
 #endif
         dev_load_address (blockno * DEV_BSIZE);
 
-        /* Switch data bus to input. */
-        TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        data_switch_input();            /* switch data bus to input */
 
 	/* Read data. */
         for (i=0; i<nbytes; i++) {
-                /* Toggle rd. */
-                PORT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
-                PORT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
+                rd_high();              /* set rd high */
 
-                /* Read a byte of data. */
-                *data++ = PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
+                *data++ = data_get();   /* read a byte of data */
+
+                rd_low();               /* set rd low */
         }
 }
 
@@ -93,18 +148,14 @@ dev_write (blockno, data, nbytes)
         dev_load_address (blockno * DEV_BSIZE);
 
         for (i=0; i<nbytes; i++) {
-                /* Send a byte of data. */
-                PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-                PORT_SET(SW_DATA_PORT) = (unsigned char) *data << SW_DATA_PIN;
+                data_set (*data);       /* send a byte of data */
                 data++;
 
-                /* Toggle wr. */
-                PORT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
-                PORT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
+                wr_pulse();             /* pulse wr */
         }
 
         /* Switch data bus to input. */
-        TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        data_switch_input();
 }
 
 int
@@ -115,7 +166,7 @@ swopen (dev, flag, mode)
 	if (TRIS_VAL(SW_LDA_PORT) & (1 << SW_LDA_PIN)) {
 		/* Initialize hardware.
                  * Switch data bus to input. */
-		TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+                data_switch_input();
 
                 /* Set rd, wr and ldaddr as output pins. */
 		PORT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
@@ -126,7 +177,8 @@ swopen (dev, flag, mode)
 		TRIS_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 
                 /* Toggle rd: make one dummy read. */
-		PORT_INV(SW_RD_PORT) = 1 << SW_RD_PIN;
+                rd_high();              /* set rd high */
+                rd_low();               /* set rd low */
 #ifdef UCB_METER
                 /* Allocate statistics slot */
                 dk_alloc (&sw_dkn, 1, "sw");
