@@ -19,6 +19,10 @@
 #include "namei.h"
 #include "mount.h"
 #include "systm.h"
+#ifdef CONSOLE_USB
+#   include <machine/usb_device.h>
+#   include <machine/usb_function_cdc.h>
+#endif
 
 #ifdef LED_TTY_INVERT
 #define LED_TTY_ON()   PORT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN
@@ -320,7 +324,13 @@ boot (dev, howto)
         }
 	printf ("halted\n");
 	for (;;) {
+#ifdef CONSOLE_USB
+                usb_device_tasks();
+                cdc_consume (0);
+                cdc_tx_service();
+#else
 		asm volatile ("wait");
+#endif
 	}
 	/*NOTREACHED*/
 }
