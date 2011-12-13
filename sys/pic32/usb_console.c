@@ -195,6 +195,35 @@ again:
     splx (s);
 }
 
+static int gets_finished;
+
+/*
+ * Receive a character for gets.
+ */
+static void cn_getc (int c)
+{
+    if (c == '\r')
+        gets_finished = 1;
+}
+
+/*
+ * Put a symbol on console terminal.
+ */
+void cngets (prompt)
+    const char *prompt;
+{
+    register int s;
+
+    printf ("%s", prompt);
+    s = spltty();
+    for (gets_finished=0; !gets_finished; ) {
+        usb_device_tasks();
+        cdc_consume (cn_getc);
+        cdc_tx_service();
+    }
+    splx (s);
+}
+
 /*
  * Receive a character from CDC.
  */

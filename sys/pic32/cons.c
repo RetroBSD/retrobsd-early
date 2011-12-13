@@ -391,3 +391,32 @@ again:
         led_control (LED_TTY, 0);
 	splx (s);
 }
+
+void
+cngets (prompt)
+        const char *prompt;
+{
+	register struct uartreg *reg = (struct uartreg*) &CONSOLE_PORT;
+        int s, c;
+
+        printf ("%s", prompt);
+	s = spltty();
+        for (;;) {
+                /* Wait for key pressed. */
+                if (! (reg->sta & PIC32_USTA_URXDA))
+                        continue;
+                c = reg->rxreg;
+                if (c == '\r')
+                        break;
+        }
+#if CONSOLE_RX_IRQ < 32
+	IFSCLR(0) = (1 << CONSOLE_RX_IRQ) | (1 << CONSOLE_ER_IRQ);
+#elif CONSOLE_RX_IRQ < 64
+	IFSCLR(1) = (1 << (CONSOLE_RX_IRQ - 32)) |
+                    (1 << (CONSOLE_ER_IRQ - 32));
+#else
+	IFSCLR(2) = (1 << (CONSOLE_RX_IRQ - 64)) |
+                    (1 << (CONSOLE_ER_IRQ - 64));
+#endif
+	splx (s);
+}

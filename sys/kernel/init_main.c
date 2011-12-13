@@ -146,10 +146,15 @@ main()
         spl0();
 
 	/* Mount a root filesystem. */
-	fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
+        for (;;) {
+                fs = mountfs (rootdev, (boothowto & RB_RDONLY) ? MNT_RDONLY : 0,
 			(struct inode*) 0);
-	if (! fs)
-		panic ("no root filesystem");
+                if (fs)
+                        break;
+		printf ("No root filesystem available!\n");
+		cngets ("Please, insert bootable SD card and press <Enter>: ");
+		printf ("\n\n");
+        }
 	printf ("root size = %u kbytes\n", fs->fs_fsize * DEV_BSIZE / 1024);
 	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
 	mount_updname (fs, "/", "root", 1, 4);
