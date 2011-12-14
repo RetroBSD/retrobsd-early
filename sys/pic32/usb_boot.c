@@ -29,11 +29,17 @@
 /*
  * Flash memory.
  */
-#define FLASH_START         0x1D000000  /* physical */
-#define FLASH_PROGRAM       0x1D005000  /* physical - beginning of application */
-#define FLASH_BOOT          0x9D006000  /* virtual - start of application */
+#define FLASH_BASE          0x1D000000  /* physical */
 
-#define BYTES_PER_PAGE      4096
+#ifndef FLASH_USER
+#   define FLASH_USER       FLASH_BASE  /* physical: beginning of user application */
+#endif
+
+#ifndef FLASH_JUMP                      /* virtual: start of application */
+#   define FLASH_JUMP       (FLASH_USER + 0x80001000)
+#endif
+
+#define FLASH_PAGESZ        4096        /* bytes per page, for erasing */
 
 /*
  * Commands of bootloader protocol.
@@ -70,18 +76,9 @@
 #define	PACKET_SIZE	    64      // HID packet size
 #define REQUEST_SIZE        56      // Number of bytes of a standard request
 
-typedef union __attribute__ ((packed)) _USB_HID_BOOTLOADER_COMMAND
+typedef union __attribute__ ((packed))
 {
     unsigned char Contents [PACKET_SIZE];
-
-    struct __attribute__ ((packed)) {
-        unsigned char Command;
-        unsigned AddressHigh;
-        unsigned AddressLow;
-        unsigned char Size;
-        unsigned char PadBytes [PACKET_SIZE - 6 - REQUEST_SIZE];
-        unsigned int Data [REQUEST_SIZE / sizeof(unsigned)];
-    };
 
     struct __attribute__ ((packed)) {
         unsigned char Command;
@@ -101,25 +98,19 @@ typedef union __attribute__ ((packed)) _USB_HID_BOOTLOADER_COMMAND
         unsigned char Type2;
         unsigned long Address2;
         unsigned long Length2;
-        unsigned char Type3;		// End of sections list indicator goes here, when not programming the vectors, in that case fill with 0xFF.
+        unsigned char Type3;
         unsigned long Address3;
         unsigned long Length3;
         unsigned char Type4;		// End of sections list indicator goes here, fill with 0xFF.
         unsigned char ExtraPadBytes[33];
     };
-
-    struct __attribute__ ((packed)) {   // For lock/unlock config command
-        unsigned char Command;
-        unsigned char LockValue;
-    };
 } packet_t;
 
 static packet_t send;           // 64-byte send buffer (EP1 IN to the PC)
-static packet_t receive;        // 64-byte receive buffer (EP1 OUT from the PC)
-static packet_t receive_buffer;
+static packet_t receive_buffer; // 64-byte receive buffer (EP1 OUT from the PC)
+static packet_t receive;        // copy of receive buffer, for processing
 
-static USB_HANDLE out_handle;
-static USB_HANDLE in_handle;
+static USB_HANDLE request_handle;
 
 /*
  * Placed at fixed address 0x80000000 by linker.
@@ -129,7 +120,6 @@ static USB_HANDLE in_handle;
 unsigned int reset_key
      __attribute__((section(".sdata")));
 
-static int packet_received;
 static unsigned int buf [32];
 static unsigned int buf_index;
 static unsigned int base_address;
@@ -141,7 +131,7 @@ PIC32_DEVCFG (
     DEVCFG0_DEBUG_DISABLED,     /* ICE debugger disabled */
 
     DEVCFG1_FNOSC_PRIPLL |      /* Primary oscillator with PLL */
-//    DEVCFG1_IESO |              /* Internal-external switch over */
+    DEVCFG1_IESO |              /* Internal-external switch over */
     DEVCFG1_POSCMOD_HS |        /* HS oscillator */
     DEVCFG1_FPBDIV_1 |          /* Peripheral bus clock = SYSCLK/1 */
     DEVCFG1_WDTPS_1,            /* Watchdog postscale = 1/1024 */
@@ -153,12 +143,11 @@ PIC32_DEVCFG (
 
     DEVCFG3_USERID(0xffff) |    /* User-defined ID */
     DEVCFG3_FSRSSEL_7 |         /* Assign irq priority 7 to shadow set */
-//    DEVCFG3_FMIIEN |            /* Ethernet MII enable */
-    DEVCFG3_FETHIO            /* Default Ethernet i/o pins */
-//    | DEVCFG3_FCANIO
-);            /* CAN pins default */
-//    DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
-//    DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
+    DEVCFG3_FMIIEN |            /* Ethernet MII enable */
+    DEVCFG3_FETHIO |            /* Default Ethernet i/o pins */
+    DEVCFG3_FCANIO |            /* CAN pins default */
+    DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
+    DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
 
 /*
  * Boot code.
@@ -207,6 +196,7 @@ static inline void led_init()
 #if defined (UBW32)
     LATECLR = 0xF;
     TRISECLR = 0xF;
+    PORTEINV = 7;
 
 #elif defined (MAXIMITE)
     LATECLR = 2;
@@ -222,10 +212,10 @@ static inline void led_init()
 #endif
 }
 
-static inline void led_toggle (int n)
+static inline void led_toggle()
 {
 #if defined (UBW32)
-    PORTEINV = 1 << n;
+    PORTEINV = 3 << 2;
 
 #elif defined (MAXIMITE)
     PORTEINV = 1 << 1;
@@ -237,25 +227,27 @@ static inline void led_toggle (int n)
 #endif
 }
 
-#if 1
+#if 0
+/*
+ * Printing to UART.
+ * These functions are useful for debugging a bootloader.
+ */
 static inline void cinit()
 {
     /*
      * Setup UART registers.
      * Compute the divisor for 115.2 kbaud.
-     * Assume we have 80 MHz cpu clock.
      */
     U1BRG = PIC32_BRG_BAUD (CPU_KHZ * 1000, 115200);
     U1STA = 0;
     U1MODE = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
              PIC32_UMODE_ON;		/* UART Enable */
-    U1STASET = PIC32_USTA_URXEN |		/* Receiver Enable */
-               PIC32_USTA_UTXEN;		/* Transmit Enable */
-
+    U1STASET = PIC32_USTA_URXEN |	/* Receiver Enable */
+               PIC32_USTA_UTXEN;	/* Transmit Enable */
 }
 
 /*
- * Send a byte to the UART transmitter, with interrupts disabled.
+ * Send a byte to the UART transmitter.
  */
 static void cputc (int c)
 {
@@ -324,6 +316,31 @@ static void udelay (unsigned usec)
 }
 
 /*
+ * Clear an array.
+ */
+void memzero (void *data, unsigned nbytes)
+{
+    unsigned *wordp = (unsigned*) data;
+    unsigned nwords = nbytes / sizeof(int);
+
+    while (nwords-- > 0)
+        *wordp++ = 0;
+}
+
+/*
+ * Copy an array.
+ */
+void memcopy (void *from, void *to, unsigned nbytes)
+{
+    unsigned *src = (unsigned*) from;
+    unsigned *dst = (unsigned*) to;
+    unsigned nwords = nbytes / sizeof(int);
+
+    while (nwords-- > 0)
+        *dst++ = *src++;
+}
+
+/*
  * BlinkUSBStatus turns on and off LEDs
  * corresponding to the USB device state.
  */
@@ -332,15 +349,14 @@ static void led_blink()
     static unsigned led_count;
 
     if (led_count == 0)
-        led_count = 100;
+        led_count = 100000;
     led_count--;
 
-    if (//! usb_is_device_suspended() &&
-//      usb_device_state == CONFIGURED_STATE &&
+    if (! usb_is_device_suspended() &&
+        usb_device_state == CONFIGURED_STATE &&
         led_count == 0)
     {
-cputc('.');
-        led_toggle(3);
+        led_toggle();
     }
 }
 
@@ -403,10 +419,9 @@ static void write_flash_block()
 
 /*
  * A command packet was received from PC.
- * Process it and send a reply.
- * In_handle should be free before calling this function.
+ * Process it and return 1 when a reply is ready.
  */
-static void handle_packet()
+static int handle_packet()
 {
     int i;
 
@@ -414,29 +429,24 @@ static void handle_packet()
     case QUERY_DEVICE:
         // Prepare a response packet, which lets the PC software know
         // about the memory ranges of this device.
-
+        memzero (&send, PACKET_SIZE);
         send.Command = QUERY_DEVICE;
         send.PacketDataFieldSize = REQUEST_SIZE;
-        send.DeviceFamily = 3;            /* PIC23 */
-
-        send.Type1 = 1;                   /* program memory type */
-        send.Address1 = FLASH_PROGRAM;
-        send.Length1 = FLASH_START + BMXPFMSZ - FLASH_PROGRAM;
-
+        send.DeviceFamily = 3;            /* PIC32 */
+        send.Type1 = 1;                   /* 'program' memory type */
+        send.Address1 = FLASH_USER;
+        send.Length1 = FLASH_BASE + BMXPFMSZ - FLASH_USER;
         send.Type2 = 0xFF;                /* end of list */
-
-        in_handle = usb_transfer_one_packet (HID_EP, IN_TO_HOST,
-            (unsigned char*) &send, PACKET_SIZE);
-        break;
+        return 1;
 
     case UNLOCK_CONFIG:
-        break;
+        return 0;
 
     case ERASE_DEVICE:
-        for (i = 0; i < BMXPFMSZ/BYTES_PER_PAGE; i++) {
+        for (i = 0; i < BMXPFMSZ/FLASH_PAGESZ; i++) {
             /* Erase flash page */
             nvm_operation (PIC32_NVMCON_PAGE_ERASE,
-                FLASH_PROGRAM + i * BYTES_PER_PAGE, 0);
+                FLASH_USER + i * FLASH_PAGESZ, 0);
 
             // Call this function periodically to prevent falling
             // off the bus if any SETUP packets should happen to arrive.
@@ -446,14 +456,14 @@ static void handle_packet()
         // not expecting to do erase/write operations,
         // further reducing probability of accidental activation.
         NVMCONCLR = PIC32_NVMCON_WREN;
-        break;
+        return 0;
 
     case PROGRAM_DEVICE:
         if (base_address == 0)
             base_address = receive.Address;
 
         if (base_address == receive.Address) {
-            for(i = 0; i < receive.Size/sizeof(unsigned); i++) {
+            for (i = 0; i < receive.Size/sizeof(unsigned); i++) {
                 unsigned int index;
 
                 index = (REQUEST_SIZE - receive.Size) / sizeof(unsigned) + i;
@@ -471,7 +481,7 @@ static void handle_packet()
         // else host sent us a non-contiguous packet address...
         // to make this firmware simpler, host should not do this without
         // sending a PROGRAM_COMPLETE command in between program sections.
-        break;
+        return 0;
 
     case PROGRAM_COMPLETE:
         write_flash_block();
@@ -479,28 +489,17 @@ static void handle_packet()
         // Reinitialize pointer to an invalid range, so we know the next
         // PROGRAM_DEVICE will be the start address of a contiguous section.
         base_address = 0;
-        break;
+        return 0;
 
     case GET_DATA:
+        memzero (&send, PACKET_SIZE);
         send.Command = GET_DATA;
         send.Address = receive.Address;
         send.Size = receive.Size;
-
-        for (i = 0; i < (receive.Size/sizeof(unsigned)); i++) {
-            unsigned *p;
-            unsigned data;
-
-            p = ((unsigned*) ((receive.Address + (i * sizeof(unsigned))) | 0x80000000));
-            data = *p;
-
-            send.Data [REQUEST_SIZE/sizeof(unsigned) + i -
-                receive.Size/sizeof(unsigned)] =
-                *((unsigned*)((receive.Address + (i * sizeof(unsigned))) | 0x80000000));
-        }
-
-        in_handle = usb_transfer_one_packet (HID_EP,  IN_TO_HOST,
-            (unsigned char*) &send.Contents[0], PACKET_SIZE);
-        break;
+        memcopy ((void*) (receive.Address | 0x80000000),
+            send.Data + (REQUEST_SIZE - receive.Size)/sizeof(unsigned),
+            receive.Size);
+        return 1;
 
     case RESET_DEVICE:
         // Disable USB module
@@ -512,8 +511,9 @@ static void handle_packet()
         udelay (1000);
 
         soft_reset();
-        break;
+        return 0;
     }
+    return 0;
 }
 
 /*
@@ -542,16 +542,11 @@ int main()
         mips_read_c0_register (C0_CONFIG, 0) | 3);
 
     /* Initialize all .bss variables by zeros. */
-    extern unsigned __bss_start, __bss_end;
-    unsigned *dest = &__bss_start;
-    while (dest < &__bss_end)
-            *dest++ = 0;
+    extern unsigned char __bss_start, __bss_end;
+    memzero (&__bss_start, &__bss_end - &__bss_start);
 
-cinit();
-cputs("=0=\n");
-
-    // Initialize all of the LED pins
-    led_init();
+    //cinit();
+    //cputs("=0=\n");
 
     // Initialize all of the push buttons
     button_init();
@@ -568,8 +563,8 @@ cputs("=0=\n");
 	reset_key = 0;
 
         // If there is NO real program to execute, then fall through to the bootloader
-	if (*(int*) FLASH_BOOT != 0xFFFFFFFF)	{
-            void (*fptr)(void) = (void (*)(void)) FLASH_BOOT;
+	if (*(int*) FLASH_JUMP != 0xFFFFFFFF)	{
+            void (*fptr)(void) = (void (*)(void)) FLASH_JUMP;
 
             fptr();
             for (;;)
@@ -579,62 +574,54 @@ cputs("=0=\n");
     // Must clear out software key.
     reset_key = 0;
     RCONCLR = PIC32_RCON_SWR;
-cputs("=1=\n");
+
+    // Initialize all of the LED pins
+    led_init();
 
     // Initialize USB module SFRs and firmware variables to known states.
     usb_device_init();
-cputs("=2=\n");
 
-in_handle = 0;
+    USB_HANDLE reply_handle = 0;
+    int packet_received = 0;
     for (;;) {
 	// Check bus status and service USB interrupts.
         usb_device_tasks();
-//cputs("=3=\n");
 
         // Blink the LEDs according to the USB device status
         led_blink();
 
         // User Application USB tasks
-        if (usb_device_state < CONFIGURED_STATE /*|| usb_is_device_suspended()*/)
+        if (usb_device_state < CONFIGURED_STATE || usb_is_device_suspended())
             continue;
-cputs("=4=\n");
 
         // Are we done sending the last response.  We need to be before we
         // receive the next command because we clear the send buffer
         // once we receive a command
-        if (in_handle && usb_handle_busy (in_handle))
-            continue;
+        if (reply_handle != 0) {
+            if (usb_handle_busy (reply_handle))
+                continue;
+            reply_handle = 0;
+        }
 
         if (packet_received) {
-cputs("=5=\n");
-            handle_packet();
+            if (handle_packet())
+                reply_handle = usb_transfer_one_packet (HID_EP,
+                    IN_TO_HOST, &send.Contents[0], PACKET_SIZE);
             packet_received = 0;
             continue;
         }
-cputs("=6=\n");
 
         // Did we receive a command?
-        if (usb_handle_busy (out_handle))
+        if (usb_handle_busy (request_handle))
             continue;
-cputs("=7=\n");
 
         // Make a copy of received data.
-        int i;
-        for (i = 0; i < PACKET_SIZE; i++) {
-            receive.Contents[i] = receive_buffer.Contents[i];
-        }
+        memcopy (&receive_buffer, &receive, PACKET_SIZE);
+        packet_received = 1;
 
         // Restart receiver, to be ready for a next packet.
-        out_handle = usb_transfer_one_packet (HID_EP, OUT_FROM_HOST,
+        request_handle = usb_transfer_one_packet (HID_EP, OUT_FROM_HOST,
             (unsigned char*) &receive_buffer, PACKET_SIZE);
-
-        // Prepare the next packet we will send to the host,
-        // by initializing the entire packet to 0x00.
-        for (i = 0; i < PACKET_SIZE; i++) {
-            send.Contents[i] = 0;
-        }
-        packet_received = 1;
-cputs("=8=\n");
     }
 }
 
@@ -642,51 +629,11 @@ cputs("=8=\n");
  * USB Callback Functions
  */
 /*
- * Call back that is invoked when a USB suspend is detected.
- */
-void usbcb_suspend()
-{
-    /* Empty. */
-}
-
-/*
- * This call back is invoked when a wakeup from USB suspend is detected.
- */
-void usbcb_wake_from_suspend()
-{
-    /* Empty. */
-}
-
-/*
- * Called when start-of-frame packet arrives, every 1 ms.
- */
-void usbcb_sof_handler()
-{
-    /* Empty. */
-}
-
-/*
- * Called on any USB error interrupt, for debugging purposes.
- */
-void usbcb_error_handler()
-{
-    /* Empty. */
-}
-
-/*
  * Process device-specific SETUP requests.
  */
 void usbcb_check_other_req()
 {
     hid_check_request();
-}
-
-/*
- * Handle a SETUP SET_DESCRIPTOR request (optional).
- */
-void usbcb_std_set_dsc_handler()
-{
-    /* Empty. */
 }
 
 /*
@@ -701,7 +648,7 @@ void usbcb_init_ep()
         USB_HANDSHAKE_ENABLED | USB_DISALLOW_SETUP);
 
     // Arm the OUT endpoint for the first packet
-    out_handle = usb_rx_one_packet (HID_EP,
+    request_handle = usb_rx_one_packet (HID_EP,
         &receive_buffer.Contents[0], PACKET_SIZE);
 }
 

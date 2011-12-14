@@ -1484,3 +1484,51 @@ USB_HANDLE usb_transfer_one_packet (unsigned ep, unsigned dir,
     }
     return handle;
 }
+
+/*
+ * USB Callback Functions
+ */
+/*
+ * Call back that is invoked when a USB suspend is detected.
+ */
+void __attribute__((weak))
+usbcb_suspend()
+{
+    /* Empty. */
+}
+
+/*
+ * This call back is invoked when a wakeup from USB suspend is detected.
+ */
+void __attribute__((weak))
+usbcb_wake_from_suspend()
+{
+    /* Empty. */
+}
+
+/*
+ * Called when start-of-frame packet arrives, every 1 ms.
+ */
+void __attribute__((weak))
+usbcb_sof_handler()
+{
+    /* Empty. */
+}
+
+/*
+ * Called on any USB error interrupt, for debugging purposes.
+ */
+void __attribute__((weak))
+usbcb_error_handler()
+{
+    /* Empty. */
+}
+
+/*
+ * Handle a SETUP SET_DESCRIPTOR request (optional).
+ */
+void __attribute__((weak))
+usbcb_std_set_dsc_handler()
+{
+    /* Empty. */
+}

@@ -292,46 +292,7 @@ void usbcb_check_other_req()
     cdc_check_request();
 }
 
-/*
- * Handle a SETUP SET_DESCRIPTOR request (optional).
- */
-void usbcb_std_set_dsc_handler()
-{
-    /* Empty. */
-}
-
-/*
- * Call back that is invoked when a USB suspend is detected.
- */
-void usbcb_suspend()
-{
-    /* Empty. */
-}
-
-/*
- * This call back is invoked when a wakeup from USB suspend is detected.
- */
-void usbcb_wake_from_suspend()
-{
-    /* Empty. */
-}
-
-/*
- * Called when start-of-frame packet arrives, every 1 ms.
- */
-void usbcb_sof_handler()
-{
-    /* Empty. */
-}
-
-/*
- * Called on any USB error interrupt, for debugging purposes.
- */
-void usbcb_error_handler()
-{
-    /* Empty. */
-}
-
+#if 0
 /*
  * Wake up a host PC.
  */
@@ -345,6 +306,7 @@ void usb_send_resume (void)
 
     U1CON &= ~PIC32_U1CON_RESUME;
 }
+#endif
 
 #ifndef CONSOLE_VID
 #   define CONSOLE_VID 0x04D8   // Vendor ID: Microchip

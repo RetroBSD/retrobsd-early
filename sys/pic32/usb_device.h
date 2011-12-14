@@ -1144,7 +1144,7 @@ void usbcb_ep0_data_received (void);
   Remarks:
     None
   */
-#define usb_handle_busy(handle) (handle==0 ? 0 : handle->STAT.UOWN)
+#define usb_handle_busy(handle) (handle != 0 && handle->STAT.UOWN)
 
 /*
     Function:

@@ -76,20 +76,6 @@ SECTIONS
     _etext = .;
   } > kseg0_program_mem
 
-  /* Start data (internal SRAM).  */
-  .data		  : AT (ADDR (.text) + SIZEOF (.text))
-  {
-    __data_start = . ;
-    _gp = .; 	/* We have only 32k RAM on MC-24, so no need for 0x8000 offset. */
-    /* We want the small data sections together, so single-instruction offsets
-       can access them all, and initialized data all before uninitialized, so
-       we can shorten the on-disk segment size.  */
-    *(.sdata .sdata.* .gnu.linkonce.s.*)
-    *(.data .data.* .gnu.linkonce.d.*)
-    *(.eh_frame)
-    _edata = .;
-  } > ram
-
   /* Device configuration.  */
   .config         :
   {
@@ -99,11 +85,25 @@ SECTIONS
     *(.config0)
   } > devcfg
 
+  /* Start data (internal SRAM).  */
+  .data		  : AT (ADDR (.text) + SIZEOF (.text))
+  {
+    __data_start = . ;
+    _gp = .;
+    /* We want the small data sections together, so single-instruction offsets
+       can access them all, and initialized data all before uninitialized, so
+       we can shorten the on-disk segment size.  */
+    *(.sdata .sdata.* .gnu.linkonce.s.*)
+    *(.data .data.* .gnu.linkonce.d.*)
+    *(.eh_frame)
+    _edata = .;
+  } > ram
+
   .bss ADDR (.data) + SIZEOF (.data) (NOLOAD) :
   {
    __bss_start = .;
    *(.dynbss)
-   *(.sbss)
+   *(.sbss .sbss.*)
    *(.scommon)
    *(.bss .bss.* .gnu.linkonce.b.*)
    *(COMMON)
