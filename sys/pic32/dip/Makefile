@@ -43,7 +43,8 @@ include ../gcc-config.mk
 
 CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
 CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-LDFLAGS         += -nostdlib -T bare-metal.ld -Wl,-Map=unix.map
+#LDFLAGS         += -nostdlib -T bare-metal.ld -Wl,-Map=unix.map
+LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map
 SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy

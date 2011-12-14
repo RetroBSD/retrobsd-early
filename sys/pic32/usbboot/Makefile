@@ -21,13 +21,13 @@ OBJS            = usb_boot.o usb_device.o usb_function_hid.o
 I               = ..
 
 # UBW32
-CFLAGS          += -DUBW32 -DFLASH_USER=0x1d005000
+#CFLAGS          += -DUBW32 -DFLASH_USER=0x1d005000
 
 # Maximite
 #CFLAGS         += -DMAXIMITE
 
 # eflightworks DIP
-#CFLAGS         += -DDIP
+CFLAGS         += -DDIP
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

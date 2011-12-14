@@ -207,6 +207,7 @@ static inline void led_init()
 #elif defined (DIP)
     LATECLR = 0xF0;
     TRISECLR = 0xF0;
+    PORTEINV = 0x40;
 #else
 #error "Unknown board"
 #endif
@@ -221,7 +222,7 @@ static inline void led_toggle()
     PORTEINV = 1 << 1;
 
 #elif defined (DIP)
-    PORTEINV = 0x10 << n;
+    PORTEINV = 3 << 6;
 #else
 #error "Unknown board"
 #endif
