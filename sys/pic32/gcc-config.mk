@@ -10,3 +10,17 @@ ifndef GCCPREFIX
     GCCPREFIX   = /usr/local/pic32-tools/bin/pic32-
     LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
 endif
+
+# chipKIT MPIDE on Mac OS X
+ifneq (,$(wildcard /Applications/Mpide.app/Contents/Resources/Java/hardware/tools/avr))
+    AVRDUDE     = /Applications/Mpide.app/Contents/Resources/Java/hardware/tools/avr/bin/avrdude \
+                  -C /Applications/Mpide.app/Contents/Resources/Java/hardware/tools/avr/etc/avrdude.conf \
+                  -P /dev/tty.usbserial-*
+endif
+
+# chipKIT MPIDE on Linux
+ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude))
+    AVRDUDE     = /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude \
+                  -C /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude.conf \
+                  -P /dev/ttyUSB0
+endif
