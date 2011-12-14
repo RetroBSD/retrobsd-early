@@ -53,3 +53,6 @@ startup.o:      startup.S
 
 clean:
 		$(RM) *.o usbboot.elf usbboot.hex usbboot.map usbboot.dis
+
+load:           usbboot.hex
+		pic32prog $<
