@@ -102,7 +102,8 @@ _reset_vector_:	.globl	_reset_vector_
 		.section .exception,"ax",@progbits
 _exception_base_: .globl _exception_base_
 
-		.org	0x100
+#		.org	0x100                           # ???
+		.org	0                               # For RetroBSD bootloader
 		.type	_entry_vector_, @function
 _entry_vector_: .globl  _entry_vector_
                 la      $k0, _reset_vector_

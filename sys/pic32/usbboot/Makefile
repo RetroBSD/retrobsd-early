@@ -1,3 +1,14 @@
+#
+# Building USB HID bootloader.
+# Supported boards:
+#   - Sparkfun UBW32
+#   - Maximite
+#   - Microchip PIC32 USB Starter Kit
+#   - Microchip PIC32 Ethernet Starter Kit
+#   - eflightworks PIC32-on-a-DIP
+#
+# Select a board by uncommenting a needed line below.
+#
 include ../gcc-config.mk
 
 CC              = $(GCCPREFIX)gcc -g -EL -mips32r2 -fno-dwarf2-cfi-asm
@@ -24,10 +35,13 @@ I               = ..
 #CFLAGS          += -DUBW32 -DFLASH_USER=0x1d005000
 
 # Maximite
-#CFLAGS         += -DMAXIMITE
+#CFLAGS         += -DMAXIMITE -DFLASH_USER=0x1d003000
 
 # eflightworks DIP
-CFLAGS         += -DDIP
+CFLAGS         += -DDIP -DFLASH_JUMP=0x9d000000
+
+# Microchip USB/Ethernet Starter Kit
+#CFLAGS          += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

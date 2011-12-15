@@ -144,7 +144,7 @@ PIC32_DEVCFG (
     DEVCFG3_USERID(0xffff) |    /* User-defined ID */
     DEVCFG3_FSRSSEL_7 |         /* Assign irq priority 7 to shadow set */
     DEVCFG3_FMIIEN |            /* Ethernet MII enable */
-    DEVCFG3_FETHIO |            /* Default Ethernet i/o pins */
+    DEVCFG3_FETHIO |            /* Ethernet pins default */
     DEVCFG3_FCANIO |            /* CAN pins default */
     DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
     DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
@@ -171,6 +171,9 @@ static inline void button_init()
 
 #elif defined (DIP)
     TRISGSET = 1 << 6;
+
+#elif defined (STARTERKIT)
+    TODO;
 #else
 #error "Unknown board"
 #endif
@@ -186,6 +189,9 @@ static inline int button_pressed()
 
 #elif defined (DIP)
     return ! (PORTG & (1 << 6));
+
+#elif defined (STARTERKIT)
+    TODO;
 #else
 #error "Unknown board"
 #endif
@@ -208,6 +214,9 @@ static inline void led_init()
     LATECLR = 0xF0;
     TRISECLR = 0xF0;
     PORTEINV = 0x40;
+
+#elif defined (STARTERKIT)
+    TODO;
 #else
 #error "Unknown board"
 #endif
@@ -223,6 +232,9 @@ static inline void led_toggle()
 
 #elif defined (DIP)
     PORTEINV = 3 << 6;
+
+#elif defined (STARTERKIT)
+    TODO;
 #else
 #error "Unknown board"
 #endif
