@@ -1,5 +1,13 @@
 #
-# Build RetroBSD kernel for PIC32 platform.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
 H		= ../../include
 M		= ..
@@ -16,24 +24,21 @@ DEFS		+= -DCPU_KHZ=80000
 DEFS		+= -DBUS_KHZ=80000
 
 #
-# eflightworks DIP board
-# ======================
+# Pinguino-micro board
+# ====================
 #
 # Console on USB
 # For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
 DEFS            += -DCONSOLE_USB
 DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
-# SD/MMC card driver on SPI3
-# /CS0 at pin D4
-DEFS            += -DSD_PORT=SPI3CON
-DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=4
+# SD/MMC card driver on SPI2
+# /CS0 at pin B13
+DEFS            += -DSD_PORT=SPI2CON
+DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=13
 
-# LEDs at pins E4, E5, E6, E7
-DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=4
-DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=5
-DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=6
-DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=7
+# LED at pin D1
+DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=1
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -51,7 +56,9 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 # Machine-dependent files:
 # startup.o MUST be loaded first.
 KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
-		  signal.o machdep.o mem.o exception.o
+		  signal.o machdep.o mem.o exception.o \
+                  usb_device.o usb_function_cdc.o
+KERNOBJ		+= usb_console.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -70,10 +77,9 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 
 # Drivers.
 KERNOBJ		+= sd.o
-KERNOBJ		+= usb_console.o usb_device.o usb_function_cdc.o
 
 # Configuration-dependent files.
-KERNOBJ		+= vers.o devcfg.o
+KERNOBJ		+= vers.o
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf
@@ -92,14 +98,16 @@ sys:
 machine:
 		ln -s .. $@
 
-unix.elf:	$(KERNOBJ) bare-metal.ld
+unix.elf:	$(KERNOBJ) using-bootloader.ld
 		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
 		chmod -x $@
 		$(OBJDUMP) -d -S $@ > unix.dis
+		$(OBJCOPY) -O binary $@ unix.bin
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
+		chmod -x $@ unix.bin
 
 load:           unix.elf
-		pic32prog unix.hex
+		pic32prog -p unix.hex
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c
