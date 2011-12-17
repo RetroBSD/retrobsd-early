@@ -42,7 +42,7 @@ pass5check(blk)
 	if (outrange(blk)) {
 		fixfree = 1;
 		if (preen)
-			pfatal("BAD BLOCKS IN FREE LIST.");
+			pfatal("BAD BLOCKS IN FREE LIST.\n");
 		if (++badblk >= MAXBAD) {
 			printf("EXCESSIVE BAD BLKS IN FREE LIST.");
 			if (reply("CONTINUE") == 0)
@@ -75,7 +75,7 @@ freechk()
 		return;
 	do {
 		if (freeblk.df_nfree <= 0 || freeblk.df_nfree > NICFREE) {
-			pfatal("BAD FREEBLK COUNT");
+			pfatal("BAD FREEBLK COUNT\n");
 			printf("\n");
 			fixfree = 1;
 			return;

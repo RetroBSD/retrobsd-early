@@ -78,6 +78,7 @@ struct filecntl {
 	int	rfdes;
 	int	wfdes;
 	int	mod;
+	off_t   offset;
 } dfile, sfile;			/* file descriptors for filesys/scratch files */
 
 enum fixstate {DONTKNOW, NOFIX, FIX};

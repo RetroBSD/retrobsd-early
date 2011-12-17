@@ -230,7 +230,7 @@ adjust(idesc, lcnt)
 		if (preen) {
 			if (lcnt < 0) {
 				printf("\n");
-				pfatal("LINK COUNT INCREASING");
+				pfatal("LINK COUNT INCREASING\n");
 			}
 			printf(" (ADJUSTED)\n");
 		}
@@ -468,7 +468,7 @@ linkup(orphan, pdir)
 	}
 	dp = ginode(lfdir);
 	if (!DIRCT(dp)) {
-		pfatal("lost+found IS NOT A DIRECTORY");
+		pfatal("lost+found IS NOT A DIRECTORY\n");
 		if (reply("REALLOCATE") == 0)
 			return (0);
 		oldlfdir = lfdir;
@@ -502,7 +502,7 @@ linkup(orphan, pdir)
 	pathp += len;
 	len = lftempname(tempname, orphan);
 	if (makeentry(lfdir, orphan, tempname) == 0) {
-		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
+		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY\n");
 		printf("\n\n");
 		return (0);
 	}

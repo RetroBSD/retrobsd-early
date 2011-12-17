@@ -291,7 +291,7 @@ static int create_swap_file (fs_t *fs)
 	inode.fs = fs;
 	inode.number = BSDFS_SWAP_INODE;
 	inode.size = fs->swapsz * BSDFS_BSIZE;
-	inode.flags = SYS_IMMUTABLE | USER_IMMUTABLE | USER_NODUMP;
+	inode.flags = /*SYS_IMMUTABLE |*/ USER_IMMUTABLE | USER_NODUMP;
 	inode.nlink = 1;
 	inode.dirty = 1;
 
@@ -314,7 +314,7 @@ int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
 {
 	int n;
 	unsigned char buf [BSDFS_BSIZE];
-	off_t bytes;
+	off_t bytes, offset;
 
 	memset (fs, 0, sizeof (*fs));
 	fs->filename = filename;
@@ -335,8 +335,11 @@ int fs_create (fs_t *fs, const char *filename, unsigned kbytes,
 		return 0;
 
 	/* make sure the file is of proper size */
-	if (lseek (fs->fd, bytes-1, SEEK_SET) != bytes-1 ||
-	    write (fs->fd, "", 1) != 1) {
+	offset = lseek (fs->fd, bytes-1, SEEK_SET);
+	if (offset != bytes-1)
+	        return 0;
+	if (write (fs->fd, "", 1) != 1) {
+	        perror ("write");
 		return 0;
 	}
 	lseek (fs->fd, 0, SEEK_SET);

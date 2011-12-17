@@ -51,7 +51,7 @@ reply(s)
 	char line[80];
 
 	if (preen)
-		pfatal("INTERNAL ERROR: GOT TO reply()");
+		pfatal("INTERNAL ERROR: GOT TO reply()\n");
 	printf("\n%s? ", s);
 	if (nflag || dfile.wfdes < 0) {
 		printf(" no\n\n");
@@ -157,7 +157,7 @@ rwerr(s, blk)
 {
 	if (preen == 0)
 		printf("\n");
-	pfatal("CANNOT %s: BLK %ld", s, blk);
+	pfatal("CANNOT %s: BLK %ld\n", s, blk);
 	if (reply("CONTINUE") == 0)
 		errexit("Program terminated\n");
 }
@@ -192,18 +192,20 @@ bread(fcp, buf, blk, size)
 {
 	char *cp;
 	register int i, errs;
+	off_t offset;
 
-	if (lseek(fcp->rfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
+	offset = ((off_t) blk << DEV_BSHIFT) + fcp->offset;
+	if (lseek(fcp->rfdes, offset, 0) < 0)
 		rwerr("SEEK", blk);
 	else if (read(fcp->rfdes, buf, size) == size) {
 		/*printf(".%u ", (unsigned) blk); fflush (stdout);*/
 		return (0);
 	}
 	rwerr("READ", blk);
-	if (lseek(fcp->rfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->rfdes, offset, 0) < 0)
 		rwerr("SEEK", blk);
 	errs = 0;
-	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:");
+	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:\n");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE) {
 		if (read(fcp->rfdes, cp, DEV_BSIZE) < 0) {
 			printf(" %ld,", blk + i / DEV_BSIZE);
@@ -224,10 +226,12 @@ bwrite(fcp, buf, blk, size)
 {
 	int i;
 	char *cp;
+	off_t offset;
 
 	if (fcp->wfdes < 0)
 		return;
-	if (lseek(fcp->wfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
+	offset = ((off_t) blk << DEV_BSHIFT) + fcp->offset;
+	if (lseek(fcp->wfdes, offset, 0) < 0)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, size) == size) {
 		fcp->mod = 1;
@@ -235,9 +239,9 @@ bwrite(fcp, buf, blk, size)
 		return;
 	}
 	rwerr("WRITE", blk);
-	if (lseek(fcp->wfdes, (off_t) blk << DEV_BSHIFT, 0) < 0)
+	if (lseek(fcp->wfdes, offset, 0) < 0)
 		rwerr("SEEK", blk);
-	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:");
+	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:\n");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)
 		if (write(fcp->wfdes, cp, DEV_BSIZE) < 0)
 			printf(" %ld,", blk + i / DEV_BSIZE);

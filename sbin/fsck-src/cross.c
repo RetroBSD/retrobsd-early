@@ -98,7 +98,7 @@ checkfilesys(filesys)
 	devnam = filesys;
 	if (setup(filesys) == 0) {
 		if (preen)
-			pfatal("CAN'T CHECK FILE SYSTEM.");
+			pfatal("CAN'T CHECK FILE SYSTEM.\n");
 		return;
 	}
 	/*
@@ -117,7 +117,7 @@ checkfilesys(filesys)
 	 */
 	if (enddup != duplist) {
 		if (preen)
-			pfatal("INTERNAL ERROR: dups with -p");
+			pfatal("INTERNAL ERROR: dups with -p\n");
 		printf("** Phase 1b - Rescan For More DUPS\n");
 		pass1b();
 	}

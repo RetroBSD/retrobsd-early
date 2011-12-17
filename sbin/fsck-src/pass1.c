@@ -37,7 +37,7 @@ pass1()
 			if (bcmp((char *)dp->di_addr, (char *)zino.di_addr,
 				NADDR * sizeof(daddr_t)) ||
 			    dp->di_mode || dp->di_size) {
-				pfatal("PARTIALLY ALLOCATED INODE I=%u",
+				pfatal("PARTIALLY ALLOCATED INODE I=%u\n",
 					inumber);
 				if (reply("CLEAR") == 1) {
 					zapino(dp);
@@ -106,7 +106,7 @@ pass1()
 		setlncnt(inumber, dp->di_nlink);
 		if (dp->di_nlink <= 0) {
 			if (zlnp >= &zlnlist[MAXLNCNT]) {
-				pfatal("LINK COUNT TABLE OVERFLOW");
+				pfatal("LINK COUNT TABLE OVERFLOW\n");
 				if (reply("CONTINUE") == 0)
 					errexit("");
 			} else
@@ -118,7 +118,7 @@ pass1()
 		(void)ckinode(dp, &idesc);
 		continue;
 unknown:
-		pfatal("UNKNOWN FILE TYPE I=%u mode: %o", inumber, dp->di_mode);
+		pfatal("UNKNOWN FILE TYPE I=%u mode: %o\n", inumber, dp->di_mode);
 		setstate(inumber, FCLEAR);
 		if (reply("CLEAR") == 1) {
 			setstate(inumber, USTATE);
@@ -163,7 +163,7 @@ pass1check(idesc)
 			return (STOP);
 		}
 		if (enddup >= &duplist[DUPTBLSIZE]) {
-			pfatal("DUP TABLE OVERFLOW");
+			pfatal("DUP TABLE OVERFLOW\n");
 			if (reply("CONTINUE") == 0)
 				errexit("");
 			return(STOP);

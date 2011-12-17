@@ -510,7 +510,7 @@ chflags()
 	register struct inode *ip;
 	register struct a {
 		char	*fname;
-		u_short	flags;
+		u_int	flags;
 	} *uap = (struct a *)u.u_arg;
 	struct	nameidata nd;
 	register struct nameidata *ndp = &nd;
@@ -530,7 +530,7 @@ fchflags()
 {
 	register struct a {
 		int	fd;
-		u_short	flags;
+		u_int	flags;
 	} *uap = (struct a *)u.u_arg;
 	register struct inode *ip;
 

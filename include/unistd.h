@@ -103,6 +103,8 @@ int     setgid (gid_t gid);
 int     isatty (int fd);
 int     chdir (const char *path);
 int     fchdir (int fd);
+int     chflags (const char *path, u_long flags);
+int     fchflags (int fd, u_long flags);
 
 struct stat;
 int     stat (const char *path, struct stat *buf);

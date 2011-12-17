@@ -219,7 +219,7 @@ blkerr(ino, s, blk)
 	daddr_t blk;
 {
 
-	pfatal("%ld %s I=%u", blk, s, ino);
+	pfatal("%ld %s I=%u\n", blk, s, ino);
 	printf("\n");
 	switch (getstate(ino)) {
 

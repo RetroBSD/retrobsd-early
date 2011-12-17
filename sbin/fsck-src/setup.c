@@ -30,9 +30,7 @@ setup(dev)
 	struct stat statb;
 	u_int msize;
 	char *mbase;
-	int n;
 	BUFAREA *bp;
-	char junk[80 + sizeof (".XXXXX") + 1];
 
 	if (stat("/", &statb) < 0)
 		errexit("Can't stat root\n");
@@ -63,7 +61,7 @@ setup(dev)
 	if (nflag || (dfile.wfdes = open(dev, 1)) < 0) {
 		dfile.wfdes = -1;
 		if (preen)
-			pfatal("NO WRITE ACCESS");
+			pfatal("NO WRITE ACCESS\n");
 		printf(" (NO WRITE)");
 	}
 	if (preen == 0)
@@ -87,7 +85,7 @@ setup(dev)
 	startib = fsmax;
 	if (fsmin >= fsmax ||
 		(imax/INOPB) != ((ino_t)sblock.fs_isize-(SUPERB+1))) {
-		pfatal("Size check: fsize %ld isize %d",
+		pfatal("Size check: fsize %ld isize %d\n",
 			sblock.fs_fsize,sblock.fs_isize);
 		printf("\n");
 		ckfini();
@@ -116,28 +114,47 @@ setup(dev)
 		lncntsz = roundup(lncntsz,DEV_BSIZE);
 		nscrblk = (bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
 		if (scrfile[0] == 0) {
-			pfatal("\nNEED SCRATCH FILE (%ld BLKS)\n",nscrblk);
-			do {
-				printf("ENTER FILENAME:  ");
-				if ((n = getlin(stdin, scrfile,
-						sizeof(scrfile) - 6)) == EOF)
-					errexit("\n");
-			} while(n == 0);
-		}
-		strcpy(junk, scrfile);
-		strcat(junk, ".XXXXX");
-		sfile.wfdes = mkstemp(junk);
-		if ((sfile.wfdes < 0)
-		    || ((sfile.rfdes = open(junk,0)) < 0)) {
-			printf("Can't create %s\n", junk);
-			ckfini();
-			return(0);
-		}
-		unlink(junk);	/* make it invisible incase we exit */
-		if (hotroot && (fstat(sfile.wfdes,&statb)==0)
-		    && ((statb.st_mode & S_IFMT) == S_IFREG)
-		    && (statb.st_dev==rootdev))
-		     pfatal("TMP FILE (%s) ON ROOT WHEN CHECKING ROOT", junk);
+		        /* Use tail of swap file for temporary data. */
+                        strcpy(scrfile, "/swap");
+                        if (stat(scrfile, &statb) < 0 ||
+                            statb.st_size < bmapsz+smapsz+lncntsz + 1024*1024)
+                        {
+                                pfatal("TMP FILE (%s) TOO SMALL\n", scrfile);
+                                ckfini();
+                                return(0);
+                        }
+                        /* Temporarily clear immutable flag.  */
+                        chflags(scrfile, statb.st_flags & ~(UF_IMMUTABLE | SF_IMMUTABLE));
+                        sfile.wfdes = open(scrfile, 1);
+                        chflags(scrfile, statb.st_flags);
+                        if (sfile.wfdes < 0 ||
+                            (sfile.rfdes = open(scrfile, 0)) < 0) {
+                                printf("Can't open %s\n", scrfile);
+                                ckfini();
+                                return(0);
+                        }
+                        sfile.offset = statb.st_size - (nscrblk << DEV_BSHIFT);
+                        /*printf("Using scratch file %s, offset %u\n",
+                                scrfile, (unsigned) sfile.offset);*/
+		} else {
+		        /* User-define scratch file prefix. */
+                        char junk[80 + sizeof (".XXXXX") + 1];
+
+                        strcpy(junk, scrfile);
+                        strcat(junk, ".XXXXX");
+                        sfile.wfdes = mkstemp(junk);
+                        if (sfile.wfdes < 0 ||
+                            (sfile.rfdes = open(junk, 0)) < 0) {
+                                printf("Can't create %s\n", junk);
+                                ckfini();
+                                return(0);
+                        }
+                        unlink(junk);	/* make it invisible incase we exit */
+                        if (hotroot && (fstat(sfile.wfdes,&statb)==0)
+                            && ((statb.st_mode & S_IFMT) == S_IFREG)
+                            && (statb.st_dev==rootdev))
+                             pfatal("TMP FILE (%s) ON ROOT WHEN CHECKING ROOT\n", junk);
+                }
 		bp = &((BUFAREA *)mbase)[(msize/sizeof(BUFAREA))];
 		poolhead = NULL;
 		while(--bp >= (BUFAREA *)mbase) {

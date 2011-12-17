@@ -281,7 +281,7 @@ mkswap ()
 	node.i_mode = IFREG | 0400;
 	node.i_nlink = 1;
 	node.i_size = filsys.fs.fs_swapsz * DEV_BSIZE;
-	node.i_flags = UF_NODUMP | UF_IMMUTABLE | SF_IMMUTABLE;
+	node.i_flags = UF_NODUMP | UF_IMMUTABLE /*| SF_IMMUTABLE*/;
 
         for (lbn=0; lbn<filsys.fs.fs_swapsz; lbn++)
                 add_swap (lbn);

@@ -26,7 +26,7 @@ pass2()
 	switch (getstate(ROOTINO)) {
 
 	case USTATE:
-		pfatal("ROOT INODE UNALLOCATED");
+		pfatal("ROOT INODE UNALLOCATED\n");
 		if (reply("ALLOCATE") == 0)
 			errexit("");
 		if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
@@ -35,7 +35,7 @@ pass2()
 		break;
 
 	case DCLEAR:
-		pfatal("DUPS/BAD IN ROOT INODE");
+		pfatal("DUPS/BAD IN ROOT INODE\n");
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
 			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
@@ -51,7 +51,7 @@ pass2()
 
 	case FSTATE:
 	case FCLEAR:
-		pfatal("ROOT INODE NOT DIRECTORY");
+		pfatal("ROOT INODE NOT DIRECTORY\n");
 		if (reply("REALLOCATE")) {
 			freeino(ROOTINO);
 			if (allocdir(ROOTINO, ROOTINO) != ROOTINO)
