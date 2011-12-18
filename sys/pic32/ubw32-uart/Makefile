@@ -119,7 +119,7 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 		chmod -x $@ unix.bin
 
 load:           unix.elf
-		ubw32 -write unix.hex -reset
+		pic32prog -p unix.hex
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c

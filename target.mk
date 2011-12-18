@@ -15,8 +15,8 @@ ifndef GCCPREFIX
     INCLUDES    = -I/usr/local/pic32-tools/lib/gcc/pic32mx/4.5.1/include
 endif
 
-CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)
-CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -I$(TOPSRC)/include $(INCLUDES)
+CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
+CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
 LD		= $(GCCPREFIX)ld
 AR		= $(GCCPREFIX)ar
 RANLIB          = $(GCCPREFIX)ranlib

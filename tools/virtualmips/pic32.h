@@ -91,6 +91,13 @@ struct pic32_system {
     unsigned rcon;
     unsigned rswrst;
 
+    unsigned ad1con1;               /* Analog to digital converter */
+    unsigned ad1con2;
+    unsigned ad1con3;
+    unsigned ad1chs;
+    unsigned ad1cssl;
+    unsigned ad1pcfg;
+
     struct vdevice *prefetch;       /* Prefetch cache controller */
     unsigned checon;
 };
@@ -109,6 +116,7 @@ int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
 int dev_pic32_intcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_dmacon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_syscon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_adc_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_prefetch_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,

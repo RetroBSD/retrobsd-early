@@ -676,6 +676,13 @@ sdopen (dev, flag, mode)
 
 	if (! (reg->con & PIC32_SPICON_MSTEN)) {
 		/* Initialize hardware. */
+#ifdef SD_ENA_PORT
+                /* On Duinomite Mega board, pin B13 set low
+                 * enables a +3.3V power to SD card. */
+		TRIS_CLR(SD_ENA_PORT) = 1 << SD_ENA_PIN;
+		PORT_CLR(SD_ENA_PORT) = 1 << SD_ENA_PIN;
+		udelay (1000);
+#endif
 		spi_select (unit, 0);		// initially keep the SD card disabled
 
                 // make Card select an output pin

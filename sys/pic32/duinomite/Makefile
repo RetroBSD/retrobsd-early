@@ -24,8 +24,8 @@ DEFS		+= -DCPU_KHZ=80000
 DEFS		+= -DBUS_KHZ=80000
 
 #
-# Pinguino-micro board
-# ====================
+# Duinomite and Duinomite-Mega boards
+# ===================================
 #
 # Console on USB
 # For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
@@ -36,6 +36,10 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 # /CS0 at pin D5
 DEFS            += -DSD_PORT=SPI3CON -DSD_MHZ=8
 DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=5
+
+# Duinomite-Mega has a FET controlled by pin B13,
+# which enables a power for SD card, RS-232 and CAN
+DEFS            += -DSD_ENA_PORT=TRISB -DSD_ENA_PIN=13
 
 # LEDs at pin B15 (green), B12 (yellow)
 DEFS            += -DLED_KERNEL_PORT=TRISB -DLED_KERNEL_PIN=15

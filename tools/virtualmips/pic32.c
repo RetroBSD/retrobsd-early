@@ -212,6 +212,8 @@ static int pic32_init_platform (pic32_t *pic32)
         return (-1);
     if (dev_pic32_syscon_init (vm, "PIC32 SYSCON", PIC32_OSCCON) == -1)
         return (-1);
+    if (dev_pic32_adc_init (vm, "PIC32 ADC", PIC32_AD1CON1) == -1)
+        return (-1);
     if (dev_pic32_prefetch_init (vm, "PIC32 Prefetch", PIC32_CHECON) == -1)
         return (-1);
     if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
