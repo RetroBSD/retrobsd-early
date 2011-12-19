@@ -46,9 +46,9 @@ struct	proc {
 		long	P_sigcatch;	/* signals being caught by user */
 		short	P_pgrp;		/* name of process group leader */
 		struct	proc *P_link;	/* linked list of running processes */
-		memaddr	P_addr;		/* address of u. area */
-		memaddr	P_daddr;	/* address of data area */
-		memaddr	P_saddr;	/* address of stack area */
+		size_t	P_addr;		/* address of u. area */
+		size_t	P_daddr;	/* address of data area */
+		size_t	P_saddr;	/* address of stack area */
 		size_t	P_dsize;	/* size of data area (clicks) */
 		size_t	P_ssize;	/* size of stack segment (clicks) */
 		caddr_t	P_wchan;	/* event process is awaiting */
@@ -196,7 +196,7 @@ void exit (int rv);
 /*
  * Swap I/O.
  */
-void swap (memaddr blkno, memaddr coreaddr, int count, int rdflg);
+void swap (size_t blkno, size_t coreaddr, int count, int rdflg);
 
 /*
  * Kill a process when ran out of swap space.

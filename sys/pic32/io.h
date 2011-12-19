@@ -137,6 +137,15 @@ mips_intr_restore (int x)
 }
 
 /*
+ * Explicit hazard barrier.
+ */
+static void inline __attribute__ ((always_inline))
+mips_ehb()
+{
+	asm volatile ("ehb");
+}
+
+/*
  * Enable hardware interrupts.
  */
 static int inline __attribute__ ((always_inline))

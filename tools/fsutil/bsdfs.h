@@ -13,8 +13,8 @@
 #define BSDFS_SWAP_INODE	4	/* swap file in inode 4 */
 #define BSDFS_INODES_PER_BLOCK	16	/* inodes per block */
 
-#define	NICINOD		100		/* number of superblock inodes */
-#define	NICFREE		100		/* number of superblock free blocks */
+#define	NICINOD		32		/* number of superblock inodes */
+#define	NICFREE		200		/* number of superblock free blocks */
 
 /*
  * 28 of the di_addr address bytes are used; 7 addresses of 4
@@ -36,7 +36,7 @@
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in
  * the super block for this name.
  */
-#define MAXMNTLEN	12
+#define MAXMNTLEN	28
 
 #define MAXNAMLEN	63
 
@@ -58,10 +58,10 @@ typedef struct {
 	unsigned 	free [NICFREE];	/* in core free blocks */
 	unsigned 	ninode;		/* number of in core I nodes (0-100) */
 	unsigned 	inode [NICINOD]; /* in core free I nodes */
-	unsigned char	flock;		/* lock during free list manipulation */
-	unsigned char	ilock;		/* lock during I list manipulation */
-	unsigned char	fmod;		/* super block modified flag */
-	unsigned char	ronly;		/* mounted read-only flag */
+	unsigned 	flock;		/* lock during free list manipulation */
+	unsigned 	ilock;		/* lock during I list manipulation */
+	unsigned 	fmod;		/* super block modified flag */
+	unsigned 	ronly;		/* mounted read-only flag */
 	long		utime;		/* current date of last update */
 	unsigned	tfree;		/* total free blocks */
 	unsigned	tinode;		/* total free inodes */

@@ -704,7 +704,7 @@ static unsigned check_free_list (fs_t *fs)
 	nfree = fs->nfree;
 	base = fs->free;
 	for (;;) {
-		if (nfree <= 0 || nfree > 100) {
+		if (nfree <= 0 || nfree > NICFREE) {
 			printf ("BAD FREEBLK COUNT\n");
 			free_list_corrupted = 1;
 			break;
@@ -721,7 +721,7 @@ static unsigned check_free_list (fs_t *fs)
 			break;
 		}
 		nfree = data[0];
-		for (i=0; i<100; ++i)
+		for (i=0; i<NICFREE; ++i)
 			list [i] = data[i+1];
 		base = list;
 	}
@@ -742,7 +742,7 @@ static void check_free_inode_list (fs_t *fs)
 			printf ("ALLOCATED INODE(S) IN IFREE LIST\n");
 			if (fs->writable) {
 				fs->ninode = i - 1;
-				while (i < 100)
+				while (i < NICINOD)
 					fs->inode [i++] = 0;
 				fs->dirty = 1;
 			}

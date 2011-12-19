@@ -117,9 +117,10 @@ setup(dev)
 		        /* Use tail of swap file for temporary data. */
                         strcpy(scrfile, "/swap");
                         if (stat(scrfile, &statb) < 0 ||
-                            statb.st_size < bmapsz+smapsz+lncntsz + 1024*1024)
+                            statb.st_size < bmapsz+smapsz+lncntsz + 512*1024)
                         {
-                                pfatal("TMP FILE (%s) TOO SMALL\n", scrfile);
+                                pfatal("TMP FILE (%s) TOO SMALL (need %u kbytes)\n",
+                                        scrfile, bmapsz+smapsz+lncntsz);
                                 ckfini();
                                 return(0);
                         }

@@ -725,7 +725,7 @@ delete_file:
 	if (inode->nlink <= 0) {
 		fs_inode_truncate (inode);
 		fs_inode_clear (inode);
-		if (inode->fs->ninode < 100) {
+		if (inode->fs->ninode < NICINOD) {
 			inode->fs->inode [inode->fs->ninode++] = dirent.inum;
 			inode->fs->dirty = 1;
 		}
@@ -791,15 +791,11 @@ create_link:
 }
 
 /*
- * Allocate an unused I node
- * on the specified device.
- * Used with file creation.
- * The algorithm keeps up to
- * 100 spare I nodes in the
- * super block. When this runs out,
- * a linear search through the
- * I list is instituted to pick
- * up 100 more.
+ * Allocate an unused I node on the specified device.
+ * Used with file creation.  The algorithm keeps up to
+ * NICINOD spare I nodes in the super block.
+ * When this runs out, a linear search through the
+ * I list is instituted to pick up NICINOD more.
  */
 int fs_inode_alloc (fs_t *fs, fs_inode_t *inode)
 {

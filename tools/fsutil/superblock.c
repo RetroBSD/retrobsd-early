@@ -158,19 +158,25 @@ int fs_open (fs_t *fs, const char *filename, int writable)
 		return 0;
 	if (! fs_read32 (fs, &fs->swapsz))	/* size in blocks of swap area */
 		return 0;
-	if (! fs_read32 (fs, &fs->nfree))	/* number of in core free blocks (0-100) */
+	if (! fs_read32 (fs, &fs->nfree))	/* number of in core free blocks */
 		return 0;
 	for (i=0; i<NICFREE; ++i) {		/* in core free blocks */
 		if (! fs_read32 (fs, &fs->free[i]))
 			return 0;
 	}
-	if (! fs_read32 (fs, &fs->ninode))	/* number of in core I nodes (0-100) */
+	if (! fs_read32 (fs, &fs->ninode))	/* number of in core I nodes */
 		return 0;
 	for (i=0; i<NICINOD; ++i) {		/* in core free I nodes */
 		if (! fs_read32 (fs, &fs->inode[i]))
 			return 0;
 	}
-	if (! fs_read32 (fs, &magic))		/* flock, fmod, ilock, ronly */
+	if (! fs_read32 (fs, &fs->flock))
+		return 0;
+	if (! fs_read32 (fs, &fs->fmod))
+		return 0;
+	if (! fs_read32 (fs, &fs->ilock))
+		return 0;
+	if (! fs_read32 (fs, &fs->ronly))
 		return 0;
 	if (! fs_read32 (fs, (unsigned*) &fs->utime))
 		return 0;			/* current date of last update */
@@ -213,19 +219,25 @@ int fs_sync (fs_t *fs, int force)
 		return 0;
 	if (! fs_write32 (fs, fs->swapsz))	/* size in blocks of swap area */
 		return 0;
-	if (! fs_write32 (fs, fs->nfree))	/* number of in core free blocks (0-100) */
+	if (! fs_write32 (fs, fs->nfree))	/* number of in core free blocks */
 		return 0;
-	for (i=0; i<100; ++i) {			/* in core free blocks */
+	for (i=0; i<NICFREE; ++i) {		/* in core free blocks */
 		if (! fs_write32 (fs, fs->free[i]))
 			return 0;
 	}
-	if (! fs_write32 (fs, fs->ninode))	/* number of in core I nodes (0-100) */
+	if (! fs_write32 (fs, fs->ninode))	/* number of in core I nodes */
 		return 0;
-	for (i=0; i<100; ++i) {			/* in core free I nodes */
+	for (i=0; i<NICINOD; ++i) {		/* in core free I nodes */
 		if (! fs_write32 (fs, fs->inode[i]))
 			return 0;
 	}
-	if (! fs_write32 (fs, 0))		/* flock, fmod, ilock, ronly */
+	if (! fs_write32 (fs, fs->flock))
+		return 0;
+	if (! fs_write32 (fs, fs->fmod))
+		return 0;
+	if (! fs_write32 (fs, fs->ilock))
+		return 0;
+	if (! fs_write32 (fs, fs->ronly))
 		return 0;
 	if (! fs_write32 (fs, fs->utime))	/* current date of last update */
 		return 0;
@@ -261,7 +273,7 @@ void fs_print (fs_t *fs, FILE *out)
 		fs->fsmnt[0] ? fs->fsmnt : "(none)");
 	fprintf (out, "   In-core free list: %u blocks", fs->nfree);
 	if (verbose)
-	    for (i=0; i < 100 && i < fs->nfree; ++i) {
+	    for (i=0; i < NICFREE && i < fs->nfree; ++i) {
 		if (i % 10 == 0)
 			fprintf (out, "\n                     ");
 		fprintf (out, " %u", fs->free[i]);
@@ -270,7 +282,7 @@ void fs_print (fs_t *fs, FILE *out)
 
 	fprintf (out, " In-core free inodes: %u inodes", fs->ninode);
 	if (verbose)
-	    for (i=0; i < 100 && i < fs->nfree; ++i) {
+	    for (i=0; i < NICINOD && i < fs->ninode; ++i) {
 		if (i % 10 == 0)
 			fprintf (out, "\n                     ");
 		fprintf (out, " %u", fs->inode[i]);

@@ -62,6 +62,5 @@
 #define	LONG_MAX	2147483647L	/* max value for a long */
 #define	LONG_MIN	(-2147483647L-1L)	/* min value for a long */
 
-#define	SSIZE_MAX	INT_MAX		/* max value for a ssize_t */
-
-#define	SIZE_T_MAX	UINT_MAX	/* max value for a size_t */
+#define SSIZE_MAX       INT_MAX         /* max value for a ssize_t */
+#define SIZE_T_MAX	UINT_MAX	/* max value for a size_t */

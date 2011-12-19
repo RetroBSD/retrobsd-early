@@ -49,9 +49,9 @@ int fs_block_free (fs_t *fs, unsigned int bno)
 
         if (verbose > 1)
                 printf ("free block %d, total %d\n", bno, fs->nfree);
-	if (fs->nfree >= 100) {
+	if (fs->nfree >= NICFREE) {
 		buf[0] = fs->nfree;
-		for (i=0; i<100; i++)
+		for (i=0; i<NICFREE; i++)
 			buf[i+1] = fs->free[i];
 		if (! fs_write_block (fs, bno, (char*) buf)) {
 			fprintf (stderr, "block_free: write error at block %d\n", bno);
@@ -154,7 +154,7 @@ again:
 		if (! fs_read_block (fs, *bno, (char*) buf))
 			return 0;
 		fs->nfree = buf[0];
-		for (i=0; i<100; i++)
+		for (i=0; i<NICFREE; i++)
 			fs->free[i] = buf[i+1];
 	}
 	if (*bno == 0)

@@ -80,7 +80,7 @@ struct dkdevice {
 	int	dk_copenmask;		/* character devices open */
 	int	dk_openmask;		/* composite (bopen|copen) */
 	int	dk_flags;		/* label state   see below */
-	memaddr	dk_label;		/* sector containing label */
+	size_t	dk_label;		/* sector containing label */
 	struct	partition dk_parts[MAXPARTITIONS];	/* inkernel portion */
 };
 

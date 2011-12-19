@@ -22,9 +22,9 @@ void
 swapin (p)
 	register struct proc *p;
 {
-	memaddr daddr = USER_DATA_START;
-	memaddr saddr = USER_DATA_END - p->p_ssize;
-	memaddr uaddr = (memaddr) &u0;
+	size_t daddr = USER_DATA_START;
+	size_t saddr = USER_DATA_END - p->p_ssize;
+	size_t uaddr = (size_t) &u0;
 
 	if (p->p_dsize) {
 		swap (p->p_daddr, daddr, p->p_dsize, B_READ);
@@ -65,7 +65,7 @@ swapout (p, freecore, odata, ostack)
 	int freecore;
 	register u_int odata, ostack;
 {
-	memaddr a[3];
+	size_t a[3];
 
 	if (odata == (u_int) X_OLDSIZE)
 		odata = p->p_dsize;

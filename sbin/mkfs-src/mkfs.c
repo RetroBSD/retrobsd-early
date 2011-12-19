@@ -48,7 +48,7 @@ union {
 	char pad2 [DEV_BSIZE];
 } filsys;
 
-u_int	f_i	= 8192;		/* bytes/inode default */
+u_int	f_i	= 16 * 1024;		/* bytes/inode default */
 
 /*
  * initialize the file system
@@ -380,7 +380,7 @@ main (argc,argv)
 	char	**argv;
 {
 	register int c;
-	long n, kbytes, swapsz = 0;
+	unsigned n, kbytes, swapsz = 0;
 	char *special;
 
 	while ((c = getopt(argc, argv, "i:s:")) != EOF) {
@@ -389,7 +389,7 @@ main (argc,argv)
 			f_i = atoi(optarg);
 			break;
 		case 's':
-			swapsz = atol(optarg);
+			swapsz = strtoul(optarg, 0, 0);
 			break;
 		default:
 			usage();
@@ -401,7 +401,7 @@ main (argc,argv)
 	if (argc != 2 || f_i == 0)
 		usage();
 	special = argv[0];
-	kbytes = atol(argv[1]);
+	kbytes = strtoul(argv[1], 0, 0);
 
 	/*
 	 * NOTE: this will fail if the device is currently mounted and the system
@@ -418,7 +418,7 @@ main (argc,argv)
 	if (fsi < 0)
 		err (1, "cannot open %s\n", special);
 
-	printf ("Size: %ld kbytes\n", kbytes);
+	printf ("Size: %u kbytes\n", kbytes);
 	if (kbytes == 0) {
 		printf ("Can't make zero length filesystem\n");
 		return -1;
@@ -439,13 +439,13 @@ main (argc,argv)
 	n = (kbytes * DEV_BSIZE / f_i) / INOPB;
 	if (n <= 0)
 		n = 1;
-	printf ("Inodes: %ld\n", n*INOPB);
+	printf ("Inodes: %u\n", n*INOPB);
 
 	filsys.fs.fs_isize = n + 1;
 	filsys.fs.fs_fsize = kbytes;
 	filsys.fs.fs_swapsz = swapsz;
 	if (filsys.fs.fs_isize + filsys.fs.fs_swapsz >= filsys.fs.fs_fsize) {
-		printf ("%ld/%u: bad ratio\n",
+		printf ("%u/%u: bad ratio\n",
                         filsys.fs.fs_fsize, filsys.fs.fs_isize-2);
 		exit (1);
 	}

@@ -252,28 +252,6 @@ sleep (chan, pri)
 	/*NOTREACHED*/
 }
 
-#if 0
-void longjmp (memaddr addr, label_t *label)
-{
-	if (addr != (memaddr) &u) {
-		u.u_procp->p_addr = (memaddr) &u0;
-
-		unsigned n = USIZE >> 4;
-		unsigned *p = (unsigned*) &u;
-		unsigned *q = (unsigned*) &u0;
-		do {
-			unsigned word;
-			word = *p; *p++ = *q; *q++ = word;
-			word = *p; *p++ = *q; *q++ = word;
-			word = *p; *p++ = *q; *q++ = word;
-			word = *p; *p++ = *q; *q++ = word;
-		} while (--n);
-
-		u.u_procp->p_addr = (memaddr) &u;
-	}
-}
-#endif
-
 /*
  * Remove a process from its wait queue
  */

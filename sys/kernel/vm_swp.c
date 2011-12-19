@@ -18,7 +18,7 @@
  */
 void
 swap (blkno, coreaddr, count, rdflg)
-	memaddr blkno, coreaddr;
+	size_t blkno, coreaddr;
 	register int count;
 	int rdflg;
 {

@@ -334,13 +334,13 @@ static void print_exception (cpu_mips_t * cpu, u_int exc_code)
 	if (exc_code == MIPS_CP0_CAUSE_SYSCALL) {
 	    mips_insn_t code;
 
-        cpu->trace_syscall = 1;
         if (mips_fetch_instruction (cpu, cpu->pc, &code) != 0) {
             printf ("--- syscall at %08x: cannot fetch instruction opcode\n", cpu->pc);
             return;
         }
         /* bottom 8 bits are index */
 		code = (code >> 6) & 0377;
+        cpu->trace_syscall = code;
 		if (code >= sizeof (bsd_syscalls) / sizeof (bsd_syscalls[0])) {
             printf ("--- syscall: #%d at %08x\n", (int)code, cpu->pc);
             return;

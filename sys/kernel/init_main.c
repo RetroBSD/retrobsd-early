@@ -114,7 +114,7 @@ main()
 	 * Set up system process 0 (swapper).
 	 */
 	p = &proc[0];
-	p->p_addr = (memaddr) &u;
+	p->p_addr = (size_t) &u;
 	p->p_stat = SRUN;
 	p->p_flag |= SLOAD | SSYS;
 	p->p_nice = NZERO;

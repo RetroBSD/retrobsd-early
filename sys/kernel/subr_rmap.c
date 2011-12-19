@@ -41,13 +41,13 @@
  *
  * Algorithm is first-fit.
  */
-memaddr
+size_t
 malloc (mp, size)
 	struct map *mp;
 	register size_t size;
 {
 	register struct mapent *bp, *ep;
-	memaddr addr;
+	size_t addr;
 
 	if (! size)
 		panic ("malloc: size = 0");
@@ -73,7 +73,7 @@ malloc (mp, size)
 			return(addr);
 		}
 	/* no entries big enough */
-	return((memaddr)NULL);
+	return 0;
 }
 
 /*
@@ -84,7 +84,7 @@ void
 mfree (mp, size, addr)
 	struct map *mp;
 	size_t size;
-	register memaddr addr;
+	register size_t addr;
 {
 	register struct mapent *bp, *ep;
 	struct mapent *start;
@@ -173,11 +173,11 @@ mfree (mp, size, addr)
  * to be in decreasing order; generally, data, stack, then u. will be
  * best.  Returns NULL on failure, address of u. on success.
  */
-memaddr
+size_t
 malloc3 (mp, d_size, s_size, u_size, a)
 	struct map *mp;
 	size_t d_size, s_size, u_size;
-	memaddr a[3];
+	size_t a[3];
 {
 	register struct mapent *bp, *remap;
 	register int next;
@@ -208,7 +208,7 @@ malloc3 (mp, d_size, s_size, u_size, a)
 	for (next = 0; next < 3; ++next)
 		if (madd[next])
 			madd[next]->m_size += sizes[next];
-	return((memaddr)NULL);
+	return 0;
 
 resolve:
 	/* got it all, update the addresses. */

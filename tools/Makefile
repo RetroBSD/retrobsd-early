@@ -1,4 +1,4 @@
-SUBDIR		= elf2aout fsutil ubw32
+SUBDIR		= elf2aout fsutil
 
 all install depend: ${SUBDIR}
 		-for i in ${SUBDIR}; do ${MAKE} -C $$i ${MFLAGS} DESTDIR=${DESTDIR} $@; done

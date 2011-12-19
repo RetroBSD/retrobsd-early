@@ -22,15 +22,15 @@
 #define	ROOTINO		((ino_t)2)	/* i number of all roots */
 #define	LOSTFOUNDINO	(ROOTINO + 1)
 
-#define	NICINOD		100		/* number of superblock inodes */
-#define	NICFREE		100		/* number of superblock free blocks */
+#define	NICINOD		32		/* number of superblock inodes */
+#define	NICFREE		200		/* number of superblock free blocks */
 
 /*
  * The path name on which the file system is mounted is maintained
  * in fs_fsmnt. MAXMNTLEN defines the amount of space allocated in
  * the super block for this name.
  */
-#define MAXMNTLEN	12
+#define MAXMNTLEN	28
 
 /*
  * Super block for a file system.  NOTE:  The 'fs_flock' and 'fs_ilock'
@@ -41,18 +41,18 @@ struct	fs
 {
 	u_int	fs_magic1;		/* magic word */
 	u_int	fs_isize;		/* first block after i-list */
-	daddr_t	fs_fsize;		/* size in blocks of entire volume */
+	u_int	fs_fsize;		/* size in blocks of entire volume */
 	u_int	fs_swapsz;		/* size in blocks of swap area */
 	int	fs_nfree;		/* number of addresses in fs_free */
 	daddr_t	fs_free [NICFREE];	/* free block list */
 	int	fs_ninode;		/* number of inodes in fs_inode */
 	ino_t	fs_inode [NICINOD];	/* free inode list */
-	char	fs_flock;		/* lock during free list manipulation */
-	char	fs_fmod;		/* super block modified flag */
-	char	fs_ilock;		/* lock during i-list manipulation */
-	char	fs_ronly;		/* mounted read-only flag */
+	int	fs_flock;		/* lock during free list manipulation */
+	int	fs_fmod;		/* super block modified flag */
+	int	fs_ilock;		/* lock during i-list manipulation */
+	int	fs_ronly;		/* mounted read-only flag */
 	time_t	fs_time;		/* last super block update */
-	daddr_t	fs_tfree;		/* total free blocks */
+	u_int	fs_tfree;		/* total free blocks */
 	ino_t	fs_tinode;		/* total free inodes */
 	char	fs_fsmnt [MAXMNTLEN];	/* ordinary file mounted on */
 	ino_t	fs_lasti;		/* start place for circular search */
@@ -93,7 +93,7 @@ struct	fblk {
 #define blkoff(loc)		/* calculates (loc % fs->fs_bsize) */ \
 	((loc) & DEV_BMASK)
 #define lblkno(loc)		/* calculates (loc / fs->fs_bsize) */ \
-	((loc) >> DEV_BSHIFT)
+	((unsigned) (loc) >> DEV_BSHIFT)
 
 /*
  * Determine the number of available blocks given a

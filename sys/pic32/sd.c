@@ -695,8 +695,14 @@ sdopen (dev, flag, mode)
                 reg->con = PIC32_SPICON_MSTEN | PIC32_SPICON_CKE |
                         PIC32_SPICON_ON;
 
-                printf ("sd%d: port %s, select pin %c%d\n", unit,
-                        spi_name (&SD_PORT), cs_name(unit), cs_pin(unit));
+#ifdef SD_CS1_PORT
+                printf ("sd: port %s, select pins %c%d, %c%d\n",
+                        spi_name (&SD_PORT), cs_name(0), cs_pin(0),
+                        cs_name(1), cs_pin(1));
+#else
+                printf ("sd0: port %s, select pin %c%d\n",
+                        spi_name (&SD_PORT), cs_name(0), cs_pin(0));
+#endif
 #ifdef UCB_METER
                 /* Allocate statistics slots */
                 dk_alloc (&sd_dkn, NSD, "sd");

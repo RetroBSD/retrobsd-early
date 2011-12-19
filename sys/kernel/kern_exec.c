@@ -177,7 +177,7 @@ execve()
 	unsigned len;
 	char *sharg;
 	struct inode *ip;
-	memaddr bno;
+	size_t bno;
 	char cfname [MAXCOMLEN + 1];
 #define	SHSIZE	32
 	char cfarg [SHSIZE];

@@ -76,7 +76,6 @@ freechk()
 	do {
 		if (freeblk.df_nfree <= 0 || freeblk.df_nfree > NICFREE) {
 			pfatal("BAD FREEBLK COUNT\n");
-			printf("\n");
 			fixfree = 1;
 			return;
 		}

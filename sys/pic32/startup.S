@@ -218,17 +218,18 @@ restore_regs:
 		lw	$28, (16+FRAME_GP*4) ($sp)
 		# Skip $29 - SP
 		lw	$30, (16+FRAME_FP*4) ($sp)
-		lw	$31, (16+FRAME_RA*4) ($sp)
 		.set	at
 
-		lw	$k0, (16+FRAME_STATUS*4) ($sp)	# K0 = saved status
-		ori	$k0, $k0, ST_EXL                # Set EXL
-		mtc0	$k0, $C0_STATUS			# put SR back: disable interrupts
+                # Do not use k0/k1 here, as interrupts are still enabled
+		lw	$31, (16+FRAME_STATUS*4) ($sp)	# K0 = saved status
+		ori	$31, ST_EXL                     # Set EXL
+		mtc0	$31, $C0_STATUS			# put SR back: disable interrupts
                 ehb
 
 		lw	$k0, (16+FRAME_PC*4) ($sp)	# K0 = EPC
 		mtc0	$k0, $C0_EPC			# put PC in EPC
 
+		lw	$31, (16+FRAME_RA*4) ($sp)
 		lw	$sp, (16+FRAME_SP*4) ($sp)	# Restore stack
 
 		# Return from exception

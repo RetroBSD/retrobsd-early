@@ -34,7 +34,7 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
 # SD/MMC card driver on SPI3
 # /CS0 at pin D5
-DEFS            += -DSD_PORT=SPI3CON -DSD_MHZ=8
+DEFS            += -DSD_PORT=SPI3CON
 DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=5
 
 # Duinomite-Mega has a FET controlled by pin B13,

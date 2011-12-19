@@ -340,6 +340,7 @@ printf ("kernel stack = %p\n", frame);
                         /* Switch to kernel mode, enable interrupts. */
                         mips_write_c0_register (C0_STATUS, 0,
                                 status & ~(ST_UM | ST_EXL));
+                        mips_ehb();
                         goto out;
                 }
                 goto ret;
@@ -354,6 +355,7 @@ printf ("kernel stack = %p\n", frame);
                 /* Switch to kernel mode, enable interrupts. */
                 mips_write_c0_register (C0_STATUS, 0,
                         status & ~(ST_UM | ST_EXL));
+                mips_ehb();
 		u.u_error = 0;
                 u.u_frame = frame;
                 u.u_code = frame [FRAME_PC];            /* For signal handler */

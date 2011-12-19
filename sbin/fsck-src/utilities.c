@@ -195,14 +195,14 @@ bread(fcp, buf, blk, size)
 	off_t offset;
 
 	offset = ((off_t) blk << DEV_BSHIFT) + fcp->offset;
-	if (lseek(fcp->rfdes, offset, 0) < 0)
+	if (lseek(fcp->rfdes, offset, 0) != offset)
 		rwerr("SEEK", blk);
 	else if (read(fcp->rfdes, buf, size) == size) {
 		/*printf(".%u ", (unsigned) blk); fflush (stdout);*/
 		return (0);
 	}
 	rwerr("READ", blk);
-	if (lseek(fcp->rfdes, offset, 0) < 0)
+	if (lseek(fcp->rfdes, offset, 0) != offset)
 		rwerr("SEEK", blk);
 	errs = 0;
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE READ:\n");
@@ -231,7 +231,7 @@ bwrite(fcp, buf, blk, size)
 	if (fcp->wfdes < 0)
 		return;
 	offset = ((off_t) blk << DEV_BSHIFT) + fcp->offset;
-	if (lseek(fcp->wfdes, offset, 0) < 0)
+	if (lseek(fcp->wfdes, offset, 0) != offset)
 		rwerr("SEEK", blk);
 	else if (write(fcp->wfdes, buf, size) == size) {
 		fcp->mod = 1;
@@ -239,7 +239,7 @@ bwrite(fcp, buf, blk, size)
 		return;
 	}
 	rwerr("WRITE", blk);
-	if (lseek(fcp->wfdes, offset, 0) < 0)
+	if (lseek(fcp->wfdes, offset, 0) != offset)
 		rwerr("SEEK", blk);
 	pfatal("THE FOLLOWING SECTORS COULD NOT BE WRITTEN:\n");
 	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE)

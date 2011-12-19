@@ -553,6 +553,7 @@ int main()
     /* Config register: enable kseg0 caching. */
     mips_write_c0_register (C0_CONFIG, 0,
         mips_read_c0_register (C0_CONFIG, 0) | 3);
+    mips_ehb();
 
     /* Initialize all .bss variables by zeros. */
     extern unsigned char __bss_start, __bss_end;

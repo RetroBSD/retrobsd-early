@@ -165,6 +165,10 @@ startup()
 	mips_write_c0_register (C0_CONFIG, 0,
             mips_read_c0_register (C0_CONFIG, 0) | 3);
 
+	/* Kernel mode, interrupts disabled.  */
+	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
+        mips_ehb();
+
 	/*
          * Configure LED pins.
          */
@@ -184,9 +188,6 @@ startup()
         LED_AUX_OFF();
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
-
-	/* Kernel mode, interrupts disabled.  */
-	mips_write_c0_register (C0_STATUS, 0, ST_CU0);
 
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
