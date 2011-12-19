@@ -335,7 +335,7 @@ extern char				badop[];
 
 /*	fork constant	*/
 
-#define FORKLIM 	32
+#define FORKLIM 2               /* was 32: max retry timeout for fork() */
 
 #include "ctype.h"
 
