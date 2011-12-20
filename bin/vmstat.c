@@ -53,7 +53,7 @@ struct nlist nl[] = {
 char	**dk_name;
 int	*dk_unit;
 size_t	pfree;
-int	flag29;
+int	pflag;
 char	**dr_name;
 int	*dr_select;
 int	dk_ndrive;
@@ -93,18 +93,18 @@ void printhdr(sig)
 {
 	register int i, j;
 
-	if (flag29)
+	if (pflag)
 	    printf("-procs- -----memory----- -swap- ");
 	else
 	    printf("-procs- ---memory-- ");
 
 	printf("-----disks----- ");
 
-	if (flag29) {
-		printf("-----faults---- ------cpu------\n");
+	if (pflag) {
+		printf("-----faults----- ------cpu------\n");
 		printf(" r b w    avm  tx   fre   i  o  ");
 	} else {
-		printf("---faults-- ----cpu----\n");
+		printf("---faults--- ----cpu----\n");
 		printf(" r b w    avm   fre ");
 	}
 
@@ -112,10 +112,13 @@ void printhdr(sig)
 		if (dr_select[i])
 			printf("%c%c%c ",
                                 dr_name[i][0], dr_name[i][1], dr_name[i][2]);
-	if (flag29)
-	    printf(" in  sy  tr  cs  us  ni  sy  id\n");
-	else
-            printf(" in  sy  cs  us  sy  id\n");
+        printf("  in  sy");
+	if (pflag)
+                printf("  tr");
+        printf("  cs  us");
+	if (pflag)
+                printf("  ni");
+        printf("  sy  id\n");
 	lines = 19;
 }
 
@@ -170,12 +173,12 @@ main(argc, argv)
 			break;
 
 		case 'p':
-			flag29++;
+			pflag++;
 			break;
 
 		default:
 			fprintf(stderr,
-			    "usage: vmstat [ -fsi ] [ interval ] [ count]\n");
+			    "usage: vmstat [ -fsiptz ] [ interval ] [ count]\n");
 			exit(1);
 		}
 	}
@@ -306,12 +309,12 @@ loop:
 	 * within this kernel
 	 */
 	printf("%7d", total.t_avm);
-	if (flag29)
+	if (pflag)
 		printf("%4d",
 		    total.t_avm ? (total.t_avmtxt * 100) / total.t_avm : 0);
 	printf("%6d", pfree);
 
-	if (flag29) {
+	if (pflag) {
 		printf("%4d%3d ", rate.v_swpin / nintv, rate.v_swpout / nintv);
 	}
 
@@ -320,18 +323,14 @@ loop:
 		if (dr_select[i])
 			stats(i);
         }
-	if (flag29)
-		printf("%4d%4d%4d%4d",
-		    INTS(rate.v_intr / nintv),
-		    rate.v_syscall / nintv, rate.v_trap / nintv,
-		    rate.v_swtch / nintv);
-	else
-                printf("%4d%4d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv,
-                    rate.v_swtch/nintv);
+        printf("%5d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv);
+	if (pflag)
+		printf("%4d", rate.v_trap / nintv);
+        printf("%4d", rate.v_swtch / nintv);
 
 	for(i=0; i<CPUSTATES; i++) {
 		float f = stat1(i);
-		if (!flag29 && i == 0) {   	/* US+NI */
+		if (! pflag && i == 0) {   	/* US+NI */
 			i++;
 			f += stat1(i);
 		}
