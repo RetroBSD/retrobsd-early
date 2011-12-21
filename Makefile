@@ -81,13 +81,14 @@ ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
                   var/log/messages var/log/wtmp .profile share/re.help
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/ u/
 
-BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1
+BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
                   dev/tty!c2:0 \
                   dev/rsd0!c3:0 dev/rsd1!c3:1 dev/swap!c3:0 \
                   dev/klog!c4:0 \
-                  dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2
+                  dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2 \
+                  dev/rsw0!c6:0
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
                   dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \

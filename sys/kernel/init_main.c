@@ -162,9 +162,9 @@ main()
 	boottime = time;
 
         /* Find a swap file. */
-#ifdef SWAPDEV
+#if 0 //def SWAPDEV
         swapdev = SWAPDEV;
-	swapstart = 0;
+	swapstart = 1;
 	nswap = SWAPSZ;
 #else
         swapdev = rootdev;

@@ -62,8 +62,6 @@ char	*defdrives[] = { "sd0", 0 };
 double	stat1();
 int	hz;
 
-#define	INTS(x)	((x) - (hz) < 0 ? 0 : (x) - (hz))
-
 struct {
 	int	busy;
 	long	time[CPUSTATES];
@@ -323,7 +321,7 @@ loop:
 		if (dr_select[i])
 			stats(i);
         }
-        printf("%5d%4d", INTS(rate.v_intr/nintv), rate.v_syscall/nintv);
+        printf("%5d%4d", rate.v_intr/nintv, rate.v_syscall/nintv);
 	if (pflag)
 		printf("%4d", rate.v_trap / nintv);
         printf("%4d", rate.v_swtch / nintv);
