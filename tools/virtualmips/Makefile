@@ -9,6 +9,9 @@ CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DMAX32
 # Microchip Explorer 16
 #CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DEXPLORER16
 
+# UBW32 with UART console
+#CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DUBW32
+
 CC          = gcc -g
 CFLAGS		+= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
 LIBS		= -lconfuse -lpthread -lelf
@@ -29,7 +32,7 @@ CFLAGS		+= -O
 
 PROG		= pic32
 OBJS		= pic32.o pic32_dev_flash.o pic32_dev_uart.o pic32_dev_intcon.o \
-              pic32_dev_spi.o pic32_dev_gpio.o dev_sdcard.o \
+              pic32_dev_spi.o pic32_dev_gpio.o dev_sdcard.o dev_swap.o \
               pic32_dev_bmxcon.o pic32_dev_dmacon.o pic32_dev_syscon.o \
               pic32_dev_prefetch.o pic32_dev_adc.o
 

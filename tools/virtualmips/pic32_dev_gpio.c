@@ -25,14 +25,22 @@
 #ifdef UBW32
 #define MASKA_CS0       (1 << 9)            // A9: sd0 on SPI1
 #define MASKA_CS1       (1 << 10)           // A10: sd1 on SPI1
+#define MASKC_LDADDR    (1 << 1)            // C1: swap LDADDR
+#define MASKE_WR        (1 << 9)            // E8: swap WR
+#define MASKE_RD        (1 << 8)            // E8: swap RD
+#define MASKE_DATA      (0xff << 0)         // E0-E7: swap DATA
+#define SHIFTE_DATA     0
+
 #elif defined MAXIMITE
 #define MASKE_CS0       (1 << 0)            // E0: sd0 on SPI4
 #define MASKE_CS1                           // reserved
 #define MASKD_PS2C      (1 << 6)            // PS2 keyboard
 #define MASKD_PS2D      (1 << 7)
+
 #elif defined MAX32
 #define MASKD_CS0       (1 << 3)            // D3: sd0 on SPI4
 #define MASKD_CS1       (1 << 4)            // D4: sd1 on SPI4
+
 #elif defined EXPLORER16
 #define MASKB_CS0       (1 << 1)            // B1: sd0 on SPI1
 #define MASKB_CS1       (1 << 2)            // B2: sd1 on SPI1
@@ -243,6 +251,12 @@ lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
             *data = d->lat_c;
         } else {
 lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
+#ifdef UBW32
+            if (d->lat_c & MASKC_LDADDR)  /* Swap disk: LDADDR */
+                dev_swap_ldaddr (cpu, 1);
+            else
+                dev_swap_ldaddr (cpu, 0);
+#endif
         }
         break;
 
@@ -334,6 +348,11 @@ lat_d:      d->lat_d = write_op (d->lat_d, *data, offset);
 
     case PIC32_PORTE & 0x1f0:             /* Port E: read inputs, write outputs */
         if (op_type == MTS_READ) {
+#ifdef UBW32
+            /* Swap disk: DATA */
+            d->port_e &= ~MASKE_DATA;
+            d->port_e |= dev_swap_io (cpu, 0, 0xff);
+#endif
             *data = d->port_e;
         } else {
             goto lat_e;
@@ -358,6 +377,21 @@ lat_e:      d->lat_e = write_op (d->lat_e, *data, offset);
             else
                 dev_sdcard_select (cpu, 1, 1);
 #endif
+#endif
+#ifdef UBW32
+            if (d->lat_e & MASKE_RD)        /* Swap disk: RD */
+                dev_swap_rd (cpu, 1);
+            else
+                dev_swap_rd (cpu, 0);
+
+            if (d->lat_e & MASKE_WR)        /* Swap disk: WR */
+                dev_swap_wr (cpu, 1);
+            else
+                dev_swap_wr (cpu, 0);
+
+            /* Swap disk: DATA */
+            dev_swap_io (cpu, d->lat_e >> SHIFTE_DATA,
+                d->tris_e >> SHIFTE_DATA);
 #endif
         }
         break;

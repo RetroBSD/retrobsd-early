@@ -10,6 +10,7 @@
 #include "types.h"
 #include "pic32mx.h"
 #include "dev_sdcard.h"
+#include "dev_swap.h"
 
 #define DATA_WIDTH          32          /* MIPS32 architecture */
 #define LL                              /* empty - printf format for machine word */
@@ -61,6 +62,8 @@ struct pic32_system {
     char *sdcard0_file_name;        /* image of SD card 0 */
     char *sdcard1_file_name;        /* image of SD card 1 */
     sdcard_t sdcard [2];            /* max number of sdcards */
+
+    swap_t swap;                    /* swap device */
 
     struct vdevice *intdev;         /* interrupt controller */
     unsigned intcon;                /* interrupt control */

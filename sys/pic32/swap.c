@@ -247,7 +247,7 @@ swstrategy (bp)
 #if 0
 	printf ("    %02x", (unsigned char) bp->b_addr[0]);
         int i;
-	for (i=1; i<SECTSIZE && i<bp->b_bcount; i++)
+	for (i=1; i<bp->b_bcount; i++)
                 printf ("-%02x", (unsigned char) bp->b_addr[i]);
 	printf ("\n");
 #endif

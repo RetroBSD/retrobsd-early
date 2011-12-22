@@ -147,6 +147,10 @@ void led_control (int mask, int on);
 #define PORT_CLR(p)     (&p)[5]
 #define PORT_SET(p)     (&p)[6]
 #define PORT_INV(p)     (&p)[7]
+#define LAT_VAL(p)      (&p)[8]
+#define LAT_CLR(p)      (&p)[9]
+#define LAT_SET(p)      (&p)[10]
+#define LAT_INV(p)      (&p)[11]
 
 #endif /* KERNEL */
 
