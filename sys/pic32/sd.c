@@ -123,16 +123,16 @@ spi_select (unit, on)
         switch (unit) {
         case 0:
                 if (on)
-                        PORT_CLR(SD_CS0_PORT) = 1 << SD_CS0_PIN;
+                        LAT_CLR(SD_CS0_PORT) = 1 << SD_CS0_PIN;
                 else
-                        PORT_SET(SD_CS0_PORT) = 1 << SD_CS0_PIN;
+                        LAT_SET(SD_CS0_PORT) = 1 << SD_CS0_PIN;
                 break;
 #ifdef SD_CS1_PORT
         case 1:
                 if (on)
-                        PORT_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
+                        LAT_CLR(SD_CS1_PORT) = 1 << SD_CS1_PIN;
                 else
-                        PORT_SET(SD_CS1_PORT) = 1 << SD_CS1_PIN;
+                        LAT_SET(SD_CS1_PORT) = 1 << SD_CS1_PIN;
                 break;
 #endif
         }
@@ -680,7 +680,7 @@ sdopen (dev, flag, mode)
                 /* On Duinomite Mega board, pin B13 set low
                  * enables a +3.3V power to SD card. */
 		TRIS_CLR(SD_ENA_PORT) = 1 << SD_ENA_PIN;
-		PORT_CLR(SD_ENA_PORT) = 1 << SD_ENA_PIN;
+		LAT_CLR(SD_ENA_PORT) = 1 << SD_ENA_PIN;
 		udelay (1000);
 #endif
 		spi_select (unit, 0);		// initially keep the SD card disabled

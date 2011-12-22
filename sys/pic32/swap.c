@@ -39,8 +39,8 @@ static inline void data_switch_output ()
  */
 static inline void data_set (unsigned char byte)
 {
-        PORT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-        PORT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
+        LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        LAT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
 }
 
 /*
@@ -56,8 +56,8 @@ static inline unsigned char data_get ()
  */
 static inline void lda_pulse ()
 {
-        PORT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-        PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 }
 
 /*
@@ -66,7 +66,7 @@ static inline void lda_pulse ()
  */
 static inline void rd_high ()
 {
-        PORT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
+        LAT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
 
         /* TODO: This needs to be adusted
          * using oscilloscope on a real hardware. */
@@ -83,7 +83,7 @@ static inline void rd_high ()
  */
 static inline void rd_low ()
 {
-        PORT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
+        LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
 }
 
 /*
@@ -92,7 +92,7 @@ static inline void rd_low ()
  */
 static inline void wr_pulse ()
 {
-        PORT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
+        LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
 
         /* TODO: This needs to be adusted
          * using oscilloscope on a real hardware. */
@@ -105,7 +105,7 @@ static inline void wr_pulse ()
 #if BUS_KHZ > 75000
         asm volatile ("nop");
 #endif
-        PORT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
+        LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 }
 
 /*
@@ -192,9 +192,9 @@ swopen (dev, flag, mode)
                 data_switch_input();
 
                 /* Set rd, wr and ldaddr as output pins. */
-		PORT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
-		PORT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
-		PORT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+		LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
+		LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
+		LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 		TRIS_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
 		TRIS_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 		TRIS_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
