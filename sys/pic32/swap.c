@@ -7,8 +7,9 @@
  *  wr        - write a byte data[7:0] to memory, increment address
  *  ldaddr    - write address from data[7:0] in 3 steps: low-middle-high
  *
- * Signals rd, wr, ldadr are low idle.
- * To activate, you need to pulse it low-high-low.
+ * Signals rd, wr, ldadr are active LOW and idle HIGH.
+ * To activate, you need to pulse it high-low-high.
+ * CHANGE: IM 23.12.2011 - signals active LOW
  */
 #include "param.h"
 #include "systm.h"
@@ -25,6 +26,7 @@ static inline void data_set (unsigned char byte)
 {
         LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
         LAT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
+	asm volatile ("nop");
 }
 
 /*
@@ -34,6 +36,7 @@ static inline void data_switch_input ()
 {
         LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;    // !!! PIC32 errata
         TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+	asm volatile ("nop");
 }
 
 /*
@@ -42,6 +45,7 @@ static inline void data_switch_input ()
 static inline void data_switch_output ()
 {
         TRIS_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+	asm volatile ("nop");
 }
 
 /*
@@ -49,31 +53,44 @@ static inline void data_switch_output ()
  */
 static inline unsigned char data_get ()
 {
+	asm volatile ("nop");
         return PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
 }
 
+
 /*
- * Send LDA pulse: low-high-low.
+ * Send LDA pulse: high-low.
  */
-static inline void lda_pulse ()
+static inline void lda_low ()
 {
-        LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-        asm volatile ("nop");
-        LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+	LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+	asm volatile ("nop");
 }
 
 /*
- * Set RD high.
- * Minimal time between rising edge of RD to data valid is 30ns.
+ * Send LDA pulse: low-high.
  */
-static inline void rd_high ()
+static inline void lda_high ()
 {
-        LAT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
+	asm volatile ("nop");
+	LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+	asm volatile ("nop");
+}
+
+
+/*
+ * Set RD low.
+ * Minimal time between falling edge of RD to data valid is 30ns.
+ */
+static inline void rd_low ()
+{
+        LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
 
         /* TODO: This needs to be adusted
          * using oscilloscope on a real hardware. */
 #if BUS_KHZ > 33000
         asm volatile ("nop");
+ 	asm volatile ("nop");
 #endif
 #if BUS_KHZ > 66000
         asm volatile ("nop");
@@ -81,25 +98,26 @@ static inline void rd_high ()
 }
 
 /*
- * Set RD low.
+ * Set RD high.
  */
-static inline void rd_low ()
+static inline void rd_high ()
 {
-        LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
+        LAT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
 }
 
 /*
- * Send WR pulse: low-high-low.
+ * Send WR pulse: high-low-high.
  * It shall be minimally 40ns.
  */
 static inline void wr_pulse ()
 {
-        LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
+        LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 
         /* TODO: This needs to be adusted
          * using oscilloscope on a real hardware. */
 #if BUS_KHZ > 25000
         asm volatile ("nop");
+	asm volatile ("nop");
 #endif
 #if BUS_KHZ > 50000
         asm volatile ("nop");
@@ -107,7 +125,7 @@ static inline void wr_pulse ()
 #if BUS_KHZ > 75000
         asm volatile ("nop");
 #endif
-        LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
+        LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
 }
 
 /*
@@ -118,17 +136,27 @@ static void
 dev_load_address (addr)
         unsigned addr;
 {
-        data_switch_output();           /* switch data bus to output */
+	/* Toggle rd: make one dummy read - this clears cpld addr pointer */
+        rd_low ();
+	rd_high ();
 
+	data_switch_output();           /* switch data bus to output */
+
+	lda_low();
         data_set (addr);                /* send lower 8 bits */
-        lda_pulse();                    /* pulse ldaddr */
+        lda_high();                     /* pulse ldaddr */
 
+	lda_low();
         data_set (addr >> 8);           /* send middle 8 bits */
-        lda_pulse();                    /* pulse ldaddr */
+        lda_high();                    /* pulse ldaddr */
 
+	lda_low();
         data_set (addr >> 16);          /* send high 8 bits */
-        lda_pulse();                    /* pulse ldaddr */
+        lda_high();                    /* pulse ldaddr */
+
+	data_switch_input();
 }
+
 
 /*
  * Read a block of data.
@@ -143,17 +171,17 @@ dev_read (blockno, data, nbytes)
 	printf ("sw0: read block %u, length %u bytes, addr %p\n",
 		blockno, nbytes, data);
 #endif
-        dev_load_address (blockno * DEV_BSIZE);
+	dev_load_address (blockno * DEV_BSIZE);
 
         data_switch_input();            /* switch data bus to input */
 
 	/* Read data. */
         for (i=0; i<nbytes; i++) {
-                rd_high();              /* set rd high */
+                rd_low();              /* set rd LOW */
 
                 *data++ = data_get();   /* read a byte of data */
 
-                rd_low();               /* set rd low */
+                rd_high();               /* set rd HIGH */
         }
 }
 
@@ -170,7 +198,9 @@ dev_write (blockno, data, nbytes)
 	printf ("sw0: write block %u, length %u bytes, addr %p\n",
 		blockno, nbytes, data);
 #endif
-        dev_load_address (blockno * DEV_BSIZE);
+	dev_load_address (blockno * DEV_BSIZE);
+
+	data_switch_output();           /* switch data bus to output */
 
         for (i=0; i<nbytes; i++) {
                 data_set (*data);       /* send a byte of data */
@@ -193,17 +223,17 @@ swopen (dev, flag, mode)
                  * Switch data bus to input. */
                 data_switch_input();
 
-                /* Set rd, wr and ldaddr as output pins. */
-		LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
-		LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
-		LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+                /* Set idle HIGH rd, wr and ldaddr as output pins. */
+		LAT_SET(SW_RD_PORT) = 1 << SW_RD_PIN;
+		LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
+		LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 		TRIS_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
 		TRIS_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 		TRIS_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 
                 /* Toggle rd: make one dummy read. */
-                rd_high();              /* set rd high */
-                rd_low();               /* set rd low */
+                rd_low();              /* set rd low */
+                rd_high();               /* set rd high */
 #ifdef UCB_METER
                 /* Allocate statistics slot */
                 dk_alloc (&sw_dkn, 1, "sw");
@@ -237,15 +267,6 @@ swstrategy (bp)
         } else {
                 dev_write (bp->b_blkno, bp->b_addr, bp->b_bcount);
         }
-#if 0
-	printf ("    %02x-%02x-%02x-%02x-...-%02x-%02x-%02x-%02x\n",
-		(unsigned char) bp->b_addr[0], (unsigned char) bp->b_addr[1],
-                (unsigned char) bp->b_addr[2], (unsigned char) bp->b_addr[3],
-                (unsigned char) bp->b_addr[bp->b_bcount-4],
-                (unsigned char) bp->b_addr[bp->b_bcount-3],
-                (unsigned char) bp->b_addr[bp->b_bcount-2],
-                (unsigned char) bp->b_addr[bp->b_bcount-1]);
-#endif
 #if 0
 	printf ("    %02x", (unsigned char) bp->b_addr[0]);
         int i;
