@@ -7,66 +7,20 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define MEM_SIZE (2*1024*1024)
+#define BLOCKSZ     1024
 
 char *progname;
 int verbose;
 int fd;
 
-void byte_write (unsigned addr, unsigned char val)
-{
-    int ret;
-
-    if (verbose)
-        printf ("Write byte %02X to address %06X.\n", val, addr);
-
-    ret = lseek (fd, addr, 0);
-    if (ret != addr) {
-        printf ("Seek error at %06X: result %06X, expected %06X.\n",
-            addr, ret, addr);
-        exit (-1);
-    }
-    ret = write (fd, &val, 1);
-    if (ret != 1) {
-        printf ("Write error at %06X: %s\n", addr, strerror(ret));
-        exit (-1);
-    }
-}
-
-void byte_check (unsigned addr, unsigned char val)
-{
-    unsigned char rval;
-    int ret;
-
-    if (verbose)
-        printf ("Read byte from address %06X.\n", addr);
-
-    ret = lseek (fd, addr, 0);
-    if (ret != addr) {
-        printf ("Seek error: result %06X, expected %06X.\n", ret, addr);
-        exit (-1);
-    }
-    ret = read (fd, &rval, 1);
-    if (ret != 1) {
-        printf ("Read error at %06X: %s\n", addr, strerror(ret));
-        exit (-1);
-    }
-    if (verbose)
-        printf ("    Got %02X.\n", rval);
-
-    if (rval != val)
-        printf ("Data error: address %06X written %02X read %02X.\n",
-            addr, val, rval);
-}
-
-void block_write (unsigned addr, unsigned char *data, unsigned nbytes)
+void block_write (unsigned addr, unsigned char *data)
 {
     int ret, i;
 
     if (verbose) {
         printf ("Write block to address %06X.\n", addr);
 	printf ("    %02x", data[0]);
-	for (i=1; i<nbytes; i++)
+	for (i=1; i<BLOCKSZ; i++)
             printf ("-%02x", data[i]);
 	printf ("\n");
     }
@@ -76,14 +30,14 @@ void block_write (unsigned addr, unsigned char *data, unsigned nbytes)
             addr, ret, addr);
         exit (-1);
     }
-    ret = write (fd, data, nbytes);
-    if (ret != nbytes) {
+    ret = write (fd, data, BLOCKSZ);
+    if (ret != BLOCKSZ) {
         printf ("Write error at %06X: %s\n", addr, strerror(ret));
         exit (-1);
     }
 }
 
-void block_read (unsigned addr, unsigned char *data, unsigned nbytes)
+void block_read (unsigned addr, unsigned char *data)
 {
     int ret, i;
 
@@ -95,100 +49,155 @@ void block_read (unsigned addr, unsigned char *data, unsigned nbytes)
         printf ("Seek error: result %06X, expected %06X.\n", ret, addr);
         exit (-1);
     }
-    ret = read (fd, data, nbytes);
-    if (ret != nbytes) {
+    ret = read (fd, data, BLOCKSZ);
+    if (ret != BLOCKSZ) {
         printf ("Read error at %06X: %s\n", addr, strerror(ret));
         exit (-1);
     }
     if (verbose) {
 	printf ("    %02x", data[0]);
-	for (i=1; i<nbytes; i++)
+	for (i=1; i<BLOCKSZ; i++)
             printf ("-%02x", data[i]);
 	printf ("\n");
     }
 }
 
-void test_address (unsigned address)
+/*
+ * Fill an array with pattern data.
+ * When alt=~0, use counter starting from given value.
+ * Otherwise, use pattern-alt-pattern-alt ans so on.
+ */
+void data_fill (unsigned char *data, unsigned pattern, unsigned alt)
 {
     int i;
 
-    printf ("Testing address %06X.\n", address);
-
-    for (i=0; i<8; ++i) {
-        byte_write (address, 0x55);
-        byte_check (address, 0x55);
-
-        byte_write (address, 0xAA);
-        byte_check (address, 0xAA);
+    for (i=0; i<BLOCKSZ; ++i) {
+        if (alt == ~0)
+            data[i] = pattern++;
+        else
+            data[i] = (i & 1) ? alt : pattern;
     }
-    printf ("Done.\n");
 }
 
-void test_block (unsigned address)
+void data_check (unsigned char *data, unsigned char *rdata)
 {
-    unsigned char data [256];
-    unsigned char rdata [256];
     int i;
 
-    printf ("Testing block at address %06X.\n", address);
-    for (i=0; i<sizeof(data); ++i)
-        data[i] = i;
-
-    block_write (address, data, sizeof(data));
-    block_read (address, rdata, sizeof(rdata));
-
-    for (i=0; i<sizeof(data); ++i) {
+    for (i=0; i<BLOCKSZ; ++i) {
         if (rdata[i] != data[i])
             printf ("Data error: offset %d written %02X read %02X.\n",
                 i, data[i], rdata[i]);
     }
+}
+
+void test_alternate (unsigned blocknum)
+{
+    unsigned char data [BLOCKSZ];
+    unsigned char rdata [BLOCKSZ];
+
+    printf ("Testing block %u at address %06X.\n",
+        blocknum, blocknum * BLOCKSZ);
+
+    data_fill (data, 0x55, 0xAA);
+    block_write (blocknum, data);
+    block_read (blocknum, rdata);
+    data_check (data, rdata);
+
+    data_fill (data, 0xAA, 0x55);
+    block_write (blocknum, data);
+    block_read (blocknum, rdata);
+    data_check (data, rdata);
+
     printf ("Done.\n");
 }
 
-void test_address_bus ()
+void test_counter (unsigned blocknum)
 {
-    printf ("Testing address signals.\n");
-    byte_write (0x000000, 0x55);
-    byte_write (0x000004, 0x11);
-    byte_write (0x000008, 0x12);
-    byte_write (0x000010, 0x14);
-    byte_write (0x000020, 0x18);
-    byte_write (0x000040, 0x21);
-    byte_write (0x000080, 0x22);
-    byte_write (0x000100, 0x24);
-    byte_write (0x000200, 0x28);
-    byte_write (0x000400, 0x31);
-    byte_write (0x000800, 0x32);
-    byte_write (0x001000, 0x34);
-    byte_write (0x002000, 0x38);
-    byte_write (0x004000, 0x41);
-    byte_write (0x008000, 0x42);
-    byte_write (0x010000, 0x44);
-    byte_write (0x020000, 0x48);
-    byte_write (0x040000, 0x51);
-    byte_write (0x080000, 0x52);
-    byte_write (0x100000, 0x54);
+    unsigned char data [BLOCKSZ];
+    unsigned char rdata [BLOCKSZ];
 
-    byte_check (0x000000, 0x55);
-    byte_check (0x000004, 0x11);
-    byte_check (0x000008, 0x12);
-    byte_check (0x000010, 0x14);
-    byte_check (0x000020, 0x18);
-    byte_check (0x000040, 0x21);
-    byte_check (0x000080, 0x22);
-    byte_check (0x000100, 0x24);
-    byte_check (0x000200, 0x28);
-    byte_check (0x000400, 0x31);
-    byte_check (0x000800, 0x32);
-    byte_check (0x001000, 0x34);
-    byte_check (0x002000, 0x38);
-    byte_check (0x004000, 0x41);
-    byte_check (0x008000, 0x42);
-    byte_check (0x010000, 0x44);
-    byte_check (0x020000, 0x48);
-    byte_check (0x040000, 0x51);
-    byte_check (0x080000, 0x52);
-    byte_check (0x100000, 0x54);
+    printf ("Testing block %u at address %06X.\n",
+        blocknum, blocknum * BLOCKSZ);
+
+    data_fill (data, 0, ~0);
+    block_write (blocknum, data);
+    block_read (blocknum, rdata);
+    data_check (data, rdata);
+
+    printf ("Done.\n");
+}
+
+void test_blocks (unsigned blocknum)
+{
+    unsigned char data [BLOCKSZ];
+    unsigned char rdata [BLOCKSZ];
+    unsigned bn;
+    int i;
+
+    /* Pass 1: write data. */
+    for (i=0; ; i++) {
+        /* Use block numbers 0, 1, 2, 4, 8, 16... blocknum (inclusive). */
+        if (i == 0)
+            bn = 0;
+        else
+            bn = 1 << (i - 1);
+        if (bn > blocknum)
+            bn = blocknum;
+
+        printf ("Testing block %u at address %06X.\n",
+            bn, bn * BLOCKSZ);
+
+        /* Use counter pattern, different for every next block. */
+        data_fill (data, i, ~0);
+        block_write (bn, data);
+
+        if (bn == blocknum)
+            break;
+    }
+
+    /* Pass 2: read and check. */
+    for (i=0; ; i++) {
+        /* Use block numbers 0, 1, 2, 4, 8, 16... blocknum (inclusive). */
+        if (i == 0)
+            bn = 0;
+        else
+            bn = 1 << (i - 1);
+        if (bn > blocknum)
+            bn = blocknum;
+
+        printf ("Testing block %u at address %06X.\n",
+            bn, bn * BLOCKSZ);
+
+        /* Use counter pattern, different for every next block. */
+        data_fill (data, i, ~0);
+        block_read (bn, rdata);
+        data_check (data, rdata);
+
+        if (bn == blocknum)
+            break;
+    }
+    printf ("Done.\n");
+}
+
+void fill_blocks (unsigned blocknum, unsigned char pattern)
+{
+    unsigned char data [BLOCKSZ];
+    unsigned char rdata [BLOCKSZ];
+    unsigned bn;
+
+    for (bn=0; bn<=blocknum; bn++) {
+        printf ("Testing block %u at address %06X.\n",
+            bn, bn * BLOCKSZ);
+
+        /* Use counter pattern, different for every next block. */
+        data_fill (data, pattern, pattern);
+        block_write (bn, data);
+        block_read (bn, rdata);
+        data_check (data, rdata);
+
+        if (bn == blocknum)
+            break;
+    }
     printf ("Done.\n");
 }
 
@@ -196,37 +205,38 @@ void usage ()
 {
     fprintf (stderr, "Disk testing utility.\n");
     fprintf (stderr, "Usage:\n");
-    fprintf (stderr, "    %s [options] device\n", progname);
+    fprintf (stderr, "    %s [options] device [blocknum]\n", progname);
     fprintf (stderr, "Options:\n");
-    fprintf (stderr, "    -a address      -- test a byte at address,\n");
-    fprintf (stderr, "                       write/read 55-AA-55-AA-...\n");
-    fprintf (stderr, "    -c address      -- test 256 bytes at address,\n");
-    fprintf (stderr, "                       write/read 0-1-2-..-FF\n");
-    fprintf (stderr, "    -b              -- test addresses 1, 2, 4, 8... 0x100000\n");
+    fprintf (stderr, "    -a              -- test a block with alternate pattern 55/AA\n");
+    fprintf (stderr, "    -c              -- test a block with counter pattern 0-1-2...FF\n");
+    fprintf (stderr, "    -b              -- test blocks 0-1-2-4-8...blocknum\n");
+    fprintf (stderr, "    -f pattern      -- fill blocks 0...blocknum with given byte value\n");
     fprintf (stderr, "    -v              -- verbose mode\n");
     exit (-1);
 }
 
 int main (int argc, char **argv)
 {
-    int aflag = 0, bflag = 0, cflag = 0;
-    unsigned address = 0;
+    int aflag = 0, bflag = 0, cflag = 0, fflag = 0;
+    unsigned blocknum = 0, pattern = 0;
 
     progname = *argv;
     for (;;) {
-        switch (getopt (argc, argv, "a:bc:v")) {
+        switch (getopt (argc, argv, "abcf:v")) {
         case EOF:
             break;
         case 'a':
             aflag = 1;
-            address = strtoul (optarg, 0, 0) % MEM_SIZE;
+            continue;
+        case 'c':
+            cflag = 1;
             continue;
         case 'b':
             bflag = 1;
             continue;
-        case 'c':
-            cflag = 1;
-            address = strtoul (optarg, 0, 0) % MEM_SIZE;
+        case 'f':
+            fflag = 1;
+            pattern = strtoul (optarg, 0, 0);
             continue;
         case 'v':
             verbose = 1;
@@ -238,7 +248,7 @@ int main (int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
-    if (argc != 1 || aflag + bflag + cflag == 0)
+    if (argc < 1 || argc > 2 || aflag + bflag + cflag == 0)
         usage ();
 
     fd = open (argv[0], O_RDWR);
@@ -246,15 +256,20 @@ int main (int argc, char **argv)
         perror (argv[0]);
         return -1;
     }
+    if (argc > 1)
+        blocknum = strtoul (argv[1], 0, 0);
 
     if (aflag)
-        test_address (address);
-
-    if (bflag)
-        test_address_bus();
+        test_alternate (blocknum);
 
     if (cflag)
-        test_block (address);
+        test_counter (blocknum);
+
+    if (bflag)
+        test_blocks (blocknum);
+
+    if (fflag)
+        fill_blocks (blocknum, pattern);
 
     return 0;
 }
