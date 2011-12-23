@@ -13,8 +13,9 @@ char *progname;
 int verbose;
 int fd;
 
-void block_write (unsigned addr, unsigned char *data)
+void block_write (unsigned bn, unsigned char *data)
 {
+    unsigned addr = bn * BLOCKSZ;
     int ret, i;
 
     if (verbose) {
@@ -37,8 +38,9 @@ void block_write (unsigned addr, unsigned char *data)
     }
 }
 
-void block_read (unsigned addr, unsigned char *data)
+void block_read (unsigned bn, unsigned char *data)
 {
+    unsigned addr = bn * BLOCKSZ;
     int ret, i;
 
     if (verbose)
@@ -144,7 +146,7 @@ void test_blocks (unsigned blocknum)
         if (bn > blocknum)
             bn = blocknum;
 
-        printf ("Testing block %u at address %06X.\n",
+        printf ("Writing block %u at address %06X.\n",
             bn, bn * BLOCKSZ);
 
         /* Use counter pattern, different for every next block. */
@@ -165,7 +167,7 @@ void test_blocks (unsigned blocknum)
         if (bn > blocknum)
             bn = blocknum;
 
-        printf ("Testing block %u at address %06X.\n",
+        printf ("Reading block %u at address %06X.\n",
             bn, bn * BLOCKSZ);
 
         /* Use counter pattern, different for every next block. */
@@ -185,9 +187,9 @@ void fill_blocks (unsigned blocknum, unsigned char pattern)
     unsigned char rdata [BLOCKSZ];
     unsigned bn;
 
+    printf ("Testing blocks 0-%u with byte value %02X.\n",
+        blocknum, pattern);
     for (bn=0; bn<=blocknum; bn++) {
-        printf ("Testing block %u at address %06X.\n",
-            bn, bn * BLOCKSZ);
 
         /* Use counter pattern, different for every next block. */
         data_fill (data, pattern, pattern);
@@ -248,7 +250,7 @@ int main (int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
-    if (argc < 1 || argc > 2 || aflag + bflag + cflag == 0)
+    if (argc < 1 || argc > 2 || aflag + bflag + cflag + fflag == 0)
         usage ();
 
     fd = open (argv[0], O_RDWR);
