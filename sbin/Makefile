@@ -4,8 +4,8 @@
 TOPSRC		= $(shell cd ..; pwd)
 include $(TOPSRC)/target.mk
 
-SUBDIR		= chown-src chroot-src fsck-src getty-src init-src mkfs-src \
-                  mknod-src mkpasswd-src mount-src pstat-src \
+SUBDIR		= chown-src chroot-src disktool-src fsck-src getty-src init-src \
+                  mkfs-src mknod-src mkpasswd-src mount-src pstat-src \
                   reboot-src shutdown-src umount-src update-src vipw-src
 
 all:		${SUBDIR}

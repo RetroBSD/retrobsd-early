@@ -19,10 +19,20 @@
 int sw_dkn = -1;                /* Statistics slot number */
 
 /*
+ * Set data output value.
+ */
+static inline void data_set (unsigned char byte)
+{
+        LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
+        LAT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
+}
+
+/*
  * Switch data bus to input.
  */
 static inline void data_switch_input ()
 {
+        LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;    // !!! PIC32 errata
         TRIS_SET(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
 }
 
@@ -32,15 +42,6 @@ static inline void data_switch_input ()
 static inline void data_switch_output ()
 {
         TRIS_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-}
-
-/*
- * Set data output value.
- */
-static inline void data_set (unsigned char byte)
-{
-        LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
-        LAT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
 }
 
 /*
@@ -57,6 +58,7 @@ static inline unsigned char data_get ()
 static inline void lda_pulse ()
 {
         LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+        asm volatile ("nop");
         LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
 }
 
