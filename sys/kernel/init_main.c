@@ -162,14 +162,17 @@ main()
 	boottime = time;
 
         /* Find a swap file. */
-#if 0 //def SWAPDEV
+#ifdef SWAPDEV
         swapdev = SWAPDEV;
 	swapstart = 1;
 	nswap = SWAPSZ;
+	printf ("swap dev  = (%d,%d)\n", major(swapdev), minor(swapdev));
+        (*bdevsw[major(swapdev)].d_open)(swapdev, FREAD|FWRITE, S_IFBLK);
 #else
         swapdev = rootdev;
 	swapstart = fs->fs_isize;
 	nswap = fs->fs_swapsz;
+	printf ("swap dev  = root, offset %u\n", swapstart);
 #endif
 	printf ("swap size = %u kbytes\n", nswap * DEV_BSIZE / 1024);
 	if (nswap <= 0)
