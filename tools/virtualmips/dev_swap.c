@@ -28,8 +28,6 @@
 #define TRACE(...)  /*empty*/
 #endif
 
-#define ADDR_MASK   (SWAP_BYTES - 1)
-
 /*
  * Reset swap.
  */
@@ -59,13 +57,14 @@ void dev_swap_rd (cpu_mips_t *cpu, int on)
     swap_t *d = &pic32->swap;
 
     if (on && ! d->rd) {
-        TRACE ("swap: RD on\n");
         d->rd = 1;
+        d->offset %= SWAP_BYTES;
         d->data = d->buf [d->offset];
+        TRACE ("swap: RD on, send %02X\n", d->data);
     } else if (! on && d->rd) {
-        TRACE ("swap: RD off\n");
         d->rd = 0;
-        d->offset = (d->offset + 1) & ADDR_MASK;
+        d->offset++;
+        TRACE ("swap: RD off, offset = %06X\n", d->offset);
     }
 }
 
@@ -75,13 +74,14 @@ void dev_swap_wr (cpu_mips_t *cpu, int on)
     swap_t *d = &pic32->swap;
 
     if (on && ! d->wr) {
-        TRACE ("swap: WR on\n");
         d->wr = 1;
+        d->offset %= SWAP_BYTES;
         d->buf [d->offset] = d->data;
+        TRACE ("swap: WR on, data %02X\n", d->data);
     } else if (! on && d->wr) {
-        TRACE ("swap: WR off\n");
         d->wr = 0;
-        d->offset = (d->offset + 1) & ADDR_MASK;
+        d->offset++;
+        TRACE ("swap: WR off, offset = %06X\n", d->offset);
     }
 }
 
@@ -91,10 +91,10 @@ void dev_swap_ldaddr (cpu_mips_t *cpu, int on)
     swap_t *d = &pic32->swap;
 
     if (on && ! d->ldaddr) {
-        TRACE ("swap: LDADDR on\n");
         d->ldaddr = 1;
         d->offset >>= 8;
         d->offset |= d->data << 16;
+        TRACE ("swap: LDADDR on, offset = %06X\n", d->offset);
     } else if (! on && d->ldaddr) {
         TRACE ("swap: LDADDR off\n");
         d->ldaddr = 0;
@@ -112,10 +112,11 @@ unsigned dev_swap_io (cpu_mips_t *cpu, unsigned char newval, unsigned char rmask
 
     if (rmask == 0) {
         /* Write mode. */
-        TRACE ("swap: send %02x\n", newval);
+        //TRACE ("swap: send %02x\n", newval);
         d->data = newval;
-    } else
-        TRACE ("swap: receive %02x\n", d->data);
+    } else {
+        //TRACE ("swap: receive %02x\n", d->data);
+    }
 
     /* Read mode. */
     return d->data;

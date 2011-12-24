@@ -253,9 +253,9 @@ lat_b:      d->lat_b = write_op (d->lat_b, *data, offset);
 lat_c:      d->lat_c = write_op (d->lat_c, *data, offset);
 #ifdef UBW32
             if (d->lat_c & MASKC_LDADDR)  /* Swap disk: LDADDR */
-                dev_swap_ldaddr (cpu, 1);
-            else
                 dev_swap_ldaddr (cpu, 0);
+            else
+                dev_swap_ldaddr (cpu, 1);
 #endif
         }
         break;
@@ -380,14 +380,14 @@ lat_e:      d->lat_e = write_op (d->lat_e, *data, offset);
 #endif
 #ifdef UBW32
             if (d->lat_e & MASKE_RD)        /* Swap disk: RD */
-                dev_swap_rd (cpu, 1);
-            else
                 dev_swap_rd (cpu, 0);
+            else
+                dev_swap_rd (cpu, 1);
 
             if (d->lat_e & MASKE_WR)        /* Swap disk: WR */
-                dev_swap_wr (cpu, 1);
-            else
                 dev_swap_wr (cpu, 0);
+            else
+                dev_swap_wr (cpu, 1);
 
             /* Swap disk: DATA */
             dev_swap_io (cpu, d->lat_e >> SHIFTE_DATA,
