@@ -10,6 +10,10 @@
  * Signals rd, wr, ldadr are active LOW and idle HIGH.
  * To activate, you need to pulse it high-low-high.
  * CHANGE: IM 23.12.2011 - signals active LOW
+ * CHANGE: IM 24.12.2011 - finetuning for 55ns SRAM and 7ns CPLD
+ *                       - some nops removed
+ *                       - nops marked 55ns are required !!!
+ *                       - MAX performance settings for 55ns SRAM
  */
 #include "param.h"
 #include "systm.h"
@@ -26,7 +30,6 @@ static inline void data_set (unsigned char byte)
 {
         LAT_CLR(SW_DATA_PORT) = 0xff << SW_DATA_PIN;
         LAT_SET(SW_DATA_PORT) = byte << SW_DATA_PIN;
-	asm volatile ("nop");
 }
 
 /*
@@ -53,30 +56,20 @@ static inline void data_switch_output ()
  */
 static inline unsigned char data_get ()
 {
-	asm volatile ("nop");
+	asm volatile ("nop");  // 55ns
         return PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
-}
-
-
-/*
- * Send LDA pulse: high-low.
- */
-static inline void lda_low ()
-{
-	LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-	asm volatile ("nop");
 }
 
 /*
  * Send LDA pulse: low-high.
  */
-static inline void lda_high ()
+static inline void lda_pulse ()
 {
+	LAT_CLR(SW_LDA_PORT) = 1 << SW_LDA_PIN;
+	asm volatile ("nop");
 	asm volatile ("nop");
 	LAT_SET(SW_LDA_PORT) = 1 << SW_LDA_PIN;
-	asm volatile ("nop");
 }
-
 
 /*
  * Set RD low.
@@ -86,14 +79,12 @@ static inline void rd_low ()
 {
         LAT_CLR(SW_RD_PORT) = 1 << SW_RD_PIN;
 
-        /* TODO: This needs to be adusted
-         * using oscilloscope on a real hardware. */
 #if BUS_KHZ > 33000
-        asm volatile ("nop");
- 	asm volatile ("nop");
+        asm volatile ("nop"); // 55ns
+ 	asm volatile ("nop"); // 55ns
 #endif
 #if BUS_KHZ > 66000
-        asm volatile ("nop");
+        asm volatile ("nop"); // 55ns
 #endif
 }
 
@@ -113,17 +104,11 @@ static inline void wr_pulse ()
 {
         LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 
-        /* TODO: This needs to be adusted
-         * using oscilloscope on a real hardware. */
-#if BUS_KHZ > 25000
-        asm volatile ("nop");
-	asm volatile ("nop");
-#endif
-#if BUS_KHZ > 50000
-        asm volatile ("nop");
+#if BUS_KHZ > 35000
+        asm volatile ("nop");  // 55ns
 #endif
 #if BUS_KHZ > 75000
-        asm volatile ("nop");
+        asm volatile ("nop");  // 55ns
 #endif
         LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
 }
@@ -142,17 +127,14 @@ dev_load_address (addr)
 
 	data_switch_output();           /* switch data bus to output */
 
-	lda_low();
         data_set (addr);                /* send lower 8 bits */
-        lda_high();                     /* pulse ldaddr */
+        lda_pulse();                    /* pulse ldaddr */
 
-	lda_low();
         data_set (addr >> 8);           /* send middle 8 bits */
-        lda_high();                    /* pulse ldaddr */
+        lda_pulse();                    /* pulse ldaddr */
 
-	lda_low();
         data_set (addr >> 16);          /* send high 8 bits */
-        lda_high();                    /* pulse ldaddr */
+        lda_pulse();                    /* pulse ldaddr */
 
 	data_switch_input();
 }
@@ -233,7 +215,7 @@ swopen (dev, flag, mode)
 
                 /* Toggle rd: make one dummy read. */
                 rd_low();              /* set rd low */
-                rd_high();               /* set rd high */
+                rd_high();             /* set rd high */
 #ifdef UCB_METER
                 /* Allocate statistics slot */
                 dk_alloc (&sw_dkn, 1, "sw");
