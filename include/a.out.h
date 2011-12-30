@@ -52,29 +52,28 @@
 #define	N_DRELOFF(ex) 		(N_TRELOFF(ex) + (ex).a_text /*trsize*/)
 
 /* Symbol table offset. */
-#define	N_SYMOFF(ex) 		(N_DRELOFF(ex) + (ex).a_data /*drsize*/)
-
-/* String table offset. */
-#define	N_STROFF(ex)		(N_SYMOFF(ex) + (ex).a_syms)
+#define	N_SYMOFF(ex) 		((((ex).a_flag & 1) ? N_DATOFF(ex) : \
+                                                      N_DRELOFF(ex)) + \
+                                 (ex).a_data /*drsize*/)
 
 #define	_AOUT_INCLUDE_
 #include <nlist.h>
 
 /* Relocations */
-#define RSMASK  070             /* bitmask for segments */
+#define RSMASK  0x70            /* bitmask for segments */
 #define RABS    0
-#define RTEXT   020
-#define RDATA   030
-#define RBSS    040
-#define RSTRNG  060             /* for assembler */
-#define REXT    070             /* externals and bitmask */
+#define RTEXT   0x20
+#define RDATA   0x30
+#define RBSS    0x40
+#define RSTRNG  0x60            /* for assembler */
+#define REXT    0x70            /* externals and bitmask */
 
-#define RFMASK  07              /* bitmask for format */
-#define RHIGH16 02
-#define RWORD16 03
-#define RWORD26 04
+#define RFMASK  0x07            /* bitmask for format */
+#define RHIGH16 0x02            /* upper part of byte address: bits 31:16 */
+#define RWORD16 0x03            /* word address: bits 17:2 */
+#define RWORD26 0x04            /* word address: bits 27:2 */
 
-#define RINDEX(h) ((h)>>6)
-#define RSETINDEX(h) ((h)<<6)
+#define RINDEX(h)       ((h) >> 8)
+#define RSETINDEX(h)    ((h) << 8)
 
 #endif	/* !_AOUT_H_ */

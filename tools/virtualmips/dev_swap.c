@@ -60,7 +60,7 @@ void dev_swap_rd (cpu_mips_t *cpu, int on)
         d->rd = 1;
         d->offset %= SWAP_BYTES;
         d->data = d->buf [d->offset];
-        TRACE ("swap: RD on, send %02X\n", d->data);
+        TRACE ("swap: RD on, %06X -> %02X\n", d->offset, d->data);
     } else if (! on && d->rd) {
         d->rd = 0;
         d->offset++;
@@ -77,7 +77,7 @@ void dev_swap_wr (cpu_mips_t *cpu, int on)
         d->wr = 1;
         d->offset %= SWAP_BYTES;
         d->buf [d->offset] = d->data;
-        TRACE ("swap: WR on, data %02X\n", d->data);
+        TRACE ("swap: WR on, %06X := %02X\n", d->offset, d->data);
     } else if (! on && d->wr) {
         d->wr = 0;
         d->offset++;

@@ -10,12 +10,13 @@
  * This file is part of the virtualmips distribution.
  * See LICENSE file for terms of the license.
  */
+//#define NEED_MIPS16
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "mips-opcode.h"
 #include "mips-opc.c"
-#include "mips16-opc.c"
 
 /* FIXME: These are needed to figure out if the code is mips16 or
    not. The low bit of the address is often a good indicator.  No
@@ -30,13 +31,6 @@ struct mips_cp0sel_name {
     unsigned int sel;
     const char *const name;
 };
-
-/* The mips16 registers.  */
-static const unsigned int mips16_to_32_reg_map[] = {
-    16, 17, 2, 3, 4, 5, 6, 7
-};
-
-#define mips16_reg_names(rn)	mips_gpr_names[mips16_to_32_reg_map[rn]]
 
 static const char *const mips_gpr_names[32] = {
     "zero", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -151,7 +145,6 @@ static const char *const mips_hwr_names[32] = {
  */
 static int no_aliases = 0;
 
-static int big_endian;
 static int branch_delay_insns;
 static int data_size;
 static unsigned target;
@@ -201,12 +194,6 @@ print_address (unsigned address, FILE *stream)
         fprintf (stream, "%d", address);
     else
         fprintf (stream, "0x%x", address);
-}
-
-static void
-memory_error (int status, unsigned memaddr, FILE *stream)
-{
-    fprintf (stream, "Error reading memory at 0x%08x: %s", memaddr, strerror (status));
 }
 
 static const struct mips_cp0sel_name *
@@ -821,6 +808,18 @@ print_insn_mips (unsigned memaddr,
     return INSNLEN;
 }
 
+#ifdef NEED_MIPS16
+
+#include "mips16-opc.c"
+
+/* The mips16 registers.  */
+static const unsigned int mips16_to_32_reg_map[] = {
+    16, 17, 2, 3, 4, 5, 6, 7
+};
+#define mips16_reg_names(rn)	mips_gpr_names[mips16_to_32_reg_map[rn]]
+
+static int big_endian;
+
 static unsigned
 getb16 (const unsigned char *buf)
 {
@@ -831,6 +830,12 @@ static unsigned
 getl16 (const unsigned char *buf)
 {
     return (buf[1] << 8) | buf[0];
+}
+
+static void
+memory_error (int status, unsigned memaddr, FILE *stream)
+{
+    fprintf (stream, "Error reading memory at 0x%08x: %s", memaddr, strerror (status));
 }
 
 /*
@@ -1442,3 +1447,4 @@ print_insn_mips16 (unsigned memaddr, FILE *stream,
 
     return length;
 }
+#endif

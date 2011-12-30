@@ -21,7 +21,11 @@
  * arising out of or in connection with the use or performance of
  * this software.
  */
-#include </usr/include/stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -361,13 +365,13 @@ void fputsym (s, file)
     register struct nlist *s;
     register FILE *file;
 {
-	register int i;
+    register int i;
 
-	putc (s->n_len, file);
-	putc (s->n_type, file);
-	fputword (s->n_value, file);
-	for (i=0; i<s->n_len; i++)
-		putc (s->n_name[i], file);
+    putc (s->n_len, file);
+    putc (s->n_type, file);
+    fputword (s->n_value, file);
+    for (i=0; i<s->n_len; i++)
+        putc (s->n_name[i], file);
 }
 
 void startup ()
@@ -906,7 +910,7 @@ void getbitmask ()
  *
  * expression = [term] {op term}...
  * term       = LNAME | LNUM | "." | "(" expression ")"
- * op         = "+" | "-" | "&" | "|" | "^" | "~" | "\" | "/" | "*" | "%"
+ * op         = "+" | "-" | "&" | "|" | "^" | "~" | "<<" | ">>" | "/" | "*" | "%"
  */
 unsigned getexpr (s)
     register int *s;
@@ -1058,7 +1062,6 @@ void makecmd (opcode, type)
         opcode |= cval << 21;           /* rs, ... */
     }
 
-
     /*
      * Second register.
      */
@@ -1128,7 +1131,7 @@ void makecmd (opcode, type)
         offset = getexpr (&segment);
         if (segment != SABS)
             uerror ("absolute value required");
-        switch (type & (FCODE | FOFF16 | FSA | FSEL)) {
+        switch (type & (FCODE | FSA)) {
         case FCODE:                     /* immediate shifted <<6 */
             opcode |= offset << 6;
             break;
@@ -1144,7 +1147,7 @@ void makecmd (opcode, type)
         relinfo = segmrel [segment];
         if (relinfo == REXT)
             relinfo |= RSETINDEX (extref);
-        switch (type & (FCODE | FOFF16 | FSA | FSEL)) {
+        switch (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28)) {
         case FOFF16:                    /* low 16-bit byte address */
             opcode |= offset & 0xffff;
             break;
@@ -1596,13 +1599,19 @@ unsigned relword (relinfo)
 
 void makereloc ()
 {
-    register unsigned len;
+    register unsigned i, nbytes;
+    unsigned r, n;
 
     for (segm=STEXT; segm<SBSS; segm++) {
-        rewind (rfile [segm]);
-        len = count [segm];
-        while (len--)
-            fputword (relword (fgetword (rfile[segm])), stdout);
+        nbytes = count [segm];
+        if (nbytes > 0) {
+            rewind (rfile [segm]);
+            for (i=0; i<nbytes; i+=WORDSZ) {
+                r = fgetword (rfile[segm]);
+                n = relword (r);
+                fputword (n, stdout);
+            }
+        }
     }
 }
 
@@ -1634,7 +1643,7 @@ int main (argc, argv)
     for (i=1; i<argc; i++) {
         switch (argv[i][0]) {
         case '-':
-            for (cp=argv[i]; *cp; cp++) {
+            for (cp=argv[i]+1; *cp; cp++) {
                 switch (*cp) {
                 case 'X':       /* strip L* locals */
                     Xflag++;
@@ -1657,6 +1666,9 @@ int main (argc, argv)
                         /* -o file */
                         outfile = argv[++i];
                     break;
+                default:
+usage:              fprintf (stderr, "Usage: as [-uxX] [infile] [-o outfile]\n");
+                    return (1);
                 }
             }
             break;
@@ -1667,6 +1679,8 @@ int main (argc, argv)
             break;
         }
     }
+    if (! infile && isatty(0))
+        goto usage;
 
     /*
      * Setup input-output.

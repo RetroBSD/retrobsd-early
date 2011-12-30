@@ -3,28 +3,28 @@
 # aout    - Display information from a.out files
 #
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -Werror -Wall
 LDFLAGS         += -g
-AS              = /usr/local/pic32-tools/bin/pic32-as
 
-OBJS		= aout.o mips-dis.o
+all:            ../aout ../as
 
-all:            aout as
+../as:          as.o
+		${CC} ${LDFLAGS} -o as.elf as.o ${LIBS} #-lvmf
+		${OBJDUMP} -S as.elf > as.dis
+		${SIZE} as.elf
+		${ELF2AOUT} as.elf $@
 
-aout:           ${OBJS}
-		${CC} ${LDFLAGS} -o aout ${OBJS} ${LIBS}
+../aout:        aout.o mips-dis.o
+		${CC} ${LDFLAGS} -o aout.elf aout.o mips-dis.o ${LIBS} #-lvmf
+		${OBJDUMP} -S aout.elf > aout.dis
+		${SIZE} aout.elf
+		${ELF2AOUT} aout.elf $@
 
 clean:
-		rm -f *.o *~ as aout
-
-#as:             as.o fputsym.o fputhdr.o fgeth.o fputh.o
-#		$(CC) $(LDFLAGS) as.o -o as fputsym.o fputhdr.o fgeth.o fputh.o
-
-#dis:            dis.o fgethdr.o fgeth.o
-#		$(CC) $(LDFLAGS) dis.o -o dis fgethdr.o fgeth.o
+		rm -f *.o *.0 *.elf ../as ../aout *.elf *.dis tags *~
 
 test:
-		$(AS) -al example.s
+		/usr/local/pic32-tools/bin/pic32-as -al example.s
