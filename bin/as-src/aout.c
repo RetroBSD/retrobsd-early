@@ -55,15 +55,32 @@ int fgethdr (text, h)
     register FILE *text;
     register struct exec *h;
 {
-    h->a_magic = fgetword (text);
-    h->a_text  = fgetword (text);
-    h->a_data  = fgetword (text);
-    h->a_bss   = fgetword (text);
-    h->a_syms  = fgetword (text);
-    h->a_entry = fgetword (text);
-    fgetword (text);                    /* unused */
-    h->a_flag  = fgetword (text);
+    h->a_magic   = fgetword (text);
+    h->a_text    = fgetword (text);
+    h->a_data    = fgetword (text);
+    h->a_bss     = fgetword (text);
+    h->a_reltext = fgetword (text);
+    h->a_reldata = fgetword (text);
+    h->a_syms    = fgetword (text);
+    h->a_entry   = fgetword (text);
     return (1);
+}
+
+/*
+ * Read a relocation record: 1 or 4 bytes.
+ */
+unsigned int fgetrel (f)
+    register FILE *f;
+{
+    register unsigned int r;
+
+    r = getc (f);
+    if ((r & RSMASK) == REXT) {
+        r |= getc (f) << 8;
+        r |= getc (f) << 16;
+        r |= getc (f) << 24;
+    }
+    return r;
 }
 
 /*
@@ -132,7 +149,7 @@ void prtext (n)
         printf ("\t%08x", opcode);
         if (rflag) {
             putchar (' ');
-            prrel (fgetword (rel));
+            prrel (fgetrel (rel));
         }
         if (! dflag) {
             putchar ('\t');
@@ -152,7 +169,7 @@ void prdata (n)
         printf ("    %8x:\t%08x", addr++, fgetword (text));
         if (rflag) {
             putchar ('\t');
-            prrel (fgetword (rel));
+            prrel (fgetrel (rel));
         }
         putchar ('\n');
     }
@@ -205,7 +222,7 @@ void disasm (fname)
         return;
     }
     if (rflag) {
-        if (hdr.a_flag & 1) {
+        if (hdr.a_magic != OMAGIC) {
             fprintf (stderr, "aout: %s is not relocatable\n",
                 fname);
             rflag = 0;
@@ -219,22 +236,19 @@ void disasm (fname)
         }
     }
     printf ("File %s:\n", fname);
-    printf ("    a_magic = %08x (%s)\n", hdr.a_magic,
-        hdr.a_magic == OMAGIC ? "OMAGIC" :
-        hdr.a_magic == NMAGIC ? "NMAGIC" :
-        hdr.a_magic == ZMAGIC ? "ZMAGIC" : "unknown");
-    printf ("    a_text  = %08x (%u bytes)\n", hdr.a_text, hdr.a_text);
-    printf ("    a_data  = %08x (%u bytes)\n", hdr.a_data, hdr.a_data);
-    printf ("    a_bss   = %08x (%u bytes)\n", hdr.a_bss, hdr.a_bss);
-    printf ("    a_syms  = %08x (%u bytes)\n", hdr.a_syms, hdr.a_syms);
-    printf ("    a_entry = %08x\n", hdr.a_entry);
-    printf ("    a_flag  = %08x %s\n", hdr.a_flag,
-        (hdr.a_flag & 1) ? "(fixed)" : "(relocatable)");
+    printf ("    a_magic   = %08x (%s)\n", hdr.a_magic,
+        hdr.a_magic == OMAGIC ? "relocatable" :
+        hdr.a_magic == XMAGIC ? "XMAGIC" :
+        hdr.a_magic == NMAGIC ? "NMAGIC" : "unknown");
+    printf ("    a_text    = %08x (%u bytes)\n", hdr.a_text, hdr.a_text);
+    printf ("    a_data    = %08x (%u bytes)\n", hdr.a_data, hdr.a_data);
+    printf ("    a_bss     = %08x (%u bytes)\n", hdr.a_bss, hdr.a_bss);
+    printf ("    a_reltext = %08x (%u bytes)\n", hdr.a_reltext, hdr.a_reltext);
+    printf ("    a_reldata = %08x (%u bytes)\n", hdr.a_reldata, hdr.a_reldata);
+    printf ("    a_syms    = %08x (%u bytes)\n", hdr.a_syms, hdr.a_syms);
+    printf ("    a_entry   = %08x\n", hdr.a_entry);
 
-    if (hdr.a_flag & 1)
-        addr = USER_CODE_START;
-    else
-        addr = 0;
+    addr = (hdr.a_magic == OMAGIC) ? 0 : USER_CODE_START;
 
     if (hdr.a_text > 0) {
         printf ("\nSection .text:\n");
@@ -242,6 +256,8 @@ void disasm (fname)
     }
     if (hdr.a_data > 0) {
         printf ("\nSection .data:\n");
+        if (rflag)
+            fseek (rel, N_DRELOFF (hdr), 0);
         prdata (hdr.a_data / sizeof(int));
     }
     if (hdr.a_syms > 0) {

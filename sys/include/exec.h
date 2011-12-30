@@ -14,15 +14,15 @@ struct	exec {
 unsigned int	a_text;		/* size of text segment */
 unsigned int	a_data;		/* size of initialized data */
 unsigned int	a_bss;		/* size of uninitialized data */
+unsigned int	a_reltext;	/* size of text relocation info */
+unsigned int	a_reldata;	/* size of data relocation info */
 unsigned int	a_syms;		/* size of symbol table */
 unsigned int	a_entry; 	/* entry point */
-unsigned int	a_unused;	/* not used */
-unsigned int	a_flag; 	/* relocation info stripped */
 };
 
 /* a_magic */
-#define OMAGIC		0407    /* old impure format */
+#define OMAGIC		0406    /* relocatable object file */
+#define XMAGIC		0407    /* old impure format */
 #define NMAGIC		0410    /* read-only text */
-#define ZMAGIC		0413    /* demand load format */
 
 #endif

@@ -47,15 +47,15 @@
  */
 struct	exec {
 	unsigned a_magic;	/* magic number */
-#define OMAGIC      0407        /* old impure format */
+#define XMAGIC      0407        /* old impure format */
 
         unsigned a_text;	/* size of text segment */
         unsigned a_data;	/* size of initialized data */
         unsigned a_bss;		/* size of uninitialized data */
+        unsigned a_reltext;	/* size of text relocation info */
+        unsigned a_reldata;	/* size of data relocation info */
         unsigned a_syms;	/* size of symbol table */
         unsigned a_entry; 	/* entry point */
-        unsigned a_unused;	/* not used */
-        unsigned a_flag; 	/* relocation info stripped */
 };
 
 struct	nlist {
@@ -426,7 +426,7 @@ usage:                  fprintf(stderr,
         }
 
 	/* We now have enough information to cons up an a.out header... */
-	aex.a_magic = OMAGIC;
+	aex.a_magic = XMAGIC;
         if (! symflag) {
                 aex.a_text = text.len;
                 aex.a_data = data.len;
@@ -441,16 +441,17 @@ usage:                  fprintf(stderr,
                 aex.a_syms = (sizeof(struct nlist) * (symtabix != -1 ?
                         sh[symtabix].sh_size / sizeof(Elf32_Sym) : 0));
         }
-	aex.a_unused = 0;
-	aex.a_flag = 1;
+        aex.a_reltext = 0;
+        aex.a_reldata = 0;
 	if (verbose) {
-                printf ("magic: %#o\n", aex.a_magic);
-                printf (" text: %#x\n", aex.a_text);
-                printf (" data: %#x\n", aex.a_data);
-                printf ("  bss: %#x\n", aex.a_bss);
-                printf ("entry: %#x\n", aex.a_entry);
-                printf (" syms: %u\n", aex.a_syms);
-                printf (" flag: %u\n", aex.a_flag);
+                printf ("  magic: %#o\n", aex.a_magic);
+                printf ("   text: %#x\n", aex.a_text);
+                printf ("   data: %#x\n", aex.a_data);
+                printf ("    bss: %#x\n", aex.a_bss);
+                printf ("reltext: %#x\n", aex.a_reltext);
+                printf ("reldata: %#x\n", aex.a_reldata);
+                printf ("  entry: %#x\n", aex.a_entry);
+                printf ("   syms: %u\n", aex.a_syms);
         }
 
 	/* Make the output file... */

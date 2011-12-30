@@ -45,18 +45,20 @@ strip(name)
 		status = 1;
 		goto out;
 	}
-	if ((head.a_syms == 0) && ((head.a_flag & 1) != 0))
+	if (head.a_syms == 0 && head.a_magic != OMAGIC)
 		goto out;
 
 	size = N_DATOFF(head) + head.a_data;
-	head.a_syms = 0;
-	head.a_flag |= 1;
 	if (ftruncate(f, size) < 0) {
 		fprintf(stderr, "strip: ");
 		perror(name);
 		status = 1;
 		goto out;
 	}
+	head.a_magic = XMAGIC;
+	head.a_reltext = 0;
+	head.a_reldata = 0;
+	head.a_syms = 0;
 	(void) lseek(f, (long)0, L_SET);
 	(void) write(f, (char *)&head, sizeof (head));
 out:

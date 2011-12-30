@@ -325,7 +325,7 @@ void uerror (char *fmt, ...)
     exit (1);
 }
 
-unsigned int fgetword (f)
+unsigned fgetword (f)
     register FILE *f;
 {
     register unsigned int h;
@@ -347,6 +347,41 @@ void fputword (h, f)
     putc (h >> 24, f);
 }
 
+/*
+ * Read a relocation record: 1 or 4 bytes.
+ */
+unsigned int fgetrel (f)
+    register FILE *f;
+{
+    register unsigned int r;
+
+    r = getc (f);
+    if ((r & RSMASK) == REXT) {
+        r |= getc (f) << 8;
+        r |= getc (f) << 16;
+        r |= getc (f) << 24;
+    }
+    return r;
+}
+
+/*
+ * Emit a relocation record: 1 or 4 bytes.
+ * Return a written length.
+ */
+unsigned int fputrel (r, f)
+    register unsigned int r;
+    register FILE *f;
+{
+    putc (r, f);
+    if ((r & RSMASK) != REXT) {
+        return 1;
+    }
+    putc (r >> 8, f);
+    putc (r >> 16, f);
+    putc (r >> 24, f);
+    return 4;
+}
+
 void fputhdr (filhdr, coutb)
     register struct exec *filhdr;
     register FILE *coutb;
@@ -355,10 +390,10 @@ void fputhdr (filhdr, coutb)
     fputword (filhdr->a_text, coutb);
     fputword (filhdr->a_data, coutb);
     fputword (filhdr->a_bss, coutb);
+    fputword (filhdr->a_reltext, coutb);
+    fputword (filhdr->a_reldata, coutb);
     fputword (filhdr->a_syms, coutb);
     fputword (filhdr->a_entry, coutb);
-    fputword (0, coutb);
-    fputword (filhdr->a_flag, coutb);
 }
 
 void fputsym (s, file)
@@ -380,10 +415,12 @@ void startup ()
 
     mktemp (tfilename);
     for (i=STEXT; i<SBSS; i++) {
-        if (! (sfile [i] = fopen (tfilename, "w+")))
+        sfile [i] = fopen (tfilename, "w+");
+        if (! sfile [i])
             uerror ("cannot open %s", tfilename);
         unlink (tfilename);
-        if (! (rfile [i] = fopen (tfilename, "w+")))
+        rfile [i] = fopen (tfilename, "w+");
+        if (! rfile [i])
             uerror ("cannot open %s", tfilename);
         unlink (tfilename);
     }
@@ -1023,7 +1060,7 @@ void emitword (w, r)
     register unsigned r;
 {
     fputword (w, sfile[segm]);
-    fputword (r, rfile[segm]);
+    fputrel (r, rfile[segm]);
     count[segm] += WORDSZ;
 }
 
@@ -1259,7 +1296,7 @@ void makeascii ()
     while (c--)
         fputc (0, sfile[segm]);
     while (n--)
-        fputword (0, rfile[segm]);
+        fputrel (0, rfile[segm]);
 }
 
 void pass1 ()
@@ -1293,7 +1330,7 @@ void pass1 ()
             else {
                 while (count[segm] < addr) {
                     fputword (0, sfile[segm]);
-                    fputword (0L, rfile[segm]);
+                    fputrel (0, rfile[segm]);
                     count[segm]++;
                 }
             }
@@ -1358,7 +1395,7 @@ void pass1 ()
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
                 fputword (intval, sfile[segm]);
-                fputword (addr, rfile[segm]);
+                fputrel (addr, rfile[segm]);
                 count[segm] += 2;
                 clex = getlex (&cval);
                 if (clex != ',') {
@@ -1439,7 +1476,7 @@ void middle ()
     stlength += stalign;
 }
 
-void makeheader ()
+void makeheader (rtsize, rdsize)
 {
     struct exec hdr;
 
@@ -1447,9 +1484,11 @@ void makeheader ()
     hdr.a_text = count [STEXT];
     hdr.a_data = count [SDATA] + count [SSTRNG];
     hdr.a_bss = count [SBSS];
+    hdr.a_reltext = rtsize;
+    hdr.a_reldata = rdsize;
     hdr.a_syms = stlength;
     hdr.a_entry = 0;
-    hdr.a_flag = 0;
+    fseek (stdout, 0, 0);
     fputhdr (&hdr, stdout);
 }
 
@@ -1546,12 +1585,13 @@ void pass2 ()
         }
         stab[i].n_value = h;
     }
+    fseek (stdout, sizeof(struct exec), 0);
     for (segm=STEXT; segm<SBSS; segm++) {
         rewind (sfile [segm]);
         rewind (rfile [segm]);
         for (h=count[segm]; h>0; h-=WORDSZ)
             fputword (makeword (fgetword (sfile[segm]),
-                fgetword (rfile[segm])), stdout);
+                fgetrel (rfile[segm])), stdout);
     }
 }
 
@@ -1573,7 +1613,12 @@ int typerel (t)
     }
 }
 
-unsigned relword (relinfo)
+/*
+ * Relocate a relocation info word.
+ * Remap symbol indexes.
+ * Put string pseudo-section to data section.
+ */
+unsigned relrel (relinfo)
     register long relinfo;
 {
     register int i;
@@ -1597,22 +1642,31 @@ unsigned relword (relinfo)
     return (relinfo);
 }
 
-void makereloc ()
+/*
+ * Emit a relocation info for a given segment.
+ * Copy it from scratch file to output.
+ * Return a size of relocation data in bytes.
+ */
+unsigned makereloc (s)
+    register int s;
 {
     register unsigned i, nbytes;
     unsigned r, n;
 
-    for (segm=STEXT; segm<SBSS; segm++) {
-        nbytes = count [segm];
-        if (nbytes > 0) {
-            rewind (rfile [segm]);
-            for (i=0; i<nbytes; i+=WORDSZ) {
-                r = fgetword (rfile[segm]);
-                n = relword (r);
-                fputword (n, stdout);
-            }
-        }
+    if (count [s] <= 0)
+        return 0;
+    rewind (rfile [s]);
+    nbytes = 0;
+    for (i=0; i<count[s]; i+=WORDSZ) {
+        r = fgetrel (rfile[s]);
+        n = relrel (r);
+        nbytes += fputrel (n, stdout);
     }
+    while (nbytes % WORDSZ) {
+        putchar (0);
+        nbytes++;
+    }
+    return nbytes;
 }
 
 void makesymtab ()
@@ -1636,6 +1690,7 @@ int main (argc, argv)
     register int i;
     register char *cp;
     int ofile = 0;
+    unsigned rtsize, rdsize;
 
     /*
      * Parse options.
@@ -1690,13 +1745,14 @@ usage:              fprintf (stderr, "Usage: as [-uxX] [infile] [-o outfile]\n")
     if (! freopen (outfile, "w", stdout))
         uerror ("cannot open %s", outfile);
 
-    startup ();     /* Open temporary files */
-    hashinit ();    /* Initialize hash tables */
-    pass1 ();       /* First pass */
-    middle ();      /* Prepare symbol table */
-    makeheader ();  /* Write a.out header */
-    pass2 ();       /* Second pass */
-    makereloc ();   /* Emit relocation data */
-    makesymtab ();  /* Emit symbol table */
+    startup ();                         /* Open temporary files */
+    hashinit ();                        /* Initialize hash tables */
+    pass1 ();                           /* First pass */
+    middle ();                          /* Prepare symbol table */
+    pass2 ();                           /* Second pass */
+    rtsize = makereloc (STEXT);         /* Emit relocation info */
+    rdsize = makereloc (SDATA);
+    makesymtab ();                      /* Emit symbol table */
+    makeheader (rtsize, rdsize);        /* Write a.out header */
     exit (0);
 }

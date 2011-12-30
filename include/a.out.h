@@ -36,25 +36,26 @@
 #include <sys/exec.h>
 
 /* Valid magic number check. */
-#define	N_BADMAG(x) 		(((x).a_magic) != NMAGIC && \
-				 ((x).a_magic) != OMAGIC)
+#define	N_BADMAG(x) 		(((x).a_magic) != OMAGIC && \
+				 ((x).a_magic) != XMAGIC && \
+				 ((x).a_magic) != NMAGIC)
 
 /* Text segment offset. */
 #define	N_TXTOFF(x) 		sizeof(struct exec)
 
 /* Data segment offset. */
-#define	N_DATOFF(ex) 		(N_TXTOFF(ex) + (ex).a_text)
+#define	N_DATOFF(x) 		(N_TXTOFF(x) + (x).a_text)
 
 /* Text relocation table offset. */
-#define	N_TRELOFF(ex) 		(N_DATOFF(ex) + (ex).a_data)
+#define	N_TRELOFF(x) 		(N_DATOFF(x) + (x).a_data)
 
 /* Data relocation table offset. */
-#define	N_DRELOFF(ex) 		(N_TRELOFF(ex) + (ex).a_text /*trsize*/)
+#define	N_DRELOFF(x) 		(N_TRELOFF(x) + (x).a_reltext)
 
 /* Symbol table offset. */
-#define	N_SYMOFF(ex) 		((((ex).a_flag & 1) ? N_DATOFF(ex) : \
-                                                      N_DRELOFF(ex)) + \
-                                 (ex).a_data /*drsize*/)
+#define	N_SYMOFF(x) 		((x).a_magic == OMAGIC ? \
+                                    N_DRELOFF(x) + (x).a_reldata : \
+                                    N_DATOFF(x) + (x).a_data)
 
 #define	_AOUT_INCLUDE_
 #include <nlist.h>

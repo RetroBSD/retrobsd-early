@@ -176,29 +176,89 @@ int fgethdr (text, h)
         register FILE *text;
         register struct exec *h;
 {
-        h->a_magic = fgetword (text);
-        h->a_text  = fgetword (text);
-        h->a_data  = fgetword (text);
-        h->a_bss   = fgetword (text);
-        h->a_syms  = fgetword (text);
-        h->a_entry = fgetword (text);
-        fgetword (text);                    /* unused */
-        h->a_flag  = fgetword (text);
+        h->a_magic   = fgetword (text);
+        h->a_text    = fgetword (text);
+        h->a_data    = fgetword (text);
+        h->a_bss     = fgetword (text);
+        h->a_reltext = fgetword (text);
+        h->a_reldata = fgetword (text);
+        h->a_syms    = fgetword (text);
+        h->a_entry   = fgetword (text);
         return (1);
 }
 
-void fputhdr (filhdr, coutb)
-        register struct exec *filhdr;
+void fputhdr (hdr, coutb)
+        register struct exec *hdr;
         register FILE *coutb;
 {
-        fputword (filhdr->a_magic, coutb);
-        fputword (filhdr->a_text, coutb);
-        fputword (filhdr->a_data, coutb);
-        fputword (filhdr->a_bss, coutb);
-        fputword (filhdr->a_syms, coutb);
-        fputword (filhdr->a_entry, coutb);
-        fputword (0, coutb);
-        fputword (filhdr->a_flag, coutb);
+        fputword (hdr->a_magic, coutb);
+        fputword (hdr->a_text, coutb);
+        fputword (hdr->a_data, coutb);
+        fputword (hdr->a_bss, coutb);
+        fputword (hdr->a_reltext, coutb);
+        fputword (hdr->a_reldata, coutb);
+        fputword (hdr->a_syms, coutb);
+        fputword (hdr->a_entry, coutb);
+}
+
+/*
+ * Read a relocation record: 1 or 4 bytes.
+ */
+unsigned int fgetrel (f)
+        register FILE *f;
+{
+        register unsigned int r;
+
+        r = getc (f);
+        if ((r & RSMASK) == REXT) {
+                r |= getc (f) << 8;
+                r |= getc (f) << 16;
+                r |= getc (f) << 24;
+        }
+        return r;
+}
+
+/*
+ * Emit a relocation record: 1 or 4 bytes.
+ * Return a written length.
+ */
+unsigned int fputrel (r, f)
+        register unsigned int r;
+        register FILE *f;
+{
+        putc (r, f);
+        if ((r & RSMASK) != REXT) {
+                return 1;
+        }
+        putc (r >> 8, f);
+        putc (r >> 16, f);
+        putc (r >> 24, f);
+        return 4;
+}
+
+void delexit (int sig)
+{
+	unlink ("l.out");
+	if (! delarg && !arflag)
+                chmod (ofilename, 0777 & ~umask(0));
+	exit (delarg);
+}
+
+void error (int n, const char *s, ...)
+{
+        va_list ap;
+
+        va_start (ap, s);
+	if (! errlev)
+                printf ("ld: ");
+	if (filname)
+                printf ("%s: ", filname);
+	vprintf (s, ap);
+	va_end (ap);
+	printf ("\n");
+	if (n > 1)
+                delexit (0);
+	errlev = n;
 }
 
 int fgetsym (text, sym)
@@ -207,18 +267,21 @@ int fgetsym (text, sym)
 {
 	register int c;
 
-	sym->n_len = getc (text);
-	if (sym->n_len <= 0)
-		return (1);
+	c = getc (text);
+	if (c <= 0)
+		return 0;
+	sym->n_len = c;
 	sym->n_name = malloc (sym->n_len + 1);
-	if (! sym->n_name)
-		return (0);
+	if (! sym->n_name) {
+		error (2, "out of memory");
+		return 0;
+        }
 	sym->n_type = getc (text);
 	sym->n_value = fgetword (text);
 	for (c=0; c<sym->n_len; c++)
 		sym->n_name [c] = getc (text);
 	sym->n_name [sym->n_len] = '\0';
-	return (sym->n_len + 6);
+	return sym->n_len + 6;
 }
 
 void fputsym (s, file)
@@ -332,31 +395,6 @@ failed:                 free (h->ar_name);
 		goto failed;
 
 	return 1;
-}
-
-void delexit (int sig)
-{
-	unlink ("l.out");
-	if (! delarg && !arflag)
-                chmod (ofilename, 0777 & ~umask(0));
-	exit (delarg);
-}
-
-void error (int n, const char *s, ...)
-{
-        va_list ap;
-
-        va_start (ap, s);
-	if (! errlev)
-                printf ("ld: ");
-	if (filname)
-                printf ("%s: ", filname);
-	vprintf (s, ap);
-	va_end (ap);
-	printf ("\n");
-	if (n > 1)
-                delexit (0);
-	errlev = n;
 }
 
 void freerantab ()
@@ -572,23 +610,28 @@ void relocate (lp, b1, b2, len)
 	len /= W;
 	while (len--) {
 		t = fgetword (text);
-		r = fgetword (reloc);
+		r = fgetrel (reloc);
 		relword (lp, t, r, &t, &r);
 		fputword (t, b1);
 		if (rflag)
-                        fputword (r, b2);
+                        fputrel (r, b2);
 	}
 }
 
-void copy_and_close (buf)
+unsigned copy_and_close (buf)
         register FILE *buf;
 {
 	register int c;
+	unsigned nbytes;
 
 	rewind (buf);
-	while ((c = getc (buf)) != EOF)
+	nbytes = 0;
+	while ((c = getc (buf)) != EOF) {
                 putc (c, outb);
+                nbytes++;
+        }
 	fclose (buf);
+	return nbytes;
 }
 
 int mkfsym (s, wflag)
@@ -762,8 +805,8 @@ int load1 (loc, libflg, nloc)
 	int savindex, ndef, type, symlen, nsymbol;
 
 	readhdr (loc);
-	if (filhdr.a_flag & 1) {
-		error (1, "file stripped");
+	if (filhdr.a_magic != OMAGIC) {
+		error (1, "file not relocatable");
 		return (0);
 	}
 	fseek (reloc, loc + N_SYMOFF (filhdr), 0);
@@ -772,7 +815,8 @@ int load1 (loc, libflg, nloc)
 	cdrel = dsize - filhdr.a_text;
 	cbrel = bsize - (filhdr.a_text + filhdr.a_data);
 
-	loc += HDRSZ + (filhdr.a_text + filhdr.a_data) * 2;
+	loc += HDRSZ + filhdr.a_text + filhdr.a_data  +
+                filhdr.a_reltext + filhdr.a_reldata;
 	fseek (text, loc, 0);
 	ndef = 0;
 	savindex = symindex;
@@ -783,8 +827,6 @@ int load1 (loc, libflg, nloc)
 	for (;;) {
 		symlen = fgetsym (text, &cursym);
 		if (symlen == 0)
-			error (2, "out of memory");
-		if (symlen == 1)
 			break;
 		type = cursym.n_type;
 		if (Sflag && ((type & N_TYPE) == N_ABS ||
@@ -1157,25 +1199,7 @@ void setupout ()
 		tcreat (&troutb, 1);
 		tcreat (&droutb, 1);
 	}
-	filhdr.a_magic = OMAGIC;
-	filhdr.a_text = tsize;
-	filhdr.a_data = dsize;
-	filhdr.a_bss = bsize;
-	filhdr.a_syms = ALIGN (ssize, W);
-	if (entrypt) {
-		if (entrypt->n_type != N_EXT+N_TEXT &&
-		    entrypt->n_type != N_EXT+N_UNDF)
-			error (1, "entry out of text");
-		else filhdr.a_entry = entrypt->n_value;
-	} else
-		filhdr.a_entry = torigin;
-
-	if (rflag)
-		filhdr.a_flag &= ~1;
-	else
-		filhdr.a_flag |= 1;
-
-	fputhdr (&filhdr, outb);
+	fseek (outb, sizeof(filhdr), 0);
 }
 
 void load2 (loc)
@@ -1199,17 +1223,15 @@ void load2 (loc)
 	 * Reread the symbol table, recording the numbering
 	 * of symbols for fixing external references.
 	 */
-
 	lp = local;
 	symno = -1;
 	loc += HDRSZ;
-	fseek (text, loc + (filhdr.a_text + filhdr.a_data) * 2, 0);
+	fseek (text, loc + filhdr.a_text + filhdr.a_data +
+                filhdr.a_reltext + filhdr.a_reldata, 0);
 	for (;;) {
 		symno++;
 		count = fgetsym (text, &cursym);
 		if (count == 0)
-			error (2, "out of memory");
-		if (count == 1)
 			break;
 		symreloc ();
 		type = cursym.n_type;
@@ -1257,7 +1279,7 @@ void load2 (loc)
 	if (trace > 1)
 		printf ("** DATA **\n");
 	fseek (text, loc + filhdr.a_text, 0);
-	fseek (reloc, count + filhdr.a_text, 0);
+	fseek (reloc, count + filhdr.a_reltext, 0);
 	relocate (lp, doutb, droutb, filhdr.a_data);
 
 	torigin += filhdr.a_text;
@@ -1350,12 +1372,21 @@ void pass2 (argc, argv)
 void finishout ()
 {
 	register struct nlist *p;
+        unsigned rtsize = 0, rdsize = 0;
 
 	copy_and_close (toutb);
 	copy_and_close (doutb);
 	if (rflag) {
-		copy_and_close (troutb);
-		copy_and_close (droutb);
+		rtsize = copy_and_close (troutb);
+		while (rtsize % W) {
+			putc (0, outb);
+			rtsize++;
+                }
+		rdsize = copy_and_close (droutb);
+		while (rdsize % W) {
+			putc (0, outb);
+			rdsize++;
+                }
 	}
 	if (! sflag) {
 		if (! xflag)
@@ -1366,6 +1397,23 @@ void finishout ()
 		while (ssize++ % W)
 			putc (0, outb);
 	}
+	filhdr.a_magic = rflag ? OMAGIC : XMAGIC;
+	filhdr.a_text = tsize;
+	filhdr.a_data = dsize;
+	filhdr.a_bss = bsize;
+	filhdr.a_reltext = rtsize;
+	filhdr.a_reldata = rdsize;
+	filhdr.a_syms = ALIGN (ssize, W);
+	if (entrypt) {
+		if (entrypt->n_type != N_EXT+N_TEXT &&
+		    entrypt->n_type != N_EXT+N_UNDF)
+			error (1, "entry out of text");
+		else filhdr.a_entry = entrypt->n_value;
+	} else
+		filhdr.a_entry = basaddr;
+
+	fseek (outb, 0, 0);
+	fputhdr (&filhdr, outb);
 	fclose (outb);
 }
 
@@ -1395,7 +1443,7 @@ int main (argc, argv)
 	middle ();
 
 	/*
-	 * Create temporary files and write a header.
+	 * Create temporary files.
 	 */
 	setupout ();
 
@@ -1405,7 +1453,7 @@ int main (argc, argv)
 	pass2 (argc, argv);
 
 	/*
-	 * Flush buffers..
+	 * Flush buffers, write a header.
 	 */
 	finishout ();
 
