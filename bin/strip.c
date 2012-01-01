@@ -45,7 +45,7 @@ strip(name)
 		status = 1;
 		goto out;
 	}
-	if (head.a_syms == 0 && head.a_magic != OMAGIC)
+	if (head.a_syms == 0 && head.a_magic != RMAGIC)
 		goto out;
 
 	size = N_DATOFF(head) + head.a_data;
@@ -55,7 +55,7 @@ strip(name)
 		status = 1;
 		goto out;
 	}
-	head.a_magic = XMAGIC;
+	head.a_magic = OMAGIC;
 	head.a_reltext = 0;
 	head.a_reldata = 0;
 	head.a_syms = 0;

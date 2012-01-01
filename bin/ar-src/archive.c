@@ -33,13 +33,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include <ar.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -281,16 +285,16 @@ put_arobj(cfp, sb)
 				(void)fflush(stderr);
 			}
 			(void)sprintf(hb, HDR3, name, sb->st_mtime, sb->st_uid,
-			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
+			    sb->st_gid, sb->st_mode, (long) sb->st_size, ARFMAG);
 			lname = 0;
 		} else if (lname > sizeof(hdr->ar_name) || index(name, ' '))
 			(void)sprintf(hb, HDR1, AR_EFMT1, lname, sb->st_mtime,
 			    sb->st_uid, sb->st_gid, sb->st_mode,
-			    sb->st_size + lname, ARFMAG);
+			    (long) sb->st_size + lname, ARFMAG);
 		else {
 			lname = 0;
 			(void)sprintf(hb, HDR2, name, sb->st_mtime, sb->st_uid,
-			    sb->st_gid, sb->st_mode, sb->st_size, ARFMAG);
+			    sb->st_gid, sb->st_mode, (long) sb->st_size, ARFMAG);
 		}
 		size = sb->st_size;
 	} else {

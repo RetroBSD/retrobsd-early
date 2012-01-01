@@ -785,7 +785,7 @@ void readhdr (loc)
 	fseek (text, loc, 0);
 	if (! fgethdr (text, &filhdr))
 		error (2, "bad format");
-	if (filhdr.a_magic != OMAGIC)
+	if (filhdr.a_magic != RMAGIC)
 		error (2, "bad magic");
 	if (filhdr.a_text % W)
 		error (2, "bad length of text");
@@ -805,7 +805,7 @@ int load1 (loc, libflg, nloc)
 	int savindex, ndef, type, symlen, nsymbol;
 
 	readhdr (loc);
-	if (filhdr.a_magic != OMAGIC) {
+	if (filhdr.a_magic != RMAGIC) {
 		error (1, "file not relocatable");
 		return (0);
 	}
@@ -1397,7 +1397,7 @@ void finishout ()
 		while (ssize++ % W)
 			putc (0, outb);
 	}
-	filhdr.a_magic = rflag ? OMAGIC : XMAGIC;
+	filhdr.a_magic = rflag ? RMAGIC : OMAGIC;
 	filhdr.a_text = tsize;
 	filhdr.a_data = dsize;
 	filhdr.a_bss = bsize;

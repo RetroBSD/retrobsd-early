@@ -314,7 +314,7 @@ void namelist()
 		while (n > 0) {
 		        char name [256];
 
-                        int c = fgetsym (fi, name, &symp[i].n_value, &symp[i].n_type);
+                        int c = fgetsym(fi, name, &symp[i].n_value, &symp[i].n_type);
                         if (c <= 0)
                                 break;
                         n -= c;
@@ -324,7 +324,7 @@ void namelist()
                             symp[i].n_value != 0)
 				continue;
 
-                        symp[i].n_name = malloc (c - 5);
+                        symp[i].n_name = malloc(c - 5);
                         if (! symp[i].n_name)
                                 error(1, "out of memory");
                         strcpy (symp[i].n_name, name);

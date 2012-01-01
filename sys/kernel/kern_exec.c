@@ -75,7 +75,7 @@ getxfile (ip, ep, nargc, uid, gid)
 {
 	u_int ds, ts, ss;
 
-	if (ep->a_magic == XMAGIC) {
+	if (ep->a_magic == OMAGIC) {
 		ep->a_data += ep->a_text;
 		ep->a_text = 0;
 	}
@@ -255,7 +255,7 @@ again:
 //printf ("execve: text=%u, data=%u, bss=%u\n", exdata.ex_exec.a_text, exdata.ex_exec.a_data, exdata.ex_exec.a_bss);
 
 	switch ((int) exdata.ex_exec.a_magic) {
-	case XMAGIC:
+	case OMAGIC:
 	case NMAGIC:
 		break;
 	default:

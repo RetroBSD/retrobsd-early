@@ -36,8 +36,8 @@
 #include <sys/exec.h>
 
 /* Valid magic number check. */
-#define	N_BADMAG(x) 		(((x).a_magic) != OMAGIC && \
-				 ((x).a_magic) != XMAGIC && \
+#define	N_BADMAG(x) 		(((x).a_magic) != RMAGIC && \
+				 ((x).a_magic) != OMAGIC && \
 				 ((x).a_magic) != NMAGIC)
 
 /* Text segment offset. */
@@ -53,7 +53,7 @@
 #define	N_DRELOFF(x) 		(N_TRELOFF(x) + (x).a_reltext)
 
 /* Symbol table offset. */
-#define	N_SYMOFF(x) 		((x).a_magic == OMAGIC ? \
+#define	N_SYMOFF(x) 		((x).a_magic == RMAGIC ? \
                                     N_DRELOFF(x) + (x).a_reldata : \
                                     N_DATOFF(x) + (x).a_data)
 

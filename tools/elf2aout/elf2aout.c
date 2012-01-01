@@ -47,7 +47,7 @@
  */
 struct	exec {
 	unsigned a_magic;	/* magic number */
-#define XMAGIC      0407        /* old impure format */
+#define OMAGIC      0407        /* old impure format */
 
         unsigned a_text;	/* size of text segment */
         unsigned a_data;	/* size of initialized data */
@@ -426,7 +426,7 @@ usage:                  fprintf(stderr,
         }
 
 	/* We now have enough information to cons up an a.out header... */
-	aex.a_magic = XMAGIC;
+	aex.a_magic = OMAGIC;
         if (! symflag) {
                 aex.a_text = text.len;
                 aex.a_data = data.len;

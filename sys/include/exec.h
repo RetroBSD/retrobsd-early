@@ -21,8 +21,8 @@ unsigned int	a_entry; 	/* entry point */
 };
 
 /* a_magic */
-#define OMAGIC		0406    /* relocatable object file */
-#define XMAGIC		0407    /* old impure format */
+#define RMAGIC		0406    /* relocatable object file */
+#define OMAGIC		0407    /* old impure format */
 #define NMAGIC		0410    /* read-only text */
 
 #endif

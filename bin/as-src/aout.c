@@ -222,7 +222,7 @@ void disasm (fname)
         return;
     }
     if (rflag) {
-        if (hdr.a_magic != OMAGIC) {
+        if (hdr.a_magic != RMAGIC) {
             fprintf (stderr, "aout: %s is not relocatable\n",
                 fname);
             rflag = 0;
@@ -237,8 +237,8 @@ void disasm (fname)
     }
     printf ("File %s:\n", fname);
     printf ("    a_magic   = %08x (%s)\n", hdr.a_magic,
-        hdr.a_magic == OMAGIC ? "relocatable" :
-        hdr.a_magic == XMAGIC ? "XMAGIC" :
+        hdr.a_magic == RMAGIC ? "relocatable" :
+        hdr.a_magic == OMAGIC ? "OMAGIC" :
         hdr.a_magic == NMAGIC ? "NMAGIC" : "unknown");
     printf ("    a_text    = %08x (%u bytes)\n", hdr.a_text, hdr.a_text);
     printf ("    a_data    = %08x (%u bytes)\n", hdr.a_data, hdr.a_data);
@@ -248,7 +248,7 @@ void disasm (fname)
     printf ("    a_syms    = %08x (%u bytes)\n", hdr.a_syms, hdr.a_syms);
     printf ("    a_entry   = %08x\n", hdr.a_entry);
 
-    addr = (hdr.a_magic == OMAGIC) ? 0 : USER_CODE_START;
+    addr = (hdr.a_magic == RMAGIC) ? 0 : USER_CODE_START;
 
     if (hdr.a_text > 0) {
         printf ("\nSection .text:\n");

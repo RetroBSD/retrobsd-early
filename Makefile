@@ -61,26 +61,29 @@ SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fsck sbin/halt sbin/init 
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells
 BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
-                  bin/bc bin/cal bin/cat bin/cb \
-                  bin/chflags bin/chgrp bin/chmod bin/chpass bin/cmp bin/col \
-                  bin/comm bin/cp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
+                  bin/bc bin/cal bin/cat bin/cb bin/chflags bin/chgrp \
+                  bin/chmod bin/chpass bin/cmp bin/col bin/comm bin/cp \
+                  bin/date bin/dc bin/dd bin/df bin/diff bin/du \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
                   bin/file bin/find bin/fstat bin/grep bin/groups bin/head \
                   bin/hostid bin/hostname bin/id bin/iostat bin/join \
                   bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login \
                   bin/mail bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
-                  bin/pr bin/printf bin/ps bin/pwd bin/re bin/renice bin/rev bin/rm \
-                  bin/rmail bin/rmdir bin/rz bin/sed bin/sh bin/size bin/sleep \
-                  bin/sort bin/split bin/strip bin/stty bin/su bin/sum \
-                  bin/sync bin/sysctl bin/sz bin/tail bin/tar bin/tee bin/test \
+                  bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
+                  bin/renice bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
+                  bin/sed bin/sh bin/size bin/sleep bin/sort bin/split \
+                  bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
+                  bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
-                  var/log/messages var/log/wtmp .profile share/re.help
-ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/misc/ var/ var/run/ var/log/ u/
+                  var/log/messages var/log/wtmp .profile share/re.help \
+                  share/example/hello.s
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/example/ \
+                  share/misc/ var/ var/run/ var/log/ u/
 
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
