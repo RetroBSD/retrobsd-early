@@ -96,8 +96,8 @@ enum {
  * Sizes of tables.
  * Hash sizes should be powers of 2!
  */
-#define HASHSZ  2048            /* symbol name hash table size */
-#define HCMDSZ  1024            /* instruction hash table size */
+#define HASHSZ  1024            /* symbol name hash table size */
+#define HCMDSZ  256             /* instruction hash table size */
 #define STSIZE  (HASHSZ*9/10)   /* symbol name table size */
 
 /*
@@ -147,7 +147,11 @@ struct optable {
     unsigned opcode;
     const char *name;
     unsigned type;
+    void (*func) (unsigned, unsigned);
 };
+
+void emit_li (unsigned, unsigned);
+void emit_la (unsigned, unsigned);
 
 const struct optable optable [] = {
     { 0x00000020,   "add",      FRD1 | FRS2 | FRT3 },
@@ -192,10 +196,12 @@ const struct optable optable [] = {
     { 0x00000409,   "jalr.hb",	FRD1 | FRS2 },
     { 0x00000008,   "jr",	FRS1 },
     { 0x00000408,   "jr.hb",	FRS1 },
+    {          0,   "la",	FRT1, emit_la },
     { 0x80000000,   "lb",	FRT1 | FOFF16 | FRSB },
     { 0x90000000,   "lbu",	FRT1 | FOFF16 | FRSB },
     { 0x84000000,   "lh",	FRT1 | FOFF16 | FRSB },
     { 0x94000000,   "lhu",	FRT1 | FOFF16 | FRSB },
+    {          0,   "li",	FRT1, emit_li },
     { 0xc0000000,   "ll",	FRT1 | FOFF16 | FRSB },
     { 0x3c000000,   "lui",	FRT1 | FHIGH16 },
     { 0x8c000000,   "lw",	FRT1 | FOFF16 | FRSB },
@@ -326,25 +332,19 @@ void uerror (char *fmt, ...)
 }
 
 unsigned fgetword (f)
-    register FILE *f;
+    FILE *f;
 {
-    register unsigned int h;
+    unsigned int w;
 
-    h = getc (f);
-    h |= getc (f) << 8;
-    h |= getc (f) << 16;
-    h |= getc (f) << 24;
-    return h;
+    fread (&w, sizeof(w), 1, f);
+    return w;
 }
 
-void fputword (h, f)
-    register unsigned int h;
-    register FILE *f;
+void fputword (w, f)
+    unsigned int w;
+    FILE *f;
 {
-    putc (h, f);
-    putc (h >> 8, f);
-    putc (h >> 16, f);
-    putc (h >> 24, f);
+    fwrite (&w, sizeof(w), 1, f);
 }
 
 /*
@@ -1055,6 +1055,74 @@ unsigned getexpr (s)
     /* NOTREACHED */
 }
 
+/*
+ * LI macro instruction.
+ */
+void emit_li (opcode, relinfo)
+    register unsigned opcode;
+    register unsigned relinfo;
+{
+    register unsigned value;
+    int cval, segment;
+
+    if (getlex (&cval) != ',')
+        uerror ("comma expected");
+    value = getexpr (&segment);
+    if (segment != SABS)
+        uerror ("absolute value required");
+    if (value >= 0 && value <= 0xffff) {
+        /* ori d, $zero, value */
+        opcode |= 0x34000000 | value;
+    } else if (value >= -0x8000) {
+        /* addiu d, $zero, value */
+        opcode |= 0x24000000 | value;
+    } else {
+        /* lui d, %hi(value)
+         * ori d, d, %lo(value) */
+        fputword (opcode | 0x3c000000 | (value >> 16), sfile[segm]);
+        fputrel (RABS, rfile[segm]);
+        count[segm] += WORDSZ;
+        opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
+    }
+    fputword (opcode, sfile[segm]);
+    fputrel (relinfo, rfile[segm]);
+    count[segm] += WORDSZ;
+}
+
+/*
+ * LA macro instruction.
+ */
+void emit_la (opcode, relinfo)
+    register unsigned opcode;
+    register unsigned relinfo;
+{
+    register unsigned value;
+    int cval, segment;
+
+    if (getlex (&cval) != ',')
+        uerror ("comma expected");
+    value = getexpr (&segment);
+    if (segment == SABS)
+        uerror ("relocatable value required");
+    relinfo = segmrel [segment];
+    if (relinfo == REXT)
+        relinfo |= RSETINDEX (extref);
+
+    /* lui d, %hi(value)
+     * ori d, d, %lo(value) */
+    fputword (opcode | 0x3c000000 | (value >> 16), sfile[segm]);
+    fputrel (relinfo | RHIGH16, rfile[segm]);
+    count[segm] += WORDSZ;
+
+    opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
+    fputword (opcode, sfile[segm]);
+    fputrel (relinfo, rfile[segm]);
+    count[segm] += WORDSZ;
+}
+
+/*
+ * Default emit function.
+ */
 void emitword (w, r)
     register unsigned w;
     register unsigned r;
@@ -1067,8 +1135,9 @@ void emitword (w, r)
 /*
  * Build and emit a machine instruction code.
  */
-void makecmd (opcode, type)
+void makecmd (opcode, type, emitfunc)
     unsigned opcode;
+    void (*emitfunc) (unsigned, unsigned);
 {
     register int clex;
     register unsigned offset, relinfo;
@@ -1228,7 +1297,9 @@ void makecmd (opcode, type)
     }
 
     /* Output resulting values. */
-    emitword (opcode, relinfo);
+    if (! emitfunc)
+        emitfunc = emitword;
+    emitfunc (opcode, relinfo);
 }
 
 void makeascii ()
@@ -1241,13 +1312,15 @@ void makeascii ()
         uerror ("no .ascii parameter");
     n = 0;
     for (;;) {
-        switch (c = getchar ()) {
+        c = getchar ();
+        switch (c) {
         case EOF:
             uerror ("EOF in text string");
         case '"':
             break;
         case '\\':
-            switch (c = getchar ()) {
+            c = getchar ();
+            switch (c) {
             case EOF:
                 uerror ("EOF in text string");
             case '\n':
@@ -1290,13 +1363,13 @@ void makeascii ()
         }
         break;
     }
-    c = WORDSZ - n % WORDSZ;
+    c = WORDSZ - (unsigned) n % WORDSZ;
     count[segm] += n + c;
-    n = (n + c) / WORDSZ;
+    n = (unsigned) (n + c) / WORDSZ;
     while (c--)
         fputc (0, sfile[segm]);
     while (n--)
-        fputrel (0, rfile[segm]);
+        fputrel (RABS, rfile[segm]);
 }
 
 void pass1 ()
@@ -1315,7 +1388,8 @@ void pass1 ()
         case ':':
             continue;
         case LCMD:
-            makecmd (optable[cval].opcode, optable[cval].type);
+            makecmd (optable[cval].opcode, optable[cval].type,
+                optable[cval].func);
             break;
         case '.':
             if (getlex (&cval) != '=')
@@ -1330,7 +1404,7 @@ void pass1 ()
             else {
                 while (count[segm] < addr) {
                     fputword (0, sfile[segm]);
-                    fputrel (0, rfile[segm]);
+                    fputrel (RABS, rfile[segm]);
                     count[segm]++;
                 }
             }
@@ -1558,9 +1632,9 @@ void pass2 ()
     register unsigned h;
 
     tbase = 0;
-    dbase = tbase + count[STEXT]/2;
-    adbase = dbase + count[SDATA]/2;
-    bbase = adbase + count[SSTRNG]/2;
+    dbase = tbase + count[STEXT];
+    adbase = dbase + count[SDATA];
+    bbase = adbase + count[SSTRNG];
 
     /* Adjust indexes in symbol name */
     for (i=0; i<stabfree; i++) {
@@ -1589,9 +1663,12 @@ void pass2 ()
     for (segm=STEXT; segm<SBSS; segm++) {
         rewind (sfile [segm]);
         rewind (rfile [segm]);
-        for (h=count[segm]; h>0; h-=WORDSZ)
-            fputword (makeword (fgetword (sfile[segm]),
-                fgetrel (rfile[segm])), stdout);
+        for (h=count[segm]; h>0; h-=WORDSZ) {
+            unsigned word = fgetword (sfile[segm]);
+            unsigned relinfo = fgetrel (rfile[segm]);
+            word = makeword (word, relinfo);
+            fputword (word, stdout);
+        }
     }
 }
 

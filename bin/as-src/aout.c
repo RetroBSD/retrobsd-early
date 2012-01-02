@@ -122,11 +122,11 @@ void prrel (r)
     indx = RINDEX (r);
     switch (r & RSMASK) {
     default:        putchar ('?');  break;
-    case RABS:      putchar ('a');  break;
     case RTEXT:     putchar ('t');  break;
     case RDATA:     putchar ('d');  break;
     case RBSS:      putchar ('b');  break;
     case REXT:      printf ("%d", indx);
+    case RABS:      break;
     }
     switch (r & RFMASK) {
     default:        putchar ('?');  break;
@@ -168,7 +168,7 @@ void prdata (n)
     while (n--) {
         printf ("    %8x:\t%08x", addr++, fgetword (text));
         if (rflag) {
-            putchar ('\t');
+            putchar (' ');
             prrel (fgetrel (rel));
         }
         putchar ('\n');
