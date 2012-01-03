@@ -2,40 +2,40 @@
 #
 # Makefile.in for the cc part of pcc.
 #
-VPATH=@srcdir@
-srcdir=@srcdir@
-top_srcdir=@top_srcdir@
-top_builddir=@top_builddir@
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = @bindir@
-libdir = @libdir@
-libexecdir = @libexecdir@
-includedir = @includedir@
-datarootdir = @datarootdir@
-mandir = @mandir@
-strip = @strip@
-CC = @CC@
-EXEEXT = @EXEEXT@
-TARGOS = @targos@
-TARGMACH = @targmach@
-TARGET = @target@
-VERSION = @PACKAGE_VERSION@
+
+srcdir=.
+top_srcdir=../..
+top_builddir=../..
+prefix = /usr/local
+exec_prefix = /usr/local
+bindir = ${exec_prefix}/bin
+libdir = ${exec_prefix}/lib
+libexecdir = ${exec_prefix}/libexec
+includedir = ${prefix}/include
+datarootdir = ${prefix}/share
+mandir = ${datarootdir}/man
+strip = yes
+CC = gcc
+EXEEXT = 
+TARGOS = bsd
+TARGMACH = mips
+TARGET = mips-unknown-bsd
+VERSION = 0.9.9
 PCCLIBDIR = $(libdir)/pcc/$(TARGET)/$(VERSION)/lib
 PCCINCDIR = $(libdir)/pcc/$(TARGET)/$(VERSION)/include
-CFLAGS = @CFLAGS@ @ADD_CFLAGS@
-CPPFLAGS = @CPPFLAGS@ -DLIBEXECDIR=\"${libexecdir}/\" \
-	@ADD_CPPFLAGS@ -DINCLUDEDIR=\"${includedir}/\" \
+CFLAGS = -g -O2  -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
+CPPFLAGS =  -DLIBEXECDIR=\"${libexecdir}/\" \
+	 -DGCC_COMPAT -DINCLUDEDIR=\"${includedir}/\" \
 	-DPCCINCDIR=\"${PCCINCDIR}/\" -DPCCLIBDIR=\"${PCCLIBDIR}/\" \
 	-Dos_${TARGOS} -DTARGMACH=${TARGMACH} -Dmach_${TARGMACH} \
 	-I${top_builddir} -I${top_srcdir}/os/${TARGOS} -I${MIPDIR} -I${MDIR}
-LIBS = @LIBS@
-LDFLAGS = @LDFLAGS@
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LIBS = 
+LDFLAGS = 
+INSTALL = /usr/bin/install -c
+INSTALL_PROGRAM = ${INSTALL}
 
 OBJS=cc.o compat.o
-DEST=@BINPREFIX@pcc$(EXEEXT)
+DEST=mips-bsd-pcc$(EXEEXT)
 
 MIPDIR=${top_srcdir}/mip
 MDIR=${top_srcdir}/arch/$(TARGMACH)

@@ -2,35 +2,35 @@
 #
 # Makefile.in for ccom
 #
-VPATH=@srcdir@
-srcdir=@srcdir@
-top_srcdir=@top_srcdir@
-builddir=@builddir@
-top_builddir=@top_builddir@
+
+srcdir=.
+top_srcdir=../..
+builddir=.
+top_builddir=../..
 XFL=-DPCC_DEBUG
-CC = @CC@
-EXEEXT = @EXEEXT@
-CC_FOR_BUILD = @CC_FOR_BUILD@
-_CFLAGS = @CFLAGS@
-CFLAGS = $(_CFLAGS) @ADD_CFLAGS@
-CPPFLAGS = @ADD_CPPFLAGS@ ${XFL} -Dos_${TARGOS} -Dmach_${TARGMACH} \
+CC = gcc
+EXEEXT = 
+CC_FOR_BUILD = gcc
+_CFLAGS = -g -O2
+CFLAGS = $(_CFLAGS)  -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
+CPPFLAGS =  -DGCC_COMPAT ${XFL} -Dos_${TARGOS} -Dmach_${TARGMACH} \
 	-D_ISOC99_SOURCE \
 	-I${srcdir} -I${builddir} -I${top_builddir} -I${MIPDIR} -I${MDIR} \
 	-I${top_srcdir}/os/${TARGOS} 
-LIBS = @LIBS@
-LDFLAGS = @LDFLAGS@
-LEX = @LEX@
-YACC = @YACC@
-TARGOS = @targos@
-TARGMACH = @targmach@
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-libexecdir = @libexecdir@
-datarootdir = @datarootdir@
-mandir = @mandir@
-strip = @strip@
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
+LIBS = 
+LDFLAGS = 
+LEX = flex
+YACC = bison -y
+TARGOS = bsd
+TARGMACH = mips
+prefix = /usr/local
+exec_prefix = /usr/local
+libexecdir = ${exec_prefix}/libexec
+datarootdir = ${prefix}/share
+mandir = ${datarootdir}/man
+strip = yes
+INSTALL = /usr/bin/install -c
+INSTALL_PROGRAM = ${INSTALL}
 
 MDIR=$(top_srcdir)/arch/$(TARGMACH)
 MIPDIR=$(top_srcdir)/mip
@@ -42,7 +42,7 @@ OBJS2=match.o reader.o optim2.o regs.o local2.o order.o table.o
 
 OBJS=$(OBJS1) $(OBJS2) compat.o common.o main.o external.o
 
-DEST=@BINPREFIX@ccom$(EXEEXT)
+DEST=mips-bsd-ccom$(EXEEXT)
 
 all: ${DEST}
 

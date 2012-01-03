@@ -2,35 +2,35 @@
 #
 # Makefile.in for cpp
 #
-VPATH=@srcdir@
-srcdir=@srcdir@
-top_srcdir=@top_srcdir@
-builddir=@builddir@
-top_builddir=@top_builddir@
+
+srcdir=.
+top_srcdir=../..
+builddir=.
+top_builddir=../..
 XFL=-DCPP_DEBUG
 
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = @bindir@
-libexecdir = @libexecdir@
-datarootdir = @datarootdir@
-mandir = @mandir@
-strip = @strip@
-CC = @CC@
-EXEEXT = @EXEEXT@
-CFLAGS = @CFLAGS@ @ADD_CFLAGS@
-CPPFLAGS = @CPPFLAGS@ @ADD_CPPFLAGS@ ${XFL} -I${srcdir} -I${top_builddir} -I${builddir} -I${MIPDIR} -I${MDIR}
-LIBS = @LIBS@
-LDFLAGS = @LDFLAGS@
-LEX = @LEX@
-YACC = @YACC@
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
-TARGMACH = @targmach@
+prefix = /usr/local
+exec_prefix = /usr/local
+bindir = ${exec_prefix}/bin
+libexecdir = ${exec_prefix}/libexec
+datarootdir = ${prefix}/share
+mandir = ${datarootdir}/man
+strip = yes
+CC = gcc
+EXEEXT = 
+CFLAGS = -g -O2  -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
+CPPFLAGS =   -DGCC_COMPAT ${XFL} -I${srcdir} -I${top_builddir} -I${builddir} -I${MIPDIR} -I${MDIR}
+LIBS = 
+LDFLAGS = 
+LEX = flex
+YACC = bison -y
+INSTALL = /usr/bin/install -c
+INSTALL_PROGRAM = ${INSTALL}
+TARGMACH = mips
 
 OBJS=cpp.o cpy.o token.o compat.o
 HEADERS=cpp.h
-DEST=@BINPREFIX@cpp$(EXEEXT)
+DEST=mips-bsd-cpp$(EXEEXT)
 
 MIPDIR=$(top_srcdir)/mip
 MDIR=$(top_srcdir)/arch/$(TARGMACH)

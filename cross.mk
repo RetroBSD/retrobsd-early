@@ -7,6 +7,7 @@ AS		= $(CC) -x assembler-with-cpp
 LD		= ld
 AR		= ar
 RANLIB		= ranlib
+YACC            = byacc
 SIZE		= size
 OBJDUMP		= objdump
 INSTALL		= install -m 644

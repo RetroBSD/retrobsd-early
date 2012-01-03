@@ -166,6 +166,8 @@ void free(ap)
 {
 	register union store *p = (union store *)ap;
 
+	if (p == NULL)
+	        return;
 	ASSERT(p > clearbusy(allocs[1].ptr) && p <= alloct);
 	ASSERT(allock());
 	allocp = --p;
@@ -190,6 +192,8 @@ realloc(vp, nbytes)
 	register unsigned nw;
 	unsigned onw;
 
+	if (p == NULL)
+	        return malloc(nbytes);
 	if (testbusy(p[-1].ptr))
 		free((char *)p);
 	onw = p[-1].ptr - p;

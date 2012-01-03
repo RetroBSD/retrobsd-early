@@ -44,4 +44,6 @@ struct utsname {
 	char	machine[128];	/* Hardware type. */
 };
 
+int uname (struct utsname *name);
+
 #endif	/* !_SYS_UTSNAME_H */
