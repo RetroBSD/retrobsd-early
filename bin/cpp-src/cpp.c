@@ -1,5 +1,3 @@
-/*	$Id: cpp.c,v 1.110 2010/12/18 16:07:03 ragge Exp $	*/
-
 /*
  * Copyright (c) 2004,2010 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -30,18 +28,11 @@
  * This code originates from the V6 preprocessor with some additions
  * from V7 cpp, and at last ansi/c99 support.
  */
-
-#include "config.h"
-
-#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
 #include <sys/stat.h>
 
 #include <fcntl.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -49,12 +40,11 @@
 #include <time.h>
 #include <ctype.h>
 
-#include "compat.h"
 #include "cpp.h"
 #include "y.tab.h"
 
-#define	MAXARG	250	/* # of args to a macro, limited by char value */
-#define	SBSIZE	600000
+#define	MAXARG	20	/* # of args to a macro, limited by char value */
+#define	SBSIZE	30000
 
 static usch	sbf[SBSIZE];
 /* C command */
@@ -111,7 +101,7 @@ usch *stringbuf = sbf;
  *   character WARN followed by the argument number.
  * - The value element points to the end of the string, to simplify
  *   pushback onto the input queue.
- * 
+ *
  * The first character (from the end) in the replacement list is
  * the number of arguments:
  *   VARG  - ends with ellipsis, next char is argcount without ellips.
@@ -150,6 +140,7 @@ void usage(void);
 usch *xstrdup(const char *str);
 const usch *prtprag(const usch *opb);
 static void addidir(char *idir, struct incs **ww);
+size_t strlcpy(char *dst, const char *src, size_t siz);
 
 int
 main(int argc, char **argv)
@@ -435,6 +426,37 @@ found:			if (nl == 0 || subst(nl, NULL) == 0) {
 	return NULL; /* XXX gcc */
 }
 
+/*
+ * Copy src to string dst of size siz.  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz == 0).
+ * Returns strlen(src); if retval >= siz, truncation occurred.
+ */
+size_t
+strlcpy(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+
+	/* Copy as many bytes as will fit */
+	if (n != 0 && --n != 0) {
+		do {
+			if ((*d++ = *s++) == 0)
+				break;
+		} while (--n != 0);
+	}
+
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';	/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
+
+	return(s - src - 1);	/* count does not include NUL */
+}
+
 void
 line()
 {
@@ -510,7 +532,7 @@ include()
 	struct symtab *nl;
 	usch *osp;
 	usch *fn, *safefn;
-	int c, it;
+	int c;
 
 	if (flslvl)
 		return;
@@ -541,7 +563,6 @@ include()
 			;
 		if (c != '\n')
 			goto bad;
-		it = SYSINC;
 		safefn = fn;
 	} else {
 		usch *nm = stringbuf;
@@ -837,7 +858,7 @@ loop:
 #else
 				continue;
 #endif
-			} 
+			}
 in2:			if (narg < 0) {
 				/* no meaning in object-type macro */
 				savch('#');
@@ -961,16 +982,18 @@ xwarning(usch *s)
 {
 	usch *t;
 	usch *sb = stringbuf;
-	int dummy;
 
 	flbuf();
 	savch(0);
 	if (ifiles != NULL) {
 		t = sheap("%s:%d: warning: ", ifiles->fname, ifiles->lineno);
-		write (2, t, strlen((char *)t));
+		if (write (2, t, strlen((char *)t)) < 0)
+                    /* ignore */;
 	}
-	dummy = write (2, s, strlen((char *)s));
-	dummy = write (2, "\n", 1);
+	if (write (2, s, strlen((char *)s)) < 0)
+	    /* ignore */;
+	if (write (2, "\n", 1) < 0)
+	    /* ignore */;
 	stringbuf = sb;
 }
 
@@ -978,16 +1001,18 @@ void
 xerror(usch *s)
 {
 	usch *t;
-	int dummy;
 
 	flbuf();
 	savch(0);
 	if (ifiles != NULL) {
 		t = sheap("%s:%d: error: ", ifiles->fname, ifiles->lineno);
-		dummy = write (2, t, strlen((char *)t));
+		if (write (2, t, strlen((char *)t)) < 0)
+                    /* ignore */;
 	}
-	dummy = write (2, s, strlen((char *)s));
-	dummy = write (2, "\n", 1);
+	if (write (2, s, strlen((char *)s)) < 0)
+	    /* ignore */;
+	if (write (2, "\n", 1) < 0)
+	    /* ignore */;
 	exit(1);
 }
 
@@ -1002,7 +1027,7 @@ savch(int c)
 	} else {
 		stringbuf = sbf; /* need space to write error message */
 		error("Too much defining");
-	} 
+	}
 }
 
 /*
@@ -1103,7 +1128,7 @@ subst(struct symtab *sp, struct recur *rp)
 			}
 			if (c == '\n')
 				nl++;
-		} while (c == ' ' || c == '\t' || c == '\n' || 
+		} while (c == ' ' || c == '\t' || c == '\n' ||
 			    c == '\r' || c == WARN);
 
 		DPRINT(("c %d\n", c));
@@ -1183,7 +1208,7 @@ expmac(struct recur *rp)
 		case IDENT:
 			/*
 			 * Handle argument concatenation here.
-			 * If an identifier is found and directly 
+			 * If an identifier is found and directly
 			 * after EXPAND or NOEXP then push the
 			 * identifier back on the input stream and
 			 * call sloscan() again.
@@ -1252,9 +1277,9 @@ expmac(struct recur *rp)
 			if (canexpand(rp, nl) == 0)
 				goto def;
 			/*
-			 * If noexp == 0 then expansion of any macro is 
+			 * If noexp == 0 then expansion of any macro is
 			 * allowed.  If noexp == 1 then expansion of a
-			 * fun-like macro is allowed iff there is an 
+			 * fun-like macro is allowed iff there is an
 			 * EXPAND between the identifier and the '('.
 			 */
 			if (noexp == 0) {
@@ -1424,7 +1449,7 @@ expdef(const usch *vp, struct recur *rp, int gotwarn)
 		    (stringbuf[-1] == ' ' || stringbuf[-1] == '\t'))
 			stringbuf--;
 		savch('\0');
-		
+
 	}
 	if (narg == 0 && ellips == 0)
 		while ((c = sloscan()) == WSPACE || c == '\n')
@@ -1442,7 +1467,7 @@ expdef(const usch *vp, struct recur *rp, int gotwarn)
 
 	/*
 	 * push-back replacement-list onto lex buffer while replacing
-	 * arguments. 
+	 * arguments.
 	 */
 	cunput(WARN);
 	while (*sp != 0) {
@@ -1485,7 +1510,7 @@ expdef(const usch *vp, struct recur *rp, int gotwarn)
 				bp++;
 			while (bp > ap) {
 				bp--;
-				if (snuff && !instr && 
+				if (snuff && !instr &&
 				    (*bp == ' ' || *bp == '\t' || *bp == '\n')){
 					while (*bp == ' ' || *bp == '\t' ||
 					    *bp == '\n') {
@@ -1595,7 +1620,7 @@ num2str(int num)
 	static usch buf[12];
 	usch *b = buf;
 	int m = 0;
-	
+
 	if (num < 0)
 		num = -num, m = 1;
 	do {
@@ -1609,7 +1634,7 @@ num2str(int num)
 }
 
 /*
- * similar to sprintf, but only handles %s and %d. 
+ * similar to sprintf, but only handles %s and %d.
  * saves result on heap.
  */
 usch *
@@ -1653,7 +1678,7 @@ usage()
 /*
  * Symbol table stuff.
  * The data structure used is a patricia tree implementation using only
- * bytes to store offsets.  
+ * bytes to store offsets.
  * The information stored is (lower address to higher):
  *
  *	unsigned char bitno[2]; bit number in the string
@@ -1710,7 +1735,7 @@ lookup(const usch *key, int enterf)
 	struct symtab *sp;
 	struct tree *w, *new, *last;
 	int len, cix, bit, fbit, svbit, ix, bitno;
-	const usch *k, *m, *sm;
+	const usch *k, *m;
 
 	/* Count full string length */
 	for (k = key, len = 0; *k; k++, len++)
@@ -1745,7 +1770,7 @@ lookup(const usch *key, int enterf)
 
 	sp = (struct symtab *)w;
 
-	sm = m = sp->namep;
+	m = sp->namep;
 	k = key;
 
 	/* Check for correct string and return */

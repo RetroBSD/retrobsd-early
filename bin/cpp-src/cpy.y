@@ -1,5 +1,3 @@
-/*	$Id: cpy.y,v 1.18 2010/02/25 15:49:00 ragge Exp $	*/
-
 /*
  * Copyright (c) 2004 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
@@ -57,10 +55,9 @@
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OFLIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 %{
 
 #include "cpp.h"
@@ -110,7 +107,7 @@ int setd(int l, int r);
 %type <node>	term e NUMBER UNUMBER
 
 %%
-S:	e '\n'	{ 
+S:	e '\n'	{
 		if ($1.op == 0)
 			error("division by zero");
 		return $1.nd_val;
@@ -218,4 +215,3 @@ setd(int l, int r)
 		return UNUMBER;
 	return NUMBER;
 }
-

@@ -1,5 +1,3 @@
-/*	$Id: token.c,v 1.41 2010/12/27 18:13:10 ragge Exp $	*/
-
 /*
  * Copyright (c) 2004,2009 Anders Magnusson. All rights reserved.
  *
@@ -31,7 +29,7 @@
  *		characters that may require actions.
  *	- sloscan() tokenize the input stream and returns tokens.
  *		It may recurse into itself during expansion.
- *	- yylex() returns something from the input stream that 
+ *	- yylex() returns something from the input stream that
  *		is suitable for yacc.
  *
  *	Other functions of common use:
@@ -39,19 +37,13 @@
  *	- inch() is like inpch but \\n and trigraphs are expanded.
  *	- unch() pushes back a character to the input stream.
  */
-
-#include "config.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <fcntl.h>
 #include <errno.h>
 
-#include "compat.h"
 #include "cpp.h"
 #include "y.tab.h"
 
@@ -79,6 +71,8 @@ extern int yyget_lineno (void);
 extern void yyset_lineno (int);
 
 static int inch(void);
+
+size_t strlcat(char *dst, const char *src, size_t siz);
 
 int inif;
 
@@ -128,7 +122,7 @@ static char spechr[256] = {
 static void
 unch(int c)
 {
-		
+
 	--ifiles->curptr;
 	if (ifiles->curptr < ifiles->bbuf)
 		error("pushback buffer full");
@@ -360,7 +354,7 @@ zagain:
 		yyp = 0;
 		break;
 
-	case '0': case '1': case '2': case '3': case '4': case '5': 
+	case '0': case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
 		/* readin a "pp-number" */
 ppnum:		for (;;) {
@@ -377,7 +371,7 @@ ppnum:		for (;;) {
 			if ((spechr[ch] & C_ID) || ch == '.') {
 				yytext[yyp++] = (usch)ch;
 				continue;
-			} 
+			}
 			break;
 		}
 		unch(ch);
@@ -386,7 +380,7 @@ ppnum:		for (;;) {
 		return NUMBER;
 
 	case '\'':
-chlit:		
+chlit:
 		for (;;) {
 			if ((ch = inch()) == '\\') {
 				yytext[yyp++] = (usch)ch;
@@ -477,7 +471,7 @@ chlit:
 				yytext[yyp++] = (usch)ch;
 				yytext[yyp++] = (usch)inch();
 				continue;
-			} else 
+			} else
 				yytext[yyp++] = (usch)ch;
 			if (ch == '\"')
 				break;
@@ -497,15 +491,15 @@ chlit:
 		/* FALLTHROUGH */
 
 	/* Yetch, all identifiers */
-	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': 
-	case 'g': case 'h': case 'i': case 'j': case 'k': case 'l': 
-	case 'm': case 'n': case 'o': case 'p': case 'q': case 'r': 
-	case 's': case 't': case 'u': case 'v': case 'w': case 'x': 
+	case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+	case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+	case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+	case 's': case 't': case 'u': case 'v': case 'w': case 'x':
 	case 'y': case 'z':
-	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F': 
+	case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
 	case 'G': case 'H': case 'I': case 'J': case 'K':
-	case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': 
-	case 'S': case 'T': case 'U': case 'V': case 'W': case 'X': 
+	case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+	case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
 	case 'Y': case 'Z':
 	case '_': /* {L}({L}|{D})* */
 
@@ -675,6 +669,41 @@ msdos:		if ((c = inpch()) == '\n') {
 }
 
 /*
+ * Appends src to string dst of size siz (unlike strncat, siz is the
+ * full size of dst, not space left).  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
+ * Returns strlen(initial dst) + strlen(src); if retval >= siz,
+ * truncation occurred.
+ */
+size_t
+strlcat(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+	size_t dlen;
+
+	/* Find the end of dst and adjust bytes left but don't go past end */
+	while (n-- != 0 && *d != '\0')
+		d++;
+	dlen = d - dst;
+	n = siz - dlen;
+
+	if (n == 0)
+		return(dlen + strlen(s));
+	while (*s != '\0') {
+		if (n != 1) {
+			*d++ = *s;
+			n--;
+		}
+		s++;
+	}
+	*d = '\0';
+
+	return(dlen + (s - src));	/* count does not include NUL */
+}
+
+/*
  * Let the command-line args be faked defines at beginning of file.
  */
 static void
@@ -758,7 +787,8 @@ pushfile(const usch *file, const usch *fn, int idx, void *incs)
 		prinit(initar, ic);
 		initar = NULL;
 		if (dMflag)
-			write(ofd, ic->buffer, strlen((char *)ic->buffer));
+			if (write(ofd, ic->buffer, strlen((char *)ic->buffer)) < 0)
+                            /* ignore */;
 		fastscan();
 		prtline();
 		ic->infil = oin;
@@ -790,7 +820,8 @@ prtline()
 			return; /* no output */
 		if (ifiles->lineno == 1) {
 			s = sheap("%s: %s\n", Mfile, ifiles->fname);
-			write(ofd, s, strlen((char *)s));
+			if (write(ofd, s, strlen((char *)s)) < 0)
+                            /* ignore */;
 		}
 	} else if (!Pflag)
 		putstr(sheap("\n# %d \"%s\"\n", ifiles->lineno, ifiles->fname));
@@ -954,8 +985,8 @@ skpln(void)
 }
 
 static void
-ifdefstmt(void)		 
-{ 
+ifdefstmt(void)
+{
 	int t;
 
 	if (flslvl) {
@@ -976,8 +1007,8 @@ ifdefstmt(void)
 }
 
 static void
-ifndefstmt(void)	  
-{ 
+ifndefstmt(void)
+{
 	int t;
 
 	if (flslvl) {
@@ -998,7 +1029,7 @@ ifndefstmt(void)
 }
 
 static void
-endifstmt(void)		 
+endifstmt(void)
 {
 	if (flslvl) {
 		flslvl--;

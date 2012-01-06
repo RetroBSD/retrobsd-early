@@ -1,99 +1,56 @@
-#	$Id: Makefile.in,v 1.28 2010/12/18 15:22:13 ragge Exp $
-#
-# Makefile.in for cpp
-#
+TOPSRC		= $(shell cd ../..; pwd)
+#include $(TOPSRC)/target.mk
+include $(TOPSRC)/cross.mk
 
-srcdir=.
-top_srcdir=../..
-builddir=.
-top_builddir=../..
-XFL=-DCPP_DEBUG
+OBJS            = cpp.o cpy.o token.o
 
-prefix = /usr/local
-exec_prefix = /usr/local
-bindir = ${exec_prefix}/bin
-libexecdir = ${exec_prefix}/libexec
-datarootdir = ${prefix}/share
-mandir = ${datarootdir}/man
-strip = yes
-CC = gcc
-EXEEXT = 
-CFLAGS = -g -O2  -Wall -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
-CPPFLAGS =   -DGCC_COMPAT ${XFL} -I${srcdir} -I${top_builddir} -I${builddir} -I${MIPDIR} -I${MDIR}
-LIBS = 
-LDFLAGS = 
-LEX = flex
-YACC = bison -y
-INSTALL = /usr/bin/install -c
-INSTALL_PROGRAM = ${INSTALL}
-TARGMACH = mips
+LDFLAGS         += -g
 
-OBJS=cpp.o cpy.o token.o compat.o
-HEADERS=cpp.h
-DEST=mips-bsd-cpp$(EXEEXT)
+CFLAGS		= -DCROSS
+CFLAGS		+= -Werror -Wall -Os
+CFLAGS		+= -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
+CFLAGS          += -DCPP_DEBUG -DGCC_COMPAT #-I${MIPDIR} -I${MDIR}
+CFLAGS          += -DHAVE_CPP_VARARG_MACRO_GCC
 
-MIPDIR=$(top_srcdir)/mip
-MDIR=$(top_srcdir)/arch/$(TARGMACH)
+all:            ../cpp
 
-all: ${DEST}
+../cpp:         $(OBJS)
+		${CC} ${LDFLAGS} -o cpp.elf $(OBJS) ${LIBS}
+		${OBJDUMP} -S cpp.elf > cpp.dis
+		${SIZE} cpp.elf
+		${ELF2AOUT} cpp.elf $@
 
-${DEST}: $(OBJS) $(HEADERS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $@
-
-.c.o:
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $<
-
-.l.o:
-	$(LEX) $(LFLAGS) $<
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o $@ lex.yy.c
-
-.y.o:
-	$(YACC) -d $(YFLAGS) $<
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o $@ y.tab.c
-
-compat.o: $(MIPDIR)/compat.c
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o $@ $(MIPDIR)/compat.c
-
-$(OBJS): $(HEADERS)
-
-cpp.o: cpy.o
-token.o: cpy.o
-
-test:
-	./cpp < tests/test1 > tests/run1
-	cmp tests/run1 tests/res1
-	./cpp < tests/test2 > tests/run2
-	cmp tests/run2 tests/res2
-	./cpp < tests/test3 > tests/run3
-	cmp tests/run3 tests/res3
-	./cpp < tests/test4 > tests/run4
-	cmp tests/run4 tests/res4
-	./cpp < tests/test5 > tests/run5
-	cmp tests/run5 tests/res5
-	./cpp < tests/test6 > tests/run6
-	cmp tests/run6 tests/res6
-	./cpp < tests/test7 > tests/run7
-	cmp tests/run7 tests/res7
-	./cpp < tests/test8 > tests/run8
-	cmp tests/run8 tests/res8
-	./cpp < tests/test9 > tests/run9
-	cmp tests/run9 tests/res9
-	./cpp < tests/test10 > tests/run10
-	cmp tests/run10 tests/res10
-
-
-install:
-	test -z "${DESTDIR}$(libexecdir)" || mkdir -p "${DESTDIR}$(libexecdir)"
-	${INSTALL_PROGRAM} ${DEST} ${DESTDIR}${libexecdir}
-	@if [ ${strip} = yes ]; then		\
-		strip ${DESTDIR}${libexecdir}/${DEST} ;	\
-		echo strip ${DESTDIR}${libexecdir}/${DEST} ;	\
-	fi
-	test -z "${DESTDIR}$(mandir)/man1" || mkdir -p "${DESTDIR}$(mandir)/man1"       
-	${INSTALL} $(srcdir)/cpp.1 ${DESTDIR}${mandir}/man1/$(DEST).1
+cpp.o:          cpp.c y.tab.h
 
 clean:
-	/bin/rm -f $(OBJS) $(DEST) lex.yy.c y.tab.[ch] tests/run*
+		rm -f *.o *.0 *.elf ../cpp *.elf *.dis tags *~ lex.yy.c y.tab.[ch] tests/run*
 
-distclean: clean
-	/bin/rm -f Makefile
+.l.o:
+		$(LEX) $(LFLAGS) $<
+		$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o $@ lex.yy.c
+
+cpy.o y.tab.h:  cpy.y
+		$(YACC) -d $(YFLAGS) cpy.y
+		$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o cpy.o y.tab.c
+
+test:
+		./cpp < tests/test1 > tests/run1
+		cmp tests/run1 tests/res1
+		./cpp < tests/test2 > tests/run2
+		cmp tests/run2 tests/res2
+		./cpp < tests/test3 > tests/run3
+		cmp tests/run3 tests/res3
+		./cpp < tests/test4 > tests/run4
+		cmp tests/run4 tests/res4
+		./cpp < tests/test5 > tests/run5
+		cmp tests/run5 tests/res5
+		./cpp < tests/test6 > tests/run6
+		cmp tests/run6 tests/res6
+		./cpp < tests/test7 > tests/run7
+		cmp tests/run7 tests/res7
+		./cpp < tests/test8 > tests/run8
+		cmp tests/run8 tests/res8
+		./cpp < tests/test9 > tests/run9
+		cmp tests/run9 tests/res9
+		./cpp < tests/test10 > tests/run10
+		cmp tests/run10 tests/res10

@@ -30,7 +30,8 @@
 #include <stdio.h> /* for obuf */
 #include <stdlib.h>
 
-#include "config.h"
+/* Version string */
+#define VERSSTR "cpp for RetroBSD"
 
 typedef unsigned char usch;
 #ifdef YYTEXT_POINTER
@@ -54,16 +55,7 @@ extern	int	ofd;
 #define ENTER   1
 
 /* buffer used internally */
-#ifndef CPPBUF
-#if defined(__pdp11__)
 #define CPPBUF  BUFSIZ
-#elif defined(WIN32)
-/* winxp seems to fail > 26608 bytes */
-#define CPPBUF	16384
-#else
-#define CPPBUF	65536
-#endif
-#endif
 
 #define	NAMEMAX	CPPBUF	/* currently pushbackbuffer */
 
@@ -86,8 +78,8 @@ struct includ {
 
 /* Symbol table entry  */
 struct symtab {
-	const usch *namep;    
-	const usch *value;    
+	const usch *namep;
+	const usch *value;
 	const usch *file;
 	int line;
 };

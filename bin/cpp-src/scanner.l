@@ -1,6 +1,4 @@
 %{
-/*	$Id: scanner.l,v 1.49 2009/02/14 09:23:55 ragge Exp $   */
-
 /*
  * Copyright (c) 2004 Anders Magnusson. All rights reserved.
  *
@@ -26,15 +24,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "config.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <fcntl.h>
 #include <errno.h>
 
@@ -192,7 +185,7 @@ WS	[\t ]
 			}
 
 0[xX]{H}+{IS}?		{	scale = 16;
-			num:	if (YYSTATE == IFR) 
+			num:	if (YYSTATE == IFR)
 					cvtdig(scale);
 				PRTOUT(NUMBER);
 			}
@@ -671,8 +664,8 @@ elsestmt(void)
 }
 
 static void
-ifdefstmt(void)		 
-{ 
+ifdefstmt(void)
+{
 	int t;
 
 	if (flslvl) {
@@ -699,8 +692,8 @@ ifdefstmt(void)
 }
 
 static void
-ifndefstmt(void)	  
-{ 
+ifndefstmt(void)
+{
 	int t;
 
 	slow = 1;
@@ -718,7 +711,7 @@ ifndefstmt(void)
 }
 
 static void
-endifstmt(void)		 
+endifstmt(void)
 {
 	if (flslvl) {
 		flslvl--;
@@ -736,8 +729,8 @@ endifstmt(void)
 
 /*
  * Note! Ugly!
- * Walk over the string s and search for defined, and replace it with 
- * spaces and a 1 or 0. 
+ * Walk over the string s and search for defined, and replace it with
+ * spaces and a 1 or 0.
  */
 static void
 fixdefined(usch *s)
