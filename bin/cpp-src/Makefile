@@ -1,16 +1,14 @@
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 OBJS            = cpp.o cpy.o token.o
 
 LDFLAGS         += -g
 
-CFLAGS		= -DCROSS
 CFLAGS		+= -Werror -Wall -Os
-CFLAGS		+= -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
-CFLAGS          += -DCPP_DEBUG -DGCC_COMPAT #-I${MIPDIR} -I${MDIR}
-CFLAGS          += -DHAVE_CPP_VARARG_MACRO_GCC
+#CFLAGS		+= -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
+CFLAGS          += -DCPP_DEBUG -DGCC_COMPAT -DHAVE_CPP_VARARG_MACRO_GCC
 
 all:            ../cpp
 

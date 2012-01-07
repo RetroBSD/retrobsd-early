@@ -96,7 +96,7 @@ char yytext[CPPBUF];
 #define	C_ID	4
 #define	C_I	(C_SPEC|C_ID)
 #define	C_2	8		/* for yylex() tokenizing */
-static char spechr[256] = {
+static const char spechr[256] = {
 	0,	0,	0,	0,	0,	0,	0,	0,
 	0,	0,	C_SPEC,	0,	0,	0,	0,	0,
 	0,	0,	0,	0,	0,	0,	0,	0,

@@ -1,5 +1,3 @@
-/*	$Id: cpp.h,v 1.43 2010/02/25 15:49:00 ragge Exp $	*/
-
 /*
  * Copyright (c) 2004 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.

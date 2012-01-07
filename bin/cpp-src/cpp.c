@@ -37,14 +37,13 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <ctype.h>
 
 #include "cpp.h"
 #include "y.tab.h"
 
 #define	MAXARG	20	/* # of args to a macro, limited by char value */
-#define	SBSIZE	30000
+#define	SBSIZE	20000
 
 static usch	sbf[SBSIZE];
 /* C command */
@@ -1674,7 +1673,6 @@ usage()
 	error("Usage: cpp [-Cdt] [-Dvar=val] [-Uvar] [-Ipath] [-Spath]");
 }
 
-#ifdef notyet
 /*
  * Symbol table stuff.
  * The data structure used is a patricia tree implementation using only
@@ -1685,7 +1683,6 @@ usage()
  *	unsigned char left[3];	offset from base to left element
  *	unsigned char right[3];	offset from base to right element
  */
-#endif
 
 /*
  * This patricia implementation is more-or-less the same as
