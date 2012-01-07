@@ -38,7 +38,7 @@
 #include "y.tab.h"
 
 #define	MAXARG	20	/* # of args to a macro, limited by char value */
-#define	SBSIZE	20000
+#define	SBSIZE	(12*1024)
 
 static usch	sbf[SBSIZE];
 /* C command */
@@ -1782,7 +1782,8 @@ lookup(const usch *key, int enterf)
 		ix >>= 1, cix++;
 
 	/* Create new node */
-	if ((new = malloc(sizeof *new)) == NULL)
+	new = malloc(sizeof *new);
+	if (! new)
 		error("getree: couldn't allocate tree");
 	bit = P_BIT(key, cix);
 	new->bitno = cix | (bit ? RIGHT_IS_LEAF : LEFT_IS_LEAF);

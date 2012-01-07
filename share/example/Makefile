@@ -1,8 +1,11 @@
 
-all:	hello
+all:	ashello
 
-hello:	hello.o
-	$(LD) hello.o -o $@
+ashello: ashello.o
+	$(LD) ashello.o -o $@
+
+chello: chello.o
+	$(CC) chello.o -o $@
 
 clean:
-	rm -f *.o hello *~
+	rm -f *.o ashello *~

@@ -14,7 +14,7 @@
 /* DEFAULT RULES FOR UNIX */
 
 char *builtin[] = {
-    ".SUFFIXES : .out .a .o .c .y .l .s",
+    ".SUFFIXES : .out .a .o .c .y .l .s .S",
     "YACC=yacc",
     "YFLAGS=",
     "LEX=lex",
@@ -23,6 +23,7 @@ char *builtin[] = {
     "AS=as",
     "LD=ld",
     "CFLAGS=",
+    "ASFLAGS=",
     "LIBS=",
 
     ".c.a :",
@@ -33,8 +34,11 @@ char *builtin[] = {
     ".c.o :",
     "\t$(CC) $(CFLAGS) -c $<",
 
+    ".S.o :",
+    "\t$(CC) $(ASFLAGS) -c $<",
+
     ".s.o :",
-    "\t$(AS) -o $@ $<",
+    "\t$(AS) $(ASFLAGS) -o $@ $<",
 
     ".y.o :",
     "\t$(YACC) $(YFLAGS) $<",

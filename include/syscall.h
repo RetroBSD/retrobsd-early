@@ -2,14 +2,12 @@
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)syscall.h	5.4.11 (2.11BSD) 2000/2/20
  */
 
 /*
  * DO NOT place any comments on the same line as a SYS_* definition.  This
  * causes cpp to leave a trailing tab when expanding macros in pdp/sys/SYS.h
-*/
+ */
 
 #define	SYS_exit	1
 #define	SYS_fork	2

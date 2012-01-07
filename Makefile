@@ -79,11 +79,14 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
+INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
+                  include/sys/select.h
+SHARE_FILES	= share/re.help share/example/Makefile \
+                  share/example/ashello.S share/example/chello.c
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
-                  var/log/messages var/log/wtmp .profile share/re.help \
-                  share/example/hello.s share/example/Makefile
+                  $(INC_FILES) $(SHARE_FILES) var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/example/ \
-                  share/misc/ var/ var/run/ var/log/ u/
+                  share/misc/ var/ var/run/ var/log/ u/ include/ include/sys/
 
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \

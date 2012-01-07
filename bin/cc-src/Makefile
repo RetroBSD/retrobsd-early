@@ -6,9 +6,9 @@ OBJS            = cc.o
 
 CFLAGS		+= -Werror -Wall -DGCC_COMPAT
 CFLAGS          += -DVERSSTR=\"1.0\" \
-                   -DSTDINC=\"/include/\" \
-                   -DLIBDIR=\"/lib/\" \
-                   -DLIBEXECDIR=\"/libexec/\"
+                   -DSTDINC=\"/include\" \
+                   -DLIBDIR=\"/lib\" \
+                   -DLIBEXECDIR=\"/libexec\"
                    -DCRT0FILE=\"/lib/crt0.o\" \
                    -DCRT0FILE_PROFILE=\"/lib/gcrt0.o\"
 
