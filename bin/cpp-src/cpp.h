@@ -24,8 +24,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include <stdio.h> /* for obuf */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/ctype.h>
+#else
+#   include <stdio.h> /* for obuf */
+#   include <ctype.h>
+#endif
 #include <stdlib.h>
 
 /* Version string */

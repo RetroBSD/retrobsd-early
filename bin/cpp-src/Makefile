@@ -7,7 +7,6 @@ OBJS            = cpp.o cpy.o token.o
 LDFLAGS         += -g
 
 CFLAGS		+= -Werror -Wall -Os
-#CFLAGS		+= -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wsign-compare
 CFLAGS          += -DCPP_DEBUG -DGCC_COMPAT -DHAVE_CPP_VARARG_MACRO_GCC
 
 all:            ../cpp
@@ -32,23 +31,23 @@ cpy.o y.tab.h:  cpy.y
 		$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c -o cpy.o y.tab.c
 
 test:
-		./cpp < tests/test1 > tests/run1
+		./cpp.elf < tests/test1 > tests/run1
 		cmp tests/run1 tests/res1
-		./cpp < tests/test2 > tests/run2
+		./cpp.elf < tests/test2 > tests/run2
 		cmp tests/run2 tests/res2
-		./cpp < tests/test3 > tests/run3
+		./cpp.elf < tests/test3 > tests/run3
 		cmp tests/run3 tests/res3
-		./cpp < tests/test4 > tests/run4
+		./cpp.elf < tests/test4 > tests/run4
 		cmp tests/run4 tests/res4
-		./cpp < tests/test5 > tests/run5
+		./cpp.elf < tests/test5 > tests/run5
 		cmp tests/run5 tests/res5
-		./cpp < tests/test6 > tests/run6
+		./cpp.elf < tests/test6 > tests/run6
 		cmp tests/run6 tests/res6
-		./cpp < tests/test7 > tests/run7
+		./cpp.elf < tests/test7 > tests/run7
 		cmp tests/run7 tests/res7
-		./cpp < tests/test8 > tests/run8
+		./cpp.elf < tests/test8 > tests/run8
 		cmp tests/run8 tests/res8
-		./cpp < tests/test9 > tests/run9
+		./cpp.elf < tests/test9 > tests/run9
 		cmp tests/run9 tests/res9
-		./cpp < tests/test10 > tests/run10
+		./cpp.elf < tests/test10 > tests/run10
 		cmp tests/run10 tests/res10

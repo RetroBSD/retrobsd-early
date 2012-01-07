@@ -1,5 +1,17 @@
-/*	$Id: cc.c,v 1.163 2010/11/17 07:15:30 gmcgarry Exp $	*/
 /*
+ * Front-end to the C compiler.
+ *
+ * Brief description of its syntax:
+ * - Files that end with .c are passed via cpp->ccom->as->ld
+ * - Files that end with .i are passed via ccom->as->ld
+ * - Files that end with .s are passed as->ld
+ * - Files that end with .o are passed directly to ld
+ * - Multiple files may be given on the command line.
+ * - Unrecognized options are all sent directly to ld.
+ * -c or -S cannot be combined with -o if multiple files are given.
+ *
+ * This file should be rewritten readable.
+ *
  * Copyright(C) Caldera International Inc. 2001-2002. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,44 +41,25 @@
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OFLIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-/*
- * Front-end to the C compiler.
- *
- * Brief description of its syntax:
- * - Files that end with .c are passed via cpp->ccom->as->ld
- * - Files that end with .i are passed via ccom->as->ld
- * - Files that end with .s are passed as->ld
- * - Files that end with .o are passed directly to ld
- * - Multiple files may be given on the command line.
- * - Unrecognized options are all sent directly to ld.
- * -c or -S cannot be combined with -o if multiple files are given.
- *
- * This file should be rewritten readable.
- */
-#include "config.h"
-
 #include <sys/types.h>
-#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
-#endif
 
 #include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
 #include <signal.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/errno.h>
+#else
+#   include <stdio.h>
+#   include <errno.h>
 #endif
 
 #ifdef WIN32
@@ -74,11 +67,6 @@
 #include <process.h>
 #include <io.h>
 #endif
-
-#include "compat.h"
-
-#include "ccconfig.h"
-/* C command */
 
 #define	MKS(x) _MKS(x)
 #define _MKS(x) #x
@@ -93,6 +81,10 @@
 
 #ifndef LIBDIR
 #define LIBDIR		"/usr/lib/"
+#endif
+
+#ifndef LIBEXECDIR
+#define LIBEXECDIR	"/usr/libexec/"
 #endif
 
 #ifndef PREPROCESSOR
@@ -111,18 +103,9 @@
 #define LINKER		"ld"
 #endif
 
-#define OS MKS(TARGOS)
-#define MACH MKS(TARGMACH)
-#ifndef PCCINCDIR
-#define PCCINCDIR	LIBDIR "pcc/" MACH "-" OS "/" PACKAGE_VERSION "/include"
-#endif
-#ifndef PCCLIBDIR
-#define PCCLIBDIR	LIBDIR "pcc/" MACH "-" OS "/" PACKAGE_VERSION "/lib"
-#endif
-
-#define MAXFIL 10000
-#define MAXLIB 10000
-#define MAXAV  10000
+#define MAXFIL 1000
+#define MAXLIB 1000
+#define MAXAV  1000
 #define MAXOPT 100
 char	*tmp3;
 char	*tmp4;
@@ -188,12 +171,22 @@ int	pthreads;
 int	xcflag;
 int 	ascpp;
 
-char	*passp = LIBEXECDIR PREPROCESSOR;
+char	*passp = "/bin/" PREPROCESSOR;
 char	*pass0 = LIBEXECDIR COMPILER;
 char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*Bflag;
-char *cppadd[] = CPPADD;
+
+/* common cpp predefines */
+char *cppadd[] = { "-D__unix__", "-D__BSD__", "-D__RETROBSD__", NULL };
+
+#ifdef __mips__
+#   define	CPPMDADD { "-D__mips__", NULL, }
+#endif
+#ifdef __i386__
+#   define	CPPMDADD { "-D__i386__", NULL, }
+#endif
+
 #ifdef DYNLINKER
 char *dynlinker[] = DYNLINKER;
 #endif
@@ -240,10 +233,10 @@ char *libclibs_profile[] = { "-lc_p", NULL };
 #define STARTLABEL "__start"
 #endif
 char *incdir = STDINC;
-char *altincdir = INCLUDEDIR "pcc/";
 char *libdir = LIBDIR;
-char *pccincdir = PCCINCDIR;
-char *pcclibdir = PCCLIBDIR;
+char *altincdir;
+char *pccincdir;
+char *pcclibdir;
 
 /* handle gcc warning emulations */
 struct Wflags {
@@ -280,27 +273,9 @@ struct Wflags {
 /*
  * Wide char defines.
  */
-#if WCHAR_TYPE == USHORT
 #define	WCT "short unsigned int"
 #define WCM "65535U"
-#if WCHAR_SIZE != 2
-#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
-#endif
-#elif WCHAR_TYPE == INT
-#define WCT "int"
-#define WCM "2147483647"
-#if WCHAR_SIZE != 4
-#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
-#endif
-#elif WCHAR_TYPE == UNSIGNED
-#define WCT "unsigned int"
-#define WCM "4294967295U"
-#if WCHAR_SIZE != 4
-#error WCHAR_TYPE vs. WCHAR_SIZE mismatch
-#endif
-#else
-#error WCHAR_TYPE not defined or invalid
-#endif
+#define WCS 2
 
 #ifdef GCC_COMPAT
 #ifndef REGISTER_PREFIX
@@ -315,6 +290,121 @@ struct Wflags {
 #define PCC_PTRDIFF_TYPE "long int"
 #endif
 
+/*
+ * Copy src to string dst of size siz.  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz == 0).
+ * Returns strlen(src); if retval >= siz, truncation occurred.
+ */
+size_t
+strlcpy(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+
+	/* Copy as many bytes as will fit */
+	if (n != 0 && --n != 0) {
+		do {
+			if ((*d++ = *s++) == 0)
+				break;
+		} while (--n != 0);
+	}
+
+	/* Not enough room in dst, add NUL and traverse rest of src */
+	if (n == 0) {
+		if (siz != 0)
+			*d = '\0';	/* NUL-terminate dst */
+		while (*s++)
+			;
+	}
+
+	return(s - src - 1);	/* count does not include NUL */
+}
+
+/*
+ * Appends src to string dst of size siz (unlike strncat, siz is the
+ * full size of dst, not space left).  At most siz-1 characters
+ * will be copied.  Always NUL terminates (unless siz <= strlen(dst)).
+ * Returns strlen(initial dst) + strlen(src); if retval >= siz,
+ * truncation occurred.
+ */
+size_t
+strlcat(char *dst, const char *src, size_t siz)
+{
+	char *d = dst;
+	const char *s = src;
+	size_t n = siz;
+	size_t dlen;
+
+	/* Find the end of dst and adjust bytes left but don't go past end */
+	while (n-- != 0 && *d != '\0')
+		d++;
+	dlen = d - dst;
+	n = siz - dlen;
+
+	if (n == 0)
+		return(dlen + strlen(s));
+	while (*s != '\0') {
+		if (n != 1) {
+			*d++ = *s;
+			n--;
+		}
+		s++;
+	}
+	*d = '\0';
+
+	return(dlen + (s - src));	/* count does not include NUL */
+}
+
+void
+usage()
+{
+	printf("Usage: cc [options] file...\n");
+	printf("Options:\n");
+	printf("  -h               Display this information\n");
+	printf("  --version        Display compiler version information\n");
+	printf("  -c               Compile and assemble, but do not link\n");
+	printf("  -S               Compile only; do not assemble or link\n");
+	printf("  -E               Preprocess only; do not compile, assemble or link\n");
+	printf("  -P               Preprocess to .i output file\n");
+	printf("  -o <file>        Place the output into <file>\n");
+	printf("  -O, -O0          Enable, disable optimization\n");
+	printf("  -g               Create debug output\n");
+	printf("  -k               Generate position-independent code\n");
+	printf("  -v               Display the programs invoked by the compiler\n");
+	printf("  -Wall            Enable gcc-compatible warnings\n");
+	printf("  -WW              Enable all warnings\n");
+	printf("  -p, -pg          Generate profiled code\n");
+	printf("  -r               Generate relocatable code\n");
+	printf("  -t               Use traditional preprocessor syntax\n");
+	printf("  -C <option>      Pass preprocessor option\n");
+	printf("  -Dname=val       Define preprocessor symbol\n");
+	printf("  -Uname           Undefine preprocessor symbol\n");
+	printf("  -Ipath           Add a directory to preprocessor path\n");
+	printf("  -x <language>    Specify the language of the following input files\n");
+	printf("  -B <directory>   Add <directory> to the compiler's search paths\n");
+	printf("  -m<option>       Target-dependent options\n");
+	printf("  -f<option>       GCC-compatible flags: -fPI -fpicC -fsigned-char\n");
+	printf("                   -fno-signed-char -funsigned-char -fno-unsigned-char\n");
+	printf("                   -fstack-protector -fstack-protector-all\n");
+	printf("                   -fno-stack-protector -fno-stack-protector-all\n");
+	printf("  -isystem dir     Add a system include directory\n");
+	printf("  -include dir     Add an include directory\n");
+	printf("  -idirafter dir   Set a last include directory\n");
+	printf("  -nostdinc        Disable standard include directories\n");
+	printf("  -nostdlib        Disable standard libraries and start files\n");
+	printf("  -nostartfiles    Disable standard start files\n");
+	printf("  -Wa,<options>    Pass comma-separated <options> on to the assembler\n");
+	printf("  -Wp,<options>    Pass comma-separated <options> on to the preprocessor\n");
+	printf("  -Wl,<options>    Pass comma-separated <options> on to the linker\n");
+	printf("  -Wc,<options>    Pass comma-separated <options> on to the compiler\n");
+	printf("  -M               Output a list of dependencies\n");
+	printf("  -X               Leave temporary files\n");
+	printf("                   Permissible languages include: c assembler-with-cpp\n");
+	//printf("  -d               Debug mode ???\n");
+        exit(0);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -327,17 +417,31 @@ main(int argc, char *argv[])
 	int k;
 #endif
 
+#ifdef INCLUDEDIR
+        altincdir = INCLUDEDIR "pcc/";
+#endif
+#ifdef PCCINCDIR
+        pccincdir = PCCINCDIR;
+#endif
+#ifdef PCCLIBDIR
+        pcclibdir = PCCLIBDIR;
+#endif
+
 #ifdef WIN32
 	/* have to prefix path early.  -B may override */
 	incdir = win32pathsubst(incdir);
-	altincdir = win32pathsubst(altincdir);
+	if (altincdir)
+                altincdir = win32pathsubst(altincdir);
 	libdir = win32pathsubst(libdir);
-	pccincdir = win32pathsubst(pccincdir);
-	pcclibdir = win32pathsubst(pcclibdir);
+	if (pccincdir)
+                pccincdir = win32pathsubst(pccincdir);
+	if (pcclibdir)
+                pcclibdir = win32pathsubst(pcclibdir);
 	passp = win32pathsubst(passp);
 	pass0 = win32pathsubst(pass0);
 #endif
-
+        if (argc == 1)
+                usage();
 	i = nc = nl = nas = ncpp = nxo = 0;
 	pv = ptemp;
 	while(++i < argc) {
@@ -345,6 +449,8 @@ main(int argc, char *argv[])
 			switch (argv[i][1]) {
 			default:
 				goto passa;
+			case 'h':
+			        usage();
 #ifdef notyet
 	/* must add library options first (-L/-l/...) */
 				error("unrecognized option `-%c'", argv[i][1]);
@@ -690,9 +796,12 @@ main(int argc, char *argv[])
 		tmp4 = gettmp();
 	}
 	if (Bflag) {
-		altincdir = Bflag;
-		pccincdir = Bflag;
-		pcclibdir = Bflag;
+                if (altincdir)
+                        altincdir = Bflag;
+                if (pccincdir)
+                        pccincdir = Bflag;
+                if (pcclibdir)
+                        pcclibdir = Bflag;
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)	/* interrupt */
 		signal(SIGINT, idexit);
@@ -764,7 +873,7 @@ main(int argc, char *argv[])
 			av[na++] = cpplist[j];
 		av[na++] = "-D__STDC_ISO_10646__=200009L";
 		av[na++] = "-D__WCHAR_TYPE__=" WCT;
-		av[na++] = "-D__SIZEOF_WCHAR_T__=" MKS(WCHAR_SIZE);
+		av[na++] = "-D__SIZEOF_WCHAR_T__=" MKS(WCS);
 		av[na++] = "-D__WCHAR_MAX__=" WCM;
 		av[na++] = "-D__WINT_TYPE__=unsigned int";
 		av[na++] = "-D__SIZE_TYPE__=unsigned long";
@@ -787,9 +896,11 @@ main(int argc, char *argv[])
 		for(pv=ptemp; pv <pvt; pv++)
 			av[na++] = *pv;
 		if (!nostdinc) {
-			av[na++] = "-S", av[na++] = altincdir;
+                        if (altincdir)
+                                av[na++] = "-S", av[na++] = altincdir;
 			av[na++] = "-S", av[na++] = incdir;
-			av[na++] = "-S", av[na++] = pccincdir;
+                        if (pccincdir)
+                                av[na++] = "-S", av[na++] = pccincdir;
 		}
 		if (idirafter) {
 			av[na++] = "-I";
@@ -1072,9 +1183,12 @@ nocom:
 #else
 #define	DL	"-L"
 #endif
-			char *s = copy(DL, i = strlen(pcclibdir));
-			strlcat(s, pcclibdir, sizeof(DL) + i);
-			av[j++] = s;
+			char *s;
+                        if (pcclibdir) {
+                                s = copy(DL, i = strlen(pcclibdir));
+                                strlcat(s, pcclibdir, sizeof(DL) + i);
+                                av[j++] = s;
+                        }
 #ifdef os_win32
 			s = copy(DL, i = strlen(libdir));
 			strlcat(s, libdir, sizeof(DL) + i);
@@ -1093,7 +1207,7 @@ nocom:
 			if (shared) {
 				for (i = 0; endfiles_S[i]; i++)
 					av[j++] = Bprefix(endfiles_S[i]);
-			} else 
+			} else
 #endif
 			{
 #ifdef STARTFILES_T
@@ -1238,11 +1352,29 @@ getsuf(char *s)
 char *
 setsuf(char *s, char ch)
 {
-	char *p;
+	char *p, *lastp;
+	int len;
 
-	s = copy(basename(s), 2);
-	if ((p = strrchr(s, '.')) == NULL) {
-		p = s + strlen(s);
+	/* Strip trailing slashes, if any. */
+	lastp = s + strlen(s) - 1;
+	while (lastp != s && *lastp == '/')
+		lastp--;
+
+	/* Now find the beginning of this (final) component. */
+	p = lastp;
+	while (p != s && *(p - 1) != '/')
+		p--;
+
+	/* ...and copy the result into the result buffer. */
+	len = (lastp - p) + 1;
+	s = ccmalloc(len + 3);
+	memcpy(s, p, len);
+	s[len] = '\0';
+
+        /* Find and change a suffix */
+	p = strrchr(s, '.');
+	if (! p) {
+		p = s + len;
 		p[0] = '.';
 	}
 	p[1] = ch;

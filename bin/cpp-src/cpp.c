@@ -1,4 +1,8 @@
 /*
+ * The C preprocessor.
+ * This code originates from the V6 preprocessor with some additions
+ * from V7 cpp, and at last ansi/c99 support.
+ *
  * Copyright (c) 2004,2010 Anders Magnusson (ragge@ludd.luth.se).
  * All rights reserved.
  *
@@ -22,22 +26,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/*
- * The C preprocessor.
- * This code originates from the V6 preprocessor with some additions
- * from V7 cpp, and at last ansi/c99 support.
- */
 #include <sys/wait.h>
 #include <sys/stat.h>
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "cpp.h"
 #include "y.tab.h"
