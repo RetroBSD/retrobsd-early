@@ -16,8 +16,13 @@
 #include "internal.h"
 #include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <pwd.h>
+#ifdef CROSS
+#   include <dirent.h>
+#else
+#   include <sys/dir.h>
+#   define dirent direct
+#endif
 
 /*
  * The structure below is used to keep track of a globbing result
@@ -359,7 +364,7 @@ DoGlob(interp, dir, rem)
 	} else {
 	    newDir = (char *) malloc((unsigned) l2);
 	}
-	sprintf(newDir, "%s%s%.*s", dir, separator, p-rem, rem);
+	sprintf(newDir, "%s%s%.*s", dir, separator, (int) (p - rem), rem);
 	result = DoGlob(interp, newDir, p+1);
 	if (newDir != static1) {
 	    free(newDir);

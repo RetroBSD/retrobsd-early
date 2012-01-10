@@ -899,8 +899,7 @@ make_string (Value_t *valuePtr)		/* Value to be converted. */
 	(*valuePtr->pv.expandProc) (&valuePtr->pv, 20 - space);
     }
     if (valuePtr->type == TYPE_INT) {
-	snprintf (valuePtr->pv.buffer, STATIC_STRING_SPACE, "%ld",
-		valuePtr->int_value);
+	sprintf (valuePtr->pv.buffer, "%ld", valuePtr->int_value);
     }
     valuePtr->type = TYPE_STRING;
 }
@@ -1036,7 +1035,7 @@ Tcl_ExprString (Tcl_Interp *interp,	/* Context in which to evaluate the
     result = evaluate (interp, string, &value);
     if (result == TCL_OK) {
 	if (value.type == TYPE_INT) {
-	    snprintf (interp->result, TCL_RESULT_SIZE, "%ld", value.int_value);
+	    sprintf (interp->result, "%ld", value.int_value);
 	} else {
 	    if (value.pv.buffer != value.static_space) {
 		interp->result = value.pv.buffer;

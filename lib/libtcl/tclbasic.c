@@ -728,7 +728,7 @@ Tcl_Eval(interp, cmd, flags, termPtr)
 		iPtr->result = (unsigned char*) "invoked \"continue\" outside of a loop";
 	    } else {
 		iPtr->result = iPtr->resultSpace;
-		snprintf(iPtr->resultSpace, TCL_RESULT_SIZE, "command returned bad code: %d",
+		sprintf(iPtr->resultSpace, "command returned bad code: %d",
 			result);
 	    }
 	    result = TCL_ERROR;
@@ -776,12 +776,10 @@ Tcl_Eval(interp, cmd, flags, termPtr)
 	}
 
 	if (!(iPtr->flags & ERR_IN_PROGRESS)) {
-	    snprintf(copyStorage, sizeof (copyStorage),
-		"\n    while executing\n\"%.*s%s\"",
+	    sprintf(copyStorage, "\n    while executing\n\"%.*s%s\"",
 		    numChars, cmdStart, ellipsis);
 	} else {
-	    snprintf(copyStorage, sizeof (copyStorage),
-		"\n    invoked from within\n\"%.*s%s\"",
+	    sprintf(copyStorage, "\n    invoked from within\n\"%.*s%s\"",
 		    numChars, cmdStart, ellipsis);
 	}
 	Tcl_AddErrorInfo(interp, copyStorage);

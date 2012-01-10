@@ -171,7 +171,7 @@ Tcl_IncrCmd(dummy, interp, argc, argv)
 	}
 	value += increment;
     }
-    snprintf(newString, sizeof (newString), "%d", value);
+    sprintf(newString, "%d", value);
     result = Tcl_SetVar(interp, argv[1], newString, TCL_LEAVE_ERR_MSG);
     if (result == 0) {
 	return TCL_ERROR;
@@ -259,7 +259,7 @@ Tcl_InfoCmd(dummy, interp, argc, argv)
 		    " cmdcount\"", 0);
 	    return TCL_ERROR;
 	}
-	snprintf(iPtr->result, TCL_RESULT_SIZE, "%ld", iPtr->cmdCount);
+	sprintf(iPtr->result, "%ld", iPtr->cmdCount);
 	return TCL_OK;
     } else if ((c == 'c') && (strncmp(argv[1], (unsigned char*) "commands", length) == 0)
 	    && (length >= 4)) {
@@ -397,7 +397,7 @@ Tcl_InfoCmd(dummy, interp, argc, argv)
 	    if (iPtr->varFramePtr == 0) {
 		iPtr->result = (unsigned char*) "0";
 	    } else {
-		snprintf(iPtr->result, TCL_RESULT_SIZE, "%d", iPtr->varFramePtr->level);
+		sprintf(iPtr->result, "%d", iPtr->varFramePtr->level);
 	    }
 	    return TCL_OK;
 	} else if (argc == 3) {
@@ -835,7 +835,7 @@ Tcl_LlengthCmd(dummy, interp, argc, argv)
 	    break;
 	}
     }
-    snprintf(interp->result, TCL_RESULT_SIZE, "%d", count);
+    sprintf(interp->result, "%d", count);
     return TCL_OK;
 }
 
@@ -1095,7 +1095,7 @@ Tcl_LsearchCmd(notUsed, interp, argc, argv)
 	    break;
 	}
     }
-    snprintf (interp->result, TCL_RESULT_SIZE, "%d", match);
+    sprintf (interp->result, "%d", match);
     free (listArgv);
     return TCL_OK;
 }

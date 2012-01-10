@@ -168,7 +168,7 @@ Tcl_CaseCmd(dummy, interp, argc, argv)
 	result = Tcl_Eval(interp, caseArgv[body], 0, 0);
 	if (result == TCL_ERROR) {
 	    unsigned char msg[100];
-	    snprintf(msg, sizeof (msg), "\n    (\"%.50s\" arm line %d)", caseArgv[body-1],
+	    sprintf(msg, "\n    (\"%.50s\" arm line %d)", caseArgv[body-1],
 		    interp->errorLine);
 	    Tcl_AddErrorInfo(interp, msg);
 	}
@@ -229,7 +229,7 @@ Tcl_CatchCmd(dummy, interp, argc, argv)
 	}
     }
     Tcl_ResetResult(interp);
-    snprintf(interp->result, TCL_RESULT_SIZE, "%d", result);
+    sprintf(interp->result, "%d", result);
     return TCL_OK;
 }
 
@@ -395,7 +395,7 @@ Tcl_EvalCmd(dummy, interp, argc, argv)
     }
     if (result == TCL_ERROR) {
 	unsigned char msg[60];
-	snprintf(msg, sizeof (msg), "\n    (\"eval\" body line %d)", interp->errorLine);
+	sprintf(msg, "\n    (\"eval\" body line %d)", interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
     return result;
@@ -489,7 +489,7 @@ Tcl_ForCmd(dummy, interp, argc, argv)
 	} else if (result != TCL_OK) {
 	    if (result == TCL_ERROR) {
 		unsigned char msg[60];
-		snprintf(msg, sizeof (msg), "\n    (\"for\" body line %d)", interp->errorLine);
+		sprintf(msg, "\n    (\"for\" body line %d)", interp->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 	    }
 	    break;
@@ -572,7 +572,7 @@ Tcl_ForeachCmd(dummy, interp, argc, argv)
 		break;
 	    } else if (result == TCL_ERROR) {
 		unsigned char msg[100];
-		snprintf(msg, sizeof (msg), "\n    (\"foreach\" body line %d)",
+		sprintf(msg, "\n    (\"foreach\" body line %d)",
 			interp->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 		break;
@@ -623,7 +623,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
     int size;			/* Number of bytes needed for result of
 				 * conversion, based on type of conversion
 				 * ("e", "s", etc.) and width from above. */
-    unsigned char *oneWordValue = 0; /* Used to hold value to pass to snprintf, if
+    unsigned char *oneWordValue = 0; /* Used to hold value to pass to sprintf, if
 				 * it's a one-word value. */
     unsigned char *dst = interp->result; /* Where result is stored.  Starts off at
 				 * interp->resultSpace, but may get dynamically
@@ -639,16 +639,16 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
     int useShort;		/* Value to be printed is short (half word). */
 
     /*
-     * This procedure is a bit nasty.  The goal is to use snprintf to
+     * This procedure is a bit nasty.  The goal is to use sprintf to
      * do most of the dirty work.  There are several problems:
      * 1. this procedure can't trust its arguments.
      * 2. we must be able to provide a large enough result area to hold
      *    whatever's generated.  This is hard to estimate.
      * 2. there's no way to move the arguments from argv to the call
-     *    to snprintf in a reasonable way.  This is particularly nasty
+     *    to sprintf in a reasonable way.  This is particularly nasty
      *    because some of the arguments may be two-word values (doubles).
      * So, what happens here is to scan the format string one % group
-     * at a time, making many individual calls to snprintf.
+     * at a time, making many individual calls to sprintf.
      */
 
     if (argc < 2) {
@@ -731,8 +731,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 	    format++;
 	}
 	if (width != 0) {
-	    snprintf(newPtr, sizeof (newFormat) - (newPtr - newFormat),
-                "%d", width);
+	    sprintf(newPtr, "%d", width);
 	    while (*newPtr != 0) {
 		newPtr++;
 	    }
@@ -759,8 +758,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 	    format++;
 	}
 	if (precision != 0) {
-	    snprintf(newPtr, sizeof (newFormat) - (newPtr - newFormat),
-                "%d", precision);
+	    sprintf(newPtr, "%d", precision);
 	    while (*newPtr != 0) {
 		newPtr++;
 	    }
@@ -818,7 +816,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 			"format string ended in middle of field specifier";
 		goto fmtError;
 	    default:
-		snprintf(interp->result, TCL_RESULT_SIZE,
+		sprintf(interp->result,
 			"bad field specifier \"%c\"", *format);
 		goto fmtError;
 	}
@@ -861,9 +859,9 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 		 * (e.g. Pyramids as of 1/93) that don't like casts
 		 * directly from pointers to shorts.
 		 */
-		snprintf(dst+dstSize, TCL_RESULT_SIZE, (char*) newFormat, (short) (int) oneWordValue);
+		sprintf(dst+dstSize, (char*) newFormat, (short) (int) oneWordValue);
 	    } else {
-		snprintf(dst+dstSize, TCL_RESULT_SIZE, (char*) newFormat, oneWordValue);
+		sprintf(dst+dstSize, (char*) newFormat, oneWordValue);
 	    }
 	    dstSize += strlen(dst+dstSize);
 	}

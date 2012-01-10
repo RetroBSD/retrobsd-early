@@ -1,6 +1,6 @@
 TOPSRC		= $(shell cd ../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -Wall -Werror -Wno-error=pointer-sign -Wno-pointer-sign
 

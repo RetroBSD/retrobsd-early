@@ -45,7 +45,7 @@ loop_cmd (void *arg, Tcl_Interp *interp, int argc, unsigned char **argv)
 	for (i = first;
 	    (((i < limit) && (incr > 0)) || ((i > limit) && (incr < 0)));
 	    i += incr) {
-		snprintf (itxt, sizeof (itxt), "%d", i);
+		sprintf (itxt, "%d", i);
 		if (! Tcl_SetVar (interp, argv [1], itxt, TCL_LEAVE_ERR_MSG))
 			return TCL_ERROR;
 
@@ -59,8 +59,7 @@ loop_cmd (void *arg, Tcl_Interp *interp, int argc, unsigned char **argv)
 			} else if (result == TCL_ERROR) {
 				unsigned char buf [64];
 
-				snprintf (buf, sizeof (buf),
-					"\n    (\"loop\" body line %d)",
+				sprintf (buf, "\n    (\"loop\" body line %d)",
 					interp->errorLine);
 				Tcl_AddErrorInfo (interp, buf);
 				break;
@@ -73,7 +72,7 @@ loop_cmd (void *arg, Tcl_Interp *interp, int argc, unsigned char **argv)
 	/*
 	 * Set variable to its final value.
 	 */
-	snprintf (itxt, sizeof (itxt), "%d", i);
+	sprintf (itxt, "%d", i);
 	if (! Tcl_SetVar (interp, argv [1], itxt, TCL_LEAVE_ERR_MSG))
 		return TCL_ERROR;
 
@@ -93,7 +92,7 @@ echo_cmd (void *arg, Tcl_Interp *interp, int argc, unsigned char **argv)
 	for (i=1; ; i++) {
 		if (! argv[i]) {
 			if (i != argc)
-echoError:			snprintf (interp->result, TCL_RESULT_SIZE,
+echoError:			sprintf (interp->result,
 					"argument list wasn't properly NULL-terminated in \"%s\" command",
 					argv[0]);
 			break;

@@ -136,7 +136,7 @@ Tcl_CloseCmd(dummy, interp, argc, argv)
     if (TclGetOpenFile(interp, argv[1], &filePtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    ((Interp *) interp)->filePtrArray[fileno(filePtr->f)] = NULL;
+    ((Interp *) interp)->filePtrArray[(int)fileno(filePtr->f)] = NULL;
 
     /*
      * First close the file (in the case of a process pipeline, there may

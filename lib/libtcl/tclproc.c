@@ -309,7 +309,7 @@ Tcl_UplevelCmd(dummy, interp, argc, argv)
     }
     if (result == TCL_ERROR) {
 	unsigned char msg[60];
-	snprintf(msg, sizeof (msg), "\n    (\"uplevel\" body line %d)",
+	sprintf(msg, "\n    (\"uplevel\" body line %d)",
 		interp->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     }
@@ -499,7 +499,7 @@ InterpProc(clientData, interp, argc, argv)
 	 * Record information telling where the error occurred.
 	 */
 
-	snprintf(msg, sizeof (msg), "\n    (procedure \"%.50s\" line %d)", argv[0],
+	sprintf(msg, "\n    (procedure \"%.50s\" line %d)", argv[0],
 		iPtr->errorLine);
 	Tcl_AddErrorInfo(interp, msg);
     } else if (result == TCL_BREAK) {

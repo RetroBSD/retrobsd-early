@@ -320,19 +320,17 @@ Tcl_HashStats (Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
      */
     size = NUM_COUNTERS*60 + 300;
     result = malloc (size);
-    snprintf(result, size, "%d entries in table, %d buckets\n",
+    sprintf(result, "%d entries in table, %d buckets\n",
 	    tablePtr->numEntries, tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	snprintf(p, size - strlen (p),
-		"number of buckets with %d entries: %d\n", i, count[i]);
+	sprintf(p, "number of buckets with %d entries: %d\n", i, count[i]);
 	p += strlen(p);
     }
-    snprintf(p, size - strlen (p),
-	"number of buckets with more %d or more entries: %d",
+    sprintf(p, "number of buckets with more %d or more entries: %d",
 	NUM_COUNTERS, overflow);
 /*    p += strlen(p);*/
-/*    snprintf(p, size - strlen (p), "\naverage search distance for entry: %.1f", average);*/
+/*    sprintf(p, "\naverage search distance for entry: %.1f", average);*/
     return result;
 }
 

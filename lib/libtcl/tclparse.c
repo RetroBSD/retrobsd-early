@@ -358,7 +358,7 @@ TclParseQuotes(interp, string, termChar, flags, termPtr, pvPtr)
 	    continue;
 	} else if (c == '\0') {
 	    Tcl_ResetResult(interp);
-	    snprintf(interp->result, TCL_RESULT_SIZE, "missing %c", termChar);
+	    sprintf(interp->result, "missing %c", termChar);
 	    *termPtr = string-1;
 	    return TCL_ERROR;
 	} else {
@@ -1178,7 +1178,7 @@ Tcl_ParseVar(interp, string, termPtr)
 	    if (TclParseQuotes(interp, string+1, ')', 0, &end, &pv)
 		    != TCL_OK) {
 		unsigned char msg[100];
-		snprintf(msg, sizeof (msg), "\n    (parsing index for array \"%.*s\")",
+		sprintf(msg, "\n    (parsing index for array \"%.*s\")",
 			(int) (string - name1), name1);
 		Tcl_AddErrorInfo(interp, msg);
 		result = 0;

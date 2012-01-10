@@ -152,7 +152,7 @@ Tcl_RegexpCmd(dummy, interp, argc, argv)
 	    }
 	} else {
 	    if (indices) {
-		snprintf(info, sizeof (info), "%d %d", (int) (regexpPtr->startp[i] - string),
+		sprintf(info, "%d %d", (int) (regexpPtr->startp[i] - string),
 			(int) (regexpPtr->endp[i] - string - 1));
 		result = Tcl_SetVar(interp, argPtr[i+2], info, 0);
 	    } else {
@@ -610,7 +610,7 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 		break;
 
 	    default:
-		snprintf(interp->result, TCL_RESULT_SIZE,
+		sprintf(interp->result,
 			"bad scan conversion character \"%c\"", *fmt);
 		return TCL_ERROR;
 	}
@@ -665,7 +665,7 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 	    unsigned char string[120];
 
 	    case 'd':
-		snprintf(string, sizeof (string), "%d", *((int *) curField->location));
+		sprintf(string, "%d", *((int *) curField->location));
 		if (Tcl_SetVar(interp, argv[i+3], string, 0) == 0) {
 		    storeError:
 		    Tcl_AppendResult(interp,
@@ -676,7 +676,7 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 		break;
 
 	    case 'c':
-		snprintf(string, sizeof (string), "%d", *curField->location & 0xff);
+		sprintf(string, "%d", *curField->location & 0xff);
 		if (Tcl_SetVar(interp, argv[i+3], string, 0) == 0) {
 		    goto storeError;
 		}
@@ -691,7 +691,7 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 	}
     }
     free(results);
-    snprintf(interp->result, TCL_RESULT_SIZE, "%d", numScanned);
+    sprintf(interp->result, "%d", numScanned);
     return TCL_OK;
 }
 
@@ -847,7 +847,7 @@ Tcl_StringCmd(dummy, interp, argc, argv)
 		}
 	    }
 	}
-	snprintf(interp->result, TCL_RESULT_SIZE, "%d", match);
+	sprintf(interp->result, "%d", match);
 	return TCL_OK;
     } else if ((c == 'i') && (strncmp(argv[1], (unsigned char*) "index", length) == 0)) {
 	int index;
@@ -881,7 +881,7 @@ Tcl_StringCmd(dummy, interp, argc, argv)
 		    " length string\"", 0);
 	    return TCL_ERROR;
 	}
-	snprintf(interp->result, TCL_RESULT_SIZE, "%u", (unsigned int) strlen(argv[2]));
+	sprintf(interp->result, "%u", (unsigned int) strlen(argv[2]));
 	return TCL_OK;
     } else if ((c == 'm') && (strncmp(argv[1], (unsigned char*) "match", length) == 0)) {
 	if (argc != 4) {
@@ -1355,7 +1355,7 @@ Tcl_WhileCmd(dummy, interp, argc, argv)
 	} else if (result != TCL_OK) {
 	    if (result == TCL_ERROR) {
 		unsigned char msg[60];
-		snprintf(msg, sizeof (msg), "\n    (\"while\" body line %d)",
+		sprintf(msg, "\n    (\"while\" body line %d)",
 			interp->errorLine);
 		Tcl_AddErrorInfo(interp, msg);
 	    }
