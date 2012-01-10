@@ -20,7 +20,7 @@
 /* #undef ECOFFABI */
 
 /* Using ELF ABI */
-#define ELFABI 
+#define ELFABI
 
 /* Define to 1 if you have the `basename' function. */
 #define HAVE_BASENAME 1
@@ -68,10 +68,10 @@
 #define HAVE_STRING_H 1
 
 /* Define to 1 if you have the `strlcat' function. */
-#define HAVE_STRLCAT 1
+//#define HAVE_STRLCAT 1
 
 /* Define to 1 if you have the `strlcpy' function. */
-#define HAVE_STRLCPY 1
+//#define HAVE_STRLCPY 1
 
 /* Define to 1 if you have the `strtold' function. */
 #define HAVE_STRTOLD 1
@@ -98,7 +98,7 @@
 /* #undef HOST_BIG_ENDIAN */
 
 /* Define if host is LITTLE endian */
-#define HOST_LITTLE_ENDIAN 
+#define HOST_LITTLE_ENDIAN
 
 /* lex is flex */
 #define ISFLEX 1

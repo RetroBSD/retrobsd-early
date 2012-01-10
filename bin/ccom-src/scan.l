@@ -1,6 +1,4 @@
 %{
-/*	$Id: scan.l,v 1.97 2010/12/27 14:58:54 ragge Exp $	*/
-
 /*
  * Copyright (c) 2002 Anders Magnusson. All rights reserved.
  *
@@ -26,6 +24,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/errno.h>
+#else
+#   include <stdio.h>
+#   include <errno.h>
+#endif
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+
+#include "pass1.h"
+#include "cgram.h"
 %}
 
 
@@ -39,14 +50,6 @@ IS			(u|U|l|L)*
 UL			({L}|\\u{H}{H}{H}{H}|\\U{H}{H}{H}{H}{H}{H}{H}{H})
 
 %{
-#include <stdlib.h>
-#include <errno.h>  
-#include <string.h>
-#include <stdarg.h>
-
-#include "pass1.h"
-#include "cgram.h"
-
 static NODE *cvtdig(int radix);
 static NODE *charcon(void);
 static NODE *wcharcon(void);
@@ -60,9 +63,9 @@ static int resw(TWORD, int);
 #define	CPP_HASH	4
 
 #ifdef STABS
-#define	STABS_LINE(x) if (gflag && cftnsp) stabs_line(x)
+#   define STABS_LINE(x) if (gflag && cftnsp) stabs_line(x)
 #else
-#define STABS_LINE(x)
+#   define STABS_LINE(x)
 #endif
 #if defined(FLEX_SCANNER) && YY_FLEX_SUBMINOR_VERSION == 31
 /* Hack to avoid unnecessary warnings */
@@ -78,7 +81,6 @@ int yylex_destroy  (void);
 extern int yyget_lineno (void);
 extern void yyset_lineno (int);
 #endif
-
 %}
 
 %%
@@ -322,7 +324,7 @@ h2n(int ch)
 	if (ch >= 'a' && ch <= 'f')
 		return ch - 'a' + 10;
 	return ch - 'A' + 10;
-	
+
 }
 
 NODE *
@@ -401,7 +403,7 @@ esccon(char **sptr)
 		    (val < 0xA0 && val != 0x24 && val != 0x40 && val != 0x60)))
 			werror("invalid universal character name %04X", val);
 		break;
-	case '0': case '1': case '2': case '3': case '4': 
+	case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7':
 		val = wr[-1] - '0';
 		if (*wr >= '0' && *wr <= '7') {
@@ -427,7 +429,7 @@ cvtdig(int radix)
 
 	if (radix == 16)
 		ch += 2; /* Skip 0x */
-	
+
 	v = 0;
 	while ((*ch >= '0' && *ch <= '9') || (*ch >= 'a' && *ch <= 'f') ||
 	    (*ch >= 'A' && *ch <= 'F')) {

@@ -29,10 +29,9 @@
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OFLIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "config.h"
 
 #include <sys/types.h>
@@ -48,8 +47,6 @@
 typedef unsigned int bittype; /* XXX - for basicblock */
 #endif
 #include "manifest.h"
-
-#include "ccconfig.h"
 
 /*
  * Storage classes
@@ -287,7 +284,7 @@ void cbranch(NODE *, NODE *);
 void extdec(struct symtab *);
 void defzero(struct symtab *);
 int falloc(struct symtab *, int, NODE *);
-TWORD ctype(TWORD);  
+TWORD ctype(TWORD);
 void ninval(CONSZ, int, NODE *);
 void infld(CONSZ, int, CONSZ);
 void zbits(CONSZ, int);
@@ -604,4 +601,3 @@ void stabs_struct(struct symtab *, struct attr *);
 #define coptype(o)	(cdope(o)&TYFLG)
 #define clogop(o)	(cdope(o)&LOGFLG)
 #define casgop(o)	(cdope(o)&ASGFLG)
-
