@@ -78,6 +78,8 @@ int	system();
 
 int	putenv();
 int	setenv();
+int     setenv (const char *name, const char *value, int overwrite);
+int     unsetenv (const char *name);
 
 void	*alloca();
 
@@ -91,7 +93,6 @@ int	getsubopt();
 long	random (void);
 char	*setstate (char *);
 void	srandom (unsigned);
-void	unsetenv();
 char	*_findenv (char *name, int *offset);
 
 #endif /* _STDLIB_H_ */

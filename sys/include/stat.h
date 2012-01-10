@@ -59,10 +59,12 @@ struct	stat
 #define S_IWOTH 0000002		/* W for other */
 #define S_IXOTH 0000001		/* X for other */
 
-#define	S_ISDIR(m)	((m & 0170000) == 0040000)	/* directory */
-#define	S_ISCHR(m)	((m & 0170000) == 0020000)	/* char special */
-#define	S_ISBLK(m)	((m & 0170000) == 0060000)	/* block special */
-#define	S_ISREG(m)	((m & 0170000) == 0100000)	/* regular file */
+#define	S_ISDIR(m)	((m & S_IFMT) == S_IFDIR)	/* directory */
+#define	S_ISCHR(m)	((m & S_IFMT) == S_IFCHR)	/* character special */
+#define	S_ISBLK(m)	((m & S_IFMT) == S_IFBLK)	/* block special */
+#define	S_ISREG(m)	((m & S_IFMT) == S_IFREG)	/* regular */
+#define	S_ISLNK(m)	((m & S_IFMT) == S_IFLNK)	/* symbolic link */
+#define	S_ISSOCK(m)	((m & S_IFMT) == S_IFSOCK)      /* socket */
 
 /*
  * Definitions of flags stored in file flags word.  Different from 4.4 because

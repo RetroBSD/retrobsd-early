@@ -89,6 +89,7 @@ int hzto (struct timeval *tv);
 #else
 #include <time.h>
 
+int gettimeofday(struct timeval *tv, struct timezone *tz);
 int utimes(const char *filename, const struct timeval times[2]);
 
 #endif

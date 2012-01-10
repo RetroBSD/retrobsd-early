@@ -41,7 +41,6 @@
 #define	_UNISTD_H_
 
 #include <sys/types.h>
-/* #include <sys/unistd.h> */
 
 #define	STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
@@ -50,6 +49,13 @@
 #ifndef NULL
 #define	NULL		0	/* null pointer constant */
 #endif
+
+/* Values for the second argument to access.
+   These may be OR'd together.  */
+#define	R_OK            4	/* Test for read permission.  */
+#define	W_OK            2	/* Test for write permission.  */
+#define	X_OK            1	/* Test for execute permission.  */
+#define	F_OK            0	/* Test for existence.  */
 
 void	_exit (int);
 int	access();
@@ -96,6 +102,7 @@ int     dup (int oldfd);
 int     dup2 (int oldfd, int newfd);
 int     unlink (const char *pathname);
 int     link (const char *oldpath, const char *newpath);
+ssize_t readlink (const char *path, char *buf, size_t bufsiz);
 int     chown (const char *path, uid_t owner, gid_t group);
 int     nice (int inc);
 int     setuid (uid_t uid);
@@ -109,6 +116,7 @@ int     fchflags (int fd, u_long flags);
 struct stat;
 int     stat (const char *path, struct stat *buf);
 int     fstat (int fd, struct stat *buf);
+int     lstat (const char *path, struct stat *buf);
 
 int	execl (const char *path, const char *arg0, ... /* NULL */);
 int	execle (const char *path, const char *arg0, ... /* NULL, char *envp[] */);
