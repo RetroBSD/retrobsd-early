@@ -76,10 +76,10 @@ long	strtol();
 unsigned long strtoul();
 int	system();
 
-int	putenv();
-int	setenv();
+int     putenv (char *string);
 int     setenv (const char *name, const char *value, int overwrite);
 int     unsetenv (const char *name);
+char	*_findenv (const char *name, int *offset);
 
 void	*alloca();
 
@@ -93,6 +93,5 @@ int	getsubopt();
 long	random (void);
 char	*setstate (char *);
 void	srandom (unsigned);
-char	*_findenv (char *name, int *offset);
 
 #endif /* _STDLIB_H_ */

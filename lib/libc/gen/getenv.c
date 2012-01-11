@@ -32,16 +32,18 @@ getenv(name)
  */
 char *
 _findenv(name, offset)
-	register char *name;
+	register const char *name;
 	int	*offset;
 {
 	register int	len;
-	register char	**P,
-			*C;
+	register char	**P, *C;
+	register const char *E;
 
-	for (C = name,len = 0;*C && *C != '=';++C,++len);
-	for (P = environ;*P;++P)
-		if (!strncmp(*P,name,len))
+        len = 0;
+	for (E = name; *E && *E != '='; ++E)
+                ++len;
+	for (P = environ; *P; ++P)
+		if (!strncmp(*P, name, len))
 			if (*(C = *P + len) == '=') {
 				*offset = P - environ;
 				return(++C);

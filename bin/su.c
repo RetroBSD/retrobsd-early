@@ -28,6 +28,42 @@ int	fastlogin;
 extern char	**environ;
 struct	passwd *pwd;
 
+setenvv(ename, eval, buf)
+	char *ename, *eval, *buf;
+{
+	register char *cp, *dp;
+	register char **ep = environ;
+
+	/*
+	 * this assumes an environment variable "ename" already exists
+	 */
+	while (dp = *ep++) {
+		for (cp = ename; *cp == *dp && *cp; cp++, dp++)
+			continue;
+		if (*cp == 0 && (*dp == '=' || *dp == 0)) {
+			strcat(buf, eval);
+			*--ep = buf;
+			return;
+		}
+	}
+}
+
+char *
+getenvv(ename)
+	char *ename;
+{
+	register char *cp, *dp;
+	register char **ep = environ;
+
+	while (dp = *ep++) {
+		for (cp = ename; *cp == *dp && *cp; cp++, dp++)
+			continue;
+		if (*cp == 0 && (*dp == '=' || *dp == 0))
+			return (*--ep);
+	}
+	return ((char *)0);
+}
+
 main(argc,argv)
 	int argc;
 	char *argv[];
@@ -115,13 +151,13 @@ ok:
 	if (pwd->pw_shell && *pwd->pw_shell)
 		shell = pwd->pw_shell;
 	if (fulllogin) {
-		cleanenv[4] = getenv("TERM");
+		cleanenv[4] = getenvv("TERM");
 		environ = cleanenv;
 	}
 	if (strcmp(user, "root"))
-		setenv("USER", pwd->pw_name, userbuf);
-	setenv("SHELL", shell, shellbuf);
-	setenv("HOME", pwd->pw_dir, homebuf);
+		setenvv("USER", pwd->pw_name, userbuf);
+	setenvv("SHELL", shell, shellbuf);
+	setenvv("HOME", pwd->pw_dir, homebuf);
 	setpriority(PRIO_PROCESS, 0, 0);
 	if (fastlogin) {
 		*argv-- = "-f";
@@ -137,40 +173,4 @@ ok:
 	execv(shell, argv);
 	fprintf(stderr, "No shell\n");
 	exit(7);
-}
-
-setenv(ename, eval, buf)
-	char *ename, *eval, *buf;
-{
-	register char *cp, *dp;
-	register char **ep = environ;
-
-	/*
-	 * this assumes an environment variable "ename" already exists
-	 */
-	while (dp = *ep++) {
-		for (cp = ename; *cp == *dp && *cp; cp++, dp++)
-			continue;
-		if (*cp == 0 && (*dp == '=' || *dp == 0)) {
-			strcat(buf, eval);
-			*--ep = buf;
-			return;
-		}
-	}
-}
-
-char *
-getenv(ename)
-	char *ename;
-{
-	register char *cp, *dp;
-	register char **ep = environ;
-
-	while (dp = *ep++) {
-		for (cp = ename; *cp == *dp && *cp; cp++, dp++)
-			continue;
-		if (*cp == 0 && (*dp == '=' || *dp == 0))
-			return (*--ep);
-	}
-	return ((char *)0);
 }

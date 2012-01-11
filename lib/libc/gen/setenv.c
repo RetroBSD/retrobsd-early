@@ -15,13 +15,15 @@
  *	Set the value of the environmental variable "name" to be
  *	"value".  If rewrite is set, replace any current value.
  */
-setenv(name,value,rewrite)
-	register char	*name,
-			*value;
+int
+setenv(name, value, rewrite)
+	register const char	*name,
+				*value;
 	int	rewrite;
 {
 	static int	alloced;		/* if allocated space before */
 	register char	*C;
+	register const char *E;
 	int l_value, offset;
 
 	if (*value == '=')			/* no `=' in value */
@@ -58,12 +60,12 @@ setenv(name,value,rewrite)
 		environ[cnt + 1] = NULL;
 		offset = cnt;
 	}
-	for (C = name;*C && *C != '=';++C);	/* no `=' in name */
+	for (E = name; *E && *E != '='; ++E);	/* no `=' in name */
 	if (!(environ[offset] =			/* name + `=' + value */
-	    malloc((u_int)((int)(C - name) + l_value + 2))))
+	    malloc((u_int)((int)(E - name) + l_value + 2))))
 		return(-1);
-	for (C = environ[offset];(*C = *name++) && *C != '=';++C);
-	for (*C++ = '=';*C++ = *value++;);
+	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C);
+	for (*C++ = '='; *C++ = *value++; );
 	return(0);
 }
 
@@ -71,9 +73,9 @@ setenv(name,value,rewrite)
  * unsetenv(name) --
  *	Delete environmental variable "name".
  */
-void
+int
 unsetenv(name)
-	char	*name;
+	const char	*name;
 {
 	register char	**P;
 	int	offset;
@@ -82,4 +84,5 @@ unsetenv(name)
 		for (P = &environ[offset];;++P)
 			if (!(*P = *(P + 1)))
 				break;
+        return 0;
 }
