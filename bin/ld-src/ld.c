@@ -122,6 +122,7 @@ int     rflag;                  /* preserve relocation bits, don't define common
 int     arflag;                 /* original copy of rflag */
 int     sflag;                  /* discard all symbols */
 int     dflag;                  /* define common even with rflag */
+int     verbose;                /* verbose mode */
 
 /*
  * cumulative sizes set in pass 1
@@ -144,9 +145,6 @@ char	*filname;
 int	errlev;
 int	delarg	= 4;
 char    tfname [] = "/tmp/ldaXXXXX";
-char    libname [] = "/lib/libxxxxxxxxxxxxxxx";
-
-#define LNAMLEN 17             /* originally 12 */
 
 #define ALIGN(x,y)     ((x)+(y)-1-((x)+(y)-1)%(y))
 
@@ -664,23 +662,22 @@ int getfile (cp)
 {
 	int c;
 	struct stat x;
+        static char libname [] = "/lib/libxxxxxxxxxxxxxxx";
 
 	text = 0;
 	filname = cp;
 	if (cp[0] == '-' && cp[1] == 'l') {
 		if (cp[2] == '\0')
                         cp = "-la";
-		filname = libname;
+                filname = libname;
 		for (c = 0; cp [c+2]; c++)
-                        filname [c + LNAMLEN] = cp [c+2];
-		filname [c + LNAMLEN] = '.';
-		filname [c + LNAMLEN + 1] = 'a';
-		filname [c + LNAMLEN + 2] = '\0';
-		text = fopen (filname, "r");
-		if (! text)
-                        filname += 4;
+                        filname [c + 8] = cp [c+2];
+		filname [c + 8] = '.';
+		filname [c + 8 + 1] = 'a';
+		filname [c + 8 + 2] = '\0';
 	}
-	if (! text && ! (text = fopen (filname, "r")))
+	text = fopen (filname, "r");
+	if (! text)
 		error (2, "cannot open");
 	reloc = fopen (filname, "r");
 	if (! reloc)
@@ -1076,6 +1073,11 @@ void pass1 (argc, argv)
 				trace++;
 				continue;
 
+				/* verbose */
+			case 'v':
+				verbose++;
+				continue;
+
 			default:
 				error (2, "unknown flag");
 			}
@@ -1293,7 +1295,7 @@ void load2arg (acp)
 	register unsigned *lp;
 
 	if (getfile (acp) == 0) {
-		if (trace)
+		if (trace || verbose)
 			printf ("%s:\n", acp);
 		mkfsym (acp, 1);
 		load2 (0L);
@@ -1307,7 +1309,7 @@ void load2arg (acp)
 			acp = malloc (15);
 			strncpy (acp, archdr.ar_name, 14);
 			acp [14] = '\0';
-			if (trace)
+			if (trace || verbose)
 				printf ("%s(%s):\n", arname, acp);
 			mkfsym (acp, 1);
 			free (acp);
@@ -1351,7 +1353,6 @@ void pass2 (argc, argv)
 			case 'u':
 			case 'e':
 			case 'o':
-			case 'v':
 				++c;
 				++p;
 

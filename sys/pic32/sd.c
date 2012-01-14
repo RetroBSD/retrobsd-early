@@ -49,6 +49,12 @@
 #define SD_MHZ          13      /* speed 13.33 MHz */
 #endif
 
+#define TIMO_WAIT_READY 1000000
+#define TIMO_CMD        20000
+#define TIMO_SEND_OP    100000
+#define TIMO_SEND_CSD   250000
+#define TIMO_READ       2500000
+
 int sd_type[NSD];               /* Card type */
 int sd_dkn = -1;                /* Statistics slot number */
 
@@ -150,9 +156,11 @@ spi_wait_ready ()
 {
         int i;
 
-	for (i=0; i<100000; i++)
+        spi_io (0xFF);
+	for (i=0; i<TIMO_WAIT_READY; i++)
                 if (spi_io (0xFF) == 0xFF)
-                        break;
+                        return;
+        printf ("sd: wait_ready failed\n");
 }
 
 /*
@@ -296,11 +304,14 @@ card_cmd (cmd, addr)
                 spi_io (0xFF);
 
 	/* Wait for a response. */
-	for (i=0; i<200; i++) {
+	for (i=0; i<TIMO_CMD; i++) {
 		reply = spi_io (0xFF);
 		if (! (reply & 0x80))
-		        break;
+		        return reply;
 	}
+	if (cmd != CMD_GO_IDLE)
+                printf ("sd: card_cmd timeout, cmd=%02x, addr=%08x, reply=%02x\n",
+                        cmd, addr, reply);
 	return reply;
 }
 
@@ -366,7 +377,7 @@ card_init (unit)
 		spi_select (unit, 0);
 		if (reply == 0)
 			break;
-		if (i >= 10000) {
+		if (i >= TIMO_SEND_OP) {
 			/* Init timed out. */
                         printf ("card_init: SEND_OP timed out, reply = %d\n",
                                 reply);
@@ -423,9 +434,11 @@ card_size (unit, nsectors)
 		reply = spi_io (0xFF);
 		if (reply == DATA_START_BLOCK)
 			break;
-		if (i >= 25000) {
+		if (i >= TIMO_SEND_CSD) {
 			/* Command timed out. */
 			spi_select (unit, 0);
+                        printf ("card_size: SEND_CSD timed out, reply = %d\n",
+                                reply);
 			return 0;
 		}
 	}
@@ -490,7 +503,7 @@ again:
 		reply = spi_io (0xFF);
 		if (reply == DATA_START_BLOCK)
 			break;
-		if (i >= 250000) {
+		if (i >= TIMO_READ) {
 			/* Command timed out. */
                         printf ("card_read: READ_MULTIPLE timed out, reply = %d\n",
                                 reply);

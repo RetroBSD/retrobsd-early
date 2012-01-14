@@ -2,8 +2,8 @@
  * This is an example of MIPS assembly program for RetroBSD.
  *
  * To compile this program, type:
- *  as hello.s -o hello.o
- *  ld hello.o -o hello
+ *  cc -c ashello.S
+ *  ld ashello.o -o ashello
  */
 #include <syscall.h>
 

@@ -135,7 +135,7 @@ physio(strat, bp, dev, rw, uio)
 			bp->b_flags = B_BUSY | B_PHYS | B_INVAL | rw;
 			bp->b_dev = dev;
 			bp->b_addr = iov->iov_base;
-			bp->b_blkno = uio->uio_offset >> DEV_BSHIFT;
+			bp->b_blkno = (unsigned) uio->uio_offset >> DEV_BSHIFT;
 			bp->b_bcount = iov->iov_len;
 			c = bp->b_bcount;
 			(*strat)(bp);

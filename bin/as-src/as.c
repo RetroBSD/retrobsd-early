@@ -299,7 +299,7 @@ int segm;
 char *infile, *outfile = "a.out";
 char tfilename[] = "/tmp/asXXXXXX";
 int line;                               /* Source line number */
-int xflags, Xflag, uflag;
+int xflags, Xflag, uflag, vflag;
 int stlength;                           /* Symbol table size in bytes */
 int stalign;                            /* Symbol table alignment */
 unsigned tbase, dbase, adbase, bbase;
@@ -1784,6 +1784,9 @@ int main (argc, argv)
                     break;
                 case 'u':       /* treat undefines as error */
                     uflag++;
+                    break;
+                case 'v':       /* verbose mode */
+                    vflag++;
                     break;
                 case 'o':       /* output file name */
                     if (ofile)

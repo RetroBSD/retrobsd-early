@@ -14,6 +14,7 @@
  *                       - some nops removed
  *                       - nops marked 55ns are required !!!
  *                       - MAX performance settings for 55ns SRAM
+ * CHANGE: IM 28.12.2011 - dev_load_address is 6x4bit now
  */
 #include "param.h"
 #include "systm.h"
@@ -56,12 +57,11 @@ static inline void data_switch_output ()
  */
 static inline unsigned char data_get ()
 {
-	asm volatile ("nop");  // 55ns
-        return PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
+	return PORT_VAL(SW_DATA_PORT) >> SW_DATA_PIN;
 }
 
 /*
- * Send LDA pulse: low-high.
+ * Send LDA pulse: high-low-high.
  */
 static inline void lda_pulse ()
 {
@@ -73,7 +73,7 @@ static inline void lda_pulse ()
 
 /*
  * Set RD low.
- * Minimal time between falling edge of RD to data valid is 30ns.
+ * Minimal time between falling edge of RD to data valid is 50ns.
  */
 static inline void rd_low ()
 {
@@ -85,6 +85,7 @@ static inline void rd_low ()
 #endif
 #if BUS_KHZ > 66000
         asm volatile ("nop"); // 55ns
+	asm volatile ("nop"); // 55ns
 #endif
 }
 
@@ -104,10 +105,11 @@ static inline void wr_pulse ()
 {
         LAT_CLR(SW_WR_PORT) = 1 << SW_WR_PIN;
 
-#if BUS_KHZ > 35000
+#if BUS_KHZ > 33000
         asm volatile ("nop");  // 55ns
+	asm volatile ("nop");  // 55ns
 #endif
-#if BUS_KHZ > 75000
+#if BUS_KHZ > 66000
         asm volatile ("nop");  // 55ns
 #endif
         LAT_SET(SW_WR_PORT) = 1 << SW_WR_PIN;
@@ -115,25 +117,34 @@ static inline void wr_pulse ()
 
 /*
  * Load the 24 bit address to ramdisk.
- * Leave data bus in output mode.
+ * Leave data bus in input mode.
  */
 static void
 dev_load_address (addr)
         unsigned addr;
 {
-	/* Toggle rd: make one dummy read - this clears cpld addr pointer */
+	/* Toggle rd: make one dummy read - this clears cpld's addr pointer */
         rd_low ();
 	rd_high ();
 
 	data_switch_output();           /* switch data bus to output */
 
-        data_set (addr);                /* send lower 8 bits */
+        data_set (addr);                /* send lowest 4 bits */
         lda_pulse();                    /* pulse ldaddr */
 
-        data_set (addr >> 8);           /* send middle 8 bits */
+        data_set (addr >> 4);           /* send 4 bits */
         lda_pulse();                    /* pulse ldaddr */
 
-        data_set (addr >> 16);          /* send high 8 bits */
+        data_set (addr >> 8);           /* send 4 bits */
+        lda_pulse();                    /* pulse ldaddr */
+
+	data_set (addr >> 12);          /* send 4 bits */
+        lda_pulse();                    /* pulse ldaddr */
+
+        data_set (addr >> 16);          /* send 4 bits */
+        lda_pulse();                    /* pulse ldaddr */
+
+        data_set (addr >> 20);          /* send highest 4 bits */
         lda_pulse();                    /* pulse ldaddr */
 
 	data_switch_input();
@@ -159,11 +170,11 @@ dev_read (blockno, data, nbytes)
 
 	/* Read data. */
         for (i=0; i<nbytes; i++) {
-                rd_low();              /* set rd LOW */
+                rd_low();               /* set rd LOW */
 
                 *data++ = data_get();   /* read a byte of data */
 
-                rd_high();               /* set rd HIGH */
+                rd_high();              /* set rd HIGH */
         }
 }
 
