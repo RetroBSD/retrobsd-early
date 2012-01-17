@@ -98,6 +98,10 @@ const struct cdevsw	cdevsw[] = {
 	swopen,		nulldev,	rawrw,		rawrw,
 	noioctl,	nulldev,	0,		seltrue,
 	swstrategy,	},
+{ /* gpio = 7 */
+	gpioopen,	gpioclose,	gpioread,	gpiowrite,
+	gpioioctl,	nulldev,	0,              seltrue,
+	nostrategy,	},
 };
 const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 

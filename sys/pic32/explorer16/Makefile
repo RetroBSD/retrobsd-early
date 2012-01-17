@@ -66,7 +66,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+KERNOBJ		+= sd.o gpio.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o

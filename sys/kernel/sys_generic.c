@@ -168,80 +168,48 @@ ioctl()
 		long	cmd;
 		caddr_t	cmarg;
 	} *uap;
-	long com;
-	u_int k_com;
-	register u_int size;
-	char data[IOCPARM_MASK+1];
-        caddr_t *pdata = (caddr_t*) data;
+	u_int com;
 
 	uap = (struct a *)u.u_arg;
-	if ((fp = getf(uap->fdes)) == NULL)
+	fp = getf(uap->fdes);
+	if (! fp)
 		return;
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
+	if (! (fp->f_flag & (FREAD | FWRITE))) {
 		u.u_error = EBADF;
 		return;
 	}
-	com = uap->cmd;
+	com = (u_int) uap->cmd;
+	if (com & (IOC_IN | IOC_OUT)) {
+	        /* Check user address. */
+                u_int nbytes = (com & ~(IOC_INOUT | IOC_VOID)) >> 16;
+                if (baduaddr (uap->cmarg) ||
+                    baduaddr (uap->cmarg + nbytes - 1)) {
+                        u.u_error = EFAULT;
+                        return;
+                }
+	}
 
-	/* THE 2.11 KERNEL STILL THINKS THAT IOCTL COMMANDS ARE 16 BITS */
-	k_com = (u_int)com;
-
-	if (k_com == FIOCLEX) {
+	switch (com) {
+	case FIOCLEX:
 		u.u_pofile[uap->fdes] |= UF_EXCLOSE;
 		return;
-	}
-	if (k_com == FIONCLEX) {
+	case FIONCLEX:
 		u.u_pofile[uap->fdes] &= ~UF_EXCLOSE;
 		return;
-	}
-
-	/*
-	 * Interpret high order word to find
-	 * amount of data to be copied to/from the
-	 * user's address space.
-	 */
-	size = (com &~ (IOC_INOUT|IOC_VOID)) >> 16;
-	if (size > sizeof (data)) {
-		u.u_error = EFAULT;
-		return;
-	}
-	if (com & IOC_IN) {
-		if (size) {
-			u.u_error = copyin (uap->cmarg, (caddr_t) data, size);
-			if (u.u_error)
-				return;
-		} else
-			*pdata = uap->cmarg;
-	} else if ((com & IOC_OUT) && size)
-		/*
-		 * Zero the buffer on the stack so the user
-		 * always gets back something deterministic.
-		 */
-		bzero ((caddr_t) data, size);
-	else if (com & IOC_VOID)
-		*pdata = uap->cmarg;
-
-	switch (k_com) {
 	case FIONBIO:
-		u.u_error = fset (fp, FNONBLOCK, *(int*) pdata);
+		u.u_error = fset (fp, FNONBLOCK, *(int*) uap->cmarg);
 		return;
 	case FIOASYNC:
-		u.u_error = fset (fp, FASYNC, *(int*) pdata);
+		u.u_error = fset (fp, FASYNC, *(int*) uap->cmarg);
 		return;
 	case FIOSETOWN:
-		u.u_error = fsetown (fp, *(int*) pdata);
+		u.u_error = fsetown (fp, *(int*) uap->cmarg);
 		return;
 	case FIOGETOWN:
-		u.u_error = fgetown (fp, (int*) pdata);
+		u.u_error = fgetown (fp, (int*) uap->cmarg);
 		return;
 	}
-	u.u_error = (*Fops[fp->f_type]->fo_ioctl) (fp, k_com, data);
-	/*
-	 * Copy any data to user, size was
-	 * already set and checked above.
-	 */
-	if (u.u_error == 0 && (com & IOC_OUT) && size)
-		u.u_error = copyout (data, uap->cmarg, size);
+	u.u_error = (*Fops[fp->f_type]->fo_ioctl) (fp, com, uap->cmarg);
 }
 
 int	nselcoll;
