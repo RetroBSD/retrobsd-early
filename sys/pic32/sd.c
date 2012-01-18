@@ -58,6 +58,12 @@
 int sd_type[NSD];               /* Card type */
 int sd_dkn = -1;                /* Statistics slot number */
 
+int sd_timo_wait_ready;         /* Max timeouts, for sysctl */
+int sd_timo_cmd;
+int sd_timo_send_op;
+int sd_timo_send_csd;
+int sd_timo_read;
+
 /*
  * Definitions for MMC/SDC commands.
  */
@@ -157,9 +163,13 @@ spi_wait_ready ()
         int i;
 
         spi_io (0xFF);
-	for (i=0; i<TIMO_WAIT_READY; i++)
-                if (spi_io (0xFF) == 0xFF)
+	for (i=0; i<TIMO_WAIT_READY; i++) {
+                if (spi_io (0xFF) == 0xFF) {
+                        if (sd_timo_wait_ready < i)
+                                sd_timo_wait_ready = i;
                         return;
+                }
+        }
         printf ("sd: wait_ready failed\n");
 }
 
@@ -306,8 +316,11 @@ card_cmd (cmd, addr)
 	/* Wait for a response. */
 	for (i=0; i<TIMO_CMD; i++) {
 		reply = spi_io (0xFF);
-		if (! (reply & 0x80))
+		if (! (reply & 0x80)) {
+                        if (sd_timo_cmd < i)
+                                sd_timo_cmd = i;
 		        return reply;
+                }
 	}
 	if (cmd != CMD_GO_IDLE)
                 printf ("sd: card_cmd timeout, cmd=%02x, addr=%08x, reply=%02x\n",
@@ -384,6 +397,8 @@ card_init (unit)
 			return 0;
 		}
 	}
+        if (sd_timo_send_op < i)
+                sd_timo_send_op = i;
 
         /* If SD2 read OCR register to check for SDHC card. */
         if (sd_type[unit] == 2) {
@@ -442,6 +457,8 @@ card_size (unit, nsectors)
 			return 0;
 		}
 	}
+        if (sd_timo_send_csd < i)
+                sd_timo_send_csd = i;
 
 	/* Read data. */
 	for (i=0; i<sizeof(csd); i++) {
@@ -511,6 +528,8 @@ again:
 			return 0;
 		}
 	}
+        if (sd_timo_read < i)
+                sd_timo_read = i;
 
 	/* Read data. */
         if (bcount >= SECTSIZE) {

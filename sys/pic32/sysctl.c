@@ -286,6 +286,17 @@ cpu_sysctl (name, namelen, oldp, oldlenp, newp, newlen)
 		}
 		return EOPNOTSUPP;
 
+        case CPU_TIMO_WAIT_READY:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &sd_timo_wait_ready);
+        case CPU_TIMO_CMD:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &sd_timo_cmd);
+        case CPU_TIMO_SEND_OP:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &sd_timo_send_op);
+        case CPU_TIMO_SEND_CSD:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &sd_timo_send_csd);
+        case CPU_TIMO_READ:
+		return sysctl_int(oldp, oldlenp, newp, newlen, &sd_timo_read);
+
 	default:
 		return EOPNOTSUPP;
 	}

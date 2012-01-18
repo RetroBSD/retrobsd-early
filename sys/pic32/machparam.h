@@ -152,6 +152,15 @@ void led_control (int mask, int on);
 #define LAT_SET(p)      (&p)[10]
 #define LAT_INV(p)      (&p)[11]
 
+/*
+ * SD timeouts, for sysctl.
+ */
+extern int sd_timo_wait_ready;
+extern int sd_timo_cmd;
+extern int sd_timo_send_op;
+extern int sd_timo_send_csd;
+extern int sd_timo_read;
+
 #endif /* KERNEL */
 
 #endif /* ENDIAN */
