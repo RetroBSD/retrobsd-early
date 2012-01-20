@@ -24,6 +24,7 @@ SIZE            = $(GCCPREFIX)size
 OBJDUMP         = $(GCCPREFIX)objdump -mmips:isa32r2
 AS		= $(CC) -x assembler-with-cpp
 YACC            = byacc
+LEX             = flex
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d
 TAGSFILE	= tags

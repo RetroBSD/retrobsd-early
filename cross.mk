@@ -8,6 +8,7 @@ LD		= ld
 AR		= ar
 RANLIB		= ranlib
 YACC            = byacc
+LEX             = flex
 SIZE		= size
 OBJDUMP		= objdump
 INSTALL		= install -m 644
