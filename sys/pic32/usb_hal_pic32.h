@@ -34,43 +34,6 @@
 #ifndef USB_HAL_PIC32_H
 #define USB_HAL_PIC32_H
 
-#define USBTransactionCompleteIE	(U1IE & PIC32_U1I_TRN)
-#define USBTransactionCompleteIF	(U1IR & PIC32_U1I_TRN)
-#define USBTransactionCompleteIFReg	(unsigned char*)&U1IR
-#define USBTransactionCompleteIFBitNum	3
-
-#define USBResetIE			(U1IE & PIC32_U1I_URST)
-#define USBResetIF			(U1IR & PIC32_U1I_URST)
-#define USBResetIFReg			(unsigned char*)&U1IR
-#define USBResetIFBitNum		0
-
-#define USBIdleIE			(U1IE & PIC32_U1I_IDLE)
-#define USBIdleIF			(U1IR & PIC32_U1I_IDLE)
-#define USBIdleIFReg			(unsigned char*)&U1IR
-#define USBIdleIFBitNum			4
-
-#define USBActivityIE			(U1OTGIE & PIC32_U1OTGI_ACTV)
-#define USBActivityIF			(U1OTGIR & PIC32_U1OTGI_ACTV)
-#define USBActivityIFReg		(unsigned char*)&U1OTGIR
-#define USBActivityIFBitNum		4
-
-#define USBSOFIE			(U1IE & PIC32_U1I_SOF)
-#define USBSOFIF			(U1IR & PIC32_U1I_SOF)
-#define USBSOFIFReg			(unsigned char*)&U1IR
-#define USBSOFIFBitNum			2
-
-#define USBStallIE			(U1IE & PIC32_U1I_STALL)
-#define USBStallIF			(U1IR & PIC32_U1I_STALL)
-#define USBStallIFReg			(unsigned char*)&U1IR
-#define USBStallIFBitNum		7
-
-#define USBErrorIE			(U1IE & PIC32_U1I_UERR)
-#define USBErrorIF			(U1IR & PIC32_U1I_UERR)
-#define USBErrorIFReg			(unsigned char*)&U1IR
-#define USBErrorIFBitNum		1
-
-//#define USBResumeControl		U1CONbits.RESUME
-
 /* Buffer Descriptor Status Register Initialization Parameters */
 
 //The _BSTALL definition is changed from 0x04 to 0x00 to

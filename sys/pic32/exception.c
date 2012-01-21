@@ -211,7 +211,6 @@ exception (frame)
 
         led_control (LED_KERNEL, 1);
         if ((unsigned) frame < (unsigned) &u + sizeof(u)) {
-printf ("kernel stack = %p\n", frame);
 		dumpregs (frame);
 		panic ("stack overflow");
 		/*NOTREACHED*/
@@ -275,7 +274,7 @@ printf ("kernel stack = %p\n", frame);
 		/* Get the current irq number */
 		c = INTSTAT;
 		if ((c & PIC32_INTSTAT_SRIPL_MASK) == 0) {
-                        //printf ("*** unexpected interrupt: INTSTAT %08x\n", c);
+                        printf ("*** unexpected interrupt: INTSTAT %08x\n", c);
 			goto ret;
                 }
 		irq = PIC32_INTSTAT_VEC (c);
@@ -292,6 +291,10 @@ printf ("kernel stack = %p\n", frame);
 
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         hardclock ((caddr_t) frame [FRAME_PC], status);
+#ifdef CONSOLE_USB
+                        /* Poll USB on every timer tick. */
+                        cnintr (0);
+#endif
                         break;
 #if defined(CONSOLE_UART1) || defined(CONSOLE_UART2) || \
     defined(CONSOLE_UART3) || defined(CONSOLE_UART4) || \

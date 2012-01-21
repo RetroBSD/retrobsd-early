@@ -104,7 +104,7 @@ filter_out (mask, portnum, portaddr, pin)
         u_int portnum;
         volatile unsigned *portaddr;
 {
-	register struct gpioreg *reg = portnum + (struct gpioreg*) TRISA;
+	register struct gpioreg *reg = portnum + (struct gpioreg*) &TRISA;
 
         if ((unsigned) reg == (unsigned) portaddr)
                 mask &= ~(1 << pin);
@@ -228,7 +228,7 @@ gpioioctl (dev, cmd, addr, flag)
 
         op = cmd & ~(IOC_INOUT | IOC_VOID | 0xffff);
         mask = (u_int) addr & 0xffff;
-        reg = portnum + (struct gpioreg*) TRISA;
+        reg = portnum + (struct gpioreg*) &TRISA;
 printf ("gpioioctl (cmd=%08x, addr=%08x, flag=%d)\n", cmd, addr, flag);
 
 	if (op & GPIO_CONFIN) {

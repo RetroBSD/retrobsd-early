@@ -104,8 +104,8 @@ void usb_device_init(void)
     U1EP0 = EP_CTRL | USB_HANDSHAKE_ENABLED;
 
     // Flush any pending transactions
-    while (USBTransactionCompleteIF) {
-        *USBTransactionCompleteIFReg = 1 << USBTransactionCompleteIFBitNum;
+    while (U1IR & PIC32_U1I_TRN) {
+        U1IR = PIC32_U1I_TRN;
     }
 
     //clear all of the internal pipe information
@@ -215,8 +215,8 @@ void usb_device_tasks(void)
          */
         U1IR = 0;			// Clear all USB interrupts
         U1IE = 0;			// Mask all USB interrupts
-	U1IE |= PIC32_U1I_URST |	// Unmask RESET interrupt
-		PIC32_U1I_IDLE;		// Unmask IDLE interrupt
+	U1IE = PIC32_U1I_URST |         // Unmask RESET interrupt
+               PIC32_U1I_IDLE;		// Unmask IDLE interrupt
 	usb_device_state = POWERED_STATE;
     }
 
@@ -234,11 +234,10 @@ void usb_device_tasks(void)
     /*
      * Task A: Service USB Activity Interrupt
      */
-    if (USBActivityIF && USBActivityIE)
+    if ((U1OTGIR & PIC32_U1OTGI_ACTV) && (U1OTGIE & PIC32_U1OTGI_ACTV))
     {
 #if defined(USB_SUPPORT_OTG)
-        *USBActivityIFReg = 1 << USBActivityIFBitNum;
-        U1OTGIR = 0x10;
+        U1OTGIR = PIC32_U1OTGI_ACTV;
 #else
         usb_wake_from_suspend();
 #endif
@@ -261,7 +260,7 @@ void usb_device_tasks(void)
      * DETACHED_STATE or ATTACHED_STATE, and therefore cannot
      * cause a USB reset event during these two states.
      */
-    if (USBResetIF && USBResetIE)
+    if ((U1IR & PIC32_U1I_URST) && (U1IE & PIC32_U1I_URST))
     {
         usb_device_init();
         usb_device_state = DEFAULT_STATE;
@@ -293,7 +292,7 @@ void usb_device_tasks(void)
     /*
      * Task C: Service other USB interrupts
      */
-    if (USBIdleIF && USBIdleIE)
+    if ((U1IR & PIC32_U1I_IDLE) && (U1IE & PIC32_U1I_IDLE))
     {
 #ifdef USB_SUPPORT_OTG
         // If Suspended, Try to switch to Host
@@ -301,21 +300,22 @@ void usb_device_tasks(void)
 #else
         usb_suspend();
 #endif
-        *USBIdleIFReg = 1 << USBIdleIFBitNum;
+        U1IR = PIC32_U1I_IDLE;
     }
 
-    if (USBSOFIF && USBSOFIE)
+    if (U1IR & PIC32_U1I_SOF)
     {
-        usbcb_sof_handler();    // Required callback, see usbcallbacks.c
-        *USBSOFIFReg = 1 << USBSOFIFBitNum;
+        if (U1IE & PIC32_U1I_SOF)
+            usbcb_sof_handler();    // Required callback, see usbcallbacks.c
+        U1IR = PIC32_U1I_SOF;
     }
 
-    if (USBStallIF && USBStallIE)
+    if ((U1IR & PIC32_U1I_STALL) && (U1IE & PIC32_U1I_STALL))
     {
         usb_stall_handler();
     }
 
-    if (USBErrorIF && USBErrorIE)
+    if ((U1IR & PIC32_U1I_UERR) && (U1IE & PIC32_U1I_UERR))
     {
         usbcb_error_handler();  // Required callback, see usbcallbacks.c
         U1EIR = 0xFF;           // This clears UERRIF
@@ -332,18 +332,18 @@ void usb_device_tasks(void)
     /*
      * Task D: Servicing USB Transaction Complete Interrupt
      */
-    if (USBTransactionCompleteIE)
+    if (U1IE & PIC32_U1I_TRN)
     {
         // Drain or deplete the USAT FIFO entries.
         // If the USB FIFO ever gets full, USB bandwidth
         // utilization can be compromised, and the device
         // won't be able to receive SETUP packets.
 	for (i = 0; i < 4; i++) {
-	    if (! USBTransactionCompleteIF)
+	    if (! (U1IR & PIC32_U1I_TRN))
 	    	break;                      // USTAT FIFO must be empty.
 
             ustat_saved = U1STAT;
-            *USBTransactionCompleteIFReg = 1 << USBTransactionCompleteIFBitNum;
+            U1IR = PIC32_U1I_TRN;
 
             /*
              * usb_ctrl_ep_service only services transactions over EP0.
@@ -373,16 +373,17 @@ void usb_stall_handler(void)
     if (U1EP0 & PIC32_U1EP_EPSTALL)
     {
         // UOWN - if 0, owned by CPU, if 1, owned by SIE
-        if ((pBDTEntryEP0OutCurrent->STAT.Val == _USIE) && (pBDTEntryIn[0]->STAT.Val == (_USIE|_BSTALL)))
+        if (pBDTEntryEP0OutCurrent->STAT.Val == _USIE &&
+            pBDTEntryIn[0]->STAT.Val == (_USIE | _BSTALL))
         {
             // Set ep0Bo to stall also
             pBDTEntryEP0OutCurrent->STAT.Val = _USIE|_DAT0|_DTSEN|_BSTALL;
         }
 	// Clear stall status
 	U1EP0 &= ~PIC32_U1EP_EPSTALL;
-    }//end if
+    }
 
-    *USBStallIFReg = 1 << USBStallIFBitNum;
+    U1IR = PIC32_U1I_STALL;
 }
 
 /*
@@ -415,7 +416,7 @@ void usb_suspend(void)
      */
 
     U1OTGIE |= PIC32_U1OTGI_ACTV;	// Enable bus activity interrupt
-    *USBIdleIFReg = 1 << USBIdleIFBitNum;
+    U1IR = PIC32_U1I_IDLE;
 
     /*
      * At this point the PIC can go into sleep,idle, or
@@ -451,14 +452,7 @@ void usb_wake_from_suspend(void)
     module may not be immediately operational while waiting for the 96 MHz
     PLL to lock.
     */
-
-    // UIRbits.ACTVIF = 0;                      // Removed
-    #if defined(__18CXX)
-    while(USBActivityIF)
-    #endif
-    {
-        *USBActivityIFReg = 1 << USBActivityIFBitNum;
-    }  // Added
+    U1OTGIR = PIC32_U1OTGI_ACTV;
 }
 
 /*

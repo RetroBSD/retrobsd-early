@@ -20,42 +20,96 @@ enum {
     OP_POLL,
 };
 
+const char *opname[] = {
+    "ASSIGN",
+    "CONF_INPUT",
+    "CONF_OUTPUT",
+    "CONF_OPENDRAIN",
+    "DECONF",
+    "SET",
+    "CLEAR",
+    "INVERT",
+    "POLL",
+};
+
 char *progname;
 int verbose;
 int fd;
 
-void parse_port (char *arg, int *pnum, int *pmask)
+/*
+ * Parse port name.
+ * Split it into port number and pin mask.
+ * Return nonzero on success.
+ * Examples:
+ *      a0          single pin
+ *      b3-7,11     list of pins
+ *      c           same as c0-15 (zero mask returned)
+ */
+int parse_port (char *arg, int *pnum, int *pmask)
 {
+    char *arg0 = arg;
+
     if (*arg >= 'a' && *arg <='z')
         *pnum = *arg - 'a';
     else if (*arg >= 'A' && *arg <='Z')
         *pnum = *arg - 'A';
     else {
-        fprintf (stderr, "%s: incorrect port '%s'\n", progname, arg);
-        exit (-1);
+fatal:  fprintf (stderr, "%s: incorrect port '%s'\n", progname, arg0);
+        return 0;
     }
     *pmask = 0;
     while (*++arg) {
-        // TODO
+        char *ep;
+        unsigned from = strtoul (arg, &ep, 10);
+        if (ep == arg)
+            goto fatal;
+        arg = ep + 1;
+        if (*ep == '-') {
+            unsigned to = strtoul (arg, &ep, 10);
+            if (ep == arg)
+                goto fatal;
+            arg = ep + 1;
+            if (from > to) {
+                unsigned v = from;
+                from = to;
+                to = v;
+            }
+            *pmask |= (0xffff >> (15 - to + from)) << from;
+        } else {
+            *pmask |= 1 << from;
+        }
+        if (*ep == 0)
+            return 1;
+        if (*ep != ',')
+            goto fatal;
     }
-}
-
-int parse_value (char *arg)
-{
-    if (arg[0] == '0' && arg[1] == 'b') {
-        /* Binary value 0bxxx */
-        return strtoul (arg+2, 0, 2);
-    }
-    return strtoul (arg, 0, 0);
+    return 1;
 }
 
 void do_op (int op, char *port_arg, char *value_arg)
 {
     int pnum, pmask, i, value = 0;
 
-    parse_port (port_arg, &pnum, &pmask);
-    if (value_arg)
-        value = parse_value (value_arg);
+    if (! parse_port (port_arg, &pnum, &pmask))
+        return;
+    if (pmask == 0) {
+        /* No pin numbers - use all pins. */
+        pmask = 0xffff;
+    }
+
+    if (value_arg) {
+        if (value_arg[0] == '0' && value_arg[1] == 'b') {
+            /* Binary value 0bxxx */
+            value = strtoul (value_arg + 2, 0, 2);
+        } else
+            value = strtoul (value_arg, 0, 0);
+        if (verbose)
+            printf ("%s port %c mask %04x value %04x\n",
+                opname[op], pnum + 'A', pmask, value);
+    } else if (verbose) {
+        printf ("%s port %c mask %04x\n",
+            opname[op], pnum + 'A', pmask);
+    }
 
     switch (op) {
     case OP_ASSIGN:
@@ -133,6 +187,7 @@ void usage ()
     fprintf (stderr, "    -c ports        clear ports (set to 0)\n");
     fprintf (stderr, "    -r ports        reverse ports (invert)\n");
     fprintf (stderr, "    -g ports        get port values\n");
+    fprintf (stderr, "    -v              verbose mode\n");
     fprintf (stderr, "Ports:\n");
     fprintf (stderr, "    a0              single pin\n");
     fprintf (stderr, "    b3-7,11         list of pins\n");
@@ -146,6 +201,7 @@ int main (int argc, char **argv)
     register char *arg;
     const char *devname = "/dev/porta";
 
+    progname = *argv++;
     if (argc <= 1)
         usage();
 
@@ -156,7 +212,6 @@ int main (int argc, char **argv)
     }
 
     op = OP_ASSIGN;
-    progname = *argv++;
     for (c=1; c<argc; ++c) {
         arg = *argv++;
         if (arg[0] != '-') {

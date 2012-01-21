@@ -63,7 +63,6 @@ KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
 		  signal.o machdep.o mem.o exception.o \
                   usb_device.o usb_function_cdc.o
 KERNOBJ		+= usb_console.o
-#KERNOBJ	+= cons.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
