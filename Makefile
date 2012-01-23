@@ -105,8 +105,8 @@ CDEVS           = dev/console!c0:0 \
                   dev/klog!c4:0 \
                   dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2 \
                   dev/rsw0!c6:0 \
-                  dev/porta!c7:0 dev/portb!c7:0 dev/portc!c7:0 \
-                  dev/portd!c7:0 dev/porte!c7:0 dev/portf!c7:0 dev/portg!c7:0 \
+                  dev/porta!c7:0 dev/portb!c7:1 dev/portc!c7:2 \
+                  dev/portd!c7:3 dev/porte!c7:4 dev/portf!c7:5 dev/portg!c7:6 \
                   dev/confa!c7:64 dev/confb!c7:65 dev/confc!c7:66 \
                   dev/confd!c7:67 dev/confe!c7:68 dev/conff!c7:69 dev/confg!c7:70
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
@@ -177,7 +177,7 @@ buildlib:
 		@echo
 
 installfs: filesys.img
-ifdef SDCARD 
+ifdef SDCARD
 	sudo dd if=filesys.img of=$(SDCARD)
 else
 	@echo "Error: No SDCARD defined."
