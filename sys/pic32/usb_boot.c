@@ -173,7 +173,7 @@ static inline void button_init()
     TRISGSET = 1 << 6;
 
 #elif defined (STARTERKIT)
-    TODO;
+    TRISDSET = 1 << 6;
 #else
 #error "Unknown board"
 #endif
@@ -191,7 +191,7 @@ static inline int button_pressed()
     return ! (PORTG & (1 << 6));
 
 #elif defined (STARTERKIT)
-    TODO;
+    return ! (PORTD & (1 << 6));
 #else
 #error "Unknown board"
 #endif
@@ -216,7 +216,9 @@ static inline void led_init()
     PORTEINV = 0x40;
 
 #elif defined (STARTERKIT)
-    TODO;
+    TRISDCLR = 3 << 6;
+    LATDCLR = 1 << 6;
+    LATDSET = 2 << 6;
 #else
 #error "Unknown board"
 #endif
@@ -234,7 +236,7 @@ static inline void led_toggle()
     PORTEINV = 3 << 6;
 
 #elif defined (STARTERKIT)
-    TODO;
+    LATDINV = 3 << 6;
 #else
 #error "Unknown board"
 #endif

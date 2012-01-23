@@ -1,5 +1,25 @@
 /*
  * Control general purpose i/o pins.
+ *
+ * Copyright (C) 2012 Serge Vakulenko, <serge@vak.ru>
+ *
+ * Permission to use, copy, modify, and distribute this software
+ * and its documentation for any purpose and without fee is hereby
+ * granted, provided that the above copyright notice appear in all
+ * copies and that both that the copyright notice and this
+ * permission notice and warranty disclaimer appear in supporting
+ * documentation, and that the name of the author not be used in
+ * advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.
+ *
+ * The author disclaim all warranties with regard to this
+ * software, including all implied warranties of merchantability
+ * and fitness.  In no event shall the author be liable for any
+ * special, indirect or consequential damages or any damages
+ * whatsoever resulting from loss of use, data or profits, whether
+ * in an action of contract, negligence or other tortious action,
+ * arising out of or in connection with the use or performance of
+ * this software.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -113,24 +133,20 @@ void do_op (int op, char *port_arg, char *value_arg)
 
     switch (op) {
     case OP_ASSIGN:
-        if (pmask == 0xffff) {
-            /* All pins */
+        if (pmask == 0xffff) {                  /* All pins */
             if (ioctl (fd, GPIO_STORE | GPIO_PORT (pnum), value) < 0)
                 perror ("GPIO_STORE");
 
-        } else if (pmask & (pmask-1)) {
-            /* Several pins */
+        } else if (pmask & (pmask-1)) {         /* Several pins */
             for (i=1; ! (pmask & i); i<<=1)
                 value <<= 1;
             if (ioctl (fd, GPIO_STORE | GPIO_PORT (pnum), value) < 0)
                 perror ("GPIO_STORE");
 
-        } else if (value & 1) {
-            /* Set single pin */
+        } else if (value & 1) {                 /* Set single pin */
             if (ioctl (fd, GPIO_SET | GPIO_PORT (pnum), pmask) < 0)
                 perror ("GPIO_SET");
-        } else {
-            /* Clear single pin */
+        } else {                                /* Clear single pin */
             if (ioctl (fd, GPIO_CLEAR | GPIO_PORT (pnum), pmask) < 0)
                 perror ("GPIO_SET");
         }
@@ -163,11 +179,19 @@ void do_op (int op, char *port_arg, char *value_arg)
         if (ioctl (fd, GPIO_INVERT | GPIO_PORT (pnum), pmask) < 0)
             perror ("GPIO_INVERT");
         break;
-    default:
     case OP_POLL:
-        if (ioctl (fd, GPIO_POLL | GPIO_PORT (pnum), &value) < 0)
+        value = ioctl (fd, GPIO_POLL | GPIO_PORT (pnum), 0);
+        if (value < 0)
             perror ("GPIO_POLL");
-        printf ("0x%04x\n", value);
+        if (pmask == 0xffff) {                  /* All pins */
+            printf ("0x%04x\n", value);
+
+        } else {                                /* Some pins */
+            value &= pmask;
+            for (i=1; ! (pmask & i); i<<=1)
+                value >>= 1;
+            printf ("%#x\n", value);
+        }
         break;
     }
 }
@@ -187,6 +211,7 @@ void usage ()
     fprintf (stderr, "    -c ports        clear ports (set to 0)\n");
     fprintf (stderr, "    -r ports        reverse ports (invert)\n");
     fprintf (stderr, "    -g ports        get port values\n");
+    fprintf (stderr, "    -m msec         delay in milliseconds\n");
     fprintf (stderr, "    -v              verbose mode\n");
     fprintf (stderr, "Ports:\n");
     fprintf (stderr, "    a0              single pin\n");
@@ -197,7 +222,7 @@ void usage ()
 
 int main (int argc, char **argv)
 {
-    register int c, op;
+    register int op, msec;
     register char *arg;
     const char *devname = "/dev/porta";
 
@@ -211,12 +236,13 @@ int main (int argc, char **argv)
         return -1;
     }
 
-    op = OP_ASSIGN;
-    for (c=1; c<argc; ++c) {
+    /* Default operation is poll. */
+    op = OP_POLL;
+    while (--argc > 0) {
         arg = *argv++;
         if (arg[0] != '-') {
             if (op == OP_ASSIGN) {
-                if (++c >= argc || **argv=='-') {
+                if (--argc <= 0 || **argv=='-') {
                     fprintf (stderr, "%s: option -a: second argument missed\n", progname);
                     return -1;
                 }
@@ -243,6 +269,9 @@ badop:      fprintf (stderr, "%s: unknown option `%s'\n", progname, arg);
         case 'x':               /* deconfigure ports */
             op = OP_DECONF;
             break;
+        case 'a':               /* set a value of port */
+            op = OP_ASSIGN;
+            break;
         case 's':               /* set ports to 1 */
             op = OP_SET;
             break;
@@ -257,6 +286,14 @@ badop:      fprintf (stderr, "%s: unknown option `%s'\n", progname, arg);
             break;
         case 'v':               /* verbose mode */
             verbose++;
+            break;
+        case 'm':               /* delay in milliseconds */
+            if (--argc <= 0 || **argv=='-') {
+                fprintf (stderr, "%s: option -m: argument missed\n", progname);
+                return -1;
+            }
+            msec = strtol (*argv++, 0, 0);
+            usleep (msec * 1000);
             break;
         case 'h':               /* help */
             usage();

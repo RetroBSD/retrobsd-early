@@ -38,10 +38,10 @@ I               = ..
 #CFLAGS         += -DMAXIMITE -DFLASH_USER=0x1d003000
 
 # eflightworks DIP
-CFLAGS         += -DDIP -DFLASH_JUMP=0x9d000000
+#CFLAGS         += -DDIP -DFLASH_JUMP=0x9d000000
 
 # Microchip USB/Ethernet Starter Kit
-#CFLAGS          += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
+CFLAGS          += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

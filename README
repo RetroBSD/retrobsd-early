@@ -21,6 +21,9 @@ Supported hardware
  * Maximite computer.
  * Microchip Explorer 16 board, with PIC32 CAN-USB plug-in module and SD & MMC pictail.
  * Microchip PIC32 USB or Ethernet Starter Kit, with I/O Expansion board and SD & MMC pictail.
+ * Olimex Duinomite, Duinomite-Mini and Duinomite-Mega boards.
+ * Olimex Pinguino-Micro board with PIC32MX795F512H microcontroller.
+ * eflightworks DIP board.
 
 
 Build
@@ -30,16 +33,14 @@ To select another target board, edit a top-level Makefile
 and change a TARGET value under section "Select target board":
 
     TARGET = $(UBW32)       # for the UBW32 board with USB console
-
     TARGET = $(UBW32UART)   # for the UBW32 board with UART console
-
     TARGET = $(MAXIMITE)    # for the Maximite board
-
     TARGET = $(EXPLORER16)  # for the Explorer 16 board
-
     TARGET = $(STARTERKIT)  # for the PIC32 USB or Ethernet Starter Kit
-
     TARGET = $(MAX32)       # default
+    TARGET = $(DUINOMITE)   # for the Duinomite board
+    TARGET = $(PINGUINO)    # for the Pinguino-Micro board
+    TARGET = $(DIP)         # for the DIP board
 
 You can also change a desired filesystem size and swap area size,
 as required.  Default is:
@@ -80,7 +81,10 @@ Max32 board:
     Here you need to change AVRTOOLS path and tty name according to your system.
 
 UBW32 board:
-    tools/ubw32/ubw32 -write sys/pic32/ubw32/unix.hex -reset
+    Use a pic32prog utility (http://code.google.com/p/pic32prog/)
+    and a USB cable to install a kernel:
+
+    pic32prog sys/pic32/ubw32/unix.hex
 
 Maximite:
     Use the bootload program for Windows, available for download by link:

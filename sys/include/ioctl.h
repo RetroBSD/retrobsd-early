@@ -264,6 +264,7 @@ struct ttysize {
 #define GPIO_PORTE	GPIO_PORT(4)
 #define GPIO_PORTF	GPIO_PORT(5)
 #define GPIO_PORTG	GPIO_PORT(6)
+#define GPIO_COMMAND	0x1fff0000                      /* command mask */
 #define GPIO_CONFIN	(IOC_VOID | 1 << 16 | 'g'<<8)   /* configure as input */
 #define GPIO_CONFOUT    (IOC_VOID | 1 << 17 | 'g'<<8)   /* configure as output */
 #define GPIO_CONFOD	(IOC_VOID | 1 << 18 | 'g'<<8)   /* configure as open drain */

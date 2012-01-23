@@ -26,6 +26,7 @@
 #include "user.h"
 #include "ioctl.h"
 #include "systm.h"
+#include "uio.h"
 
 /*
  * Devices:
@@ -65,15 +66,26 @@
  * of all PORTA pins:
  * val = ioctl(fd, GPIO_PORTA | GPIO_SET | GPIO_CLEAR | GPIO_POLL, 1<<3);
  */
-#define NGPIO   7                       /* Ports A, B, C, D, E, F, G */
+#define NGPIO           7               /* Ports A, B, C, D, E, F, G */
+#define NPINS           16              /* Number of pins per port */
+
+#define MINOR_CONF      0x40            /* Minor mask: /dev/confX */
+#define MINOR_UNIT      0x07            /* Minor mask: unit number */
 
 /*
- * Mask of enabled pins, default empty.
+ * Mask of configured pins, default empty.
  */
 u_int gpio_confmask [NGPIO];
 
 /*
- * PIC32 UART registers.
+ * To enable debug output, comment out the first line,
+ * and uncomment the second line.
+ */
+#define PRINTDBG(...) /*empty*/
+//#define PRINTDBG printf
+
+/*
+ * PIC32 port i/o registers.
  */
 struct gpioreg {
         volatile unsigned tris;		/* Mask of inputs */
@@ -156,11 +168,99 @@ gpio_filter (mask, portnum)
         return mask;
 }
 
+static void
+gpio_print (dev, buf)
+	dev_t dev;
+        char *buf;
+{
+	u_int unit = minor(dev) & MINOR_UNIT;
+	register struct gpioreg *reg = unit + (struct gpioreg*) &TRISA;
+        register u_int mask, conf, tris;
+        register char c;
+
+        conf = gpio_confmask [unit];
+        tris = reg->tris;
+        if (minor(dev) & MINOR_CONF) {
+                /* /dev/confX device: port configuration mask */
+                u_int odc = reg->odc;
+                for (mask=1<<(NPINS-1); mask; mask>>=1) {
+                        if (! (conf & mask))
+                                c = '-';
+                        else if (tris & mask)
+                                c = 'i';
+                        else
+                                c = (odc & mask) ? 'd' : 'o';
+                        *buf++ = c;
+                }
+        } else {
+                /* /dev/portX device: port value mask */
+                u_int lat = reg->lat;
+                u_int port = reg->port;
+                for (mask=1<<(NPINS-1); mask; mask>>=1) {
+                        if (! (conf & mask))
+                                c = '-';
+                        else if (tris & mask)
+                                c = (port & mask) ? '1' : '0';
+                        else
+                                c = (lat & mask) ? '1' : '0';
+                        *buf++ = c;
+                }
+        }
+        *buf++ = '\n';
+        *buf = 0;
+}
+
+static void
+gpio_parse (dev, buf)
+	dev_t dev;
+        char *buf;
+{
+	u_int unit = minor(dev) & MINOR_UNIT;
+	register struct gpioreg *reg = unit + (struct gpioreg*) &TRISA;
+        register u_int mask;
+        register char c;
+
+        if (minor(dev) & MINOR_CONF) {
+                /* /dev/confX device: port configuration mask */
+                for (mask=1<<(NPINS-1); mask; mask>>=1) {
+                        c = *buf++;
+                        if (c <= ' ' || c > '~')
+                                break;
+                        if (c == 'x' || c == 'X')
+                                gpio_confmask [unit] &= ~mask;
+                        else if (c == 'i' || c == 'I')
+                                reg->trisset = mask;
+                        else if (c == 'o' || c == 'O') {
+                                reg->odcclr = mask;
+                                reg->trisclr = mask;
+                        } else if (c == 'd' || c == 'D') {
+                                reg->odcset = mask;
+                                reg->trisclr = mask;
+                        }
+                }
+        } else {
+                /* /dev/portX device: port value mask */
+                u_int conf = gpio_confmask [unit];
+                u_int tris = reg->tris;
+                for (mask=1<<(NPINS-1); mask; mask>>=1) {
+                        c = *buf++;
+                        if (c <= ' ' || c > '~')
+                                break;
+                        if (! (conf & mask) || (tris & mask))
+                                continue;
+                        if (c == '0')
+                                reg->latclr = mask;
+                        else
+                                reg->latset = mask;
+                }
+        }
+}
+
 int
 gpioopen (dev, flag, mode)
 	dev_t dev;
 {
-	int unit = minor(dev);
+	register u_int unit = minor(dev) & MINOR_UNIT;
 
 	if (unit >= NGPIO)
 		return ENXIO;
@@ -182,8 +282,30 @@ gpioread (dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-        // TODO
-	return ENODEV;
+	register struct iovec *iov;
+	register u_int cnt = NPINS + 1;
+        char buf [20];
+
+        /* I/o size should be large enough. */
+        iov = uio->uio_iov;
+	if (iov->iov_len < cnt)
+	        return EIO;
+
+        /* Read only cnt bytes. */
+        if (uio->uio_offset >= cnt)
+                return 0;
+        cnt -= uio->uio_offset;
+
+        /* Print port status to buffer. */
+        gpio_print (dev, buf);
+        //PRINTDBG ("gpioread -> %s", buf);
+
+        bcopy (buf + uio->uio_offset, iov->iov_base, cnt);
+        iov->iov_base += cnt;
+        iov->iov_len -= cnt;
+        uio->uio_resid -= cnt;
+        uio->uio_offset += cnt;
+	return 0;
 }
 
 int
@@ -192,8 +314,23 @@ gpiowrite (dev, uio, flag)
 	struct uio *uio;
 	int flag;
 {
-        // TODO
-	return ENODEV;
+	register struct iovec *iov = uio->uio_iov;
+	register u_int cnt = NPINS;
+        char buf [20];
+
+        /* I/o size should be large enough. */
+	if (iov->iov_len < cnt)
+	        return EIO;
+
+        bcopy (iov->iov_base, buf, cnt);
+        iov->iov_base += cnt;
+        iov->iov_len -= cnt;
+        uio->uio_resid -= cnt;
+        uio->uio_offset += cnt;
+
+        PRINTDBG ("gpiowrite ('%s')\n", buf);
+        gpio_parse (dev, buf);
+	return 0;
 }
 
 /*
@@ -216,65 +353,78 @@ gpioioctl (dev, cmd, addr, flag)
 	register u_int cmd;
 	caddr_t addr;
 {
-	register u_int portnum, op, mask;
+	register u_int unit, mask, value;
 	register struct gpioreg *reg;
 
 	if ((cmd & (IOC_INOUT | IOC_VOID)) != IOC_VOID ||
             ((cmd >> 8) & 0xff) != 'g')
 		return EINVAL;
-	portnum = cmd & 0xff;
-	if (portnum >= NGPIO)
+	unit = cmd & 0xff;
+	if (unit >= NGPIO)
 		return ENXIO;
 
-        op = cmd & ~(IOC_INOUT | IOC_VOID | 0xffff);
-        mask = (u_int) addr & 0xffff;
-        reg = portnum + (struct gpioreg*) &TRISA;
-printf ("gpioioctl (cmd=%08x, addr=%08x, flag=%d)\n", cmd, addr, flag);
+        mask = gpio_filter ((u_int) addr & 0xffff, unit);
+        reg = unit + (struct gpioreg*) &TRISA;
+        PRINTDBG ("gpioioctl (cmd=%08x, addr=%08x, flag=%d)\n", cmd, addr, flag);
 
-	if (op & GPIO_CONFIN) {
+	if (cmd & GPIO_COMMAND & GPIO_CONFIN) {
                 /* configure as input */
-                mask = gpio_filter (mask, portnum);
+                PRINTDBG ("TRIS%cSET %p := %04x\n", unit+'A', &reg->trisset, mask);
                 reg->trisset = mask;
-                gpio_confmask [portnum] |= mask;
+                gpio_confmask [unit] |= mask;
         }
-        if (op & GPIO_CONFOUT) {
+        if (cmd & GPIO_COMMAND & GPIO_CONFOUT) {
                 /* configure as output */
-                mask = gpio_filter (mask, portnum);
+                PRINTDBG ("ODC%cCLR %p := %04x\n", unit+'A', &reg->odcclr, mask);
                 reg->odcclr = mask;
+                PRINTDBG ("TRIS%cCLR %p := %04x\n", unit+'A', &reg->trisclr, mask);
                 reg->trisclr = mask;
-                gpio_confmask [portnum] |= mask;
+                gpio_confmask [unit] |= mask;
         }
-        if (op & GPIO_CONFOD) {
+        if (cmd & GPIO_COMMAND & GPIO_CONFOD) {
                 /* configure as open drain */
-                mask = gpio_filter (mask, portnum);
+                PRINTDBG ("ODC%cSET %p := %04x\n", unit+'A', &reg->odcset, mask);
                 reg->odcset = mask;
+                PRINTDBG ("TRIS%cCLR %p := %04x\n", unit+'A', &reg->trisclr, mask);
                 reg->trisclr = mask;
-                gpio_confmask [portnum] |= mask;
+                gpio_confmask [unit] |= mask;
         }
-        if (op & GPIO_DECONF) {
+        if (cmd & GPIO_COMMAND & GPIO_DECONF) {
                 /* deconfigure */
-                gpio_confmask [portnum] &= ~mask;
+                gpio_confmask [unit] &= ~mask;
         }
-        if (op & GPIO_STORE) {
+        if (cmd & GPIO_COMMAND & GPIO_STORE) {
                 /* store all outputs */
-                reg->lat = (reg->lat & ~gpio_confmask [portnum]) |
-                        (mask & gpio_confmask [portnum]);
+                value = reg->lat;
+                PRINTDBG ("LAT%c %p -> %04x\n", unit+'A', &reg->lat, value);
+                value &= ~gpio_confmask [unit];
+                value |= mask & gpio_confmask [unit];
+                PRINTDBG ("LAT%c %p := %04x\n", unit+'A', &reg->lat, value);
+                reg->lat = value;
         }
-        if (op & GPIO_SET) {
+        if (cmd & GPIO_COMMAND & GPIO_SET) {
                 /* set to 1 by mask */
-                reg->latset = mask & gpio_confmask [portnum];
+                mask &= gpio_confmask [unit];
+                PRINTDBG ("LAT%cSET %p := %04x\n", unit+'A', &reg->latset, mask);
+                reg->latset = mask;
         }
-        if (op & GPIO_CLEAR) {
+        if (cmd & GPIO_COMMAND & GPIO_CLEAR) {
                 /* set to 0 by mask */
-                reg->latclr = mask & gpio_confmask [portnum];
+                mask &= gpio_confmask [unit];
+                PRINTDBG ("LAT%cCLR %p := %04x\n", unit+'A', &reg->latclr, mask);
+                reg->latclr = mask;
         }
-        if (op & GPIO_INVERT) {
+        if (cmd & GPIO_COMMAND & GPIO_INVERT) {
                 /* invert by mask */
-                reg->latinv = mask & gpio_confmask [portnum];
+                mask &= gpio_confmask [unit];
+                PRINTDBG ("LAT%cINV %p := %04x\n", unit+'A', &reg->latinv, mask);
+                reg->latinv = mask;
         }
-        if (op & GPIO_POLL) {
+        if (cmd & GPIO_COMMAND & GPIO_POLL) {
                 /* send current pin values to user */
-		u.u_rval = reg->port;
+		value = reg->port;
+                PRINTDBG ("PORT%c %p -> %04x\n", unit+'A', &reg->port, value);
+		u.u_rval = value;
         }
 	return 0;
 }
