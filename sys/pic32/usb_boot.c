@@ -216,9 +216,9 @@ static inline void led_init()
     PORTEINV = 0x40;
 
 #elif defined (STARTERKIT)
-    TRISDCLR = 3 << 6;
-    LATDCLR = 1 << 6;
-    LATDSET = 2 << 6;
+    TRISDCLR = 7 << 0;
+    LATDCLR = 1 << 0;
+    LATDSET = 6 << 0;
 #else
 #error "Unknown board"
 #endif
@@ -236,7 +236,7 @@ static inline void led_toggle()
     PORTEINV = 3 << 6;
 
 #elif defined (STARTERKIT)
-    LATDINV = 3 << 6;
+    LATDINV = 7 << 0;
 #else
 #error "Unknown board"
 #endif
