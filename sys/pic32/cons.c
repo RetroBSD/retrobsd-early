@@ -99,6 +99,9 @@ void cninit()
 	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, 115200);
 	reg->sta = 0;
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
+#ifdef CONSOLE_RTSCTS
+                    PIC32_UMODE_UEN_RTSCTS |    /* Enable hardware handshaking */
+#endif
 		    PIC32_UMODE_ON;		/* UART Enable */
 	reg->staset = PIC32_USTA_URXEN |	/* Receiver Enable */
 		      PIC32_USTA_UTXEN;		/* Transmit Enable */
@@ -175,7 +178,11 @@ cnopen (dev, flag, mode)
 
 	reg->sta = 0;
 	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, speed_bps [tp->t_ospeed]);
-	reg->mode = PIC32_UMODE_PDSEL_8NPAR | PIC32_UMODE_ON;
+	reg->mode = PIC32_UMODE_PDSEL_8NPAR | 
+#ifdef CONSOLE_RTSCTS
+                    PIC32_UMODE_UEN_RTSCTS |
+#endif
+                    PIC32_UMODE_ON;
 	reg->staset = PIC32_USTA_URXEN | PIC32_USTA_UTXEN;
 
 	/* Enable receive interrupt. */

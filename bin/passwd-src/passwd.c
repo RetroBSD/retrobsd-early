@@ -189,7 +189,7 @@ copy(name, np, fp, pw)
 		 * go and get the "offset" value for this class and reset
 		 * the timer.
 		 */
-		fprintf(fp, "%s:%s:%d:%d:%s:%s:%s\n",
+		fprintf(fp, "%s:%s:%d:%d::0:0:%s:%s:%s\n",
 		    pw->pw_name, np, pw->pw_uid, pw->pw_gid,
 		    pw->pw_gecos, pw->pw_dir, pw->pw_shell);
 		done = 1;

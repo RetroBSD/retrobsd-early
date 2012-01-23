@@ -22,11 +22,17 @@ PINGUINO        = sys/pic32/pinguino-micro
 DIP             = sys/pic32/dip
 
 # Select target board
-TARGET          = $(MAX32)
+TARGET          ?= $(MAX32)
 
 # Filesystem and swap sizes.
 FS_KBYTES       = 16384
 SWAP_KBYTES     = 2048
+
+# Set this to the device name for your SD card.  With this
+# enabled you can use "make installfs" to copy the filesys.img
+# to the SD card.
+
+# SDCARD          = /dev/sdb
 
 #
 # C library options: passed to libc makefile.
@@ -169,3 +175,10 @@ buildlib:
 		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
 		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
 		@echo
+
+installfs: filesys.img
+ifdef SDCARD 
+	sudo dd if=filesys.img of=$(SDCARD)
+else
+	@echo "Error: No SDCARD defined."
+endif

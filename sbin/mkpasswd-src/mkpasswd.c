@@ -37,6 +37,7 @@ scanpw()
 {
 	register char *cp;
 	char	*bp;
+        char    *ignore;
 
 	for (;;) {
 		offset = ftell(_pw_fp);
@@ -61,6 +62,9 @@ scanpw()
 		if (!(cp = strsep(&bp, ":")))
 			continue;
 		_pw_passwd.pw_gid = atoi(cp);
+		ignore = strsep(&bp, ":");
+		ignore = strsep(&bp, ":");
+		ignore = strsep(&bp, ":");
 		_pw_passwd.pw_gecos = strsep(&bp, ":");
 		_pw_passwd.pw_dir = strsep(&bp, ":");
 		_pw_passwd.pw_shell = strsep(&bp, ":");
@@ -176,9 +180,10 @@ main(argc, argv)
 		/* create original format password file entry */
 		if (!makeold)
 			continue;
-		fprintf(oldfp, "%s:*:%d:%d:%s:%s:%s\n", _pw_passwd.pw_name,
-		    _pw_passwd.pw_uid, _pw_passwd.pw_gid, _pw_passwd.pw_gecos,
-		    _pw_passwd.pw_dir, _pw_passwd.pw_shell);
+		fprintf(oldfp, "%s:%d:%d:%d:%s:%s:%s\n", _pw_passwd.pw_name, 
+                    offset, _pw_passwd.pw_uid, _pw_passwd.pw_gid, 
+                    _pw_passwd.pw_gecos, _pw_passwd.pw_dir, 
+                    _pw_passwd.pw_shell);
 	}
 	dbm_close(dp);
 	exit(0);
