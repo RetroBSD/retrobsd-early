@@ -27,19 +27,19 @@
     #error "PIC32 only supports full ping pong mode."
 #endif
 
-USB_VOLATILE unsigned usb_device_state;
-USB_VOLATILE unsigned usb_active_configuration;
-static USB_VOLATILE unsigned char usb_alternate_interface[USB_MAX_NUM_INT];
+unsigned usb_device_state;
+unsigned usb_active_configuration;
+static unsigned char usb_alternate_interface[USB_MAX_NUM_INT];
 static volatile BDT_ENTRY *pBDTEntryEP0OutCurrent;
 static volatile BDT_ENTRY *pBDTEntryEP0OutNext;
 static volatile BDT_ENTRY *pBDTEntryOut[USB_MAX_EP_NUMBER+1];
 static volatile BDT_ENTRY *pBDTEntryIn[USB_MAX_EP_NUMBER+1];
-static USB_VOLATILE unsigned short_packet_status;
-static USB_VOLATILE unsigned control_transfer_state;
-static USB_VOLATILE unsigned ustat_saved;
-USB_VOLATILE IN_PIPE usb_in_pipe[1];
-USB_VOLATILE OUT_PIPE usb_out_pipe[1];
-USB_VOLATILE int usb_remote_wakeup;
+static unsigned short_packet_status;
+static unsigned control_transfer_state;
+static unsigned ustat_saved;
+IN_PIPE usb_in_pipe[1];
+OUT_PIPE usb_out_pipe[1];
+int usb_remote_wakeup;
 
 /*
  * Section A: Buffer Descriptor Table

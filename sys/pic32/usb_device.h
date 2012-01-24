@@ -451,8 +451,8 @@ extern volatile CTRL_TRF_SETUP usb_setup_pkt;           // 8-byte only
 
 extern unsigned usb_device_state;
 extern unsigned usb_active_configuration;
-extern USB_VOLATILE IN_PIPE usb_in_pipe[1];
-extern USB_VOLATILE OUT_PIPE usb_out_pipe[1];
+extern IN_PIPE usb_in_pipe[1];
+extern OUT_PIPE usb_out_pipe[1];
 
 /*
   Function:
@@ -1735,6 +1735,6 @@ void usb_stall_endpoint(unsigned ep, unsigned dir);
     #error "No ping pong mode defined."
 #endif
 
-extern USB_VOLATILE int usb_remote_wakeup;
+extern int usb_remote_wakeup;
 
 #endif //USBD_H

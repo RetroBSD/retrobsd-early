@@ -105,31 +105,7 @@ typedef union __attribute__ ((packed))__BDT
 #define USTAT_EP0_IN_EVEN   0x08
 #define USTAT_EP0_IN_ODD    0x0C
 
-typedef union
-{
-    unsigned short UEP[16];
-} _UEP;
-
 #define UEP_STALL 0x0002
-#define USB_VOLATILE
-
- //* Depricated: v2.2 - will be removed at some point of time ***
-#define _LS         0x00            // Use Low-Speed USB Mode
-#define _FS         0x00            // Use Full-Speed USB Mode
-#define _TRINT      0x00            // Use internal transceiver
-#define _TREXT      0x00            // Use external transceiver
-#define _PUEN       0x00            // Use internal pull-up resistor
-#define _OEMON      0x00            // Use SIE output indicator
-//*
-
-#define USB_PULLUP_ENABLE 0x10
-#define USB_PULLUP_DISABLE 0x00
-
-#define USB_INTERNAL_TRANSCEIVER 0x00
-#define USB_EXTERNAL_TRANSCEIVER 0x01
-
-#define USB_FULL_SPEED 0x00
-//USB_LOW_SPEED not currently supported in PIC24F USB products
 
 //#define USB_PING_PONG__NO_PING_PONG	0x00
 //#define USB_PING_PONG__EP0_OUT_ONLY	0x01
