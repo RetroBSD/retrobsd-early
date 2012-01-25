@@ -15,6 +15,10 @@
 #include "tty.h"
 #include "systm.h"
 
+#ifdef GPIO_ENABLED
+#include "gpio.h"
+#endif
+
 #ifndef SWAPDEV
 #define swopen      nulldev
 #define swstrategy  nostrategy
@@ -98,10 +102,19 @@ const struct cdevsw	cdevsw[] = {
 	swopen,		nulldev,	rawrw,		rawrw,
 	noioctl,	nulldev,	0,		seltrue,
 	swstrategy,	},
+
+#ifdef GPIO_ENABLED
 { /* gpio = 7 */
 	gpioopen,	gpioclose,	gpioread,	gpiowrite,
 	gpioioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
+#else
+{
+        nulldev,        nulldev,        norw,           norw,
+        noioctl,        nulldev,        0,              seltrue,
+        nostrategy,     },
+#endif
+
 };
 const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
 

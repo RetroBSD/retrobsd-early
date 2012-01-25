@@ -186,6 +186,19 @@ gpio_filter (mask, portnum)
 #ifdef SW_WR_PORT
         mask = filter_out (mask, portnum, &SW_WR_PORT, SW_WR_PIN);
 #endif
+
+#ifdef POWER_ENABLED
+#ifdef POWER_SWITCH_PORT
+        mask = filter_out (mask, portnum, &POWER_SWITCH_PORT, POWER_SWITCH_PIN);
+#endif
+#ifdef POWER_LED_PORT
+        mask = filter_out (mask, portnum, &POWER_LED_PORT, POWER_LED_PIN);
+#endif
+#ifdef POWER_CONTROL_PORT
+        mask = filter_out (mask, portnum, &POWER_CONTROL_PORT, POWER_CONTROL_PIN);
+#endif
+#endif
+
         return mask;
 }
 

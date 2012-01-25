@@ -42,6 +42,8 @@ main(argc, argv)
 		howto = RB_HALT|RB_NOFSCK;
 	else if (strcmp(myname, "fastboot") == 0)
 		howto = RB_NOFSCK;
+	else if (strcmp(myname, "poweroff") == 0)
+		howto = RB_HALT|RB_POWEROFF;
 	else
 		howto = 0;
 
@@ -61,6 +63,7 @@ main(argc, argv)
 			case 'f':  howto |= RB_NOFSCK;	break;
 			case 'R':  howto |= RB_DFLTROOT; break;
 			case 'D':  howto |= RB_AUTODEBUG; break;
+			case 'p':  howto |= RB_HALT|RB_POWEROFF; break;
 			case '?':
 				fprintf(stderr,
 					"usage: %s [-%s]\n", myname, OPTS);

@@ -268,9 +268,3 @@ int logselect (dev_t dev, int rw);
 
 int fdopen (dev_t dev, int flag, int mode);
 int dupfdopen (int indx, int dfd, int mode, int error);
-
-int gpioopen (dev_t dev, int flag, int mode);
-int gpioclose (dev_t dev, int flag, int mode);
-int gpioread (dev_t dev, struct uio *uio, int flag);
-int gpiowrite (dev_t dev, struct uio *uio, int flag);
-int gpioioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);

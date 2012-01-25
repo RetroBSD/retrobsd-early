@@ -66,7 +66,7 @@ FSUTIL		= tools/fsutil/fsutil
 SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fsck sbin/halt sbin/init \
                   sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount \
                   sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
-                  sbin/update sbin/vipw
+                  sbin/update sbin/vipw sbin/poweroff
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells
 BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
@@ -144,6 +144,9 @@ $(FSUTIL):
 clean:
 		rm -f *~
 		for dir in $(CLEANDIR); do $(MAKE) -C $$dir -k clean; done
+
+realclean: clean
+		rm -f sys/pic32/*/unix.hex
 
 # TODO
 buildlib:

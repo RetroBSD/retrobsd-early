@@ -24,12 +24,28 @@ DEFS            += -DCONSOLE_UART1 -DCONSOLE_RTSCTS
 # SD/MMC card driver on SPI1
 DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
 # /CS0 at pin B1
-DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
+DEFS            += -DSD_CS0_PORT=TRISC -DSD_CS0_PIN=14
 # LEDs at pins A0, A1, A2, A3
-DEFS            += -DLED_DISK_PORT=TRISA   -DLED_DISK_PIN=0
-DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=1
-DEFS            += -DLED_TTY_PORT=TRISA    -DLED_TTY_PIN=2
-DEFS            += -DLED_AUX_PORT=TRISA    -DLED_AUX_PIN=3
+DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=4
+DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=3
+DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=2
+DEFS            += -DLED_AUX_PORT=TRISG    -DLED_AUX_PIN=13
+
+# Include or exclude drivers
+
+# General Purpose I/O
+DRIVER_GPIO         = yes
+
+# Power control (power LED, and soft power-off by button)
+# requires supported PSU (ATX)
+DRIVER_POWER        = yes
+
+POWER_LED_PORT      = TRISG
+POWER_LED_PIN       = 12
+POWER_SWITCH_PORT   = TRISG
+POWER_SWITCH_PIN    = 0
+POWER_CONTROL_PORT  = TRISE
+POWER_CONTROL_PIN   = 9
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -66,16 +82,19 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o gpio.o
+KERNOBJ		+= sd.o 
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o
+
+# This makefile does the work including the right files and options for the drivers
+include ../common/Makefile.internalDrivers
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf
 
 clean:
-		rm -rf .deps *.o *.elf *.hex *.bin *.dis *.map *.srec core \
+		rm -rf .deps *.o *.elf *.bin *.dis *.map *.srec core \
 		mklog assym.h vers.c genassym sys machine
 		find ../.. -name \*~ | xargs rm -f
 

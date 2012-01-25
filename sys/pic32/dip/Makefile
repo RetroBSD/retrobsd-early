@@ -35,6 +35,21 @@ DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=5
 DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=6
 DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=7
 
+# General Purpose I/O
+DRIVER_GPIO         = yes
+
+# Power control (power LED, and soft power-off by button)
+# requires supported PSU (ATX)
+DRIVER_POWER        = no
+
+POWER_LED_PORT      = TRISG
+POWER_LED_PIN       = 12
+POWER_SWITCH_PORT   = TRISG
+POWER_SWITCH_PIN    = 0
+POWER_CONTROL_PORT  = TRISE
+POWER_CONTROL_PIN   = 9
+
+
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
@@ -69,11 +84,13 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o gpio.o
+KERNOBJ		+= sd.o 
 KERNOBJ		+= usb_console.o usb_device.o usb_function_cdc.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o
+
+include ../common/Makefile.internalDrivers
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf

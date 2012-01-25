@@ -14,12 +14,13 @@ all:            ../reboot reboot.0
 		${SIZE} reboot.elf
 		${ELF2AOUT} reboot.elf $@
 		ln -f $@ ../halt
+		ln -f $@ ../poweroff
 
 reboot.0:       ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ *.elf *.dis ${MAN} ../reboot ../halt tags
+		rm -f *.o *~ *.elf *.dis ${MAN} ../reboot ../halt ../poweroff tags
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
@@ -33,6 +34,7 @@ install:        reboot
 		-rm ${DESTDIR}/sbin/fastboot ${DESTDIR}/sbin/halt
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/halt
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/fastboot
+		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/poweroff
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

@@ -53,6 +53,22 @@ DEFS            += -DSW_RD_PORT=TRISE   -DSW_RD_PIN=8
 DEFS            += -DSW_WR_PORT=TRISE   -DSW_WR_PIN=9
 DEFS            += -DSW_LDA_PORT=TRISC  -DSW_LDA_PIN=1
 
+# Include or exclude drivers
+
+# General Purpose I/O
+DRIVER_GPIO         = yes
+
+# Power control (power LED, and soft power-off by button)
+# requires supported PSU (ATX)
+DRIVER_POWER        = yes
+
+POWER_LED_PORT      = TRISG
+POWER_LED_PIN       = 12
+POWER_SWITCH_PORT   = TRISG
+POWER_SWITCH_PIN    = 0
+POWER_CONTROL_PORT  = TRISE
+POWER_CONTROL_PIN   = 9
+
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
@@ -88,10 +104,13 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o gpio.o
+KERNOBJ		+= sd.o 
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
+
+# This makefile does the work including the right files and options for the drivers
+include ../common/Makefile.internalDrivers
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf

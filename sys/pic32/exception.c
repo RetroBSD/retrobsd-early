@@ -12,6 +12,11 @@
 
 //#define TRACE_EXCEPTIONS
 
+#ifdef POWER_ENABLED
+extern void power_switch_check();
+#endif
+
+
 #ifdef TRACE_EXCEPTIONS
 static void
 print_args (narg, arg0, arg1, arg2, arg3, arg4, arg5)
@@ -291,6 +296,10 @@ exception (frame)
 
                         IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         hardclock ((caddr_t) frame [FRAME_PC], status);
+#ifdef POWER_ENABLED
+                        power_switch_check();
+#endif
+
 #ifdef CONSOLE_USB
                         /* Poll USB on every timer tick. */
                         cnintr (0);

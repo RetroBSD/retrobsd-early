@@ -24,6 +24,11 @@
 #   include <machine/usb_function_cdc.h>
 #endif
 
+#ifdef POWER_ENABLED
+extern void power_init();
+extern void power_off();
+#endif
+
 #ifdef LED_TTY_INVERT
 #define LED_TTY_ON()        LAT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN
 #define LED_TTY_OFF()       LAT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN
@@ -188,6 +193,9 @@ startup()
         LED_AUX_OFF();
 	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
 #endif
+#ifdef POWER_ENABLED
+        power_init();
+#endif
 
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
@@ -333,6 +341,10 @@ boot (dev, howto)
                 cdc_consume (0);
                 cdc_tx_service();
 #else
+#ifdef POWER_ENABLED
+                if(howto & RB_POWEROFF)
+                    power_off();
+#endif
 		asm volatile ("wait");
 #endif
 	}
