@@ -60,7 +60,7 @@ DRIVER_GPIO         = yes
 
 # Power control (power LED, and soft power-off by button)
 # requires supported PSU (ATX)
-DRIVER_POWER        = yes
+DRIVER_POWER        = no
 
 POWER_LED_PORT      = TRISG
 POWER_LED_PIN       = 12
