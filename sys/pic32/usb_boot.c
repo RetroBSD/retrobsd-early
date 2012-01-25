@@ -1,5 +1,5 @@
 /*
- * USB HIT bootloader for PIC32 microcontroller.
+ * USB HID bootloader for PIC32 microcontroller.
  *
  * Based on Microchip sources.
  * Heavily rewritten by Serge Vakulenko, <serge@vak.ru>.
