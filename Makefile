@@ -181,7 +181,7 @@ buildlib:
 
 installfs: filesys.img
 ifdef SDCARD
-	sudo dd if=filesys.img of=$(SDCARD)
+	sudo dd bs=16k if=filesys.img of=$(SDCARD)
 else
 	@echo "Error: No SDCARD defined."
 endif

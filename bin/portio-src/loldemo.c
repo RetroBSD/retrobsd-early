@@ -3,7 +3,7 @@
  *
  * Some LoL signals are used for SD card on Duinomite.
  * So I had to modify Duinomite-shield, by cutting signals
- * D10-D11 and connecting them to A2-A5.
+ * D9-D12 and connecting them to A1-A5.
  *
  * Writen for the LoL Shield, designed by Jimmie Rodgers:
  * http://jimmieprodgers.com/kits/lolshield/
@@ -28,70 +28,10 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-
-/*
- * Number of control pins for LoL Shield.
- */
-#define NPINS   12
-
-/*
- * Sequence of pins to set high during refresh cycle.
- */
-static const unsigned high [NPINS] =
-{
-#define HIGH(p,n) ((p-'a') << 4 | n)
-    HIGH('b',9),HIGH('b',8),HIGH('b',7),HIGH('b',6),HIGH('b',12),HIGH('b',11),
-    HIGH('e',7),HIGH('e',6),HIGH('e',5),HIGH('e',4),HIGH('e',3), HIGH('e',2),
-};
-
-/*
- * Pin data to set low during refresh cycle.
- */
-unsigned low [NPINS];
-
-/*
- * Pin masks to set low for a pixel.
- */
-#define PB09    (1 << 9)            /* Marked D13 on shield (connect to A5) */
-#define PB08    (1 << 8)            /* D12 (connect to A4) */
-#define PB07    (1 << 7)            /* D11 (connect to A3) */
-#define PB06    (1 << 6)            /* D10 (connect to A2) */
-#define PB12    (1 << 12)           /* D9 */
-#define PB11    (1 << 11)           /* D8 */
-#define PE07    (1 << (16+7))       /* D7 */
-#define PE06    (1 << (16+6))       /* D6 */
-#define PE05    (1 << (16+5))       /* D5 */
-#define PE04    (1 << (16+4))       /* D4 */
-#define PE03    (1 << (16+3))       /* D3 */
-#define PE02    (1 << (16+2))       /* D2 */
-
-/*
- * Remap pixels to low index and mask.
- */
-static const int pixel_map [9*14*2] =
-{
-    0,PE05, 0,PE06, 0,PE07, 0,PB11, 0, PB12, 0,PB06, 0, PB07, 0,PB08,
-            0,PE04, 9,PB09, 0,PE03, 10,PB09, 0,PE02, 11,PB09,
-    1,PE05, 1,PE06, 1,PE07, 1,PB11, 1, PB12, 1,PB06, 1, PB07, 1,PB09,
-            1,PE04, 9,PB08, 1,PE03, 10,PB08, 1,PE02, 11,PB08,
-    2,PE05, 2,PE06, 2,PE07, 2,PB11, 2, PB12, 2,PB06, 2, PB08, 2,PB09,
-            2,PE04, 9,PB07, 2,PE03, 10,PB07, 2,PE02, 11,PB07,
-    3,PE05, 3,PE06, 3,PE07, 3,PB11, 3, PB12, 3,PB07, 3, PB08, 3,PB09,
-            3,PE04, 9,PB06, 3,PE03, 10,PB06, 3,PE02, 11,PB06,
-    4,PE05, 4,PE06, 4,PE07, 4,PB11, 4, PB06, 4,PB07, 4, PB08, 4,PB09,
-            4,PE04, 9,PB12, 4,PE03, 10,PB12, 4,PE02, 11,PB12,
-    5,PE05, 5,PE06, 5,PE07, 5,PB12, 5, PB06, 5,PB07, 5, PB08, 5,PB09,
-            5,PE04, 9,PB11, 5,PE03, 10,PB11, 5,PE02, 11,PB11,
-    6,PE05, 6,PE06, 6,PB11, 6,PB12, 6, PB06, 6,PB07, 6, PB08, 6,PB09,
-            6,PE04, 9,PE07, 6,PE03, 10,PE07, 6,PE02, 11,PE07,
-    7,PE05, 7,PE07, 7,PB11, 7,PB12, 7, PB06, 7,PB07, 7, PB08, 7,PB09,
-            7,PE04, 9,PE06, 7,PE03, 10,PE06, 7,PE02, 11,PE06,
-    8,PE06, 8,PE07, 8,PB11, 8,PB12, 8, PB06, 8,PB07, 8, PB08, 8,PB09,
-            8,PE04, 9,PE05, 8,PE03, 10,PE05, 8,PE02, 11,PE05,
-};
+#include <sys/gpio.h>
 
 /*
  * The movie array is what contains the frame data. Each line is one full frame.
@@ -186,15 +126,72 @@ static const short movie[][9] =
 {-1}
 };
 
-/* Gpio device handle. */
-int fd;
+void demo1 (fd)
+{
+    unsigned frame;
 
-/*
- * Initialize LoL shield.
- */
-void init()
+    printf ("LoL Demo ");
+    fflush (stdout);
+
+    /* Process a sequence of frames. */
+    for (frame = 0; movie[frame][0] >= 0; frame++) {
+        printf (".");
+        fflush (stdout);
+
+        /* Display a frame. */
+        ioctl (fd, GPIO_LOL, movie [frame]);
+    }
+    printf (" Done\n");
+}
+
+void demo2 (fd)
+{
+    static unsigned short picture[9];
+    int y, n, frame;
+
+    printf ("LoL Demo ");
+    fflush (stdout);
+
+    for (frame = 0; frame<14; frame++) {
+        printf (".");
+        fflush (stdout);
+        memset (picture, 0, sizeof(picture));
+
+        for (y=0; y<9; y++)
+            picture[y] |= 1 << frame;
+
+        /* Display a frame. */
+        for (n=0; n<80; n++)
+            ioctl (fd, GPIO_LOL, picture);
+    }
+    for (frame = 0; frame<9; frame++) {
+        printf ("+");
+        fflush (stdout);
+        memset (picture, 0, sizeof(picture));
+
+        picture[frame] = (1 << 14) - 1;
+
+        /* Display a frame. */
+        for (n=0; n<80; n++)
+            ioctl (fd, GPIO_LOL, picture);
+    }
+    for (frame = 0; frame<9; frame++) {
+        printf ("=");
+        fflush (stdout);
+        memset (picture, 0xFF, sizeof(picture));
+
+        /* Display a frame. */
+        for (n=0; n<80; n++)
+            ioctl (fd, GPIO_LOL, picture);
+    }
+    printf (" Done\n");
+}
+
+int main (argc, argv)
+    char **argv;
 {
     const char *devname = "/dev/porta";
+    int fd;
 
     /* Open gpio device. */
     fd = open (devname, 1);
@@ -203,81 +200,12 @@ void init()
         exit (-1);
     }
 
-    /* Configure control pins as inputs.
-     * Port B. */
-    ioctl (fd, GPIO_PORT(1) | GPIO_DECONF, ~0);
-    ioctl (fd, GPIO_PORT(1) | GPIO_CONFIN,
-        PB06 | PB07 | PB08 | PB09 | PB11 | PB12);
-
-    /* Port E. */
-    ioctl (fd, GPIO_PORT(4) | GPIO_DECONF, ~0);
-    ioctl (fd, GPIO_PORT(4) | GPIO_CONFIN,
-        (PE02 | PE03 | PE04 | PE05 | PE06 | PE07) >> 16);
-}
-
-/*
- * Display a frame.
- */
-void display (const short data[])
-{
-    unsigned x, y, mask, portnum;
-    const int *map;
-
-    /* Convert image to array of pin masks. */
-    for (y = 0; y < 9; y++) {
-        mask = data [y];
-        map = &pixel_map [y*14];
-        for (x = 0; x < 14; x++) {
-            if ((mask >> x) & 1) {
-                low [map[0]] |= map[1];
-            }
-            map += 2;
+    if (argc > 1) {
+        if (**argv == '2') {
+            demo2 (fd);
+            return 0;
         }
     }
-
-    /* Display the image. */
-    for (y = 0; y < NPINS; y++) {
-        /* Set one pin to high. */
-        portnum = high [y] >> 4;
-        mask = 1 << (high [y] & 15);
-        ioctl (fd, GPIO_PORT(portnum) | GPIO_CONFOUT | GPIO_SET, mask);
-
-        /* Set other pins to low. */
-        mask = low [y];
-        ioctl (fd, GPIO_PORT(1) | GPIO_CONFOUT | GPIO_CLEAR, mask);
-        ioctl (fd, GPIO_PORT(4) | GPIO_CONFOUT | GPIO_CLEAR, mask >> 16);
-
-        /* Pause to make it visible. */
-        usleep (10);
-
-        /* Clear line for next loop. */
-        low [y] = 0;
-    }
-
-    /* Turn off.
-     * Set all pins to tristate. */
-    ioctl (fd, GPIO_PORT(1) | GPIO_CONFIN,
-        PB06 | PB07 | PB08 | PB09 | PB11 | PB12);
-    ioctl (fd, GPIO_PORT(4) | GPIO_CONFIN,
-        (PE02 | PE03 | PE04 | PE05 | PE06 | PE07) >> 16);
-}
-
-int main()
-{
-    unsigned frame;
-
-    init();
-    printf ("LoL Demo ");
-    fflush (stdout);
-
-    /* Display a sequence of frames. */
-    for (frame = 0; movie[frame][0] >= 0; frame++) {
-        printf (".");
-        fflush (stdout);
-
-        display (movie [frame]);
-
-    }
-    printf (" Done\n");
+    demo1 (fd);
     return 0;
 }

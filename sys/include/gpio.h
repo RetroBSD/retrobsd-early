@@ -34,6 +34,7 @@
 #define GPIO_CLEAR	(IOC_VOID | 1 << 22 | 'g'<<8)   /* set to 0 by mask */
 #define GPIO_INVERT	(IOC_VOID | 1 << 23 | 'g'<<8)   /* invert by mask */
 #define GPIO_POLL	(IOC_VOID | 1 << 24 | 'g'<<8)   /* poll */
+#define GPIO_LOL	(IOC_IN   | 1 << 25 | 'g'<<8)   /* display lol picture */
 
 #ifdef KERNEL
 int gpioopen (dev_t dev, int flag, int mode);
