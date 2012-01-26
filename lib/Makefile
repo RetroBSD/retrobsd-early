@@ -8,7 +8,7 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= startup-$(MACHINE) libc libm libutil
+SUBDIR		= startup-$(MACHINE) libc libm libutil libtermlib
 
 all:		${SUBDIR}
 

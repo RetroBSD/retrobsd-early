@@ -20,6 +20,7 @@ STARTERKIT      = sys/pic32/starter-kit
 DUINOMITE       = sys/pic32/duinomite
 PINGUINO        = sys/pic32/pinguino-micro
 DIP             = sys/pic32/dip
+BAREMETAL       = sys/pic32/baremetal
 
 # Select target board
 TARGET          ?= $(MAX32)
@@ -68,7 +69,8 @@ SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fsck sbin/halt sbin/init 
                   sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
                   sbin/update sbin/vipw sbin/poweroff
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
-                  etc/passwd etc/shadow etc/fstab etc/motd etc/shells
+                  etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
+                  etc/termcap
 BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/bc bin/cal bin/cat bin/cb bin/cc bin/chflags bin/chgrp \
                   bin/chmod bin/chpass bin/cmp bin/col bin/comm bin/cp \
