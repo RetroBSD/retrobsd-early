@@ -83,7 +83,7 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
                   bin/renice bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
-                  bin/sed bin/sh bin/size bin/sleep bin/sort bin/split \
+                  bin/sed bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
                   bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
                   bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
