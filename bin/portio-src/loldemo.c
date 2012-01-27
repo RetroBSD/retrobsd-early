@@ -139,7 +139,7 @@ void demo1 (fd)
         fflush (stdout);
 
         /* Display a frame. */
-        ioctl (fd, GPIO_LOL, movie [frame]);
+        ioctl (fd, GPIO_LOL | 100, movie [frame]);
     }
     printf (" Done\n");
 }
@@ -147,7 +147,7 @@ void demo1 (fd)
 void demo2 (fd)
 {
     static unsigned short picture[9];
-    int y, n, frame;
+    int y, frame;
 
     printf ("LoL Demo ");
     fflush (stdout);
@@ -161,8 +161,7 @@ void demo2 (fd)
             picture[y] |= 1 << frame;
 
         /* Display a frame. */
-        for (n=0; n<80; n++)
-            ioctl (fd, GPIO_LOL, picture);
+        ioctl (fd, GPIO_LOL | 150, picture);
     }
     for (frame = 0; frame<9; frame++) {
         printf ("+");
@@ -172,8 +171,7 @@ void demo2 (fd)
         picture[frame] = (1 << 14) - 1;
 
         /* Display a frame. */
-        for (n=0; n<80; n++)
-            ioctl (fd, GPIO_LOL, picture);
+        ioctl (fd, GPIO_LOL | 150, picture);
     }
     for (frame = 0; frame<9; frame++) {
         printf ("=");
@@ -181,8 +179,8 @@ void demo2 (fd)
         memset (picture, 0xFF, sizeof(picture));
 
         /* Display a frame. */
-        for (n=0; n<80; n++)
-            ioctl (fd, GPIO_LOL, picture);
+        ioctl (fd, GPIO_LOL | 250, picture);
+        ioctl (fd, GPIO_LOL | 250, picture);
     }
     printf (" Done\n");
 }
@@ -201,7 +199,7 @@ int main (argc, argv)
     }
 
     if (argc > 1) {
-        if (**argv == '2') {
+        if (argv[1][0] == '2') {
             demo2 (fd);
             return 0;
         }

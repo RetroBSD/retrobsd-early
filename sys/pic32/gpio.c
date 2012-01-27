@@ -370,10 +370,12 @@ gpiowrite (dev, uio, flag)
 
 /*
  * Display a picture on LoL shield.
- * It takes 12 msec of user time.
+ * Duration in milliseconds is specified.
  */
 static void
-gpio_lol (const short data[])
+gpio_lol (msec, data)
+        u_int msec;
+        const short *data;
 {
         /* Number of control pins for LoL Shield. */
         #define LOL_NPINS   12
@@ -386,11 +388,11 @@ gpio_lol (const short data[])
 
         /* Sequence of pins to set high during refresh cycle. */
         static const unsigned high [LOL_NPINS] = {
-            1 << 9,         /* PB9  - labeled D13 on board (connect to A5) */
-            1 << 8,         /* PB8  - D12 (connect to A4) */
+            1 << 10,        /* PB10 - labeled D13 on board (connect to A5) */
+            1 << 9,         /* PB9  - D12 (connect to A4) */
             1 << 7,         /* PB7  - D11 (connect to A3) */
             1 << 6,         /* PB6  - D10 (connect to A2) */
-            1 << 5,         /* PB5  - D9 (connect to A1) */
+            1 << 4,         /* PB4  - D9 (connect to A1) */
             1 << 11,        /* PB11 - D8 */
             1 << (16 + 7),  /* PE7  - D7 */
             1 << (16 + 6),  /* PE6  - D6 */
@@ -425,7 +427,7 @@ gpio_lol (const short data[])
         /* Convert image to array of pin masks. */
         for (row = 0; row < LOL_NROW; row++) {
                 mask = *data++;
-                map = &lol_map [row * LOL_NCOL];
+                map = &lol_map [row * LOL_NCOL * 2];
                 while (mask != 0) {
                         if (mask & 1) {
                                 low [map[0]] |= high [map[1]];
@@ -439,32 +441,36 @@ gpio_lol (const short data[])
                  high[11]) >> 16;
 
         /* Display the image. */
-        for (row = 0; row < LOL_NPINS; row++) {
-                /* Set all pins to tristate. */
-                TRISBSET = bmask;
-                TRISESET = emask;
+        if (msec < 1)
+            msec = 20;
+        while (msec-- > 0) {
+                for (row = 0; row < LOL_NPINS; row++) {
+                        /* Set all pins to tristate. */
+                        TRISBSET = bmask;
+                        TRISESET = emask;
 
-                /* Set one pin to high. */
-                mask = high [row];
-                if (row < 6) {
+                        /* Set one pin to high. */
+                        mask = high [row];
+                        if (row < 6) {
+                                TRISBCLR = mask;
+                                LATBSET = mask;
+                        } else {
+                                mask >>= 16;
+                                TRISECLR = mask;
+                                LATESET = mask;
+                        }
+
+                        /* Set other pins to low. */
+                        mask = low [row];
                         TRISBCLR = mask;
-                        LATBSET = mask;
-                } else {
+                        LATBCLR = mask;
                         mask >>= 16;
                         TRISECLR = mask;
-                        LATESET = mask;
+                        LATECLR = mask;
+
+                        /* Pause 1 msec to make it visible. */
+                        udelay (1000 / LOL_NPINS);
                 }
-
-                /* Set other pins to low. */
-                mask = low [row];
-                TRISBCLR = mask;
-                LATBCLR = mask;
-                mask >>= 16;
-                TRISECLR = mask;
-                LATECLR = mask;
-
-                /* Pause 1 msec to make it visible. */
-                udelay (1000);
         }
 
         /* Turn display off. */
@@ -496,18 +502,19 @@ gpioioctl (dev, cmd, addr, flag)
 	register struct gpioreg *reg;
 
         PRINTDBG ("gpioioctl (cmd=%08x, addr=%08x, flag=%d)\n", cmd, addr, flag);
+	unit = cmd & 0xff;
+	cmd &= ~0xff;
         if (cmd == GPIO_LOL) {
                 /* display 9x14 image on a lol shield  */
                 if (baduaddr (addr) || baduaddr (addr + LOL_NROW*2 - 1))
                         return EFAULT;
-                gpio_lol ((const short*) addr);
+                gpio_lol (unit, (const short*) addr);
                 return 0;
         }
 
 	if ((cmd & (IOC_INOUT | IOC_VOID)) != IOC_VOID ||
             ((cmd >> 8) & 0xff) != 'g')
 		return EINVAL;
-	unit = cmd & 0xff;
 	if (unit >= NGPIO)
 		return ENXIO;
 
