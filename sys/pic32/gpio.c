@@ -468,7 +468,7 @@ gpio_lol (msec, data)
                         TRISECLR = mask;
                         LATECLR = mask;
 
-                        /* Pause 1 msec to make it visible. */
+                        /* Pause to make it visible. */
                         udelay (1000 / LOL_NPINS);
                 }
         }
