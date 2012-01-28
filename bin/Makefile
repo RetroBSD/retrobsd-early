@@ -13,9 +13,9 @@ CFLAGS          += -Werror
 SUBDIR		= ar-src as-src awk-src cc-src chflags-src chpass-src \
                   cpp-src dc-src diff-src find-src fstat-src hostname-src \
                   id-src la-src ld-src ls-src login-src make-src man-src \
-                  more-src nm-src passwd-src portio-src printf-src ranlib-src \
-                  re-src renice-src sl-src sed-src sh-src stty-src sysctl-src \
-                  test-src uname-src xargs-src zmodem-src
+                  more-src nm-src passwd-src portio-src printf-src \
+                  ranlib-src re-src renice-src sl-src sed-src sh-src stty-src \
+                  sysctl-src test-src uname-src xargs-src zmodem-src
 # TODO: ccom-src lex-src m4-src yacc-src
 
 # Shell scripts that need only be installed and are never removed.

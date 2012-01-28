@@ -394,12 +394,12 @@ gpio_lol (msec, data)
             1 << 6,         /* PB6  - D10 (connect to A2) */
             1 << 4,         /* PB4  - D9 (connect to A1) */
             1 << 11,        /* PB11 - D8 */
-            1 << (16 + 7),  /* PE7  - D7 */
-            1 << (16 + 6),  /* PE6  - D6 */
-            1 << (16 + 5),  /* PE5  - D5 */
-            1 << (16 + 4),  /* PE4  - D4 */
-            1 << (16 + 3),  /* PE3  - D3 */
-            1 << (16 + 2),  /* PE2  - D2 */
+            0x10000 << 7,   /* PE7  - D7 */
+            0x10000 << 6,   /* PE6  - D6 */
+            0x10000 << 5,   /* PE5  - D5 */
+            0x10000 << 4,   /* PE4  - D4 */
+            0x10000 << 3,   /* PE3  - D3 */
+            0x10000 << 2,   /* PE2  - D2 */
         };
 
         /* Remap pixels to pin indexes. */
@@ -426,7 +426,7 @@ gpio_lol (msec, data)
 
         /* Convert image to array of pin masks. */
         for (row = 0; row < LOL_NROW; row++) {
-                mask = *data++;
+                mask = *data++ & ((1 << LOL_NCOL) - 1);
                 map = &lol_map [row * LOL_NCOL * 2];
                 while (mask != 0) {
                         if (mask & 1) {

@@ -18,5 +18,5 @@ MANROFF		= nroff -man -h
 ELF2AOUT	= cp
 
 CFLAGS		= -O -DCROSS -I/usr/include -I$(TOPSRC)/include
-LDFLAGS		= -L$(TOPSRC)/lib
+LDFLAGS		=
 LIBS		=

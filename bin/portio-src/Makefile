@@ -6,7 +6,7 @@ CFLAGS		+= -Werror -Wall
 SRCS		= portio.c
 OBJS		= portio.o
 
-all:            ../portio ../loldemo
+all:            ../portio ../lol
 
 ../portio:      ${OBJS}
 		${CC} ${LDFLAGS} -o portio.elf ${OBJS} ${LIBS}
@@ -14,11 +14,11 @@ all:            ../portio ../loldemo
 		${SIZE} portio.elf
 		${ELF2AOUT} portio.elf $@
 
-../loldemo:     loldemo.o
-		${CC} ${LDFLAGS} -o loldemo.elf loldemo.o ${LIBS}
-		${OBJDUMP} -S loldemo.elf > loldemo.dis
-		${SIZE} loldemo.elf
-		${ELF2AOUT} loldemo.elf $@
+../lol:         lol.o
+		${CC} ${LDFLAGS} -o lol.elf lol.o ${LIBS}
+		${OBJDUMP} -S lol.elf > lol.dis
+		${SIZE} lol.elf
+		${ELF2AOUT} lol.elf $@
 
 clean:
-		rm -f *.o *.elf ../portio ../loldemo *.elf *.dis *~
+		rm -f *.o *.elf ../portio ../lol *.elf *.dis *~

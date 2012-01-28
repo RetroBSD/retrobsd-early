@@ -78,7 +78,7 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
                   bin/file bin/find bin/fstat bin/grep bin/groups bin/head \
                   bin/hostid bin/hostname bin/id bin/iostat bin/join \
-                  bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login bin/loldemo \
+                  bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login bin/lol \
                   bin/mail bin/make bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
@@ -89,14 +89,15 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
+LIB_FILES	=
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
                   include/sys/select.h
 SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/ashello.S share/example/chello.c
-ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIBEXEC_FILES) \
+ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) var/log/messages var/log/wtmp .profile
-ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ libexec/ share/ share/example/ \
+ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
                   share/misc/ var/ var/run/ var/log/ u/ include/ include/sys/
 
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0

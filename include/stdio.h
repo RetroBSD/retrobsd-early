@@ -91,7 +91,8 @@ void    setbuffer (FILE *, char *, size_t);
 void    setlinebuf (FILE *);
 int     setvbuf (FILE *, char *, int, size_t);
 int     fseek (FILE *, long, int);
-void    rewind (FILE *stream);
+void    rewind (FILE *);
+int     remove (const char *);
 
 size_t	fread (void *, size_t, size_t, FILE *);
 size_t	fwrite (const void *, size_t, size_t, FILE *);

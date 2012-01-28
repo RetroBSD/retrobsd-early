@@ -1,9 +1,6 @@
 #ifndef _TERMIOS_H
 #define _TERMIOS_H
 
-typedef int int32_t;
-typedef unsigned int uint32_t;
-
 #define E_TERMCAP       "/etc/termcap"
 
 typedef unsigned char   cc_t;
