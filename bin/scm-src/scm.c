@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <memory.h>
 #include <string.h>
 
 #include "scm.h"
@@ -15,6 +14,7 @@ int verbose;                    /* многословный режим */
  */
 #define MAXLEX  256             /* максимальный размер одной лексемы */
 #define MAXVECT 256             /* максимальная длина константы-вектора */
+#define MEMSZ   2000            /* размер памяти */
 
 long lexval;			/* значение лексемы-числа */
 double lexrealval;              /* значение лексемы-вещественного числа */
@@ -23,9 +23,9 @@ int backlexflag = 0;		/* флаг возврата лексемы */
 int lexlex;			/* текущая лексема */
 int lexlen;                     /* длина лексемы-строки */
 
-cell *mem;                      /* память списков */
-char *gclabel;                  /* метки для сбора мусора */
-unsigned memsz;                 /* размер памяти */
+cell mem[MEMSZ];                /* память списков */
+char gclabel[MEMSZ];            /* метки для сбора мусора */
+unsigned memsz = MEMSZ;         /* размер памяти */
 LISP firstfree;                 /* список свободных пар */
 
 LISP T;                         /* атом T */
@@ -158,22 +158,19 @@ double strtodx (char *string, char **endPtr, int radix)
 	 * Entry is 10^2^i.  Used to convert decimal
 	 * exponents into floating-point numbers. */
 	static double powersOf10[] = {
-		1e1, 1e2, 1e4, 1e8, 1e16, 1e32, 1e64, 1e128, 1e256,
+		1e1, 1e2, 1e4, 1e8, 1e16, 1e32, //1e64, 1e128, 1e256,
 	};
 	static double powersOf2[] = {
-		2, 4, 16, 256, 65536, 4.294967296e9,
-		1.8446744073709551616e19, 3.4028236692093846346e38,
-		1.1579208923731619542e77, 1.3407807929942597099e154,
+		2, 4, 16, 256, 65536, 4.294967296e9, 1.8446744073709551616e19,
+                //3.4028236692093846346e38, 1.1579208923731619542e77, 1.3407807929942597099e154,
 	};
 	static double powersOf8[] = {
-		8, 64, 4096, 2.81474976710656e14,
-		7.9228162514264337593e28, 6.2771017353866807638e57,
-		3.9402006196394479212e115, 1.5525180923007089351e231,
+		8, 64, 4096, 2.81474976710656e14, 7.9228162514264337593e28,
+                //6.2771017353866807638e57, 3.9402006196394479212e115, 1.5525180923007089351e231,
 	};
 	static double powersOf16[] = {
-		16, 256, 65536,
-		1.8446744073709551616e19, 3.4028236692093846346e38,
-		1.1579208923731619542e77, 1.3407807929942597099e154,
+		16, 256, 65536, 1.8446744073709551616e19,
+                //3.4028236692093846346e38, 1.1579208923731619542e77, 1.3407807929942597099e154,
 	};
 
 	/*
@@ -719,7 +716,7 @@ lexsym:         i = 0;
 LISP getvector ()       /* чтение вектора ВЫР... */
 {
 	int len = 0;
-	LISP vect[MAXVECT];
+	static LISP vect[MAXVECT];
 
 	for (;;) {
 		switch (getlex ()) {
@@ -940,6 +937,16 @@ void setatom (LISP atom, LISP value, LISP ctx)
 	setcdr (pair, value);
 }
 
+/*
+ * проверить соответствие типа
+ */
+int istype (LISP p, int type)
+{
+	if (p == NIL) return (0);
+	assert (p>=0 && p<memsz);
+	return (mem[p].type == type);
+}
+
 LISP evallist (LISP expr, LISP ctx)
 {
 	LISP val, tail;
@@ -1107,7 +1114,7 @@ again:
 			return (car (expr));
 		}
 		if (!strcmp (funcname, "define")) {
-			LISP value, atom, pair, arg;
+			LISP value, atom, pair, arg = 0;
 			int lambda;
 			if (! istype (expr = cdr (expr), TPAIR))
 				return (NIL);
@@ -1312,7 +1319,7 @@ int main (int argc, char **argv)
 
 		for (p=1+*argv; *p; ++p) switch (*p) {
 		case 'h':
-			fprintf (stderr, "Usage: %s [-h] [-v] [-t] [-m#] prog [arg...]\n",
+			fprintf (stderr, "Usage: %s [-h] [-v] [-t] prog [arg...]\n",
 				progname);
 			return (0);
 		case 't':
@@ -1321,16 +1328,6 @@ int main (int argc, char **argv)
 		case 'v':
 			++verbose;
 			break;
-		case 'm':
-			if (! *++p) {
-				if (argc <= 1)
-					break;
-				p = *++argv;
-				--argc;
-			}
-			memsz = atoi (p);
-			p += strlen (p) - 1;
-			break;
 		}
 	}
 	if (argc > 0) {
@@ -1338,17 +1335,9 @@ int main (int argc, char **argv)
 		--argc;
 	}
 
-	if (memsz < 1000)
-		memsz = (sizeof (unsigned) < 4 ? 64000 : 256000) / sizeof (cell);
 	if (verbose) {
 		fprintf (stderr, "Micro Scheme Interpreter, Release 1.0\n");
-		fprintf (stderr, "Memory size = %d bytes\n", memsz * sizeof (cell));
-	}
-	mem = (cell *) malloc (sizeof (cell) * memsz);
-	gclabel = malloc (memsz);
-	if (!mem || !gclabel) {
-		fprintf (stderr, "Out of memory\n");
-		return (-1);
+		fprintf (stderr, "Memory size = %ld bytes\n", memsz * sizeof (cell));
 	}
 
 	if (prog && freopen (prog, "r", stdin) != stdin) {

@@ -72,7 +72,7 @@ ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
 BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
-                  bin/bc bin/cal bin/cat bin/cb bin/cc bin/chflags bin/chgrp \
+                  bin/basic bin/bc bin/cal bin/cat bin/cb bin/cc bin/chflags bin/chgrp \
                   bin/chmod bin/chpass bin/cmp bin/col bin/comm bin/cp \
                   bin/cpp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
@@ -82,8 +82,8 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/mail bin/make bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
-                  bin/renice bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
-                  bin/sed bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
+                  bin/renice bin/renumber bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
+                  bin/scm bin/sed bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
                   bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
                   bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
@@ -94,7 +94,9 @@ LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
                   include/sys/select.h
 SHARE_FILES	= share/re.help share/example/Makefile \
-                  share/example/ashello.S share/example/chello.c
+                  share/example/ashello.S share/example/chello.c \
+                  share/example/blkjack.bas share/example/hilow.bas \
+                  share/example/stars.bas share/example/prime.scm
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \

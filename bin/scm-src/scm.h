@@ -1,6 +1,10 @@
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #ifdef DEBUG
 #   define assert(x) { if (! (x)) {\
@@ -75,8 +79,9 @@ void putexpr (LISP p, FILE *fd);        /* печать списка */
 LISP copy (LISP a, LISP *t);            /* копирование списка */
 LISP alloc (int type);                  /* выделение памяти под новую пару */
 void fatal (char*);                     /* фатальная ошибка */
+int istype (LISP p, int type);          /* проверить соответствие типа */
 
-extern cell *mem;                       /* память списков */
+extern cell mem[];                      /* память списков */
 extern unsigned memsz;                  /* размер памяти */
 extern void *memcopy (void*, int);
 
@@ -213,11 +218,4 @@ static inline char *symname (LISP p)    /* выдать строку - имя с
 {
 	assert (p>=0 && p<memsz && mem[p].type==TSYMBOL);
 	return (mem[p].as.symbol);
-}
-
-static inline int istype (LISP p, int type) /* проверить соответствие типа */
-{
-	if (p == NIL) return (0);
-	assert (p>=0 && p<memsz);
-	return (mem[p].type == type);
 }

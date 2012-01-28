@@ -90,11 +90,16 @@
  *
  * Compile command: cc basic -fop
  */
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/ctype.h>
+#else
+#   include <stdio.h>
+#   include <ctype.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
-#include <ctype.h>
 #include <time.h>
 
 /* Fixed parameters */

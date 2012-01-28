@@ -1,13 +1,24 @@
-CFLAGS		= -Wall -O -g
-LDFLAGS		= -g
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
-all:		basic renumber
+CFLAGS		+= -Wall -Werror
+
+OBJS            = basic.o
+
+all:            ../basic ../renumber
+
+../basic:       ${OBJS}
+		${CC} ${LDFLAGS} -o basic.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S basic.elf > basic.dis
+		${SIZE} basic.elf
+		${ELF2AOUT} basic.elf $@
+
+../renumber:    renumber.o
+		${CC} ${LDFLAGS} -o renumber.elf $< ${LIBS}
+		${OBJDUMP} -S renumber.elf > renumber.dis
+		${SIZE} renumber.elf
+		${ELF2AOUT} renumber.elf $@
 
 clean:
-		rm -f *~ *.o basic renumber
-
-basic:		basic.o
-		$(CC) $(LDFLAGS) basic.o -o $@
-
-renumber:	renumber.o
-		$(CC) $(LDFLAGS) renumber.o -o $@
+		rm -f *.o ../basic ../renumber *.elf *.dis *~

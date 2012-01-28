@@ -12,9 +12,14 @@
  *
  * Compile command: cc renumber -fop
  */
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/ctype.h>
+#else
+#   include <stdio.h>
+#   include <ctype.h>
+#endif
 #include <stdlib.h>
-#include <ctype.h>
 
 #define	MAX_LINES	10000	/* Maximum # lines in input program */
 

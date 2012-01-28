@@ -1,13 +1,22 @@
-CFLAGS          = -Wall -Wno-unused-function -DDEBUG -O
-CC              = gcc -g
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
+
+CFLAGS		+= -Os -Wall -Werror
 
 OBJS            = scm.o func.o
 TESTS           = tests/*.scm
 
-all:            scm
+all:            ../scm ${MAN}
 
-scm:            $(OBJS)
-		$(CC) $(LDFLAGS) $(OBJS) $(LIBS) -o scm
+../scm:         ${OBJS}
+		${CC} ${LDFLAGS} -o scm.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S scm.elf > scm.dis
+		${SIZE} scm.elf
+		${ELF2AOUT} scm.elf $@
+
+clean:
+		rm -f *.o ../scm *.elf *.dis *~ tests/*.out
 
 tests:          scm $(TESTS) ALWAYS
 		for i in $(TESTS); do \
@@ -15,14 +24,9 @@ tests:          scm $(TESTS) ALWAYS
                         ./scm -v $$i > tests/$$base.out;\
                         diff tests/$$base.expected tests/$$base.out; done
 
+ALWAYS:
+
 expected:       scm $(TESTS)
 		for i in $(TESTS); do \
                         base=`basename $$i .scm`;\
                         ./scm -v $$i > tests/$$base.expected; done
-
-clean:;         rm -f *.o *.b .,* core.* core a.out scm tests/*.out
-
-ALWAYS:
-
-###
-$(OBJS): scm.h
