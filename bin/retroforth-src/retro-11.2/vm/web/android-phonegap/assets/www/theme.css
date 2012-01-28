@@ -1,0 +1,33 @@
+*
+{
+  font-family: "Monaco", monospace;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  font-size: 9pt;
+  line-height: 100%;
+  word-spacing: normal;
+  letter-spacing: normal;
+  text-decoration: none;
+  text-transform: none;
+  text-align: left;
+  text-indent: 0ex;
+}
+
+body
+{
+  background: #333333;
+  color: #777;
+}
+
+#framebuffer, #framebufferd
+{
+  background: #111111;
+  height: 480px;
+  border: 3px solid #222;
+}
+
+#console, #draw, #editor, #settings, #help
+{
+  height: 600px;
+}

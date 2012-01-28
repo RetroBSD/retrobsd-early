@@ -1,0 +1,15 @@
+chain: display' {{
+
+  0 variable: state
+
+---reveal---
+
+  : mode ( n- ) !state ;
+  : putc ( c- ) @state swap -1 #14 out wait ;
+  : puts ( $- ) @state swap -2 #14 out wait ;
+  : setxy ( xy- ) -3 #14 out wait ;
+  : clear ( - ) -4 #14 out wait ;
+  : with ( -n ) -5 #14 out wait #14 in ;
+  : height ( -n ) -6 #14 out wait #14 in ;
+
+}} ;chain

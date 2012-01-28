@@ -1,0 +1,50 @@
+needs array'
+needs assertion'
+needs bad'
+needs bstrings'
+needs canvas'
+needs char'
+needs combinators'
+needs decorator'
+needs dissect'
+needs enum'
+needs eval'
+needs forth'
+needs hash'
+needs infix'
+needs linkedList'
+needs locals'
+needs math'
+needs stack'
+needs struct'
+needs values'
+
+{{
+  create EOL 10 , 0 ,
+  variable fid
+  : w/l    ( $-  )
+    dup getLength [ @+ @fid ^files'write drop ] times drop ;
+  : \n     (  -  ) EOL w/l ;
+  : cell   ( a-a )
+    dup @ toString w/l ";" w/l ;
+  : header (  -  )
+    "function loadImage()" w/l \n
+    "{" w/l \n
+    "image = '" w/l ;
+  : footer (  -  )
+    "'.split(';').map(function(x){return parseInt(x)});" w/l \n
+    "ip = 0;" w/l \n
+    "}" w/l \n ;
+  : body   (  -  ) 0 here [ cell 1+ ] times drop ;
+  [        (  -  )
+    "retroImage.js" ^files':W ^files'open !fid
+    header body footer
+    @fid ^files'close drop ]
+}}
+hide files'
+hide include
+hide :include
+hide needs
+hide getEnv
+: needs    ( "- ) ' drop ;
+do bye

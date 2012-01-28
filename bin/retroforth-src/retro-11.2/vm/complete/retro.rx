@@ -1,0 +1,193 @@
+( Ngaro in Retro ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( This is a minimal implementation of the Ngaro VM written in Retro.          )
+(                                                                             )
+( Limitations:                                                                )
+( - max image size 32k cells                                                  )
+( - shares data stack w/retro host                                            )
+( - 1024 cells on address stack                                               )
+(                                                                             )
+( Adapted from retro.fs                                                       )
+( ~~~~~~~~~~~~~~~~~~~~~ Copyright [c] 2011, Charles Childers and Marc Simpson )
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Our Data Structures                                                         )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+create image 32768 allot
+
+variable ip
+create    port 13 allot
+create handler 13 allot
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Loading and saving of the image is complicated by the fact that Ngaro can   )
+( only read or write files at a byte level. We have to read in the four bytes,)
+( shift them to the proper offsets, and add them together.                    )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+create rs
+  1024 allot
+rs ^buffer'set
+
+variable fid
+
+: readByte ( -n )
+  @fid ^files'read ;
+
+: readCell ( -n )
+  readByte
+  readByte  8 << +
+  readByte 16 << +
+  readByte 24 << + ;
+
+: loadImage ( $- )
+  ^files':R ^files'open !fid
+  image @fid ^files'size 4 / [ readCell swap !+ ] times drop
+  @fid ^files'close drop ;
+
+: writeByte ( n- )
+  @fid ^files'write drop ;
+
+: applyMask ( n- )
+  %00000000000000000000000011111111 and ;
+
+: writeCell ( n- )
+       dup applyMask writeByte
+  8 >> dup applyMask writeByte
+  8 >> dup applyMask writeByte
+  8 >>     applyMask writeByte ;
+
+: saveImage ( $- )
+  ^files':W ^files'open !fid
+  image image 3 + @ [ @+ writeCell ] times drop
+  @fid ^files'close drop ;
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Helper functions to improve readabilty and performance                      )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+: ip++    ` 1  ` ip   ` +!  ; immediate
+
+: rs>     ^buffer'get ;
+: >rs     ^buffer'add ;
+
+: >image  image + ;
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( I/O Ports                                                                   )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+: register: ( p"- ) ' swap handler + ! ;
+
+: (ready) 1 !port ;
+: >port   port + ;
+: port?   0 12 1+ within ;
+
+: port[   ` >port ` dup ` push ` @ ; immediate
+: ]port   ` pop ` ! ` (ready) ; immediate
+
+: reader  getc ;
+: input   port[ 1 = [ reader ] [ 0 ] if ]port ;
+1 register: input
+
+: output  port[ 1 = [ putc ] ifTrue 0 ]port ;
+2 register: output
+
+: files
+  [ -1 = ] [ [ >image ] dip ^files'open ] whend
+  [ -2 = ] [ ^files'read   ] whend
+  [ -3 = ] [ ^files'write  ] whend
+  [ -4 = ] [ ^files'close  ] whend
+  [ -5 = ] [ ^files'pos    ] whend
+  [ -6 = ] [ ^files'seek   ] whend
+  [ -7 = ] [ ^files'size   ] whend
+  [ -8 = ] [ >image ^files'delete     ] whend
+  [  1 = ] [ "retroImage" saveImage 0 ] whend
+  [  2 = ] [ >image :include 0    ] whend
+  drop 0 ;
+
+: vm-files port[ files ]port ;
+4 register: vm-files
+
+: query
+  [  -1 = ] [ 32768                ] whend
+  [  -5 = ] [ depth                ] whend
+  [  -6 = ] [ ^buffer'size         ] whend
+  [  -8 = ] [ time                 ] whend
+  [  -9 = ] [ 32768 !ip 0          ] whend
+  [ -10 = ] [ &>image bi@ getEnv 0 ] whend
+  drop 0 ( default ) ;
+
+: vm-info port[ query ]port ;
+5 register: vm-info
+
+: handle  dup handler + @ dup [ 0; do ] [ 2drop ] if ;
+: ?handle dup >port @ &handle &drop if ;
+: i/o     12 [ 0; ?handle ] iterd ;
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Many instructions can fall through directly into the host Retro. A few need )
+( to be accounted for though [jumps, calls, loops]                            )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+: (jmp)     ` ip ` @ ` >image ` @ ` 1- ` ip ` ! ; immediate
+
+: vm_nop ;
+: vm_lit    ip++ ip @ >image @ ;
+( Native dup, drop, swap )
+: vm_push   >rs ;
+: vm_pop    rs> ;
+: vm_loop   ip++ 1- dup 0 > [ (jmp) ] [ drop ] if ;
+: vm_jmp    ip++ (jmp) ;
+: vm_ret    rs> !ip ;
+: vm_>jmp   ip++  > [ (jmp) ] ifTrue ;
+: vm_<jmp   ip++  < [ (jmp) ] ifTrue ;
+: vm_<>jmp  ip++ <> [ (jmp) ] ifTrue ;
+: vm_=jmp   ip++  = [ (jmp) ] ifTrue ;
+: vm_@      >image @ ;
+: vm_!      >image ! ;
+( Native +, -, *, /mod, and, or, xor, shl , shr )
+: vm_0exit  dup 0 = [ drop rs> ip ! ] ifTrue ;
+( Native inc [1+], dec [1-] )
+: vm_in     >port dup [ @ 0 ] dip ! ;
+: vm_out    dup port? [ >port ! ] [ 2drop ] if ;
+: vm_wait   port @ 1 <> &i/o ifTrue ;
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( Use a lookup table for dispatching the opcodes. Cleaner than a conditional  )
+( structure.                                                                  )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+create opcodes
+  &vm_nop     ,    &vm_lit   ,   &dup      ,
+  &drop       ,    &swap     ,   &vm_push  ,
+  &vm_pop     ,    &vm_loop  ,   &vm_jmp   ,
+  &vm_ret     ,    &vm_>jmp  ,   &vm_<jmp  ,
+  &vm_<>jmp   ,    &vm_=jmp  ,   &vm_@     ,
+  &vm_!       ,    &+        ,   &-        ,
+  &*          ,    &/mod     ,   &and      ,
+  &or         ,    &xor      ,   &<<       ,
+  &>>         ,    &vm_0exit ,   &1+       ,
+  &1-         ,    &vm_in    ,   &vm_out   ,
+  &vm_wait    ,
+
+: process
+  @ip >image @ dup 0 30 within
+  [ opcodes + @ do ]
+  [ @ip >rs 1- !ip ] if ;
+
+
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+( The main entry point. Loads the image, then walks through it                )
+( ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ )
+
+: retro
+  clear
+  "retroImage" loadImage
+  -1 !ip [ ip++ process @ip 32768 < ] while bye ;
+retro

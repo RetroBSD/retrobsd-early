@@ -1,0 +1,11 @@
+( for use with retro_with_sockets.c )
+chain: socket'
+  : socket   ( -s    ) -1 13 out wait ;
+  : bind     ( sp-f  ) -2 13 out wait ;
+  : listen   ( s-f   ) -3 13 out wait ;
+  : accept   ( s-f   ) -4 13 out wait ;
+  : close    ( s-f   ) -5 13 out wait ;
+  : send     ( $s-f  ) -6 13 out wait ;
+  : recv     ( s-c   ) -7 13 out wait ;
+  : connect  ( $ps-f ) -8 13 out wait ;
+;chain

@@ -1,0 +1,66 @@
+body
+{
+  color: #ff0000;
+  background: #000000;
+}
+
+#framebuffer
+{
+  background: #111111;
+  height: 224px;
+  width: 224px;
+  border: 1px solid #ff0000;
+  padding: 5px;
+  border-radius: 2px;
+}
+
+#console, #editor, #settings
+{
+  height: 100%;
+}
+
+.pane
+{
+  vertical-align: top;
+  min-width: 310px;
+  max-width: 320px;
+}
+
+h1
+{
+  font-size: 14pt;
+}
+
+input, textarea, select
+{
+  color: #ff0000;
+  border: 1px solid #ff0000;
+  background: #000000;
+  border-radius: 2px;
+}
+
+input::-webkit-input-placeholder, textarea::-webkit-input-placeholder
+{
+  color: #550000;
+}
+
+input[type=button]
+{
+  min-width: 70px;
+  min-height: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+input[type=textarea], textarea
+{
+  min-height: 20px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+select
+{
+  width:  200px;
+}
+

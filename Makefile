@@ -82,14 +82,14 @@ BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/mail bin/make bin/man bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
-                  bin/renice bin/renumber bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
+                  bin/renice bin/renumber bin/retroforth bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
                   bin/scm bin/sed bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
                   bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
                   bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
                   bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
                   bin/whereis bin/who bin/whoami bin/write bin/xargs
-LIB_FILES	=
+LIB_FILES	= lib/retroImage
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
                   include/sys/select.h

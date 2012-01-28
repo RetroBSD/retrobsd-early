@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<head>
+<link rel="stylesheet" href="theme.css" />
+<link rel="stylesheet" href="mobile.css" title="blue"/>
+<link rel="alternate stylesheet" href="mobile_red.css" title="red"/>
+<link rel="alternate stylesheet" href="mobile_gray.css" title="gray"/>
+<meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=yes;">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+</head>
+
+<body onload="rxPrepareCanvas('framebuffer', 'framebuffer'); rxGetTabletMode(); rxResizePanes(); rxLoadCleanImage(); rxPrepareVM(); rxStartVM(); rxListProjects(); window.scroll(0,150); rxLoadTheme();">
+<table border="0">
+  <tr><td class="pane">
+  <h1>console</h1>
+  <div id="console">
+    <div><canvas name="framebuffer" id="framebuffer" width="224" height="224" /></div>
+    <form action="javascript:rxProcessInput()">
+      <input type="textarea" onBlur="javascript:rxProcessInput();"
+             class="placeholder" placeholder="enter code here"
+             id="tib" size="30"></input>
+    </form>
+    <br/><br/><br/>
+    <input type="button" onClick="javascript:rxLoadCleanImage()" value="new" />
+    <input type="button" onClick="javascript:rxSaveImage()"      value="save" />
+    <input type="button" onClick="javascript:rxLoadImage()"      value="load" />
+    <span class="ui"><br/></span>
+    <input type="button" onClick="javascript:rxClearCanvas()"    value="clear" />
+    <input type="button" onClick="javascript:rxToggleVM()"       value="pause vm" id="vmtoggle"/>
+  </div>
+  </td>
+  <td class="pane">
+
+  <h1>editor</h1>
+  <div id="editor">
+    <textarea rows="16" cols="30" id="project"></textarea><br/>
+    <input type="textarea" class="placeholder" placeholder="project name" id="rxProjectName" size="25"></input>
+    <br/><br/><br/>
+    <input type="button" onClick="javascript:rxNewProject()" value="new" />
+    <input type="button" onClick="javascript:rxSaveProject()" value="save" />
+    <input type="button" onClick="javascript:rxLoadSavedProject()" value="load" />
+    <span class="ui"><br/></span>
+    <input type="button" onClick="javascript:rxRunProject()" value="eval" />
+    <br/>
+    <br/>
+    <select id="projectList" size="1" onChange="javascript:rxSelectProject(this.selectedIndex)"></select>
+    <br/>
+    <br/>
+    <input type="button" onClick="javascript:rxDeleteProject()" value="delete current project" />
+  </div>
+  </td>
+  <td class="pane">
+  <h1>settings</h1>
+  <div id="settings">
+    Process up to <input type="textarea" size="8" onBlur="javascript:rxSetCyclesPerInterval()" id="cycles" value="5000"/>
+    instructions every <input type="textarea" size="8" onBlur="javascript:rxSetInterval()" id="frequency" value="75"/> milliseconds.
+    <hr>
+    <input type="button" id="tabletMode" onClick="javascript:rxToggleTablet()" value="Toggle Tablet Mode"></input>
+    <br/><br/>
+    Tablet mode will attempt to detect your screen size and adjust the user interface to make
+    better use of it.
+    <hr>
+    Select a color scheme:
+    <br/><br/>
+    <input type="button" onClick="setActiveStyleSheet('blue')" value="Blue" />
+    <input type="button" onClick="setActiveStyleSheet('red')"  value="Red/Black" />
+    <input type="button" onClick="setActiveStyleSheet('gray')"  value="Shades of Gray" />
+  </div>
+  </td>
+</tr>
+</table>
+
+<script src="styleswitcher.js"></script>
+<script src="canvastext.js"></script>
+<script src="ngaro.js"></script>
+<script src="retroImage.js"></script>
+<script type="text/javascript">
+  FB_WIDTH=224;
+  FB_HEIGHT=224;
+  TERM_WIDTH  = Math.floor(FB_WIDTH / 8);
+  TERM_HEIGHT = Math.floor(FB_HEIGHT / 16);
+
+  function setClassStyle(class_name, css)
+  {
+    var style_sheet = document.createElement('style');
+    if (style_sheet)
+    {
+      style_sheet.setAttribute('type', 'text/css');
+      var cstr = '.' + class_name + ' {' + css + '}';
+      var rules = document.createTextNode(cstr);
+      if(style_sheet.styleSheet)
+        style_sheet.styleSheet.cssText = rules.nodeValue;
+      else
+        style_sheet.appendChild(rules);
+      var head = document.getElementsByTagName('head')[0];
+      if (head)
+        head.appendChild(style_sheet);
+    }
+  }
+
+  var tablet;
+
+  function rxToggleTablet()
+  {
+    if (tablet == "false")
+    {
+      try
+      {
+        tablet = "true";
+        localStorage.setItem("rxTabletMode", "true");
+        document.getElementById("tabletMode").value = "Disable Tablet Mode";
+      }
+      catch (e)
+      {
+        alert("Sorry, but we couldn't save tablet settings.");
+      }
+    } else {
+      try
+      {
+        tablet = "false";
+        localStorage.setItem("rxTabletMode", "false");
+        document.getElementById("tabletMode").value = "Enable Tablet Mode";
+      }
+      catch (e)
+      {
+        alert("Sorry, but we couldn't save tablet settings.");
+      }
+    }
+    rxResizePanes();
+  }
+
+  function rxGetTabletMode()
+  {
+    tablet = localStorage["rxTabletMode"];
+
+    if (tablet != "false" && tablet != "true")
+      tablet = "false";
+
+    if (tablet == "false")
+      document.getElementById("tabletMode").value = "Enable Tablet Mode";
+    else
+      document.getElementById("tabletMode").value = "Disable Tablet Mode";
+  }
+
+  function rxResizePanes()
+  {
+    if (tablet == "false")
+    {
+      document.getElementById('framebuffer').style.width="224px";
+      document.getElementById('framebuffer').style.height="224px";
+      document.getElementById('framebuffer').setAttribute("width", "224px");
+      document.getElementById('framebuffer').setAttribute("height", "224px");
+      document.getElementById('project').setAttribute("rows", "16");
+      document.getElementById('project').setAttribute("cols", "30");
+      FB_WIDTH  = 224;
+      FB_HEIGHT = 224;
+      setClassStyle("pane", "min-width: 310px; max-width: 310px;");
+      rxLoadCleanImage();
+      return;
+    }
+    if (window.innerWidth > 320)
+    {
+      document.getElementById('framebuffer').style.width="296px";
+      document.getElementById('framebuffer').style.height="296px";
+      document.getElementById('framebuffer').setAttribute("width", "296px");
+      document.getElementById('framebuffer').setAttribute("height", "296px");
+      document.getElementById('project').setAttribute("rows", "18");
+      document.getElementById('project').setAttribute("cols", "40");
+      FB_WIDTH  = 296;
+      FB_HEIGHT = 296;
+      setClassStyle("pane", "min-width: 310px; max-width: 310px;");
+      setClassStyle("ui", "display: inline;");
+    }
+
+    if (window.innerWidth >= 480)
+    {
+      document.getElementById('framebuffer').style.width="360px";
+      document.getElementById('framebuffer').style.height="360px";
+      document.getElementById('framebuffer').setAttribute("width", "360px");
+      document.getElementById('framebuffer').setAttribute("height", "360px");
+      document.getElementById('project').setAttribute("rows", "24");
+      document.getElementById('project').setAttribute("cols", "50");
+      FB_WIDTH  = 360;
+      FB_HEIGHT = 360;
+      setClassStyle("pane", "min-width: 470px; max-width: 470px;");
+      setClassStyle("ui", "display: inline;");
+    }
+
+    if (window.innerWidth >= 600)
+    {
+      document.getElementById('framebuffer').style.width="480px";
+      document.getElementById('framebuffer').style.height="480px";
+      document.getElementById('framebuffer').setAttribute("width", "480px");
+      document.getElementById('framebuffer').setAttribute("height", "480px");
+      document.getElementById('project').setAttribute("rows", "24");
+      document.getElementById('project').setAttribute("cols", "50");
+      FB_WIDTH  = 480;
+      FB_HEIGHT = 480;
+      setClassStyle("pane", "min-width: 600px; max-width: 600px;");
+      setClassStyle("ui", "display: none;");
+    }
+
+    TERM_WIDTH = Math.floor(FB_WIDTH / 8);
+    TERM_HEIGHT = Math.floor(FB_HEIGHT / 16);
+    rxLoadCleanImage();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+( Mostly for ATmega2560 )
+
+with arduino'
+
+0     constant PINA
+1     constant DDRA
+2     constant PORTA
+3     constant PINB
+4     constant DDRB
+5     constant PORTB
+6     constant PINC
+7     constant DDRC
+8     constant PORTC
+9     constant PIND
+10    constant DDRD
+11    constant PORTD
+12    constant PINE
+13    constant DDRE
+14    constant PORTE
+15    constant PINF
+16    constant DDRF
+17    constant PORTF
+18    constant PING
+19    constant DDRG
+20    constant PORTG
+21    constant TIFR0
+22    constant TIFR1
+23    constant TIFR2
+24    constant TIFR3
+25    constant TIFR4
+26    constant TIFR5
+27    constant PCIFR
+28    constant EIFR
+29    constant EIMSK
+30    constant GPIOR0
+
+31    constant EECR 
+    5 constant EEPM1
+    4 constant EEPM0
+    3 constant EERIE
+    2 constant EEMPE
+    1 constant EEPE
+    0 constant EERE
+
+32    constant EEDR
+33    constant EEARL
+34    constant EEARH
+35    constant GTCCR
+36    constant TCCR0A
+37    constant TCCR0B
+38    constant TCNT0
+39    constant OCR0A
+40    constant OCR0B
+41    constant GPIOR1
+42    constant GPIOR2
+43    constant SPCR
+44    constant SPSR
+45    constant SPDR
+46    constant ACSR
+47    constant MONDR
+48    constant OCDR
+49    constant SMCR
+50    constant MCUSR
+51    constant MCUCR
+52    constant SPMCSR
+53    constant RAMPZ
+54    constant EIND
+
+256   constant PINH
+257   constant DDRH
+258   constant PORTH
+259   constant PING
+260   constant DDRG
+261   constant PORTG
+262   constant PINJ
+263   constant DDRJ
+264   constant PORTJ
+265   constant PINK
+266   constant DDRK
+267   constant PORTK
+268   constant PINL
+268   constant DDRL
+268   constant PORTL
+
+256   constant SPM_PAGESIZE
+8703  constant RAMEND
+65535 constant XRAMEND
+4095  constant E2END
+8     constant E2PAGESIZE
+3     constant FLASHEND      ( Real Value: 65535 + FLASHEND << 16 )
+
+: led ( n- ) 
+  [ 0 = ] [ drop 0 7 DDRB io-bit! 0 7 PORTB io-bit! ] when
+  [ 1 = ] [ drop 0 7 DDRB io-bit! 1 7 PORTB io-bit! ] when
+  [ 2 = ] [ drop 1 7 DDRB io-bit! 1 7 PORTB io-bit! ] when
+  drop "\nLED level need to be 0, 1 or 2 " puts ;
+  
+without

@@ -11,9 +11,9 @@ include $(TOPSRC)/target.mk
 DEFS= -DNOSCCS
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D $(DEFS)
 LD = $(CC)
-SRCS=	termcap.c tgoto.c tputs.c
-OBJS=	termcap.o tgoto.o tputs.o
-POBJS=	../termcap.o ../tgoto.o ../tputs.o
+SRCS=	termcap.c tgoto.c tputs.c tcattr.c
+OBJS=	termcap.o tgoto.o tputs.o tcattr.o
+POBJS=	../termcap.o ../tgoto.o ../tputs.o ../tcattr.o
 TAGSFILE=tags
 
 #.c.o:
@@ -55,7 +55,6 @@ clean:
 	-rm -f *.o profiled/*.o
 	-rm -f ../libtermcap.a ../libtermcap_p.a
 	-rm -f termcap/termcap
-	-rm -f $(TOPSRC)/etc/termcap
 
 VGRIND=	csh /usr/ucb/vgrind
 vgrind:
