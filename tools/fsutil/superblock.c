@@ -103,8 +103,8 @@ int fs_read (fs_t *fs, unsigned char *data, int bytes)
 
 	while (bytes > 0) {
 		len = bytes;
-		if (len > 128)
-			len = 128;
+		if (len > 16*BSDFS_BSIZE)
+			len = 16*BSDFS_BSIZE;
 		if (read (fs->fd, data, len) != len)
 			return 0;
 		data += len;
@@ -121,8 +121,8 @@ int fs_write (fs_t *fs, unsigned char *data, int bytes)
 		return 0;
 	while (bytes > 0) {
 		len = bytes;
-		if (len > 128)
-			len = 128;
+		if (len > 16*BSDFS_BSIZE)
+			len = 16*BSDFS_BSIZE;
 		if (write (fs->fd, data, len) != len)
 			return 0;
 		data += len;
@@ -193,8 +193,12 @@ int fs_open (fs_t *fs, const char *filename, int writable)
 	if (! fs_read32 (fs, &fs->flags))	/* mount time flags */
 		return 0;
 	if (! fs_read32 (fs, &magic) ||		/* magic word */
-	    magic != FSMAGIC2)
+	    magic != FSMAGIC2) {
+		if (verbose)
+			printf ("fs_open: bad magic2 = %08x, expected %08x\n",
+				magic, FSMAGIC2);
 		return 0;
+        }
 	return 1;
 }
 
