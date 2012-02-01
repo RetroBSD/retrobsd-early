@@ -4,17 +4,17 @@
 #include "scm.h"
 
 /*
- * Глобальные флаги программы.
+ * Global options.
  */
-int trace;                      /* отладочная трассировка */
-int verbose;                    /* многословный режим */
+int trace;                      /* debug trace */
+int verbose;                    /* verbose mode */
 
 /*
- * Переменные лексического анализатора.
+ * Data for lexical analyser.
  */
-#define MAXLEX  256             /* максимальный размер одной лексемы */
-#define MAXVECT 256             /* максимальная длина константы-вектора */
-#define MEMSZ   2000            /* размер памяти */
+#define MAXLEX  128             /* max size of strings */
+#define MAXVECT 64              /* max size of vectors */
+#define MEMSZ   2400            /* memory size */
 
 long lexval;			/* значение лексемы-числа */
 double lexrealval;              /* значение лексемы-вещественного числа */
@@ -23,16 +23,16 @@ int backlexflag = 0;		/* флаг возврата лексемы */
 int lexlex;			/* текущая лексема */
 int lexlen;                     /* длина лексемы-строки */
 
-cell mem[MEMSZ];                /* память списков */
-char gclabel[MEMSZ];            /* метки для сбора мусора */
-unsigned memsz = MEMSZ;         /* размер памяти */
-LISP firstfree;                 /* список свободных пар */
+cell mem[MEMSZ];                /* list memory */
+char gclabel[MEMSZ];            /* tags for garbage collector */
+unsigned memsz = MEMSZ;         /* memory size */
+lisp_t firstfree;               /* list of free cells */
 
-LISP T;                         /* атом T */
-LISP ZERO;                      /* атом 0 */
-LISP ENV;                       /* контекст верхнего уровня */
+lisp_t T;                       /* atom T */
+lisp_t ZERO;                    /* atom 0 */
+lisp_t ENV;                     /* top level context */
 
-extern functab stdfunc [];      /* стандартные функции */
+extern functab stdfunc [];      /* standard functions */
 
 void fatal (char *s)
 {
@@ -41,9 +41,9 @@ void fatal (char *s)
 	exit (-1);
 }
 
-LISP alloc (int type)           /* выделение памяти под новую пару */
+lisp_t alloc (int type)         /* выделение памяти под новую пару */
 {
-	LISP p = firstfree;
+	lisp_t p = firstfree;
 	if (p == NIL)
 		fatal ("Out of memory");
 	firstfree = cdr (firstfree);
@@ -308,7 +308,7 @@ void initmem ()                 /* инициализация списка св�
 	}
 }
 
-void glabelit (LISP r)
+void glabelit (lisp_t r)
 {
 	while (r!=NIL && ! gclabel[r]) {
 		assert (r>=0 && r<memsz);
@@ -367,10 +367,11 @@ void gc ()			/* сбор мусора */
 
 void *memcopy (void *p, int len)
 {
+        assert (len > 0);
 	char *q = malloc (len);
 	if (! q)
 		fatal ("out of dynamic memory");
-	memcpy (q, p, len);
+        memcpy (q, p, len);
 	return (q);
 }
 
@@ -452,7 +453,7 @@ void putchr (int c, FILE *fd)
 		putc (c, fd);
 }
 
-void putstring (LISP p, FILE *fd)
+void putstring (lisp_t p, FILE *fd)
 {
 	int len;
 	char *s;
@@ -476,10 +477,10 @@ void putstring (LISP p, FILE *fd)
 	putc ('"', fd);
 }
 
-void putvector (LISP p, FILE *fd)
+void putvector (lisp_t p, FILE *fd)
 {
 	int len;
-	LISP *s;
+	lisp_t *s;
 
 	assert (p>=0 && p<memsz && mem[p].type==TVECTOR);
 	len = mem[p].as.vector.length;
@@ -493,7 +494,7 @@ void putvector (LISP p, FILE *fd)
 	putc (')', fd);
 }
 
-void putatom (LISP p, FILE *fd)
+void putatom (lisp_t p, FILE *fd)
 {
 	if (p == NIL) {
 		fputs ("()", fd);
@@ -507,13 +508,13 @@ void putatom (LISP p, FILE *fd)
 	case TSTRING:  putstring (p, fd);                               break;
 	case TVECTOR:  putvector (p, fd);                               break;
 	case TCHAR:    putchr (charval (p), fd);                        break;
-	case THARDW:   fprintf (fd, "<builtin-%lx>", (long) hardwval (p)); break;
-	case TCLOSURE: fprintf (fd, "<closure-%lx>", p);                break;
+	case THARDW:   fprintf (fd, "<builtin-%x>", (unsigned) hardwval (p)); break;
+	case TCLOSURE: fprintf (fd, "<closure-%x>", (unsigned) p);      break;
 	default:       fputs ("<?>", fd);                               break;
 	}
 }
 
-void putlist (LISP p, FILE *fd)
+void putlist (lisp_t p, FILE *fd)
 {
 	int first = 1;
 	while (istype (p, TPAIR)) {
@@ -530,9 +531,9 @@ void putlist (LISP p, FILE *fd)
 	}
 }
 
-void putexpr (LISP p, FILE *fd)
+void putexpr (lisp_t p, FILE *fd)
 {
-	LISP h, a;
+	lisp_t h, a;
 
 	if (! istype (p, TPAIR)) {
 		putatom (p, fd);
@@ -713,10 +714,10 @@ lexsym:         i = 0;
 	return (lexlex = c);
 }
 
-LISP getvector ()       /* чтение вектора ВЫР... */
+lisp_t getvector ()       /* чтение вектора ВЫР... */
 {
 	int len = 0;
-	static LISP vect[MAXVECT];
+	lisp_t vect[MAXVECT];
 
 	for (;;) {
 		switch (getlex ()) {
@@ -735,9 +736,9 @@ LISP getvector ()       /* чтение вектора ВЫР... */
 	}
 }
 
-LISP getlist ()		/* чтение списка ВЫР ('.' СПИС | ВЫР)... */
+lisp_t getlist ()		/* чтение списка ВЫР ('.' СПИС | ВЫР)... */
 {
-	LISP p = cons (getexpr (), NIL);
+	lisp_t p = cons (getexpr (), NIL);
 	switch (getlex ()) {
 	case '.':
 		setcdr (p, getexpr ());
@@ -755,9 +756,9 @@ LISP getlist ()		/* чтение списка ВЫР ('.' СПИС | ВЫР)... 
 	return (p);
 }
 
-LISP getexpr ()         /* чтение выражения АТОМ | ЧИСЛО | '(' СПИСОК ')' */
+lisp_t getexpr ()         /* чтение выражения АТОМ | ЧИСЛО | '(' СПИСОК ')' */
 {
-	LISP p;
+	lisp_t p;
 
 	switch (getlex ()) {
 	default:
@@ -829,9 +830,9 @@ LISP getexpr ()         /* чтение выражения АТОМ | ЧИСЛО
 	return (p);
 }
 
-LISP copy (LISP a, LISP *t)
+lisp_t copy (lisp_t a, lisp_t *t)
 {
-	LISP val, tail;
+	lisp_t val, tail;
 	if (! istype (a, TPAIR))
 		return (NIL);
 	tail = val = cons (NIL, NIL);
@@ -847,9 +848,9 @@ LISP copy (LISP a, LISP *t)
 	return (val);
 }
 
-int eqvvector (LISP a, LISP b)  /* сравнение векторов */
+int eqvvector (lisp_t a, lisp_t b)  /* сравнение векторов */
 {
-	LISP *s, *t;
+	lisp_t *s, *t;
 	int len;
 
 	assert (a>=0 && a<memsz && mem[a].type==TVECTOR);
@@ -865,7 +866,7 @@ int eqvvector (LISP a, LISP b)  /* сравнение векторов */
 	return (1);
 }
 
-int eqv (LISP a, LISP b)        /* сравнение объектов */
+int eqv (lisp_t a, lisp_t b)        /* сравнение объектов */
 {
 	if (a == b)
 		return (1);
@@ -890,7 +891,7 @@ int eqv (LISP a, LISP b)        /* сравнение объектов */
 	return (0);
 }
 
-int equal (LISP a, LISP b)      /* рекурсивное сравнение */
+int equal (lisp_t a, lisp_t b)      /* рекурсивное сравнение */
 {
 	if (a == b)
 		return (1);
@@ -903,7 +904,7 @@ int equal (LISP a, LISP b)      /* рекурсивное сравнение */
 	return (eqv (a, b));
 }
 
-LISP findatom (LISP atom, LISP ctx)
+lisp_t findatom (lisp_t atom, lisp_t ctx)
 {
 	/* Поиск атома по контексту */
 	/* Контекст - это список пар (имя, значение) */
@@ -911,25 +912,25 @@ LISP findatom (LISP atom, LISP ctx)
 		return (NIL);
 	/* Сначала ищем в текущем контексте */
 	for (; ctx!=NIL; ctx=cdr(ctx)) {
-		LISP pair = car (ctx);
-		LISP sym = car (pair);
+		lisp_t pair = car (ctx);
+		lisp_t sym = car (pair);
 		if (atom == sym || !strcmp (symname (atom), symname (sym)))
 			return (pair);
 	}
 	/* Затем просматриваем контекст верхнего уровня */
 	for (ctx=ENV; ctx!=NIL; ctx=cdr(ctx)) {
-		LISP pair = car (ctx);
-		LISP sym = car (pair);
+		lisp_t pair = car (ctx);
+		lisp_t sym = car (pair);
 		if (atom == sym || !strcmp (symname (atom), symname (sym)))
 			return (pair);
 	}
 	return (NIL);
 }
 
-void setatom (LISP atom, LISP value, LISP ctx)
+void setatom (lisp_t atom, lisp_t value, lisp_t ctx)
 {
 	/* Присваивание значения переменной */
-	LISP pair = findatom (atom, ctx);
+	lisp_t pair = findatom (atom, ctx);
 	if (pair == NIL) {
 		fprintf (stderr, "unbound symbol: `%s'\n", symname (atom));
 		return;
@@ -940,16 +941,16 @@ void setatom (LISP atom, LISP value, LISP ctx)
 /*
  * проверить соответствие типа
  */
-int istype (LISP p, int type)
+int istype (lisp_t p, int type)
 {
 	if (p == NIL) return (0);
 	assert (p>=0 && p<memsz);
 	return (mem[p].type == type);
 }
 
-LISP evallist (LISP expr, LISP ctx)
+lisp_t evallist (lisp_t expr, lisp_t ctx)
 {
-	LISP val, tail;
+	lisp_t val, tail;
 	tail = val = cons (NIL, NIL);
 	for (;;) {
 		setcar (tail, eval (car (expr), &ctx));
@@ -960,10 +961,10 @@ LISP evallist (LISP expr, LISP ctx)
 	}
 }
 
-LISP evalblock (LISP expr, LISP ctx)
+lisp_t evalblock (lisp_t expr, lisp_t ctx)
 {
 	/* Вычисление блока в отдельном контексте */
-	LISP value = NIL;
+	lisp_t value = NIL;
 	while (istype (expr, TPAIR)) {
 		value = eval (car (expr), &ctx);
 		expr = cdr (expr);
@@ -971,14 +972,14 @@ LISP evalblock (LISP expr, LISP ctx)
 	return (value);
 }
 
-LISP evalclosure (LISP func, LISP expr)
+lisp_t evalclosure (lisp_t func, lisp_t expr)
 {
-	LISP ctx = closurectx (func), body = closurebody (func);
-	LISP arg = car (body);
+	lisp_t ctx = closurectx (func), body = closurebody (func);
+	lisp_t arg = car (body);
 
 	/* Расширяем контекст аргументами вызова */
 	while (istype (arg, TPAIR)) {
-		LISP val;
+		lisp_t val;
 		if (istype (expr, TPAIR)) {
 			val = car (expr);
 			expr = cdr (expr);
@@ -1001,9 +1002,9 @@ LISP evalclosure (LISP func, LISP expr)
 	return (evalblock (cdr (body), ctx));
 }
 
-LISP quasiquote (LISP expr, LISP ctx, int level)
+lisp_t quasiquote (lisp_t expr, lisp_t ctx, int level)
 {
-	LISP val, tail, func, v;
+	lisp_t val, tail, func, v;
 	if (! istype (expr, TPAIR))
 		return (expr);
 	if (istype (func = car (expr), TSYMBOL)) {
@@ -1040,7 +1041,7 @@ LISP quasiquote (LISP expr, LISP ctx, int level)
 			else {
 				v = eval (car (v), &ctx);
 				if (istype (v, TPAIR)) {
-					LISP newtail;
+					lisp_t newtail;
 					setcar (tail, car (v));
 					setcdr (tail, copy (cdr (v), &newtail));
 					tail = newtail;
@@ -1061,7 +1062,7 @@ LISP quasiquote (LISP expr, LISP ctx, int level)
 	}
 }
 
-LISP evalfunc (LISP func, LISP arg, LISP ctx)
+lisp_t evalfunc (lisp_t func, lisp_t arg, lisp_t ctx)
 {
 	/* Встроенная функция */
 	if (istype (func, THARDW))
@@ -1075,10 +1076,10 @@ LISP evalfunc (LISP func, LISP arg, LISP ctx)
 	return (NIL);
 }
 
-LISP eval (LISP expr, LISP *ctxp)
+lisp_t eval (lisp_t expr, lisp_t *ctxp)
 {
-	LISP ctx = ctxp ? *ctxp : NIL;
-	LISP func;
+	lisp_t ctx = ctxp ? *ctxp : NIL;
+	lisp_t func;
 again:
 	if (expr == NIL)
 		return (NIL);
@@ -1086,7 +1087,7 @@ again:
 	/* Если это символ, берем его значение */
 	if (istype (expr, TSYMBOL)) {
 		/* Поиск значения по контексту */
-		LISP pair = findatom (expr, ctx);
+		lisp_t pair = findatom (expr, ctx);
 		if (pair == NIL) {
 			fprintf (stderr, "unbound symbol: `%s'\n", symname (expr));
 			return (NIL);
@@ -1114,7 +1115,7 @@ again:
 			return (car (expr));
 		}
 		if (!strcmp (funcname, "define")) {
-			LISP value, atom, pair, arg = 0;
+			lisp_t value, atom, pair, arg = 0;
 			int lambda;
 			if (! istype (expr = cdr (expr), TPAIR))
 				return (NIL);
@@ -1146,7 +1147,7 @@ again:
 			return (value);
 		}
 		if (!strcmp (funcname, "set!")) {
-			LISP value = NIL;
+			lisp_t value = NIL;
 			if (! istype (expr = cdr (expr), TPAIR))
 				return (NIL);
 			if (istype (cdr (expr), TPAIR))
@@ -1157,7 +1158,7 @@ again:
 		if (!strcmp (funcname, "begin"))
 			return (evalblock (cdr (expr), ctx));
 		if (!strcmp (funcname, "lambda")) {
-			LISP arg = NIL;
+			lisp_t arg = NIL;
 			if (istype (expr = cdr (expr), TPAIR)) {
 				arg = car (expr);
 				if (! istype (expr = cdr (expr), TPAIR))
@@ -1166,7 +1167,7 @@ again:
 			return (closure (cons (arg, expr), ctx));
 		}
 		if (!strcmp (funcname, "let")) {
-			LISP arg = NIL, oldctx = ctx;
+			lisp_t arg = NIL, oldctx = ctx;
 			if (istype (expr = cdr (expr), TPAIR)) {
 				arg = car (expr);
 				if (! istype (expr = cdr (expr), TPAIR))
@@ -1174,7 +1175,7 @@ again:
 			}
 			/* Расширяем контекст новыми переменными */
 			while (istype (arg, TPAIR)) {
-				LISP var = car (arg);
+				lisp_t var = car (arg);
 				arg = cdr (arg);
 				/* Значения вычисляем в старом контексте */
 				if (istype (var, TPAIR))
@@ -1187,7 +1188,7 @@ again:
 			return (evalblock (expr, ctx));
 		}
 		if (!strcmp (funcname, "let*")) {
-			LISP arg = NIL;
+			lisp_t arg = NIL;
 			if (istype (expr = cdr (expr), TPAIR)) {
 				arg = car (expr);
 				if (! istype (expr = cdr (expr), TPAIR))
@@ -1195,7 +1196,7 @@ again:
 			}
 			/* Расширяем контекст новыми переменными */
 			while (istype (arg, TPAIR)) {
-				LISP var = car (arg);
+				lisp_t var = car (arg);
 				arg = cdr (arg);
 				/* Значения вычисляем в текущем контексте */
 				if (istype (var, TPAIR))
@@ -1208,7 +1209,7 @@ again:
 			return (evalblock (expr, ctx));
 		}
 		if (!strcmp (funcname, "letrec")) {
-			LISP arg = NIL, a;
+			lisp_t arg = NIL, a;
 			if (istype (expr = cdr (expr), TPAIR)) {
 				arg = car (expr);
 				if (! istype (expr = cdr (expr), TPAIR))
@@ -1216,7 +1217,7 @@ again:
 			}
 			/* Расширяем контекст новыми переменными с пустыми значениями */
 			for (a=arg; istype (a, TPAIR); a=cdr(a)) {
-				LISP var = car (a);
+				lisp_t var = car (a);
 				if (istype (var, TPAIR))
 					ctx = cons (cons (car (var), NIL), ctx);
 				else if (istype (var, TSYMBOL))
@@ -1224,7 +1225,7 @@ again:
 			}
 			/* Вычисляем значения в новом контексте */
 			for (a=arg; istype (a, TPAIR); a=cdr(a)) {
-				LISP var = car (a);
+				lisp_t var = car (a);
 				if (istype (var, TPAIR))
 					setatom (car (var),
 						evalblock (cdr (var), ctx),
@@ -1233,7 +1234,7 @@ again:
 			return (evalblock (expr, ctx));
 		}
 		if (!strcmp (funcname, "if")) {
-			LISP iftrue = NIL, iffalse = NIL, test;
+			lisp_t iftrue = NIL, iffalse = NIL, test;
 			if (! istype (expr = cdr (expr), TPAIR))
 				return (NIL);
 			test = car (expr);
@@ -1258,7 +1259,7 @@ again:
 			return (NIL);
 		}
 		if (!strcmp (funcname, "cond")) {
-			LISP oldctx = ctx, test, clause;
+			lisp_t oldctx = ctx, test, clause;
 			while (istype (expr = cdr (expr), TPAIR)) {
 				if (! istype (clause = car (expr), TPAIR))
 					continue;
@@ -1310,7 +1311,7 @@ void initcontext (functab *p)
 
 int main (int argc, char **argv)
 {
-	LISP expr, val;
+	lisp_t expr, val;
 	char *progname, *prog = 0;
 
 	progname = *argv++;
@@ -1337,7 +1338,8 @@ int main (int argc, char **argv)
 
 	if (verbose) {
 		fprintf (stderr, "Micro Scheme Interpreter, Release 1.0\n");
-		fprintf (stderr, "Memory size = %ld bytes\n", memsz * sizeof (cell));
+		fprintf (stderr, "Memory size = %lu bytes\n",
+                        (unsigned long) memsz * sizeof (cell));
 	}
 
 	if (prog && freopen (prog, "r", stdin) != stdin) {
@@ -1346,8 +1348,8 @@ int main (int argc, char **argv)
 	}
 
 	initmem ();
-	T = alloc (TBOOL);              /* логическая истина #t */
-	ZERO = number (0);              /* целый ноль */
+	T = alloc (TBOOL);              /* boolean true #t */
+	ZERO = number (0);              /* integer zero */
 	ENV = cons (cons (symbol ("version"), number (10)), NIL);
 	initcontext (stdfunc);
 	for (;;) {

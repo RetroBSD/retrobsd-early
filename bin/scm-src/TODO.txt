@@ -1,9 +1,9 @@
-1) Float
-2) Строки
-3) Векторы
-4) Конечная рекурсия
-5) Сборка мусора
-6) Задержка
+1) Floats
+2) Strings
+3) Vectors
+4) Tail recursion
+5) Garbage collection
+6) Delays
 
 f acos
 f angle

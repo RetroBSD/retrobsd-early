@@ -59,14 +59,14 @@ static long ipow (long x, long p)
 	}
 }
 
-#define CXR(func,op) LISP func (LISP a, LISP ctx) { \
+#define CXR(func,op) lisp_t func (lisp_t a, lisp_t ctx) { \
 	if (! istype (a, TPAIR) || ! istype (a = car (a), TPAIR)) \
 	return (NIL); return (op (a)); }
 
 CXR (Fcar, car)
 CXR (Fcdr, cdr)
 
-#define CXXR(func,op1,op2) LISP func (LISP a, LISP ctx) { \
+#define CXXR(func,op1,op2) lisp_t func (lisp_t a, lisp_t ctx) { \
 	if (! istype (a, TPAIR) || ! istype (a = car (a), TPAIR) || \
 	! istype (a = op1 (a), TPAIR)) return (NIL); return (op2 (a)); }
 
@@ -75,11 +75,12 @@ CXXR (Fcadr, cdr, car)
 CXXR (Fcdar, car, cdr)
 CXXR (Fcddr, cdr, cdr)
 
-#define CXXXR(func,op1,op2,op3) LISP func (LISP a, LISP ctx) { \
+#define CXXXR(func,op1,op2,op3) lisp_t func (lisp_t a, lisp_t ctx) { \
 	if (! istype (a, TPAIR) || ! istype (a = car (a), TPAIR) || \
 	! istype (a = op1 (a), TPAIR) || ! istype (a = op2 (a), TPAIR)) \
 	return (NIL); return (op3 (a)); }
 
+#if 0
 CXXXR (Fcaaar, car, car, car)
 CXXXR (Fcaadr, cdr, car, car)
 CXXXR (Fcadar, car, cdr, car)
@@ -89,7 +90,7 @@ CXXXR (Fcdadr, cdr, car, cdr)
 CXXXR (Fcddar, car, cdr, cdr)
 CXXXR (Fcdddr, cdr, cdr, cdr)
 
-#define CXXXXR(func,op1,op2,op3,op4) LISP func (LISP a, LISP ctx) { \
+#define CXXXXR(func,op1,op2,op3,op4) lisp_t func (lisp_t a, lisp_t ctx) { \
 	if (! istype (a, TPAIR) || ! istype (a = car (a), TPAIR) || \
 	! istype (a = op1 (a), TPAIR) || ! istype (a = op2 (a), TPAIR) || \
 	! istype (a = op3 (a), TPAIR)) return (NIL); return (op4 (a)); }
@@ -110,14 +111,15 @@ CXXXXR (Fcddaar, car, car, cdr, cdr)
 CXXXXR (Fcddadr, cdr, car, cdr, cdr)
 CXXXXR (Fcdddar, car, cdr, cdr, cdr)
 CXXXXR (Fcddddr, cdr, cdr, cdr, cdr)
+#endif
 
 /*
  * Создать новую пару из двух элементов.
  * (cons a (b)) ==> (a b)
  */
-LISP Fcons (LISP arg, LISP ctx)
+lisp_t Fcons (lisp_t arg, lisp_t ctx)
 {
-	LISP a;
+	lisp_t a;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	a = car (arg);
@@ -130,9 +132,9 @@ LISP Fcons (LISP arg, LISP ctx)
  * Заменить голову списка.
  * (set-car! pair obj) ==> pair
  */
-LISP Fsetcar (LISP arg, LISP ctx)
+lisp_t Fsetcar (lisp_t arg, lisp_t ctx)
 {
-	LISP a;
+	lisp_t a;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	a = car (arg);
@@ -145,9 +147,9 @@ LISP Fsetcar (LISP arg, LISP ctx)
  * Заменить хвост списка.
  * (set-cdr! pair obj) ==> pair
  */
-LISP Fsetcdr (LISP arg, LISP ctx)
+lisp_t Fsetcdr (lisp_t arg, lisp_t ctx)
 {
-	LISP a;
+	lisp_t a;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	a = car (arg);
@@ -161,7 +163,7 @@ LISP Fsetcdr (LISP arg, LISP ctx)
  * Выдает #t если аргумент равен #f или пустому списку.
  * (not (a b c)) ==> #f
  */
-LISP Fnot (LISP arg, LISP ctx)
+lisp_t Fnot (lisp_t arg, lisp_t ctx)
 {
 	return (istype (arg, TPAIR) && car (arg) == NIL ? T : NIL);
 }
@@ -170,9 +172,9 @@ LISP Fnot (LISP arg, LISP ctx)
  * Сравнить элементы списка.
  * (eqv? a b) ==> #f
  */
-LISP Feqv (LISP arg, LISP ctx)
+lisp_t Feqv (lisp_t arg, lisp_t ctx)
 {
-	LISP a;
+	lisp_t a;
 	if (! istype (arg, TPAIR))
 		return (T);
 	a = car (arg);
@@ -186,9 +188,9 @@ LISP Feqv (LISP arg, LISP ctx)
  * Сравнить элементы списка рекурсивно.
  * (equal? a b) ==> #f
  */
-LISP Fequal (LISP arg, LISP ctx)
+lisp_t Fequal (lisp_t arg, lisp_t ctx)
 {
-	LISP a;
+	lisp_t a;
 	if (! istype (arg, TPAIR))
 		return (T);
 	a = car (arg);
@@ -205,19 +207,19 @@ LISP Fequal (LISP arg, LISP ctx)
  * в контексте верхнего уровня, и оператор define
  * будет добавлять новые переменные.
  */
-LISP Feval (LISP a, LISP ctx)
+lisp_t Feval (lisp_t a, lisp_t ctx)
 {
 	if (! istype (a, TPAIR))
 		return (NIL);
 	return (eval (car (a), ctx == TOPLEVEL || cdr (a) != NIL ? 0 : &ctx));
 }
 
-LISP Fabs (LISP arg, LISP ctx)
+lisp_t Fabs (lisp_t arg, lisp_t ctx)
 {
 	long sum = 0;
 
 	while (istype (arg, TPAIR)) {
-		LISP b = car (arg);
+		lisp_t b = car (arg);
 		if (istype (b, TINTEGER)) {
 			long v = numval (b);
 			if (v > 0)
@@ -230,12 +232,12 @@ LISP Fabs (LISP arg, LISP ctx)
 	return (number (sum));
 }
 
-LISP Fadd (LISP arg, LISP ctx)
+lisp_t Fadd (lisp_t arg, lisp_t ctx)
 {
 	long sum = 0;
 
 	while (istype (arg, TPAIR)) {
-		LISP v = car (arg);
+		lisp_t v = car (arg);
 		if (istype (v, TINTEGER))
 			sum += numval (v);
 		arg = cdr (arg);
@@ -243,12 +245,12 @@ LISP Fadd (LISP arg, LISP ctx)
 	return (number (sum));
 }
 
-LISP Fmul (LISP arg, LISP ctx)
+lisp_t Fmul (lisp_t arg, lisp_t ctx)
 {
 	long prod = 1;
 
 	while (istype (arg, TPAIR)) {
-		LISP v = car (arg);
+		lisp_t v = car (arg);
 		if (istype (v, TINTEGER))
 			prod *= numval (v);
 		arg = cdr (arg);
@@ -256,7 +258,7 @@ LISP Fmul (LISP arg, LISP ctx)
 	return (number (prod));
 }
 
-LISP Fsub (LISP arg, LISP ctx)
+lisp_t Fsub (lisp_t arg, lisp_t ctx)
 {
 	long val;
 
@@ -266,14 +268,14 @@ LISP Fsub (LISP arg, LISP ctx)
 	if (! istype (arg = cdr (arg), TPAIR))
 		return (number (-val));
 	do {
-		LISP v = car (arg);
+		lisp_t v = car (arg);
 		if (istype (v, TINTEGER))
 			val -= numval (v);
 	} while (istype (arg = cdr (arg), TPAIR));
 	return (number (val));
 }
 
-LISP Fdiv (LISP arg, LISP ctx)
+lisp_t Fdiv (lisp_t arg, lisp_t ctx)
 {
 	long val, p;
 
@@ -283,14 +285,14 @@ LISP Fdiv (LISP arg, LISP ctx)
 	if (! istype (arg = cdr (arg), TPAIR))
 		return (ZERO);
 	do {
-		LISP v = car (arg);
+		lisp_t v = car (arg);
 		if (istype (v, TINTEGER) && (p = numval (v)))
 			val /= p;
 	} while (istype (arg = cdr (arg), TPAIR));
 	return (number (val));
 }
 
-LISP Feq (LISP arg, LISP ctx)
+lisp_t Feq (lisp_t arg, lisp_t ctx)
 {
 	long val;
 
@@ -298,7 +300,7 @@ LISP Feq (LISP arg, LISP ctx)
 		return (T);
 	val = numval (car (arg));
 	while (istype (arg, TPAIR)) {
-		LISP v = car (arg);
+		lisp_t v = car (arg);
 		long nval = numval (v);
 		if (! (istype (v, TINTEGER) && val == nval))
 			return (NIL);
@@ -307,9 +309,9 @@ LISP Feq (LISP arg, LISP ctx)
 	return (T);
 }
 
-#define DEFLOG(func,op) LISP func (LISP a, LISP ctx) { \
+#define DEFLOG(func,op) lisp_t func (lisp_t a, lisp_t ctx) { \
 	long v, nv; if (! istype (a, TPAIR)) return (T); v = numval (car (a)); \
-	while (istype (a = cdr (a), TPAIR)) { LISP b = car (a); \
+	while (istype (a = cdr (a), TPAIR)) { lisp_t b = car (a); \
 	if (! istype (b, TINTEGER) || ! (v op (nv = numval (b)))) return (NIL); \
 	v = nv; } return (T); }
 
@@ -318,10 +320,10 @@ DEFLOG (Fgt, >);
 DEFLOG (Fle, <=);
 DEFLOG (Fge, >=);
 
-LISP Fifboolean (LISP arg, LISP ctx)
+lisp_t Fifboolean (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (a != NIL && ! istype (a, TBOOL))
 			return (NIL);
 		arg = cdr (arg);
@@ -329,10 +331,10 @@ LISP Fifboolean (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fifsymbol (LISP arg, LISP ctx)
+lisp_t Fifsymbol (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (! istype (a, TSYMBOL))
 			return (NIL);
 		arg = cdr (arg);
@@ -340,10 +342,10 @@ LISP Fifsymbol (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fifpair (LISP arg, LISP ctx)
+lisp_t Fifpair (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (! istype (a, TPAIR))
 			return (NIL);
 		arg = cdr (arg);
@@ -351,8 +353,8 @@ LISP Fifpair (LISP arg, LISP ctx)
 	return (T);
 }
 
-#define DEFNUMLOG(func,test) LISP func (LISP arg, LISP ctx) { \
-	while (istype (arg, TPAIR)) { LISP a = car (arg); \
+#define DEFNUMLOG(func,test) lisp_t func (lisp_t arg, lisp_t ctx) { \
+	while (istype (arg, TPAIR)) { lisp_t a = car (arg); \
 		if (! (istype (a, TINTEGER) test)) return (NIL); \
 		arg = cdr (arg); } return (T); }
 
@@ -363,7 +365,7 @@ DEFNUMLOG (Fifnegative, && numval (a) < 0)
 DEFNUMLOG (Fifodd, && (numval (a) & 1))
 DEFNUMLOG (Fifeven, && ! (numval (a) & 1))
 
-LISP Fmax (LISP arg, LISP ctx)
+lisp_t Fmax (lisp_t arg, lisp_t ctx)
 {
 	long val;
 
@@ -371,7 +373,7 @@ LISP Fmax (LISP arg, LISP ctx)
 		return (ZERO);
 	val = numval (car (arg));
 	while (istype (arg = cdr (arg), TPAIR)) {
-		LISP b = car (arg);
+		lisp_t b = car (arg);
 		if (istype (b, TINTEGER)) {
 			long v = numval (b);
 			if (v > val)
@@ -381,7 +383,7 @@ LISP Fmax (LISP arg, LISP ctx)
 	return (number (val));
 }
 
-LISP Fmin (LISP arg, LISP ctx)
+lisp_t Fmin (lisp_t arg, lisp_t ctx)
 {
 	long val;
 
@@ -389,7 +391,7 @@ LISP Fmin (LISP arg, LISP ctx)
 		return (ZERO);
 	val = numval (car (arg));
 	while (istype (arg = cdr (arg), TPAIR)) {
-		LISP b = car (arg);
+		lisp_t b = car (arg);
 		if (istype (b, TINTEGER)) {
 			long v = numval (b);
 			if (v < val)
@@ -399,11 +401,11 @@ LISP Fmin (LISP arg, LISP ctx)
 	return (number (val));
 }
 
-LISP Fgcd (LISP arg, LISP ctx)
+lisp_t Fgcd (lisp_t arg, lisp_t ctx)
 {
 	long val = 0;
 	while (istype (arg, TPAIR)) {
-		LISP b = car (arg);
+		lisp_t b = car (arg);
 		if (istype (b, TINTEGER))
 			val = gcd (val, numval (b));
 		arg = cdr (arg);
@@ -411,11 +413,11 @@ LISP Fgcd (LISP arg, LISP ctx)
 	return (number (val));
 }
 
-LISP Flcm (LISP arg, LISP ctx)
+lisp_t Flcm (lisp_t arg, lisp_t ctx)
 {
 	long val = 1;
 	while (istype (arg, TPAIR)) {
-		LISP b = car (arg);
+		lisp_t b = car (arg);
 		if (istype (b, TINTEGER))
 			val = lcm (val, numval (b));
 		arg = cdr (arg);
@@ -423,7 +425,7 @@ LISP Flcm (LISP arg, LISP ctx)
 	return (number (val));
 }
 
-LISP Fquotient (LISP arg, LISP ctx)
+lisp_t Fquotient (lisp_t arg, lisp_t ctx)
 {
 	long a, b;
 
@@ -436,7 +438,7 @@ LISP Fquotient (LISP arg, LISP ctx)
 	return (number (divide (a, b)));
 }
 
-LISP Fremainder (LISP arg, LISP ctx)
+lisp_t Fremainder (lisp_t arg, lisp_t ctx)
 {
 	long a, b;
 
@@ -449,7 +451,7 @@ LISP Fremainder (LISP arg, LISP ctx)
 	return (number (a - divide (a, b) * b));
 }
 
-LISP Fmodulo (LISP arg, LISP ctx)
+lisp_t Fmodulo (lisp_t arg, lisp_t ctx)
 {
 	long a, b, r;
 
@@ -465,7 +467,7 @@ LISP Fmodulo (LISP arg, LISP ctx)
 	return (number (r));
 }
 
-LISP Fexpt (LISP arg, LISP ctx)
+lisp_t Fexpt (lisp_t arg, lisp_t ctx)
 {
 	long r = 1;
 
@@ -478,10 +480,10 @@ LISP Fexpt (LISP arg, LISP ctx)
 	return (number (r));
 }
 
-LISP Fifnull (LISP arg, LISP ctx)
+lisp_t Fifnull (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (a != NIL)
 			return (NIL);
 		arg = cdr (arg);
@@ -489,10 +491,10 @@ LISP Fifnull (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fifprocedure (LISP arg, LISP ctx)
+lisp_t Fifprocedure (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (! istype (a, THARDW) && ! istype (a, TCLOSURE))
 			return (NIL);
 		arg = cdr (arg);
@@ -500,10 +502,10 @@ LISP Fifprocedure (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fiflist (LISP arg, LISP ctx)
+lisp_t Fiflist (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		while (istype (a, TPAIR))
 			a = cdr (a);
 		if (a != NIL)
@@ -513,12 +515,12 @@ LISP Fiflist (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fread (LISP arg, LISP ctx)
+lisp_t Fread (lisp_t arg, lisp_t ctx)
 {
 	return (getexpr ());
 }
 
-LISP Fwrite (LISP arg, LISP ctx)
+lisp_t Fwrite (lisp_t arg, lisp_t ctx)
 {
 	int first = 1;
 	while (istype (arg, TPAIR)) {
@@ -532,7 +534,7 @@ LISP Fwrite (LISP arg, LISP ctx)
 	return (NIL);
 }
 
-LISP Fnewline (LISP arg, LISP ctx)
+lisp_t Fnewline (lisp_t arg, lisp_t ctx)
 {
 	putc ('\n', stdout);
 	return (NIL);
@@ -541,7 +543,7 @@ LISP Fnewline (LISP arg, LISP ctx)
 /*
  * Выдать текущий контекст.
  */
-LISP Fcontext (LISP arg, LISP ctx)
+lisp_t Fcontext (lisp_t arg, lisp_t ctx)
 {
 	return (ctx==TOPLEVEL ? NIL : ctx);
 }
@@ -549,24 +551,24 @@ LISP Fcontext (LISP arg, LISP ctx)
 /*
  * Выдать контекст верхнего уровня.
  */
-LISP Fgcontext (LISP arg, LISP ctx)
+lisp_t Fgcontext (lisp_t arg, lisp_t ctx)
 {
 	return (ENV);
 }
 
-LISP Flist (LISP arg, LISP ctx)
+lisp_t Flist (lisp_t arg, lisp_t ctx)
 {
 	return (copy (arg, 0));
 }
 
-LISP Fappend (LISP arg, LISP ctx)
+lisp_t Fappend (lisp_t arg, lisp_t ctx)
 {
-	LISP val = NIL, tail;
+	lisp_t val = NIL, tail;
 	while (istype (arg, TPAIR)) {
 		if (val == NIL)
 			val = copy (car (arg), &tail);
 		else {
-			LISP newtail;
+			lisp_t newtail;
 			setcdr (tail, copy (car (arg), &newtail));
 			tail = newtail;
 		}
@@ -575,9 +577,9 @@ LISP Fappend (LISP arg, LISP ctx)
 	return (val);
 }
 
-LISP Freverse (LISP arg, LISP ctx)
+lisp_t Freverse (lisp_t arg, lisp_t ctx)
 {
-	LISP val = NIL;
+	lisp_t val = NIL;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	arg = car (arg);
@@ -588,7 +590,7 @@ LISP Freverse (LISP arg, LISP ctx)
 	return (val);
 }
 
-LISP Flength (LISP arg, LISP ctx)
+lisp_t Flength (lisp_t arg, lisp_t ctx)
 {
 	long len = 0;
 	if (! istype (arg, TPAIR))
@@ -598,9 +600,9 @@ LISP Flength (LISP arg, LISP ctx)
 	return (number (len));
 }
 
-LISP Flisttail (LISP arg, LISP ctx)
+lisp_t Flisttail (lisp_t arg, lisp_t ctx)
 {
-	LISP l;
+	lisp_t l;
 	int k;
 	if (! istype (arg, TPAIR))
 		return (NIL);
@@ -616,9 +618,9 @@ LISP Flisttail (LISP arg, LISP ctx)
 	return (l);
 }
 
-LISP Flistref (LISP arg, LISP ctx)
+lisp_t Flistref (lisp_t arg, lisp_t ctx)
 {
-	LISP l;
+	lisp_t l;
 	int k;
 	if (! istype (arg, TPAIR))
 		return (NIL);
@@ -636,7 +638,7 @@ LISP Flistref (LISP arg, LISP ctx)
 	return (car (l));
 }
 
-LISP member (LISP o, LISP arg, int (*compare) (LISP, LISP))
+lisp_t member (lisp_t o, lisp_t arg, int (*compare) (lisp_t, lisp_t))
 {
 	while (istype (arg, TPAIR)) {
 		if ((*compare) (o, car (arg)))
@@ -646,9 +648,9 @@ LISP member (LISP o, LISP arg, int (*compare) (LISP, LISP))
 	return (NIL);
 }
 
-LISP assoc (LISP o, LISP arg, int (*compare) (LISP, LISP))
+lisp_t assoc (lisp_t o, lisp_t arg, int (*compare) (lisp_t, lisp_t))
 {
-	LISP p;
+	lisp_t p;
 	while (istype (arg, TPAIR)) {
 		if (istype (p = car (arg), TPAIR) && (*compare) (o, car (p)))
 			return (p);
@@ -657,9 +659,9 @@ LISP assoc (LISP o, LISP arg, int (*compare) (LISP, LISP))
 	return (NIL);
 }
 
-LISP Fmemv (LISP arg, LISP ctx)
+lisp_t Fmemv (lisp_t arg, lisp_t ctx)
 {
-	LISP o;
+	lisp_t o;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	o = car (arg);
@@ -668,9 +670,9 @@ LISP Fmemv (LISP arg, LISP ctx)
 	return (member (o, car (arg), eqv));
 }
 
-LISP Fmember (LISP arg, LISP ctx)
+lisp_t Fmember (lisp_t arg, lisp_t ctx)
 {
-	LISP o;
+	lisp_t o;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	o = car (arg);
@@ -679,9 +681,9 @@ LISP Fmember (LISP arg, LISP ctx)
 	return (member (o, car (arg), equal));
 }
 
-LISP Fassv (LISP arg, LISP ctx)
+lisp_t Fassv (lisp_t arg, lisp_t ctx)
 {
-	LISP o;
+	lisp_t o;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	o = car (arg);
@@ -690,9 +692,9 @@ LISP Fassv (LISP arg, LISP ctx)
 	return (assoc (o, car (arg), eqv));
 }
 
-LISP Fassoc (LISP arg, LISP ctx)
+lisp_t Fassoc (lisp_t arg, lisp_t ctx)
 {
-	LISP o;
+	lisp_t o;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	o = car (arg);
@@ -701,9 +703,9 @@ LISP Fassoc (LISP arg, LISP ctx)
 	return (assoc (o, car (arg), equal));
 }
 
-LISP Fapply (LISP arg, LISP ctx)
+lisp_t Fapply (lisp_t arg, lisp_t ctx)
 {
-	LISP func;
+	lisp_t func;
 	if (! istype (arg, TPAIR))
 		return (NIL);
 	func = car (arg);
@@ -711,9 +713,9 @@ LISP Fapply (LISP arg, LISP ctx)
 	return (evalfunc (func, arg, ctx));
 }
 
-static LISP makearg (int n, LISP *vect)
+static lisp_t makearg (int n, lisp_t *vect)
 {
-	LISP arg = NIL, v;
+	lisp_t arg = NIL, v;
 	int i;
 
 	for (i=n-1; i>=0; --i) {
@@ -727,9 +729,9 @@ static LISP makearg (int n, LISP *vect)
 	return (arg);
 }
 
-LISP Fmap (LISP arg, LISP ctx)
+lisp_t Fmap (lisp_t arg, lisp_t ctx)
 {
-	LISP func, vect[MAXARG], tail, val;
+	lisp_t func, vect[MAXARG], tail, val;
 	int n;
 
 	if (! istype (arg, TPAIR))
@@ -756,9 +758,9 @@ LISP Fmap (LISP arg, LISP ctx)
 	return (val);
 }
 
-LISP Fforeach (LISP arg, LISP ctx)
+lisp_t Fforeach (lisp_t arg, lisp_t ctx)
 {
-	LISP func, vect[MAXARG];
+	lisp_t func, vect[MAXARG];
 	int n;
 
 	if (! istype (arg, TPAIR))
@@ -779,10 +781,10 @@ LISP Fforeach (LISP arg, LISP ctx)
 	return (NIL);
 }
 
-LISP Fifstring (LISP arg, LISP ctx)
+lisp_t Fifstring (lisp_t arg, lisp_t ctx)
 {
 	while (istype (arg, TPAIR)) {
-		LISP a = car (arg);
+		lisp_t a = car (arg);
 		if (! istype (a, TSTRING))
 			return (NIL);
 		arg = cdr (arg);
@@ -790,9 +792,9 @@ LISP Fifstring (LISP arg, LISP ctx)
 	return (T);
 }
 
-LISP Fmakestring (LISP arg, LISP ctx)
+lisp_t Fmakestring (lisp_t arg, lisp_t ctx)
 {
-	LISP s = string (0, "");
+	lisp_t s = string (0, "");
 	int k, f = ' ';
 
 	if (!istype (arg, TPAIR) || !istype (car (arg), TINTEGER))
@@ -812,9 +814,9 @@ LISP Fmakestring (LISP arg, LISP ctx)
 	return (s);
 }
 
-LISP Fstring (LISP arg, LISP ctx)
+lisp_t Fstring (lisp_t arg, lisp_t ctx)
 {
-	LISP a, s = string (0, "");
+	lisp_t a, s = string (0, "");
 	int k = 0;
 
 	for (a=arg; istype (a, TPAIR) && istype (car (a), TCHAR); a=cdr(a))
@@ -832,7 +834,7 @@ LISP Fstring (LISP arg, LISP ctx)
 	return (s);
 }
 
-LISP Fstringlength (LISP arg, LISP ctx)
+lisp_t Fstringlength (lisp_t arg, lisp_t ctx)
 {
 	if (! istype (arg, TPAIR) || ! istype (arg = car (arg), TSTRING))
 		return (ZERO);
@@ -847,7 +849,8 @@ functab stdfunc [] = {
 	{ "cadr",                   Fcadr		},
 	{ "cdar",                   Fcdar		},
 	{ "cddr",                   Fcddr		},
-
+#if 0
+        /* Disabled to save memory. */
 	{ "caaar",                  Fcaaar		},
 	{ "caadr",                  Fcaadr		},
 	{ "cadar",                  Fcadar		},
@@ -873,7 +876,7 @@ functab stdfunc [] = {
 	{ "cddadr",                 Fcddadr		},
 	{ "cdddar",                 Fcdddar		},
 	{ "cddddr",                 Fcddddr		},
-
+#endif
 	{ "cons",                   Fcons		},
 	{ "set-car!",               Fsetcar		},
 	{ "set-cdr!",               Fsetcdr		},

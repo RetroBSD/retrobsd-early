@@ -10,212 +10,212 @@
 #   define assert(x) { if (! (x)) {\
 	fprintf (stderr, "assertion failed: file \"%s\", line %d\n",\
 	__FILE__, __LINE__); exit (-1); } }
-#   define inline /* no inline */
 #else
 #   define assert(x)
 #endif
+#define INLINE static inline __attribute__((always_inline))
 
 /*
- * Метки типов.
+ * Type tags.
  */
-#define TPAIR           1               /* метка "пара" */
-#define TSYMBOL         2               /* метка "символ" */
-#define TBOOL           3               /* метка "булевское" */
-#define TCHAR           4               /* метка "буква" */
-#define TINTEGER        5               /* метка "целое" */
-#define TREAL           6               /* метка "вещественное" */
-#define TSTRING         7               /* метка "строка" */
-#define TVECTOR         8               /* метка "вектор" */
-#define THARDW          9               /* метка "встроенная функция" */
-#define TCLOSURE       10               /* метка "замыкание" */
+#define TPAIR           1               /* tag "pair" */
+#define TSYMBOL         2               /* tag "symbol" */
+#define TBOOL           3               /* tag "boolean" */
+#define TCHAR           4               /* tag "character" */
+#define TINTEGER        5               /* tag "integer" */
+#define TREAL           6               /* tag "real" */
+#define TSTRING         7               /* tag "string" */
+#define TVECTOR         8               /* tag "vector" */
+#define THARDW          9               /* tag "hard-wired function" */
+#define TCLOSURE       10               /* tag "closure" */
 
-#define NIL             ((LISP) -1)     /* пустой список */
-#define TOPLEVEL        ((LISP) -2)     /* признак контекста верхнего уровня */
+#define NIL             ((lisp_t) -1)     /* empty list */
+#define TOPLEVEL        ((lisp_t) -2)     /* top level context */
 
 /*
- * Размер LISP обязан быть больше, чем размер указателя.
+ * Size of lisp_t should be bigger that pointer size.
  * Это используется для хранения указателя на строку в cdr.
  */
-typedef long LISP;                      /* "указатель" на пару */
-typedef LISP (*LISPFUNC) (LISP, LISP);  /* указатель на встроенную функцию */
+typedef size_t lisp_t;                  /* address of a cell */
+typedef lisp_t (*func_t) (lisp_t, lisp_t);  /* pointer to hardwired function */
 
-typedef struct {                        /* элементарная ячейка */
-	short type;                     /* тип */
+typedef struct {                        /* elementary cell */
+	short type;                     /* type */
 	union {
-		struct {                /* пара */
-			LISP a;         /* первый элемент */
-			LISP d;         /* второй элемент */
+		struct {                /* pair */
+			lisp_t a;       /* first element */
+			lisp_t d;       /* second element */
 		} pair;
-		struct {                /* строка */
-			int length;     /* длина */
-			char *array;    /* массив байтов длины length */
+		struct {                /* string */
+			int length;     /* length */
+			char *array;    /* array of bytes */
 		} string;
-		struct {                /* вектор */
-			int length;     /* длина */
-			LISP *array;    /* массив элементов длины length */
+		struct {                /* vector */
+			int length;     /* length */
+			lisp_t *array;  /* array of elements */
 		} vector;
-		char *symbol;           /* символ */
-		unsigned char chr;      /* буква */
-		long integer;           /* целое, встроенная функция */
-		double real;            /* вещественное */
+		char *symbol;           /* symbol */
+		unsigned char chr;      /* character */
+		long integer;           /* integer number, hardwired function */
+		double real;            /* real number */
 	} as;
 } cell;
 
 typedef struct {
 	char *name;
-	LISPFUNC func;
+	func_t func;
 } functab;
 
-extern LISP T, ZERO, ENV;
+extern lisp_t T, ZERO, ENV;
 
-int eqv (LISP a, LISP b);               /* сравнение объектов */
-int equal (LISP a, LISP b);             /* рекурсивное сравнение */
-LISP evalblock (LISP expr, LISP ctx);   /* вычисление блока */
-LISP evalclosure (LISP func, LISP expr); /* вычисление замыкания */
-LISP evalfunc (LISP func, LISP arg, LISP ctx); /* вычисление функции */
-LISP eval (LISP expr, LISP *ctxp);      /* вычисление */
-LISP getexpr ();                        /* чтение выражения */
-void putexpr (LISP p, FILE *fd);        /* печать списка */
-LISP copy (LISP a, LISP *t);            /* копирование списка */
-LISP alloc (int type);                  /* выделение памяти под новую пару */
-void fatal (char*);                     /* фатальная ошибка */
-int istype (LISP p, int type);          /* проверить соответствие типа */
+int eqv (lisp_t a, lisp_t b);                   /* сравнение объектов */
+int equal (lisp_t a, lisp_t b);                 /* рекурсивное сравнение */
+lisp_t evalblock (lisp_t expr, lisp_t ctx);     /* вычисление блока */
+lisp_t evalclosure (lisp_t func, lisp_t expr);  /* вычисление замыкания */
+lisp_t evalfunc (lisp_t func, lisp_t arg, lisp_t ctx); /* вычисление функции */
+lisp_t eval (lisp_t expr, lisp_t *ctxp);        /* вычисление */
+lisp_t getexpr ();                              /* чтение выражения */
+void putexpr (lisp_t p, FILE *fd);              /* печать списка */
+lisp_t copy (lisp_t a, lisp_t *t);              /* копирование списка */
+lisp_t alloc (int type);                        /* выделение памяти под новую пару */
+void fatal (char*);                             /* фатальная ошибка */
+int istype (lisp_t p, int type);                /* проверить соответствие типа */
 
-extern cell mem[];                      /* память списков */
-extern unsigned memsz;                  /* размер памяти */
+extern cell mem[];                              /* память списков */
+extern unsigned memsz;                          /* размер памяти */
 extern void *memcopy (void*, int);
 
-static inline LISP car (LISP p)         /* доступ к первому элементу */
+INLINE lisp_t car (lisp_t p)            /* доступ к первому элементу */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TPAIR);
 	return mem[p].as.pair.a;
 }
 
-static inline LISP cdr (LISP p)         /* доступ ко второму элементу */
+INLINE lisp_t cdr (lisp_t p)            /* доступ ко второму элементу */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TPAIR);
 	return mem[p].as.pair.d;
 }
 
-static inline void setcar (LISP p, LISP v) /* доступ к первому элементу */
+INLINE void setcar (lisp_t p, lisp_t v) /* доступ к первому элементу */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TPAIR);
 	mem[p].as.pair.a = v;
 }
 
-static inline void setcdr (LISP p, LISP v) /* доступ ко второму элементу */
+INLINE void setcdr (lisp_t p, lisp_t v) /* доступ ко второму элементу */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TPAIR);
 	mem[p].as.pair.d = v;
 }
 
-static inline LISP cons (LISP a, LISP d) /* выделение памяти под новую пару */
+INLINE lisp_t cons (lisp_t a, lisp_t d) /* выделение памяти под новую пару */
 {
-	LISP p = alloc (TPAIR);
+	lisp_t p = alloc (TPAIR);
 	setcar (p, a);
 	setcdr (p, d);
-	return (p);
+	return p;
 }
 
-static inline LISP symbol (char *name)  /* создание атома-символа */
+INLINE lisp_t symbol (char *name)       /* создание атома-символа */
 {
-	LISP p = alloc (TSYMBOL);
+	lisp_t p = alloc (TSYMBOL);
 	mem[p].as.symbol = memcopy (name, strlen (name) + 1);
-	return (p);
+	return p;
 }
 
-static inline LISP number (long val)    /* создание атома-числа */
+INLINE long numval (lisp_t p)           /* выдать значение целого числа */
 {
-	LISP p = alloc (TINTEGER);
+	assert (p>=0 && p<memsz && mem[p].type==TINTEGER);
+	return mem[p].as.integer;
+}
+
+INLINE lisp_t number (long val)         /* создание атома-числа */
+{
+	lisp_t p = alloc (TINTEGER);
 	mem[p].as.integer = val;
-	return (p);
+	return p;
 }
 
-static inline LISP character (int val)  /* создание атома-буквы */
+INLINE lisp_t string (int len, char *array) /* создание строки */
 {
-	LISP p = alloc (TCHAR);
-	mem[p].as.chr = val;
-	return (p);
-}
-
-static inline LISP real (double val)    /* создание атома-вещественного числа */
-{
-	LISP p = alloc (TREAL);
-	mem[p].as.real = val;
-	return (p);
-}
-
-static inline LISP string (int len, char *array) /* создание строки */
-{
-	LISP p = alloc (TSTRING);
+	lisp_t p = alloc (TSTRING);
 	mem[p].as.string.length = len;
 	if (len > 0)
 		mem[p].as.string.array = memcopy (array, len);
-	return (p);
+	return p;
 }
 
-static inline LISP vector (int len, LISP *array) /* создание вектора */
-{
-	LISP p = alloc (TVECTOR);
-	mem[p].as.vector.length = len;
-	if (len > 0)
-		mem[p].as.vector.array = memcopy (array, len * sizeof (LISP));
-	return (p);
-}
-
-static inline LISP closure (LISP body, LISP ctx) /* создание замыкания */
-{
-	LISP p = alloc (TCLOSURE);
-	mem[p].as.pair.a = body;
-	mem[p].as.pair.d = ctx;
-	return (p);
-}
-
-static inline LISP hardw (LISPFUNC func) /* создание встроенной функции */
-{
-	LISP p = alloc (THARDW);
-	mem[p].as.integer = (long) func;
-	return (p);
-}
-
-static inline long numval (LISP p)      /* выдать значение целого числа */
-{
-	assert (p>=0 && p<memsz && mem[p].type==TINTEGER);
-	return (mem[p].as.integer);
-}
-
-static inline long charval (LISP p)     /* выдать значение буквы */
+INLINE long charval (lisp_t p)          /* выдать значение буквы */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TCHAR);
-	return (mem[p].as.chr);
+	return mem[p].as.chr;
 }
 
-static inline double realval (LISP p)   /* выдать значение веществ. числа */
+INLINE lisp_t character (int val)       /* создание атома-буквы */
+{
+	lisp_t p = alloc (TCHAR);
+	mem[p].as.chr = val;
+	return p;
+}
+
+INLINE lisp_t real (double val)         /* создание атома-вещественного числа */
+{
+	lisp_t p = alloc (TREAL);
+	mem[p].as.real = val;
+	return p;
+}
+
+INLINE lisp_t vector (int len, lisp_t *array) /* создание вектора */
+{
+	lisp_t p = alloc (TVECTOR);
+	mem[p].as.vector.length = len;
+	if (len > 0)
+		mem[p].as.vector.array = memcopy (array, len * sizeof (lisp_t));
+	return p;
+}
+
+INLINE lisp_t closure (lisp_t body, lisp_t ctx) /* создание замыкания */
+{
+	lisp_t p = alloc (TCLOSURE);
+	mem[p].as.pair.a = body;
+	mem[p].as.pair.d = ctx;
+	return p;
+}
+
+INLINE lisp_t hardw (func_t func)       /* создание встроенной функции */
+{
+	lisp_t p = alloc (THARDW);
+	mem[p].as.integer = (long) func;
+	return p;
+}
+
+INLINE double realval (lisp_t p)        /* выдать значение веществ. числа */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TREAL);
-	return (mem[p].as.real);
+	return mem[p].as.real;
 }
 
-static inline LISPFUNC hardwval (LISP p) /* выдать адрес встроенной функции */
+INLINE func_t hardwval (lisp_t p)       /* выдать адрес встроенной функции */
 {
 	assert (p>=0 && p<memsz && mem[p].type==THARDW);
-	return ((LISPFUNC) mem[p].as.integer);
+	return (func_t) mem[p].as.integer;
 }
 
-static inline LISP closurebody (LISP p) /* выдать замыкание */
+INLINE lisp_t closurebody (lisp_t p)    /* выдать замыкание */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TCLOSURE);
-	return (mem[p].as.pair.a);
+	return mem[p].as.pair.a;
 }
 
-static inline LISP closurectx (LISP p)  /* выдать замыкание */
+INLINE lisp_t closurectx (lisp_t p)     /* выдать замыкание */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TCLOSURE);
-	return (mem[p].as.pair.d);
+	return mem[p].as.pair.d;
 }
 
-static inline char *symname (LISP p)    /* выдать строку - имя символа */
+INLINE char *symname (lisp_t p)         /* выдать строку - имя символа */
 {
 	assert (p>=0 && p<memsz && mem[p].type==TSYMBOL);
-	return (mem[p].as.symbol);
+	return mem[p].as.symbol;
 }
