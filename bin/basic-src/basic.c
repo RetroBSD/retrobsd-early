@@ -92,15 +92,14 @@
  */
 #ifdef CROSS
 #   include </usr/include/stdio.h>
-#   include </usr/include/ctype.h>
 #else
 #   include <stdio.h>
-#   include <ctype.h>
 #endif
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
 #include <time.h>
+#include <limits.h>
 
 /* Fixed parameters */
 #define BUFFER_SIZE	100	/* input buffer size */
@@ -225,10 +224,10 @@ FILE *filein, *fileout;			/* File I/O active pointers */
 jmp_buf savjmp;				/* Save area for set/longjmp */
 
 /* Misc. global variables */
-char *cmdptr,				/* Command line parse pointer */
+char    *cmdptr,                        /* Command line parse pointer */
 	*dataptr,			/* Read data pointer */
-	buffer[BUFFER_SIZE],		/* General input buffer */
-	mode = 0,			/* 0=Stopped, !0=Running */
+	buffer[BUFFER_SIZE];		/* General input buffer */
+unsigned mode = 0,			/* 0=Stopped, !0=Running */
 	expr_type,			/* Type of last expression */
 	nest;				/* Nest level of expr. parser */
 unsigned line,				/* Current line number */
@@ -273,6 +272,42 @@ unsigned in (int i)
 {
 	printf("IN not implemented yet, at line %u\n", line);
 	return 0;
+}
+
+int isalnum(int c)
+{
+        c = (unsigned char) c;
+        if (c >= 'a' && c <= 'z')
+                return 1;
+        if (c >= '0' && c <= '9')
+                return 1;
+        if (c >= 'A' && c <= 'Z')
+                return 1;
+        return 0;
+}
+
+int isalpha(int c)
+{
+        c = (unsigned char) c;
+        if (c >= 'a' && c <= 'z')
+                return 1;
+        if (c >= 'A' && c <= 'Z')
+                return 1;
+        return 0;
+}
+
+int isdigit(int c)
+{
+        c = (unsigned char) c;
+        return c >= '0' && c <= '9';
+}
+
+int toupper(int c)
+{
+        c = (unsigned char) c;
+        if (c >= 'a' && c <= 'z')
+                c += 'A' - 'a';
+        return c;
 }
 
 void concat (char *ab, char *a, char *b)
@@ -374,7 +409,7 @@ unsigned lookup(char *table[])
 
 	optr = cmdptr;
 	for(i=0; (cptr = table[i]); ++i) {
-		while((*cptr) && (*cptr == toupper(*cmdptr))) {
+	        while((*cptr) && (*cptr == toupper(*cmdptr))) {
 			++cptr;
 			++cmdptr;
 		}
@@ -538,7 +573,7 @@ int get_var()
 	unsigned index;
 	char c;
 
-	if(!isalpha(c = get_next()))
+	if(! isalpha(c = get_next()))
 		error(0);
 	index = ((c - 'A') & 0x1F) * 10;
 	if(isdigit(c = *cmdptr)) {
@@ -738,10 +773,10 @@ void skip_stmt()
  */
 void num_string(unsigned value, char *ptr)
 {
-	char cstack[5];
+	char cstack[12];
 	int i;
 
-	if(value > 32767) {
+	if(value > INT_MAX) {
 		*ptr++ = '-';
 		value = -value;
 	}
@@ -1180,7 +1215,7 @@ void get_char_value(char *ptr)
 			*ptr++ = c;
 		}
 		*ptr = 0;
-	} else if(isalpha(c)) {		/* variable */
+	} else if(isalpha(c)) {         /* variable */
 		--cmdptr;
 		i = get_var();
 		if(! expr_type)
@@ -1240,7 +1275,7 @@ int get_value()
 			expr_type = 0;
 			break;
 		case -128+ABS:		/* Absolute value */
-			if((value = eval_sub()) > 32767)
+			if((value = eval_sub()) > INT_MAX)
 				value = -value;
 			goto number_only;
 		case -128+RND:		/* Random number */
@@ -1258,7 +1293,7 @@ number_only:
 			break;
 		default:		/* test for character expression */
 			--cmdptr;
-			if(isalpha(c)) {		/* variable */
+			if(isalpha(c)) {                /* variable */
 				value = get_var();
 				if(expr_type) {		/* char */
 					ptr = char_vars[value];
