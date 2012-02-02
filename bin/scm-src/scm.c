@@ -14,7 +14,7 @@ int verbose;                    /* verbose mode */
  */
 #define MAXLEX  128             /* max size of strings */
 #define MAXVECT 64              /* max size of vectors */
-#define MEMSZ   3600            /* memory size */
+#define MEMSZ   2500            /* memory size */
 
 long lexval;			/* значение лексемы-числа */
 double lexrealval;              /* значение лексемы-вещественного числа */
