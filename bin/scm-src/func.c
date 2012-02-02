@@ -808,8 +808,8 @@ lisp_t Fmakestring (lisp_t arg, lisp_t ctx)
 		if (! array)
 			fatal ("no memory for string");
 		memset (array, f, k);
-		mem[s].as.string.length = k;
-		mem[s].as.string.array = array;
+		mem[s].string.length = k;
+		mem[s].string.array = array;
 	}
 	return (s);
 }
@@ -828,8 +828,8 @@ lisp_t Fstring (lisp_t arg, lisp_t ctx)
 			fatal ("no memory for string");
 		for (a=arg; istype (a, TPAIR) && istype (car (a), TCHAR); a=cdr(a))
 			*p++ = charval (car (a));
-		mem[s].as.string.length = k;
-		mem[s].as.string.array = array;
+		mem[s].string.length = k;
+		mem[s].string.array = array;
 	}
 	return (s);
 }
@@ -838,10 +838,10 @@ lisp_t Fstringlength (lisp_t arg, lisp_t ctx)
 {
 	if (! istype (arg, TPAIR) || ! istype (arg = car (arg), TSTRING))
 		return (ZERO);
-	return (number (mem[arg].as.string.length));
+	return (number (mem[arg].string.length));
 }
 
-functab stdfunc [] = {
+functab_t stdfunc [] = {
 	{ "car",                    Fcar		},
 	{ "cdr",                    Fcdr		},
 

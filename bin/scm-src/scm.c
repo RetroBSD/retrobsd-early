@@ -14,7 +14,7 @@ int verbose;                    /* verbose mode */
  */
 #define MAXLEX  128             /* max size of strings */
 #define MAXVECT 64              /* max size of vectors */
-#define MEMSZ   2400            /* memory size */
+#define MEMSZ   3600            /* memory size */
 
 long lexval;			/* значение лексемы-числа */
 double lexrealval;              /* значение лексемы-вещественного числа */
@@ -23,7 +23,7 @@ int backlexflag = 0;		/* флаг возврата лексемы */
 int lexlex;			/* текущая лексема */
 int lexlen;                     /* длина лексемы-строки */
 
-cell mem[MEMSZ];                /* list memory */
+cell_t mem[MEMSZ];              /* list memory */
 char gclabel[MEMSZ];            /* tags for garbage collector */
 unsigned memsz = MEMSZ;         /* memory size */
 lisp_t firstfree;               /* list of free cells */
@@ -32,7 +32,7 @@ lisp_t T;                       /* atom T */
 lisp_t ZERO;                    /* atom 0 */
 lisp_t ENV;                     /* top level context */
 
-extern functab stdfunc [];      /* standard functions */
+extern functab_t stdfunc [];    /* standard functions */
 
 void fatal (char *s)
 {
@@ -302,8 +302,8 @@ void initmem ()                 /* инициализация списка св�
 	for (i=0; i<memsz; ++i) {
 		gclabel[i] = 0;
 		mem[i].type = TPAIR;
-		mem[i].as.pair.a = NIL;
-		mem[i].as.pair.d = firstfree;
+		mem[i].pair.a = NIL;
+		mem[i].pair.d = firstfree;
 		firstfree = i;
 	}
 }
@@ -315,8 +315,8 @@ void glabelit (lisp_t r)
 		gclabel[r] = 1;
 		if (mem[r].type != TPAIR && mem[r].type != TCLOSURE)
 			return;
-		glabelit (mem[r].as.pair.a);
-		r = mem[r].as.pair.d;           /* avoid recursion */
+		glabelit (mem[r].pair.a);
+		r = mem[r].pair.d;              /* avoid recursion */
 	}
 }
 
@@ -331,20 +331,20 @@ int gcollect ()
 		else {
 			switch (mem[i].type) {
 			case TSYMBOL:
-				free (mem[i].as.symbol);
+				free (mem[i].symbol.name);
 				break;
 			case TSTRING:
-				if (mem[i].as.string.length > 0)
-					free (mem[i].as.string.array);
+				if (mem[i].string.length > 0)
+					free (mem[i].string.array);
 				break;
 			case TVECTOR:
-				if (mem[i].as.vector.length > 0)
-					free (mem[i].as.vector.array);
+				if (mem[i].vector.length > 0)
+					free (mem[i].vector.array);
 				break;
 			}
 			mem[i].type = TPAIR;
-			mem[i].as.pair.a = NIL;
-			mem[i].as.pair.d = firstfree;
+			mem[i].pair.a = NIL;
+			mem[i].pair.d = firstfree;
 			firstfree = i;
 			++n;
 		}
@@ -459,8 +459,8 @@ void putstring (lisp_t p, FILE *fd)
 	char *s;
 
 	assert (p>=0 && p<memsz && mem[p].type==TSTRING);
-	len = mem[p].as.string.length;
-	s = mem[p].as.string.array;
+	len = mem[p].string.length;
+	s = mem[p].string.array;
 	putc ('"', fd);
 	while (--len >= 0) {
 		static char mask[] = "\"\\\n\t\r\b\f", repl[] = "\"\\ntrbf";
@@ -483,8 +483,8 @@ void putvector (lisp_t p, FILE *fd)
 	lisp_t *s;
 
 	assert (p>=0 && p<memsz && mem[p].type==TVECTOR);
-	len = mem[p].as.vector.length;
-	s = mem[p].as.vector.array;
+	len = mem[p].vector.length;
+	s = mem[p].vector.array;
 	fputs ("#(", fd);
 	while (--len >= 0) {
 		putexpr (*s++, fd);
@@ -855,11 +855,11 @@ int eqvvector (lisp_t a, lisp_t b)  /* сравнение векторов */
 
 	assert (a>=0 && a<memsz && mem[a].type==TVECTOR);
 	assert (b>=0 && b<memsz && mem[b].type==TVECTOR);
-	if (mem[a].as.vector.length != mem[b].as.vector.length)
+	if (mem[a].vector.length != mem[b].vector.length)
 		return (0);
-	len = mem[a].as.vector.length;
-	s = mem[a].as.vector.array;
-	t = mem[b].as.vector.array;
+	len = mem[a].vector.length;
+	s = mem[a].vector.array;
+	t = mem[b].vector.array;
 	while (--len >= 0)
 		if (! eqv (*s++, *t++))
 			return (0);
@@ -878,15 +878,15 @@ int eqv (lisp_t a, lisp_t b)        /* сравнение объектов */
 		return (0);
 	switch (mem[a].type) {
 	case TBOOL:     return (1);
-	case TCHAR:     return (mem[a].as.chr == mem[b].as.chr);
-	case TINTEGER:  return (mem[a].as.integer == mem[b].as.integer);
-	case TREAL:     return (mem[a].as.real == mem[b].as.real);
-	case TSYMBOL:   return (!strcmp (mem[a].as.symbol, mem[b].as.symbol));
+	case TCHAR:     return (mem[a].chr.value == mem[b].chr.value);
+	case TINTEGER:  return (mem[a].integer.value == mem[b].integer.value);
+	case TREAL:     return (mem[a].real.value == mem[b].real.value);
+	case TSYMBOL:   return (!strcmp (mem[a].symbol.name, mem[b].symbol.name));
 	case TVECTOR:   return (eqvvector (a, b));
-	case TSTRING:   return (mem[a].as.string.length == mem[b].as.string.length &&
-				(mem[a].as.string.length<=0 ||
-				!memcmp (mem[a].as.string.array, mem[b].as.string.array,
-				mem[a].as.string.length)));
+	case TSTRING:   return (mem[a].string.length == mem[b].string.length &&
+				(mem[a].string.length <= 0 ||
+				memcmp (mem[a].string.array, mem[b].string.array,
+                                    mem[a].string.length) == 0));
 	}
 	return (0);
 }
@@ -1303,7 +1303,7 @@ again:
 	return (evalfunc (car (expr), cdr (expr), ctxp ? *ctxp : TOPLEVEL));
 }
 
-void initcontext (functab *p)
+void initcontext (functab_t *p)
 {
 	for (; p->name; ++p)
 		ENV = cons (cons (symbol (p->name), hardw (p->func)), ENV);
@@ -1339,7 +1339,7 @@ int main (int argc, char **argv)
 	if (verbose) {
 		fprintf (stderr, "Micro Scheme Interpreter, Release 1.0\n");
 		fprintf (stderr, "Memory size = %lu bytes\n",
-                        (unsigned long) memsz * sizeof (cell));
+                        (unsigned long) memsz * sizeof (cell_t));
 	}
 
 	if (prog && freopen (prog, "r", stdin) != stdin) {
