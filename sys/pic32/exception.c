@@ -16,6 +16,10 @@
 extern void power_switch_check();
 #endif
 
+#ifdef ADC_ENABLED
+#include "adc.h"
+#endif
+
 
 #ifdef TRACE_EXCEPTIONS
 static void
@@ -333,6 +337,12 @@ exception (frame)
                 case PIC32_VECT_USB:    /* USB */
                         IFSCLR(1) = 1 << (PIC32_IRQ_USB - 32);
                         cnintr (0);
+                        break;
+#endif
+#ifdef ADC_ENABLED
+                case PIC32_VECT_AD1:    /* ADC */
+                        IFSCLR(1) = 1 << (PIC32_IRQ_AD1 - 32);
+                        adc_intr();
                         break;
 #endif
                 default:

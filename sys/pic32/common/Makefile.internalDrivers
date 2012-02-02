@@ -16,4 +16,7 @@ ifeq ($(DRIVER_POWER),yes)
         DEFS    += -DPOWER_CONTROL_PORT=$(POWER_CONTROL_PORT) -DPOWER_CONTROL_PIN=$(POWER_CONTROL_PIN)
 endif
 
-
+ifeq ($(DRIVER_ADC),yes)
+	KERNOBJ += adc.o
+	DEFS    += -DADC_ENABLED
+endif

@@ -71,7 +71,7 @@ SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fsck sbin/halt sbin/init 
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-BIN_FILES	= bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
+BIN_FILES	= bin/adc-demo bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
                   bin/basic bin/bc bin/cal bin/cat bin/cb bin/cc bin/chflags bin/chgrp \
                   bin/chmod bin/chpass bin/cmp bin/col bin/comm bin/cp \
                   bin/cpp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
@@ -125,6 +125,10 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
+ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
+                  dev/adc4!c8:4 dev/adc5!c8:5 dev/adc6!c8:6 dev/adc7!c8:7 \
+                  dev/adc8!c8:8 dev/adc9!c8:9 dev/adc10!c8:10 dev/adc11!c8:11 \
+                  dev/adc12!c8:12 dev/adc13!c8:13 dev/adc14!c8:14 dev/adc15!c8:15
 
 all:
 		$(MAKE) -C $(LIBDIR) DEFS="$(DEFS)"
@@ -138,6 +142,7 @@ filesys.img:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
 		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
+		$(FSUTIL) -a $@ $(ADCDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)
 
 user.img:	$(FSUTIL)

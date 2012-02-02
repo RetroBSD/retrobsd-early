@@ -10,7 +10,7 @@ CFLAGS          += -Werror
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= ar-src as-src awk-src basic-src cc-src chflags-src chpass-src \
+SUBDIR		= adc-demo-src ar-src as-src awk-src basic-src cc-src chflags-src chpass-src \
                   cpp-src dc-src diff-src find-src forth-src fstat-src hostname-src \
                   id-src la-src ld-src ls-src login-src make-src man-src \
                   more-src nm-src passwd-src portio-src printf-src \

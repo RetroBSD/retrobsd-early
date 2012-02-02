@@ -19,6 +19,10 @@
 #include "gpio.h"
 #endif
 
+#ifdef ADC_ENABLED
+#include "adc.h"
+#endif
+
 #ifndef SWAPDEV
 #define swopen      nulldev
 #define swstrategy  nostrategy
@@ -107,6 +111,18 @@ const struct cdevsw	cdevsw[] = {
 { /* gpio = 7 */
 	gpioopen,	gpioclose,	gpioread,	gpiowrite,
 	gpioioctl,	nulldev,	0,              seltrue,
+	nostrategy,	},
+#else
+{
+        nulldev,        nulldev,        norw,           norw,
+        noioctl,        nulldev,        0,              seltrue,
+        nostrategy,     },
+#endif
+
+#ifdef ADC_ENABLED
+{ /* adc = 8 */
+	adc_open,	adc_close,	adc_read,	adc_write,
+	adc_ioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
 #else
 {

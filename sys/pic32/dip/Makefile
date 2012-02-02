@@ -38,6 +38,9 @@ DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=7
 # General Purpose I/O
 DRIVER_GPIO         = yes
 
+# Basic ADC interface
+DRIVER_ADC          = no
+
 # Power control (power LED, and soft power-off by button)
 # requires supported PSU (ATX)
 DRIVER_POWER        = no
