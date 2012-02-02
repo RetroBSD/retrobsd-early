@@ -201,8 +201,10 @@ main(argc, argv)
 		if (pwd = getpwnam(username)) {
 			salt = pwd->pw_passwd;
 //printf("getpwnam returned username='%s' password='%s'\n", pwd->pw_name, pwd->pw_passwd);
-		} else
+		} else {
 			salt = "xx";
+                        goto nouser;
+                }
 
 		/* if user not super-user, check for disabled logins */
 		if (pwd == NULL || pwd->pw_uid)
@@ -245,6 +247,7 @@ main(argc, argv)
 		if (!passwd_req || (pwd && !*pwd->pw_passwd))
 			break;
 
+nouser:
 		setpriority(PRIO_PROCESS, 0, -4);
 		pp = getpass("Password:");
 		p = crypt(pp, salt);
