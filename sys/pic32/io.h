@@ -69,6 +69,28 @@
 
 #ifndef __ASSEMBLER__
 
+#ifndef KERNEL
+/*
+ * 2BSD system call extensions: use with care.
+ */
+
+/*
+ * Read peripheral register.
+ */
+unsigned ufetch (unsigned addr);
+
+/*
+ * Write peripheral register.
+ */
+unsigned ustore (unsigned addr, unsigned value);
+
+/*
+ * Call a kernel function.
+ */
+unsigned ucall (int priority, void *address, int arg1, int arg2);
+
+#endif /* KERNEL */
+
 /*
  * Set value of stack pointer register.
  */
@@ -133,7 +155,8 @@ mips_intr_disable ()
 static void inline __attribute__ ((always_inline))
 mips_intr_restore (int x)
 {
-	mips_write_c0_register (C0_STATUS, 0, x);
+        /* C0_STATUS */
+	mips_write_c0_register (12, 0, x);
 }
 
 /*

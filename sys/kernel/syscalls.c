@@ -161,9 +161,9 @@ const char *const syscallnames[] = {
 	"quota",		/* 149 = quota */
 	"getsockname",		/* 150 = getsockname */
 	"#151",			/* 151 = unused */
-	"nostk",		/* 152 = nostk */
-	"fetchi",		/* 153 = fetchi */
+	"ustore",		/* 152 = ustore */
+	"ufetch",		/* 153 = ufetch */
 	"ucall",		/* 154 = ucall */
-	"fperr",		/* 155 = fperr */
+	"#155",                 /* 155 = unused */
 };
 #endif

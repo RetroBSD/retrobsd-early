@@ -46,7 +46,7 @@ DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=1 -DLED_KERNEL_INVER
 DRIVER_GPIO         = yes
 
 # Basic ADC interface
-DRIVER_ADC          = no
+DRIVER_ADC          = yes
 
 # Power control (power LED, and soft power-off by button)
 # requires supported PSU (ATX)
@@ -96,7 +96,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o 
+KERNOBJ		+= sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o

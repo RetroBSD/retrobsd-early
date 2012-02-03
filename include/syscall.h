@@ -169,7 +169,7 @@
  * 2BSD special calls
  */
 				/* 151 is unused */
-#define	SYS_nostk	152
-#define	SYS_fetchi	153
+#define	SYS_ustore	152
+#define	SYS_ufetch	153
 #define	SYS_ucall	154
-#define	SYS_fperr	155
+				/* 155 is unused */

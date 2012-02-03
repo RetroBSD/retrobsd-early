@@ -45,7 +45,7 @@ DEFS            += -DLED_TTY_PORT=TRISA    -DLED_TTY_PIN=3
 DRIVER_GPIO         = yes
 
 # Basic ADC interface
-DRIVER_ADC          = no
+DRIVER_ADC          = yes
 
 # Power control (power LED, and soft power-off by button)
 # requires supported PSU (ATX)

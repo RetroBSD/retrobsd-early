@@ -31,7 +31,7 @@ SYSOBJS		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o \
 		  lseek.o sigsuspend.o \
 		  getgid.o getegid.o getpgrp.o getpid.o \
 		  getppid.o getuid.o geteuid.o profil.o sigpending.o sync.o \
-		  umask.o vfork.o vhangup.o
+                  ufetch.o ustore.o ucall.o umask.o vfork.o vhangup.o
 
 OBJS		= ${COBJS} ${ASMOBJS} ${SYSOBJS}
 
@@ -41,7 +41,7 @@ sys.a:		${OBJS}
 		@echo "building sys.a"
 		@$(AR) cru sys.a ${OBJS}
 
-${SYSOBJS}:	SYS.h #/usr/include/syscall.h
+${SYSOBJS}:	SYS.h
 		@echo creating $*.o
 		@printf '#include "SYS.h"\nSYS($*)\n' | $(AS) ${ASFLAGS} - -c -o $*.o
 

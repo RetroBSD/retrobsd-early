@@ -204,26 +204,66 @@ ucall()
 }
 
 /*
- * fetch the word at iaddr from flash memory.  This system call is
- * required on PIC32 because in user mode the access to flash memory
- * region is not allowed.
+ * Fetch the word at addr from flash memory or i/o port.
+ * This system call is required on PIC32 because in user mode
+ * the access to flash memory region is not allowed.
  */
 void
-fetchi()
+ufetch()
 {
-        unsigned *addr = (unsigned*) u.u_arg;
+        unsigned addr = *(unsigned*) u.u_arg;
 
         /* Check root privileges */
 	if (! suser())
 		return;
 
+        /* Low memory address - assume peripheral i/o space.  */
+	if (addr < 0x90000)
+                addr += 0xbf800000;
+
         /* Check address */
-	if ((unsigned) addr < KERNEL_FLASH_START ||
-	    (unsigned) addr >= KERNEL_FLASH_START + FLASH_SIZE) {
+	if (! (addr >= 0x9d000000 && addr < 0x9d000000 + FLASH_SIZE) &&
+	    ! (addr >= 0xbd000000 && addr < 0xbd000000 + FLASH_SIZE) &&
+
+            /* Boot flash memory */
+	    ! (addr >= 0x9fc00000 && addr < 0x9fc00000 + 12*1024) &&
+	    ! (addr >= 0xbfc00000 && addr < 0xbfc00000 + 12*1024) &&
+
+	    /* Peripheral registers */
+	    ! (addr >= 0xbf800000 && addr < 0xbf810000) &&
+	    ! (addr >= 0xbf880000 && addr < 0xbf890000)) {
                 u.u_error = EFAULT;
 		return;
         }
-	u.u_rval = *addr;
+	u.u_rval = *(unsigned*) addr;
+}
+
+/*
+ * Store the word at addr of i/o port.
+ */
+void
+ustore()
+{
+	register struct a {
+	    unsigned addr;
+	    unsigned value;
+	} *uap = (struct a *)u.u_arg;
+
+        /* Check root privileges */
+	if (! suser())
+		return;
+
+        /* Low memory address - assume peripheral i/o space.  */
+	if (uap->addr < 0x90000)
+                uap->addr += 0xbf800000;
+
+        /* Check address */
+	if (! (uap->addr >= 0xbf800000 && uap->addr < 0xbf810000) &&
+	    ! (uap->addr >= 0xbf880000 && uap->addr < 0xbf890000)) {
+                u.u_error = EFAULT;
+		return;
+        }
+	*(unsigned*) uap->addr = uap->value;
 }
 
 /*

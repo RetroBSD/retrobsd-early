@@ -194,8 +194,8 @@ const struct sysent sysent[] = {
 	 * 2BSD special calls
 	 */
 	{ 0, nosys },			/* 151 = unused */
-	{ 0, nosys },			/* 152 = nostk */
-	{ 1, fetchi },			/* 153 = fetchi */
+	{ 2, ustore },			/* 152 = ustore */
+	{ 1, ufetch },			/* 153 = ufetch */
 	{ 4, ucall },			/* 154 = ucall */
 	{ 0, nosys },			/* 155 = fperr */
 };

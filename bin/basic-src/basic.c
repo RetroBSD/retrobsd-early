@@ -92,14 +92,18 @@
  */
 #ifdef CROSS
 #   include </usr/include/stdio.h>
+#   define ustore(addr, value)  /*empty*/
+#   define ufetch(addr)         0
 #else
 #   include <stdio.h>
+#   include <machine/io.h>
 #endif
 #include <stdlib.h>
 #include <string.h>
 #include <setjmp.h>
 #include <time.h>
 #include <limits.h>
+#include <unistd.h>
 
 /* Fixed parameters */
 #define BUFFER_SIZE	100	/* input buffer size */
@@ -252,9 +256,9 @@ void beep (int i, int t)
 	printf("BEEP not implemented yet, at line %u\n", line);
 }
 
-void delay (int i)
+void delay (int msec)
 {
-	printf("DELAY not implemented yet, at line %u\n", line);
+        usleep (msec * 1000);
 }
 
 unsigned kbtst ()
@@ -263,15 +267,16 @@ unsigned kbtst ()
 	return 0;
 }
 
-void out (int i, int t)
+void out (int addr, int value)
 {
-	printf("OUT not implemented yet, at line %u\n", line);
+        /* 2BSD system call extension. */
+        ustore (addr, value);
 }
 
-unsigned in (int i)
+unsigned in (int addr)
 {
-	printf("IN not implemented yet, at line %u\n", line);
-	return 0;
+        /* 2BSD system call extension. */
+	return ufetch (addr);
 }
 
 int isalnum(int c)

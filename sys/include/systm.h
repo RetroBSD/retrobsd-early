@@ -172,7 +172,8 @@ void	ucall (void);					/* 2BSD calls */
 
 /* 1.2 memory management */
 void	brk (void);
-void	fetchi (void);                                  /* 2BSD calls */
+void	ustore (void);                                  /* 2BSD calls */
+void	ufetch (void);                                  /* 2BSD calls */
 
 /* 1.3 signals */
 void	sigstack (void), sigreturn (void);
