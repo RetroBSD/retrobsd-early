@@ -12,9 +12,9 @@ CFLAGS          += -Werror
 #
 SUBDIR		= adc-demo-src ar-src as-src awk-src basic-src cc-src chflags-src chpass-src \
                   cpp-src dc-src diff-src find-src forth-src fstat-src hostname-src \
-                  id-src la-src ld-src ls-src login-src make-src man-src \
+                  id-src la-src ld-src ls-src login-src make-src man-src med-src \
                   more-src nm-src passwd-src portio-src printf-src \
-                  ranlib-src re-src renice-src retroforth-src scm-src sl-src \
+                  ranlib-src re-src renice-src retroforth-src scm-src setty-src sl-src \
                   sed-src sh-src stty-src sysctl-src test-src uname-src xargs-src \
                   zmodem-src
 

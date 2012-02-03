@@ -1,4 +1,4 @@
 #
 # name	getty                           type	status		comments
 #
-console	"/libexec/getty std.115200"	linux	on secure	#special
+console	"/libexec/getty std.115200"	vt100	on secure	#special

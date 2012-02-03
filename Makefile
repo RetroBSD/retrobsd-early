@@ -79,11 +79,11 @@ BIN_FILES	= bin/adc-demo bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename
                   bin/file bin/find bin/forth bin/fstat bin/grep bin/groups bin/head \
                   bin/hostid bin/hostname bin/id bin/iostat bin/join \
                   bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login bin/lol \
-                  bin/mail bin/make bin/man bin/mesg bin/mkdir bin/more bin/mv \
+                  bin/mail bin/make bin/man bin/med bin/mesg bin/mkdir bin/more bin/mv \
                   bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
                   bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
                   bin/renice bin/renumber bin/retroforth bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
-                  bin/scm bin/sed bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
+                  bin/scm bin/sed bin/setty bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
                   bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
                   bin/sz bin/tail bin/tar bin/tee bin/test \
                   bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
