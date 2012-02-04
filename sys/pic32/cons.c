@@ -12,6 +12,13 @@
 #include "tty.h"
 #include "systm.h"
 
+#define CONCAT(x,y) x ## y
+#define BBAUD(x) CONCAT(B,x)
+
+#ifndef CONSOLE_BAUD
+#define CONSOLE_BAUD 115200
+#endif
+
 #define NKL     1                       /* Only one console device */
 
 #ifdef CONSOLE_UART1
@@ -96,7 +103,7 @@ void cninit()
 	 * Setup UART registers.
 	 * Compute the divisor for 115.2 kbaud.
 	 */
-	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, 115200);
+	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, CONSOLE_BAUD);
 	reg->sta = 0;
 	reg->mode = PIC32_UMODE_PDSEL_8NPAR |	/* 8-bit data, no parity */
 #ifdef CONSOLE_RTSCTS
@@ -166,8 +173,8 @@ cnopen (dev, flag, mode)
 	tp->t_oproc = cnstart;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		if (tp->t_ispeed == 0) {
-			tp->t_ispeed = B115200;
-			tp->t_ospeed = B115200;
+			tp->t_ispeed = BBAUD(CONSOLE_BAUD);
+			tp->t_ospeed = BBAUD(CONSOLE_BAUD);
 		}
 		ttychars(tp);
 		tp->t_state = TS_ISOPEN | TS_CARR_ON;
