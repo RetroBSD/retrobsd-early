@@ -31,6 +31,19 @@
 #define B38400	13
 #define B57600	14
 #define B115200	15
+#define B230400	16
+#define B460800 17
+#define B500000 18
+#define B576000 19
+#define B921600 20
+#define B1000000 21
+#define B1152000 22
+#define B1500000 23
+#define B2000000 24
+#define B2500000 25
+#define B3000000 26
+#define B3500000 27
+#define B4000000 28
 
 #ifdef KERNEL
 /*

@@ -87,7 +87,7 @@ struct tty {
 #define	TTOPRI	29
 
 /* limits */
-#define	NSPEEDS	16
+#define	NSPEEDS	29
 #define	TTMASK	15
 #define	OBUFSIZ	100
 
