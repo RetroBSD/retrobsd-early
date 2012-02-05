@@ -57,7 +57,8 @@ LIBDIR		= lib
 SRCDIR		= tools etc share bin sbin
 
 CLEANDIR	= $(LIBDIR) $(SRCDIR) $(UBW32) $(UBW32UART) \
-                  $(MAXIMITE) $(MAX32) $(EXPLORER16) $(STARTERKIT)
+                  $(MAXIMITE) $(MAX32) $(EXPLORER16) $(STARTERKIT) \
+                  $(DUINOMITE) $(PINGUINO) $(DIP) $(BAREMETAL)
 
 FSUTIL		= tools/fsutil/fsutil
 
@@ -136,7 +137,7 @@ all:
 		for dir in $(SRCDIR); do $(MAKE) -C $$dir $(SRC_MFLAGS); done
 		$(MAKE) filesys.img user.img
 
-filesys.img:	$(FSUTIL) $(TARGET)/unix.elf $(ALLFILES)
+filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
 		$(FSUTIL) -n$(FS_KBYTES) -s$(SWAP_KBYTES) $@
 		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
