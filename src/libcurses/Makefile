@@ -2,8 +2,6 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2.1 (2.11BSD) 1999/10/24
-#
 # curses package
 #
 TOPSRC          = $(shell cd ../..; pwd)
@@ -33,27 +31,23 @@ DEFS=	-DNOSCCS
 CFLAGS=	-O $(DEFS)
 TAGSFILE=tags
 
-#.c.o:
-#	${CC} -c -p ${CFLAGS} $*.c
-#	ld -x -r $*.o
-#	mv a.out profiled/$*.o
-#	${CC} -c ${CFLAGS} $*.c
-#	ld -x -r $*.o
-#	mv a.out $*.o
+all:    ../libcurses.a
 
-../libcurses.a ../libcurses_p.a: ${OBJS}
-	@echo building profiled ../libcurses.a
-	@cd profiled; $(AR) ru ../../libcurses_p.a ${POBJS}
-	$(RANLIB) ../libcurses_p.a
+../libcurses.a: ${OBJS}
 	@echo building normal ../libcurses.a
 	@$(AR) ru ../libcurses.a ${OBJS}
 	$(RANLIB) ../libcurses.a
 
-install: ../libcurses.a ../libcurses_p.a
-	install -m 644 ../libcurses ${DESTDIR}/usr/lib/libcurses.a
-	ranlib ${DESTDIR}/usr/lib/libcurses.a
-	install -m 644 ../libcurses_p ${DESTDIR}/usr/lib/libcurses_p.a
-	ranlib ${DESTDIR}/usr/lib/libcurses_p.a
+../libcurses_p.a: ${OBJS}
+	@echo building profiled ../libcurses.a
+	@cd profiled; $(AR) ru ../../libcurses_p.a ${POBJS}
+	$(RANLIB) ../libcurses_p.a
+
+install: all
+	cp ../libcurses.a ${DESTDIR}/lib/libcurses.a
+	$(RANLIB) ${DESTDIR}/lib/libcurses.a
+#	cp ../libcurses_p.a ${DESTDIR}/lib/libcurses_p.a
+#	$(RANLIB) ${DESTDIR}/lib/libcurses_p.a
 
 tags:
 	cwd=`pwd`; \

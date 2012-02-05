@@ -29,12 +29,12 @@ include $(TOPSRC)/target.mk
 DEFS		=
 ALL		= gen stdio stdlib string inet compat ${MACHINE}
 
-../libc.a:	${ALL}
+../libc.a:      ${ALL}
 		rm -rf tmp
 		mkdir tmp
 		cd tmp; for i in ${ALL}; do $(AR) x ../$$i/$$i.a; done; \
 			$(AR) cr ../$@ *.o
-#			$(AR) cr ../$@ `sh ../../../bin/lorder.sh *.o | tsort`
+#			$(AR) cr ../$@ `sh ../../cmd/lorder.sh *.o | tsort`
 		rm -rf tmp
 
 ${ALL}:		FRC
@@ -46,11 +46,6 @@ install:	../libc.a
 		${INSTALLDIR} ${DESTDIR}/lib
 		${INSTALL} ../libc.a ${DESTDIR}/lib/libc.a
 		$(RANLIB) ${DESTDIR}/lib/libc.a
-
-tags:
-		for i in ${ALL}; do \
-			(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
-		done
 
 clean:
 		for i in ${ALL}; \

@@ -1,5 +1,5 @@
-DESTDIR		= /usr/local/lib/retrobsd
 MACHINE		= mips
+DESTDIR		?= $(TOPSRC)
 
 # chipKIT PIC32 compiler on Linux
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,6 +33,6 @@ ELF2AOUT	= $(TOPSRC)/tools/elf2aout/elf2aout
 
 CFLAGS		= -O -g
 
-LDFLAGS		+= -N -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/lib/elf32-mips.ld \
-		   $(TOPSRC)/lib/crt0.o -L$(TOPSRC)/lib
+LDFLAGS		+= -N -nostartfiles -fno-dwarf2-cfi-asm -T$(TOPSRC)/src/elf32-mips.ld \
+		   $(TOPSRC)/src/crt0.o -L$(TOPSRC)/src
 LIBS		= -lc

@@ -1,7 +1,7 @@
 #
 # Public Domain.  2/4/1995 - Steven Schultz
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -11,26 +11,26 @@ OBJS		= uname.o
 MAN		= uname.0
 MANSRC		= uname.1
 
-all:            ../uname uname.0
+all:            uname uname.0
 
-../uname:       ${OBJS}
+uname:          ${OBJS}
 		${CC} ${LDFLAGS} -o uname.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S uname.elf > uname.dis
 		${SIZE} uname.elf
-		${ELF2AOUT} uname.elf $@
+		${ELF2AOUT} uname.elf $@ && rm uname.elf
 
 uname.0:        ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../uname *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} uname *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
 install:        all
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-		install -s -o root -g bin -m 755 uname ${DESTDIR}/usr/bin/uname
+		cp ${MAN} ${DESTDIR}/share/man/cat1/
+		install uname ${DESTDIR}/bin/uname
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

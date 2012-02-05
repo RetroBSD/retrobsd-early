@@ -8,7 +8,8 @@ include $(TOPSRC)/target.mk
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR		= startup-$(MACHINE) libc libm libutil libtermlib libcurses libvmf
+SUBDIR		= startup-$(MACHINE) libc libm libutil libtermlib libcurses \
+                  libvmf share cmd
 
 all:		${SUBDIR}
 
@@ -17,9 +18,10 @@ ${SUBDIR}:	FRC
 
 FRC:
 
-install:
+install:        elf32-mips.ld
 		-for i in ${SUBDIR}; do \
 			(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+		cp -p elf32-mips.ld ${DESTDIR}/lib/elf32-mips.ld
 
 tags:
 		cd libc; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags

@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
@@ -7,16 +7,19 @@ CFLAGS		+= -Os -Wall -Werror
 OBJS            = scm.o func.o
 TESTS           = tests/*.scm
 
-all:            ../scm ${MAN}
+all:            scm ${MAN}
 
-../scm:         ${OBJS}
+scm:            ${OBJS}
 		${CC} ${LDFLAGS} -o scm.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S scm.elf > scm.dis
 		${SIZE} scm.elf
-		${ELF2AOUT} scm.elf $@
+		${ELF2AOUT} scm.elf $@ && rm scm.elf
 
 clean:
-		rm -f *.o ../scm *.elf *.dis *~ tests/*.out
+		rm -f *.o scm *.elf *.dis *~ tests/*.out
+
+install:        all
+		install scm $(DESTDIR)/bin/
 
 tests:          scm $(TESTS) ALWAYS
 		for i in $(TESTS); do \

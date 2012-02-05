@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS          += -Wall -Werror
@@ -8,27 +8,26 @@ OBJS		= init.o
 MAN		= init.0
 MANSRC		= init.8
 
-all:		../init init.0
+all:		init init.0
 
-../init:	${OBJS}
+init:		${OBJS}
 		${CC} ${LDFLAGS} -o init.elf ${OBJS} -lc
 		${OBJDUMP} -S init.elf > init.dis
 		${SIZE} init.elf
-		${ELF2AOUT} init.elf $@
+		${ELF2AOUT} init.elf $@ && rm init.elf
 
 init.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ *.elf *.dis ${MAN} ../init tags
+		rm -f *.o *~ *.elf *.dis ${MAN} init tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	../init
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		#-mv /etc/init /etc/init.old
-		install -s -o root -g bin -m 700 ../init ${DESTDIR}/etc/init
+install:	all
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
+		install -m 700 init ${DESTDIR}/sbin/init
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

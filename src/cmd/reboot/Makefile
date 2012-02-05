@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 SRCS            = reboot.c
@@ -6,32 +6,32 @@ OBJS            = reboot.o
 MAN             = reboot.0
 MANSRC          = reboot.8
 
-all:            ../reboot reboot.0
+all:            reboot ${MAN}
 
-../reboot:      ${OBJS}
+reboot:         ${OBJS}
 		${CC} ${LDFLAGS} -o reboot.elf ${OBJS} -lc
 		${OBJDUMP} -S reboot.elf > reboot.dis
 		${SIZE} reboot.elf
 		${ELF2AOUT} reboot.elf $@
-		ln -f $@ ../halt
-		ln -f $@ ../poweroff
+		ln -f $@ halt
+		ln -f $@ poweroff
 
-reboot.0:       ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *~ *.elf *.dis ${MAN} ../reboot ../halt ../poweroff tags
+		rm -f *.o *~ *.elf *.dis ${MAN} reboot halt poweroff tags
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        reboot
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		-rm -f ${DESTDIR}/usr/man/cat8/fastboot.0 ${DESTDIR}/usr/man/cat8/halt.0
-		ln ${DESTDIR}/usr/man/cat8/reboot.0 ${DESTDIR}/usr/man/cat8/fastboot.0
-		ln ${DESTDIR}/usr/man/cat8/reboot.0 ${DESTDIR}/usr/man/cat8/halt.0
-		install -s -o root -g bin -m 755 reboot ${DESTDIR}/sbin/reboot
-		-rm ${DESTDIR}/sbin/fastboot ${DESTDIR}/sbin/halt
+install:        all
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
+		@-rm -f ${DESTDIR}/share/man/cat8/fastboot.0 ${DESTDIR}/share/man/cat8/halt.0
+		ln ${DESTDIR}/share/man/cat8/reboot.0 ${DESTDIR}/share/man/cat8/fastboot.0
+		ln ${DESTDIR}/share/man/cat8/reboot.0 ${DESTDIR}/share/man/cat8/halt.0
+		install reboot ${DESTDIR}/sbin/reboot
+		@-rm -f ${DESTDIR}/sbin/fastboot ${DESTDIR}/sbin/halt ${DESTDIR}/sbin/poweroff
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/halt
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/fastboot
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/poweroff

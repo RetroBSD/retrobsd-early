@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -24,26 +24,26 @@ OBJS		= mkpasswd.o
 MAN		= mkpasswd.0
 MANSRC		= mkpasswd.8
 
-all:            ../mkpasswd mkpasswd.0
+all:            mkpasswd ${MAN}
 
-../mkpasswd:    ${OBJS}
+mkpasswd:    	${OBJS}
 		${CC} ${LDFLAGS} -o mkpasswd.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S mkpasswd.elf > mkpasswd.dis
 		${SIZE} mkpasswd.elf
-		${ELF2AOUT} mkpasswd.elf $@
+		${ELF2AOUT} mkpasswd.elf $@ && rm mkpasswd.elf
 
-mkpasswd.0:     ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../mkpasswd *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} mkpasswd *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep -p ${CFLAGS} ${SRCS}
 
-install:        ${MAN} mkpasswd
-		install -s -o bin -g bin -m 755 mkpasswd ${DESTDIR}/sbin/mkpasswd
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        all
+		install mkpasswd ${DESTDIR}/sbin/mkpasswd
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}

@@ -2,50 +2,43 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2.1 (2.11BSD) 1999/10/24
-#
 # vmf package
 #
 TOPSRC          = $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFILES=	vmf.c
-OBJS=	vmf.o
-POBJS=	../vmf.o
+CFILES  	= vmf.c
+OBJS    	= vmf.o
+POBJS   	= ../vmf.o
+MAN		= vmf.0
+MANSRC		= vmf.3
 
-CTAGS=	ctags
-#DEFS=	-DNOSCCS
-#CFLAGS=	-O $(DEFS)
-TAGSFILE=tags
+CTAGS   	= ctags
+#DEFS   	= -DNOSCCS
+#CFLAGS 	= -O $(DEFS)
+TAGSFILE	= tags
 
-#.c.o:
-#	${CC} -c -p ${CFLAGS} $*.c
-#	ld -x -r $*.o
-#	mv a.out profiled/$*.o
-#	${CC} -c ${CFLAGS} $*.c
-#	ld -x -r $*.o
-#	mv a.out $*.o
+all:    	../libvmf.a $(MAN)
 
-../libvmf.a ../libvmf_p.a: ${OBJS}
-	@echo building profiled ../libvmf.a
-	@cd profiled; $(AR) ru ../../libvmf_p.a ${POBJS}
-	$(RANLIB) ../libvmf_p.a
-	@echo building normal ../libvmf.a
-	@$(AR) ru ../libvmf.a ${OBJS}
-	$(RANLIB) ../libvmf.a
+../libvmf.a: 	${OBJS}
+		@echo building normal ../libvmf.a
+		@$(AR) ru ../libvmf.a ${OBJS}
+		$(RANLIB) ../libvmf.a
 
-install: ../libvmf.a ../libvmf_p.a
-	install -m 644 ../libvmf ${DESTDIR}/usr/lib/libvmf.a
-	ranlib ${DESTDIR}/usr/lib/libvmf.a
-	install -m 644 ../libvmf_p ${DESTDIR}/usr/lib/libvmf_p.a
-	ranlib ${DESTDIR}/usr/lib/libvmf_p.a
+../libvmf_p.a: 	${OBJS}
+		@echo building profiled ../libvmf.a
+		@cd profiled; $(AR) ru ../../libvmf_p.a ${POBJS}
+		$(RANLIB) ../libvmf_p.a
 
-tags:
-	cwd=`pwd`; \
-	for i in ${CFILES}; do \
-		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
-	done
+$(MAN):         $(MANSRC)
+		${MANROFF} $< > $@
+
+install: 	all
+		cp $(MAN) $(DESTDIR)/share/man/cat3/
+		cp ../libvmf.a ${DESTDIR}/lib/libvmf.a
+		$(RANLIB) ${DESTDIR}/lib/libvmf.a
+#		cp ../libvmf_p.a ${DESTDIR}/lib/libvmf_p.a
+#		$(RANLIB) ${DESTDIR}/lib/libvmf_p.a
 
 clean:
-	rm -f ${OBJS} profiled/*.o a.out core test errs \
-	    ../libvmf.a ../libvmf_p.a tags
+	rm -f *.o profiled/*.o a.out core test errs ../libvmf*.a

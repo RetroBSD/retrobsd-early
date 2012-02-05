@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -22,31 +22,31 @@ CFLAGS		+= -Werror
 SRCS		= man.c
 OBJS		= man.o
 
-all:            ../man ../apropos
+all:            man apropos
 
-../man:         ${OBJS}
+man:            ${OBJS}
 		${CC} ${LDFLAGS} -o man.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S man.elf > man.dis
 		${SIZE} man.elf
-		${ELF2AOUT} man.elf $@
+		${ELF2AOUT} man.elf $@ && rm man.elf
 
-../apropos:     ${OBJS}
+apropos:        ${OBJS}
 		${CC} ${LDFLAGS} -o apropos.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S apropos.elf > apropos.dis
 		${SIZE} apropos.elf
-		${ELF2AOUT} apropos.elf $@
+		${ELF2AOUT} apropos.elf $@ && rm apropos.elf
 
 clean:
-		rm -f *.o *.elf ${MAN} ../man ../apropos *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} man apropos *.elf *.dis tags *~
 
 depend:         FRC
 		mkdep ${CFLAGS} ${ASRCS} ${MSRCS}
 
-install:        man apropos
-		rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
-		install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
-		install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
-		ln ${DESTDIR}/usr/ucb/apropos ${DESTDIR}/usr/ucb/whatis
+install:        all
+		@rm -f ${DESTDIR}/bin/whatis ${DESTDIR}/bin/apropos
+		install apropos ${DESTDIR}/bin/apropos
+		install man ${DESTDIR}/bin/man
+		ln ${DESTDIR}/bin/apropos ${DESTDIR}/bin/whatis
 
 lint:           FRC
 		lint ${CFLAGS} ${ASRCS}

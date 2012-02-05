@@ -31,7 +31,7 @@ void pchild(int sig)
 	struct rusage ru;
 
 loop:
-	pid = wait3(&w, (setintr ? WNOHANG|WUNTRACED:WNOHANG), &ru);
+	pid = wait3((int*) &w, (setintr ? WNOHANG|WUNTRACED:WNOHANG), &ru);
 	if (pid <= 0) {
 		if (errno == EINTR) {
 			errno = 0;

@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -11,23 +11,23 @@ DIFFH           = /libexec/diffh
 PR              = /bin/pr
 CFLAGS          += -DDIFF='"${DIFF}"' -DDIFFH='"${DIFFH}"' -DPR='"${PR}"'
 
-all:            ../diff ../../libexec/diffh
+all:            diff diffh
 
-../diff:        ${OBJS}
+diff:           ${OBJS}
 		${CC} ${LDFLAGS} -o diff.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S diff.elf > diff.dis
 		${SIZE} diff.elf
-		${ELF2AOUT} diff.elf $@
+		${ELF2AOUT} diff.elf $@ && rm diff.elf
 
-../../libexec/diffh: diffh.o
+diffh:          diffh.o
 		${CC} ${LDFLAGS} -o diffh.elf $< ${LIBS}
 		${OBJDUMP} -S diffh.elf > diffh.dis
 		${SIZE} diffh.elf
-		${ELF2AOUT} diffh.elf $@
+		${ELF2AOUT} diffh.elf $@ && rm diffh.elf
 
 clean:
-		rm -f *.o *.elf ${MAN} ../diff ../../libexec/diffh *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} diff diffh *.elf *.dis tags *~
 
 install:        all
-		install -s diff ${DESTDIR}/bin/diff
-		install -s ../../libexec/diffh ${DESTDIR}/usr/libexec/diffh
+		install diff ${DESTDIR}/bin/diff
+		install diffh ${DESTDIR}/libexec/diffh

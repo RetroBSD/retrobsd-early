@@ -5,27 +5,32 @@
 #
 #	Version 1.2
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
 
 SRCS            = test.c operators.c
 OBJS            = test.o operators.o
+MAN             = test.0
+MANSRC          = test.1
 
-all:            ../test
+all:            test $(MAN)
 
-../test:        ${OBJS}
+test:        	${OBJS}
 		${CC} ${LDFLAGS} -o test.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S test.elf > test.dis
 		${SIZE} test.elf
-		${ELF2AOUT} test.elf $@
+		${ELF2AOUT} test.elf $@ && rm test.elf
+
+$(MAN):         ${MANSRC}
+		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o *.elf ${MAN} ../test *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} test *.elf *.dis tags *~
 
 install:        all
-		install -s -m 755 -g bin -o bin test ${DESTDIR}/bin
-		rm -f ${DESTDIR}/bin/[
+		install test ${DESTDIR}/bin/
+		@rm -f ${DESTDIR}/bin/[
 		ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
-		install -c -m 444 -g bin -o bin test.0 ${DESTDIR}/usr/man/cat1
+		cp $(MAN) ${DESTDIR}/share/man/cat1/

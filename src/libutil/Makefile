@@ -22,6 +22,8 @@ CFLAGS          += ${DEFS}
 SRCS            = login.c logout.c logwtmp.c
 OBJS            = login.o logout.o logwtmp.o
 
+all:            ../libutil.a
+
 ../libutil.a:	${OBJS}
 		$(AR) cru $@ ${OBJS}
 		$(RANLIB) $@
@@ -35,11 +37,11 @@ cleandir:       clean
 depend:
 		mkdep ${CFLAGS} ${SRCS}
 
-install: all
-		install -o bin -g bin -m 644 libutil.a ${DESTDIR}/usr/lib
-		ranlib -t ${DESTDIR}/usr/lib/libutil.a
-		install -o bin -g bin -m 644 libutil_p.a ${DESTDIR}/usr/lib
-		ranlib -t ${DESTDIR}/usr/lib/libutil_p.a
+install:        all
+		cp ../libutil.a ${DESTDIR}/lib/
+		$(RANLIB) -t ${DESTDIR}/lib/libutil.a
+#		cp libutil_p.a ${DESTDIR}/lib/
+#		$(RANLIB) -t ${DESTDIR}/lib/libutil_p.a
 
 tags:
 		ctags ${SRCS}

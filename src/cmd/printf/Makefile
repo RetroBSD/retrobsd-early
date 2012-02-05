@@ -1,7 +1,7 @@
 #
 # Public Domain.  1995/05/02 - Steven Schultz
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror -DNOFPU
@@ -11,26 +11,26 @@ OBJS		= printf.o
 MAN		= printf.0
 MANSRC		= printf.1
 
-all:            ../printf printf.0
+all:            printf ${MAN}
 
-../printf:      ${OBJS}
+printf:         ${OBJS}
 		${CC} ${LDFLAGS} -o printf.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S printf.elf > printf.dis
 		${SIZE} printf.elf
-		${ELF2AOUT} printf.elf $@
+		${ELF2AOUT} printf.elf $@ && rm printf.elf
 
-printf.0:       ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../printf *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} printf *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
 install:        all
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-		install -s -o root -g bin -m 755 printf ${DESTDIR}/usr/bin/printf
+		cp ${MAN} ${DESTDIR}/share/man/cat1/
+		install printf ${DESTDIR}/bin/printf
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

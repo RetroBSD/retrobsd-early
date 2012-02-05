@@ -1,9 +1,7 @@
 #
 # Public Domain.  1996/11/16 - Steven Schultz
 #
-#	@(#)Makefile	1.0 (2.11BSD) 1996/11/16
-#
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
@@ -14,26 +12,26 @@ OBJS		= mkfs.o
 MAN		= mkfs.0
 MANSRC		= mkfs.8
 
-all:		../mkfs mkfs.0
+all:		mkfs mkfs.0
 
-../mkfs:	${OBJS}
+mkfs:		${OBJS}
 		${CC} ${LDFLAGS} -o mkfs.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S mkfs.elf > mkfs.dis
 		${SIZE} mkfs.elf
-		${ELF2AOUT} mkfs.elf $@
+		${ELF2AOUT} mkfs.elf $@ && rm mkfs.elf
 
 mkfs.0:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf *.dis *~ ${MAN} ../mkfs tags
+		rm -f *.o *.elf *.dis *~ ${MAN} mkfs tags
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	../mkfs
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		install -s -o root -g bin -m 755 ../mkfs ${DESTDIR}/sbin/mkfs
+install:	all
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
+		install mkfs ${DESTDIR}/sbin/mkfs
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

@@ -1,26 +1,35 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
 OBJS            = cpp.o cpy.o token.o
+MAN             = cpp.0
+MANSRC          = cpp.1
 
 LDFLAGS         += -g
 
 CFLAGS		+= -Werror -Wall -Os
 CFLAGS          += -DCPP_DEBUG -DGCC_COMPAT -DHAVE_CPP_VARARG_MACRO_GCC
 
-all:            ../cpp
+all:            cpp $(MAN)
 
-../cpp:         $(OBJS)
+cpp:            $(OBJS)
 		${CC} ${LDFLAGS} -o cpp.elf $(OBJS) ${LIBS}
 		${OBJDUMP} -S cpp.elf > cpp.dis
 		${SIZE} cpp.elf
-		${ELF2AOUT} cpp.elf $@
+		${ELF2AOUT} cpp.elf $@ && rm cpp.elf
 
-cpp.o:          cpp.c y.tab.h
+$(MAN):         ${MANSRC}
+		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o *.0 *.elf ../cpp *.elf *.dis tags *~ lex.yy.c y.tab.[ch] tests/run*
+		rm -f *.o *.0 *.elf cpp *.elf *.dis tags *~ lex.yy.c y.tab.[ch] tests/run*
+
+install:        all
+		install cpp $(DESTDIR)/bin/
+		cp cpp.0 $(DESTDIR)/share/man/cat1/
+
+cpp.o:          cpp.c y.tab.h
 
 .l.o:
 		$(LEX) $(LFLAGS) $<

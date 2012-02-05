@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -24,19 +24,19 @@ OBJS		= passwd.o
 MAN		= passwd.0
 MANSRC		= passwd.1
 
-all:            ../passwd passwd.0
+all:            passwd ${MAN}
 
-../passwd:     ${OBJS}
+passwd:     	${OBJS}
 		${CC} ${LDFLAGS} -o passwd.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S passwd.elf > passwd.dis
 		${SIZE} passwd.elf
-		${ELF2AOUT} passwd.elf $@
+		${ELF2AOUT} passwd.elf $@ && rm passwd.elf
 
-passwd.0:      ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../passwd *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} passwd *.elf *.dis tags *~
 
 cleandir:       clean
 		rm -f tags .depend
@@ -45,8 +45,8 @@ depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
 install:        ${MAN} passwd
-		install -s -o root -g bin -m 4755 passwd ${DESTDIR}/bin/passwd
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+		install -m 4755 passwd ${DESTDIR}/bin/passwd
+		cp ${MAN} ${DESTDIR}/share/man/cat1/
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}

@@ -5,18 +5,23 @@
 #	Last Modified: 29/01/2012
 #==========================================
 
-TOPSRC          = $(shell cd ../..; pwd)
+TOPSRC          = $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 OBJS            = adc-demo.o
 SRCS            = adc-demo.c
-LIBS            += -lcurses -ltermcap 
+LIBS            += -lcurses -ltermcap
 
-../adc-demo: ${OBJS}
-	${CC} ${LDFLAGS} -o adc-demo.elf ${OBJS} ${LIBS}
-	${OBJDUMP} -S adc-demo.elf > adc-demo.dis
-	${SIZE} adc-demo.elf
-	${ELF2AOUT} adc-demo.elf $@
+all:            adc-demo
+
+adc-demo:       ${OBJS}
+		${CC} ${LDFLAGS} -o adc-demo.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S adc-demo.elf > adc-demo.dis
+		${SIZE} adc-demo.elf
+		${ELF2AOUT} adc-demo.elf $@
 
 clean:
-	-rm -f ../adc-demo ${OBJS} adc-demo.elf adc-demo.dis
+		-rm -f adc-demo ${OBJS} adc-demo.elf adc-demo.dis
+
+install:        all
+		install adc-demo $(DESTDIR)/bin/

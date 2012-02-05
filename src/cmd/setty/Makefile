@@ -5,18 +5,23 @@
 #	Last Modified: 29/01/2012
 #==========================================
 
-TOPSRC          = $(shell cd ../..; pwd)
+TOPSRC          = $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 OBJS            = setty.o
 SRCS            = setty.c
-LIBS            += -lcurses -ltermcap 
+LIBS            += -lcurses -ltermcap
 
-../setty: ${OBJS}
-	${CC} ${LDFLAGS} -o setty.elf ${OBJS} ${LIBS}
-	${OBJDUMP} -S setty.elf > setty.dis
-	${SIZE} setty.elf
-	${ELF2AOUT} setty.elf $@
+all:            setty
+
+setty:          ${OBJS}
+		${CC} ${LDFLAGS} -o setty.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S setty.elf > setty.dis
+		${SIZE} setty.elf
+		${ELF2AOUT} setty.elf $@ && rm setty.elf
 
 clean:
-	-rm -f ../setty ${OBJS} setty.elf setty.dis
+		-rm -f setty ${OBJS} setty.elf setty.dis
+
+install:        all
+		install setty $(DESTDIR)/bin/

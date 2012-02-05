@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -23,16 +23,16 @@ LIBS            := -lutil $(LIBS)
 SRCS		= login.c
 OBJS		= login.o
 
-all:            ../login
+all:            login
 
-../login:       ${OBJS}
+login:       	${OBJS}
 		${CC} ${LDFLAGS} -o login.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S login.elf > login.dis
 		${SIZE} login.elf
-		${ELF2AOUT} login.elf $@
+		${ELF2AOUT} login.elf $@ && rm login.elf
 
 clean:
-		rm -f *.o *.elf ${MAN} ../login *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} login *.elf *.dis tags *~
 
 
 cleandir:       clean
@@ -41,8 +41,8 @@ cleandir:       clean
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        ../login
-		install -s -o root -g bin -m 4755 ../login ${DESTDIR}/bin/login
+install:        all
+		install -m 4755 login ${DESTDIR}/bin/login
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}

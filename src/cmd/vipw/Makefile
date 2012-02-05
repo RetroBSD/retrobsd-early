@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -24,19 +24,19 @@ OBJS		= vipw.o
 MAN		= vipw.0
 MANSRC		= vipw.8
 
-all:            ../vipw vipw.0
+all:            vipw ${MAN}
 
-../vipw:        ${OBJS}
+vipw:        	${OBJS}
 		${CC} ${LDFLAGS} -o vipw.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S vipw.elf > vipw.dis
 		${SIZE} vipw.elf
-		${ELF2AOUT} vipw.elf $@
+		${ELF2AOUT} vipw.elf $@ && rm vipw.elf
 
-vipw.0:         ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../vipw *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} vipw *.elf *.dis tags *~
 
 cleandir:       clean
 		rm -f tags .depend
@@ -44,9 +44,9 @@ cleandir:       clean
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        ${MAN} vipw
-		install -s -o bin -g bin -m 755 vipw ${DESTDIR}/usr/sbin
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        all
+		install vipw ${DESTDIR}/sbin/
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}

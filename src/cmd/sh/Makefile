@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 OBJS            = setbrk.o blok.o stak.o cmd.o fault.o main.o word.o \
@@ -6,18 +6,19 @@ OBJS            = setbrk.o blok.o stak.o cmd.o fault.o main.o word.o \
                   print.o macro.o expand.o ctype.o msg.o test.o defs.o \
                   echo.o hash.o hashserv.o pwd.o func.o
 
-all:		../sh
+all:		sh
 
-../sh:		${OBJS}
+sh:		${OBJS}
 		${CC} ${LDFLAGS} -o sh.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S sh.elf > sh.dis
 		${SIZE} sh.elf
-		${ELF2AOUT} sh.elf $@
+		${ELF2AOUT} sh.elf $@ && rm sh.elf
 
 install:	all
-		install -s ../sh $(DESTDIR)/bin
+		install sh $(DESTDIR)/bin/
+
 clean:
-		rm -f ../sh *.o *~ *.elf *.dis
+		rm -f sh *.o *~ *.elf *.dis
 
 args.o: args.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h
 blok.o: blok.c defs.h mac.h mode.h name.h stak.h brkincr.h ctype.h

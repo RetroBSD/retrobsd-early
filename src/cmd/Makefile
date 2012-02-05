@@ -3,22 +3,27 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-TOPSRC		= $(shell cd ..; pwd)
+TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS          += -Werror
 
 # Programs that live in subdirectories, and have makefiles of their own.
-#
-SUBDIR		= adc-demo-src ar-src as-src awk-src basic-src cc-src chflags-src chpass-src \
-                  cpp-src dc-src diff-src find-src forth-src fstat-src hostname-src \
-                  id-src la-src ld-src ls-src login-src make-src man-src med-src \
-                  more-src nm-src passwd-src portio-src printf-src \
-                  ranlib-src re-src renice-src retroforth-src scm-src setty-src sl-src \
-                  sed-src sh-src stty-src sysctl-src test-src uname-src xargs-src \
-                  zmodem-src
+# /bin
+SUBDIR		= adc-demo ar as awk basic cc chflags chpass \
+                  cpp dc diff find forth fstat hostname \
+                  id la ld ls login make man med \
+                  more nm passwd portio printf \
+                  ranlib re renice retroforth scm setty sl \
+                  sed sh stty sysctl test uname xargs \
+                  zmodem
 
-# TODO: ccom-src lex-src m4-src yacc-src
+# /sbin
+SUBDIR         += chown chroot disktool fsck getty init \
+                  mkfs mknod mkpasswd mount pstat \
+                  reboot shutdown umount update vipw
+
+# TODO: ccom lex m4 yacc reloc adb sre pforth
 
 # Shell scripts that need only be installed and are never removed.
 #
@@ -28,7 +33,7 @@ SCRIPT		= false nohup true #lorder mkdep
 # explicit make lines.
 #
 STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
-		  echo ed fgrep file grep head hostid hostname join kill last ln \
+		  echo ed fgrep file grep head hostid join kill last ln \
                   mesg mkdir mv nice od pagesize pr pwd rev rm rmail rmdir \
                   size sleep sort split sum sync tail tar tee time touch tr \
                   tsort tty uniq w wc whereis who
@@ -70,7 +75,7 @@ FRC:
 		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $< ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
-		${ELF2AOUT} $@.elf $@
+		${ELF2AOUT} $@.elf $@ && rm $@.elf
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
@@ -83,21 +88,18 @@ ${SCRIPT}:
 		install -c $@.sh $@
 
 install:	${BINS}
-		install -s -m 751 -g staff ${STD} ${NSTD} ${DESTDIR}/bin
+		install ${STD} ${NSTD} strip ${DESTDIR}/bin/
 		-for i in ${SUBDIR}; do \
 			(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-		-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
+		-for i in ${SCRIPT}; do (install $$i.sh ${DESTDIR}/bin/$$i); done
 		-for i in ${SETUID}; do \
-			(install -o root -m 4751 -s $$i ${DESTDIR}/bin/$$i); done
+			(install -m 4751 $$i ${DESTDIR}/bin/$$i); done
 		-for i in ${OPERATOR}; do \
-			(install -g operator -m 2751 -s $$i ${DESTDIR}/bin/$$i); done
+			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
 		-for i in ${KMEM}; do \
-			(install -g kmem -m 2751 -s $$i ${DESTDIR}/bin/$$i); done
+			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
 		-for i in ${TTY}; do \
-			(install -g tty -m 2751 -s $$i ${DESTDIR}/bin/$$i); done
-		-install -s -m 751 -g staff strip ${DESTDIR}/bin/xstrip
-		-/bin/mv ${DESTDIR}/bin/xstrip ${DESTDIR}/bin/strip
-		/bin/rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
+			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
 
 clean:
 		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *.dis *.elf *~ y.tab.c errs

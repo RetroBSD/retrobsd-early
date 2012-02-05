@@ -1,7 +1,7 @@
 #
 # Public Domain.  1997/3/27 - Steven Schultz
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		= -O -Werror -g
@@ -11,26 +11,26 @@ OBJS		= stty.o
 MAN		= stty.0
 MANSRC		= stty.1
 
-all:		../stty stty.0
+all:		stty ${MAN}
 
-../stty:	${OBJS}
+stty:		${OBJS}
 		${CC} ${LDFLAGS} -o stty.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S stty.elf > stty.dis
 		${SIZE} stty.elf
-		${ELF2AOUT} stty.elf $@
+		${ELF2AOUT} stty.elf $@ && rm stty.elf
 
-stty.0:		${MANSRC}
+${MAN}:		${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../stty *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} stty *.elf *.dis tags *~
 
 depend:		${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:	../stty
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-		install -s -o root -g bin -m 755 ../stty ${DESTDIR}/bin/stty
+install:	all
+		cp ${MAN} ${DESTDIR}/share/man/cat1/
+		install stty ${DESTDIR}/bin/stty
 
 lint:		${SRCS}
 		lint -hax ${SRCS}

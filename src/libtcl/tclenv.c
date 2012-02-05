@@ -291,7 +291,7 @@ setenv(name, value, overwrite)
 
 int
 putenv(string)
-    const char *string;		/* Info about environment variable in the
+    char *string;		/* Info about environment variable in the
 				 * form NAME=value. */
 {
     int nameLength;

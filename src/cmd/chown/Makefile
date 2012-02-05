@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS          = -O
@@ -7,26 +7,26 @@ OBJS            = chown.o
 MAN             = chown.0
 MANSRC          = chown.8
 
-all:            ../chown
+all:            chown $(MAN)
 
-../chown:       ${OBJS}
+chown:          ${OBJS}
 		${CC} ${LDFLAGS} -o chown.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S chown.elf > chown.dis
 		${SIZE} chown.elf
-		${ELF2AOUT} chown.elf $@
+		${ELF2AOUT} chown.elf $@ && rm chown.elf
 
-chown.0:        ${MANSRC}
-		/usr/man/manroff ${MANSRC} > ${MAN}
+$(MAN):         ${MANSRC}
+		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o ../chown chown.elf chown.dis tags *~
+		rm -f *.o chown chown.elf chown.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        chown
-		install -s -o root -g bin -m 755 ../chown ${DESTDIR}/usr/sbin/chown
-#		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        all
+		install chown ${DESTDIR}/sbin/chown
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

@@ -1,4 +1,4 @@
-DESTDIR		= /usr/local
+DESTDIR		= /usr/local/retrobsd
 MACHINE		= mips
 
 CC		= gcc
@@ -10,7 +10,8 @@ RANLIB		= ranlib
 YACC            = byacc
 LEX             = flex
 SIZE		= size
-OBJDUMP		= objdump
+#OBJDUMP		= objdump
+OBJDUMP		= sync
 INSTALL		= install -m 644
 INSTALLDIR	= install -m 755 -d
 TAGSFILE	= tags

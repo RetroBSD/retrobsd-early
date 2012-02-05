@@ -1,4 +1,7 @@
-TOPSRC		= $(shell cd ../..; pwd)
+#
+# Should be installed with kmem group.
+#
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -8,26 +11,26 @@ OBJS            = pstat.o
 MAN             = pstat.0
 MANSRC          = pstat.8
 
-all:            ../pstat pstat.0
+all:            pstat ${MAN}
 
-../pstat:       ${OBJS}
+pstat:          ${OBJS}
 		${CC} ${LDFLAGS} -o pstat.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S pstat.elf > pstat.dis
 		${SIZE} pstat.elf
-		${ELF2AOUT} pstat.elf $@
+		${ELF2AOUT} pstat.elf $@ && rm pstat.elf
 
-pstat.0:        ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../pstat *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} pstat *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        ../pstat
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		install -s -o bin -g kmem -m 2755 ../pstat ${DESTDIR}/usr/sbin/pstat
+install:        pstat
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
+		install -m 2755 pstat ${DESTDIR}/sbin/pstat
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

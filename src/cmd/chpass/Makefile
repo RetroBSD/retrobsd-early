@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -24,19 +24,19 @@ OBJS		= chpass.o field.o util.o
 MAN		= chpass.0
 MANSRC		= chpass.1
 
-all:            ../chpass chpass.0
+all:            chpass chpass.0
 
-../chpass:      ${OBJS}
+chpass:         ${OBJS}
 		${CC} ${LDFLAGS} -o chpass.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S chpass.elf > chpass.dis
 		${SIZE} chpass.elf
-		${ELF2AOUT} chpass.elf $@
+		${ELF2AOUT} chpass.elf $@ && rm chpass.elf
 
 chpass.0:       ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../chpass *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} chpass *.elf *.dis tags *~
 
 cleandir: 	clean
 		rm -f tags .depend
@@ -44,15 +44,15 @@ cleandir: 	clean
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install: 	${MAN} chpass
-		install -s -o root -g bin -m 4755 chpass ${DESTDIR}/bin/chpass
+install: 	all
+		install -m 4755 chpass ${DESTDIR}/bin/chpass
 		rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chfn
 		rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chsh
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-		rm -f ${DESTDIR}/usr/man/cat1/chfn.0
-		rm -f ${DESTDIR}/usr/man/cat1/chsh.0
-		-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chfn.0
-		-ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chsh.0
+		cp ${MAN} ${DESTDIR}/share/man/cat1/
+		rm -f ${DESTDIR}/share/man/cat1/chfn.0
+		rm -f ${DESTDIR}/share/man/cat1/chsh.0
+		-ln ${DESTDIR}/share/man/cat1/chpass.0 ${DESTDIR}/share/man/cat1/chfn.0
+		-ln ${DESTDIR}/share/man/cat1/chpass.0 ${DESTDIR}/share/man/cat1/chsh.0
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}

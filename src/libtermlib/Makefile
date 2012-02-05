@@ -3,18 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) 6/5/85
-#
 TOPSRC          = $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
-DEFS= -DNOSCCS
-CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D $(DEFS)
-LD = $(CC)
-SRCS=	termcap.c tgoto.c tputs.c tcattr.c
-OBJS=	termcap.o tgoto.o tputs.o tcattr.o
-POBJS=	../termcap.o ../tgoto.o ../tputs.o ../tcattr.o
-TAGSFILE=tags
+DEFS    = -DNOSCCS
+CFLAGS  = -O -DCM_N -DCM_GT -DCM_B -DCM_D $(DEFS)
+LD      = $(CC)
+SRCS    = termcap.c tgoto.c tputs.c tcattr.c
+OBJS    = termcap.o tgoto.o tputs.o tcattr.o
+POBJS   = ../termcap.o ../tgoto.o ../tputs.o ../tcattr.o
+TAGSFILE= tags
 
 #.c.o:
 #	$(CC) $(CFLAGS) -c -p $*.c
@@ -23,7 +21,7 @@ TAGSFILE=tags
 #	$(LD) $(LDFLAGS) -X -r $*.o
 #	mv a.out $*.o
 
-all: ../libtermcap.a ../libtermcap_p.a termcap
+all:    ../libtermcap.a
 
 .PHONY: termcap
 
@@ -31,19 +29,21 @@ termcap:
 	cd termcap && make
 	cp termcap/termcap $(TOPSRC)/etc/
 
-../libtermcap.a ../libtermcap_p.a: ${OBJS}
+../libtermcap.a: ${OBJS}
 	$(AR) cr ../libtermcap.a ${OBJS}
+
+../libtermcap_p.a: ${OBJS}
 	cd profiled; $(AR) cr ../../libtermcap_p.a ${POBJS}
 
-install: termcap.a termcap_p.a
-	install -c termcap.a ${DESTDIR}/usr/lib/libtermcap.a
-	-rm -f ${DESTDIR}/usr/lib/libtermlib.a
-	ln ${DESTDIR}/usr/lib/libtermcap.a ${DESTDIR}/usr/lib/libtermlib.a
-	ranlib ${DESTDIR}/usr/lib/libtermcap.a
-	install -c termcap_p.a ${DESTDIR}/usr/lib/libtermcap_p.a
-	-rm -f ${DESTDIR}/usr/lib/libtermlib_p.a
-	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
-	ranlib ${DESTDIR}/usr/lib/libtermcap_p.a
+install: all
+	cp ../libtermcap.a ${DESTDIR}/lib/libtermcap.a
+	@-rm -f ${DESTDIR}/lib/libtermlib.a
+	ln ${DESTDIR}/lib/libtermcap.a ${DESTDIR}/lib/libtermlib.a
+	$(RANLIB) ${DESTDIR}/lib/libtermcap.a
+#	cp ../libtermcap_p.a ${DESTDIR}/lib/libtermcap_p.a
+#	@-rm -f ${DESTDIR}/lib/libtermlib_p.a
+#	ln ${DESTDIR}/lib/libtermcap_p.a ${DESTDIR}/lib/libtermlib_p.a
+#	$(RANLIB) ${DESTDIR}/lib/libtermcap_p.a
 
 tags:
 	cwd=`pwd`; \

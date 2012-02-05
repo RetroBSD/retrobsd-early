@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
@@ -9,16 +9,19 @@ LDFLAGS		+=
 OBJS		= tclsh.o
 LIBS		= -ltcl
 
-all:            ../tcl
+all:            tcl
 
-../tcl:         ${OBJS}
+tcl:         	${OBJS}
 		${CC} ${LDFLAGS} -o tcl.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S tcl.elf > tcl.dis
 		${SIZE} tcl.elf
-		${ELF2AOUT} tcl.elf $@
+		${ELF2AOUT} tcl.elf $@ && rm tcl.elf
 
 clean:
-		rm -f *.o *.0 *.elf ../tcl *.elf *.dis a.out tags *~
+		rm -f *.o *.0 *.elf tcl *.elf *.dis a.out tags *~
+
+install:        all
+		install tcl $(DESTDIR)/bin/
 
 ###
 regexp.o: regexp.c regexp.h regpriv.h

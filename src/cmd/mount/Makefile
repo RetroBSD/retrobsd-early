@@ -1,7 +1,7 @@
 #
 # Public Domain.  1996/1/15 - Steven Schultz
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror
@@ -11,26 +11,26 @@ OBJS            = mount.o getmntopts.o mount_ufs.o
 MAN		= mount.0
 MANSRC		= mount.8
 
-all:            ../mount mount.0
+all:            mount ${MAN}
 
-../mount:       ${OBJS}
+mount:       	${OBJS}
 		${CC} ${LDFLAGS} -o mount.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S mount.elf > mount.dis
 		${SIZE} mount.elf
-		${ELF2AOUT} mount.elf $@
+		${ELF2AOUT} mount.elf $@ && rm mount.elf
 
-mount.0:        ${MANSRC}
+${MAN}:         ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f *.o *.elf ${MAN} ../mount *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} mount *.elf *.dis tags *~
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
 install:        all
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
-		install -s -o root -g bin -m 755 mount ${DESTDIR}/sbin/mount
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
+		install mount ${DESTDIR}/sbin/mount
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror -Wall
@@ -10,13 +10,13 @@ OBJS            = append.o ar.o archive.o contents.o delete.o extract.o \
 MAN		= ar.1.0 ar.5.0
 MANSRC		= ar.1 ar.5
 
-all:            ../ar $(MAN)
+all:            ar $(MAN)
 
-../ar:          ${OBJS}
+ar:             ${OBJS}
 		${CC} ${LDFLAGS} -o ar.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S ar.elf > ar.dis
 		${SIZE} ar.elf
-		${ELF2AOUT} ar.elf $@
+		${ELF2AOUT} ar.elf $@ && rm ar.elf
 
 ar.1.0:         ar.1
 		${MANROFF} $< > $@
@@ -25,4 +25,9 @@ ar.5.0:         ar.5.5
 		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o *.0 *.elf ${MAN} ../ar *.elf *.dis tags *~
+		rm -f *.o *.0 *.elf ${MAN} ar *.elf *.dis tags *~
+
+install:        all
+		install ar $(DESTDIR)/bin/
+		cp ar.1.0 $(DESTDIR)/share/man/cat1/ar.0
+		cp ar.5.0 $(DESTDIR)/share/man/cat5/ar.0

@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
@@ -12,13 +12,16 @@ CFLAGS          += -DVERSSTR=\"1.0\" \
                    -DCRT0FILE=\"/lib/crt0.o\" \
                    -DCRT0FILE_PROFILE=\"/lib/gcrt0.o\"
 
-all:            ../cc
+all:            cc
 
-../cc:          $(OBJS)
+cc:             $(OBJS)
 		${CC} ${LDFLAGS} -o cc.elf $(OBJS) ${LIBS}
 		${OBJDUMP} -S cc.elf > cc.dis
 		${SIZE} cc.elf
-		${ELF2AOUT} cc.elf $@
+		${ELF2AOUT} cc.elf $@ && rm cc.elf
 
 clean:
-		rm -f *.o *.0 *.elf ../cc *.elf *.dis tags *~
+		rm -f *.o *.0 *.elf cc *.elf *.dis tags *~
+
+install:        all
+		install cc $(DESTDIR)/bin/

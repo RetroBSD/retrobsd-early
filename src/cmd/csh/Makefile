@@ -3,14 +3,12 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3.3 (2.11BSD GTE) 1996/12/1
-#
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
 #
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
@@ -21,18 +19,18 @@ OBJS            = alloc.o printf.o sh.char.o sh.dir.o sh.dol.o \
                   sh.init.o sh.lex.o sh.misc.o sh.parse.o sh.print.o sh.proc.o sh.sem.o \
                   sh.set.o sh.o sh.exec.o sh.time.o sh.exec2.o
 
-all:		../csh
+all:		csh
 
-../csh:		${OBJS}
+csh:		${OBJS}
 		${CC} ${LDFLAGS} -o csh.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S csh.elf > csh.dis
 		${SIZE} csh.elf
-		${ELF2AOUT} csh.elf $@
+		${ELF2AOUT} csh.elf $@ && rm csh.elf
 
 install:	all
-		install -s ../csh $(DESTDIR)/bin
+		install csh $(DESTDIR)/bin/
 clean:
-		rm -f ../csh *.o *~ *.elf *.dis
+		rm -f csh *.o *~ *.elf *.dis
 
 sh.o: sh.h sh.local.h sh.char.h
 sh.char.o: sh.char.h

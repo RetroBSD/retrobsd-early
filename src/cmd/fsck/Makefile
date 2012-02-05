@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 
 include $(TOPSRC)/target.mk
 OBJS		= main.o
@@ -15,7 +15,7 @@ CFLAGS		+= -g -Werror -Wall -Os
 
 # The program itself
 #
-PROG		= ../fsck
+PROG		= fsck
 
 # Sources
 #
@@ -38,10 +38,10 @@ ${PROG}:	${OBJS} ${HDRS}
 		${CC} ${LDFLAGS} -o fsck.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S fsck.elf > fsck.dis
 		${SIZE} fsck.elf
-		${ELF2AOUT} fsck.elf $@
+		${ELF2AOUT} fsck.elf $@ && rm fsck.elf
 
-install:	${PROG}
-		install -s ${PROG} ${DESTDIR}/sbin/${PROG}
+install:	all
+		install ${PROG} ${DESTDIR}/sbin/${PROG}
 
 clean:
 		rm -f *.o *~ *.elf *.dis a.out core ${PROG}

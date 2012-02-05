@@ -41,22 +41,7 @@ SWAP_KBYTES     = 2048
 #
 DEFS		=
 
-# global flags
-# SRC_MFLAGS are used on makes in command source directories,
-# but not in library or compiler directories that will be installed
-# for use in compiling everything else.
-#
-SRC_MFLAGS	= -k
-
-# Programs that live in subdirectories, and have makefiles of their own.
-#
-# 'share' has to be towards the front of the list because programs such as
-# lint(1) need their data files, etc installed first.
-
-LIBDIR		= lib
-SRCDIR		= tools etc share bin sbin
-
-CLEANDIR	= $(LIBDIR) $(SRCDIR) $(UBW32) $(UBW32UART) \
+CLEANDIR	= tools src $(UBW32) $(UBW32UART) \
                   $(MAXIMITE) $(MAX32) $(EXPLORER16) $(STARTERKIT) \
                   $(DUINOMITE) $(PINGUINO) $(DIP) $(BAREMETAL)
 
@@ -131,11 +116,16 @@ ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
                   dev/adc8!c8:8 dev/adc9!c8:9 dev/adc10!c8:10 dev/adc11!c8:11 \
                   dev/adc12!c8:12 dev/adc13!c8:13 dev/adc14!c8:14 dev/adc15!c8:15
 
-all:
-		$(MAKE) -C $(LIBDIR) DEFS="$(DEFS)"
+fs:             filesys.img user.img
+
+all:            kernel fs
+
+kernel:
 		$(MAKE) -C $(TARGET)
-		for dir in $(SRCDIR); do $(MAKE) -C $$dir $(SRC_MFLAGS); done
-		$(MAKE) filesys.img user.img
+
+build $(ALLFILES):
+		$(MAKE) -C tools
+		$(MAKE) -C src -k all install
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
@@ -157,8 +147,8 @@ clean:
 		rm -f *~
 		for dir in $(CLEANDIR); do $(MAKE) -C $$dir -k clean; done
 
-realclean: clean
-		rm -f sys/pic32/*/unix.hex
+realclean:      clean
+		rm -f sys/pic32/*/unix.hex bin/* sbin/* lib/* libexec/* share/man/cat*/*
 
 # TODO
 buildlib:

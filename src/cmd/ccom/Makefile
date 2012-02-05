@@ -1,7 +1,7 @@
 #
 # Makefile for ccom
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 #include $(TOPSRC)/target.mk
 include $(TOPSRC)/cross.mk
 
@@ -18,19 +18,23 @@ OBJS            = $(OBJS1) $(OBJS2) compat.o common.o main.o external.o
 MAN		= ccom.0
 MANSRC		= ccom.1
 
-all:            ../../libexec/ccom $(MAN)
+all:            ccom $(MAN)
 
-../../libexec/ccom: ${OBJS}
+ccom:           ${OBJS}
 		${CC} ${LDFLAGS} -o ccom.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S ccom.elf > ccom.dis
 		${SIZE} ccom.elf
-		${ELF2AOUT} ccom.elf $@
+		${ELF2AOUT} ccom.elf $@ && rm ccom.elf
 
 ccom.0:         ccom.1
 		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o *.0 *.elf ${MAN} ../../libexec/ccom *.elf *.dis a.out *~ scan.c cgram.[ch] mkext external.[ch]
+		rm -f *.o *.0 *.elf ${MAN} ccom *.elf *.dis a.out *~ scan.c cgram.[ch] mkext external.[ch]
+
+install:        all
+		install ccom $(DESTDIR)/libexec/
+		cp ccom.0 $(DESTDIR)/share/man/cat1/
 
 local.o: $(ARCHDIR)/local.c external.h
 		$(CC) $(CFLAGS) -c -o $@ $(ARCHDIR)/local.c

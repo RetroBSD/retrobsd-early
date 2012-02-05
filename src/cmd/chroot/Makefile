@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-TOPSRC		= $(shell cd ../..; pwd)
+TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 SRCS            = chroot.c
@@ -22,19 +22,19 @@ OBJS            = chroot.o
 MAN             = chroot.0
 MANSRC          = chroot.8
 
-all:            ../chroot ${MAN}
+all:            chroot ${MAN}
 
-../chroot:      ${OBJS}
+chroot:         ${OBJS}
 		${CC} ${LDFLAGS} -o chroot.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S chroot.elf > chroot.dis
 		${SIZE} chroot.elf
-		${ELF2AOUT} chroot.elf $@
+		${ELF2AOUT} chroot.elf $@ && rm chroot.elf
 
 chroot.0:       ${MANSRC}
 		${MANROFF} ${MANSRC} > ${MAN}
 
 clean:
-		rm -f ${OBJS} ${MAN} core ../chroot chroot.elf chroot.dis *~
+		rm -f ${OBJS} ${MAN} core chroot chroot.elf chroot.dis *~
 
 cleandir:       clean
 		rm -f tags .depend
@@ -42,9 +42,9 @@ cleandir:       clean
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}
 
-install:        ${MAN} chroot
-		install -s -o root -g bin -m 4751 chroot ${DESTDIR}/usr/sbin
-		install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
+install:        all
+		install -m 4751 chroot ${DESTDIR}/sbin
+		cp ${MAN} ${DESTDIR}/share/man/cat8/
 
 lint:           ${SRCS}
 		lint ${CFLAGS} ${SRCS}
