@@ -21,13 +21,12 @@ TAGSFILE= tags
 #	$(LD) $(LDFLAGS) -X -r $*.o
 #	mv a.out $*.o
 
-all:    ../libtermcap.a
+all:    ../libtermcap.a termcap
 
 .PHONY: termcap
 
 termcap:
 	cd termcap && make
-	cp termcap/termcap $(TOPSRC)/etc/
 
 ../libtermcap.a: ${OBJS}
 	$(AR) cr ../libtermcap.a ${OBJS}
@@ -40,6 +39,7 @@ install: all
 	@-rm -f ${DESTDIR}/lib/libtermlib.a
 	ln ${DESTDIR}/lib/libtermcap.a ${DESTDIR}/lib/libtermlib.a
 	$(RANLIB) ${DESTDIR}/lib/libtermcap.a
+	cd termcap && make install
 #	cp ../libtermcap_p.a ${DESTDIR}/lib/libtermcap_p.a
 #	@-rm -f ${DESTDIR}/lib/libtermlib_p.a
 #	ln ${DESTDIR}/lib/libtermcap_p.a ${DESTDIR}/lib/libtermlib_p.a

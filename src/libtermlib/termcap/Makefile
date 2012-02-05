@@ -9,16 +9,13 @@
 # (in reverse order from n'th to 1'st most commonly used)
 # to move them to the front of termcap
 #
-DESTDIR =
+DESTDIR = ../../..
 
 termcap: reorder termcap.src
 	ex - termcap.src < reorder
 
-install: termcap tabset map3270
-	install -c -m 444 termcap ${DESTDIR}/usr/share/misc/termcap
-	rm -f ${DESTDIR}/etc/termcap
-	ln -s ../usr/share/misc/termcap ${DESTDIR}/etc/termcap
-	install -c -m 444 map3270 ${DESTDIR}/usr/share/misc/map3270
+install: termcap
+	install -c -m 444 termcap ${DESTDIR}/etc/termcap
 
 tabset: FRC
 	rm -fr ${DESTDIR}/usr/share/tabset
