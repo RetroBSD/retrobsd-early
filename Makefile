@@ -50,31 +50,36 @@ FSUTIL		= tools/fsutil/fsutil
 #
 # Filesystem contents.
 #
-SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fsck sbin/halt sbin/init \
-                  sbin/mkfs sbin/mknod sbin/mkpasswd sbin/mount \
-                  sbin/pstat sbin/reboot sbin/shutdown sbin/umount \
-                  sbin/update sbin/vipw sbin/poweroff
+SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fastboot \
+                  sbin/fsck sbin/halt sbin/init sbin/mkfs sbin/mknod \
+                  sbin/mkpasswd sbin/mount sbin/pstat sbin/reboot \
+                  sbin/shutdown sbin/umount sbin/update sbin/updatedb \
+                  sbin/vipw sbin/poweroff
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-BIN_FILES	= bin/adc-demo bin/apropos bin/aout bin/ar bin/as bin/awk bin/basename \
-                  bin/basic bin/bc bin/cal bin/cat bin/cb bin/cc bin/chflags bin/chgrp \
-                  bin/chmod bin/chpass bin/cmp bin/col bin/comm bin/cp \
+BIN_FILES	= bin/[ bin/adc-demo bin/apropos bin/aout bin/ar bin/as \
+                  bin/awk bin/basename bin/basic bin/bc bin/cal bin/cat \
+                  bin/cb bin/cc bin/chflags bin/chfn bin/chgrp bin/chmod \
+                  bin/chpass bin/chsh bin/cmp bin/col bin/comm bin/cp \
                   bin/cpp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
                   bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
-                  bin/file bin/find bin/forth bin/fstat bin/grep bin/groups bin/head \
-                  bin/hostid bin/hostname bin/id bin/iostat bin/join \
-                  bin/kill bin/la bin/ld bin/last bin/ln bin/ls bin/login bin/lol \
-                  bin/mail bin/make bin/man bin/med bin/mesg bin/mkdir bin/more bin/mv \
-                  bin/nice bin/nm bin/nohup bin/od bin/pagesize bin/passwd \
-                  bin/portio bin/pr bin/printf bin/ps bin/pwd bin/re bin/ranlib \
-                  bin/renice bin/renumber bin/retroforth bin/rev bin/rm bin/rmail bin/rmdir bin/rz \
-                  bin/scm bin/sed bin/setty bin/sh bin/size bin/sl bin/sleep bin/sort bin/split \
-                  bin/strip bin/stty bin/su bin/sum bin/sync bin/sysctl \
-                  bin/sz bin/tail bin/tar bin/tee bin/test \
-                  bin/time bin/touch bin/tr bin/tsort bin/true bin/tty \
-                  bin/uname bin/uniq bin/vmstat bin/w bin/wall bin/wc \
-                  bin/whereis bin/who bin/whoami bin/write bin/xargs
+                  bin/file bin/find bin/forth bin/fstat bin/grep bin/groups \
+                  bin/head bin/hostid bin/hostname bin/id bin/iostat \
+                  bin/join bin/kill bin/la bin/ld bin/last bin/ln bin/ls \
+                  bin/login bin/lol bin/mail bin/make bin/man bin/med \
+                  bin/mesg bin/mkdir bin/more bin/mv bin/nice bin/nm \
+                  bin/nohup bin/od bin/pagesize bin/passwd bin/portio \
+                  bin/pr bin/printf bin/ps bin/pwd bin/ranlib bin/rb bin/re \
+                  bin/renice bin/renumber bin/retroforth bin/rev bin/rm \
+                  bin/rmail bin/rmdir bin/rx bin/rz bin/sb bin/scm bin/sed \
+                  bin/setty bin/sh bin/size bin/sl bin/sleep bin/sort \
+                  bin/split bin/strip bin/stty bin/su bin/sum bin/sync \
+                  bin/sysctl bin/sx bin/sz bin/tail bin/tar bin/tee \
+                  bin/test bin/time bin/touch bin/tr bin/tsort bin/true \
+                  bin/tty bin/uname bin/uniq bin/vmstat bin/w bin/wall \
+                  bin/wc bin/whatis bin/whereis bin/who bin/whoami \
+                  bin/write bin/xargs
 LIB_FILES	= lib/retroImage
 LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
