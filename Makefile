@@ -118,7 +118,7 @@ ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
 
 fs:             filesys.img user.img
 
-all:            kernel fs
+all:            build kernel fs
 
 kernel:
 		$(MAKE) -C $(TARGET)

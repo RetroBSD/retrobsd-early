@@ -9,19 +9,19 @@ LDFLAGS         += -g
 
 OBJS            = main.o doname.o misc.o files.o dosys.o gram.o
 
-all:            make
+all:            xmake
 
-make:           ${OBJS}
+xmake:          ${OBJS}
 		${CC} ${LDFLAGS} -o make.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S make.elf > make.dis
 		${SIZE} make.elf
 		${ELF2AOUT} make.elf $@ && rm make.elf
 
 clean:
-		rm -f *.o *.elf make *.elf *.dis tags *~ gram.c
+		rm -f *.o *.elf xmake *.elf *.dis tags *~ gram.c
 
 install:        all
-		install make $(DESTDIR)/bin/
+		install xmake $(DESTDIR)/bin/make
 
 gram.c:         gram.y
 		$(YACC) gram.y

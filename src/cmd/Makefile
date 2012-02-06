@@ -75,7 +75,7 @@ FRC:
 		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $< ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
-		${ELF2AOUT} $@.elf $@ && rm $@.elf
+		${ELF2AOUT} $@.elf $@ && /bin/rm $@.elf
 
 # Files listed in ${NSTD} have explicit make lines given below.
 
