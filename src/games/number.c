@@ -1,6 +1,3 @@
-
-static char sccsid[] = "	number.c	4.1	82/10/24	";
-
 #include <stdio.h>
 
 int	flag;

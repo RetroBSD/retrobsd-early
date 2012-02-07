@@ -3,28 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)rain.c	5.2 (Berkeley) 7/15/85";
-#endif not lint
-
 #define BSD
 
 #include <stdio.h>
-#ifdef USG
-#include <termio.h>
-#else
-#include <sgtty.h>
-#endif
 #include <signal.h>
+#ifdef USG
+#   include <termio.h>
+#else
+#   include <sgtty.h>
+#endif
+
 /* rain 11/3/1980 EPS/CITHEP */
 /* cc rain.c -o rain -O -ltermlib */
+
 #define cursor(col,row) tputs(tgoto(CM,col,row),1,fputchar)
 extern char *UP;
 extern short ospeed;
@@ -76,9 +67,9 @@ char *argv[];
     if (!(DN=tgetstr("dn",&tcp))) DN="\n";
     if (!(ND=tgetstr("nd",&tcp))) ND=" ";
     if ((CO = tgetnum("co")) == -1)
-	CO = 80; 
+	CO = 80;
     if ((LI = tgetnum("li")) == -1)
-	LI = 24; 
+	LI = 24;
     cols = CO - 4;
     lines = LI - 4;
     TE=tgetstr("te",&tcp);

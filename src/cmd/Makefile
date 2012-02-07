@@ -61,58 +61,58 @@ TTY		= wall write
 # 'strip' is handled specially because 'install -s' now uses 'strip' and
 # thus we can't do a 'install -s strip /bin/strip' without an error.
 #
-BINS		= ${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${TTY} ${SCRIPT} strip
+BINS		= $(STD) $(NSTD) $(SETUID) $(OPERATOR) $(KMEM) $(TTY) $(SCRIPT) strip
 
-all:		${SUBDIR} ${BINS}
+all:		$(SUBDIR) $(BINS)
 
-${SUBDIR}:	FRC
-		cd $@; make ${MFLAGS}
+$(SUBDIR):	FRC
+		$(MAKE) -C $@ $(MFLAGS)
 
 FRC:
 
-# ${STD} ${SETUID} ${KMEM} ${OPERATOR} ${TTY} strip
+# $(STD) $(SETUID) $(KMEM) $(OPERATOR) $(TTY) strip
 %: %.c
-		${CC} ${CFLAGS} ${LDFLAGS} -o $@.elf $< ${LIBS}
-		${OBJDUMP} -S $@.elf > $@.dis
-		${SIZE} $@.elf
-		${ELF2AOUT} $@.elf $@ && /bin/rm $@.elf
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-# Files listed in ${NSTD} have explicit make lines given below.
+# Files listed in $(NSTD) have explicit make lines given below.
 
 # bc egrep expr
 %.c: %.y
-		${YACC} ${YFLAGS} $<
+		$(YACC) $(YFLAGS) $<
 		-/bin/mv y.tab.c $@
 
-${SCRIPT}:
+$(SCRIPT):
 		install -c $@.sh $@
 
-install:	${BINS}
-		install ${STD} ${NSTD} strip ${DESTDIR}/bin/
-		-for i in ${SUBDIR}; do \
-			(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-		-for i in ${SCRIPT}; do (install $$i.sh ${DESTDIR}/bin/$$i); done
-		-for i in ${SETUID}; do \
-			(install -m 4751 $$i ${DESTDIR}/bin/$$i); done
-		-for i in ${OPERATOR}; do \
-			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
-		-for i in ${KMEM}; do \
-			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
-		-for i in ${TTY}; do \
-			(install -m 2751 $$i ${DESTDIR}/bin/$$i); done
+install:	$(BINS)
+		install $(STD) $(NSTD) strip $(DESTDIR)/bin/
+		-for i in $(SUBDIR); do \
+			$(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) install; done
+		-for i in $(SCRIPT); do install $$i.sh $(DESTDIR)/bin/$$i; done
+		-for i in $(SETUID); do \
+			install -m 4751 $$i $(DESTDIR)/bin/$$i; done
+		-for i in $(OPERATOR); do \
+			install -m 2751 $$i $(DESTDIR)/bin/$$i; done
+		-for i in $(KMEM); do \
+			install -m 2751 $$i $(DESTDIR)/bin/$$i; done
+		-for i in $(TTY); do \
+			install -m 2751 $$i $(DESTDIR)/bin/$$i; done
 
 clean:
-		/bin/rm -f ${BINS} expr.c a.out core *.s *.o *.dis *.elf *~ y.tab.c errs
-		for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+		/bin/rm -f $(BINS) expr.c a.out core *.s *.o *.dis *.elf *~ y.tab.c errs
+		for i in $(SUBDIR); do (cd $$i; $(MAKE) $(MFLAGS) clean); done
 
 depend:		expr.c
-		for i in ${BINS}; do \
-		    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
-		    awk ' { if ($$1 != prev) \
-			{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-			else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-			else rec = rec " " $$2 } } \
-			END { print rec } ' >> makedep; done
+		for i in $(BINS); do \
+		    cc -M $(INCPATH) $$i.c | sed 's/\.o//' | \
+		    awk ' ( if ($$1 != prev) \
+			( if (rec != "") print rec; rec = $$0; prev = $$1; ) \
+			else ( if (length(rec $$2) > 78) ( print rec; rec = $$0; ) \
+			else rec = rec " " $$2 ) ) \
+			END ( print rec ) ' >> makedep; done
 		echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 		echo '$$r makedep' >>eddep
 		echo 'w' >>eddep

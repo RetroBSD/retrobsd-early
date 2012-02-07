@@ -1,13 +1,8 @@
-
-static char sccsid[] = "	wump.c	4.1	82/10/24	";
-
-#
-#include <stdio.h>
-
 /*
  *	wumpus
  *	stolen from PCC Vol 2 No 1
  */
+#include <stdio.h>
 
 #define	NBAT	3
 #define	NROOM	20

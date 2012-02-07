@@ -1,4 +1,5 @@
 #include "stdio.h"
+
 main()
 {
 	register c, i;

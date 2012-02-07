@@ -3,91 +3,86 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (2.11BSD) 1997/7/26
-#
-DESTDIR=
-CFLAGS=	-O
-SEPFLAG= -i
+TOPSRC		= $(shell cd ../..; pwd)
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
+
+CFLAGS          = -Werror -Wall -Os
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adventure backgammon battlestar boggle btlgammon cribbage fortune \
-	hack \
-	hangman hunt mille monop phantasia quiz robots sail snake \
-	trek warp words
-
-# Shell scripts that need only be installed and are never removed.
-#
-SCRIPT=	wargames
+SUBDIR          =
+# TODO: adventure backgammon battlestar boggle btlgammon cribbage
+# fortune hack hangman hunt mille monop phantasia quiz robots
+# sail snake trek warp words
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic banner bcd cfscores factor fish morse number ppt \
-	wump
+STD             = banner
+# TODO: arithmetic bcd cfscores factor fish morse number ppt wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	canfield primes rain worm worms
+NSTD            =
+# TODO: canfield primes rain worm worms
 
-all:	${SUBDIR} ${STD} ${NSTD}
+all:            $(SUBDIR) $(STD) $(NSTD)
 
-${SUBDIR}: FRC
-	cd $@; make ${MFLAGS} SEPFLAG=${SEPFLAG}
+$(SUBDIR):      FRC
+		$(MAKE) -C $@ $(MFLAGS)
 
 FRC:
 
-${STD}:
-	cc ${CFLAGS} ${SEPFLAG} -o $@ $@.c
+# $(STD)
+%: %.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-install: ${STD} ${NSTD}
-	-for i in ${SUBDIR}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	-for i in ${SCRIPT}; do \
-		(install -c -m 755 $$i.sh ${DESTDIR}/usr/games/$$i); done
-	-for i in ${STD} ${NSTD}; do \
-		(install -s -m 755 $$i ${DESTDIR}/usr/games/$$i); done
-	cat >${DESTDIR}/usr/games/lib/cfscores </dev/null
-	chmod 777 ${DESTDIR}/usr/games/lib/cfscores
+install:        $(STD) $(NSTD)
+		-for i in $(SUBDIR); do \
+			make -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) install; done
+		-for i in $(STD) $(NSTD); do \
+			install $$i $(DESTDIR)/games/$$i; done
+		cat < /dev/null > $(DESTDIR)/games/lib/cfscores
+		chmod 777 $(DESTDIR)/games/lib/cfscores
 
 clean:
-	rm -f a.out core *.s *.o
-	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
-	rm -f ${STD} ${NSTD}
+		rm -f a.out core *.s *.o *.dis *.elf $(STD) $(NSTD)
+		-for i in $(SUBDIR); do make -C $$i $(MFLAGS) clean; done
 
-depend:
-	for i in ${STD} ${NSTD}; do \
-	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
-	    awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+# Files listed in $(NSTD) have explicit make lines given below.
 
-# Files listed in ${NSTD} have explicit make lines given below.
+canfield:       canfield.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-canfield:
-	cc -o canfield ${CFLAGS} ${SEPFLAG} canfield.c -lcurses -ltermcap
+primes:         primes.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lm $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-primes:
-	cc -o primes ${CFLAGS} ${SEPFLAG} primes.c -lm
+rain:           rain.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-rain:
-	cc -o rain ${CFLAGS} ${SEPFLAG} rain.c -lcurses -ltermcap
+worm:           worm.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
-worm:
-	cc -o worm ${CFLAGS} ${SEPFLAG} worm.c -lcurses -ltermcap
-
-worms:
-	cc -o worms ${CFLAGS} ${SEPFLAG} worms.c -lcurses -ltermcap
+worms:          worms.c
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(OBJDUMP) -S $@.elf > $@.dis
+		$(SIZE) $@.elf
+		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
 # DO NOT DELETE THIS LINE -- make depend uses it

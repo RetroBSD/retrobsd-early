@@ -1,7 +1,3 @@
-#ifndef lint
-static char sccsid[] = "@(#)factor.c	4.1 (Wollongong) 6/13/83";
-#endif
-
 /*
  *              factor [ number ]
  *

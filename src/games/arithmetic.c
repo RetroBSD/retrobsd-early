@@ -1,8 +1,6 @@
-
-static char sccsid[] = "	arithmetic.c	4.1	82/10/24	";
-
 #include <stdio.h>
 #include <signal.h>
+
 #define	MAX	100
 
 char	types[10];
@@ -184,7 +182,7 @@ int temp;
 	}
 
 /* 'hmul' returns the upper 16 bits of the product, where the operands
-   are assumed to be 16-bit integers. It replaces an old PDP-11 
+   are assumed to be 16-bit integers. It replaces an old PDP-11
    assembler language subroutine. -- dks.
 */
 hmul(a,b) { return((long)a*b >> 16); }
@@ -215,4 +213,3 @@ delete()
 	score();
 	exit();
 }
-

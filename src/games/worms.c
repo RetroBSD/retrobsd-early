@@ -1,13 +1,3 @@
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)worms.c	5.3 (Berkeley) 7/15/85";
-#endif not lint
-
 #define BSD
 
 /*

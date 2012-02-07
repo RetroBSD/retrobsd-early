@@ -3,17 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)fish.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 # include <stdio.h>
 
 /*	Through, `my' refers to the program, `your' to the player */
@@ -170,7 +159,7 @@ phand( h ) HAND h; {
 	printf( "\n" );
 	}
 
-main( argc, argv ) char * argv[]; { 
+main( argc, argv ) char * argv[]; {
 	/* initialize shuffling, ask for instructions, play game, die */
 	register c;
 
@@ -506,4 +495,3 @@ myguess(){
 	return(i);
 
 	}
-

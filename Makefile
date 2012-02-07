@@ -50,38 +50,14 @@ FSUTIL		= tools/fsutil/fsutil
 #
 # Filesystem contents.
 #
-SBIN_FILES	= sbin/chown sbin/chroot sbin/disktool sbin/fastboot \
-                  sbin/fsck sbin/halt sbin/init sbin/mkfs sbin/mknod \
-                  sbin/mkpasswd sbin/mount sbin/pstat sbin/reboot \
-                  sbin/shutdown sbin/umount sbin/update sbin/updatedb \
-                  sbin/vipw sbin/poweroff
+BIN_FILES	:= $(wildcard bin/*)
+SBIN_FILES	:= $(wildcard sbin/*)
+GAMES_FILES	:= $(shell find games -type f ! -path '*/.*')
+LIB_FILES	:= $(wildcard lib/*)
+LIBEXEC_FILES	:= $(wildcard libexec/*)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-BIN_FILES	= bin/[ bin/adc-demo bin/apropos bin/aout bin/ar bin/as \
-                  bin/awk bin/basename bin/basic bin/bc bin/cal bin/cat \
-                  bin/cb bin/cc bin/chflags bin/chfn bin/chgrp bin/chmod \
-                  bin/chpass bin/chsh bin/cmp bin/col bin/comm bin/cp \
-                  bin/cpp bin/date bin/dc bin/dd bin/df bin/diff bin/du \
-                  bin/echo bin/ed bin/egrep bin/expr bin/false bin/fgrep \
-                  bin/file bin/find bin/forth bin/fstat bin/grep bin/groups \
-                  bin/head bin/hostid bin/hostname bin/id bin/iostat \
-                  bin/join bin/kill bin/la bin/ld bin/last bin/ln bin/ls \
-                  bin/login bin/lol bin/mail bin/make bin/man bin/med \
-                  bin/mesg bin/mkdir bin/more bin/mv bin/nice bin/nm \
-                  bin/nohup bin/od bin/pagesize bin/passwd bin/portio \
-                  bin/pr bin/printf bin/ps bin/pwd bin/ranlib bin/rb bin/re \
-                  bin/renice bin/renumber bin/retroforth bin/rev bin/rm \
-                  bin/rmail bin/rmdir bin/rx bin/rz bin/sb bin/scm bin/sed \
-                  bin/setty bin/sh bin/size bin/sl bin/sleep bin/sort \
-                  bin/split bin/strip bin/stty bin/su bin/sum bin/sync \
-                  bin/sysctl bin/sx bin/sz bin/tail bin/tar bin/tee \
-                  bin/test bin/time bin/touch bin/tr bin/tsort bin/true \
-                  bin/tty bin/uname bin/uniq bin/vmstat bin/w bin/wall \
-                  bin/wc bin/whatis bin/whereis bin/who bin/whoami \
-                  bin/write bin/xargs
-LIB_FILES	= lib/retroImage
-LIBEXEC_FILES	= libexec/bigram libexec/code libexec/diffh libexec/getty
 INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
                   include/sys/select.h
 SHARE_FILES	= share/re.help share/example/Makefile \
@@ -90,10 +66,11 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/stars.bas share/example/prime.scm \
                   share/example/fact.fth
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
-                  $(INC_FILES) $(SHARE_FILES) var/log/messages var/log/wtmp .profile
+                  $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
+                  var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
-                  share/misc/ var/ var/run/ var/log/ u/ include/ include/sys/
-
+                  share/misc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
+                  games/ games/lib/
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
