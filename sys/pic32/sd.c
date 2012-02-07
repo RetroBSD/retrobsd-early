@@ -517,7 +517,9 @@ card_read (unit, offset, data, bcount)
 again:
 	/* Wait for a response. */
 	for (i=0; ; i++) {
+	        int x = spl0();
 		reply = spi_io (0xFF);
+		splx(x);
 		if (reply == DATA_START_BLOCK)
 			break;
 		if (i >= TIMO_READ) {
@@ -624,7 +626,9 @@ again:
 	}
 
 	/* Wait for write completion. */
+       	int x = spl0();
         spi_wait_ready ();
+        splx(x);
 	spi_select (unit, 0);
 
         if (bcount > SECTSIZE) {

@@ -837,6 +837,7 @@
 #define OSCCON          PIC32_R (0xf000)
 #define OSCTUN          PIC32_R (0xf010)
 #define DDPCON          PIC32_R (0xf200)        /* Debug Data Port Control */
+#define DEVID           PIC32_R (0xf220)
 #define SYSKEY          PIC32_R (0xf230)
 #define RCON            PIC32_R (0xf600)
 #define RCONCLR         PIC32_R (0xf604)

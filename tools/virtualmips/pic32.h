@@ -90,6 +90,7 @@ struct pic32_system {
     unsigned osccon;
     unsigned osctun;
     unsigned ddpcon;                /* Debug data port control */
+    unsigned devid;                 /* Device identifier */
     unsigned syskey;
     unsigned rcon;
     unsigned rswrst;

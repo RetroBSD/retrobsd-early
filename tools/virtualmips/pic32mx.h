@@ -263,6 +263,7 @@
 #define PIC32_OSCCON	PIC32_R (0xf000)
 #define PIC32_OSCTUN	PIC32_R (0xf010)
 #define PIC32_DDPCON	PIC32_R (0xf200)  /* Debug Data Port Control */
+#define PIC32_DEVID     PIC32_R (0xf220)
 #define PIC32_SYSKEY	PIC32_R (0xf230)
 #define PIC32_RCON      PIC32_R (0xf600)
 #define PIC32_RSWRST	PIC32_R (0xf610)

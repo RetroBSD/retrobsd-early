@@ -246,6 +246,21 @@ startup()
 	physmem = BMXDRMSZ;
 }
 
+void cpuidentify()
+{
+        unsigned devid = DEVID;
+
+        printf ("cpu: ");
+        switch (devid) {
+        case 0x04307053: printf ("795F512L"); break;
+        case 0x0430E053: printf ("795F512H"); break;
+        case 0x04341053: printf ("695F512L"); break;
+        case 0x04325053: printf ("695F512H"); break;
+        default:         printf ("DevID %08x", devid);
+        }
+        printf (" %u MHz, bus %u MHz\n", CPU_KHZ/1000, BUS_KHZ/1000);
+}
+
 /*
  * Sit and wait for something to happen...
  */

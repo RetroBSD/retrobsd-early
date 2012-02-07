@@ -223,7 +223,7 @@ hardclock(pc, ps)
 
 	/*
 	 * Increment the time-of-day, process callouts at a very
-	 * low cpu priority, so we don't keep the relatively  high
+	 * low cpu priority, so we don't keep the relatively high
 	 * clock interrupt priority any longer than necessary.
 	 */
 	if (adjdelta) {

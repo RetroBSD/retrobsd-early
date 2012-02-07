@@ -91,7 +91,7 @@ struct tty cnttys [NKL];
 static unsigned speed_bps [NSPEEDS] = {
     0,      50,     75,     150,    200,    300,    600,    1200,
     1800,   2400,   4800,   9600,   19200,  38400,  57600,  115200,
-    230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 
+    230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000,
     2000000, 2500000, 3000000, 3500000, 4000000
 };
 
@@ -187,7 +187,7 @@ cnopen (dev, flag, mode)
 
 	reg->sta = 0;
 	reg->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, speed_bps [tp->t_ospeed]);
-	reg->mode = PIC32_UMODE_PDSEL_8NPAR | 
+	reg->mode = PIC32_UMODE_PDSEL_8NPAR |
 #ifdef CONSOLE_RTSCTS
                     PIC32_UMODE_UEN_RTSCTS |
 #endif

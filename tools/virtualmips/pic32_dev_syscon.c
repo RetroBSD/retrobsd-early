@@ -86,6 +86,15 @@ void *dev_pic32_syscon_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
+    case PIC32_DEVID & 0xff0:           /* Device identifier */
+        /* read-only register */
+        if (op_type == MTS_READ) {
+            *data = pic32->devid;
+            if (cpu->vm->debug_level > 2)
+                printf ("        read DEVID -> %08x\n", *data);
+        }
+        break;
+
     case PIC32_SYSKEY & 0xff0:
         if (op_type == MTS_READ) {
             *data = pic32->syskey;
@@ -156,6 +165,7 @@ void dev_pic32_syscon_reset (cpu_mips_t *cpu, struct vdevice *dev)
     pic32->osccon = 0x01453320; /* from ubw32 board */
     pic32->osctun = 0;
     pic32->ddpcon = 0;
+    pic32->devid = 0x04307053;  /* 795F512L */
     pic32->syskey = 0;
     pic32->rcon = 0;
     pic32->rswrst = 0;

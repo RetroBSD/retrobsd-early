@@ -105,9 +105,7 @@ main()
 
 	startup();
 	printf ("\n%s", version);
-	printf ("phys mem  = %u kbytes\n", physmem / 1024);
-	printf ("user mem  = %u kbytes\n", MAXMEM / 1024);
-	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
+        cpuidentify();
         cnidentify();
 
 	/*
@@ -155,6 +153,9 @@ main()
 		cngets ("Please, insert bootable SD card and press <Enter>: ");
 		printf ("\n\n");
         }
+	printf ("phys mem  = %u kbytes\n", physmem / 1024);
+	printf ("user mem  = %u kbytes\n", MAXMEM / 1024);
+	printf ("root dev  = (%d,%d)\n", major(rootdev), minor(rootdev));
 	printf ("root size = %u kbytes\n", fs->fs_fsize * DEV_BSIZE / 1024);
 	mount[0].m_inodp = (struct inode*) 1;	/* XXX */
 	mount_updname (fs, "/", "root", 1, 4);
