@@ -1,5 +1,6 @@
-#
-/*   ADVENTURE -- Jim Gillogly, Jul 1977
+/*
+ * ADVENTURE -- Jim Gillogly, Jul 1977
+ *
  * This program is a re-write of ADVENT, written in FORTRAN mostly by
  * Don Woods of SAIL.  In most places it is as nearly identical to the
  * original as possible given the language and word-size differences.
@@ -12,9 +13,6 @@
  * "glorkz" in the directory where the program is first run.
  */
 
-static char hdr_sccsid[] = "	hdr.h	4.1	82/05/11	";
-
-/*  hdr.h */
 /* hdr.h: included by c advent files */
 
 extern int setup;                       /* changed by savec & init      */
@@ -115,5 +113,3 @@ int turns,lmwarn,iwest,knfloc,detail,   /* various flags & counters     */
 	saved,closng,panic,closed,scorng;
 
 int demo,newloc,limit;
-
-char *malloc();

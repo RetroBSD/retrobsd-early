@@ -1,39 +1,40 @@
-#
-/*      Re-coding of advent in C: data initialization                   */
-
-static char sccsid[] = "	init.c	4.1	82/05/11	";
-
-# include "hdr.h"
+/*
+ * Re-coding of advent in C: data initialization
+ */
+#include "hdr.h"
 
 int blklin = TRUE;
 int setup  = 0;
 
-int setbit[16] = {1,2,4,010,020,040,0100,0200,0400,01000,02000,04000,
-		  010000,020000,040000,0100000};
+int setbit[16] = {
+        1, 2, 4, 010, 020,040, 0100, 0200, 0400,
+        01000, 02000, 04000, 010000, 020000, 040000, 0100000,
+};
 
-
+void
 init(command)                           /* everything for 1st time run  */
-char *command;                          /* command we were called with  */
-{       int stat,adfd;
+        char *command;                  /* command we were called with  */
+{
+        int stat, adfd;
+
 	rdata();                        /* read data from orig. file    */
 	linkdata();
 	poof();
-	setup=1;                        /* indicate that data is in     */
-	if (confirm("got the data.  save as \"advent\"? "))
-	{       if (save(command,"advent")<0)   /* save core image      */
-		{       printf("Save failed\n");
-			exit(0);
-		}
-	}
-	else exit(0);
+	setup = 1;                      /* indicate that data is in     */
+	if (! confirm("got the data.  save as \"advent\"? "))
+                exit(0);
+        if (save(command, "advent") < 0) {  /* save core image      */
+                printf("Save failed\n");
+                exit(0);
+        }
 	printf("Save succeeded.  Adding messages.\n");
-	adfd=open("advent",1);
-	lseek(adfd,0L,2);
+	adfd = open("advent", 1);
+	lseek(adfd, 0L, 2);
 	close(datfd);
-	if (fork()==0)                  /* child process                */
-	{       close(1);
+	if (fork() == 0) {              /* child process                */
+	        close(1);
 		dup(adfd);              /* output goes to advent file   */
-		execl("/bin/cat","cat",TMPFILE,0);
+		execl("/bin/cat", "cat", TMPFILE, 0);
 		printf("unable to find /bin/cat\n");
 	}
 	wait(&stat);
@@ -41,7 +42,6 @@ char *command;                          /* command we were called with  */
 	printf("Advent is ready.\n");
 	exit(0);
 }
-
 
 linkdata()                              /*  secondary data manipulation */
 {       register int i,j;
@@ -158,13 +158,10 @@ linkdata()                              /*  secondary data manipulation */
 	closng=panic=closed=scorng=FALSE;
 }
 
-
-
 trapdel()                               /* come here if he hits a del   */
 {	delhit++;			/* main checks, treats as QUIT  */
 	signal(2,trapdel);		/* catch subsequent DELs        */
 }
-
 
 startup()
 {       int tvec[2];
@@ -178,4 +175,3 @@ startup()
 	limit=330;
 	if (hinted[3]) limit=1000;      /* better batteries if instrucs */
 }
-

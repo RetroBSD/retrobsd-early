@@ -1,9 +1,7 @@
-#
-/*      Re-coding of advent in C: privileged operations                 */
-
-static char sccsid[] = "	wizard.c	4.1	82/05/11	";
-
-# include "hdr.h"
+/*
+ * Re-coding of advent in C: privileged operations
+ */
+#include "hdr.h"
 
 datime(d,t)
 int *d,*t;
@@ -16,7 +14,6 @@ int *d,*t;
 	/* it will be attributed to Wm the C's millenial celebration    */
 	*t=tptr[2]*60+tptr[1];          /* and minutes since midnite    */
 }                                       /* pretty painless              */
-
 
 char *magic;
 
@@ -95,4 +92,3 @@ int range;                              /* can't div by 32768 because   */
 	i = rand() % range;
 	return(i);
 }
-

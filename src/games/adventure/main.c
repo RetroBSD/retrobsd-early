@@ -1,18 +1,18 @@
-/*      Re-coding of advent in C: main program                          */
-
+/*
+ * Re-coding of advent in C: main program
+ */
 #include "hdr.h"
 
-static char sccsid[] = "	main.c	4.1	82/05/11	";
-
 int	datfd = -1;
-main(argc,argv)
-int argc;
-char **argv;
+
+int main(argc,argv)
+        int argc;
+        char **argv;
 {       register int i;
 	int rval,ll;
 	struct text *kk;
-	extern trapdel();
 	static reenter;
+
 	if ((datfd = getcmd(argv[0])) < 0) {
 		write(2, "No adventure just now\n", 22);
 		exit(1);
@@ -529,4 +529,3 @@ char **argv;
 		goto l2012;
 	}
 }
-

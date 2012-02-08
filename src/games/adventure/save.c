@@ -1,27 +1,25 @@
-/* save (III)   J. Gillogly
+/*
+ * save (III)   J. Gillogly
  * save user core image for restarting
  * usage: save(<command file (argv[0] from main)>,<output file>)
  * bugs
  *   -  impure code (i.e. changes in instructions) is not handled
  *      (but people that do that get what they deserve)
  */
-
-static char sccsid[] = "	save.c	4.1	82/05/11	";
-
 #include <a.out.h>
+
 int filesize;                    /* accessible to caller         */
 
-char *sbrk();
-
 save(cmdfile,outfile)                   /* save core image              */
-char *cmdfile,*outfile;
+        char *cmdfile, *outfile;
 {       register char *c;
 	register int i,fd;
 	int fdaout;
 	struct exec header;
 	int counter;
 	char buff[512],pwbuf[120];
-	fdaout=getcmd(cmdfile);         /* open command wherever it is  */
+
+	fdaout = getcmd(cmdfile);       /* open command wherever it is  */
 	if (fdaout<0) return(-1);       /* can do nothing without text  */
 	if ((fd=open(outfile,0))>0)     /* this restriction is so that  */
 	{       printf("Can't use an existing file\n"); /* we don't try */
@@ -92,12 +90,8 @@ char *cmdfile,*outfile;
 	close(fd);
 }
 
-#define	NULL	0
-
-char	*execat(), *getenv();
-
 getcmd(command)         /* get command name (wherever it is) like shell */
-char *command;
+        char *command;
 {
 	char *pathstr;
 	register char *cp;
@@ -120,8 +114,8 @@ char *command;
 
 static char *
 execat(s1, s2, si)
-register char *s1, *s2;
-char *si;
+        register char *s1, *s2;
+        char *si;
 {
 	register char *s;
 

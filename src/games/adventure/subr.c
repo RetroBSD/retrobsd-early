@@ -1,11 +1,10 @@
-#
-/*      Re-coding of advent in C: subroutines from main                 */
+/*
+ * Re-coding of advent in C: subroutines from main
+ */
+#include "hdr.h"
 
-static char sccsid[] = "	subr.c	4.1	82/05/11	";
+/* Statement functions */
 
-# include "hdr.h"
-
-/*              Statement functions     */
 toting(objj)
 int objj;
 {       if (place[objj] == -1) return(TRUE);
@@ -786,4 +785,3 @@ caveclose()                             /* 11000 */
 	closed=TRUE;
 	return(2);
 }
-

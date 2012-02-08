@@ -1,11 +1,8 @@
-#
-/*      Re-coding of advent in C: file i/o and user i/o                 */
-
-static char sccsid[] = "	io.c	4.1	82/05/11	";
-
+/*
+ * Re-coding of advent in C: file i/o and user i/o
+ */
 #include "hdr.h"
 #include <stdio.h>
-
 
 getin(wrd1,wrd2)                        /* get command from user        */
 char **wrd1,**wrd2;                     /* no prompt, usually           */
@@ -498,4 +495,3 @@ int skip;       /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	}
 	free(tbuf);
 }
-

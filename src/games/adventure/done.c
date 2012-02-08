@@ -1,10 +1,7 @@
-#
-/*      Re-coding of advent in C: termination routines                  */
-
-static char sccsid[] = "	done.c	4.1	82/05/11	";
-
-
-# include "hdr.h"
+/*
+ * Re-coding of advent in C: termination routines
+ */
+#include "hdr.h"
 
 score()                                         /* sort of like 20000   */
 {       register int scor,i;
@@ -98,4 +95,3 @@ int entry;
 	oldloc=loc;
 	return(2000);
 }
-

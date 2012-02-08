@@ -1,9 +1,7 @@
-#
-/*      Re-coding of advent in C: data structure routines               */
-
-static char sccsid[] = "	vocab.c	4.1	82/05/11	";
-
-# include "hdr.h"
+/*
+ * Re-coding of advent in C: data structure routines
+ */
+#include "hdr.h"
 
 dstroy(object)
 int object;
@@ -182,4 +180,3 @@ prht()                                  /* print hash table             */
 		putchar('\n');
 	}
 }
-
