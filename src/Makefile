@@ -11,21 +11,18 @@ include $(TOPSRC)/target.mk
 SUBDIR		= startup-$(MACHINE) libc libm libutil libtermlib libcurses \
                   libvmf share cmd games
 
-all:		${SUBDIR}
+all:		$(SUBDIR)
 
-${SUBDIR}:	FRC
-		cd $@; make ${MFLAGS}
+$(SUBDIR):	FRC
+		$(MAKE) -C $@
 
 FRC:
 
 install:        elf32-mips.ld
-		-for i in ${SUBDIR}; do \
-			(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} all install); done
-		cp -p elf32-mips.ld ${DESTDIR}/lib/elf32-mips.ld
-
-tags:
-		cd libc; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags
+		-for i in $(SUBDIR); do \
+			$(MAKE) -C $$i DESTDIR=$(DESTDIR) all install; done
+		cp -p elf32-mips.ld $(DESTDIR)/lib/elf32-mips.ld
 
 clean:
 		rm -f a.out core *.s *.o *.a *~
-		-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
+		-for i in $(SUBDIR); do $(MAKE) -C $$i clean; done

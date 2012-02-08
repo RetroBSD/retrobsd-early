@@ -29,6 +29,8 @@ include $(TOPSRC)/target.mk
 DEFS		=
 ALL		= gen stdio stdlib string inet compat ${MACHINE}
 
+all:            ../libc.a
+
 ../libc.a:      ${ALL}
 		rm -rf tmp
 		mkdir tmp
