@@ -3,22 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)addch.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 static set_ch(reg WINDOW *win, int y, int x, int ch);
 
 /*
- *	This routine adds the character to the current position
- *
+ * This routine adds the character to the current position
  */
-waddch(win, c)
-reg WINDOW	*win;
-char		c;
+int waddch(win, c)
+        reg WINDOW	*win;
+        char		c;
 {
 	reg int		x, y;
 	reg WINDOW	*wp;

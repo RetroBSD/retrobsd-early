@@ -1,19 +1,13 @@
-#include "stdio.h"
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 
-main()
+void putone(byte)
+        register int byte;
 {
-	register c, i;
-
-	printf("___________\n");
-	while ((c = getchar()) != EOF)
-		putone(c);
-	printf("___________\n");
-}
-
-putone(byte)
-register byte;
-{
-	register i;
+	register int i;
 
 	putchar('|');
 	for (i=7; i>=0; --i) {
@@ -26,4 +20,15 @@ register byte;
 	}
 	putchar('|');
 	putchar('\n');
+}
+
+int main()
+{
+	register int c;
+
+	printf("___________\n");
+	while ((c = getchar()) != EOF)
+		putone(c);
+	printf("___________\n");
+	return 0;
 }

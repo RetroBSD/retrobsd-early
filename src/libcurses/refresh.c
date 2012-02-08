@@ -1,29 +1,22 @@
 /*
+ * make the current screen look like "win" over the area coverd by
+ * win.
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)refresh.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-/*
- * make the current screen look like "win" over the area coverd by
- * win.
- */
-
 #include <string.h>
-# include	"curses.ext"
+#include "curses.ext"
 
 static makech(reg WINDOW *win, short wy);
 static domvcur(int oy, int ox, int ny, int nx);
 
-# ifdef DEBUG
-# define	STATIC
-# else
-# define	STATIC	static
-# endif
+#ifdef DEBUG
+#   define STATIC
+#else
+#   define STATIC static
+#endif
 
 STATIC short	ly, lx;
 
@@ -31,8 +24,8 @@ STATIC bool	curwin;
 
 WINDOW	*_win = NULL;
 
-wrefresh(win)
-reg WINDOW	*win;
+int wrefresh(win)
+        reg WINDOW	*win;
 {
 	reg short	wy;
 	reg int		retval;
@@ -183,7 +176,7 @@ short		wy;
 			domvcur(ly, lx, y, wx + win->_begx);
 # ifdef DEBUG
 			fprintf(outf, "MAKECH: 1: wx = %d, lx = %d\n", wx, lx);
-# endif	
+# endif
 			ly = y;
 			lx = wx + win->_begx;
 			while (*nsp != *csp && wx <= lch) {
@@ -264,7 +257,7 @@ short		wy;
 			}
 # ifdef DEBUG
 			fprintf(outf, "MAKECH: 2: wx = %d, lx = %d\n", wx, lx);
-# endif	
+# endif
 			if (lx == wx + win->_begx)	/* if no change */
 				break;
 			lx = wx + win->_begx;
@@ -292,7 +285,7 @@ short		wy;
 			break;
 # ifdef DEBUG
 		fprintf(outf, "MAKECH: 3: wx = %d, lx = %d\n", wx, lx);
-# endif	
+# endif
 	}
 	return OK;
 }

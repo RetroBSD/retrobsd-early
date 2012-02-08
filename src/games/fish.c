@@ -3,15 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-# include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
 
-/*	Through, `my' refers to the program, `your' to the player */
+/* Through, `my' refers to the program, `your' to the player */
 
-# define CTYPE 13
-# define CTSIZ (CTYPE+1)
-# define DECK 52
-# define NOMORE 0
-# define DOUBTIT (-1);
+#define CTYPE 13
+#define CTSIZ (CTYPE+1)
+#define DECK 52
+#define NOMORE 0
+#define DOUBTIT (-1);
 
 typedef char HAND[CTSIZ];
 
@@ -25,72 +31,94 @@ char deck[DECK];
 short nextcd;
 int proflag;
 
+/* the program strategy */
+
+int try[100];
+int ntry;
+char haveguessed[CTSIZ];
+char hehas[CTSIZ];
+
 /* utility and output programs */
 
-shuffle(){
-	/* shuffle the deck, and reset nextcd */
-	/* uses the random number generator `rand' in the C library */
-	/* assumes that `srand' has already been called */
+void error(s)
+        char *s;
+{
+	fprintf(stderr, "error: %s\n", s);
+	exit(1);
+}
 
-	register i;
-
-	for( i=0; i<DECK; ++i ) deck[i] = (i%13)+1;  /* seed the deck */
-
-	for( i=DECK; i>0; --i ){ /* select the next card at random */
-		deck[i-1] = choose( deck, i );
-		}
-
-	nextcd = 0;
-	}
-
-choose( a, n ) char a[]; {
+int choose(a, n)
+        char a[];
+{
 	/* pick and return one at random from the n choices in a */
 	/* The last one is moved to replace the one chosen */
-	register j, t;
+	register int j, t;
 
-	if( n <= 0 ) error( "null choice" );
+	if (n <= 0)
+                error("null choice");
 
 	j = rand() % n;
 	t = a[j];
 	a[j] = a[n-1];
 	return(t);
+}
+
+void shuffle()
+{
+	/* shuffle the deck, and reset nextcd */
+	/* uses the random number generator `rand' in the C library */
+	/* assumes that `srand' has already been called */
+
+	register int i;
+
+	for (i=0; i<DECK; ++i) deck[i] = (i%13)+1;  /* seed the deck */
+
+	for (i=DECK; i>0; --i) { /* select the next card at random */
+		deck[i-1] = choose(deck, i);
 	}
 
-draw() {
-	if( nextcd >= DECK ) return( NOMORE );
-	return( deck[nextcd++] );
+	nextcd = 0;
+}
+
+int draw()
+{
+	if (nextcd >= DECK)
+            return NOMORE;
+	return deck[nextcd++];
+}
+
+int empty(h)
+        HAND h;
+{
+	register int i;
+
+	for (i=1; i<=CTYPE; ++i) {
+		if (h[i] != 0 && h[i] != 4)
+                        return(0);
 	}
+	return(i);
+}
 
-error( s ) char *s; {
-	fprintf( stderr, "error: " );
-	fprintf( stderr, s );
-	exit( 1 );
-	}
-
-empty( h ) HAND h; {
-	register i;
-
-	for( i=1; i<=CTYPE; ++i ){
-		if( h[i] != 0 && h[i] != 4 ) return( 0 );
-		}
-	return( i );
-	}
-
-mark( cd, hand ) HAND hand; {
-	if( cd != NOMORE ){
+int mark(cd, hand)
+        HAND hand;
+{
+	if (cd != NOMORE) {
 		++hand[cd];
-		if( hand[cd] > 4 ){
-			error( "mark overflow" );
-			}
+		if (hand[cd] > 4) {
+			error("mark overflow");
 		}
-	return( cd );
 	}
+	return(cd);
+}
 
-deal( hand, n ) HAND hand; {
-	while( n-- ){
-		if( mark( hand, draw() ) == NOMORE ) error( "deck exhausted" );
-		}
+void deal(hand, n)
+        HAND hand;
+{
+	while(n--) {
+		if (mark(hand, draw()) == NOMORE)
+                        error("deck exhausted");
 	}
+}
 
 char *cname[] = {
 	"NOMORE!!!",
@@ -107,78 +135,65 @@ char *cname[] = {
 	"J",
 	"Q",
 	"K",
-	};
+};
 
-stats(){
-	register i, ct, b;
+void stats()
+{
+	register int i, ct, b;
 
-	if( proflag ) printf( "Pro level\n" );
+	if (proflag)
+                printf("Pro level\n");
 	b = ct = 0;
 
-	for( i=1; i<=CTYPE; ++i ){
-		if( myhand[i] == 4 ) ++b;
-		else ct += myhand[i];
-		}
-
-	if( b ){
-		printf( "My books: " );
-		for( i=1; i<=CTYPE; ++i ){
-			if( myhand[i] == 4 ) printf( "%s ", cname[i] );
-			}
-		printf( "\n" );
-		}
-
-	printf( "%d cards in my hand, %d in the pool\n", ct, DECK-nextcd );
-	printf( "You ask me for: " );
+	for (i=1; i<=CTYPE; ++i) {
+		if (myhand[i] == 4)
+                        ++b;
+		else
+                        ct += myhand[i];
 	}
 
-phand( h ) HAND h; {
-	register i, j;
+	if (b) {
+		printf("My books: ");
+		for (i=1; i<=CTYPE; ++i) {
+			if (myhand[i] == 4)
+                                printf("%s ", cname[i]);
+		}
+		printf("\n");
+	}
+
+	printf("%d cards in my hand, %d in the pool\n", ct, DECK-nextcd);
+	printf("You ask me for: ");
+}
+
+void phand(h)
+        HAND h;
+{
+	register int i, j;
 
 	j = 0;
 
-	for( i = 1; i<= CTYPE; ++i ){
-		if( h[i] == 4 ) {
+	for (i = 1; i<= CTYPE; ++i) {
+		if (h[i] == 4) {
 			++j;
 			continue;
-			}
-		if( h[i] ){
-			register k;
-			k = h[i];
-			while( k-- ) printf( "%s ", cname[i] );
-			}
 		}
+		if (h[i]) {
+			register int k = h[i];
 
-	if( j ){
-		printf( "+ Books of " );
-		for( i=1; i<=CTYPE; ++i ){
-			if( h[i] == 4 ) printf( "%s ", cname[i] );
-			}
+			while(k--) printf("%s ", cname[i]);
 		}
-
-	printf( "\n" );
 	}
 
-main( argc, argv ) char * argv[]; {
-	/* initialize shuffling, ask for instructions, play game, die */
-	register c;
-
-	if( argc > 1 && argv[1][0] == '-' ){
-		while( argv[1][0] == '-' ) { ++argv[1]; ++debug; }
-		argv++;
-		argc--;
+	if (j) {
+		printf("+ Books of ");
+		for (i=1; i<=CTYPE; ++i) {
+			if (h[i] == 4)
+                                printf("%s ", cname[i]);
 		}
-
-	srand( getpid() );
-
-	printf( "instructions?\n" );
-	if( (c=getchar()) != '\n' ){
-		if( c != 'n' ) instruct();
-		while( getchar() != '\n' );
-		}
-
-	game();
 	}
+
+	printf("\n");
+}
 
 /*	print instructions */
 
@@ -203,158 +218,153 @@ char *inst[] = {
 	"guess puts you into `pro' level; The default is pretty dumb!",
 	"Good Luck!\n",
 	"",
-	};
+};
 
-instruct(){
+void instruct()
+{
 	register char **cpp;
 
-	printf( "\n" );
+	printf("\n");
 
-	for( cpp = inst; **cpp != '\0'; ++cpp ){
-		printf( "%s\n", *cpp );
-		}
+	for (cpp = inst; **cpp != '\0'; ++cpp) {
+		printf("%s\n", *cpp);
 	}
+}
 
-game(){
+void start(h)
+        HAND h;
+{
+	;
+}
 
-	shuffle();
-
-	deal( myhand, 7 );
-	deal( yourhand, 7 );
-
-	start( myhand );
-
-	for(;;){
-
-		register g;
-
-
-		/* you make repeated guesses */
-
-		for(;;) {
-			printf( "your hand is: " );
-			phand( yourhand );
-			printf( "you ask me for: " );
-			if( !move( yourhand, myhand, g=guess(), 0 ) ) break;
-			printf( "Guess again\n" );
-			}
-
-		/* I make repeated guesses */
-
-		for(;;) {
-			if( (g=myguess()) != NOMORE ){
-				printf( "I ask you for: %s\n", cname[g] );
-				}
-			if( !move( myhand, yourhand, g, 1 ) ) break;
-			printf( "I get another guess\n" );
-			}
-		}
-	}
-
-/*	reflect the effect of a move on the hands */
-
-move( hs, ht, g, v ) HAND hs, ht; {
-	/* hand hs has made a guess, g, directed towards ht */
-	/* v on indicates that the guess was made by the machine */
-	register d;
-	char *sp, *tp;
-
-	sp = tp = "I";
-	if( v ) tp = "You";
-	else sp = "You";
-
-	if( g == NOMORE ){
-		d = draw();
-		if( d == NOMORE ) score();
-		else {
-
-			printf( "Empty Hand\n" );
-			if( !v ) printf( "You draw %s\n", cname[d] );
-			mark( hs, d );
-			}
-		return( 0 );
-		}
-
-	if( !v ) heguessed( g );
-
-	if( hs[g] == 0 ){
-		if( v ) error( "Rotten Guess" );
-		printf( "You don't have any %s's\n", cname[g] );
-		return(1);
-		}
-
-	if( ht[g] ){ /* successful guess */
-		printf( "%s have %d %s%s\n", tp, ht[g], cname[g], ht[g]>1?"'s":"" );
-		hs[g] += ht[g];
-		ht[g] = 0;
-		if( hs[g] == 4 ) madebook(g);
-		return(1);
-		}
-
-	/* GO FISH! */
-
-	printf( "%s say \"GO FISH!\"\n", tp );
-
-	newdraw:
-	d = draw();
-	if( d == NOMORE ) {
-		printf( "No more cards\n" );
-		return(0);
-		}
-	mark( hs, d );
-	if( !v ) printf( "You draw %s\n", cname[d] );
-	if( hs[d] == 4 ) madebook(d);
-	if( d == g ){
-		printf( "%s drew the guess, so draw again\n", sp );
-		if( !v ) hedrew( d );
-		goto newdraw;
-		}
-	return( 0 );
-	}
-
-madebook( x ){
-	printf( "Made a book of %s's\n", cname[x] );
-	}
-
-score(){
-	register my, your, i;
+void score()
+{
+	register int my, your, i;
 
 	my = your = 0;
 
-	printf( "The game is over.\nMy books: " );
+	printf("The game is over.\nMy books: ");
 
-	for( i=1; i<=CTYPE;++i ){
-		if( myhand[i] == 4 ){
+	for (i=1; i<=CTYPE;++i) {
+		if (myhand[i] == 4) {
 			++my;
-			printf( "%s ", cname[i] );
-			}
+			printf("%s ", cname[i]);
 		}
-
-	printf( "\nYour books: " );
-
-	for( i=1; i<=CTYPE;++i ){
-		if( yourhand[i] == 4 ){
-			++your;
-			printf( "%s ", cname[i] );
-			}
-		}
-
-	printf( "\n\nI have %d, you have %d\n", my, your );
-
-	printf( "\n%s win!!!\n", my>your?"I":"You" );
-	exit(0);
 	}
 
-# define G(x) { if(go) goto err;  else go = x; }
+	printf("\nYour books: ");
 
-guess(){
+	for (i=1; i<=CTYPE;++i) {
+		if (yourhand[i] == 4) {
+			++your;
+			printf("%s ", cname[i]);
+		}
+	}
+
+	printf("\n\nI have %d, you have %d\n", my, your);
+
+	printf("\n%s win!!!\n", my>your?"I":"You");
+	exit(0);
+}
+
+void heguessed(d)
+{
+	++hehas[d];
+}
+
+void madebook(x)
+{
+	printf("Made a book of %s's\n", cname[x]);
+}
+
+void hedrew(d)
+{
+	++hehas[d];
+}
+
+/* reflect the effect of a move on the hands */
+
+int move(hs, ht, g, v)
+        HAND hs, ht;
+{
+	/* hand hs has made a guess, g, directed towards ht */
+	/* v on indicates that the guess was made by the machine */
+	register int d;
+	char *sp, *tp;
+
+	sp = tp = "I";
+	if (v)
+                tp = "You";
+	else
+                sp = "You";
+
+	if (g == NOMORE) {
+		d = draw();
+		if (d == NOMORE)
+                        score();
+		else {
+			printf("Empty Hand\n");
+			if (! v)
+                                printf("You draw %s\n", cname[d]);
+			mark(hs, d);
+		}
+		return(0);
+	}
+
+	if (! v)
+                heguessed(g);
+
+	if (hs[g] == 0) {
+		if (v)
+                        error("Rotten Guess");
+		printf("You don't have any %s's\n", cname[g]);
+		return(1);
+	}
+
+	if (ht[g]) { /* successful guess */
+		printf("%s have %d %s%s\n", tp, ht[g], cname[g], ht[g]>1?"'s":"");
+		hs[g] += ht[g];
+		ht[g] = 0;
+		if (hs[g] == 4)
+                        madebook(g);
+		return 1;
+	}
+
+	/* GO FISH! */
+
+	printf("%s say \"GO FISH!\"\n", tp);
+
+	newdraw:
+	d = draw();
+	if (d == NOMORE) {
+		printf("No more cards\n");
+		return(0);
+	}
+	mark(hs, d);
+	if (! v)
+                printf("You draw %s\n", cname[d]);
+	if (hs[d] == 4)
+                madebook(d);
+	if (d == g) {
+		printf("%s drew the guess, so draw again\n", sp);
+		if (! v)
+                        hedrew(d);
+		goto newdraw;
+	}
+	return(0);
+}
+
+#define G(x) { if (go) goto err; else go = x; }
+
+int guess()
+{
 	/* get the guess from the tty and return it... */
-	register g, go;
+	register int g, go;
 
 	go = 0;
 
-	for(;;) {
-		switch( g = getchar() ){
+	for (;;) {
+		switch(g = getchar()) {
 
 		case 'p':
 		case 'P':
@@ -369,44 +379,46 @@ guess(){
 		case '7':
 		case '8':
 		case '9':
-			G(g-'0');
+			G (g - '0');
 			continue;
 
 		case 'a':
 		case 'A':
-			G(1);
+			G (1);
 			continue;
 
 		case '1':
-			G(10);
+			G (10);
 			continue;
 
 		case '0':
-			if( go != 10 ) goto err;
+			if (go != 10)
+                                goto err;
 			continue;
 
 		case 'J':
 		case 'j':
-			G(11);
+			G (11);
 			continue;
 
 		case 'Q':
 		case 'q':
-			G(12);
+			G (12);
 			continue;
 
 		case 'K':
 		case 'k':
-			G(13);
+			G (13);
 			continue;
 
 		case '\n':
-			if( empty( yourhand ) ) return( NOMORE );
-			if( go == 0 ){
+			if (empty(yourhand))
+                                return NOMORE;
+			if (go == 0) {
 				stats();
 				continue;
-				}
-			return( go );
+			}
+			return(go);
 
 		case ' ':
 		case '\t':
@@ -414,84 +426,134 @@ guess(){
 
 		default:
 			err:
-			while( g != '\n' ) g = getchar();
-			printf( "what?\n" );
+			while(g != '\n') g = getchar();
+			printf("what?\n");
 			continue;
-			}
 		}
 	}
+}
 
-/*	the program's strategy appears from here to the end */
+int myguess()
+{
+	register int i, lg, t;
 
-char try[100];
-char ntry;
-char haveguessed[CTSIZ];
-
-char hehas[CTSIZ];
-
-start( h ) HAND h; {
-	;
-	}
-
-hedrew( d ){
-	++hehas[d];
-	}
-
-heguessed( d ){
-	++hehas[d];
-	}
-
-myguess(){
-
-	register i, lg, t;
-
-	if( empty( myhand ) ) return( NOMORE );
+	if (empty(myhand))
+                return(NOMORE);
 
 	/* make a list of those things which i have */
 	/* leave off any which are books */
 	/* if something is found that he has, guess it! */
 
 	ntry = 0;
-	for( i=1; i<=CTYPE; ++i ){
-		if( myhand[i] == 0 || myhand[i] == 4 ) continue;
+	for (i=1; i<=CTYPE; ++i) {
+		if (myhand[i] == 0 || myhand[i] == 4)
+                        continue;
 		try[ntry++] = i;
-		}
+	}
 
-	if( !proflag ) goto random;
+	if (! proflag)
+                goto random;
 
 	/* get ones he has, if any */
 
-	for( i=0; i<ntry; ++i ){
-		if( hehas[try[i]] ) {
+	for (i=0; i<ntry; ++i) {
+		if (hehas[try[i]]) {
 			i = try[i];
 			goto gotguess;
-			}
 		}
+	}
 
 	/* is there one that has never been guessed; if so, guess it */
 	lg = 101;
-	for( i=0; i<ntry; ++i ){
-		if( haveguessed[try[i]] < lg ) lg = haveguessed[try[i]];
-		}
+	for (i=0; i<ntry; ++i) {
+		if (haveguessed[try[i]] < lg)
+                        lg = haveguessed[try[i]];
+	}
 	/* remove all those not guessed longest ago */
 
 	t = 0;
-	for( i=0; i<ntry; ++i ){
-		if( haveguessed[try[i]] == lg ) try[t++] = try[i];
-		}
+	for (i=0; i<ntry; ++i) {
+		if (haveguessed[try[i]] == lg)
+                        try[t++] = try[i];
+	}
 	ntry = t;
-	if( t <= 0 ) error( "bad guessing loop" );
+	if (t <= 0)
+                error("bad guessing loop");
 
 	random:
-	i = choose( try, ntry );  /* make a random choice */
+	i = choose(try, ntry);  /* make a random choice */
 
 	gotguess:  /* do bookkeeping */
 
 	hehas[i] = 0;  /* he won't anymore! */
-	for( t=1; t<=CTYPE; ++t ){
-		if( haveguessed[t] ) --haveguessed[t];
-		}
+	for (t=1; t<=CTYPE; ++t) {
+		if (haveguessed[t])
+                        --haveguessed[t];
+	}
 	haveguessed[i] = 100;  /* will have guessed it */
 	return(i);
+}
 
+void game()
+{
+	shuffle();
+
+	deal(myhand, 7);
+	deal(yourhand, 7);
+
+	start(myhand);
+
+	for (;;) {
+		register int g;
+
+		/* you make repeated guesses */
+
+		for (;;) {
+			printf("your hand is: ");
+			phand(yourhand);
+			printf("you ask me for: ");
+			if (! move(yourhand, myhand, g = guess(), 0))
+                                break;
+			printf("Guess again\n");
+		}
+
+		/* I make repeated guesses */
+
+		for (;;) {
+			if ((g = myguess()) != NOMORE) {
+				printf("I ask you for: %s\n", cname[g]);
+			}
+			if (! move(myhand, yourhand, g, 1))
+                                break;
+			printf("I get another guess\n");
+		}
 	}
+}
+
+int main(argc, argv)
+        char * argv[];
+{
+	/* initialize shuffling, ask for instructions, play game, die */
+	register int c;
+
+	if (argc > 1 && argv[1][0] == '-') {
+		while(argv[1][0] == '-') {
+                        ++argv[1];
+                        ++debug;
+                }
+		argv++;
+		argc--;
+	}
+
+	srand(getpid());
+
+	printf("instructions?\n");
+	if ((c = getchar()) != '\n') {
+		if (c != 'n')
+                        instruct();
+		while (getchar() != '\n');
+	}
+
+	game();
+	return 0;
+}

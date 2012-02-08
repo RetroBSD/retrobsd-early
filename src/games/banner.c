@@ -1,18 +1,22 @@
 /*
  * banner - prints large signs
- * banner [-w#] [-t] message ...
+ * banner [-w#] [-p@] [-t] message ...
  *
  * Written by Vadim Antonov, MSU 28.09.1985
  * Ported to RetroBSD by Serge Vakulenko, 2012
  */
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
-#define MAXMSG 100
-#define DWIDTH 160
-#define NCHARS 128
-#define SPACEW 8        /* space width */
+#define MAXMSG 100      /* max chars in message */
+#define DWIDTH 160      /* max output line width */
+#define SPACEW 5        /* space width */
+#define DPUNCH "#"      /* symbol to use for printing */
 
 struct font_t {
         char code;
@@ -20,13 +24,14 @@ struct font_t {
 };
 
 int width = DWIDTH;	/* -w option: scrunch letters to 80 columns */
+char *punch = DPUNCH;	/* -p option: punch symbol, default # */
 int trace;
 char line [DWIDTH], *linep;
 char message [MAXMSG];
 int nchars;
 
 /*
- * Font 7x7
+ * Font 7x7, variable width
  */
 #define ROW(a,b,c,d,e,f,g) (a<<6 | b<<5 | c<<4 | d<<3 | e<<2 | f<<1 | g)
 #define _ 0
@@ -833,8 +838,13 @@ int main (argc, argv)
 		switch(argv[1][1]) {
 		case 'w':
 			width = atoi(&argv[1][2]);
-			if (width==0)
+			if (width == 0)
 				width = 80;
+			break;
+		case 'p':
+			punch = &argv[1][2];
+			if (*punch == 0)
+				punch = DPUNCH;
 			break;
 		case 't':
 			trace++;
@@ -856,7 +866,8 @@ int main (argc, argv)
 		}
 	} else {
 		fprintf(stderr,"Message: ");
-		gets(message);
+		if (! gets(message))
+		    return 0;
 	}
 	nchars = strlen(message);
 	if (trace)
@@ -899,8 +910,12 @@ int main (argc, argv)
                 char *limit = &line[width-1];
                 while (! (*limit & i))
                         limit--;
-                for (linep = line; linep <= limit; linep++)
-                        putchar ((*linep & i) ? '#': ' ');
+                for (linep = line; linep <= limit; linep++) {
+                        if (*linep & i)
+                                fputs (punch, stdout);
+                        else
+                                putchar (' ');
+                }
                 putchar ('\n');
         }
 

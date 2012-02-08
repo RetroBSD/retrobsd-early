@@ -3,19 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)endwin.c	5.1 (Berkeley) 6/7/85";
-#endif
+#include "curses.ext"
 
 /*
  * Clean things up before exiting
- *
  */
-
-# include	"curses.ext"
-
-endwin()
+void endwin()
 {
 	resetty();
 	_puts(VE);

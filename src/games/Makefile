@@ -7,7 +7,7 @@ TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
-CFLAGS          = -Werror -Wall -Os
+CFLAGS          += -Werror -Wall -Os
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
@@ -19,13 +19,13 @@ SUBDIR          =
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD             = banner
-# TODO: arithmetic bcd cfscores factor fish morse number ppt wump
+STD             = banner arithmetic bcd cfscores factor fish morse \
+                  number ppt wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD            =
-# TODO: canfield primes rain worm worms
+NSTD            = canfield
+# TODO: primes rain worm worms
 
 all:            $(SUBDIR) $(STD) $(NSTD)
 
@@ -46,6 +46,8 @@ install:        $(STD) $(NSTD)
 			make -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) install; done
 		-for i in $(STD) $(NSTD); do \
 			install $$i $(DESTDIR)/games/$$i; done
+		-for i in *.6; do \
+			${MANROFF} $$i > $(DESTDIR)/share/man/cat6/`basename $$i .6`.0; done
 		cat < /dev/null > $(DESTDIR)/games/lib/cfscores
 		chmod 777 $(DESTDIR)/games/lib/cfscores
 

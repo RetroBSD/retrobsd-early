@@ -3,20 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)getch.c	5.3 (Berkeley) 4/16/86";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
- *	This routine reads in a character from the window.
- *
+ * This routine reads in a character from the window.
  */
-wgetch(win)
-reg WINDOW	*win; {
-
+int wgetch(win)
+        reg WINDOW	*win;
+{
 	reg bool	weset = FALSE;
 	reg char	inp;
 

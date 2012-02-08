@@ -1,5 +1,12 @@
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define	MAX	100
 
@@ -12,14 +19,114 @@ long	stvec;
 long	etvec;
 long	dtvec;
 
-main(argc,argv)
-char	*argv[];
+void score()
+{
+	time(&etvec);
+
+	printf("\n\nRights %d; Wrongs %d; Score %d%%\n", rights, wrongs,
+		(rights * 100)/(rights + wrongs));
+
+	if (rights == 0)
+                return;
+	printf("Total time %ld seconds; %.1f seconds per problem\n\n\n",
+		etvec - stvec,
+		(etvec - stvec) / (rights + 0.));
+
+	sleep(3);
+	time(&dtvec);
+	stvec += dtvec - etvec;
+}
+
+void delete(sig)
+{
+	if(rights + wrongs == 0.) {
+		printf("\n");
+		exit(0);
+	}
+	score();
+	exit(0);
+}
+
+int getnum(s)
+        char *s;
+{
+	int	a;
+	char	c;
+
+	a = 0;
+	while((c = *s++) >= '0' && c <= '9') {
+		a = a*10 + c - '0';
+	}
+	return(a);
+}
+
+int arand;
+
+void srand13(n)
+{
+	arand = (n & 077774) | 01;
+}
+
+int rand13()		/*uniform on 0 to 2**13-1*/
+{
+	arand *= 3125;
+	arand &= 077777;
+	return(arand/4);
+}
+
+/*
+ * 'hmul' returns the upper 16 bits of the product, where the operands
+ *  are assumed to be 16-bit integers. It replaces an old PDP-11
+ *  assembler language subroutine. -- dks.
+ */
+int hmul(a, b)
+{
+        return (long)a*b >> 16;
+}
+
+int skrand(range)
+{
+        int temp;
+
+	temp = rand13() + rand13();
+	if (temp >017777)
+                temp = 040000 - temp;
+	return hmul(temp, 8*range);
+}
+
+int rrandom(range)
+{
+	return(hmul(rand13(), 8*range));
+}
+
+void getln(s)
+        char *s;
+{
+	register char	*rs;
+
+	rs = s;
+
+	while((*rs = getchar()) == ' ');
+	while(*rs != '\n')
+		if(*rs == 0)
+			exit(0);
+		else if(rs >= &s[99]) {
+			while((*rs = getchar()) != '\n')
+				if(*rs == '\0')
+                                        exit(0);
+		}
+		else
+			*++rs = getchar();
+	while(*--rs == ' ')
+		*rs = '\n';
+}
+
+int main(argc, argv)
+        char	*argv[];
 {
 	int range, k, dif, l;
 	char line[100];
-	int ans,pans,i,j,t;
-	char	dir,sense;
-	extern	delete();
+	int ans, pans, i, j, t;
 
 	signal(SIGINT, delete);
 
@@ -31,7 +138,7 @@ char	*argv[];
 		case '-':
 		case 'x':
 		case '/':
-			while(types[dif] = argv[1][dif])
+			while ((types[dif] = argv[1][dif]))
 				dif++;
 			break;
 
@@ -43,7 +150,7 @@ char	*argv[];
 	}
 	if(range > MAX) {
 		printf("Range is too large.\n");
-		exit();
+		exit(0);
 	}
 
 	if(dif == 0) {
@@ -57,7 +164,7 @@ char	*argv[];
 	}
 	time(&stvec);
 	k = stvec;
-	srand(k);
+	srand13(k);
 	k = 0;
 	l = 0;
 	goto start;
@@ -70,7 +177,7 @@ start:
 	i = skrand(range);
 	j = skrand(range);
 	if(dif > 1)
-		l = random(dif);
+		l = rrandom(dif);
 
 	switch(types[l]) {
 		case '+':
@@ -92,16 +199,15 @@ start:
 
 		case '/':
 			while(right[j] == 0)
-				j = random(range);
-			t = left[i] * right[j] + random(right[j]);
+				j = rrandom(range);
+			t = left[i] * right[j] + rrandom(right[j]);
 			ans = left[i];
 			printf("%d / %d =   ", t, right[j]);
 			break;
 	}
 
-
 loop1:
-	getline(line);
+	getln(line);
 	dtvec += etvec - stvec;
 	if(line[0]=='\n') goto loop1;
 	pans = getnum(line);
@@ -118,98 +224,4 @@ loop1:
 		right[range++] = right[j];
 		goto loop1;
 	}
-}
-
-getline(s)
-char *s;
-{
-	register char	*rs;
-
-	rs = s;
-
-	while((*rs = getchar()) == ' ');
-	while(*rs != '\n')
-		if(*rs == 0)
-			exit();
-		else if(rs >= &s[99]) {
-			while((*rs = getchar()) != '\n')
-				if(*rs == '\0')	exit();
-		}
-		else
-			*++rs = getchar();
-	while(*--rs == ' ')
-		*rs = '\n';
-}
-
-getnum(s)
-char *s;
-{
-	int	a;
-	char	c;
-
-	a = 0;
-	while((c = *s++) >= '0' && c <= '9') {
-		a = a*10 + c - '0';
-	}
-	return(a);
-}
-
-int arand;
-
-srand(n)
-{
-	arand = n&077774 | 01;
-}
-
-rand()		/*uniform on 0 to 2**13-1*/
-{
-
-	arand *= 3125;
-	arand &= 077777;
-	return(arand/4);
-}
-
-random(range)
-{
-	return(hmul(rand(), 8*range));
-}
-
-skrand(range){
-int temp;
-	temp = rand() + rand();
-	if(temp >017777) temp = 040000 - temp;
-	return(hmul(temp,8*range));
-	}
-
-/* 'hmul' returns the upper 16 bits of the product, where the operands
-   are assumed to be 16-bit integers. It replaces an old PDP-11
-   assembler language subroutine. -- dks.
-*/
-hmul(a,b) { return((long)a*b >> 16); }
-score()
-{
-	time(&etvec);
-
-	printf("\n\nRights %d; Wrongs %d; Score %d%%\n", rights, wrongs,
-		(rights * 100)/(rights + wrongs));
-
-	if(rights == 0)	return;
-	printf("Total time %ld seconds; %.1f seconds per problem\n\n\n",
-		etvec - stvec,
-		(etvec - stvec) / (rights + 0.));
-
-	sleep(3);
-	time(&dtvec);
-	stvec += dtvec - etvec;
-	return(0);
-}
-
-delete()
-{
-	if(rights + wrongs == 0.) {
-		printf("\n");
-		exit();
-	}
-	score();
-	exit();
 }

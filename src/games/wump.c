@@ -1,8 +1,15 @@
 /*
- *	wumpus
- *	stolen from PCC Vol 2 No 1
+ * wumpus
+ * stolen from PCC Vol 2 No 1
  */
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <time.h>
+#include <sgtty.h>
 
 #define	NBAT	3
 #define	NROOM	20
@@ -96,11 +103,110 @@ int	loc;
 int	wloc;
 int	tchar;
 
-main()
+int rnum(n)
 {
-	register i, j;
+	static short first[2];
+
+	if(first[1] == 0) {
+		time(first);
+		if(first[1]==0) first[1] = 1;
+		srand((first[1]*first[0])^first[1]);
+	}
+	return((int)((rand()/BIGINT) * n));
+}
+
+int tunnel(i)
+{
 	register struct room *p;
-	int k, icomp();
+	register int n, j;
+	int c;
+
+	c = 20;
+loop:
+	n = rnum(NROOM);
+	if(n == i)
+		if(--c > 0)
+			goto loop;
+	p = &room[n];
+	for(j=0; j<NTUNN; j++)
+	if(p->tunn[j] == -1) {
+		p->tunn[j] = i;
+		return(n);
+	}
+	goto loop;
+}
+
+int rline()
+{
+	register char c, r;
+
+	while ((c = getchar()) == ' ');
+	r = c;
+	while (c != '\n' && c != ' ') {
+		if (c == EOF)
+			exit(0);
+		c = getchar();
+	}
+	tchar = c;
+	return(r);
+}
+
+int rin()
+{
+	register int n, c;
+
+	n = 0;
+	c = getchar();
+	while(c != '\n' && c != ' ') {
+		if(c<'0' || c>'9') {
+			while(c != '\n') {
+				if(c == EOF)
+					exit(0);
+				c = getchar();
+			}
+			return(0);
+		}
+		n = n*10 + c-'0';
+		c = getchar();
+	}
+	return(n);
+}
+
+int near(ap, ahaz)
+        struct room *ap;
+{
+	register struct room *p;
+	register int haz, i;
+
+	p = ap;
+	haz = ahaz;
+	for(i=0; i<NTUNN; i++)
+	if(room[p->tunn[i]].flag & haz)
+		return (1);
+	return(0);
+}
+
+int icomp(p1, p2)
+        int *p1, *p2;
+{
+	return(*p1 - *p2);
+}
+
+void drain()
+{
+	fflush (stdin);
+#if 0
+	struct sgttyb arg;
+	if (gtty(0, &arg) != -1)
+                stty(0, &arg);
+#endif
+}
+
+int main()
+{
+	register int i, j;
+	register struct room *p;
+	int k;
 
 	printf("Instructions? (y-n) ");
 	if(rline() == 'y')
@@ -288,106 +394,5 @@ done:
 			goto setup;
 		goto init;
 	}
-}
-
-tunnel(i)
-{
-	register struct room *p;
-	register n, j;
-	int c;
-
-	c = 20;
-
-loop:
-	n = rnum(NROOM);
-	if(n == i)
-		if(--c > 0)
-			goto loop;
-	p = &room[n];
-	for(j=0; j<NTUNN; j++)
-	if(p->tunn[j] == -1) {
-		p->tunn[j] = i;
-		return(n);
-	}
-	goto loop;
-}
-
-rline()
-{
-	register char c, r;
-
-	while((c=getchar()) == ' ');
-	r = c;
-	while(c != '\n' && c != ' ') {
-		if(c == EOF)
-			exit();
-		c = getchar();
-	}
-	tchar = c;
-	return(r);
-}
-
-rnum(n)
-{
-	static short first[2];
-
-	if(first[1] == 0) {
-		time(first);
-		if(first[1]==0) first[1] = 1;
-		srand((first[1]*first[0])^first[1]);
-	}
-	return((int)((rand()/BIGINT) * n));
-}
-
-rin()
-{
-	register n, c;
-
-	n = 0;
-	c = getchar();
-	while(c != '\n' && c != ' ') {
-		if(c<'0' || c>'9') {
-			while(c != '\n') {
-				if(c == EOF)
-					exit();
-				c = getchar();
-			}
-			return(0);
-		}
-		n = n*10 + c-'0';
-		c = getchar();
-	}
-	return(n);
-}
-
-near(ap, ahaz)
-struct room *ap;
-{
-	register struct room *p;
-	register haz, i;
-
-	p = ap;
-	haz = ahaz;
-	for(i=0; i<NTUNN; i++)
-	if(room[p->tunn[i]].flag & haz)
-		return (1);
-	return(0);
-}
-
-icomp(p1, p2)
-int *p1, *p2;
-{
-
-	return(*p1 - *p2);
-}
-#include <sgtty.h>
-drain()
-{
-	register FILE *port = stdin;
-	register int iodes = fileno(port);
-	struct sgttyb arg;
-
-	port->_cnt = 0;
-	port->_ptr = port->_base;
-	if(gtty(iodes,&arg) != -1) stty(iodes,&arg);
+        return 0;
 }

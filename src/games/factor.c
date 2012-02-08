@@ -1,50 +1,20 @@
 /*
- *              factor [ number ]
+ * factor [ number ]
  *
  * Written to replace factor.s in Bell V7 distribution
  */
-
-main(argc, argv)
-char	*argv[];
-{
-	int	n;
-
-	if (argc >= 2) {
-		sscanf(argv[1], "%d", &n);
-		if (n > 0)
-			printfactors(n);
-	} else {
-		while (scanf("%d", &n) == 1)
-			if (n > 0)
-				printfactors(n);
-	}
-}
-
-/*
- * Print all prime factors of integer n > 0, smallest first, one to a line
- */
-printfactors(n)
-	register int	n;
-{
-	register int	prime;
-
-	if (n == 1)
-		printf("\t1\n");
-	else while (n != 1) {
-		prime = factor(n);
-		printf("\t%d\n", prime);
-		n /= prime;
-	}
-}
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 
 /*
  * Return smallest prime factor of integer N > 0
  *
  * Algorithm from E.W. Dijkstra (A Discipline of Programming, Chapter 20)
  */
-
-int
-factor(N)
+int factor(N)
 	int	N;
 {
 	int		p;
@@ -93,4 +63,38 @@ factor(N)
 		p = N;
 
 	return(p);
+}
+
+/*
+ * Print all prime factors of integer n > 0, smallest first, one to a line
+ */
+void printfactors(n)
+	register int	n;
+{
+	register int	prime;
+
+	if (n == 1)
+		printf("\t1\n");
+	else while (n != 1) {
+		prime = factor(n);
+		printf("\t%d\n", prime);
+		n /= prime;
+	}
+}
+
+int main(argc, argv)
+        char	*argv[];
+{
+	int	n;
+
+	if (argc >= 2) {
+		sscanf(argv[1], "%d", &n);
+		if (n > 0)
+			printfactors(n);
+	} else {
+		while (scanf("%d", &n) == 1)
+			if (n > 0)
+				printfactors(n);
+	}
+        return 0;
 }
