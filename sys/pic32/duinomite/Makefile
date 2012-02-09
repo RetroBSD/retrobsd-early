@@ -101,7 +101,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o 
+KERNOBJ		+= sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
@@ -114,7 +114,6 @@ all:		.deps sys machine unix.elf
 clean:
 		rm -rf .deps *.o *.elf *.bin *.dis *.map *.srec core \
 		mklog assym.h vers.c genassym sys machine
-		find ../.. -name \*~ | xargs rm -f
 
 .deps:
 		mkdir .deps

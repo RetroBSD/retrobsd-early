@@ -11,16 +11,16 @@
 #
 # Supported boards
 #
-MAX32           = sys/pic32/max32
-UBW32           = sys/pic32/ubw32
-UBW32UART       = sys/pic32/ubw32-uart
-MAXIMITE        = sys/pic32/maximite
-EXPLORER16      = sys/pic32/explorer16
-STARTERKIT      = sys/pic32/starter-kit
-DUINOMITE       = sys/pic32/duinomite
-PINGUINO        = sys/pic32/pinguino-micro
-DIP             = sys/pic32/dip
-BAREMETAL       = sys/pic32/baremetal
+MAX32           = pic32/max32
+UBW32           = pic32/ubw32
+UBW32UART       = pic32/ubw32-uart
+MAXIMITE        = pic32/maximite
+EXPLORER16      = pic32/explorer16
+STARTERKIT      = pic32/starter-kit
+DUINOMITE       = pic32/duinomite
+PINGUINO        = pic32/pinguino-micro
+DIP             = pic32/dip
+BAREMETAL       = pic32/baremetal
 
 # Select target board
 TARGET          ?= $(MAX32)
@@ -40,10 +40,6 @@ SWAP_KBYTES     = 2048
 # See lib/libc/Makefile for explanation.
 #
 DEFS		=
-
-CLEANDIR	= tools src $(UBW32) $(UBW32UART) \
-                  $(MAXIMITE) $(MAX32) $(EXPLORER16) $(STARTERKIT) \
-                  $(DUINOMITE) $(PINGUINO) $(DIP) $(BAREMETAL)
 
 FSUTIL		= tools/fsutil/fsutil
 
@@ -98,13 +94,13 @@ ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
                   dev/adc8!c8:8 dev/adc9!c8:9 dev/adc10!c8:10 dev/adc11!c8:11 \
                   dev/adc12!c8:12 dev/adc13!c8:13 dev/adc14!c8:14 dev/adc15!c8:15
 
-fs:             filesys.img user.img
-
 all:            build kernel
 		$(MAKE) fs
 
+fs:             filesys.img user.img
+
 kernel:
-		$(MAKE) -C $(TARGET)
+		$(MAKE) -C sys/$(TARGET)
 
 build $(ALLFILES):
 		$(MAKE) -C tools
@@ -128,10 +124,10 @@ $(FSUTIL):
 
 clean:
 		rm -f *~
-		for dir in $(CLEANDIR); do $(MAKE) -C $$dir -k clean; done
+		for dir in tools src sys/pic32; do $(MAKE) -C $$dir -k clean; done
 
-realclean:      clean
-		rm -f sys/pic32/*/unix.hex bin/* sbin/* lib/* libexec/* share/man/cat*/*
+cleanall:       clean
+		rm -f sys/pic32/*/unix.hex bin/* sbin/* lib/* games/[a-k]* games/[m-z]* libexec/* share/man/cat*/*
 
 # TODO
 buildlib:
