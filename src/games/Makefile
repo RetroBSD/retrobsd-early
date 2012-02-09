@@ -24,8 +24,7 @@ STD             = banner arithmetic bcd cfscores factor fish morse \
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD            = canfield
-# TODO: primes rain worm worms
+NSTD            = canfield primes rain worm worms
 
 all:            $(SUBDIR) $(STD) $(NSTD)
 
@@ -70,7 +69,7 @@ primes:         primes.c
 		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
 rain:           rain.c
-		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -ltermcap $(LIBS)
 		$(OBJDUMP) -S $@.elf > $@.dis
 		$(SIZE) $@.elf
 		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
@@ -82,7 +81,7 @@ worm:           worm.c
 		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf
 
 worms:          worms.c
-		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -lcurses -ltermcap $(LIBS)
+		$(CC) $(CFLAGS) $(LDFLAGS) -o $@.elf $< -ltermcap $(LIBS)
 		$(OBJDUMP) -S $@.elf > $@.dis
 		$(SIZE) $@.elf
 		$(ELF2AOUT) $@.elf $@ && /bin/rm $@.elf

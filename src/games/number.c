@@ -75,7 +75,7 @@ const char *decade[] = {
 char line[100];
 
 void print(s)
-        char *s;
+        const char *s;
 {
 	if (flag)
 		printf(" ");
@@ -122,6 +122,7 @@ void nline()
 }
 
 void cprint(s)
+        const char *s;
 {
 	if(flag)
 		print(s);

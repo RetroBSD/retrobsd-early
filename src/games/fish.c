@@ -99,7 +99,7 @@ int empty(h)
 	return(i);
 }
 
-int mark(cd, hand)
+int mark(hand, cd)
         HAND hand;
 {
 	if (cd != NOMORE) {

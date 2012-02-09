@@ -12,14 +12,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <time.h>
-#include <sys/types.h>
-
 #ifdef CROSS
 #   include </usr/include/curses.h>
 #   include </usr/include/ctype.h>
@@ -27,6 +19,13 @@
 #   include <curses.h>
 #   include <ctype.h>
 #endif
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <time.h>
+#include <sys/types.h>
 
 #define SG_ERASE ('H' & 037)
 #define SG_KILL  ('U' & 037)
@@ -423,6 +422,7 @@ void cleanupboard()
 	printw("|   |  |   |  |   |  |   |");
 	for (cnt = 0; cnt < 4; cnt++) {
 		switch(cnt) {
+                default:
 		case 0:
 			col = atabcol;
 			break;

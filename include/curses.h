@@ -2,34 +2,31 @@
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)curses.h	5.1 (Berkeley) 6/7/85
  */
+#ifndef CURSES_H
 
-# ifndef CURSES_H
+#include <stdio.h>
+#include <sgtty.h>
+#include <term.h>
 
-# include	<stdio.h>
+#define	bool	char
+#define	reg	register
 
-# include	<sgtty.h>
+#define	TRUE	(1)
+#define	FALSE	(0)
+#define	ERR	(0)
+#define	OK	(1)
 
-# define	bool	char
-# define	reg	register
+#define	_ENDLINE	001
+#define	_FULLWIN	002
+#define	_SCROLLWIN	004
+#define	_FLUSH		010
+#define	_FULLLINE	020
+#define	_IDLINE		040
+#define	_STANDOUT	0200
+#define	_NOCHANGE	-1
 
-# define	TRUE	(1)
-# define	FALSE	(0)
-# define	ERR	(0)
-# define	OK	(1)
-
-# define	_ENDLINE	001
-# define	_FULLWIN	002
-# define	_SCROLLWIN	004
-# define	_FLUSH		010
-# define	_FULLLINE	020
-# define	_IDLINE		040
-# define	_STANDOUT	0200
-# define	_NOCHANGE	-1
-
-# define	_puts(s)	tputs(s, 0, _putchar)
+#define	_puts(s)	tputs(s, 0, _putchar)
 
 typedef	struct sgttyb	SGTTY;
 
@@ -69,7 +66,7 @@ struct _win_st {
 	struct _win_st	*_nextp, *_orig;
 };
 
-# define	WINDOW	struct _win_st
+#define	WINDOW	struct _win_st
 
 extern bool	My_term, _echoit, _rawmode, _endwin;
 
@@ -85,33 +82,33 @@ extern WINDOW	*stdscr, *curscr;
  *	Define VOID to stop lint from generating "null effect"
  * comments.
  */
-# ifdef lint
+#ifdef lint
 int	__void__;
-# define	VOID(x)	(__void__ = (int) (x))
-# else
-# define	VOID(x)	(x)
-# endif
+#define	VOID(x)	(__void__ = (int) (x))
+#else
+#define	VOID(x)	(x)
+#endif
 
 /*
  * psuedo functions for standard screen
  */
-# define	addch(ch)	VOID(waddch(stdscr, ch))
-# define	getch()		VOID(wgetch(stdscr))
-# define	addstr(str)	VOID(waddstr(stdscr, str))
-# define	getstr(str)	VOID(wgetstr(stdscr, str))
-# define	move(y, x)	VOID(wmove(stdscr, y, x))
-# define	clear()		VOID(wclear(stdscr))
-# define	erase()		VOID(werase(stdscr))
-# define	clrtobot()	VOID(wclrtobot(stdscr))
-# define	clrtoeol()	VOID(wclrtoeol(stdscr))
-# define	insertln()	VOID(winsertln(stdscr))
-# define	deleteln()	VOID(wdeleteln(stdscr))
-# define	refresh()	VOID(wrefresh(stdscr))
-# define	inch()		VOID(winch(stdscr))
-# define	insch(c)	VOID(winsch(stdscr,c))
-# define	delch()		VOID(wdelch(stdscr))
-# define	standout()	VOID(wstandout(stdscr))
-# define	standend()	VOID(wstandend(stdscr))
+#define	addch(ch)	VOID(waddch(stdscr, ch))
+#define	getch()		VOID(wgetch(stdscr))
+#define	addstr(str)	VOID(waddstr(stdscr, str))
+#define	getstr(str)	VOID(wgetstr(stdscr, str))
+#define	move(y, x)	VOID(wmove(stdscr, y, x))
+#define	clear()		VOID(wclear(stdscr))
+#define	erase()		VOID(werase(stdscr))
+#define	clrtobot()	VOID(wclrtobot(stdscr))
+#define	clrtoeol()	VOID(wclrtoeol(stdscr))
+#define	insertln()	VOID(winsertln(stdscr))
+#define	deleteln()	VOID(wdeleteln(stdscr))
+#define	refresh()	VOID(wrefresh(stdscr))
+#define	inch()		VOID(winch(stdscr))
+#define	insch(c)	VOID(winsch(stdscr,c))
+#define	delch()		VOID(wdelch(stdscr))
+#define	standout()	VOID(wstandout(stdscr))
+#define	standend()	VOID(wstandend(stdscr))
 
 /*
  * mv functions
@@ -169,6 +166,9 @@ int     waddch (WINDOW *, char);
 int     wgetch (WINDOW *);
 char    *wstandout (WINDOW *);
 char    *wstandend (WINDOW *);
+int     touchwin (WINDOW *);
+int     touchline (WINDOW *, int, int);
+int     box (WINDOW *, char, char);
 void    endwin (void);
 int     printw (char *fmt, ...);
 int     wprintw (WINDOW *win, char *fmt, ...);
@@ -178,4 +178,5 @@ int     wprintw (WINDOW *win, char *fmt, ...);
  */
 #define	unctrl(c)	_unctrl[(c) & 0177]
 extern char *_unctrl[];
-# endif
+
+#endif

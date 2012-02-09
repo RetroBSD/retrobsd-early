@@ -1,49 +1,60 @@
+/*
+ *	 @@@        @@@    @@@@@@@@@@     @@@@@@@@@@@    @@@@@@@@@@@@
+ *	 @@@        @@@   @@@@@@@@@@@@    @@@@@@@@@@@@   @@@@@@@@@@@@@
+ *	 @@@        @@@  @@@@      @@@@   @@@@           @@@@ @@@  @@@@
+ *	 @@@   @@   @@@  @@@        @@@   @@@            @@@  @@@   @@@
+ *	 @@@  @@@@  @@@  @@@        @@@   @@@            @@@  @@@   @@@
+ *	 @@@@ @@@@ @@@@  @@@        @@@   @@@            @@@  @@@   @@@
+ *	  @@@@@@@@@@@@   @@@@      @@@@   @@@            @@@  @@@   @@@
+ *	   @@@@  @@@@     @@@@@@@@@@@@    @@@            @@@  @@@   @@@
+ *	    @@    @@       @@@@@@@@@@     @@@            @@@  @@@   @@@
+ *
+ *				 Eric P. Scott
+ *			  Caltech High Energy Physics
+ *				 October, 1980
+ */
 #define BSD
 
-/*
-
-	 @@@        @@@    @@@@@@@@@@     @@@@@@@@@@@    @@@@@@@@@@@@
-	 @@@        @@@   @@@@@@@@@@@@    @@@@@@@@@@@@   @@@@@@@@@@@@@
-	 @@@        @@@  @@@@      @@@@   @@@@           @@@@ @@@  @@@@
-	 @@@   @@   @@@  @@@        @@@   @@@            @@@  @@@   @@@
-	 @@@  @@@@  @@@  @@@        @@@   @@@            @@@  @@@   @@@
-	 @@@@ @@@@ @@@@  @@@        @@@   @@@            @@@  @@@   @@@
-	  @@@@@@@@@@@@   @@@@      @@@@   @@@            @@@  @@@   @@@
-	   @@@@  @@@@     @@@@@@@@@@@@    @@@            @@@  @@@   @@@
-	    @@    @@       @@@@@@@@@@     @@@            @@@  @@@   @@@
-
-				 Eric P. Scott
-			  Caltech High Energy Physics
-				 October, 1980
-
-*/
-#include <stdio.h>
-#ifdef USG
-#include <termio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#   include </usr/include/ctype.h>
 #else
-#include <sgtty.h>
+#   include <stdio.h>
+#   include <ctype.h>
 #endif
+#include <stdlib.h>
+#include <sgtty.h>
 #include <signal.h>
-int fputchar();
+#include <term.h>
+
 #define cursor(col,row) tputs(tgoto(CM,col,row),1,fputchar)
+
 extern char *UP;
 extern short ospeed;
+
 int Wrap;
 short *ref[24];
-static char flavor[]={
+
+static char flavor[] = {
     'O', '*', '#', '$', '%', '0'
 };
-static short xinc[]={
+
+static short xinc[] = {
      1,  1,  1,  0, -1, -1, -1,  0
-}, yinc[]={
+};
+
+static short yinc[] = {
     -1,  0,  1,  1,  1,  0, -1, -1
 };
+
 static struct worm {
     int orientation, head;
     short *xpos, *ypos;
 } worm[40];
+
 static char *field;
-static int length=16, number=3, trail=' ';
+static int length = 16, number = 3, trail = ' ';
+
 static struct options {
     int nopts;
     int opts[3];
@@ -129,16 +140,31 @@ static struct options {
     { 0, { 0, 0, 0 } },
     { 0, { 0, 0, 0 } }
 };
+
 char *TE;
-main(argc,argv)
-int argc;
-char *argv[];
+
+int fputchar(c)
+    char c;
 {
-    char *malloc();
-    char *getenv();
-    char *tgetstr(), *tgoto();
-    int quit();
-    float ranf();
+    return putchar(c);
+}
+
+void quit()
+{
+    signal(SIGINT, SIG_IGN);
+    tputs(TE,1,fputchar);
+    exit(0);
+}
+
+float ranf()
+{
+    return((float)rand()/2147483647.);
+}
+
+int main(argc, argv)
+    int argc;
+    char *argv[];
+{
     register int x, y;
     register int n;
     register struct worm *w;
@@ -150,11 +176,8 @@ char *argv[];
     char *tcp;
     register char *term;
     char tcb[100];
-#ifdef USG
-    struct termio sg;
-#else
     struct sgttyb sg;
-#endif
+
     setbuf(stdout,malloc(BUFSIZ));
     for (x=1;x<argc;x++) {
 	register char *p;
@@ -217,13 +240,8 @@ char *argv[];
     SR=tgetstr("sr",&tcp);
     TE=tgetstr("te",&tcp);
     UP=tgetstr("up",&tcp);
-#ifdef USG
-    ioctl(fileno(stdout),TCGETA,&sg);
-    ospeed=sg.c_cflag&CBAUD;
-#else
-    gtty(fileno(stdout),&sg);
+    ioctl(fileno(stdout),TIOCSETP,&sg);
     ospeed=sg.sg_ospeed;
-#endif
     Wrap=tgetflag("am");
     ip=(short *)malloc(LI*CO*sizeof (short));
     for (n=0;n<LI;) {
@@ -320,7 +338,7 @@ char *argv[];
 	    case 0:
 		fflush(stdout);
 		abort();
-		return;
+		return 0;
 	    case 1:
 		w->orientation=op->opts[0];
 		break;
@@ -333,22 +351,4 @@ char *argv[];
 	}
 	fflush(stdout);
     }
-}
-quit()
-{
-    signal(SIGINT, SIG_IGN);
-    tputs(TE,1,fputchar);
-    exit(0);
-}
-fputchar(c)
-char c;
-{
-    putchar(c);
-}
-float ranf() {
-#if defined(BSD) && !defined(pdp11)
-    return((float)rand()/2147483647.);
-#else
-    return((float)rand()/32767.);
-#endif
 }

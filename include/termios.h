@@ -25,17 +25,6 @@ struct termios
 #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
   };
 
-extern int tgetent(char *, char *);
-extern int tnchktc();
-extern int tnamatch(char *);
-extern char *tskip(register char *);
-extern int tgetnum(char *);
-extern int tgetflag(char *);
-extern char *tgetstr(char *, char **);
-extern char *tdecode(register char *, char **);
-extern char *tgoto(char *, int, int);
-extern int tputs(register char *, int, int (*)());
-
 extern int tcgetattr(int, struct termios *);
 extern int tcsetattr(int, int, struct termios *);
 
@@ -149,7 +138,7 @@ extern int tcsetattr(int, int, struct termios *);
 #define TCSAFLUSH       2
 
 #define TCSASOFT        0x10
-#define CIGNORE         0x00000001 
+#define CIGNORE         0x00000001
 
 #define TIOCGETA    _IOR(i, 92, struct termios)
 #define TIOCSETA    _IOW(i, 92, struct termios)

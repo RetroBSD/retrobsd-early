@@ -1,99 +1,60 @@
 /*
+ * Worm.  Written by Michael Toy
+ * UCSC
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-/*
- * Worm.  Written by Michael Toy
- * UCSC
- */
-#include <ctype.h>
-#include <curses.h>
+#ifdef CROSS
+#   define FILE int                     /* quick hack for macosx */
+#   include </usr/include/curses.h>
+#   include </usr/include/ctype.h>
+#   undef FILE
+#else
+#   include <curses.h>
+#   include <ctype.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
 #include <signal.h>
 
-#define newlink() (struct body *) malloc(sizeof (struct body));
-#define HEAD '@'
-#define BODY 'o'
-#define LENGTH 7
-#define RUNLEN 8
-#define when break;case
-#define otherwise break;default
-#define CNTRL(p) ('p'-'A'+1)
-#ifndef baudrate
-# define	baudrate()	_tty.sg_ospeed
-#endif
+#define newlink()       (struct body *) malloc(sizeof (struct body));
+#define HEAD            '@'
+#define BODY            'o'
+#define LENGTH          7
+#define RUNLEN          8
+#define CNTRL(p)        (p & 037)
 
 WINDOW *tv;
 WINDOW *stw;
+
 struct body {
 	int x;
 	int y;
 	struct body *prev;
 	struct body *next;
 } *head, *tail, goody;
+
 int growing = 0;
 int running = 0;
-int slow = 0;
 int score = 0;
 int start_len = LENGTH;
 char lastch;
-char outbuf[BUFSIZ];
 
-main(argc, argv)
-char **argv;
+extern int printf(const char *, ...);
+
+void display(pos, chr)
+        struct body *pos;
+        char chr;
 {
-	int leave(), wake(), suspend();
-	char ch;
-
-	if (argc == 2)
-		start_len = atoi(argv[1]);
-	if ((start_len <= 0) || (start_len > 500))
-		start_len = LENGTH;
-	setbuf(stdout, outbuf);
-	srand(getpid());
-	signal(SIGALRM, wake);
-	signal(SIGINT, leave);
-	signal(SIGQUIT, leave);
-#ifdef SIGTSTP
-	signal(SIGTSTP, suspend);	/* process control signal */
-#endif
-	initscr();
-	crmode();
-	noecho();
-	slow = (baudrate() <= B1200);
-	clear();
-	stw = newwin(1, COLS-1, 0, 0);
-	tv = newwin(LINES-1, COLS-1, 1, 0);
-	box(tv, '*', '*');
-	scrollok(tv, FALSE);
-	scrollok(stw, FALSE);
-	wmove(stw, 0, 0);
-	wprintw(stw, " Worm");
-	refresh();
-	wrefresh(stw);
-	wrefresh(tv);
-	life();			/* Create the worm */
-	prize();		/* Put up a goal */
-	while(1)
-	{
-		if (running)
-		{
-			running--;
-			process(lastch);
-		}
-		else
-		{
-		    fflush(stdout);
-		    if (read(0, &ch, 1) >= 0)
-			process(ch);
-		}
-	}
+	wmove(tv, pos->y, pos->x);
+	waddch(tv, chr);
 }
 
-life()
+void life()
 {
-	register struct body *bp, *np;
+	register struct body *bp, *np = 0;
 	register int i;
 
 	head = newlink();
@@ -113,43 +74,71 @@ life()
 	tail->prev = NULL;
 }
 
-display(pos, chr)
-struct body *pos;
-char chr;
-{
-	wmove(tv, pos->y, pos->x);
-	waddch(tv, chr);
-}
-
-leave()
+void leave()
 {
 	endwin();
 	exit(0);
 }
 
-wake()
+void setup()
 {
-	signal(SIGALRM, wake);
-	fflush(stdout);
-	process(lastch);
+	clear();
+	refresh();
+	touchwin(stw);
+	wrefresh(stw);
+	touchwin(tv);
+	wrefresh(tv);
+	alarm(1);
 }
 
-rnd(range)
+void suspend()
+{
+	move(LINES-1, 0);
+	refresh();
+	endwin();
+#ifdef SIGTSTP
+	kill(getpid(), SIGTSTP);
+	signal(SIGTSTP, suspend);
+#else
+        {
+	char *sh = getenv("SHELL");
+	if (sh == NULL)
+		sh = "/bin/sh";
+	system(sh);
+	}
+#endif
+	crmode();
+	noecho();
+	setup();
+}
+
+void crash()
+{
+	sleep(1);
+	clear();
+	move(23, 0);
+	refresh();
+	printf("Well you ran into something and the game is over.\r\n");
+	printf("Your final score was %d\r\n", score);
+	leave();
+}
+
+int rnd(range)
 {
 	return abs((rand()>>5)+(rand()>>5)) % range;
 }
 
-newpos(bp)
-struct body * bp;
+void newpos(bp)
+        struct body * bp;
 {
 	do {
 		bp->y = rnd(LINES-3)+ 2;
 		bp->x = rnd(COLS-3) + 1;
 		wmove(tv, bp->y, bp->x);
-	} while(winch(tv) != ' ');
+	} while (winch(tv) != ' ');
 }
 
-prize()
+void prize()
 {
 	int value;
 
@@ -159,8 +148,8 @@ prize()
 	wrefresh(tv);
 }
 
-process(ch)
-char ch;
+void process(ch)
+        char ch;
 {
 	register int x,y;
 	struct body *nh;
@@ -168,37 +157,33 @@ char ch;
 	alarm(0);
 	x = head->x;
 	y = head->y;
-	switch(ch)
-	{
-		when 'h': x--;
-		when 'j': y++;
-		when 'k': y--;
-		when 'l': x++;
-		when 'H': x--; running = RUNLEN; ch = tolower(ch);
-		when 'J': y++; running = RUNLEN/2; ch = tolower(ch);
-		when 'K': y--; running = RUNLEN/2; ch = tolower(ch);
-		when 'L': x++; running = RUNLEN; ch = tolower(ch);
-		when '\f': setup(); return;
-		when CNTRL(Z): suspend(); return;
-		when CNTRL(C): crash(); return;
-		when CNTRL(D): crash(); return;
-		otherwise: if (! running) alarm(1);
-			   return;
+	switch (ch) {
+        case 'h': x--; break;
+        case 'j': y++; break;
+        case 'k': y--; break;
+        case 'l': x++; break;
+        case 'H': x--; running = RUNLEN; ch = tolower(ch); break;
+        case 'J': y++; running = RUNLEN/2; ch = tolower(ch); break;
+        case 'K': y--; running = RUNLEN/2; ch = tolower(ch); break;
+        case 'L': x++; running = RUNLEN; ch = tolower(ch); break;
+        case '\f': setup(); return;
+        case CNTRL('Z'): suspend(); return;
+        case CNTRL('C'): crash(); return;
+        case CNTRL('D'): crash(); return;
+        default: if (! running) alarm(1); return;
 	}
 	lastch = ch;
-	if (growing == 0)
-	{
+	if (growing == 0) {
 		display(tail, ' ');
 		tail->next->prev = NULL;
 		nh = tail->next;
 		free(tail);
 		tail = nh;
-	}
-	else growing--;
+	} else
+                growing--;
 	display(head, BODY);
 	wmove(tv, y, x);
-	if (isdigit(ch = winch(tv)))
-	{
+	if (isdigit(ch = winch(tv))) {
 		growing += ch-'0';
 		prize();
 		score += growing;
@@ -206,8 +191,8 @@ char ch;
 		wmove(stw, 0, 68);
 		wprintw(stw, "Score: %3d", score);
 		wrefresh(stw);
-	}
-	else if(ch != ' ') crash();
+	} else if (ch != ' ')
+                crash();
 	nh = newlink();
 	nh->next = NULL;
 	nh->prev = head;
@@ -216,52 +201,57 @@ char ch;
 	nh->x = x;
 	display(nh, HEAD);
 	head = nh;
-	if (!(slow && running))
+	if (! running)
 		wrefresh(tv);
-	if (!running)
+	if (! running)
 		alarm(1);
 }
 
-crash()
+void wake()
 {
-	sleep(2);
-	clear();
-	move(23, 0);
-	refresh();
-	printf("Well you ran into something and the game is over.\n");
-	printf("Your final score was %d\n", score);
-	leave();
+	signal(SIGALRM, wake);
+	process(lastch);
 }
 
-suspend()
+int main(argc, argv)
+        char **argv;
 {
-	char *sh;
+	char ch;
 
-	move(LINES-1, 0);
-	refresh();
-	endwin();
-	fflush(stdout);
+	if (argc == 2)
+		start_len = atoi(argv[1]);
+	if ((start_len <= 0) || (start_len > 500))
+		start_len = LENGTH;
+	srand(getpid());
+	signal(SIGALRM, wake);
+	signal(SIGINT, leave);
+	signal(SIGQUIT, leave);
 #ifdef SIGTSTP
-	kill(getpid(), SIGTSTP);
-	signal(SIGTSTP, suspend);
-#else
-	sh = getenv("SHELL");
-	if (sh == NULL)
-		sh = "/bin/sh";
-	system(sh);
+	signal(SIGTSTP, suspend);	/* process control signal */
 #endif
+	initscr();
 	crmode();
 	noecho();
-	setup();
-}
-
-setup()
-{
 	clear();
+	stw = newwin(1, COLS-1, 0, 0);
+	tv = newwin(LINES-1, COLS-1, 1, 0);
+	box(tv, '*', '*');
+	scrollok(tv, FALSE);
+	scrollok(stw, FALSE);
+	wmove(stw, 0, 0);
+	wprintw(stw, " Worm");
 	refresh();
-	touchwin(stw);
 	wrefresh(stw);
-	touchwin(tv);
 	wrefresh(tv);
-	alarm(1);
+	life();			/* Create the worm */
+	prize();		/* Put up a goal */
+	while (1) {
+		if (running) {
+			running--;
+			process(lastch);
+		} else {
+                        if (read(0, &ch, 1) >= 0)
+                                process(ch);
+		}
+	}
 }

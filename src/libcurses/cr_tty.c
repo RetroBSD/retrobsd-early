@@ -1,21 +1,14 @@
 /*
+ * Terminal initialization routines.
+ *
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)cr_tty.c	5.2.1 (2.11BSD GTE) 12/9/94";
-#endif
-
-/*
- * Terminal initialization routines.
- *
- */
-
-# include	"curses.ext"
-# include       <termios.h>
-# include       <string.h>
+#include "curses.ext"
+#include <termios.h>
+#include <term.h>
+#include <string.h>
 
 static bool	*sflags[] = {
 			&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI,

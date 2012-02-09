@@ -3,21 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)box.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  *	This routine draws a box around the given window with "vert"
  * as the vertical delimiting char, and "hor", as the horizontal one.
  *
  */
-box(win, vert, hor)
-reg WINDOW	*win;
-char		vert, hor; {
+int box(win, vert, hor)
+        reg WINDOW	*win;
+        char		vert, hor;
+{
 
 	reg int		i;
 	reg int		endy, endx;

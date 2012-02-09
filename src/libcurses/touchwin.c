@@ -3,19 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)touchwin.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  * make it look like the whole window has been changed.
  *
  */
-touchwin(win)
-register WINDOW	*win;
+int touchwin(win)
+        register WINDOW	*win;
 {
 	register int	y, maxy;
 
@@ -25,14 +20,15 @@ register WINDOW	*win;
 	maxy = win->_maxy;
 	for (y = 0; y < maxy; y++)
 		touchline(win, y, 0, win->_maxx - 1);
+        return OK;
 }
 
 /*
  * touch a given line
  */
-touchline(win, y, sx, ex)
-register WINDOW	*win;
-register int	y, sx, ex;
+int touchline(win, y, sx, ex)
+        register WINDOW	*win;
+        register int	y, sx, ex;
 {
 # ifdef DEBUG
 	fprintf(outf, "TOUCHLINE(%0.2o, %d, %d, %d)\n", win, y, sx, ex);
@@ -53,4 +49,5 @@ register int	y, sx, ex;
 # ifdef	DEBUG
 	fprintf(outf, "TOUCHLINE:first = %d, last = %d\n", win->_firstch[y], win->_lastch[y]);
 # endif
+        return OK;
 }

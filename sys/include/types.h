@@ -40,6 +40,7 @@ typedef	long	daddr_t;
 typedef	char *	caddr_t;
 typedef	u_int	ino_t;
 #ifndef _SIZE_T
+#define _SIZE_T
 typedef	u_int	size_t;
 #endif
 #ifndef __ssize_t_defined
@@ -48,7 +49,8 @@ typedef int     ssize_t;
 #endif
 typedef	long	time_t;
 typedef	int	dev_t;
-#ifndef _SIZE_T
+#ifndef	_OFF_T
+#define	_OFF_T
 typedef	long	off_t;
 #endif
 typedef	u_int	uid_t;
