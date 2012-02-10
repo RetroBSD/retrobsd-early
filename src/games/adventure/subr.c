@@ -1,12 +1,6 @@
 /*
  * Re-coding of advent in C: subroutines from main
  */
-#ifdef CROSS
-#   include </usr/include/stdio.h>
-#else
-#   include <stdio.h>
-#endif
-#include <stdlib.h>
 #include "hdr.h"
 
 /* Statement functions */

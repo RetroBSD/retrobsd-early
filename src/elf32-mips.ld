@@ -157,6 +157,7 @@ SECTIONS
   . = DATA_SEGMENT_RELRO_END (0, .);
   .data           :
   {
+    __data_start = .;
     _fdata = . ;
     *(.data .data.* .gnu.linkonce.d.*)
     SORT(CONSTRUCTORS)

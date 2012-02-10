@@ -1,12 +1,6 @@
 /*
  * Re-coding of advent in C: file i/o and user i/o
  */
-#ifdef CROSS
-#   include </usr/include/stdio.h>
-#else
-#   include <stdio.h>
-#endif
-#include <stdlib.h>
 #include <unistd.h>
 #include "hdr.h"
 
@@ -17,8 +11,8 @@ FILE *inbuf, *outbuf;
 int adrptr;                             /* current seek adr ptr         */
 int outsw = 0;				/* putting stuff to data file?  */
 
-char iotape[] = "Ax3F'tt$8hqer*hnGKrX:!l";
-char *tape = iotape;			/* pointer to encryption tape   */
+const char iotape[] = "Ax3F'tt$8hqer*hnGKrX:!l";
+const char *tape = iotape;		/* pointer to encryption tape   */
 
 char breakch;                           /* tell which char ended rnum   */
 
@@ -223,7 +217,7 @@ char *mesg;
 int
 yes(x, y, z)                            /* confirm with rspeak          */
 int x, y, z;
-{       register int result;
+{       register int result = -1;
 	register char ch;
 	for (;;)
 	{       rspeak(x);                     /* tell him what we want*/
@@ -242,7 +236,7 @@ int x, y, z;
 int
 yesm(x, y, z)                           /* confirm with mspeak          */
 int x, y, z;
-{       register int result;
+{       register int result = -1;
 	register char ch;
 	for (;;)
 	{       mspeak(x);                     /* tell him what we want*/
@@ -322,17 +316,21 @@ rhints()
 }
 
 void
-rdata()                                 /* read all data from orig file */
+rdata(outfile)                          /* read all data from orig file */
+char *outfile;                          /* datfile we were called with  */
 {       register int sect;
 	register char ch;
-	if ((inbuf=fopen(DATFILE,"r"))==NULL)     /* all the data lives in here   */
-	{       printf("Cannot open data file %s\n",DATFILE);
+	inbuf = fopen(DATFILE, "r");
+	if (inbuf == NULL)              /* all the data lives in here   */
+	{       printf("Cannot open data file %s\n", DATFILE);
 		exit(0);
 	}
-	if ((outbuf=fopen(TMPFILE,"w"))==NULL)   /* the text lines will go here  */
-	{       printf("Cannot create output file %s\n",TMPFILE);
+	outbuf = fopen(outfile, "w");
+	if (outbuf == NULL)             /* the text lines will go here  */
+	{       printf("Cannot create output file %s\n", outfile);
 		exit(0);
 	}
+	fseek(outbuf, filesize, 0);     /* skip file header             */
 	setup=clsses=1;
 	for (;;)                        /* read data sections           */
 	{       sect=next()-'0';        /* 1st digit of section number  */
@@ -420,38 +418,11 @@ int msg;
 }
 
 void
-doseek(offset)  /* do 2 seeks to get to right place in the file         */
-unsigned offset;
-{
-	extern unsigned filesize;
-	lseek(datfd,(long)offset+(long)filesize, 0);
-#ifdef notdef
-	blockadr=chadr=0;
-	if (offset<0)                   /* right place is offset+filesize*/
-	{       blockadr += 64;         /* take off 32768 bytes         */
-		chadr += offset+32768;  /* & make them into 64 blocks   */
-	}
-	else chadr += offset;
-	if (filesize<0)                 /* data starts after file       */
-	{       blockadr += 64;         /* which may also be large      */
-		chadr += filesize+32768;
-	}
-	else chadr += filesize;
-	if (chadr<0)                    /* and the leftovers may be lge */
-	{       blockadr += 64;
-		chadr += 32768;
-	}
-	seek(datfd,blockadr,3);         /* get within 32767             */
-	seek(datfd,chadr,1);            /* then the rest of the way     */
-#endif
-}
-
-void
 speak(msg)       /* read, decrypt, and print a message (not ptext)      */
 struct text *msg;/* msg is a pointer to seek address and length of mess */
 {       register char *s,nonfirst;
 	register char *tbuf;
-	doseek(msg->seekadr);
+	lseek(datfd, filesize + msg->seekadr, 0);
 	if ((tbuf=(char *) malloc(msg->txtlen+1))<0) bug(109);
 	read(datfd,tbuf,msg->txtlen);
 	s=tbuf;
@@ -481,7 +452,7 @@ int skip;         /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	register char *tbuf;
 	char *numst;
 	int lstr;
-	doseek(ptext[msg].seekadr);
+	lseek(datfd, filesize + ptext[msg].seekadr, 0);
 	if ((tbuf=(char *) malloc((lstr=ptext[msg].txtlen)+1))<0) bug(108);
 	read(datfd,tbuf,lstr);
 	s=tbuf;

@@ -14,6 +14,12 @@
  */
 
 /* hdr.h: included by c advent files */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
 
 extern int setup;                       /* changed by savec & init      */
 int datfd;                              /* message file descriptor      */
@@ -40,8 +46,6 @@ struct hashtab                          /* hash table for vocabulary    */
 } voc[HTSIZE];
 
 #define DATFILE "glorkz"                /* all the original msgs        */
-#define TMPFILE "tmp.foo.baz"           /* just the text msgs           */
-
 
 struct text
 {       int seekadr;                    /* DATFILE must be < 2**16      */
@@ -81,7 +85,7 @@ int actspk[35];                         /* rtext msg for verb <n>       */
 
 int cond[LOCSIZ];                       /* various condition bits       */
 
-extern int setbit[16];                  /* bit defn masks 1,2,4,...     */
+extern const int setbit[16];            /* bit defn masks 1,2,4,...     */
 
 int hntmax;
 int hints[20][5];                       /* info on hints                */
@@ -114,10 +118,12 @@ int turns,lmwarn,iwest,knfloc,detail,   /* various flags & counters     */
 
 int demo,newloc,limit;
 
+extern long filesize;                   /* accessible to caller         */
+
 void init (char *);
 void startup (void);
 void trapdel (int);
-void rdata (void);
+void rdata (char *);
 void mspeak (int);
 void rspeak (int);
 void speak (struct text *);
@@ -128,7 +134,8 @@ void drop (int, int);
 int vocab (char *, int, int);
 void poof (void);
 int confirm (char *);
-int save (char *, char *);
+int save (char *);
+void restore (int);
 int start (int);
 int length (char *);
 void bug (int);
@@ -154,7 +161,6 @@ void dstroy (int);
 int score (void);
 void move (int, int);
 void datime (int *, int *);
-void ciao (char *);
 int trtake (void);
 int trdrop (void);
 int trsay (void);

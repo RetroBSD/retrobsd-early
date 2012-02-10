@@ -1,32 +1,31 @@
 /*
  * Re-coding of advent in C: main program
  */
-#ifdef CROSS
-#   include </usr/include/stdio.h>
-#else
-#   include <stdio.h>
-#endif
-#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
 #include "hdr.h"
 
 int	datfd = -1;
+char    *heap_start;
 
 int
 main(argc,argv)
 int argc;
 char **argv;
 {       register int i;
-	int rval;
+	int rval, fd;
 	struct text *kk;
 	static int reenter;
-	char *datfile = argv[0];
+	char *datfile = "adventure.sav";
 
-	if ((datfd = getcmd(datfile)) < 0) {
-		write(2, "No adventure just now\n", 22);
-		exit(1);
-	}
+	heap_start = (char*) sbrk(0);   /* start of heap segment        */
+	fd = open(datfile, 0);
+	if (fd >= 0) {
+                restore (fd);
+                datfd = fd;
+	} else if (! confirm("Start new game? "))
+                exit(0);
 	reenter++;
 	setuid(getuid());
 	switch (setup) {
@@ -323,7 +322,10 @@ char **argv;
 			if (!yes(200,54,54)) goto l2012;
 			datime(&saved,&savet);
 			setup = -1;
-			ciao(datfile);
+                        save(datfile);
+                        printf("^\n");
+                        printf("Gis revido.\n");
+                        exit(0);
 			continue;
 		    case 31:                    /* hours=8310           */
 			printf("Colossal cave is closed 9am-5pm Mon ");

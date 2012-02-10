@@ -1,12 +1,6 @@
 /*
  * Re-coding of advent in C: data initialization
  */
-#ifdef CROSS
-#   include </usr/include/stdio.h>
-#else
-#   include <stdio.h>
-#endif
-#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
@@ -16,7 +10,7 @@
 int blklin = TRUE;
 int setup  = 0;
 
-int setbit[16] = {
+const int setbit[16] = {
         1, 2, 4, 010, 020,040, 0100, 0200, 0400,
         01000, 02000, 04000, 010000, 020000, 040000, 0100000,
 };
@@ -138,34 +132,18 @@ linkdata()                              /*  secondary data manipulation */
 }
 
 void
-init(command)                           /* everything for 1st time run  */
-        char *command;                  /* command we were called with  */
+init(datfile)                           /* everything for 1st time run  */
+char *datfile;                          /* datfile we were called with  */
 {
-        int stat, adfd;
-
-	rdata();                        /* read data from orig. file    */
+	rdata(datfile);                 /* read data from orig. file    */
 	linkdata();
 	poof();
 	setup = 1;                      /* indicate that data is in     */
-	if (! confirm("got the data.  save as \"advent\"? "))
-                exit(0);
-        if (save(command, "advent") < 0) {  /* save core image      */
+        if (save(datfile) < 0) {        /* save data image              */
                 printf("Save failed\n");
                 exit(0);
         }
-	printf("Save succeeded.  Adding messages.\n");
-	adfd = open("advent", 1);
-	lseek(adfd, 0L, 2);
-	close(datfd);
-	if (fork() == 0) {              /* child process                */
-	        close(1);
-		dup(adfd);              /* output goes to advent file   */
-		execl("/bin/cat", "cat", TMPFILE, NULL);
-		printf("unable to find /bin/cat\n");
-	}
-	wait(&stat);
-	unlink(TMPFILE);
-	printf("Advent is ready.\n");
+	printf("Save succeeded.  Adventure is ready.\n");
 	exit(0);
 }
 
