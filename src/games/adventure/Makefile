@@ -1,25 +1,27 @@
-DESTDIR=
-SEPFLAG= -i
-CFILES=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
-OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
-HFILES = hdr.h
-SRCS = $(CFILES) $(HFILES) glorkz
-CFLAGS=	-O
-LDFLAGS=-n	# should be -i on small machines, -n on a vax
+TOPSRC		= $(shell cd ../../..; pwd)
+#include $(TOPSRC)/target.mk
+include $(TOPSRC)/cross.mk
 
-advent:	a.out
-	rm -f advent
-	echo y | ./a.out
+CFLAGS		+= -Werror -Wall
 
-a.out: ${OBJS}
-	${CC} ${SEPFLAG} ${LDFLAGS} ${CFLAGS} ${OBJS}
+OBJS            = done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
+MAN		= adventure.0
+MANSRC		= adventure.6
 
-install: advent
-	install -s advent ${DESTDIR}/games/adventure
-#	chmod 711 /games/lib
-#	chmod 700 /games/lib/adventure
-#	chmod 4711 /games/adventure
-#	chown games /games/adventure /games/lib/adventure
+all:            advent $(MAN)
+
+advent:         ${OBJS}
+		${CC} ${LDFLAGS} -o advent.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S advent.elf > advent.dis
+		${SIZE} advent.elf
+		${ELF2AOUT} advent.elf $@ && rm advent.elf
+
+${MAN}:         ${MANSRC}
+		${MANROFF} $< > $@
 
 clean:
-	rm -f ${OBJS} a.out advent core errs
+		rm -f *.o *.0 *.elf ${MAN} advent *.elf *.dis tags *~
+
+install:        all
+		install advent $(DESTDIR)/games/adventure
+		cp ${MAN} $(DESTDIR)/share/man/cat6/

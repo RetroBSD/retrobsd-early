@@ -1,13 +1,21 @@
 /*
  * Re-coding of advent in C: data structure routines
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
 #include "hdr.h"
 
+void
 dstroy(object)
 int object;
 {       move(object,0);
 }
 
+void
 juggle(object)
 int object;
 {       register int i,j;
@@ -17,9 +25,9 @@ int object;
 	move(object+100,j);
 }
 
-
-move(object,where)
-int object,where;
+void
+move(object, where)
+int object, where;
 {       register int from;
 	if (object<=100)
 		from=place[object];
@@ -29,17 +37,16 @@ int object,where;
 	drop(object,where);
 }
 
-
-put(object,where,pval)
-int object,where,pval;
+int
+put(object, where, pval)
+int object, where, pval;
 {       move(object,where);
 	return(-1-pval);
 }
 
-
-
-carry(object,where)
-int object,where;
+void
+carry(object, where)
+int object, where;
 {       register int temp;
 	if (object<=100)
 	{       if (place[object]== -1) return;
@@ -47,30 +54,28 @@ int object,where;
 		holdng++;
 	}
 	if (atloc[where]==object)
-	{       atloc[where]=link[object];
+	{       atloc[where]=plink[object];
 		return;
 	}
-	for (temp=atloc[where]; link[temp]!=object; temp=link[temp]);
-	link[temp]=link[object];
+	for (temp=atloc[where]; plink[temp]!=object; temp=plink[temp]);
+	plink[temp]=plink[object];
 }
 
-
-
-
-drop(object,where)
-int object,where;
+void
+drop(object, where)
+int object, where;
 {	if (object>100) fixed[object-100]=where;
 	else
 	{       if (place[object]== -1) holdng--;
 		place[object]=where;
 	}
 	if (where<=0) return;
-	link[object]=atloc[where];
+	plink[object]=atloc[where];
 	atloc[where]=object;
 }
 
-
-vocab(word,type,value)                  /* look up or store a word      */
+int
+vocab(word, type, value)                /* look up or store a word      */
 char *word;
 int type;       /* -2 for store, -1 for user word, >=0 for canned lookup*/
 int value;                              /* used for storing only        */
@@ -127,17 +132,18 @@ int value;                              /* used for storing only        */
 	}
 }
 
-
-copystr(w1,w2)                          /* copy one string to another   */
-char *w1,*w2;
+void
+copystr(w1, w2)                         /* copy one string to another   */
+char *w1, *w2;
 {       register char *s,*t;
 	for (s=w1,t=w2; *s;)
 		*t++ = *s++;
 	*t=0;
 }
 
-weq(w1,w2)                              /* compare words                */
-char *w1,*w2;                           /* w1 is user, w2 is system     */
+int
+weq(w1, w2)                             /* compare words                */
+char *w1, *w2;                          /* w1 is user, w2 is system     */
 {       register char *s,*t;
 	register int i;
 	s=w1;
@@ -150,7 +156,7 @@ char *w1,*w2;                           /* w1 is user, w2 is system     */
 	return(TRUE);
 }
 
-
+int
 length(str)                             /* includes 0 at end            */
 char *str;
 {       register char *s;
@@ -159,6 +165,7 @@ char *str;
 	return(n+1);
 }
 
+void
 prht()                                  /* print hash table             */
 {       register int i,j,l;
 	char *c;

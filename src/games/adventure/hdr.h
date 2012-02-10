@@ -87,7 +87,7 @@ int hntmax;
 int hints[20][5];                       /* info on hints                */
 int hinted[20],hintlc[20];
 
-int place[101], prop[101],link[201];
+int place[101], prop[101], plink[201];
 int abb[LOCSIZ];
 
 int maxtrs,tally,tally2;                /* treasure values              */
@@ -113,3 +113,58 @@ int turns,lmwarn,iwest,knfloc,detail,   /* various flags & counters     */
 	saved,closng,panic,closed,scorng;
 
 int demo,newloc,limit;
+
+void init (char *);
+void startup (void);
+void trapdel (int);
+void rdata (void);
+void mspeak (int);
+void rspeak (int);
+void speak (struct text *);
+int toting (int);
+int yes (int, int, int);
+int yesm (int, int, int);
+void drop (int, int);
+int vocab (char *, int, int);
+void poof (void);
+int confirm (char *);
+int save (char *, char *);
+int start (int);
+int length (char *);
+void bug (int);
+int getcmd (char *);
+int fdwarf (void);
+int die (int);
+int forced (int);
+int dark (int);
+int pct (int);
+void pspeak (int, int);
+void checkhints (void);
+void getin (char **, char **);
+void copystr (char *, char *);
+void done (int);
+int closing (void);
+int caveclose (void);
+int here (int);
+int at (int);
+int liqloc (int);
+int weq (char *, char *);
+int march (void);
+void dstroy (int);
+int score (void);
+void move (int, int);
+void datime (int *, int *);
+void ciao (char *);
+int trtake (void);
+int trdrop (void);
+int trsay (void);
+int tropen (void);
+int trkill (void);
+int trtoss (void);
+int trfill (void);
+int trfeed (void);
+int liq (int);
+int ran (int);
+void carry (int, int);
+void juggle (int);
+int put (int, int, int);

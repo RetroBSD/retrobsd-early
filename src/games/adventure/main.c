@@ -1,19 +1,29 @@
 /*
  * Re-coding of advent in C: main program
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 #include "hdr.h"
 
 int	datfd = -1;
 
-int main(argc,argv)
-        int argc;
-        char **argv;
+int
+main(argc,argv)
+int argc;
+char **argv;
 {       register int i;
-	int rval,ll;
+	int rval;
 	struct text *kk;
-	static reenter;
+	static int reenter;
+	char *datfile = argv[0];
 
-	if ((datfd = getcmd(argv[0])) < 0) {
+	if ((datfd = getcmd(datfile)) < 0) {
 		write(2, "No adventure just now\n", 22);
 		exit(1);
 	}
@@ -21,7 +31,7 @@ int main(argc,argv)
 	setuid(getuid());
 	switch (setup) {
 	case 0:
-		init(argv[0]);          /* set up initial variables     */
+		init(datfile);          /* set up initial variables     */
 		/* NOTREACHED */
 	case 1:
 		startup();		/* prepare for a user           */
@@ -34,7 +44,7 @@ int main(argc,argv)
 		goto l8;
 	default:
 		printf("Your forged file dissappears in a puff of greasy black smoke! (poof)\n");
-		unlink(argv[0]);
+		unlink(datfile);
 		exit(1);
 	}
 
@@ -60,7 +70,7 @@ int main(argc,argv)
 			}
 			kk = &rtext[16];
 		}
-	l2001:  if (toting(bear)) rspeak(141);  /* 2001                 */
+	        if (toting(bear)) rspeak(141);  /* 2001                 */
 		speak(kk);
 		k=1;
 		if (forced(loc))
@@ -68,7 +78,7 @@ int main(argc,argv)
 		if (loc==33 && pct(25)&&!closng) rspeak(8);
 		if (!dark(0))
 		{       abb[loc]++;
-			for (i=atloc[loc]; i!=0; i=link[i])     /*2004  */
+			for (i=atloc[loc]; i!=0; i=plink[i])    /*2004  */
 			{       obj=i;
 				if (obj>100) obj -= 100;
 				if (obj==steps && toting(nugget)) continue;
@@ -83,7 +93,7 @@ int main(argc,argv)
 				}
 				kk=(struct text *) prop[obj];	/* 2006		*/
 				if (obj==steps && loc==fixed[steps])kk=(struct text *)1;
-				pspeak(obj,kk);
+				pspeak(obj,(int)kk);
 			}                                       /* 2008 */
 			goto l2012;
 	l2009:          k=54;                   /* 2009                 */
@@ -164,10 +174,10 @@ int main(argc,argv)
 		if ((!weq(wd1,"water")&&!weq(wd1,"oil"))
 		    || (!weq(wd2,"plant")&&!weq(wd2,"door")))
 			goto l2610;
-		if (at(vocab(wd2,1))) copystr("pour",wd2);
+		if (at(vocab(wd2,1,0))) copystr("pour",wd2);
 	l2610:  if (weq(wd1,"west"))
 			if (++iwest==10) rspeak(17);
-	l2630:  i=vocab(wd1,-1);
+	l2630:  i=vocab(wd1,-1,0);
 		if (i== -1)
 		{       spk=60;                 /* 3000         */
 			if (pct(20)) spk=61;
@@ -207,10 +217,10 @@ int main(argc,argv)
 		if (*wd2!=0 && verb!=say) goto l2800;
 		if (verb==say) obj= *wd2;
 		if (obj!=0) goto l4090;
-	l4080:
+
 		switch(verb)
 		{   case 1:                     /* take = 8010          */
-			if (atloc[loc]==0||link[atloc[loc]]!=0) goto l8000;
+			if (atloc[loc]==0||plink[atloc[loc]]!=0) goto l8000;
 			for (i=1; i<=5; i++)
 				if (dloc[i]==loc&&dflag>=2) goto l8000;
 			obj=atloc[loc];
@@ -273,7 +283,7 @@ int main(argc,argv)
 			if (gaveup) done(2);
 			goto l2012;
 		    case 25:                    /* foo: 8250            */
-			k=vocab(wd1,3);
+			k=vocab(wd1,3,0);
 			spk=42;
 			if (foobar==1-k) goto l8252;
 			if (foobar!=0) spk=151;
@@ -313,7 +323,7 @@ int main(argc,argv)
 			if (!yes(200,54,54)) goto l2012;
 			datime(&saved,&savet);
 			setup = -1;
-			ciao(argv[0]);
+			ciao(datfile);
 			continue;
 		    case 31:                    /* hours=8310           */
 			printf("Colossal cave is closed 9am-5pm Mon ");
@@ -339,7 +349,7 @@ int main(argc,argv)
 			    case 2012: goto l2012;
 			    default: bug(105);
 			}
-	l9030:      case 3:
+	            case 3:
 			switch(trsay())
 			{   case 2012: goto l2012;
 			    case 2630: goto l2630;
@@ -478,7 +488,7 @@ int main(argc,argv)
 				||!closed) goto l2011;
 			hinted[2]=yes(192,193,54);
 			goto l2012;
-	l9280:      case 28:                    /* break                */
+	            case 28:                    /* break                */
 			if (obj==mirror) spk=148;
 			if (obj==vase&&prop[vase]==0)
 			{       spk=198;
@@ -491,7 +501,7 @@ int main(argc,argv)
 			rspeak(197);
 			done(3);
 
-	l9290:      case 29:                    /* wake                 */
+	            case 29:                    /* wake                 */
 			if (obj!=dwarf||!closed) goto l2011;
 			rspeak(199);
 			done(3);

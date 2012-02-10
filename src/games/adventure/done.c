@@ -1,8 +1,15 @@
 /*
  * Re-coding of advent in C: termination routines
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
 #include "hdr.h"
 
+int
 score()                                         /* sort of like 20000   */
 {       register int scor,i;
 	mxscor=scor=0;
@@ -39,6 +46,7 @@ score()                                         /* sort of like 20000   */
 	return(scor);
 }
 
+void
 done(entry)     /* entry=1 means goto 13000 */  /* game is over         */
 int entry;      /* entry=2 means goto 20000 */ /* 3=19000 */
 {       register int i,sc;
@@ -66,7 +74,7 @@ int entry;      /* entry=2 means goto 20000 */ /* 3=19000 */
 	exit(0);
 }
 
-
+int
 die(entry)                                      /* label 90             */
 int entry;
 {       register int i;

@@ -1,6 +1,16 @@
 /*
  * Re-coding of advent in C: data initialization
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include "hdr.h"
 
 int blklin = TRUE;
@@ -12,37 +22,6 @@ int setbit[16] = {
 };
 
 void
-init(command)                           /* everything for 1st time run  */
-        char *command;                  /* command we were called with  */
-{
-        int stat, adfd;
-
-	rdata();                        /* read data from orig. file    */
-	linkdata();
-	poof();
-	setup = 1;                      /* indicate that data is in     */
-	if (! confirm("got the data.  save as \"advent\"? "))
-                exit(0);
-        if (save(command, "advent") < 0) {  /* save core image      */
-                printf("Save failed\n");
-                exit(0);
-        }
-	printf("Save succeeded.  Adding messages.\n");
-	adfd = open("advent", 1);
-	lseek(adfd, 0L, 2);
-	close(datfd);
-	if (fork() == 0) {              /* child process                */
-	        close(1);
-		dup(adfd);              /* output goes to advent file   */
-		execl("/bin/cat", "cat", TMPFILE, 0);
-		printf("unable to find /bin/cat\n");
-	}
-	wait(&stat);
-	unlink(TMPFILE);
-	printf("Advent is ready.\n");
-	exit(0);
-}
-
 linkdata()                              /*  secondary data manipulation */
 {       register int i,j;
 	/*      array linkages          */
@@ -69,65 +48,65 @@ linkdata()                              /*  secondary data manipulation */
 	}
 
 	/* define mnemonics */
-	keys=vocab("keys",1);
-	lamp=vocab("lamp",1);
-	grate=vocab("grate",1);
-	cage=vocab("cage",1);
-	rod=vocab("rod",1);
+	keys=vocab("keys",1,0);
+	lamp=vocab("lamp",1,0);
+	grate=vocab("grate",1,0);
+	cage=vocab("cage",1,0);
+	rod=vocab("rod",1,0);
 	rod2=rod+1;
-	steps=vocab("steps",1);
-	bird=vocab("bird",1);
-	door=vocab("door",1);
-	pillow=vocab("pillow",1);
-	snake=vocab("snake",1);
-	fissur=vocab("fissu",1);
-	tablet=vocab("table",1);
-	clam=vocab("clam",1);
-	oyster=vocab("oyster",1);
-	magzin=vocab("magaz",1);
-	dwarf=vocab("dwarf",1);
-	knife=vocab("knife",1);
-	food=vocab("food",1);
-	bottle=vocab("bottl",1);
-	water=vocab("water",1);
-	oil=vocab("oil",1);
-	plant=vocab("plant",1);
+	steps=vocab("steps",1,0);
+	bird=vocab("bird",1,0);
+	door=vocab("door",1,0);
+	pillow=vocab("pillow",1,0);
+	snake=vocab("snake",1,0);
+	fissur=vocab("fissu",1,0);
+	tablet=vocab("table",1,0);
+	clam=vocab("clam",1,0);
+	oyster=vocab("oyster",1,0);
+	magzin=vocab("magaz",1,0);
+	dwarf=vocab("dwarf",1,0);
+	knife=vocab("knife",1,0);
+	food=vocab("food",1,0);
+	bottle=vocab("bottl",1,0);
+	water=vocab("water",1,0);
+	oil=vocab("oil",1,0);
+	plant=vocab("plant",1,0);
 	plant2=plant+1;
-	axe=vocab("axe",1);
-	mirror=vocab("mirro",1);
-	dragon=vocab("drago",1);
-	chasm=vocab("chasm",1);
-	troll=vocab("troll",1);
+	axe=vocab("axe",1,0);
+	mirror=vocab("mirro",1,0);
+	dragon=vocab("drago",1,0);
+	chasm=vocab("chasm",1,0);
+	troll=vocab("troll",1,0);
 	troll2=troll+1;
-	bear=vocab("bear",1);
-	messag=vocab("messa",1);
-	vend=vocab("vendi",1);
-	batter=vocab("batte",1);
+	bear=vocab("bear",1,0);
+	messag=vocab("messa",1,0);
+	vend=vocab("vendi",1,0);
+	batter=vocab("batte",1,0);
 
-	nugget=vocab("gold",1);
-	coins=vocab("coins",1);
-	chest=vocab("chest",1);
-	eggs=vocab("eggs",1);
-	tridnt=vocab("tride",1);
-	vase=vocab("vase",1);
-	emrald=vocab("emera",1);
-	pyram=vocab("pyram",1);
-	pearl=vocab("pearl",1);
-	rug=vocab("rug",1);
-	chain=vocab("chain",1);
+	nugget=vocab("gold",1,0);
+	coins=vocab("coins",1,0);
+	chest=vocab("chest",1,0);
+	eggs=vocab("eggs",1,0);
+	tridnt=vocab("tride",1,0);
+	vase=vocab("vase",1,0);
+	emrald=vocab("emera",1,0);
+	pyram=vocab("pyram",1,0);
+	pearl=vocab("pearl",1,0);
+	rug=vocab("rug",1,0);
+	chain=vocab("chain",1,0);
 
-	back=vocab("back",0);
-	look=vocab("look",0);
-	cave=vocab("cave",0);
-	null=vocab("null",0);
-	entrnc=vocab("entra",0);
-	dprssn=vocab("depre",0);
+	back=vocab("back",0,0);
+	look=vocab("look",0,0);
+	cave=vocab("cave",0,0);
+	null=vocab("null",0,0);
+	entrnc=vocab("entra",0,0);
+	dprssn=vocab("depre",0,0);
 
-	say=vocab("say",2);
-	lock=vocab("lock",2);
-	throw=vocab("throw",2);
-	find=vocab("find",2);
-	invent=vocab("inven",2);
+	say=vocab("say",2,0);
+	lock=vocab("lock",2,0);
+	throw=vocab("throw",2,0);
+	find=vocab("find",2,0);
+	invent=vocab("inven",2,0);
 	/* initialize dwarves */
 	chloc=114;
 	chloc2=140;
@@ -158,11 +137,45 @@ linkdata()                              /*  secondary data manipulation */
 	closng=panic=closed=scorng=FALSE;
 }
 
-trapdel()                               /* come here if he hits a del   */
+void
+init(command)                           /* everything for 1st time run  */
+        char *command;                  /* command we were called with  */
+{
+        int stat, adfd;
+
+	rdata();                        /* read data from orig. file    */
+	linkdata();
+	poof();
+	setup = 1;                      /* indicate that data is in     */
+	if (! confirm("got the data.  save as \"advent\"? "))
+                exit(0);
+        if (save(command, "advent") < 0) {  /* save core image      */
+                printf("Save failed\n");
+                exit(0);
+        }
+	printf("Save succeeded.  Adding messages.\n");
+	adfd = open("advent", 1);
+	lseek(adfd, 0L, 2);
+	close(datfd);
+	if (fork() == 0) {              /* child process                */
+	        close(1);
+		dup(adfd);              /* output goes to advent file   */
+		execl("/bin/cat", "cat", TMPFILE, NULL);
+		printf("unable to find /bin/cat\n");
+	}
+	wait(&stat);
+	unlink(TMPFILE);
+	printf("Advent is ready.\n");
+	exit(0);
+}
+
+void
+trapdel(sig)                            /* come here if he hits a del   */
 {	delhit++;			/* main checks, treats as QUIT  */
 	signal(2,trapdel);		/* catch subsequent DELs        */
 }
 
+void
 startup()
 {       int tvec[2];
 	demo=start(0);
