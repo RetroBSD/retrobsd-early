@@ -6,7 +6,6 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "curses.ext"
-#include <termios.h>
 #include <term.h>
 #include <string.h>
 

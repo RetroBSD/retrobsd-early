@@ -1,3 +1,7 @@
+//
+// TODO: termios support
+//
+#if 0
 #include <errno.h>
 #include <termios.h>
 
@@ -28,4 +32,4 @@ int tcsetattr(int fd, int opt, struct termios *t)
                 return (-1);
         }
 }
-
+#endif

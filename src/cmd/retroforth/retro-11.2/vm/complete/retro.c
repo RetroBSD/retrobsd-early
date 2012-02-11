@@ -7,10 +7,15 @@
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-#include <termios.h>
+#if 0
+#   include <termios.h>
+#else
+#   define termios sgttyb
+#endif
 #include <sys/ioctl.h>
 
 /* Configuration ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,14 +42,14 @@
    only useful on big endian systems.
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 #define CELL            int32_t
-#define IMAGE_SIZE      1000000
+#define IMAGE_SIZE        10000
 #define ADDRESSES          1024
 #define STACK_DEPTH         128
 #define PORTS                12
 #define MAX_FILE_NAME      1024
 #define MAX_REQUEST_LENGTH 1024
 #define MAX_OPEN_FILES        8
-#define LOCAL                 "retroImage"
+#define LOCAL                 "/lib/retroImage"
 #define CELLSIZE             32
 
 #ifdef RX64
@@ -152,6 +157,7 @@ void rxPrepareInput(VM *vm) {
 }
 
 void rxPrepareOutput(VM *vm) {
+#if 0
   tcgetattr(0, &vm->old_termios);
   vm->new_termios = vm->old_termios;
   vm->new_termios.c_iflag &= ~(BRKINT+ISTRIP+IXON+IXOFF);
@@ -160,10 +166,21 @@ void rxPrepareOutput(VM *vm) {
   vm->new_termios.c_cc[VMIN] = 1;
   vm->new_termios.c_cc[VTIME] = 0;
   tcsetattr(0, TCSANOW, &vm->new_termios);
+#else
+  ioctl(0, TIOCGETP, &vm->old_termios);
+  vm->new_termios = vm->old_termios;
+  vm->new_termios.sg_flags &= ~(ECHO | CRMOD | XTABS | RAW);
+  vm->new_termios.sg_flags |= CBREAK;
+  ioctl(0, TIOCSETP, &vm->new_termios);
+#endif
 }
 
 void rxRestoreIO(VM *vm) {
+#if 0
   tcsetattr(0, TCSANOW, &vm->old_termios);
+#else
+  ioctl(0, TIOCSETP, &vm->old_termios);
+#endif
 }
 
 /* File I/O Support ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

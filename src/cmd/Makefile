@@ -21,7 +21,7 @@ SUBDIR		= adc-demo ar as awk basic cc chflags chpass \
 # /sbin
 SUBDIR         += chown chroot disktool fsck getty init \
                   mkfs mknod mkpasswd mount pstat \
-                  reboot shutdown umount update vipw
+                  reboot shutdown umount update vipw virus
 
 # TODO: ccom lex m4 yacc reloc adb sre pforth
 
