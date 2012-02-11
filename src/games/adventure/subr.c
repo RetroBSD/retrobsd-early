@@ -296,7 +296,8 @@ int
 march()                                        /* label 8              */
 {       register int ll1,ll2;
 
-	if ((tkk=travel[newloc=loc])==0) bug(26);
+        tkk = travel[newloc = loc];
+	if (tkk == 0) bug(26);
 	if (k==null) return(2);
 	if (k==cave)                            /* 40                   */
 	{       if (loc<8) rspeak(57);

@@ -1,87 +1,72 @@
 /*
  * save (III)   J. Gillogly
  * save user core image for restarting
- * usage: save(<command file (argv[0] from main)>,<output file>)
- * bugs
- *   -  impure code (i.e. changes in instructions) is not handled
- *      (but people that do that get what they deserve)
  */
 #include <unistd.h>
 #include <fcntl.h>
 #include "hdr.h"
 
-#define MAGIC 0x76646121
-
-struct file_header {
-        unsigned magic;
-        unsigned msg_size;
-        unsigned data_size;
-        unsigned heap_size;
-        char *data_start;
-        char *heap_start;
-};
-
-long filesize = sizeof(struct file_header); /* accessible to caller     */
-
-extern char __data_start[], _end[], *heap_start;
-
-int
-save(outfile)                           /* save data image              */
-char *outfile;
+void
+save(savfile)                           /* save game state              */
+char *savfile;
 {
-	register int fd;
-        char *heap_end;
-        struct file_header hdr;
+	int fd, i;
+        struct travlist *entry;
 
-	fd = open(outfile, O_RDWR);
+	fd = creat(savfile, 0644);
 	if (fd < 0) {
-	        printf("Cannot open %s\n", outfile);
-		return(-1);
+	        printf("Cannot write to %s\n", savfile);
+		exit(0);
 	}
-	if (read(fd, &hdr, sizeof(hdr)) != sizeof(hdr)) {
-	        printf("Save file empty\n");
-		return(-1);
-	}
-	if (hdr.msg_size == 0) {
-                hdr.msg_size = (lseek(fd, 0, SEEK_END) + 7) & ~7;
-                printf("Message size = %u\n", hdr.msg_size);
+        write(fd, &game, sizeof game);  /* write all game data          */
+
+        for (i=0; i<LOCSIZ; i++) {      /* save travel lists            */
+                entry = travel[i];
+                if (! entry)
+                        continue;
+                while (entry != 0) {
+                        /*printf("entry %d: next=%p conditions=%d tloc=%d tverb=%d\n",
+                                i, entry->next, entry->conditions, entry->tloc, entry->tverb);*/
+                        write(fd, entry, sizeof(*entry));
+                        entry = entry->next;
+                }
         }
-	hdr.data_start = __data_start;
-        hdr.data_size  = _end - hdr.data_start;
-
-	heap_end = (char*) sbrk(0);
-	hdr.heap_start = heap_start;
-	hdr.heap_size  = heap_end - heap_start;
-
-	hdr.magic = MAGIC;
-        lseek(fd, 0, SEEK_SET);
-	write(fd, &hdr, sizeof(hdr));
-
-        lseek(fd, hdr.msg_size, SEEK_SET);
-	write(fd, hdr.data_start, hdr.data_size);
-	write(fd, heap_start, hdr.heap_size);
-
-        printf("Saved %u bytes to %s\n", hdr.msg_size +
-                hdr.data_size + hdr.heap_size, outfile);
+        printf("Saved %lu bytes to %s\n", lseek(fd, 0, SEEK_CUR), savfile);
 	close(fd);
-        return 0;
 }
 
-void
-restore(fd)
+int
+restore(savfile)                        /* restore game state           */
+char *savfile;
 {
-        struct file_header hdr;
+	int fd, i;
+        struct travlist **entryp;
 
-	if (read(fd, &hdr, sizeof(hdr)) != sizeof(hdr) ||
-            hdr.magic != MAGIC ||
-	    hdr.data_start != __data_start ||
-            hdr.data_size  != _end - __data_start ||
-            hdr.heap_start != heap_start) {
-	        printf("Saved data invalid\n");
-		exit(-1);
-	}
-	brk(hdr.heap_start + hdr.heap_size);
-        lseek(fd, hdr.msg_size, SEEK_SET);
-	read(fd, __data_start, hdr.data_size);
-	read(fd, heap_start, hdr.heap_size);
+	fd = open(savfile, O_RDONLY);
+	if (fd < 0)
+	        return 0;
+		                        /* read all game data           */
+        if (read(fd, &game, sizeof game) != sizeof game) {
+failed:         close(fd);
+	        return 0;
+        }
+
+        for (i=0; i<LOCSIZ; i++) {      /* restore travel lists         */
+                if (! travel[i])
+                        continue;
+                entryp = &travel[i];
+                while (*entryp != 0) {
+                        *entryp = (struct travlist*) malloc(sizeof(**entryp));
+                        if (! *entryp)
+                                goto failed;
+                        if (read(fd, *entryp, sizeof **entryp) != sizeof **entryp)
+                                goto failed;
+                        /*printf("entry %d: next=%p conditions=%d tloc=%d tverb=%d\n",
+                                i, (*entryp)->next, (*entryp)->conditions,
+                                (*entryp)->tloc, (*entryp)->tverb);*/
+                        entryp = &(*entryp)->next;
+                }
+        }
+	close(fd);
+        return 1;
 }

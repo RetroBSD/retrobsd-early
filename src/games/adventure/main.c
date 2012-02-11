@@ -6,46 +6,42 @@
 #include <fcntl.h>
 #include "hdr.h"
 
-int	datfd = -1;
-char    *heap_start;
+int	datfd;
 
 int
-main(argc,argv)
+main(argc, argv)
 int argc;
 char **argv;
 {       register int i;
-	int rval, fd;
+	int rval;
 	struct text *kk;
-	static int reenter;
-	char *datfile = "adventure.sav";
+	char *datfile = "adventure.dat";
+	char *savfile = "adventure.sav";
 
-	heap_start = (char*) sbrk(0);   /* start of heap segment        */
-	fd = open(datfile, 0);
-	if (fd >= 0) {
-                restore (fd);
-                datfd = fd;
-	} else if (! confirm("Start new game? "))
-                exit(0);
-	reenter++;
-	setuid(getuid());
-	switch (setup) {
-	case 0:
-		init(datfile);          /* set up initial variables     */
-		/* NOTREACHED */
-	case 1:
-		startup();		/* prepare for a user           */
-		signal(2,trapdel);
-		break;
-	case -1:	                /* restarting game : 8305       */
-		yea=start(0);
-		setup=3;
-		k=null;
-		goto l8;
-	default:
-		printf("Your forged file dissappears in a puff of greasy black smoke! (poof)\n");
-		unlink(datfile);
-		exit(1);
+        datfd = open(datfile, 0);
+	if (datfd < 0) {
+                init(datfile);           /* create data from orig. file */
+                datfd = open(datfile, 0);
+                if (datfd < 0) {
+                        printf("No adventure just now\n");
+                        exit(0);
+                }
+                printf("Adventure is ready.\n");
 	}
+	setuid(getuid());
+        signal(SIGINT, trapdel);
+
+	poof();
+	if (restore(savfile)) {
+                start(0);               /* restarting game : 8305       */
+		k = null;
+		goto l8;
+	}
+        if (! confirm("Start new game? "))
+                exit(0);
+        start(0);
+        startup();			/* prepare for a user           */
+        blklin = TRUE;
 
 	for (;;)                        /* main command loop (label 2)  */
 	{       if (newloc<9 && newloc!=0 && closng)
@@ -90,9 +86,10 @@ char **argv;
 					if (tally==tally2 && tally != 0)
 						if (limit>35) limit=35;
 				}
-				kk=(struct text *) prop[obj];	/* 2006		*/
-				if (obj==steps && loc==fixed[steps])kk=(struct text *)1;
-				pspeak(obj,(int)kk);
+				int pk = prop[obj];             /* 2006	*/
+				if (obj==steps && loc==fixed[steps])
+                                        pk = 1;
+				pspeak(obj, pk);
 			}                                       /* 2008 */
 			goto l2012;
 	l2009:          k=54;                   /* 2009                 */
@@ -120,7 +117,6 @@ char **argv;
 	l2608:  if ((foobar = -foobar)>0) foobar=0;     /* 2608         */
 		/* should check here for "magic mode"                   */
 		turns++;
-		if (demo && turns>=SHORT) done(1);      /* to 13000     */
 
 		if (verb==say && *wd2!=0) verb=0;
 		if (verb==say)
@@ -314,15 +310,13 @@ char **argv;
 			goto l9270;
 		    case 30:                    /* suspend=8300         */
 			spk=201;
-			if (demo) goto l2011;
 			printf("I can suspend your adventure for you so");
 			printf(" you can resume later, but\n");
 			printf("you will have to wait at least");
 			printf(" %d minutes before continuing.",latncy);
 			if (!yes(200,54,54)) goto l2012;
 			datime(&saved,&savet);
-			setup = -1;
-                        save(datfile);
+                        save(savfile);
                         printf("^\n");
                         printf("Gis revido.\n");
                         exit(0);

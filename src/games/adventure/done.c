@@ -71,7 +71,7 @@ int entry;      /* entry=2 means goto 20000 */ /* 3=19000 */
 int
 die(entry)                                      /* label 90             */
 int entry;
-{       register int i;
+{       register int i, yea;
 	if (entry != 99)
 	{       rspeak(23);
 		oldlc2=loc;
@@ -81,7 +81,7 @@ int entry;
 		numdie++;
 		done(2);
 	}
-	yea=yes(81+numdie*2,82+numdie*2,54);
+	yea=yes(81+numdie*2, 82+numdie*2, 54);
 	numdie++;
 	if (numdie==maxdie || !yea) done(2);
 	place[water]=0;

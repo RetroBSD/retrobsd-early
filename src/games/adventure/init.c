@@ -7,10 +7,7 @@
 #include <sys/wait.h>
 #include "hdr.h"
 
-int blklin = TRUE;
-int setup  = 0;
-
-const int setbit[16] = {
+const short setbit[16] = {
         1, 2, 4, 010, 020,040, 0100, 0200, 0400,
         01000, 02000, 04000, 010000, 020000, 040000, 0100000,
 };
@@ -135,16 +132,8 @@ void
 init(datfile)                           /* everything for 1st time run  */
 char *datfile;                          /* datfile we were called with  */
 {
-	rdata(datfile);                 /* read data from orig. file    */
+	rdata(DATFILE, datfile);        /* read data from orig. file    */
 	linkdata();
-	poof();
-	setup = 1;                      /* indicate that data is in     */
-        if (save(datfile) < 0) {        /* save data image              */
-                printf("Save failed\n");
-                exit(0);
-        }
-	printf("Save succeeded.  Adventure is ready.\n");
-	exit(0);
 }
 
 void
@@ -155,14 +144,14 @@ trapdel(sig)                            /* come here if he hits a del   */
 
 void
 startup()
-{       int tvec[2];
-	demo=start(0);
-	time(tvec);
-	srand(tvec[1]|1);               /* random odd seed              */
-/*      srand(371);             */      /* non-random seed                      */
-	hinted[3]=yes(65,1,0);
-	newloc=1;
-	setup=3;
-	limit=330;
-	if (hinted[3]) limit=1000;      /* better batteries if instrucs */
+{
+        time_t now;
+
+	time(&now);
+	srand(now);                     /* random odd seed              */
+/*      srand(371);             */      /* non-random seed              */
+	hinted[3] = yes(65, 1, 0);
+	newloc = 1;
+	limit = 330;
+	if (hinted[3]) limit = 1000;    /* better batteries if instrucs */
 }

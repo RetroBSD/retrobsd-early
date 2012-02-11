@@ -27,8 +27,8 @@ int *d, *t;
 
 void
 poof()
-{       magic="dwarf";
-	latncy=45;
+{       magic = "dwarf";
+	latncy = 45;
 }
 
 int
@@ -46,27 +46,28 @@ wizard()                /* not as complex as advent/10 (for now)        */
 	return(TRUE);
 }
 
-int
+void
 start(n)
-{       int d,t,delay;
+{
+        int d, t, delay;
+
 	datime(&d,&t);
-	delay=(d-saved)*1440+(t-savet); /* good for about a month       */
-	if (delay>=latncy || delay < 0 || setup >= 0)
-	{       saved= -1;
-		return(FALSE);
+	delay = (d-saved)*1440+(t-savet); /* good for about a month       */
+	if (delay >= latncy || delay < 0 /*|| setup >= 0*/) {
+                saved = -1;
+		return;
 	}
 	printf("This adventure was suspended a mere %d minutes ago.",delay);
-	if (delay<=latncy/3)
-	{       mspeak(2);
+	if (delay <= latncy / 3) {
+                mspeak(2);
 //		exit(0);
 	}
 	mspeak(8);
-	if (! wizard())
-	{       mspeak(9);
+	if (! wizard()) {
+                mspeak(9);
 		exit(0);
 	}
 	saved = -1;
-	return(FALSE);
 }
 
 int

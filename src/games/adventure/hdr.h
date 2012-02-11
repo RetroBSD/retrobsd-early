@@ -21,109 +21,116 @@
 #endif
 #include <stdlib.h>
 
-extern int setup;                       /* changed by savec & init      */
 int datfd;                              /* message file descriptor      */
 int delhit;
-int yea;
+
+#define DATFILE "glorkz"                /* all the original msgs        */
 
 #define TAB     011
 #define LF      012
 #define FLUSHLINE while (getchar()!='\n')
 #define FLUSHLF   while (next()!=LF)
 
-int loc,newloc,oldloc,oldlc2,wzdark,SHORT,gaveup,kq,k,k2;
-char *wd1,*wd2;                         /* the complete words           */
-int verb,obj,spk;
-extern int blklin;
-int saved,savet,mxscor,latncy;
+char *wd1, *wd2;                        /* the complete words           */
 
-#define MAXSTR  20                      /* max length of user's words   */
-
-#define HTSIZE  512                     /* max number of vocab words    */
-struct hashtab                          /* hash table for vocabulary    */
-{       int val;                        /* word type &index (ktab)      */
-	char *atab;                     /* pointer to actual string     */
-} voc[HTSIZE];
-
-#define DATFILE "glorkz"                /* all the original msgs        */
-
-struct text
-{       int seekadr;                    /* DATFILE must be < 2**16      */
-	int txtlen;                     /* length of msg starting here  */
+struct hashtab {                        /* hash table for vocabulary    */
+        int val;                        /* word type &index (ktab)      */
+        int hash;                       /* 32-bit hash value            */
 };
 
-#define RTXSIZ  205
-struct text rtext[RTXSIZ];              /* random text messages         */
+struct text {
+        unsigned short seekadr;         /* DATFILE must be < 2**16      */
+        unsigned short txtlen;          /* length of msg starting here  */
+};
 
-#define MAGSIZ  35
-struct text mtext[MAGSIZ];              /* magic messages               */
+struct travlist {                       /* direcs & conditions of travel*/
+        struct travlist *next;          /* ptr to next list entry       */
+        unsigned short conditions;      /* m in writeup (newloc / 1000) */
+        unsigned short tloc;            /* n in writeup (newloc % 1000) */
+        unsigned short tverb;           /* the verb that takes you there*/
+};
 
-int clsses;
-#define CLSMAX  12
-struct text ctext[CLSMAX];              /* classes of adventurer        */
-int cval[CLSMAX];
+/*
+ * Game state.
+ */
+struct {
+    short loc, newloc, oldloc, oldlc2, wzdark, gaveup, kq, k, k2;
+    short verb, obj, spk;
+    short blklin;
+    int saved, savet, mxscor, latncy;
 
-struct text ptext[101];                 /* object descriptions          */
+    #define MAXSTR  20                  /* max length of user's words   */
 
-#define LOCSIZ  141                     /* number of locations          */
-struct text ltext[LOCSIZ];              /* long loc description         */
-struct text stext[LOCSIZ];              /* short loc descriptions       */
+    #define HTSIZE  512                 /* max number of vocab words    */
+    struct hashtab voc[HTSIZE];         /* hash table for vocabulary    */
 
-struct travlist                         /* direcs & conditions of travel*/
-{       struct travlist *next;          /* ptr to next list entry       */
-	int conditions;                 /* m in writeup (newloc / 1000) */
-	int tloc;                       /* n in writeup (newloc % 1000) */
-	int tverb;                      /* the verb that takes you there*/
-} *travel[LOCSIZ],*tkk;                 /* travel is closer to keys(...)*/
+    #define RTXSIZ  205
+    struct text rtext[RTXSIZ];          /* random text messages         */
 
-int atloc[LOCSIZ];
+    #define MAGSIZ  35
+    struct text mtext[MAGSIZ];          /* magic messages               */
 
-int  plac[101];                         /* initial object placement     */
-int  fixd[101],fixed[101];              /* location fixed?              */
+    short clsses;
+    #define CLSMAX  12
+    struct text ctext[CLSMAX];          /* classes of adventurer        */
+    short cval[CLSMAX];
 
-int actspk[35];                         /* rtext msg for verb <n>       */
+    struct text ptext[101];             /* object descriptions          */
 
-int cond[LOCSIZ];                       /* various condition bits       */
+    #define LOCSIZ  141                 /* number of locations          */
+    struct text ltext[LOCSIZ];          /* long loc description         */
+    struct text stext[LOCSIZ];          /* short loc descriptions       */
 
-extern const int setbit[16];            /* bit defn masks 1,2,4,...     */
+    struct travlist *travel[LOCSIZ];    /* direcs & conditions of travel*/
 
-int hntmax;
-int hints[20][5];                       /* info on hints                */
-int hinted[20],hintlc[20];
+    short atloc[LOCSIZ];
 
-int place[101], prop[101], plink[201];
-int abb[LOCSIZ];
+    short plac[101];                      /* initial object placement     */
+    short fixd[101], fixed[101];          /* location fixed?              */
 
-int maxtrs,tally,tally2;                /* treasure values              */
+    short actspk[35];                     /* rtext msg for verb <n>       */
 
-#define FALSE   0
-#define TRUE    1
+    short cond[LOCSIZ];                   /* various condition bits       */
 
-int keys,lamp,grate,cage,rod,rod2,steps,/* mnemonics                    */
-	bird,door,pillow,snake,fissur,tablet,clam,oyster,magzin,
-	dwarf,knife,food,bottle,water,oil,plant,plant2,axe,mirror,dragon,
-	chasm,troll,troll2,bear,messag,vend,batter,
-	nugget,coins,chest,eggs,tridnt,vase,emrald,pyram,pearl,rug,chain,
-	spices,
-	back,look,cave,null,entrnc,dprssn,
-	say,lock,throw,find,invent;
+    short hntmax;
+    short hints[20][5];                   /* info on hints                */
+    short hinted[20], hintlc[20];
 
-int chloc,chloc2,dseen[7],dloc[7],      /* dwarf stuff                  */
-	odloc[7],dflag,daltlc;
+    short place[101], prop[101], plink[201];
+    short abb[LOCSIZ];
 
-int tk[21],stick,dtotal,attack;
-int turns,lmwarn,iwest,knfloc,detail,   /* various flags & counters     */
-	abbnum,maxdie,numdie,holdng,dkill,foobar,bonus,clock1,clock2,
-	saved,closng,panic,closed,scorng;
+    short maxtrs, tally, tally2;          /* treasure values              */
 
-int demo,newloc,limit;
+    #define FALSE   0
+    #define TRUE    1
 
-extern long filesize;                   /* accessible to caller         */
+    short keys, lamp, grate, cage, rod,   /* mnemonics                    */
+        rod2, steps, bird, door, pillow, snake, fissur, tablet, clam,
+        oyster, magzin, dwarf, knife, food, bottle, water, oil, plant,
+        plant2, axe, mirror, dragon, chasm, troll, troll2, bear, messag,
+        vend, batter, nugget, coins, chest, eggs, tridnt, vase, emrald,
+        pyram, pearl, rug, chain, spices, back, look, cave, null, entrnc,
+        dprssn, say, lock, throw, find, invent;
+
+    short chloc, chloc2, dseen[7],        /* dwarf stuff                  */
+        dloc[7], odloc[7], dflag, daltlc;
+
+    short tk[21], stick, dtotal, attack;
+    short turns, lmwarn, iwest, knfloc,   /* various flags & counters     */
+        detail, abbnum, maxdie, numdie, holdng, dkill, foobar, bonus,
+        clock1, clock2, closng, panic, closed, scorng;
+
+    short limit;
+} game;
+
+struct travlist *tkk;                   /* travel is closer to keys(...)*/
+
+extern const short setbit[16];            /* bit defn masks 1,2,4,...     */
 
 void init (char *);
 void startup (void);
 void trapdel (int);
-void rdata (char *);
+void rdata (char *, char *);
 void mspeak (int);
 void rspeak (int);
 void speak (struct text *);
@@ -134,9 +141,9 @@ void drop (int, int);
 int vocab (char *, int, int);
 void poof (void);
 int confirm (char *);
-int save (char *);
-void restore (int);
-int start (int);
+void save (char *);
+int restore (char *);
+void start (int);
 int length (char *);
 void bug (int);
 int getcmd (char *);
@@ -174,3 +181,136 @@ int ran (int);
 void carry (int, int);
 void juggle (int);
 int put (int, int, int);
+
+#define voc     game.voc
+#define rtext   game.rtext
+#define mtext   game.mtext
+#define ctext   game.ctext
+#define cval    game.cval
+#define ptext   game.ptext
+#define ltext   game.ltext
+#define stext   game.stext
+#define travel  game.travel
+#define atloc   game.atloc
+#define plac    game.plac
+#define fixd    game.fixd
+#define fixed   game.fixed
+#define actspk  game.actspk
+#define cond    game.cond
+#define hntmax  game.hntmax
+#define hints   game.hints
+#define hinted  game.hinted
+#define hintlc  game.hintlc
+#define place   game.place
+#define prop    game.prop
+#define plink   game.plink
+#define abb     game.abb
+#define dseen   game.dseen
+#define dloc    game.dloc
+#define odloc   game.odloc
+#define tk      game.tk
+#define loc     game.loc
+#define newloc  game.newloc
+#define oldloc  game.oldloc
+#define oldlc2  game.oldlc2
+#define wzdark  game.wzdark
+#define gaveup  game.gaveup
+#define kq      game.kq
+#define k       game.k
+#define k2      game.k2
+#define verb    game.verb
+#define obj     game.obj
+#define spk     game.spk
+#define blklin  game.blklin
+#define saved   game.saved
+#define savet   game.savet
+#define mxscor  game.mxscor
+#define latncy  game.latncy
+#define clsses  game.clsses
+#define maxtrs  game.maxtrs
+#define tally   game.tally
+#define tally2  game.tally2
+#define keys    game.keys
+#define lamp    game.lamp
+#define grate   game.grate
+#define cage    game.cage
+#define rod     game.rod
+#define rod2    game.rod2
+#define steps   game.steps
+#define bird    game.bird
+#define door    game.door
+#define pillow  game.pillow
+#define snake   game.snake
+#define fissur  game.fissur
+#define tablet  game.tablet
+#define clam    game.clam
+#define oyster  game.oyster
+#define magzin  game.magzin
+#define dwarf   game.dwarf
+#define knife   game.knife
+#define food    game.food
+#define bottle  game.bottle
+#define water   game.water
+#define oil     game.oil
+#define plant   game.plant
+#define plant2  game.plant2
+#define axe     game.axe
+#define mirror  game.mirror
+#define dragon  game.dragon
+#define chasm   game.chasm
+#define troll   game.troll
+#define troll2  game.troll2
+#define bear    game.bear
+#define messag  game.messag
+#define vend    game.vend
+#define batter  game.batter
+#define nugget  game.nugget
+#define coins   game.coins
+#define chest   game.chest
+#define eggs    game.eggs
+#define tridnt  game.tridnt
+#define vase    game.vase
+#define emrald  game.emrald
+#define pyram   game.pyram
+#define pearl   game.pearl
+#define rug     game.rug
+#define chain   game.chain
+#define spices  game.spices
+#define back    game.back
+#define look    game.look
+#define cave    game.cave
+#define null    game.null
+#define entrnc  game.entrnc
+#define dprssn  game.dprssn
+#define say     game.say
+#define lock    game.lock
+#define throw   game.throw
+#define find    game.find
+#define invent  game.invent
+#define chloc   game.chloc
+#define chloc2  game.chloc2
+#define dflag   game.dflag
+#define daltlc  game.daltlc
+#define stick   game.stick
+#define dtotal  game.dtotal
+#define attack  game.attack
+#define turns   game.turns
+#define lmwarn  game.lmwarn
+#define iwest   game.iwest
+#define knfloc  game.knfloc
+#define detail  game.detail
+#define abbnum  game.abbnum
+#define maxdie  game.maxdie
+#define numdie  game.numdie
+#define holdng  game.holdng
+#define dkill   game.dkill
+#define foobar  game.foobar
+#define bonus   game.bonus
+#define clock1  game.clock1
+#define clock2  game.clock2
+#define closng  game.closng
+#define panic   game.panic
+#define closed  game.closed
+#define scorng  game.scorng
+#define newloc  game.newloc
+#define limit   game.limit

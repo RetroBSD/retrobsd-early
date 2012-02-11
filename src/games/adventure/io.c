@@ -59,7 +59,8 @@ rtrav()                                 /* read travel table            */
 		}
 		if (locc== -1) return;
 		if (locc!=oldloc)        /* getting a new entry         */
-		{       t=travel[locc]=(struct travlist *) malloc(sizeof (struct travlist));
+		{       t = (struct travlist *) malloc(sizeof(*t));
+		        travel[locc] = t;
 		/*      printf("New travel list for %d\n",locc);        */
 			entries=0;
 			oldloc=locc;
@@ -79,7 +80,10 @@ rtrav()                                 /* read travel table            */
 			m=atoi(buf);
 		}
 		while (breakch!=LF)     /* only do one line at a time   */
-		{       if (entries++) t=t->next=(struct travlist *) malloc(sizeof (struct travlist));
+		{       if (entries++) {
+                                t->next = (struct travlist *) malloc(sizeof (*t));
+                                t = t->next;
+                        }
 			t->tverb=rnum();/* get verb from the file       */
 			t->tloc=n;      /* table entry mod 1000         */
 			t->conditions=m;/* table entry / 1000           */
@@ -316,13 +320,13 @@ rhints()
 }
 
 void
-rdata(outfile)                          /* read all data from orig file */
-char *outfile;                          /* datfile we were called with  */
+rdata(infile, outfile)                  /* read all data from orig file */
+char *infile, *outfile;                 /* datfile we were called with  */
 {       register int sect;
 	register char ch;
-	inbuf = fopen(DATFILE, "r");
+	inbuf = fopen(infile, "r");
 	if (inbuf == NULL)              /* all the data lives in here   */
-	{       printf("Cannot open data file %s\n", DATFILE);
+	{       printf("Cannot open data file %s\n", infile);
 		exit(0);
 	}
 	outbuf = fopen(outfile, "w");
@@ -330,8 +334,7 @@ char *outfile;                          /* datfile we were called with  */
 	{       printf("Cannot create output file %s\n", outfile);
 		exit(0);
 	}
-	fseek(outbuf, filesize, 0);     /* skip file header             */
-	setup=clsses=1;
+	clsses = 1;
 	for (;;)                        /* read data sections           */
 	{       sect=next()-'0';        /* 1st digit of section number  */
 		printf("Section %c",sect+'0');
@@ -422,8 +425,10 @@ speak(msg)       /* read, decrypt, and print a message (not ptext)      */
 struct text *msg;/* msg is a pointer to seek address and length of mess */
 {       register char *s,nonfirst;
 	register char *tbuf;
-	lseek(datfd, filesize + msg->seekadr, 0);
-	if ((tbuf=(char *) malloc(msg->txtlen+1))<0) bug(109);
+	lseek(datfd, (long) msg->seekadr, 0);
+	tbuf = (char *) alloca(msg->txtlen + 1);
+//	tbuf = (char *) malloc(msg->txtlen + 1);
+//	if (! tbuf) bug(109);
 	read(datfd,tbuf,msg->txtlen);
 	s=tbuf;
 	nonfirst=0;
@@ -441,7 +446,7 @@ struct text *msg;/* msg is a pointer to seek address and length of mess */
 			putchar(*s^*tape);
 		} while ((*s++^*tape++)!=LF);   /* better end with LF   */
 	}
-	free(tbuf);
+//	free(tbuf);
 }
 
 void
@@ -452,8 +457,11 @@ int skip;         /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	register char *tbuf;
 	char *numst;
 	int lstr;
-	lseek(datfd, filesize + ptext[msg].seekadr, 0);
-	if ((tbuf=(char *) malloc((lstr=ptext[msg].txtlen)+1))<0) bug(108);
+	lseek(datfd, (long) ptext[msg].seekadr, 0);
+	lstr = ptext[msg].txtlen;
+	tbuf = (char *) alloca(lstr + 1);
+//	tbuf = (char *) malloc(lstr + 1);
+//	if (! tbuf) bug(108);
 	read(datfd,tbuf,lstr);
 	s=tbuf;
 	nonfirst=0;
@@ -475,5 +483,5 @@ int skip;         /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 		} while ((*s++^*tape++)!=LF);   /* better end with LF   */
 		if (skip<0) break;
 	}
-	free(tbuf);
+//	free(tbuf);
 }

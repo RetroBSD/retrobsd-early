@@ -29,6 +29,8 @@ clean:
 install:        all
 		install adventure $(DESTDIR)/games/
 		cp glorkz $(DESTDIR)/games/lib/
+		cp adventure.dat $(DESTDIR)/games/lib/
+		cp adventure.sav $(DESTDIR)/games/lib/
 		cp ${MAN} $(DESTDIR)/share/man/cat6/
 
 $(OBJS):        hdr.h
