@@ -1,10 +1,10 @@
 /*
  * Re-coding of advent in C: privileged operations
  */
+#include "hdr.h"
 #include <unistd.h>
 #include <time.h>
 #include <fcntl.h>
-#include "hdr.h"
 
 char *magic;
 

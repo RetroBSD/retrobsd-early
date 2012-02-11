@@ -1,11 +1,11 @@
 /*
  * Re-coding of advent in C: data initialization
  */
+#include "hdr.h"
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/wait.h>
-#include "hdr.h"
 
 const short setbit[16] = {
         1, 2, 4, 010, 020,040, 0100, 0200, 0400,
@@ -126,14 +126,6 @@ linkdata()                              /*  secondary data manipulation */
 	clock2=50;
 	saved=0;
 	closng=panic=closed=scorng=FALSE;
-}
-
-void
-init(datfile)                           /* everything for 1st time run  */
-char *datfile;                          /* datfile we were called with  */
-{
-	rdata(DATFILE, datfile);        /* read data from orig. file    */
-	linkdata();
 }
 
 void

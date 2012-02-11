@@ -2,22 +2,29 @@
  * save (III)   J. Gillogly
  * save user core image for restarting
  */
+#include "hdr.h"
 #include <unistd.h>
 #include <fcntl.h>
-#include "hdr.h"
 
 void
-save(savfile)                           /* save game state              */
+save(savfile, offset)                   /* save game state to file      */
 char *savfile;
+unsigned offset;
 {
 	int fd, i;
         struct travlist *entry;
 
-	fd = creat(savfile, 0644);
+        if (offset == 0)
+                fd = creat(savfile, 0644);
+        else
+                fd = open(savfile, O_WRONLY);
 	if (fd < 0) {
 	        printf("Cannot write to %s\n", savfile);
 		exit(0);
 	}
+        if (offset != 0) {               /* use offset                   */
+                lseek (fd, (off_t) offset, SEEK_SET);
+        }
         write(fd, &game, sizeof game);  /* write all game data          */
 
         for (i=0; i<LOCSIZ; i++) {      /* save travel lists            */
@@ -31,21 +38,23 @@ char *savfile;
                         entry = entry->next;
                 }
         }
-        printf("Saved %lu bytes to %s\n", lseek(fd, 0, SEEK_CUR), savfile);
+        /*printf("Saved %u bytes to %s\n",
+                (unsigned) lseek(fd, (off_t) 0, SEEK_CUR), savfile);*/
 	close(fd);
 }
 
 int
-restore(savfile)                        /* restore game state           */
-char *savfile;
+restdat(fd, offset)                     /* restore game from dat file   */
+int fd;
+unsigned offset;
 {
-	int fd, i;
+	int i;
         struct travlist **entryp;
 
-	fd = open(savfile, O_RDONLY);
-	if (fd < 0)
-	        return 0;
-		                        /* read all game data           */
+        if (offset != 0)                /* use offset                   */
+                lseek (fd, (off_t) offset, SEEK_SET);
+
+        /* read all game data */
         if (read(fd, &game, sizeof game) != sizeof game) {
 failed:         close(fd);
 	        return 0;
@@ -67,6 +76,20 @@ failed:         close(fd);
                         entryp = &(*entryp)->next;
                 }
         }
+        return 1;
+}
+
+int
+restore(savfile)                        /* restore game from user file  */
+char *savfile;
+{
+	int fd;
+
+	fd = open(savfile, O_RDONLY);
+	if (fd < 0)
+	        return 0;
+	if (! restdat(fd, 0))
+	        return 0;
 	close(fd);
         return 1;
 }

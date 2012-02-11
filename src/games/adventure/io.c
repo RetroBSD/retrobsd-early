@@ -1,8 +1,8 @@
 /*
  * Re-coding of advent in C: file i/o and user i/o
  */
-#include <unistd.h>
 #include "hdr.h"
+#include <unistd.h>
 
 int seekhere = 1;			/* initial seek for output file */
 
@@ -337,13 +337,13 @@ char *infile, *outfile;                 /* datfile we were called with  */
 	clsses = 1;
 	for (;;)                        /* read data sections           */
 	{       sect=next()-'0';        /* 1st digit of section number  */
-		printf("Section %c",sect+'0');
+		//printf("Section %c",sect+'0');
 		if ((ch=next())!=LF)    /* is there a second digit?     */
 		{       FLUSHLF;
-			putchar(ch);
+			//putchar(ch);
 			sect=10*sect+ch-'0';
 		}
-		putchar('\n');
+		//putchar('\n');
 		switch(sect)
 		{   case 0:             /* finished reading database    */
 			fclose(inbuf);
@@ -425,10 +425,8 @@ speak(msg)       /* read, decrypt, and print a message (not ptext)      */
 struct text *msg;/* msg is a pointer to seek address and length of mess */
 {       register char *s,nonfirst;
 	register char *tbuf;
-	lseek(datfd, (long) msg->seekadr, 0);
+	lseek(datfd, (off_t) msg->seekadr, 0);
 	tbuf = (char *) alloca(msg->txtlen + 1);
-//	tbuf = (char *) malloc(msg->txtlen + 1);
-//	if (! tbuf) bug(109);
 	read(datfd,tbuf,msg->txtlen);
 	s=tbuf;
 	nonfirst=0;
@@ -446,7 +444,6 @@ struct text *msg;/* msg is a pointer to seek address and length of mess */
 			putchar(*s^*tape);
 		} while ((*s++^*tape++)!=LF);   /* better end with LF   */
 	}
-//	free(tbuf);
 }
 
 void
@@ -457,11 +454,9 @@ int skip;         /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 	register char *tbuf;
 	char *numst;
 	int lstr;
-	lseek(datfd, (long) ptext[msg].seekadr, 0);
+	lseek(datfd, (off_t) ptext[msg].seekadr, 0);
 	lstr = ptext[msg].txtlen;
 	tbuf = (char *) alloca(lstr + 1);
-//	tbuf = (char *) malloc(lstr + 1);
-//	if (! tbuf) bug(108);
 	read(datfd,tbuf,lstr);
 	s=tbuf;
 	nonfirst=0;
@@ -483,5 +478,4 @@ int skip;         /* assumes object 1 doesn't have prop 1, obj 2 no prop 2 &c*/
 		} while ((*s++^*tape++)!=LF);   /* better end with LF   */
 		if (skip<0) break;
 	}
-//	free(tbuf);
 }

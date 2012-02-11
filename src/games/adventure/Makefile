@@ -12,7 +12,10 @@ OBJS            = done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
 MAN		= adventure.0
 MANSRC		= adventure.6
 
-all:            adventure $(MAN)
+all:            adventure $(MAN) adventure.dat
+
+adventure.dat:
+		./adventure glorkz
 
 adventure:      ${OBJS}
 		${CC} ${LDFLAGS} -o adventure.elf ${OBJS} ${LIBS}
@@ -30,7 +33,6 @@ install:        all
 		install adventure $(DESTDIR)/games/
 		cp glorkz $(DESTDIR)/games/lib/
 		cp adventure.dat $(DESTDIR)/games/lib/
-		cp adventure.sav $(DESTDIR)/games/lib/
 		cp ${MAN} $(DESTDIR)/share/man/cat6/
 
 $(OBJS):        hdr.h

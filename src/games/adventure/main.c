@@ -1,10 +1,11 @@
 /*
  * Re-coding of advent in C: main program
  */
+#include "hdr.h"
+#include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
-#include "hdr.h"
 
 int	datfd;
 
@@ -15,19 +16,26 @@ char **argv;
 {       register int i;
 	int rval;
 	struct text *kk;
-	char *datfile = "adventure.dat";
 	char *savfile = "adventure.sav";
 
-        datfd = open(datfile, 0);
-	if (datfd < 0) {
-                init(datfile);           /* create data from orig. file */
-                datfd = open(datfile, 0);
-                if (datfd < 0) {
-                        printf("No adventure just now\n");
-                        exit(0);
-                }
-                printf("Adventure is ready.\n");
+	if (argc > 1)
+                savfile = argv[1];
+
+        if (strcmp(savfile, DATFILE) == 0) {
+                /* read data from orig. file and write to datfile */
+                rdata(DATFILE, "adventure.dat");
+                linkdata();
+                save("adventure.dat", DATSIZE);
+                exit(0);
 	}
+        /* try local file first */
+        datfd = open("adventure.dat", O_RDONLY);
+	if (datfd < 0)
+                datfd = open("/games/lib/adventure.dat", O_RDONLY);
+	if (datfd < 0) {
+                printf("No adventure just now\n");
+                exit(0);
+        }
 	setuid(getuid());
         signal(SIGINT, trapdel);
 
@@ -37,8 +45,15 @@ char **argv;
 		k = null;
 		goto l8;
 	}
-        if (! confirm("Start new game? "))
+        if (argc > 1) {
+                printf("Your forged file dissappears in a puff of greasy black smoke! (poof)\n");
+                unlink(savfile);
                 exit(0);
+        }
+	if (! restdat(datfd, DATSIZE)) {
+                printf("Corrupted dat file\n");
+                exit(0);
+	}
         start(0);
         startup();			/* prepare for a user           */
         blklin = TRUE;
@@ -315,9 +330,9 @@ char **argv;
 			printf("you will have to wait at least");
 			printf(" %d minutes before continuing.",latncy);
 			if (!yes(200,54,54)) goto l2012;
-			datime(&saved,&savet);
-                        save(savfile);
-                        printf("^\n");
+			datime(&saved, &savet);
+                        save(savfile, 0);
+                        //printf("^\n");
                         printf("Gis revido.\n");
                         exit(0);
 			continue;

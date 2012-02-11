@@ -15,6 +15,10 @@
 
 /* hdr.h: included by c advent files */
 #ifdef CROSS
+#   ifdef __APPLE__
+#       define _OFF_T
+        typedef long long off_t;
+#   endif
 #   include </usr/include/stdio.h>
 #else
 #   include <stdio.h>
@@ -25,6 +29,7 @@ int datfd;                              /* message file descriptor      */
 int delhit;
 
 #define DATFILE "glorkz"                /* all the original msgs        */
+#define DATSIZE (46*1024)               /* size of encrypted data       */
 
 #define TAB     011
 #define LF      012
@@ -127,7 +132,7 @@ struct travlist *tkk;                   /* travel is closer to keys(...)*/
 
 extern const short setbit[16];            /* bit defn masks 1,2,4,...     */
 
-void init (char *);
+void linkdata (void);
 void startup (void);
 void trapdel (int);
 void rdata (char *, char *);
@@ -141,8 +146,9 @@ void drop (int, int);
 int vocab (char *, int, int);
 void poof (void);
 int confirm (char *);
-void save (char *);
+void save (char *, unsigned);
 int restore (char *);
+int restdat (int, unsigned);
 void start (int);
 int length (char *);
 void bug (int);
