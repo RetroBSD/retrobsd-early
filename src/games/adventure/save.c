@@ -38,8 +38,8 @@ unsigned offset;
                         entry = entry->next;
                 }
         }
-        /*printf("Saved %u bytes to %s\n",
-                (unsigned) lseek(fd, (off_t) 0, SEEK_CUR), savfile);*/
+        printf("Saved %u bytes to %s\n",
+                (unsigned) lseek(fd, (off_t) 0, SEEK_CUR), savfile);
 	close(fd);
 }
 

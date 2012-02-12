@@ -28,7 +28,7 @@ int *d, *t;
 void
 poof()
 {       magic = "dwarf";
-	latncy = 45;
+	latncy = 15;                    /* originally 45 minutes        */
 }
 
 int

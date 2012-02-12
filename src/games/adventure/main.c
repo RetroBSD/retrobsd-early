@@ -25,6 +25,7 @@ char **argv;
                 /* read data from orig. file and write to datfile */
                 rdata(DATFILE, "adventure.dat");
                 linkdata();
+                poof();
                 save("adventure.dat", DATSIZE);
                 exit(0);
 	}
@@ -39,7 +40,6 @@ char **argv;
 	setuid(getuid());
         signal(SIGINT, trapdel);
 
-	poof();
 	if (savfile != 0) {
                 if (restore(savfile)) {
                         start(0);       /* restarting game : 8305       */
