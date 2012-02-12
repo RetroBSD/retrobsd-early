@@ -53,14 +53,14 @@ start(n)
 
 	datime(&d,&t);
 	delay = (d-saved)*1440+(t-savet); /* good for about a month       */
-	if (delay >= latncy || delay < 0 /*|| setup >= 0*/) {
+	if (delay >= latncy || delay < 0) {
                 saved = -1;
 		return;
 	}
 	printf("This adventure was suspended a mere %d minutes ago.",delay);
 	if (delay <= latncy / 3) {
                 mspeak(2);
-//		exit(0);
+		exit(0);
 	}
 	mspeak(8);
 	if (! wizard()) {
@@ -68,6 +68,31 @@ start(n)
 		exit(0);
 	}
 	saved = -1;
+}
+
+void
+ciao()
+{
+	char fname[80];
+        register char *c;
+
+	for (;;) {
+	        printf("What would you like to call the saved version?\n");
+		for (c=fname; ; c++) {
+		        *c = getchar();
+			if (*c == '\n')
+                                break;
+                }
+		*c = 0;
+		if (access(fname, F_OK) < 0)
+                        break;
+		printf("I can't use that one.\n");
+		return;
+	}
+	save(fname, 0);
+	printf("                    ^\n");
+	printf("That should do it.  Gis revido.\n");
+	exit(0);
 }
 
 int

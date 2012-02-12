@@ -1,7 +1,3 @@
-#
-# To run this program on Linux, use:
-#   sudo sysctl -w kernel.randomize_va_space=0
-#
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
@@ -14,6 +10,8 @@ MANSRC		= adventure.6
 
 all:            adventure $(MAN) adventure.dat
 
+# Data file format is compatible for all little-endian machines.
+# To rebuild it, compile the program on Linux.
 adventure.dat:
 		./adventure glorkz
 
@@ -21,7 +19,7 @@ adventure:      ${OBJS}
 		${CC} ${LDFLAGS} -o adventure.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S adventure.elf > adventure.dis
 		${SIZE} adventure.elf
-		${ELF2AOUT} adventure.elf $@ #&& rm adventure.elf
+		${ELF2AOUT} adventure.elf $@ && rm adventure.elf
 
 ${MAN}:         ${MANSRC}
 		${MANROFF} $< > $@
@@ -31,7 +29,6 @@ clean:
 
 install:        all
 		install adventure $(DESTDIR)/games/
-		cp glorkz $(DESTDIR)/games/lib/
 		cp adventure.dat $(DESTDIR)/games/lib/
 		cp ${MAN} $(DESTDIR)/share/man/cat6/
 

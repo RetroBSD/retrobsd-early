@@ -147,6 +147,7 @@ int vocab (char *, int, int);
 void poof (void);
 int confirm (char *);
 void save (char *, unsigned);
+void ciao (void);
 int restore (char *);
 int restdat (int, unsigned);
 void start (int);

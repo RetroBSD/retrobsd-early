@@ -76,8 +76,8 @@ unsigned int rot13_hash (char *str)
 {
         unsigned int len, hash;
 
-        /* Max 4 bytes. */
-        len = 4;
+        /* Max 5 characters. */
+        len = 5;
         for (hash = 0; len-- > 0 && *str != 0; str++) {
                 hash += (unsigned char) *str;
                 hash -= (hash << 13) | (hash >> 19);
@@ -107,8 +107,8 @@ int value;                              /* used for storing only        */
 				goto exitloop2;
 			h->val = value;
 			h->hash = hash32;
-		/*      printf("Stored \"%s\" (%d ch) as entry %d\n",   */
-		/*              word, length(word), adr);               */
+                        /*printf("Stored \"%s\" (%d ch) as entry %d\n",
+                                word, length(word), adr);*/
 			return 0;       /* entry unused                 */
 
                 case -1:                /* looking up user word         */

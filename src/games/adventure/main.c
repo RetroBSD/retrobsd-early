@@ -16,12 +16,12 @@ char **argv;
 {       register int i;
 	int rval;
 	struct text *kk;
-	char *savfile = "adventure.sav";
+	char *savfile = 0;
 
 	if (argc > 1)
                 savfile = argv[1];
 
-        if (strcmp(savfile, DATFILE) == 0) {
+        if (savfile != 0 && strcmp(savfile, DATFILE) == 0) {
                 /* read data from orig. file and write to datfile */
                 rdata(DATFILE, "adventure.dat");
                 linkdata();
@@ -40,12 +40,12 @@ char **argv;
         signal(SIGINT, trapdel);
 
 	poof();
-	if (restore(savfile)) {
-                start(0);               /* restarting game : 8305       */
-		k = null;
-		goto l8;
-	}
-        if (argc > 1) {
+	if (savfile != 0) {
+                if (restore(savfile)) {
+                        start(0);       /* restarting game : 8305       */
+                        k = null;
+                        goto l8;
+                }
                 printf("Your forged file dissappears in a puff of greasy black smoke! (poof)\n");
                 unlink(savfile);
                 exit(0);
@@ -331,10 +331,7 @@ char **argv;
 			printf(" %d minutes before continuing.",latncy);
 			if (!yes(200,54,54)) goto l2012;
 			datime(&saved, &savet);
-                        save(savfile, 0);
-                        //printf("^\n");
-                        printf("Gis revido.\n");
-                        exit(0);
+                        ciao();
 			continue;
 		    case 31:                    /* hours=8310           */
 			printf("Colossal cave is closed 9am-5pm Mon ");
