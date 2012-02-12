@@ -11,6 +11,8 @@
  *
  * The data file distributed with the fortran source is assumed to be called
  * "glorkz" in the directory where the program is first run.
+ *
+ * Data save/restore rewritten in portable way by Serge Vakulenko.
  */
 
 /* hdr.h: included by c advent files */

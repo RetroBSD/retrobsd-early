@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <time.h>
 #include <sys/wait.h>
 
 const short setbit[16] = {

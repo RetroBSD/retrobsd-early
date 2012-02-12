@@ -74,11 +74,16 @@ int object, where;
  */
 unsigned int rot13_hash (char *str)
 {
-        unsigned int len, hash;
+        unsigned int len, hash, c;
 
-        /* Max 5 characters. */
+        /* Max 5 utf8 characters. */
         len = 5;
-        for (hash = 0; len-- > 0 && *str != 0; str++) {
+        for (hash = 0; len > 0; str++) {
+                c = (unsigned char) *str;
+                if (c == 0)
+                        break;
+                if (! (c & 0x80))
+                        len--;
                 hash += (unsigned char) *str;
                 hash -= (hash << 13) | (hash >> 19);
         }

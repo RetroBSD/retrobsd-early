@@ -2,7 +2,7 @@ TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
-CFLAGS		+= -Werror -Wall -Os
+CFLAGS		+= -Os -Wall -Werror
 
 OBJS            = done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
 MAN		= adventure.0
@@ -12,7 +12,7 @@ all:            adventure $(MAN) adventure.dat
 
 # Data file format is compatible for all little-endian machines.
 # To rebuild it, compile the program on Linux.
-adventure.dat:
+adventure.dat:  glorkz
 		./adventure glorkz
 
 adventure:      ${OBJS}

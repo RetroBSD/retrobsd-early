@@ -3,6 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#ifndef _TIME_H
+#define _TIME_H
 
 #include <sys/types.h>		/* for time_t */
 
@@ -29,3 +31,5 @@ extern	time_t	time();
 
 size_t strftime (char *s, size_t maxsize, const char *format,
 	const struct tm *timeptr);
+
+#endif

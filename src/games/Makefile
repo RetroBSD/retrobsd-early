@@ -48,7 +48,7 @@ install:        $(STD) $(NSTD)
 		-for i in *.6; do \
 			${MANROFF} $$i > $(DESTDIR)/share/man/cat6/`basename $$i .6`.0; done
 		cat < /dev/null > $(DESTDIR)/games/lib/cfscores
-		chmod 777 $(DESTDIR)/games/lib/cfscores
+		chmod 666 $(DESTDIR)/games/lib/cfscores
 
 clean:
 		rm -f a.out core *.s *.o *.dis *.elf $(STD) $(NSTD)
