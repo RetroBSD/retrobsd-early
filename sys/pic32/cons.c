@@ -408,22 +408,22 @@ again:
 	splx (s);
 }
 
-void
-cngets (prompt)
-        const char *prompt;
+/*
+ * Receive a symbol from console terminal.
+ */
+int
+cngetc ()
 {
 	register struct uartreg *reg = (struct uartreg*) &CONSOLE_PORT;
         int s, c;
 
-        printf ("%s", prompt);
 	s = spltty();
         for (;;) {
                 /* Wait for key pressed. */
-                if (! (reg->sta & PIC32_USTA_URXDA))
-                        continue;
-                c = reg->rxreg;
-                if (c == '\r')
+                if (reg->sta & PIC32_USTA_URXDA) {
+                        c = reg->rxreg;
                         break;
+                }
         }
 #if CONSOLE_RX_IRQ < 32
 	IFSCLR(0) = (1 << CONSOLE_RX_IRQ) | (1 << CONSOLE_ER_IRQ);
@@ -435,4 +435,5 @@ cngets (prompt)
                     (1 << (CONSOLE_ER_IRQ - 64));
 #endif
 	splx (s);
+	return (unsigned char) c;
 }

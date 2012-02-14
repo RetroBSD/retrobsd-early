@@ -34,18 +34,13 @@ DEFS		+= -DCPU_KHZ=80000
 DEFS		+= -DBUS_KHZ=80000
 
 #
-# Ethernet/USB Starter Kit with I/O Expansion board
-# =================================================
+# Ethernet/USB Starter Kit with Multimedia Expansion board
+# ========================================================
 #
 # Console on USB
 # For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
 DEFS            += -DCONSOLE_USB
 DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
-
-# SD/MMC card driver on SPI1
-# /CS0 at pin B1
-DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
-DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=1
 
 # LEDs at pins D0 (red), D1 (yellow), D2 (green)
 DEFS            += -DLED_TTY_PORT=TRISD    -DLED_TTY_PIN=0
@@ -71,7 +66,6 @@ POWER_SWITCH_PIN    = 0
 POWER_CONTROL_PORT  = TRISE
 POWER_CONTROL_PIN   = 9
 
-
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
 ASFLAGS		= $(DEFS) $(DEPFLAGS)
@@ -91,7 +85,6 @@ KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
 		  signal.o machdep.o mem.o exception.o \
                   usb_device.o usb_function_cdc.o
 KERNOBJ		+= usb_console.o
-#KERNOBJ	+= cons.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -109,7 +102,8 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+# SD/MMC card controlled by SSD1926 chip
+KERNOBJ		+= ssd1926-sdcard.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o

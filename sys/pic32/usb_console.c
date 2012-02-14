@@ -206,9 +206,10 @@ static void store_char (int c)
 }
 
 /*
- * Put a symbol on console terminal.
+ * Receive a symbol from console terminal.
  */
-int cngetc ()
+int
+cngetc ()
 {
     register int s;
 
