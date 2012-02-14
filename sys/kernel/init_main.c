@@ -150,7 +150,9 @@ main()
                 if (fs)
                         break;
 		printf ("No root filesystem available!\n");
-		cngets ("Please, insert bootable SD card and press <Enter>: ");
+		printf ("Please, insert bootable SD card and press <Enter>: ");
+		while (cngetc () != '\r')
+		        ;
 		printf ("\n\n");
         }
 	printf ("phys mem  = %u kbytes\n", physmem / 1024);

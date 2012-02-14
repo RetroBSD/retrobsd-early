@@ -195,33 +195,31 @@ again:
     splx (s);
 }
 
-static int gets_finished;
+static int getc_data;
 
 /*
- * Receive a character for gets.
+ * Receive a character for getc.
  */
-static void cn_getc (int c)
+static void store_char (int c)
 {
-    if (c == '\r')
-        gets_finished = 1;
+    getc_data = (unsigned char) c;
 }
 
 /*
  * Put a symbol on console terminal.
  */
-void cngets (prompt)
-    const char *prompt;
+int cngetc ()
 {
     register int s;
 
-    printf ("%s", prompt);
     s = spltty();
-    for (gets_finished=0; !gets_finished; ) {
+    for (getc_data = -1; getc_data < 0; ) {
         usb_device_tasks();
-        cdc_consume (cn_getc);
+        cdc_consume (store_char);
         cdc_tx_service();
     }
     splx (s);
+    return getc_data;
 }
 
 /*

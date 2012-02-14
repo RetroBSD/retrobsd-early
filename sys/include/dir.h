@@ -73,11 +73,11 @@ typedef struct _dirdesc {
 
 #ifndef	KERNEL
 
-extern	DIR *opendir();
-extern	struct direct *readdir();
-extern	long telldir();
-extern	void seekdir();
-extern	void closedir();
+extern	DIR *opendir (const char *);
+extern	struct direct *readdir (DIR *);
+extern	long telldir (DIR *);
+extern	void seekdir (DIR *, long);
+extern	void closedir (DIR *);
 
 #define rewinddir(dirp)	seekdir ((dirp), (long)0)
 #define dirfd(dirp)	((dirp)->dd_fd)

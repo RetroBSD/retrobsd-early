@@ -21,8 +21,8 @@
 #define CTL_MACHDEP_NAMES { \
 	{ 0, 0 }, \
 	{ "console_device", CTLTYPE_STRUCT }, \
-	{ "error_message", CTLTYPE_STRING }, \
-	{ "name_list", CTLTYPE_STRUCT }, \
+	{ 0, 0 }, \
+	{ 0, 0 }, \
 	{ "sd_timeout_wait_ready", CTLTYPE_INT }, \
 	{ "sd_timeout_cmd", CTLTYPE_INT }, \
 	{ "sd_timeout_send_op", CTLTYPE_INT }, \

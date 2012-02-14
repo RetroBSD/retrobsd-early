@@ -102,7 +102,7 @@ void cpuidentify (void);
 void cninit (void);
 void cnidentify (void);
 void cnputc (char c);
-void cngets (const char *s);
+int cngetc (void);
 int baduaddr (caddr_t addr);		/* detect bad user address */
 int badkaddr (caddr_t addr);		/* detect bad kernel address */
 

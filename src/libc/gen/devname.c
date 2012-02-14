@@ -31,7 +31,8 @@
  * SUCH DAMAGE.
  */
 #include <sys/types.h>
-#include <ndbm.h>
+#include <sys/dir.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <paths.h>
 #include <stdio.h>
@@ -42,33 +43,28 @@ devname(dev, type)
 	dev_t dev;
 	mode_t type;
 {
-	struct {
-		mode_t type;
-		dev_t dev;
-	} bkey;
-	char	*devdb = _PATH_DEVDB;
-	static DBM *db;
-	static int failure;
-	datum data, key;
+        DIR *dir;
+        struct direct *entry;
+        char filename[40];
+        struct stat st;
 
-	if (!db && !failure &&
-	    !(db = dbm_open(devdb, O_RDONLY, 0))) {
-		warn("warning: %s", devdb);
-		failure = 1;
-	}
-	if (failure)
-		return("??");
-
-	/*
-	 * Keys are a mode_t followed by a dev_t.  The former is the type of
-	 * the file (mode & S_IFMT), the latter is the st_rdev field.  Be
-	 * sure to clear any padding that may be found in bkey.
-	 */
-	memset(&bkey, 0, sizeof(bkey));
-	bkey.dev = dev;
-	bkey.type = type;
-	key.dptr = (char *)&bkey;
-	key.dsize = sizeof(bkey);
-	data = dbm_fetch(db, key);
-	return(data.dptr == NULL ? "??" : (char *)data.dptr);
+        dir = opendir("/dev");
+        if (dir == NULL) {
+                perror("/dev");
+		return "??";
+        }
+        strcpy(filename, "/dev/");
+        while ((entry = readdir(dir)) != NULL) {
+                strcpy(filename+5, entry->d_name);
+                if (stat (filename, &st) < 0)
+                        continue;
+                if (! S_ISCHR(st.st_mode) && ! S_ISBLK(st.st_mode))
+                        continue;
+                if (st.st_rdev == dev) {
+                        closedir(dir);
+                        return entry->d_name;
+                }
+        }
+        closedir(dir);
+	return "??";
 }
