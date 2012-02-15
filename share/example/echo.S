@@ -1,3 +1,13 @@
+/*
+ * This is a standard /bin/echo utility, rewritten in MIPS assembler.
+ *
+ * To compile this program, type:
+ *  cc -c echo.S
+ *  ld echo.o -o echo
+ *
+ * Run as:
+ *  ./echo Make love not war
+ */
 #include <syscall.h>
 
         .data                           // begin data segment
@@ -7,6 +17,12 @@ space:  .ascii  " "
         .text                           // begin code segment
 start:  .globl  start                   // entry point for ld
 
+        //
+        // Program gets three arguments:
+        // argc in $a0 - number of words in command line
+        // argv in $a1 - address of list of pointers to words
+        // env  in $a3 - address of list of pointers to environment variables
+        //
         addi    $s0, $a0, -1            // argc - 1
         beq     $s0, $zero, done        // if (argc == 0) goto gone
         addi    $s1, $a1, 4             // argv + 4
