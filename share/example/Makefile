@@ -1,5 +1,5 @@
 
-all:	ashello
+all:	ashello echo
 
 ashello: ashello.o
 	$(LD) ashello.o -o $@
@@ -7,5 +7,8 @@ ashello: ashello.o
 chello: chello.o
 	$(CC) chello.o -o $@
 
+echo:   echo.o
+	$(LD) $@.o -o $@
+
 clean:
-	rm -f *.o ashello *~
+	rm -f *.o ashello echo *.dis *~

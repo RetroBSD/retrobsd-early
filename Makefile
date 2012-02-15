@@ -60,7 +60,7 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/ashello.S share/example/chello.c \
                   share/example/blkjack.bas share/example/hilow.bas \
                   share/example/stars.bas share/example/prime.scm \
-                  share/example/fact.fth
+                  share/example/fact.fth share/example/echo.S
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile

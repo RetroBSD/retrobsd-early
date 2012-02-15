@@ -166,12 +166,15 @@ void prdata (n)
     register int n;
 {
     while (n--) {
-        printf ("    %8x:\t%08x", addr++, fgetword (text));
+        printf ("    %8x:\t%08x", addr, fgetword (text));
         if (rflag) {
             putchar (' ');
             prrel (fgetrel (rel));
         }
         putchar ('\n');
+
+        /* Next address */
+        addr += 4;
     }
 }
 

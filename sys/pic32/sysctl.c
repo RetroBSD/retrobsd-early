@@ -211,7 +211,7 @@ ucall()
 void
 ufetch()
 {
-        unsigned addr = *(unsigned*) u.u_arg;
+        unsigned addr = *(unsigned*) u.u_arg & ~3;
 
         /* Check root privileges */
 	if (! suser())
@@ -248,22 +248,23 @@ ustore()
 	    unsigned addr;
 	    unsigned value;
 	} *uap = (struct a *)u.u_arg;
+        unsigned addr = uap->addr & ~3;
 
         /* Check root privileges */
 	if (! suser())
 		return;
 
         /* Low memory address - assume peripheral i/o space.  */
-	if (uap->addr < 0x90000)
-                uap->addr += 0xbf800000;
+	if (addr < 0x90000)
+                addr += 0xbf800000;
 
         /* Check address */
-	if (! (uap->addr >= 0xbf800000 && uap->addr < 0xbf810000) &&
-	    ! (uap->addr >= 0xbf880000 && uap->addr < 0xbf890000)) {
+	if (! (addr >= 0xbf800000 && addr < 0xbf810000) &&
+	    ! (addr >= 0xbf880000 && addr < 0xbf890000)) {
                 u.u_error = EFAULT;
 		return;
         }
-	*(unsigned*) uap->addr = uap->value;
+	*(unsigned*) addr = uap->value;
 }
 
 /*

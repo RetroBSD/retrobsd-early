@@ -144,7 +144,7 @@ char	*ofilename = "l.out";
 char	*filname;
 int	errlev;
 int	delarg	= 4;
-char    tfname [] = "/tmp/ldaXXXXX";
+char    tfname [] = "/tmp/ldaXXXXXX";
 
 #define ALIGN(x,y)     ((x)+(y)-1-((x)+(y)-1)%(y))
 
@@ -509,13 +509,13 @@ struct nlist *lookloc (lp, sn)
 	return 0;
 }
 
-void relword (lp, t, r, pt, pr)
+void relword (lp, t, r, pt, pr, offset)
         struct local *lp;
         register unsigned t, r;
-        unsigned *pt, *pr;
+        unsigned *pt, *pr, offset;
 {
-	register unsigned a, ad;
-	register struct nlist *sp;
+	register unsigned a, delta;
+	register struct nlist *sp = 0;
 
 	if (trace > 2)
 		printf ("%08x %08x", t, r);
@@ -528,6 +528,7 @@ void relword (lp, t, r, pt, pr)
 		break;
 	case RWORD16:
 		a = t & 0xffff;
+		a <<= 2;
 		break;
 	case RWORD26:
 		a = t & 0x3ffffff;
@@ -542,19 +543,19 @@ void relword (lp, t, r, pt, pr)
 		break;
 	}
 
-	/* compute address shift `ad' */
+	/* compute address shift `delta' */
 	/* update relocation word */
 
-	ad = 0;
+	delta = 0;
 	switch (r & RSMASK) {
 	case RTEXT:
-		ad = ctrel;
+		delta = ctrel;
 		break;
 	case RDATA:
-		ad = cdrel;
+		delta = cdrel;
 		break;
 	case RBSS:
-		ad = cbrel;
+		delta = cbrel;
 		break;
 	case REXT:
 		sp = lookloc (lp, (int) RINDEX (r));
@@ -563,10 +564,11 @@ void relword (lp, t, r, pt, pr)
 		    sp->n_type == N_EXT+N_COMM)
 		{
 			r |= REXT | RSETINDEX (nsym+(sp-symtab));
+			sp = 0;
 			break;
 		}
 		r |= reltype (sp->n_type);
-		ad = sp->n_value;
+		delta = sp->n_value;
 		break;
 	}
 
@@ -575,19 +577,23 @@ void relword (lp, t, r, pt, pr)
 	switch (r & RFMASK) {
 	case 0:
 		t &= ~0xffff;
-		t |= (a + ad) & 0xffff;
+		t |= (a + delta) & 0xffff;
 		break;
 	case RWORD16:
-		t &= ~0xffff;
-		t |= ((a + ad) >> 2) & 0xffff;
+	        if (! sp)
+                    break;
+                delta -= offset + 4;
+                t &= ~0xffff;
+                t |= ((a + delta) >> 2) & 0xffff;
+                r = RABS;
 		break;
 	case RWORD26:
 		t &= ~0x3ffffff;
-		t |= ((a + ad) >> 2) & 0x3ffffff;
+		t |= ((a + delta) >> 2) & 0x3ffffff;
 		break;
 	case RHIGH16:
 		t &= ~0xffff;
-		t |= ((a + ad) >> 16) & 0xffff;
+		t |= ((a + delta) >> 16) & 0xffff;
 		break;
 	}
 
@@ -598,18 +604,17 @@ void relword (lp, t, r, pt, pr)
 	*pr = r;
 }
 
-void relocate (lp, b1, b2, len)
+void relocate (lp, b1, b2, len, origin)
         struct local *lp;
         FILE *b1, *b2;
-        unsigned len;
+        unsigned len, origin;
 {
-	unsigned r, t;
+	unsigned r, t, offset;
 
-	len /= W;
-	while (len--) {
+	for (offset=0; offset<len; offset+=W) {
 		t = fgetword (text);
 		r = fgetrel (reloc);
-		relword (lp, t, r, &t, &r);
+		relword (lp, t, r, &t, &r, offset + origin);
 		fputword (t, b1);
 		if (rflag)
                         fputrel (r, b2);
@@ -1276,13 +1281,13 @@ void load2 (loc)
 		printf ("** TEXT **\n");
 	fseek (text, loc, 0);
 	fseek (reloc, count, 0);
-	relocate (lp, toutb, troutb, filhdr.a_text);
+	relocate (lp, toutb, troutb, filhdr.a_text, torigin);
 
 	if (trace > 1)
 		printf ("** DATA **\n");
 	fseek (text, loc + filhdr.a_text, 0);
 	fseek (reloc, count + filhdr.a_reltext, 0);
-	relocate (lp, doutb, droutb, filhdr.a_data);
+	relocate (lp, doutb, droutb, filhdr.a_data, dorigin);
 
 	torigin += filhdr.a_text;
 	dorigin += filhdr.a_data;
