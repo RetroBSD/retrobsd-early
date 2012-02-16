@@ -1,13 +1,11 @@
 #include "defs.h"
 
-	MSG	NOCFN;
-	int	callpc;
-	char	localok;
-extern	struct	SYMbol	*symbol;
-	char	*errflg;
-	char	curov;
-	int	overlay;
-	long	var[36];
+int	callpc;
+char	localok;
+long	var[36];
+const char *errflg;
+
+extern struct SYMbol *symbol;
 
 findroutine(cframe)
 	long	cframe;
@@ -15,20 +13,8 @@ findroutine(cframe)
 	register int	narg, inst;
 	int	lastpc, back2;
 	char	v;
-	char	savov, curovl;
 
 	v=FALSE; localok=FALSE; lastpc=callpc;
-	if(overlay) {
-		/*
-		 *  Save the previous overlay. Don't restore it,
-		 *  so that the next call will have the correct previous
-		 *  overlay.  The caller must save and restor the original
-		 *  overlay if needed.
-		 */
-		savov = curov;
-		curovl=get(cframe-2, DSP);
-		setovmap(curovl);
-	}
 	callpc=get(cframe+2, DSP); back2=get(leng(callpc-2), ISP);
 	IF (inst=get(leng(callpc-4), ISP)) == 04737	/* jsr pc,*$... */
 	THEN	narg = 1;
@@ -39,15 +25,11 @@ findroutine(cframe)
 	ELSE	errflg=NOCFN;
 		return(0);
 	FI
-	if (overlay)
-		setovmap(savov);	/* previous overlay, for findsym */
 	if (findsym((v ? lastpc : ((inst==04767?callpc:0) + back2)),ISYM) == -1
 	    && !v)
 		symbol = NULL;
 	else
 		localok=TRUE;
-	if (overlay)
-		setovmap(curovl);
 	inst = get(leng(callpc), ISP);
 	IF inst == 062706		/* add $n,sp */
 	THEN

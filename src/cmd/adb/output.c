@@ -1,14 +1,14 @@
 #include "defs.h"
 
-	int	mkfault;
-	int	infile;
-	int	outfile = 1;
-	int	maxpos;
-	char	printbuf[MAXLIN];
-	char	*printptr = printbuf;
-	char	*digitptr;
-	MSG	TOODEEP;
-	long	var[];
+int	mkfault;
+int	infile;
+int	outfile = 1;
+int	maxpos;
+char	printbuf[MAXLIN];
+char	*printptr = printbuf;
+char	*digitptr;
+
+extern long var[];
 
 printc(c)
 	char	c;
@@ -55,7 +55,7 @@ flushbuf()
 }
 
 /*VARARGS*/
-printf(fmat,a1)
+print(fmat,a1)
 	char	*fmat;
 	char	**a1;
 {
@@ -68,7 +68,6 @@ printf(fmat,a1)
 	int	x, decpt, n;
 	long	lx;
 	char	digits[64];
-	char	*ecvt();
 
 	fptr = fmat; vptr = (int *)&a1;
 
@@ -122,10 +121,11 @@ printf(fmat,a1)
 			printc(x); break;
 		    case 's':
 			s=(char *)x; break;
+#if 0
 		    case 'f':
 		    case 'F':
 			vptr += 7;
-			s=ecvt(*rptr, prec, &decpt, &n);
+			s = ecvt(*rptr, prec, &decpt, &n);
 			*digitptr++=(n?'-':'+');
 			*digitptr++ = (decpt<=0 ? '0' : *s++);
 			IF decpt>0 THEN decpt--; FI
@@ -137,6 +137,7 @@ printf(fmat,a1)
 			THEN *digitptr++ = 'e'; printnum(decpt,'d',10);
 			FI
 			s=0; prec = -1; break;
+#endif
 		    case 'm':
 			vptr--; break;
 		    case 'M':

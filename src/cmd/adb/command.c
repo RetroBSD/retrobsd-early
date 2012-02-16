@@ -1,36 +1,32 @@
 #include "defs.h"
 
-	MSG	BADEQ;
-	MSG	NOMATCH;
-	MSG	BADVAR;
-	MSG	BADCOM;
-	MAP	txtmap;
-	MAP	datmap;
+MAP	txtmap;
+MAP	datmap;
 
-	char	symov, lastsymov, curov;
-	int	executing;
-	char	*lp;
-	int	fcor;
-	int	fsym;
-	int	mkfault;
-	char	*errflg;
-	char	lastc;
-	char	eqformat[512] = "o";
-	char	stformat[512] = "o\"= \"^i";
-	u_int	corhdr[], *uar0;
-	long	dot;
-	long	ditto;
-	int	dotinc;
-	int	lastcom = '=';
-	long	var[];
-	long	locval;
-	long	locmsk;
-	int	pid;
-	long	expv;
-	long	adrval;
-	int	adrflg;
-	long	cntval;
-	int	cntflg;
+int	executing;
+char	*lp;
+int	fcor;
+int	fsym;
+int	mkfault;
+const char *errflg;
+char	lastc;
+char	eqformat[512] = "o";
+char	stformat[512] = "o\"= \"^i";
+extern u_int corhdr[];
+u_int	*uar0;
+long	dot;
+long	ditto;
+int	dotinc;
+int	lastcom = '=';
+extern long var[];
+long	locval;
+long	locmsk;
+int	pid;
+long	expv;
+long	adrval;
+int	adrflg;
+long	cntval;
+int	cntflg;
 extern	char	*myname;
 
 /* command decoding */
@@ -55,7 +51,7 @@ command(buf,defcom)
 
 	REP
 	IF adrflg=expr(0)
-	THEN dot=expv; ditto=dot; symov=lastsymov;
+	THEN dot=expv; ditto=dot;
 	FI
 	adrval=dot;
 	IF rdc()==',' ANDF expr(0)
@@ -148,7 +144,7 @@ command(buf,defcom)
 				 FI
 				 put((longpr?inkdot(2):dot),itype,shorten(expv));
 				 savdot=dot;
-				 printf("=%8t"); exform(1,wformat,itype,ptype);
+				 print("=%8t"); exform(1,wformat,itype,ptype);
 				 printc(EOR);
 			    PER  expr(0) ANDF errflg==0 DONE
 			    dot=savdot;
@@ -159,11 +155,7 @@ command(buf,defcom)
 			    lp--;
 			    getformat(eqcom ? eqformat : stformat);
 			    IF !eqcom
-			    THEN IF symov ANDF symov!=curov ANDF
-				ptype == ISYM ANDF dot>=txtmap.bo
-				 THEN setovmap(symov);
-				      var[VARC]=symov;
-				 FI
+			    THEN
 				 IF *stformat!='a'
 				 THEN psymoff(dot,ptype,":%16t");
 				 FI
@@ -178,11 +170,8 @@ command(buf,defcom)
 		THEN uar0[regptr]=shorten(dot);
 		     ptrace(PT_WRITE_U,pid,(int)&uar0[regptr]-(int)&corhdr,
 			uar0[regptr]);
-		     IF (uar0+regptr) == &(((U*)corhdr)->u_ovdata.uo_curov)
-		     THEN var[VARC]=dot; setovmap((char)dot); FI
 		ELIF (modifier=varchk(savc)) != -1
-		THEN	var[modifier]=dot;
-			IF modifier == VARC THEN setovmap((char)dot); FI
+		THEN	var[modifier] = dot;
 		ELSE	error(BADVAR);
 		FI
 		break;
@@ -205,7 +194,7 @@ command(buf,defcom)
 		break;
 
 	    case 0:
-		printf("%s\n", myname);
+		print("%s\n", myname);
 		break;
 
 	    default: error(BADCOM);
@@ -216,4 +205,3 @@ command(buf,defcom)
 	IF buf THEN lp=savlp; ELSE lp--; FI
 	return(adrflg ANDF dot!=0);
 }
-

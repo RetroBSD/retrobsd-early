@@ -1,28 +1,28 @@
 /*
+ * UNIX debugger - common definitions
  *
- *      UNIX debugger - common definitions
+ * 1998/4/21 - remove local redefinitions used with ptrace
  *
- *	1998/4/21 - remove local redefinitions used with ptrace
+ * Layout of a.out file (fsym):
  *
- *      Layout of a.out file (fsym):
- *
- *	This has changed over time - see a.out.h, sys/exec.h and nlist.h
- *	for the current a.out definition and format.
+ * This has changed over time - see a.out.h, sys/exec.h and nlist.h
+ * for the current a.out definition and format.
  */
-
 #include <sys/param.h>
 #include <sys/user.h>
-#include <machine/reg.h>
+#include <machine/io.h>
 #include <sgtty.h>
 #include <setjmp.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <a.out.h>
 #include <sys/ptrace.h>
 
 #define	MAXSYMLEN	32
-#define MAXCOM	64
-#define MAXARG	32
-#define LINSIZ	512
+#define MAXCOM          64
+#define MAXARG          32
+#define LINSIZ          512
 
 #define BEGIN	{
 #define END	}
@@ -56,21 +56,17 @@
  * symbol - approximately 7.5kb of D space in the case of /unix's symbol
  * table.  In practice this restriction is unlikely to be reached since
  * even the kernel's symbol table of ~28kb only has a strings table of 21kb.
-*/
-
-	struct	SYMbol
-		{
-		u_short	value;
-		char	type;
-		char	ovno;
-		u_short	soff;		/* low order of string table offset */
-		};
+ */
+struct	SYMbol {
+	u_short	value;
+	char	type;
+	u_short	soff;		/* low order of string table offset */
+};
 
 #define SYMTYPE(symflag) (( symflag>=041 || (symflag>=02 && symflag<=04))\
 				?  ((symflag&07)>=3 ? DSYM : (symflag&07))\
 				: NSYM)
 
-typedef	char		MSG[];
 typedef	struct map	MAP;
 typedef	MAP		*MAPPTR;
 typedef	struct bkpt	BKPT;
@@ -97,7 +93,6 @@ struct bkpt {
 	int	count;
 	int	initcnt;
 	char	flag;
-	char	ovly;
 	char	comm[MAXCOM];
 	BKPT	*nxtbkpt;
 };
@@ -141,13 +136,13 @@ struct reglist {
 #define BPT     03
 
 #define NOREG   32767           /* impossible return from getreg() */
-#define NREG    9       /* 8 regs + PS from kernel stack */
+#define NREG    FRAME_WORDS
 /*
  * UAR0 is the value used for subprocesses when there is no core file.
  * If it doesn't correspond to reality, use pstat -u on a core file to
  * get uar0, subtract 0140000, and divide by 2 (sizeof int).
  */
-#define UAR0    (&corhdr[ctob(USIZE)/sizeof(u_int) - 3]) /* default address of r0 (u.u_ar0) */
+#define UAR0    (&corhdr[USIZE/sizeof(u_int) - 3]) /* default address of r0 (u.u_ar0) */
 
 #define KR0     (0300/2)       /* location of r0 in kernel dump */
 #define KR1     (KR0+1)
@@ -191,8 +186,39 @@ struct	SYMbol	*symget();
 u_int	get(), chkget();
 char	*exform();
 char	*cache_sym(), *no_cache_sym();
-long    round();
+long    roundn (long, long);
 BKPTR           scanbkpt();
+struct SYMbol *cache_by_string (char *);
 
 struct sgttyb adbtty, usrtty;
 jmp_buf erradb;
+sig_t sigint, sigqit;
+
+extern const char BADMOD[];
+extern const char BADCOM[];
+extern const char BADSYM[];
+extern const char BADLOC[];
+extern const char NOCFN[];
+extern const char NOMATCH[];
+extern const char NOBKPT[];
+extern const char BADKET[];
+extern const char NOADR[];
+extern const char NOPCS[];
+extern const char BADVAR[];
+extern const char BADTXT[];
+extern const char BADDAT[];
+extern const char ODDADR[];
+extern const char EXBKPT[];
+extern const char A68BAD[];
+extern const char A68LNK[];
+extern const char ADWRAP[];
+extern const char BADEQ[];
+extern const char BADWAIT[];
+extern const char ENDPCS[];
+extern const char NOFORK[];
+extern const char BADSYN[];
+extern const char NOEOR[];
+extern const char SZBKPT[];
+extern const char LONGFIL[];
+extern const char NOTOPEN[];
+extern const char TOODEEP[];

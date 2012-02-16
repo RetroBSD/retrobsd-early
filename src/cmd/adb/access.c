@@ -1,19 +1,12 @@
 #include "defs.h"
 
-	MSG	ODDADR;
-	MSG	BADDAT;
-	MSG	BADTXT;
-	MAP	txtmap;
-	MAP	datmap;
-	int	wtflag;
-	char	*errflg;
-	int	pid;
-	struct	ovlhdr	ovlseg;
-	long	ovloff[];
-	char	curov;
-	int	overlay;
-	long	var[];
-	static	within();
+MAP	txtmap;
+MAP	datmap;
+int	wtflag;
+const char *errflg;
+int	pid;
+
+extern long	var[];
 
 /* file handling and access routines */
 
@@ -67,7 +60,7 @@ acces(mode,adr,space,value)
 		  w = (w>>8)&LOBYTE | (w1<<8);
 	     FI
 	     IF errno
-	     THEN errflg = (space&DSP ? BADDAT : BADTXT);
+	     THEN errflg = (space & DSP) ? BADDAT : BADTXT;
 	     FI
 	     return(w);
 	FI
@@ -80,10 +73,17 @@ acces(mode,adr,space,value)
 	FI
 
 	file = (space&DSP ? datmap.ufd : txtmap.ufd);
-	if	(lseek(file,adr, 0) == -1L || 
+	if	(lseek(file,adr, 0) == -1L ||
 			(rd ? read(file,&w,2) : write(file,&value,2)) < 1)
 		errflg = (space & DSP ? BADDAT : BADTXT);
 	return(w);
+}
+
+static
+within(adr,lbd,ubd)
+	long	adr, lbd, ubd;
+{
+	return(adr>=lbd && adr<ubd);
 }
 
 chkmap(adr,space)
@@ -132,30 +132,4 @@ chkmap(adr,space)
 			return(0);
 	}
 	return(1);
-}
-
-setovmap(ovno)
-	char	ovno;
-	{
-	register MAPPTR amap;
-
-	if ((!overlay) || (ovno < 0) || (ovno > NOVL))
-		return;
-	amap = &txtmap;
-	IF ovno == 0
-	THEN    amap->eo = amap->bo;
-		amap->fo = 0;
-	ELSE    amap->eo = amap->bo + ovlseg.ov_siz[ovno-1];
-		amap->fo = ovloff[ovno-1];
-	FI
-	var[VARC] = curov = ovno;
-	if (pid)
-		choverlay(ovno);
-}
-
-static
-within(adr,lbd,ubd)
-	long	adr, lbd, ubd;
-{
-	return(adr>=lbd && adr<ubd);
 }

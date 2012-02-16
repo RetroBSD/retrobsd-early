@@ -1,44 +1,34 @@
 #include "defs.h"
 #include <ctype.h>
 
-	MSG	BADSYM;
-	MSG	BADVAR;
-	MSG	BADKET;
-	MSG	BADSYN;
-	MSG	NOCFN;
-	MSG	NOADR;
-	MSG	BADLOC;
+int	lastframe;
+int	kernel;
+int	savlastf;
+long	savframe;
+int	savpc;
+int	callpc;
+char	*lp;
+int	octal;
+char	*errflg;
+long	localval;
+char	lastc;
+u_int	*uar0;
+long	dot;
+long	ditto;
+int	dotinc;
+long	expv;
 
-extern	struct	SYMbol	*symbol, *cache_by_string();
-	int	lastframe;
-	int	kernel;
-	int	savlastf;
-	long	savframe;
-	char	svlastov;
-	int	savpc;
-	int	callpc;
-	char	*lp;
-	int	octal;
-	char	*errflg;
-	long	localval;
-	static	char	isymbol[MAXSYMLEN + 2];
-	char	lastc;
-	u_int	*uar0;
-	u_int	corhdr[];
-	char	curov, startov, lastsymov;
-	int	overlay;
-	long	dot;
-	long	ditto;
-	int	dotinc;
-	long	var[];
-	long	expv;
+extern struct SYMbol *symbol;
+extern long var[];
+extern u_int corhdr[];
+
+static char isymbol[MAXSYMLEN + 2];
 
 expr(a)
 {	/* term | term dyadic expr |  */
 	int		rc;
 	long		lhs;
 
-	lastsymov = 0;
 	rdc(); lp--; rc=term(a);
 
 	WHILE rc
@@ -53,7 +43,7 @@ expr(a)
 			term(a|1); expv = lhs - expv; break;
 
 		    case '#':
-			term(a|1); expv = round(lhs,expv); break;
+			term(a|1); expv = roundn(lhs, expv); break;
 
 		    case '*':
 			term(a|1); expv *= lhs; break;
@@ -116,7 +106,6 @@ item(a)
 	long		frame;
 	union {float r; long i;} real;
 	register struct SYMbol	*symp;
-	char		savov;
 
 	hex=FALSE;
 
@@ -124,12 +113,8 @@ item(a)
 	IF symchar(0)
 	THEN	readsym();
 		IF lastc=='.'
-		THEN	frame=(kernel?corhdr[KR5]:uar0[R5])&EVEN;
-			lastframe=0; callpc=kernel?(-2):uar0[PC];
-			if (overlay){
-				savov = curov;
-				setovmap(startov);
-			}
+		THEN	frame=(kernel?corhdr[KR5]:uar0[FRAME_R5])&EVEN;
+			lastframe=0; callpc=kernel?(-2):uar0[FRAME_PC];
 			WHILE errflg==0
 			DO  savpc=callpc;
 			    findroutine(frame);
@@ -141,16 +126,14 @@ item(a)
 			    THEN error(NOCFN);
 			    FI
 			OD
-			savlastf=lastframe; savframe=frame;
-			svlastov = curov;
+			savlastf = lastframe;
+                        savframe = frame;
 			readchar();
 			IF symchar(0)
 			THEN	chkloc(expv=frame);
 			FI
-			if (overlay)
-				setovmap(savov);
 		ELIF (symp=lookupsym(isymbol))==0 THEN error(BADSYM);
-		ELSE expv = symp->value; lastsymov=symp->ovno;
+		ELSE expv = symp->value;
 		FI
 		lp--;
 
@@ -181,13 +164,12 @@ item(a)
 	ELIF lastc=='.'
 	THEN	readchar();
 		IF symchar(0)
-		THEN	savov = curov;
-			curov = svlastov;
-			lastframe=savlastf; callpc=savpc; findroutine(savframe);
+		THEN
+			lastframe = savlastf;
+                        callpc = savpc;
+                        findroutine(savframe);
 			chkloc(savframe);
-			if(overlay)
-				setovmap(savov);
-		ELSE	expv=dot;
+		ELSE	expv = dot;
 		FI
 		lp--;
 
@@ -248,30 +230,20 @@ lookupsym(symstr)
 	register struct SYMbol *symp, *sc;
 
 	symset();
-	while	(symp = symget())
-		{
-	   	if	(overlay && (symp->type == ISYM))
-			{
-			if	(sc = cache_by_string(symstr, 1))
-				return(sc);
-			if	(eqsym(no_cache_sym(symp), symstr,'~'))
-				break;
-			}
-		else
-			{
-			if	(sc = cache_by_string(symstr, 0))
-				return(sc);
-			if	(eqsym(no_cache_sym(symp), symstr,'_'))
-				break;
-			}
-		}
-/*
- * We did not enter anything into the cache (no sense inserting hundreds
- * of symbols which didn't match) while examining the (entire) symbol table.
- * Now that we have a match put it into the cache (doing a lookup on it is
- * the easiest way).
-*/
-	if	(symp)
+	while (symp = symget()) {
+	        sc = cache_by_string(symstr);
+                if (sc)
+                        return(sc);
+                if (eqsym(no_cache_sym(symp), symstr,'_'))
+                        break;
+	}
+        /*
+         * We did not enter anything into the cache (no sense inserting hundreds
+         * of symbols which didn't match) while examining the (entire) symbol table.
+         * Now that we have a match put it into the cache (doing a lookup on it is
+         * the easiest way).
+         */
+	if (symp)
 		(void)cache_sym(symp);
 	return(symp);
 }

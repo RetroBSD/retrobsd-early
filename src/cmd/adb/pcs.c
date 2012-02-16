@@ -1,25 +1,17 @@
 #include "defs.h"
 
-	MSG	NOBKPT;
-	MSG	SZBKPT;
-	MSG	EXBKPT;
-	MSG	NOPCS;
-	MSG	BADMOD;
-
 /* breakpoints */
-	BKPTR	bkpthead;
+BKPTR	bkpthead;
 
-	char	*lp;
-	char	lastc;
-	u_int	corhdr[ctob(USIZE)/sizeof(u_int)];
-	MAP	txtmap;
-	int	signo;
-	long	dot;
-	int	pid;
-	long	cntval;
-	long	loopcnt;
-	int	overlay;
-	char	curov, symov;
+char	*lp;
+char	lastc;
+u_int	corhdr [USIZE/sizeof(u_int)];
+MAP	txtmap;
+int	signo;
+long	dot;
+int	pid;
+long	cntval;
+long	loopcnt;
 
 /* sub process control */
 
@@ -36,8 +28,6 @@ subpcs(modif)
 
 	    /* delete breakpoint */
 	    case 'd': case 'D':
-		if (symov && symov!=curov)
-			setovmap(symov);
 		IF (bkptr=scanbkpt(shorten(dot)))
 		THEN bkptr->flag=0;
 		     if (pid) del1bp(bkptr);
@@ -47,8 +37,6 @@ subpcs(modif)
 
 	    /* set breakpoint */
 	    case 'b': case 'B':
-		if (symov && symov!=curov)
-			setovmap(symov);
 		IF (bkptr=scanbkpt(shorten(dot)))
 		THEN bkptr->flag=0;
 		     if (pid) del1bp(bkptr);
@@ -68,9 +56,6 @@ subpcs(modif)
 		bkptr->loc = dot;
 		bkptr->initcnt = bkptr->count = cntval;
 		bkptr->flag = BKPTSET;
-		if (overlay && dot>txtmap.bo)
-			bkptr->ovly = symov ? symov : curov;
-		else bkptr->ovly = 0;		/* base seg */
 		check=MAXCOM-1; comptr=bkptr->comm; rdc(); lp--;
 		REP *comptr++ = readchar();
 		PER check-- ANDF lastc!=EOR DONE
@@ -84,7 +69,7 @@ subpcs(modif)
 	    /* exit */
 	    case 'k' :case 'K':
 		IF pid
-		THEN printf("%d: killed", pid); endpcs(); return;
+		THEN print("%d: killed", pid); endpcs(); return;
 		FI
 		error(NOPCS);
 
@@ -116,9 +101,8 @@ subpcs(modif)
 	}
 
 	IF loopcnt>0 ANDF runpcs(runmode, execsig)
-	THEN printf("breakpoint%16t");
-	ELSE printf("stopped at%16t");
+	THEN print("breakpoint%16t");
+	ELSE print("stopped at%16t");
 	FI
 	printpc();
 }
-

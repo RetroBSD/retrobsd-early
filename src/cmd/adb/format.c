@@ -1,21 +1,18 @@
 #include "defs.h"
 #include <ctype.h>
 
-	MSG	BADMOD;
-	MSG	NOFORK;
-	MSG	ADWRAP;
-extern	struct	SYMbol	*symbol;
-	int	mkfault;
-	char	*lp;
-	char	*printptr, printbuf[];
-	int	maxoff;
-	int	sigint;
-	int	sigqit;
-	char	*errflg;
-	char	lastc;
-	long	dot;
-	int	dotinc;
-	long	var[];
+int	mkfault;
+char	*lp;
+char	*printptr;
+int	maxoff;
+char	*errflg;
+char	lastc;
+long	dot;
+int	dotinc;
+
+extern struct SYMbol *symbol;
+extern char printbuf[];
+extern long var[];
 
 scanform(icount,ifp,itype,ptype)
 	long	icount;
@@ -29,7 +26,7 @@ scanform(icount,ifp,itype,ptype)
 	WHILE icount
 	DO  fp=ifp;
 	    IF init==0 ANDF findsym(shorten(dot),ptype)==0 ANDF maxoff
-	    THEN printf("\n%s:%16t", cache_sym(symbol));
+	    THEN print("\n%s:%16t", cache_sym(symbol));
 	    FI
 	    savdot=dot; init=0;
 
@@ -105,7 +102,7 @@ exform(fcount,ifp,itype,ptype)
 		dotinc=(longpr?4:2);;
 
 		if (!(printptr - printbuf) && modifier != 'a')
-			printf("%16m");
+			print("%16m");
 
 		switch(modifier) {
 
@@ -113,10 +110,10 @@ exform(fcount,ifp,itype,ptype)
 			break;
 
 		    case 't': case 'T':
-			printf("%T",fcount); return(fp);
+			print("%T",fcount); return(fp);
 
 		    case 'r': case 'R':
-			printf("%M",fcount); return(fp);
+			print("%M",fcount); return(fp);
 
 		    case 'a':
 			psymoff(dot,ptype,":%16t"); dotinc=0; break;
@@ -125,10 +122,10 @@ exform(fcount,ifp,itype,ptype)
 			psymoff(var[0],ptype,"%16t"); break;
 
 		    case 'u':
-			printf("%-8u",w); break;
+			print("%-8u",w); break;
 
 		    case 'U':
-			printf("%-16U",wx); break;
+			print("%-16U",wx); break;
 
 		    case 'c': case 'C':
 			IF modifier=='C'
@@ -138,7 +135,7 @@ exform(fcount,ifp,itype,ptype)
 			dotinc=1; break;
 
 		    case 'b': case 'B':
-			printf("%-8o", w&LOBYTE); dotinc=1; break;
+			print("%-8o", w&LOBYTE); dotinc=1; break;
 
 		    case 's': case 'S':
 			savdot=dot; dotinc=1;
@@ -153,46 +150,46 @@ exform(fcount,ifp,itype,ptype)
 			dotinc=dot-savdot+1; dot=savdot; break;
 
 		    case 'x':
-			printf("%-8x",w); break;
+			print("%-8x",w); break;
 
 		    case 'X':
-			printf("%-16X", wx); break;
+			print("%-16X", wx); break;
 
 		    case 'Y':
-			printf("%-24Y", wx); break;
+			print("%-24Y", wx); break;
 
 		    case 'q':
-			printf("%-8q", w); break;
+			print("%-8q", w); break;
 
 		    case 'Q':
-			printf("%-16Q", wx); break;
+			print("%-16Q", wx); break;
 
 		    case 'o':
 		    case 'w':
-			printf("%-8o", w); break;
+			print("%-8o", w); break;
 
 		    case 'O':
 		    case 'W':
-			printf("%-16O", wx); break;
+			print("%-16O", wx); break;
 
 		    case 'i':
 			printins(itype,w); printc(EOR); break;
 
 		    case 'd':
-			printf("%-8d", w); break;
+			print("%-8d", w); break;
 
 		    case 'D':
-			printf("%-16D", wx); break;
+			print("%-16D", wx); break;
 
 		    case 'f':
 			*(double *)&fw = 0.0;
 			fw.sa = wx;
-			printf("%-16.9f", *(double *)&fw);
+			print("%-16.9f", *(double *)&fw);
 			dotinc=4; break;
 
 		    case 'F':
 			fw.sa = wx;
-			printf("%-32.18F", *(double *)&fw);
+			print("%-32.18F", *(double *)&fw);
 			dotinc=8; break;
 
 		    case 'n': case 'N':
@@ -232,14 +229,15 @@ unox()
 
 	WHILE lastc!=EOR DO rdc(); OD
 	IF (unixpid=fork())==0
-	THEN	signal(SIGINT,sigint); signal(SIGQUIT,sigqit);
+	THEN	signal(SIGINT, sigint);
+                signal(SIGQUIT, sigqit);
 		*lp=0; execl("/bin/sh", "sh", "-c", argp, 0);
 		exit(16);
 	ELIF unixpid == -1
 	THEN	error(NOFORK);
 	ELSE	signal(SIGINT,SIG_IGN);
 		WHILE (rc = wait(&status)) != unixpid ANDF rc != -1 DONE
-		signal(SIGINT,sigint);
+		signal(SIGINT, sigint);
 		printc('!'); lp--;
 	FI
 }
@@ -249,7 +247,7 @@ printesc(c)
 {
 	c &= STRIP;
 	IF c<SP ORF c>'~' ORF c=='@'
-	THEN printf("@%c",(c=='@' ? '@' : c^0140));
+	THEN print("@%c",(c=='@' ? '@' : c^0140));
 	ELSE printc(c);
 	FI
 }

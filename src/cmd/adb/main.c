@@ -1,45 +1,41 @@
 #include "defs.h"
 
-	MSG	NOEOR;
-	char	*myname;	/* program name */
-	int	argcount;
-	int	mkfault;
-	int	executing;
-	int	infile;
-	char	*lp;
-	int	maxoff;
-	int	maxpos;
-	int	(*sigint)();
-	int	(*sigqit)();
-	int	wtflag;
-	int	kernel;
-	long	maxfile;
-	long	maxstor;
-	long	txtsiz;
-	long	datsiz;
-	long	datbas;
-	long	stksiz;
-	long	ovlsiz;
-	int	overlay;
-	char	*errflg;
-	int	exitflg;
-	int	magic;
-	long	entrypt;
-	char	lastc;
-	int	eof;
-	int	lastcom;
-	long	var[36];
-	char	*symfil;
-	char	*corfil;
-	char	*printptr;
-	char	*Ipath = "/usr/share/adb";
+char	*myname;	/* program name */
+int	argcount;
+int	mkfault;
+int	executing;
+int	infile;
+char	*lp;
+int	maxoff;
+int	maxpos;
+int	wtflag;
+int	kernel;
+long	maxfile;
+long	maxstor;
+long	txtsiz;
+long	datsiz;
+long	datbas;
+long	stksiz;
+char	*errflg;
+int	exitflg;
+int	magic;
+long	entrypt;
+char	lastc;
+int	eof;
+int	lastcom;
+long	var[36];
+char	*symfil;
+char	*corfil;
+char	*printptr;
+char	*Ipath = "/usr/share/adb";
 
-long	round(a,b)
-long		a, b;
+long	roundn(a, b)
+        long a, b;
 {
-	long		w;
+	long w;
+
 	w = ((a+b-1)/b)*b;
-	return(w);
+	return w;
 }
 
 /* error handling */
@@ -59,9 +55,10 @@ error(n)
 	longjmp(erradb,1);
 }
 
+void
 fault(a)
 {
-	signal(a,fault);
+	signal(a, fault);
 	lseek(infile,0L,2);
 	mkfault++;
 }
@@ -108,15 +105,13 @@ main(argc, argv)
 	var[VARM] = magic;
 	var[VARS] = stksiz;
 	var[VART] = txtsiz;
-	/* if text overlay, enter total overlay area size */
-	IF overlay
-	THEN	var[VARO] = ovlsiz;
-	FI
 
-	IF (sigint=signal(SIGINT,SIG_IGN))!=SIG_IGN
-	THEN	sigint=fault; signal(SIGINT,fault);
+	sigint = signal(SIGINT, SIG_IGN);
+	IF sigint != SIG_IGN
+	THEN	sigint = fault;
+                signal(SIGINT, fault);
 	FI
-	sigqit=signal(SIGQUIT,SIG_IGN);
+	sigqit = signal(SIGQUIT, SIG_IGN);
 	siginterrupt(SIGINT, 1);
 	siginterrupt(SIGQUIT, 1);
 	setjmp(erradb);
@@ -125,13 +120,13 @@ main(argc, argv)
 
 	LOOP	flushbuf();
 		IF errflg
-		THEN printf("%s\n",errflg);
+		THEN print("%s\n",errflg);
 		     exitflg=(int)errflg;
 		     errflg=0;
 		FI
 		IF mkfault
 		THEN	mkfault=0; printc(EOR);
-			printf("%s\n", myname);
+			print("%s\n", myname);
 		FI
 		IF myname ANDF !infile
 		THEN	write(1,myname,mynamelen);
@@ -155,4 +150,3 @@ done()
 	endpcs();
 	exit(exitflg);
 }
-

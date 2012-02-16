@@ -1,41 +1,25 @@
-DESTDIR= 
-CFLAGS=	-O -DNUM_SYMS_CACHE=50
-LDFLAGS=
-SEPFLAG= -i
-CFILES=	access.c command.c expr.c findfn.c format.c input.c main.c message.c \
-	opset.c output.c pcs.c print.c runpcs.c setup.c sym.c
+TOPSRC		= $(shell cd ../../..; pwd)
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
-OFILES=	access.o command.o expr.o findfn.o format.o input.o main.o message.o \
-	opset.o output.o pcs.o print.o runpcs.o setup.o sym.o
+OBJS            = message.o access.o command.o expr.o findfn.o format.o input.o \
+                  main.o opset.o output.o pcs.o print.o \
+                  runpcs.o setup.o sym.o
 
-adb: ${OFILES}
-	${CC} ${SEPFLAG} ${LDFLAGS} -o adb ${OFILES}
+CFLAGS		+= -DNUM_SYMS_CACHE=50 -Werror #-Wall
 
-install: adb
-	install -m 755 -s adb ${DESTDIR}/bin
+all:            adb
+
+adb:            $(OBJS)
+		${CC} ${LDFLAGS} -o adb.elf $(OBJS) ${LIBS}
+		${OBJDUMP} -S adb.elf > adb.dis
+		${SIZE} adb.elf
+		${ELF2AOUT} adb.elf $@ && rm adb.elf
 
 clean:
-	-rm -f adb ${OFILES}
+		rm -f *.o *.0 *.elf adb *.elf *.dis tags *~
 
-print:
-	@ls -l | pr
-	@pr -f Makefile *.h ${CFILES}
+install:        all
+		install adb $(DESTDIR)/bin/
 
-lint:
-	lint -haxc -I. ${CFILES}
-
-access.o:	defs.h access.c
-command.o:	defs.h command.c
-expr.o:		defs.h expr.c
-findfn.o:	defs.h findfn.c
-format.o:	defs.h format.c
-input.o:	defs.h input.c
-main.o:		defs.h main.c
-message.o:	defs.h message.c
-opset.o:	defs.h opset.c
-output.o:	defs.h output.c
-pcs.o:		defs.h pcs.c
-print.o:	defs.h print.c
-runpcs.o:	defs.h runpcs.c
-setup.o:	defs.h setup.c
-sym.o:		defs.h sym.c
+$(OBJS): defs.h

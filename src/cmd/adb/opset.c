@@ -1,14 +1,11 @@
-#if	!defined(lint) && defined(DOSCCS)
-static	char	sccsid[] = "@(#)opset.c 2.7 (2.11BSD) 2000/2/28";
-#endif
-
 #include "defs.h"
 
-	char	*errflg;
-	long	dot;
-	int	dotinc;
-	long	var[];
-	MAP     datmap;
+char	*errflg;
+long	dot;
+int	dotinc;
+MAP     datmap;
+
+extern long var[];
 
 #undef  SINGLE
 
@@ -311,7 +308,7 @@ printins(idsp,ins)
 		THEN    break;
 		FI
 	OD
-	printf(p->iname);
+	print(p->iname);
 	byte=ins&0100000;
 	ins &= p->mask;
 
@@ -352,15 +349,15 @@ printins(idsp,ins)
 
 	    case SYS:
 		if (ins < NUMSYSCALLS && systab[ins])
-			printf("%8t%s", systab[ins]);
+			print("%8t%s", systab[ins]);
 		else
-			printf("%8t%d", ins);
+			print("%8t%d", ins);
 		break;
 
 	    case TRAP:
 	    case DFAULT:
 	    default:
-		printf("%8t%o", ins);
+		print("%8t%o", ins);
 	}
 	dotinc=incp;
 }
@@ -374,7 +371,7 @@ branch(s,ins)
 	char	*s;
 	register int ins;
 {
-	printf(s);
+	print(s);
 	IF ins&0200 THEN ins |= 0177400; FI
 	ins = shorten(dot) + (ins<<1) + 2;
 	psymoff(leng(ins),ISYM,"");
@@ -389,7 +386,7 @@ paddr(s, a)
 	var[2]=var[1];
 	r = a&07; a &= 070;
 
-	printf(s);
+	print(s);
 	IF r==7 ANDF a&020
 	THEN IF a&010 THEN printc('*'); FI
 	     IF a&040
@@ -412,12 +409,12 @@ paddr(s, a)
 	switch (a) {
 	    /* r */
 	    case 000:
-		printf(r);
+		print(r);
 		return;
 
 	    /* (r) */
 	    case 010:
-		printf("(%s)", r);
+		print("(%s)", r);
 		return;
 
 	    /* *(r)+ */
@@ -426,7 +423,7 @@ paddr(s, a)
 
 	    /* (r)+ */
 	    case 020:
-		printf("(%s)+", r);
+		print("(%s)+", r);
 		return;
 
 	    /* *-(r) */
@@ -435,7 +432,7 @@ paddr(s, a)
 
 	    /* -(r) */
 	    case 040:
-		printf("-(%s)", r);
+		print("-(%s)", r);
 		return;
 
 	    /* *x(r) */
@@ -450,7 +447,7 @@ paddr(s, a)
 			psymoff(var[1], (a==070?type:NSYM), "");
 		FI
 		incp += 2;
-		printf("(%s)", r);
+		print("(%s)", r);
 		return;
 	}
 }
