@@ -180,6 +180,8 @@ static int pic32_init_platform (pic32_t *pic32)
         if (dev_pic32_flash_init (vm, "Boot flash", pic32->boot_flash_size,
                 pic32->boot_flash_address, pic32->boot_file_name) == -1)
             return (-1);
+
+    /* Initialize peripherals */
     if (dev_pic32_uart_init (vm, "PIC32 UART1", PIC32_U1MODE,
             PIC32_IRQ_U1E, vm->vtty_con[0]) == -1)
         return (-1);
@@ -239,6 +241,10 @@ static int pic32_init_platform (pic32_t *pic32)
             pic32->sdcard1_file_name) < 0)
         return (-1);
     if (dev_swap_init (&pic32->swap, "Swap") < 0)
+        return (-1);
+
+    /* Initialize DEVCFG area */
+    if (dev_pic32_devcfg_init (vm, "PIC32 DEVCFG", 0x1fc02f00) < 0)
         return (-1);
 
     pic32->sdcard[1].unit = 1;

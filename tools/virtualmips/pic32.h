@@ -102,6 +102,12 @@ struct pic32_system {
     unsigned ad1cssl;
     unsigned ad1pcfg;
 
+    struct vdevice *cfgdev;         /* Device configuration */
+    unsigned devcfg3;
+    unsigned devcfg2;
+    unsigned devcfg1;
+    unsigned devcfg0;
+
     struct vdevice *prefetch;       /* Prefetch cache controller */
     unsigned checon;
 };
@@ -126,6 +132,7 @@ int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq);
 int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_devcfg_init (vm_instance_t *vm, char *name, unsigned paddr);
 void dumpregs (cpu_mips_t *cpu);
 
 #endif
