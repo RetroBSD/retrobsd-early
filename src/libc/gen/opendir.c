@@ -12,7 +12,7 @@
  */
 DIR *
 opendir(name)
-	char *name;
+	const char *name;
 {
 	register DIR *dirp;
 	register int fd;

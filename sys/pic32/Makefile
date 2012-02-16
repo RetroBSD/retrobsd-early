@@ -4,8 +4,10 @@
 SUBDIR		= baremetal dip duinomite explorer16 max32 maximite meb \
                   pinguino-micro starter-kit ubw32 ubw32-uart usbboot
 
+default:
+
 all:
-		make -C $@ all
+		-for i in $(SUBDIR); do make -C $$i all; done
 
 install:
 

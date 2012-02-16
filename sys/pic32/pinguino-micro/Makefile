@@ -20,8 +20,8 @@ vpath %.S $(M):$(S)
 DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
 
 # CPU frequency 80 MHz.
-DEFS		+= -DCPU_KHZ=80000
-DEFS		+= -DBUS_KHZ=80000
+DEFS		+= -DCPU_KHZ=60000
+DEFS		+= -DBUS_KHZ=60000
 
 #
 # Pinguino-micro board

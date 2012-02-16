@@ -915,6 +915,11 @@
 /*--------------------------------------
  * Configuration registers.
  */
+#define DEVCFG0		*(volatile unsigned*)0x9fc02ffc
+#define DEVCFG1		*(volatile unsigned*)0x9fc02ff8
+#define DEVCFG2		*(volatile unsigned*)0x9fc02ff4
+#define DEVCFG3		*(volatile unsigned*)0x9fc02ff0
+
 #define PIC32_DEVCFG(cfg0, cfg1, cfg2, cfg3) \
     asm (".section .config"); \
     unsigned __DEVCFG0 __attribute__ ((section (".config0"))) = (cfg0) ^ 0x7fffffff; \

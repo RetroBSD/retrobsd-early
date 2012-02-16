@@ -248,7 +248,11 @@ startup()
 
 void cpuidentify()
 {
-        unsigned devid = DEVID;
+        unsigned devid = DEVID, osccon = OSCCON;
+        static const char pllmult[]  = { 15, 16, 17, 18, 19, 20, 21, 24 };
+        static const char plldiv[]   = { 1, 2, 3, 4, 5, 6, 10, 12 };
+        static const char *poscmod[] = { "external", "XT crystal",
+                                         "HS crystal", "(disabled)" };
 
         printf ("cpu: ");
         switch (devid) {
@@ -259,6 +263,38 @@ void cpuidentify()
         default:         printf ("DevID %08x", devid);
         }
         printf (" %u MHz, bus %u MHz\n", CPU_KHZ/1000, BUS_KHZ/1000);
+
+        /* COSC: current oscillator selection bits */
+        printf ("oscillator: ");
+        switch (osccon >> 12 & 7) {
+        case 0:
+                printf ("internal Fast RC\n");
+                break;
+        case 1:
+                printf ("internal Fast RC, PLL div 1:%d mult x%d\n",
+                        plldiv [DEVCFG2 & 7], pllmult [osccon >> 16 & 7]);
+                break;
+        case 2:
+                printf ("%s\n", poscmod [DEVCFG1 >> 8 & 3]);
+                break;
+        case 3:
+                printf ("%s, PLL div 1:%d mult x%d\n",
+                        poscmod [DEVCFG1 >> 8 & 3],
+                        plldiv [DEVCFG2 & 7], pllmult [osccon >> 16 & 7]);
+                break;
+        case 4:
+                printf ("secondary\n");
+                break;
+        case 5:
+                printf ("internal Low-Power RC\n");
+                break;
+        case 6:
+                printf ("internal Fast RC, divided 1:16\n");
+                break;
+        case 7:
+                printf ("internal Fast RC, divided\n");
+                break;
+        }
 }
 
 /*
