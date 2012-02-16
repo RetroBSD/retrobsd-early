@@ -3,7 +3,7 @@ include $(TOPSRC)/target.mk
 
 CFLAGS		+= -Werror -Wall
 
-SRCS		= retro-11.2/vm/complete/retro.c
+SRCS		= retro.c
 OBJS		= retro.o
 BIN             = retroforth
 LIBS            += -ltermcap
@@ -17,8 +17,8 @@ $(BIN):         ${SRCS}
 		${ELF2AOUT} $(BIN).elf $@ && rm $(BIN).elf
 
 clean:
-		rm -f *.o *.elf $(BIN) *.elf *.dis *~ retro.c
+		rm -f *.o *.elf $(BIN) *.elf *.dis *~
 
 install:        all
 		install $(BIN) $(DESTDIR)/bin/
-		cp retro-11.2/retroImage $(DESTDIR)/lib/
+		cp retroImage $(DESTDIR)/lib/
