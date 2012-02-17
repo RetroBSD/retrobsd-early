@@ -1,73 +1,82 @@
 #include "defs.h"
 
-	int	mkfault;
-	char	line[LINSIZ];
-	int	infile;
-	char	*lp;
-	char	lastc = EOR;
-	int	eof;
+int     mkfault;
+char    line[LINSIZ];
+int     infile;
+char    *lp;
+char    lastc = EOR;
+int     eof;
 
 /* input routines */
 
 eol(c)
-	char	c;
+    char    c;
 {
-	return(c==EOR || c==';');
+    return (c==EOR || c==';');
 }
 
 rdc()
-{	REP	readchar();
-	PER	lastc==SP ORF lastc==TB
-	DONE
-	return(lastc);
+{
+    do {
+        readchar();
+    } while (lastc == SP || lastc == TB );
+    return lastc;
 }
 
 readchar()
 {
-	IF eof
-	THEN	lastc = '\0';
-	ELSE	IF lp==0
-		THEN	lp=line;
-			REP eof = read(infile,lp,1)==0;
-			    IF mkfault THEN error((char *)0); FI
-			PER eof==0 ANDF *lp++!=EOR DONE
-			*lp=0; lp=line;
-		FI
-		IF lastc = *lp THEN lp++; FI
-	FI
-	return(lastc);
+    if (eof) {
+        lastc = '\0';
+    } else {
+        if (lp == 0) {
+            lp = line;
+            do {
+                eof = (read(infile, lp, 1) == 0);
+                if (mkfault)
+                    error((char *)0);
+            } while (eof == 0 && *lp++ != EOR);
+            *lp = 0;
+            lp = line;
+        }
+        if (lastc = *lp)
+            lp++;
+    }
+    return lastc;
 }
 
 nextchar()
 {
-	IF eol(rdc())
-	THEN lp--; return(0);
-	ELSE return(lastc);
-	FI
+    if (eol(rdc())) {
+        lp--;
+        return 0;
+    }
+    return lastc;
 }
 
 quotchar()
 {
-	IF readchar()=='\\'
-	THEN	return(readchar());
-	ELIF lastc=='\''
-	THEN	return(0);
-	ELSE	return(lastc);
-	FI
+    if (readchar() == '\\')
+        return readchar();
+    if (lastc == '\'')
+        return 0;
+    return lastc;
 }
 
 getformat(deformat)
-	char	*deformat;
+    char    *deformat;
 {
-	register char	*fptr;
-	register int	quote;
+    register char   *fptr;
+    register int    quote;
 
-	fptr=deformat; quote=FALSE;
-	WHILE (quote ? readchar()!=EOR : !eol(readchar()))
-	DO  IF (*fptr++ = lastc)=='"'
-	    THEN quote = ~quote;
-	    FI
-	OD
-	lp--;
-	IF fptr!=deformat THEN *fptr++ = '\0'; FI
+    fptr = deformat;
+    quote = FALSE;
+    while ((quote ? readchar()!=EOR : !eol(readchar()))) {
+        if ((*fptr++ = lastc) == '"') {
+            quote = ~quote;
+        }
+    }
+    lp--;
+    if (fptr != deformat) {
+        *fptr++ = '\0';
+    }
 }

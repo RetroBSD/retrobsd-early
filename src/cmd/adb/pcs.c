@@ -1,108 +1,119 @@
 #include "defs.h"
 
 /* breakpoints */
-BKPTR	bkpthead;
+BKPTR   bkpthead;
 
-char	*lp;
-char	lastc;
-u_int	corhdr [USIZE/sizeof(u_int)];
-MAP	txtmap;
-int	signo;
-long	dot;
-int	pid;
-long	cntval;
-long	loopcnt;
+char    *lp;
+char    lastc;
+u_int   corhdr [USIZE/sizeof(u_int)];
+MAP     txtmap;
+int     signo;
+long    dot;
+int     pid;
+long    cntval;
+long    loopcnt;
 
-/* sub process control */
-
+/*
+ * sub process control
+ */
 subpcs(modif)
 {
-	register int check;
-	int	execsig, runmode;
-	register BKPTR	bkptr;
-	char	*comptr;
+    register int check;
+    int execsig, runmode;
+    register BKPTR  bkptr;
+    char *comptr;
 
-	execsig=0; loopcnt=cntval;
+    execsig = 0;
+    loopcnt = cntval;
 
-	switch(modif) {
+    switch (modif) {
 
-	    /* delete breakpoint */
-	    case 'd': case 'D':
-		IF (bkptr=scanbkpt(shorten(dot)))
-		THEN bkptr->flag=0;
-		     if (pid) del1bp(bkptr);
-		     return;
-		ELSE error(NOBKPT);
-		FI
+    case 'd': case 'D':                 /* delete breakpoint */
+        bkptr = scanbkpt(shorten(dot));
+        if (! bkptr)
+            error(NOBKPT);
+        bkptr->flag = 0;
+        if (pid)
+            del1bp(bkptr);
+        return;
 
-	    /* set breakpoint */
-	    case 'b': case 'B':
-		IF (bkptr=scanbkpt(shorten(dot)))
-		THEN bkptr->flag=0;
-		     if (pid) del1bp(bkptr);
-		FI
-		FOR bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt
-		DO IF bkptr->flag == 0
-		   THEN break;
-		   FI
-		OD
-		IF bkptr==0
-		THEN IF (bkptr=(BKPTR)malloc(sizeof *bkptr)) == (BKPTR)NULL
-		     THEN error(SZBKPT);
-		     ELSE bkptr->nxtbkpt=bkpthead;
-			  bkpthead=bkptr;
-		     FI
-		FI
-		bkptr->loc = dot;
-		bkptr->initcnt = bkptr->count = cntval;
-		bkptr->flag = BKPTSET;
-		check=MAXCOM-1; comptr=bkptr->comm; rdc(); lp--;
-		REP *comptr++ = readchar();
-		PER check-- ANDF lastc!=EOR DONE
-		*comptr=0; lp--;
-		IF check
-		THEN if (pid) set1bp(bkptr);
-		     return;
-		ELSE error(EXBKPT);
-		FI
+    case 'b': case 'B':                 /* set breakpoint */
+        bkptr = scanbkpt(shorten(dot));
+        if (bkptr) {
+            bkptr->flag = 0;
+            if (pid)
+                del1bp(bkptr);
+        }
+        for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt) {
+            if (bkptr->flag == 0)
+                break;
+        }
+        if (bkptr == 0) {
+            bkptr = (BKPTR) malloc(sizeof *bkptr);
+            if (! bkptr) {
+                error(SZBKPT);
+            } else {
+                bkptr->nxtbkpt = bkpthead;
+                bkpthead=bkptr;
+            }
+        }
+        bkptr->loc = dot;
+        bkptr->initcnt = bkptr->count = cntval;
+        bkptr->flag = BKPTSET;
+        check = MAXCOM-1;
+        comptr = bkptr->comm;
+        rdc();
+        lp--;
+        do {
+            *comptr++ = readchar();
+        } while (check-- && lastc != EOR);
+        *comptr = 0;
+        lp--;
+        if (! check)
+            error(EXBKPT);
+        if (pid)
+            set1bp(bkptr);
+        return;
 
-	    /* exit */
-	    case 'k' :case 'K':
-		IF pid
-		THEN print("%d: killed", pid); endpcs(); return;
-		FI
-		error(NOPCS);
+    case 'k': case 'K':                 /* exit */
+        if (! pid)
+            error(NOPCS);
+        print("%d: killed", pid);
+        endpcs();
+        return;
 
-	    /* run program */
-	    case 'r': case 'R':
-		endpcs();
-		setup();
-		setbp();
-		runmode=PT_CONTINUE;
-		break;
+    case 'r': case 'R':                 /* run program */
+        endpcs();
+        setup();
+        setbp();
+        runmode = PT_CONTINUE;
+        break;
 
-	    /* single step */
-	    case 's': case 'S':
-		runmode=PT_STEP;
-		IF pid
-		THEN execsig=getsig(signo);
-		ELSE setup(); loopcnt--;
-		FI
-		break;
+    case 's': case 'S':                 /* single step */
+        runmode = PT_STEP;
+        if (pid) {
+            execsig = getsig(signo);
+        } else {
+            setup();
+            loopcnt--;
+        }
+        break;
 
-	    /* continue with optional signal */
-	    case 'c': case 'C': case 0:
-		IF pid==0 THEN error(NOPCS); FI
-		runmode=PT_CONTINUE;
-		execsig=getsig(signo);
-		break;
+    case 'c': case 'C': case 0:         /* continue with optional signal */
+        if (pid == 0)
+            error(NOPCS);
+        runmode = PT_CONTINUE;
+        execsig = getsig(signo);
+        break;
 
-	    default: error(BADMOD);
-	}
+    default:
+        error(BADMOD);
+    }
 
-	IF loopcnt>0 ANDF runpcs(runmode, execsig)
-	THEN print("breakpoint%16t");
-	ELSE print("stopped at%16t");
-	FI
-	printpc();
+    if (loopcnt > 0 && runpcs(runmode, execsig)) {
+        print("breakpoint%16t");
+    } else {
+        print("stopped at%16t");
+    }
+    printpc();
 }

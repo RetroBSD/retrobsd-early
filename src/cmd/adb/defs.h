@@ -19,35 +19,13 @@
 #include <a.out.h>
 #include <sys/ptrace.h>
 
-#define	MAXSYMLEN	32
+#define MAXSYMLEN       32
 #define MAXCOM          64
 #define MAXARG          32
 #define LINSIZ          512
 
-#define BEGIN	{
-#define END	}
-
-#define IF	if(
-#define THEN	){
-#define ELSE	} else {
-#define ELIF	} else if (
-#define FI	}
-
-#define FOR	for(
-#define WHILE	while(
-#define DO	){
-#define OD	}
-#define REP	do{
-#define PER	}while(
-#define DONE	);
-#define LOOP	for(;;){
-#define POOL	}
-
-#define ANDF	&&
-#define ORF	||
-
-#define LPRMODE "%Q"
-#define OFFMODE "+%o"
+#define LPRMODE         "%Q"
+#define OFFMODE         "+%o"
 
 /*
  * This is the memory resident portion of a symbol.  The only difference
@@ -57,86 +35,86 @@
  * table.  In practice this restriction is unlikely to be reached since
  * even the kernel's symbol table of ~28kb only has a strings table of 21kb.
  */
-struct	SYMbol {
-	u_short	value;
-	char	type;
-	u_short	soff;		/* low order of string table offset */
+struct  SYMbol {
+    u_short value;
+    char    type;
+    u_short soff;           /* low order of string table offset */
 };
 
 #define SYMTYPE(symflag) (( symflag>=041 || (symflag>=02 && symflag<=04))\
-				?  ((symflag&07)>=3 ? DSYM : (symflag&07))\
-				: NSYM)
+                ?  ((symflag&07)>=3 ? DSYM : (symflag&07))\
+                : NSYM)
 
-typedef	struct map	MAP;
-typedef	MAP		*MAPPTR;
-typedef	struct bkpt	BKPT;
-typedef	BKPT		*BKPTR;
-typedef	struct user	U;
+typedef struct map      MAP;
+typedef MAP             *MAPPTR;
+typedef struct bkpt     BKPT;
+typedef BKPT            *BKPTR;
+typedef struct user     U;
 
 /* file address maps */
 struct map {
-	long	b1;
-	long	e1;
-	long	f1;
-	long	bo;
-	long	eo;
-	long	fo;
-	long	b2;
-	long	e2;
-	long	f2;
-	int	ufd;
+    long    b1;
+    long    e1;
+    long    f1;
+    long    bo;
+    long    eo;
+    long    fo;
+    long    b2;
+    long    e2;
+    long    f2;
+    int     ufd;
 };
 
 struct bkpt {
-	int	loc;
-	int	ins;
-	int	count;
-	int	initcnt;
-	char	flag;
-	char	comm[MAXCOM];
-	BKPT	*nxtbkpt;
+    int     loc;
+    int     ins;
+    int     count;
+    int     initcnt;
+    char    flag;
+    char    comm[MAXCOM];
+    BKPT    *nxtbkpt;
 };
 
-typedef	struct reglist	REGLIST;
-typedef	REGLIST		*REGPTR;
 struct reglist {
-	char	*rname;
-	int	roffs;
+    char    *rname;
+    int     roffs;
 };
+typedef struct reglist REGLIST;
+typedef REGLIST *REGPTR;
 
 /*
  * Internal variables ---
  *  They are addressed by name. (e.g. (`0'-`9', `a'-`b'))
  *  thus there can only be 36 of them.
  */
+#define VARB            11
+#define VARC            12      /* current overlay number */
+#define VARD            13
+#define VARE            14
+#define VARM            22
+#define VARO            24      /* overlay text segment addition */
+#define VARS            28
+#define VART            29
 
-#define VARB    11
-#define VARC    12      /* current overlay number */
-#define VARD    13
-#define VARE    14
-#define VARM    22
-#define VARO    24      /* overlay text segment addition */
-#define VARS    28
-#define VART    29
+#define RD              0
+#define WT              1
+#define NSP             0
+#define ISP             1
+#define DSP             2
+#define STAR            4
+#define DSYM            7
+#define ISYM            2
+#define ASYM            1
+#define NSYM            0
+#define ESYM            0177
+#define BKPTSET         1
+#define BKPTEXEC        2
 
-#define RD      0
-#define WT      1
-#define NSP     0
-#define ISP     1
-#define DSP     2
-#define STAR    4
-#define DSYM    7
-#define ISYM    2
-#define ASYM    1
-#define NSYM    0
-#define ESYM    0177
-#define BKPTSET 1
-#define BKPTEXEC 2
+#define BPT             03
 
-#define BPT     03
+#define NOREG           32767           /* impossible return from getreg() */
+#define NREG            FRAME_WORDS
 
-#define NOREG   32767           /* impossible return from getreg() */
-#define NREG    FRAME_WORDS
 /*
  * UAR0 is the value used for subprocesses when there is no core file.
  * If it doesn't correspond to reality, use pstat -u on a core file to
@@ -157,38 +135,27 @@ struct reglist {
 #define MAXPOS  80
 #define MAXLIN  128
 
-#define TRUE	 (-1)
-#define FALSE	0
-#define LOBYTE	0377
-#define HIBYTE	0177400
-#define STRIP	0177
+#define TRUE    (-1)
+#define FALSE   0
+#define LOBYTE  0377
+#define HIBYTE  0177400
+#define STRIP   0177
 
-#define SP	' '
-#define TB	'\t'
+#define SP      ' '
+#define TB      '\t'
 #define EOR     '\n'
 #define QUOTE   0200
 #define EVEN    (~1)
 
 /* long to ints and back (puns) */
 union {
-	int     I[2];
-	long   L;
+    int     I[2];
+    long   L;
 } itolws;
 
 #define leng(a)         ((long)((unsigned)(a)))
 #define shorten(a)      ((int)(a))
 #define itol(a,b)       (itolws.I[0]=(a), itolws.I[1]=(b), itolws.L)
-
-/* result type declarations */
-long    inkdot();
-struct	SYMbol	*lookupsym();
-struct	SYMbol	*symget();
-u_int	get(), chkget();
-char	*exform();
-char	*cache_sym(), *no_cache_sym();
-long    roundn (long, long);
-BKPTR           scanbkpt();
-struct SYMbol *cache_by_string (char *);
 
 struct sgttyb adbtty, usrtty;
 jmp_buf erradb;
@@ -222,3 +189,21 @@ extern const char SZBKPT[];
 extern const char LONGFIL[];
 extern const char NOTOPEN[];
 extern const char TOODEEP[];
+
+#if 0
+/* result type declarations */
+struct  SYMbol  *lookupsym();
+struct  SYMbol  *symget();
+u_int   get(), chkget();
+char    *exform();
+#endif
+
+struct SYMbol *cache_by_string (char *);
+struct SYMbol *symget (void);
+char *exform (int, char *, int, int);
+void error (const char *);
+long inkdot (int);
+BKPTR scanbkpt (int);
+char *cache_sym (struct SYMbol *);
+char *no_cache_sym (struct SYMbol *);
+long roundn (long, long);
