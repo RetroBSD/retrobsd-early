@@ -7,8 +7,9 @@ const char *errflg;
 
 extern struct SYMbol *symbol;
 
+int
 findroutine(cframe)
-    long    cframe;
+    long cframe;
 {
     register int narg, inst;
     int lastpc, back2;

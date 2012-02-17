@@ -10,12 +10,13 @@ char    *digitptr;
 
 extern long var[];
 
+void
 printc(c)
-    char    c;
+    int c;
 {
-    char    d;
-    char    *q;
-    int     posn, tabs, p;
+    char d;
+    char *q;
+    int  posn, tabs, p;
 
     if (mkfault)
         return;
@@ -63,6 +64,7 @@ printc(c)
     }
 }
 
+void
 flushbuf()
 {
     if (printptr != printbuf) {
@@ -70,10 +72,8 @@ flushbuf()
     }
 }
 
-/*VARARGS*/
-print(fmat, a1)
-    char    *fmat;
-    char    **a1;
+void
+print(char *fmat, ...)
 {
     char    *fptr, *s;
     int     *vptr;
@@ -86,7 +86,7 @@ print(fmat, a1)
     char    digits[64];
 
     fptr = fmat;
-    vptr = (int*) &a1;
+    vptr = 1 + (int*) &fmat;
 
     while (c = *fptr++) {
         if (c != '%') {
@@ -403,6 +403,7 @@ oclose()
     }
 }
 
+void
 endline()
 {
     if ((printptr - printbuf) >= maxpos)

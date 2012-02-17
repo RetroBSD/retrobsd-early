@@ -28,7 +28,6 @@ static  struct  SYMbol  *symtab;
 static  FILE    *strfp;
 static  int     symcnt;
 static  int     symnum;
-static  char    *sgets();
 
 extern  char    *myname, *symfil, *strdup();
 extern  off_t   symoff, stroff;
@@ -62,7 +61,7 @@ findsym(svalue, type)
     if (symsav)
         symcnt = symsav - symtab;
     symbol = symsav;
-    return(shorten(diff));
+    return shorten(diff);
 }
 
 valpr(v, idsp)
@@ -70,52 +69,60 @@ valpr(v, idsp)
     u_int   d;
 
     d = findsym(v, idsp);
-    if (d < maxoff
-    ) {     print("%s", cache_sym(symbol));
-        if (d
-        ) {     print(OFFMODE, d);
-        }
+    if (d < maxoff) {
+        print("%s", cache_sym(symbol));
+        if (d)
+            print(OFFMODE, d);
     }
 }
 
+int
 localsym(cframe)
-    long    cframe;
+    long cframe;
 {
     int symflg;
 
-    while (symget() && localok && (symflg= (int)symbol->type) != N_FN
-        && *no_cache_sym(symbol) != '~'
-    ) {if (symflg>=2 && symflg<=4
-    ) { localval=symbol->value;
-        return(TRUE);
-    } else if (symflg==1
-    ) { localval=leng(shorten(cframe)+symbol->value);
-        return(TRUE);
-    } else if (symflg==20 && lastframe
-    ) { localval=leng(lastframe+2*symbol->value - 10);
-        return(TRUE);
-       }
+    while (symget() && localok && (symflg = (int)symbol->type) != N_FN &&
+        *no_cache_sym(symbol) != '~')
+    {
+        if (symflg >= 2 && symflg <= 4) {
+            localval = symbol->value;
+            return TRUE;
+        } else if (symflg == 1) {
+            localval = leng(shorten(cframe) + symbol->value);
+            return TRUE;
+        } else if (symflg == 20 && lastframe) {
+            localval = leng(lastframe + 2 * symbol->value - 10);
+            return TRUE;
+        }
     }
-    return(FALSE);
+    return FALSE;
 }
 
+void
 psymoff(v, type, s)
     long v;
     int type;
     char *s;
 {
-    u_int   w;
+    u_int w;
 
     w = findsym(shorten(v), type);
-    if (w >= maxoff
-    ) { print(LPRMODE, v);
-    } else { print("%s", cache_sym(symbol));
-         if (w) { print(OFFMODE, w); }
+    if (w >= maxoff) {
+        print(LPRMODE, v);
+    } else {
+        print("%s", cache_sym(symbol));
+        if (w) {
+            print(OFFMODE, w);
+        }
     }
     print(s);
 }
 
-/* sequential search through table */
+/*
+ *  sequential search through table
+ */
+void
 symset()
 {
     symcnt = -1;
@@ -124,11 +131,11 @@ symset()
 struct SYMbol *
 symget()
 {
-    if (symcnt >= symnum || !symnum)
-        return(NULL);
+    if (symcnt >= symnum || ! symnum)
+        return NULL;
     symcnt++;
     symbol = &symtab[symcnt];
-    return(symbol);
+    return symbol;
 }
 
 /*
@@ -139,7 +146,7 @@ symget()
  * generates *lots* of them and they're useless to us.
 */
 symINI(ex)
-    struct  exec    *ex;
+    struct exec *ex;
 {
     register struct SYMbol  *sp;
     register FILE   *fp;
@@ -148,7 +155,7 @@ symINI(ex)
 
     fp = fopen(symfil, "r");
     strfp = fp;
-    if      (!fp)
+    if (! fp)
         return;
     fcntl(fileno(fp), F_SETFD, 1);
 
@@ -168,7 +175,7 @@ symINI(ex)
     fseek(fp, symoff, L_SET);
 
     symtab = (struct SYMbol *)malloc(nused * sizeof (struct SYMbol));
-    if (!symtab) {
+    if (! symtab) {
         globals_only = 1;
         nused = 0;
         for (symcnt = 0; symcnt < symnum; symcnt++) {
@@ -213,12 +220,32 @@ symINI(ex)
     return(0);
 }
 
+static char *
+sgets(soff)
+    u_short soff;
+{
+    static char symname[MAXSYMLEN + 2];
+    register char *buf = symname;
+    int c;
+    register int i;
+
+    fseek(strfp, stroff + soff, L_SET);
+    for (i = 0; i < MAXSYMLEN; i++) {
+        c = getc(strfp);
+        *buf++ = c;
+        if (c == '\0')
+            break;
+    }
+    *buf = '\0';
+    return symname;
+}
+
 /*
  * Look in the cache for a symbol in memory.  If it is not found use
  * the least recently used entry in the cache and update it with the
  * symbol name.
 */
-char    *
+char *
 cache_sym(symp)
     register struct SYMbol *symp;
 {
@@ -226,30 +253,27 @@ cache_sym(symp)
     struct  SYMcache *current;
     int     lru;
 
-    if      (!symp)
-        return("?");
-    for     (current = NULL, lru = 30000 ; sc < endcache; sc++)
-        {
-        if      (sc->syment == symp)
-            {
+    if (! symp)
+        return "?";
+    for (current = NULL, lru = 30000 ; sc < endcache; sc++) {
+        if (sc->syment == symp) {
             sc->used++;
-            if      (sc->used >= 30000)
+            if (sc->used >= 30000)
                 sc->used = 10000;
-            return(sc->name);
-            }
-        if      (sc->used < lru)
-            {
+            return sc->name;
+        }
+        if (sc->used < lru) {
             lru = sc->used;
             current = sc;
-            }
         }
+    }
     sc = current;
-    if      (sc->name)
+    if (sc->name)
         free(sc->name);
     sc->used = 1;
     sc->syment = symp;
     sc->name = strdup(sgets(symp->soff));
-    return(sc->name);
+    return sc->name;
 }
 
 /*
@@ -258,7 +282,7 @@ cache_sym(symp)
  * for example) for large numbers of symbols which probably won't be
  * used again any time soon.
  */
-char    *
+char *
 no_cache_sym(symp)
     register struct SYMbol *symp;
 {
@@ -281,9 +305,9 @@ no_cache_sym(symp)
  * Looks in the cache for a match by string value rather than string
  * file offset.
  */
-struct  SYMbol *
+struct SYMbol *
 cache_by_string(str)
-    char    *str;
+    char *str;
 {
     register struct SYMcache *sc;
 
@@ -300,25 +324,4 @@ cache_by_string(str)
         return sc->syment;
     }
     return 0;
-}
-
-static char *
-sgets(soff)
-    u_short soff;
-{
-    static  char    symname[MAXSYMLEN + 2];
-    register char   *buf = symname;
-    int     c;
-    register int i;
-
-    fseek(strfp, stroff + soff, L_SET);
-    for     (i = 0; i < MAXSYMLEN; i++)
-        {
-        c = getc(strfp);
-        *buf++ = c;
-        if      (c == '\0')
-            break;
-        }
-    *buf = '\0';
-    return(symname);
 }

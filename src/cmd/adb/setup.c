@@ -36,7 +36,7 @@ setsym()
     txtmap.ufd = fsym;
 
     if (read(fsym, &hdr, sizeof (hdr)) >= (int)sizeof (hdr)) {
-        magic= hdr.a_magic;
+        magic = hdr.a_magic;
         txtsiz = hdr.a_text;
         datsiz = hdr.a_data;
         bss = hdr.a_bss;
@@ -67,22 +67,25 @@ setsym()
         datbas = txtmap.b2;
         symINI(&hdr);
     }
-    if (magic==0) { txtmap.e1=maxfile; }
+    if (magic == 0) {
+        txtmap.e1 = maxfile;
+    }
 }
 
 setcor()
 {
     fcor = getfile(corfil, 2);
     datmap.ufd = fcor;
-    if (read(fcor, corhdr, sizeof corhdr)==sizeof corhdr
-    ) {    if (!kernel
-        ) {    txtsiz = ((U*)corhdr)->u_tsize << 6;
+    if (read(fcor, corhdr, sizeof corhdr) == sizeof corhdr) {
+        if (! kernel) {
+            txtsiz = ((U*)corhdr)->u_tsize << 6;
             datsiz = ((U*)corhdr)->u_dsize << 6;
             stksiz = ((U*)corhdr)->u_ssize << 6;
             datmap.f1 = USIZE;
             datmap.b2 = maxstor-stksiz;
             datmap.e2 = maxstor;
-        } else {    datsiz = roundn(datsiz + bss, 64L);
+        } else {
+            datsiz = roundn(datsiz + bss, 64L);
             stksiz = (long) USIZE;
             datmap.f1 = 0;
             datmap.b2 = 0140000L;
@@ -91,11 +94,11 @@ setcor()
         switch (magic) {
         case 0407:
             datmap.b1 = 0;
-            datmap.e1 = txtsiz+datsiz;
-            if (kernel
-) {    datmap.f2 = (long)corhdr[KA6] *
-                    0100L;
-} else {    datmap.f2 = USIZE + txtsiz + datsiz;
+            datmap.e1 = txtsiz + datsiz;
+            if (kernel) {
+                datmap.f2 = (long)corhdr[KA6] * 0100L;
+            } else {
+                datmap.f2 = USIZE + txtsiz + datsiz;
             }
             break;
 
@@ -103,10 +106,10 @@ setcor()
         case 0411:
             datmap.b1 = 0;
             datmap.e1 = datsiz;
-            if (kernel
-) { datmap.f2 = (long)corhdr[KA6] *
-                0100L;
-} else { datmap.f2 = datsiz + USIZE;
+            if (kernel) {
+                datmap.f2 = (long)corhdr[KA6] * 0100L;
+            } else {
+                datmap.f2 = datsiz + USIZE;
             }
             break;
 
@@ -121,7 +124,7 @@ setcor()
         }
         datbas = datmap.b1;
 #if 0
-        if (!kernel && magic) {
+        if (! kernel && magic) {
             /*
              * Note that we can no longer compare the magic
              * number of the core against that of the object
@@ -147,17 +150,16 @@ getfile(filnam, cnt)
 {
     register int f;
 
-    if (strcmp("-", filnam)
-    ) {    f = open(filnam, wtflag);
-        if (f < 0 && argcount>cnt
-        ) {    if (wtflag
-            ) {    f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
-            }
-            if (f < 0
-            ) { print("cannot open `%s'\n", filnam);
-            }
+    if (strcmp("-", filnam)) {
+        f = open(filnam, wtflag);
+        if (f < 0 && argcount > cnt) {
+            if (wtflag)
+                f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
+            if (f < 0)
+                print("cannot open `%s'\n", filnam);
         }
-    } else {    f = -1;
+    } else {
+        f = -1;
     }
-    return(f);
+    return f;
 }

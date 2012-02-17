@@ -36,7 +36,13 @@ struct ipc {
 };
 
 #ifdef KERNEL
+
 struct ipc ipc;
+
+#else
+
+int ptrace (int request, pid_t pid, void *addr, int data);
+
 #endif
 
 #endif

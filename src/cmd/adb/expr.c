@@ -25,85 +25,52 @@ extern u_int corhdr[];
 static char isymbol[MAXSYMLEN + 2];
 
 /*
- * term | term dyadic expr |
+ * service routines for expression reading
  */
-int
-expr(a)
+static int
+symchar(dig)
 {
-    int rc;
-    long lhs;
-
-    rdc();
-    lp--;
-    rc = term(a);
-
-    while (rc) {
-        lhs = expv;
-        switch (readchar()) {
-        case '+': term(a|1); expv += lhs; break;
-        case '-': term(a|1); expv = lhs - expv; break;
-        case '#': term(a|1); expv = roundn(lhs, expv); break;
-        case '*': term(a|1); expv *= lhs; break;
-        case '%': term(a|1); expv = lhs/expv; break;
-        case '&': term(a|1); expv &= lhs; break;
-        case '|': term(a|1); expv |= lhs; break;
-        case ')': if (! (a & 2)) error(BADKET);
-        default:  lp--; return rc;
-        }
+    if (lastc == '\\') {
+        readchar();
+        return TRUE;
     }
-    return rc;
+    return (isalpha(lastc) || lastc == '_' || (dig && isdigit(lastc)));
 }
 
-/*
- * item | monadic item | (expr) |
- */
-int
-term(a)
+static void
+readsym()
 {
-    switch (readchar()) {
+    register char *p;
 
-    case '*':
-        term(a | 1);
-        expv = chkget(expv, DSP);
-        return 1;
-
-    case '@':
-        term(a | 1);
-        expv = chkget(expv, ISP);
-        return 1;
-
-    case '-':
-        term(a | 1);
-        expv = -expv;
-        return 1;
-
-    case '~':
-        term(a | 1);
-        expv = ~expv;
-        return 1;
-
-    case '(':
-        expr(2);
-        if (*lp != ')') {
-            error(BADSYN);
-        } else {
-            lp++; return 1;
-        }
-
-    default:
-        lp--;
-        return item(a);
-    }
+    p = isymbol;
+    do {
+        if (p < &isymbol[MAXSYMLEN])
+            *p++ = lastc;
+        readchar();
+    } while (symchar(1));
+    *p++ = 0;
 }
 
-struct SYMbol *
+static void
+chkloc(frame)
+    long frame;
+{
+    readsym();
+    do {
+        if (localsym(frame) == 0)
+            error(BADLOC);
+        expv = localval;
+    } while (! eqsym(cache_sym(symbol), isymbol, '~'));
+}
+
+static struct SYMbol *
 lookupsym(symstr)
-    char    *symstr;
+    char *symstr;
 {
     register struct SYMbol *symp, *sc;
 
     symset();
-    while (symp = symget()) {
+    while ((symp = symget())) {
         sc = cache_by_string(symstr);
         if (sc)
             return sc;
@@ -122,9 +89,21 @@ lookupsym(symstr)
     return symp;
 }
 
+static int
+convdig(c)
+    int c;
+{
+    if (isdigit(c))
+        return c - '0';
+    if (isxdigit(c))
+        return c - 'a' + 10;
+    return 17;
+}
+
 /*
  * name [ . local ] | number | . | ^ | <var | <register | 'x |
  */
+int
 item(a)
 {
     int base, d, frpt, regptr;
@@ -258,40 +237,78 @@ item(a)
 }
 
 /*
- * service routines for expression reading
+ * item | monadic item | (expr) |
  */
-readsym()
+int
+term(a)
 {
-    register char *p;
+    switch (readchar()) {
 
-    p = isymbol;
-    do {
-        if (p < &isymbol[MAXSYMLEN])
-            *p++ = lastc;
-        readchar();
-    } while (symchar(1));
-    *p++ = 0;
-}
+    case '*':
+        term(a | 1);
+        expv = chkget(expv, DSP);
+        return 1;
 
-convdig(c)
-    int c;
-{
-    if (isdigit(c))
-        return c - '0';
-    if (isxdigit(c))
-        return c - 'a' + 10;
-    return 17;
-}
+    case '@':
+        term(a | 1);
+        expv = chkget(expv, ISP);
+        return 1;
 
-symchar(dig)
-{
-    if (lastc == '\\') {
-        readchar();
-        return TRUE;
+    case '-':
+        term(a | 1);
+        expv = -expv;
+        return 1;
+
+    case '~':
+        term(a | 1);
+        expv = ~expv;
+        return 1;
+
+    case '(':
+        expr(2);
+        if (*lp != ')') {
+            error(BADSYN);
+        } else {
+            lp++; return 1;
+        }
+
+    default:
+        lp--;
+        return item(a);
     }
-    return (isalpha(lastc) || lastc == '_' || dig && isdigit(lastc));
 }
 
+/*
+ * term | term dyadic expr |
+ */
+int
+expr(a)
+{
+    int rc;
+    long lhs;
+
+    rdc();
+    lp--;
+    rc = term(a);
+
+    while (rc) {
+        lhs = expv;
+        switch (readchar()) {
+        case '+': term(a|1); expv += lhs; break;
+        case '-': term(a|1); expv = lhs - expv; break;
+        case '#': term(a|1); expv = roundn(lhs, expv); break;
+        case '*': term(a|1); expv *= lhs; break;
+        case '%': term(a|1); expv = lhs/expv; break;
+        case '&': term(a|1); expv &= lhs; break;
+        case '|': term(a|1); expv |= lhs; break;
+        case ')': if (! (a & 2)) error(BADKET);
+        default:  lp--; return rc;
+        }
+    }
+    return rc;
+}
+
+int
 varchk(name)
 {
     if (isdigit(name))
@@ -301,17 +318,7 @@ varchk(name)
     return -1;
 }
 
-chkloc(frame)
-    long frame;
-{
-    readsym();
-    do {
-        if (localsym(frame) == 0)
-            error(BADLOC);
-        expv = localval;
-    } while (! eqsym(cache_sym(symbol), isymbol, '~'));
-}
-
+int
 eqsym(s1, s2, c)
     register char *s1, *s2;
     int c;

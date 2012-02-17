@@ -16,6 +16,7 @@ long    loopcnt;
 /*
  * sub process control
  */
+void
 subpcs(modif)
 {
     register int check;

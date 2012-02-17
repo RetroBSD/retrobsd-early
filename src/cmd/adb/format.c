@@ -1,5 +1,6 @@
 #include "defs.h"
 #include <ctype.h>
+#include <sys/wait.h>
 
 int     mkfault;
 char    *lp;
@@ -14,6 +15,7 @@ extern struct SYMbol *symbol;
 extern char printbuf[];
 extern long var[];
 
+void
 scanform(icount, ifp, itype, ptype)
     long    icount;
     char    *ifp;
@@ -70,6 +72,17 @@ scanform(icount, ifp, itype, ptype)
     }
 }
 
+static void
+printesc(c)
+{
+    c &= STRIP;
+    if (c < SP || c > '~' || c == '@') {
+        print("@%c", (c == '@') ? '@' : c ^ 0140);
+    } else {
+        printc(c);
+    }
+}
+
 char *
 exform(fcount, ifp, itype, ptype)
     int     fcount;
@@ -82,7 +95,7 @@ exform(fcount, ifp, itype, ptype)
      */
     u_int   w;
     long    savdot, wx;
-    char    *fp;
+    char    *fp = 0;
     char    c, modifier, longpr;
     struct {
         long    sa;
@@ -92,7 +105,7 @@ exform(fcount, ifp, itype, ptype)
     while (fcount > 0) {
         fp = ifp;
         c = *fp;
-        longpr = (c >= 'A') & (c <= 'Z') | (c == 'f');
+        longpr = (c >= 'A' && c <= 'Z') || (c == 'f');
         if (itype == NSP || *fp == 'a') {
             wx = dot;
             w = dot;
@@ -273,6 +286,7 @@ exform(fcount, ifp, itype, ptype)
     return fp;
 }
 
+void
 unox()
 {
     int     rc, status, unixpid;
@@ -285,7 +299,7 @@ unox()
         signal(SIGINT, sigint);
         signal(SIGQUIT, sigqit);
         *lp = 0;
-        execl("/bin/sh", "sh", "-c", argp, 0);
+        execl("/bin/sh", "sh", "-c", argp, (char*)0);
         exit(16);
     } else if (unixpid == -1) {
         error(NOFORK);
@@ -295,16 +309,6 @@ unox()
         signal(SIGINT, sigint);
         printc('!');
         lp--;
-    }
-}
-
-printesc(c)
-{
-    c &= STRIP;
-    if (c < SP || c > '~' || c == '@') {
-        print("@%c", (c == '@') ? '@' : c ^ 0140);
-    } else {
-        printc(c);
     }
 }
 

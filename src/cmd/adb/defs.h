@@ -149,8 +149,8 @@ typedef REGLIST *REGPTR;
 
 /* long to ints and back (puns) */
 union {
-    int     I[2];
-    long   L;
+    int  I[2];
+    long L;
 } itolws;
 
 #define leng(a)         ((long)((unsigned)(a)))
@@ -190,14 +190,6 @@ extern const char LONGFIL[];
 extern const char NOTOPEN[];
 extern const char TOODEEP[];
 
-#if 0
-/* result type declarations */
-struct  SYMbol  *lookupsym();
-struct  SYMbol  *symget();
-u_int   get(), chkget();
-char    *exform();
-#endif
-
 struct SYMbol *cache_by_string (char *);
 struct SYMbol *symget (void);
 char *exform (int, char *, int, int);
@@ -207,3 +199,31 @@ BKPTR scanbkpt (int);
 char *cache_sym (struct SYMbol *);
 char *no_cache_sym (struct SYMbol *);
 long roundn (long, long);
+void chkerr (void);
+int expr (int);
+int eol (int);
+int rdc (void);
+u_int get (long, int);
+void put (long, int, int);
+void psymoff (long, int, char *);
+void print (char *, ...);
+void printc (int);
+void getformat (char *);
+void scanform (long, char *, int, int);
+int getreg (int);
+int varchk (int);
+void unox (void);
+void printtrace (int);
+int nextchar (void);
+void subpcs (int);
+void flushbuf (void);
+int readchar (void);
+int findroutine (long);
+int eqsym (char *, char *, int);
+int localsym (long);
+void symset (void);
+int quotchar (void);
+u_int chkget (long, int);
+u_int findsym (u_int, int);
+void endline (void);
+void printins (int, int);

@@ -9,12 +9,13 @@ int     eof;
 
 /* input routines */
 
+int
 eol(c)
-    char    c;
 {
-    return (c==EOR || c==';');
+    return (c == EOR || c == ';');
 }
 
+int
 rdc()
 {
     do {
@@ -23,6 +24,7 @@ rdc()
     return lastc;
 }
 
+int
 readchar()
 {
     if (eof) {
@@ -38,12 +40,14 @@ readchar()
             *lp = 0;
             lp = line;
         }
-        if (lastc = *lp)
+        lastc = *lp;
+        if (lastc)
             lp++;
     }
     return lastc;
 }
 
+int
 nextchar()
 {
     if (eol(rdc())) {
@@ -53,6 +57,7 @@ nextchar()
     return lastc;
 }
 
+int
 quotchar()
 {
     if (readchar() == '\\')
@@ -62,8 +67,9 @@ quotchar()
     return lastc;
 }
 
+void
 getformat(deformat)
-    char    *deformat;
+    char *deformat;
 {
     register char   *fptr;
     register int    quote;

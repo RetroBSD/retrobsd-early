@@ -22,3 +22,8 @@ clean:
 install:        all
 		install $(BIN) $(DESTDIR)/bin/
 		cp retroImage $(DESTDIR)/lib/
+
+image:          $(BIN)
+		cat image/meta.rx image/kernel.rx > core.rx
+		./$(BIN) --shrink --image retroImage --with core.rx
+		rm core.rx

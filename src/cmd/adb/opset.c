@@ -296,6 +296,7 @@ char *regname[] = { "r0", "r1", "r2", "r3", "r4", "r5", "sp", "pc" };
 
 u_int   type, space, incp;
 
+void
 printins(idsp, ins)
     register int ins;
 {

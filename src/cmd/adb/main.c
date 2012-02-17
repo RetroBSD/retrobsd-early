@@ -42,7 +42,6 @@ roundn(a, b)
 /*
  * error handling
  */
-
 void
 chkerr()
 {

@@ -79,8 +79,10 @@ REGLIST kregs[] = {
     "sp",       FRAME_SP,           /* 26 */
 };
 
-/* general printing routines ($) */
-
+/*
+ * general printing routines ($)
+ */
+void
 printtrace(modif)
 {
     int     narg, i, stat, name, limit;
@@ -305,9 +307,11 @@ printtrace(modif)
                 print(" ? ");
             } else {
                 print("%8t");
-                valpr(name=shorten(link)+get(link-2, ISP), ISYM);
-                name=get(leng(name-2), ISP);
-                print("%8t\""); limit=8;
+                name = shorten(link) + get(link-2, ISP);
+                valpr(name, ISYM);
+                name = get(leng(name -2), ISP);
+                print("%8t\"");
+                limit = 8;
                 do {
                     word = get(leng(name), DSP);
                     name += 2;
@@ -318,28 +322,31 @@ printtrace(modif)
                 } while (lo && hi && limit--);
                 printc('"');
             }
-            limit=4; i=6; print("%24targs:%8t");
-            while (limit--
-            ) {print("%8t%o", get(frame+i, DSP)); i += 2; }
+            limit = 4;
+            i = 6;
+            print("%24targs:%8t");
+            while (limit--) {
+                print("%8t%o", get(frame + i, DSP));
+                i += 2;
+            }
             printc(EOR);
 
-            frame=dynam;
+            frame = dynam;
         }
-        errflg=0;
+        errflg = 0;
         flushbuf();
         break;
-
-        /*set default c frame*/
-        /*print breakpoints*/
-    case 'b': case 'B':
+                                        /* set default c frame */
+    case 'b': case 'B':                 /* print breakpoints */
         print("breakpoints\ncount%8tbkpt%24tcommand\n");
-        for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt
-        ) {if (bkptr->flag
-        ) { print("%-8.8d", bkptr->count);
-            psymoff(leng(bkptr->loc), ISYM, "%24t");
-            comptr=bkptr->comm;
-            while (*comptr ) {printc(*comptr++); }
-           }
+        for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt) {
+            if (bkptr->flag) {
+                print("%-8.8d", bkptr->count);
+                psymoff(leng(bkptr->loc), ISYM, "%24t");
+                comptr = bkptr->comm;
+                while (*comptr)
+                    printc(*comptr++);
+            }
         }
         break;
 
@@ -353,13 +360,15 @@ printmap(s, amap)
     MAP     *amap;
 {
     int file;
-    file=amap->ufd;
-    print("%s%12t`%s'\n", s, (file<0 ? "-" : (file==fcor ? corfil : symfil)));
+
+    file = amap->ufd;
+    print("%s%12t`%s'\n", s, file < 0 ? "-" :
+                             file == fcor ? corfil : symfil);
     print("b1 = %-16Q", amap->b1);
     print("e1 = %-16Q", amap->e1);
     print("f1 = %-16Q", amap->f1);
-    if (amap->bo
-    ) {    print("\n\t{ bo = %-16Q", amap->bo);
+    if (amap->bo) {
+        print("\n\t{ bo = %-16Q", amap->bo);
         print("eo = %-16Q", amap->eo);
         print("fo = %-16Q}", amap->fo);
     }
@@ -371,17 +380,20 @@ printmap(s, amap)
 
 printregs()
 {
-    register REGPTR      p;
-    int     v;
+    register REGPTR p;
+    int v;
 
-    if (kernel
-    ) {    for (p=kregs; p<&kregs[7]; p++
-        ) {     print("%s%8t%o%8t", p->rname, v=corhdr[p->roffs]);
+    if (kernel) {
+        for (p=kregs; p<&kregs[7]; p++) {
+            v = corhdr[p->roffs];
+            print("%s%8t%o%8t", p->rname, v);
             valpr(v, DSYM);
             printc(EOR);
         }
-    } else {    for (p=reglist; p < &reglist[NREG]; p++
-        ) {     print("%s%8t%o%8t", p->rname, v=uar0[p->roffs]);
+    } else {
+        for (p=reglist; p < &reglist[NREG]; p++) {
+            v = uar0[p->roffs];
+            print("%s%8t%o%8t", p->rname, v);
             valpr(v, (p->roffs == FRAME_PC) ? ISYM : DSYM);
             printc(EOR);
         }
@@ -389,22 +401,23 @@ printregs()
     }
 }
 
+int
 getreg(regnam)
 {
-    register REGPTR      p;
-    register char   *regptr;
-    char    regnxt;
+    register REGPTR p;
+    register char *regptr;
+    char regnxt;
 
-    if (kernel) { return(NOREG); }        /* not supported */
-    regnxt=readchar();
-    for (p=reglist; p<&reglist[NREG]; p++
-    ) {     regptr=p->rname;
-        if ((regnam == *regptr++) && (regnxt == *regptr)
-        ) {    return(p->roffs);
-        }
+    if (kernel)                         /* not supported */
+        return NOREG;
+    regnxt = readchar();
+    for (p=reglist; p<&reglist[NREG]; p++) {
+        regptr = p->rname;
+        if ((regnam == *regptr++) && (regnxt == *regptr))
+            return p->roffs;
     }
     lp--;
-    return(NOREG);
+    return NOREG;
 }
 
 printpc()
@@ -417,8 +430,6 @@ printpc()
 
 sigprint()
 {
-    extern char     *sys_siglist[];         /* signal list */
-
     if (signo >= 0 && signo < NSIG)
         print("%s", sys_siglist[signo]);
     else
