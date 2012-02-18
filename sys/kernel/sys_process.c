@@ -102,20 +102,16 @@ procxmt()
 	case PT_WRITE_U:
 		i = (int)ipc.ip_addr;
 		p = (int*)&u + i/sizeof(int);
-		for (i=0; i<8; i++)
+		for (i=0; i<FRAME_WORDS; i++)
 			if (p == &u.u_frame[i])
 				goto ok;
-		if (p != &u.u_frame [FRAME_STATUS])
-                        goto error;
-		// TODO: ptrace write u
-		//ipc.ip_data |= PSL_USERSET;	/* user space */
-		//ipc.ip_data &= ~PSL_USERCLR;	/* priority 0 */
+                goto error;
 ok:
 		*p = ipc.ip_data;
 		break;
 
 	/* set signal and continue */
-	/*  one version causes a trace-trap */
+	/* one version causes a trace-trap */
 	case PT_STEP:
 		// TODO: ptrace step
 		//u.u_frame [FRAME_STATUS] |= PSL_T;

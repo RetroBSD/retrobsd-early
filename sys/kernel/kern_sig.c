@@ -424,16 +424,16 @@ issignal (p)
 		 * We should see pending but ignored signals
 		 * only if P_TRACED was on when they were posted.
 		*/
-		if (mask & p->p_sigignore && (p->p_flag& P_TRACED) == 0) {
+		if ((mask & p->p_sigignore) && ! (p->p_flag & P_TRACED)) {
 			p->p_sig &= ~mask;
 			continue;
 		}
-		if (p->p_flag & P_TRACED && (p->p_flag & SVFORK) == 0) {
+		if ((p->p_flag & P_TRACED) && ! (p->p_flag & SVFORK)) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
 			 *
-			 * Note that we  must clear the pending signal
+			 * Note that we must clear the pending signal
 			 * before we call procxmt since that routine
 			 * might cause a fault, calling sleep and
 			 * leading us back here again with the same signal.
@@ -447,7 +447,7 @@ issignal (p)
 			do {
 				stop(p);
 				swtch();
-			} while (!procxmt() && p->p_flag & P_TRACED);
+			} while (! procxmt() && (p->p_flag & P_TRACED));
 
 			/*
 			 * If parent wants us to take the signal,
