@@ -109,6 +109,7 @@ subpcs(modif)
 
     default:
         error(BADMOD);
+        return;
     }
 
     if (loopcnt > 0 && runpcs(runmode, execsig)) {

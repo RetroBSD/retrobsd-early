@@ -94,4 +94,8 @@ long	random (void);
 char	*setstate (char *);
 void	srandom (unsigned);
 
+char *ecvt (double, int, int *, int *);
+char *fcvt (double, int, int *, int *);
+char *gcvt (double, int, char *);
+
 #endif /* _STDLIB_H_ */

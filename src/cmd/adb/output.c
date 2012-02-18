@@ -72,6 +72,132 @@ flushbuf()
     }
 }
 
+static int
+convert(cp)
+    register char **cp;
+{
+    register char c;
+    int     n = 0;
+
+    while ((c = *(*cp)++) >= '0' && c <= '9') {
+        n = n*10 + c - '0';
+    }
+    (*cp)--;
+    return n;
+}
+
+static void
+printnum(n, fmat, base)
+    register int n;
+{
+    register char k;
+    register int *dptr;
+    int digs[15];
+
+    dptr = digs;
+    if (n < 0 && fmat == 'd') {
+        n = -n;
+        *digitptr++ = '-';
+    }
+    while (n) {
+        *dptr++ = ((u_int) n) % base;
+        n = ((u_int) n ) / base;
+    }
+    if (dptr == digs) {
+        *dptr++ = 0;
+    }
+    while (dptr != digs) {
+        k = *--dptr;
+        *digitptr++ = k + ((k <= 9) ? '0' : 'a'-10);
+    }
+}
+
+static void
+printoct(o, s)
+    long    o;
+    int     s;
+{
+    int     i;
+    long    po = o;
+    char    digs[12];
+
+    if (s) {
+        if (po < 0) {
+            po = -po;
+            *digitptr++ = '-';
+
+        } else if (s > 0)
+            *digitptr++='+';
+    }
+    for (i=0; i<=11; i++) {
+        digs[i] = po & 7;
+        po >>= 3;
+    }
+    digs[10] &= 03;
+    digs[11] = 0;
+    for (i=11; i>=0; i--) {
+        if (digs[i])
+            break;
+    }
+    for (i++; i>=0; i--) {
+        *digitptr++ = digs[i] + '0';
+     }
+}
+
+static void
+printdbl(lx, ly, fmat, base)
+    int     lx, ly;
+    char    fmat;
+    int     base;
+{
+    int digs[20], *dptr;
+    char k;
+    double  f, g;
+    long q;
+
+    dptr = digs;
+    if (fmat != 'D') {
+        f = leng(lx);
+        f *= itol(1, 0);
+        f += leng(ly);
+        if (fmat == 'x')
+             *digitptr++ = '#';
+    } else {
+        f = itol(lx, ly);
+        if (f < 0) {
+            *digitptr++ = '-';
+            f = -f;
+        }
+    }
+    while (f) {
+        q = f / base;
+        g = q;
+        *dptr++ = f - g * base;
+        f = q;
+    }
+    if (dptr == digs) {
+        *dptr++ = 0;
+    }
+    while (dptr != digs) {
+        k = *--dptr;
+        *digitptr++ = k + ((k <= 9) ? '0' : 'a'-10);
+    }
+}
+
+static void
+printdate(tvec)
+    long    tvec;
+{
+    register int i;
+    register char *timeptr;
+
+    timeptr = ctime(&tvec);
+    for (i=20; i<24; i++)
+        *digitptr++ = timeptr[i];
+    for (i=3; i<19; i++)
+        *digitptr++ = timeptr[i];
+}
+
 void
 print(char *fmat, ...)
 {
@@ -88,7 +214,7 @@ print(char *fmat, ...)
     fptr = fmat;
     vptr = 1 + (int*) &fmat;
 
-    while (c = *fptr++) {
+    while ((c = *fptr++)) {
         if (c != '%') {
             printc(c);
         } else {
@@ -160,7 +286,6 @@ print(char *fmat, ...)
             case 's':
                 s = (char*) x;
                 break;
-#if 0
             case 'f':
             case 'F':
                 vptr += 7;
@@ -183,7 +308,6 @@ print(char *fmat, ...)
                 s = 0;
                 prec = -1;
                 break;
-#endif
             case 'm':
                 vptr--;
                 break;
@@ -226,127 +350,6 @@ print(char *fmat, ...)
     }
 }
 
-printdate(tvec)
-    long    tvec;
-{
-    register int i;
-    register char *timeptr;
-
-    timeptr = ctime(&tvec);
-    for (i=20; i<24; i++)
-        *digitptr++ = timeptr[i];
-    for (i=3; i<19; i++)
-        *digitptr++ = timeptr[i];
-}
-
-convert(cp)
-    register char **cp;
-{
-    register char c;
-    int     n = 0;
-
-    while ((c = *(*cp)++) >= '0' && c <= '9') {
-        n = n*10 + c - '0';
-    }
-    (*cp)--;
-    return n;
-}
-
-printnum(n, fmat, base)
-    register int n;
-{
-    register char k;
-    register int *dptr;
-    int digs[15];
-
-    dptr = digs;
-    if (n < 0 && fmat == 'd') {
-        n = -n;
-        *digitptr++ = '-';
-    }
-    while (n) {
-        *dptr++ = ((u_int) n) % base;
-        n = ((u_int) n ) / base;
-    }
-    if (dptr == digs) {
-        *dptr++ = 0;
-    }
-    while (dptr != digs) {
-        k = *--dptr;
-        *digitptr++ = k + ((k <= 9) ? '0' : 'a'-10);
-    }
-}
-
-printoct(o, s)
-    long    o;
-    int     s;
-{
-    int     i;
-    long    po = o;
-    char    digs[12];
-
-    if (s) {
-        if (po < 0) {
-            po = -po;
-            *digitptr++ = '-';
-
-        } else if (s > 0)
-            *digitptr++='+';
-    }
-    for (i=0; i<=11; i++) {
-        digs[i] = po & 7;
-        po >>= 3;
-    }
-    digs[10] &= 03;
-    digs[11] = 0;
-    for (i=11; i>=0; i--) {
-        if (digs[i])
-            break;
-    }
-    for (i++; i>=0; i--) {
-        *digitptr++ = digs[i] + '0';
-     }
-}
-
-printdbl(lx, ly, fmat, base)
-    int     lx, ly;
-    char    fmat;
-    int     base;
-{
-    int digs[20], *dptr;
-    char k;
-    double  f, g;
-    long q;
-
-    dptr = digs;
-    if (fmat != 'D') {
-        f = leng(lx);
-        f *= itol(1, 0);
-        f += leng(ly);
-        if (fmat == 'x')
-             *digitptr++ = '#';
-    } else {
-        f = itol(lx, ly);
-        if (f < 0) {
-            *digitptr++ = '-';
-            f = -f;
-        }
-    }
-    while (f) {
-        q = f / base;
-        g = q;
-        *dptr++ = f - g * base;
-        f = q;
-    }
-    if (dptr == digs) {
-        *dptr++ = 0;
-    }
-    while (dptr != digs) {
-        k = *--dptr;
-        *digitptr++ = k + ((k <= 9) ? '0' : 'a'-10);
-    }
-}
-
 #define MAXIFD  5
 struct {
     int     fd;
@@ -355,6 +358,7 @@ struct {
 
 int ifiledepth;
 
+void
 iclose(stack, err)
 {
     if (err) {
@@ -394,6 +398,7 @@ iclose(stack, err)
     }
 }
 
+void
 oclose()
 {
     if (outfile != 1) {

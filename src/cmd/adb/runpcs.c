@@ -1,5 +1,6 @@
 #include "defs.h"
-#include <sys/file.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 char    *lp;
 BKPTR   bkpthead;
@@ -24,14 +25,89 @@ extern long var[];
 
 /* service routines for sub process control */
 
+int
 getsig(sig)
 {
-    return(expr(0) ? shorten(expv) : sig);
+    return expr(0) ? shorten(expv) : sig;
 }
 
+static void
+bpwait()
+{
+    register int w;
+    int stat;
+
+    signal(SIGINT, SIG_IGN);
+    while ((w = wait(&stat)) != pid && w != -1)
+        ;
+    signal(SIGINT, sigint);
+    ioctl(0, TIOCGETP, &usrtty);
+    ioctl(0, TIOCSETP, &adbtty);
+    if (w == -1) {
+        pid = 0;
+        errflg = BADWAIT;
+
+    } else if ((stat & 0177) != 0177) {
+        signo = stat & 0177;
+        if (signo) {
+            sigprint();
+        }
+        if (stat & 0200) {
+            print(" - core dumped");
+            close(fcor);
+            setcor();
+        }
+        pid = 0;
+        errflg = ENDPCS;
+
+    } else {
+        signo = stat>>8;
+        if (signo != SIGTRAP) {
+            sigprint();
+        } else {
+            signo = 0;
+        }
+        flushbuf();
+    }
+}
+
+/*
+ * get REG values from pcs
+ */
+static void
+readregs()
+{
+    register u_int i;
+
+    for (i=0; i<NREG; i++) {
+        uar0[reglist[i].roffs] = ptrace(PT_READ_U, pid,
+            (int *)((int)&uar0[reglist[i].roffs] - (int)&corhdr),
+            0);
+    }
+}
+
+static void
+execbkpt(bkptr)
+    BKPTR bkptr;
+{
+    int bkptloc;
+#ifdef DEBUG
+    print("exbkpt: %d\n", bkptr->count);
+#endif
+    bkptloc = bkptr->loc;
+    ptrace(PT_WRITE_I, pid, (void*) bkptloc, bkptr->ins);
+    ioctl(0, TIOCSETP, &usrtty);
+    ptrace(PT_STEP, pid, (void*) bkptloc, 0);
+    bpwait();
+    chkerr();
+    ptrace(PT_WRITE_I, pid, (void*) bkptloc, BPT);
+    bkptr->flag = BKPTSET;
+}
+
+int
 runpcs(runmode, execsig)
 {
-    int rc;
+    int rc = 0;
     register BKPTR bkpt;
 
     if (adrflg)
@@ -42,14 +118,14 @@ runpcs(runmode, execsig)
 #ifdef DEBUG
         print("\ncontinue %d %d\n", userpc, execsig);
 #endif
-        stty(0, &usrtty);
+        ioctl(0, TIOCSETP, &usrtty);
         ptrace (runmode, pid, (void*) userpc, execsig);
         bpwait();
         chkerr();
         readregs();
 
         /* look for bkpt */
-        if (signo==0 && (bkpt=scanbkpt(uar0[FRAME_PC]-2))) {
+        if (signo == 0 && (bkpt = scanbkpt(uar0[FRAME_PC] - 2))) {
             /* stopped at bkpt */
             userpc = uar0[FRAME_PC] = bkpt->loc;
             if (bkpt->flag == BKPTEXEC ||
@@ -73,6 +149,7 @@ runpcs(runmode, execsig)
     return(rc);
 }
 
+void
 endpcs()
 {
     register BKPTR  bkptr;
@@ -89,50 +166,7 @@ endpcs()
     }
 }
 
-setup()
-{
-    close(fsym);
-    fsym = -1;
-    pid = fork();
-    if (pid == 0) {
-        ptrace(PT_TRACE_ME, 0, 0, 0);
-        signal(SIGINT, sigint);
-        signal(SIGQUIT, sigqit);
-        doexec();
-        exit(0);
-    } else if (pid == -1) {
-        error(NOFORK);
-    } else {
-        bpwait();
-        readregs();
-        lp[0] = EOR;
-        lp[1] = 0;
-        fsym = open(symfil, wtflag);
-        if (errflg) {
-            print("%s: cannot execute\n", symfil);
-            endpcs();
-            error((char *)0);
-        }
-    }
-}
-
-execbkpt(bkptr)
-    BKPTR bkptr;
-{
-    int bkptloc;
-#ifdef DEBUG
-    print("exbkpt: %d\n", bkptr->count);
-#endif
-    bkptloc = bkptr->loc;
-    ptrace(PT_WRITE_I, pid, (void*) bkptloc, bkptr->ins);
-    stty(0, &usrtty);
-    ptrace(PT_STEP, pid, (void*) bkptloc, 0);
-    bpwait();
-    chkerr();
-    ptrace(PT_WRITE_I, pid, (void*) bkptloc, BPT);
-    bkptr->flag = BKPTSET;
-}
-
+static void
 doexec()
 {
     char *argl[MAXARG];
@@ -179,6 +213,34 @@ doexec()
     execv(symfil, argl);
 }
 
+void
+setup()
+{
+    close(fsym);
+    fsym = -1;
+    pid = fork();
+    if (pid == 0) {
+        ptrace(PT_TRACE_ME, 0, 0, 0);
+        signal(SIGINT, sigint);
+        signal(SIGQUIT, sigqit);
+        doexec();
+        exit(0);
+    } else if (pid == -1) {
+        error(NOFORK);
+    } else {
+        bpwait();
+        readregs();
+        lp[0] = EOR;
+        lp[1] = 0;
+        fsym = open(symfil, wtflag);
+        if (errflg) {
+            print("%s: cannot execute\n", symfil);
+            endpcs();
+            error((char *)0);
+        }
+    }
+}
+
 BKPTR
 scanbkpt(adr)
 {
@@ -191,6 +253,7 @@ scanbkpt(adr)
     return bkptr;
 }
 
+void
 delbp()
 {
     register BKPTR bkptr;
@@ -201,12 +264,14 @@ delbp()
     }
 }
 
+void
 del1bp(bkptr)
     BKPTR bkptr;
 {
     ptrace(PT_WRITE_I, pid, (void*) bkptr->loc, bkptr->ins);
 }
 
+void
 setbp()
 {
     register BKPTR bkptr;
@@ -217,6 +282,7 @@ setbp()
     }
 }
 
+void
 set1bp(bkptr)
     BKPTR bkptr;
 {
@@ -228,58 +294,5 @@ set1bp(bkptr)
     if (errno) {
         print("cannot set breakpoint: ");
         psymoff(leng(bkptr->loc), ISYM, "\n");
-    }
-}
-
-bpwait()
-{
-    register int w;
-    int stat;
-
-    signal(SIGINT, SIG_IGN);
-    while ((w = wait(&stat)) != pid && w != -1)
-        ;
-    signal(SIGINT, sigint);
-    gtty(0, &usrtty);
-    stty(0, &adbtty);
-    if (w == -1) {
-        pid = 0;
-        errflg = BADWAIT;
-
-    } else if ((stat & 0177) != 0177) {
-        signo = stat & 0177;
-        if (signo) {
-            sigprint();
-        }
-        if (stat & 0200) {
-            print(" - core dumped");
-            close(fcor);
-            setcor();
-        }
-        pid = 0;
-        errflg = ENDPCS;
-
-    } else {
-        signo = stat>>8;
-        if (signo != SIGTRAP) {
-            sigprint();
-        } else {
-            signo = 0;
-        }
-        flushbuf();
-    }
-}
-
-/*
- * get REG values from pcs
- */
-readregs()
-{
-    register u_int i, *afp;
-
-    for (i=0; i<NREG; i++) {
-        uar0[reglist[i].roffs] = ptrace(PT_READ_U, pid,
-            (int *)((int)&uar0[reglist[i].roffs] - (int)&corhdr),
-            0);
     }
 }

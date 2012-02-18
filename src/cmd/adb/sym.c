@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "defs.h"
 #include <fcntl.h>
-#include <sys/file.h>
 
 struct  SYMbol  *symbol;
 char    localok;
@@ -41,7 +40,7 @@ findsym(svalue, type)
 {
     long    diff, value, symval;
     register struct SYMbol  *sp;
-    struct  SYMbol *symsav;
+    struct  SYMbol *symsav = 0;
     int     i;
 
     value = svalue;
@@ -64,6 +63,7 @@ findsym(svalue, type)
     return shorten(diff);
 }
 
+void
 valpr(v, idsp)
 {
     u_int   d;
@@ -145,6 +145,7 @@ symget()
  * a late addition to the program excludes register symbols - the assembler
  * generates *lots* of them and they're useless to us.
 */
+void
 symINI(ex)
     struct exec *ex;
 {
@@ -161,7 +162,7 @@ symINI(ex)
 
     symnum = ex->a_syms / sizeof (sym);
 
-    fseek(fp, symoff, L_SET);
+    fseek(fp, symoff, SEEK_SET);
     nused = 0;
     for (i = 0; i < symnum; i++) {
         fread(&sym, sizeof (sym), 1, fp);
@@ -172,7 +173,7 @@ symINI(ex)
         else
             nused++;
     }
-    fseek(fp, symoff, L_SET);
+    fseek(fp, symoff, SEEK_SET);
 
     symtab = (struct SYMbol *)malloc(nused * sizeof (struct SYMbol));
     if (! symtab) {
@@ -195,7 +196,7 @@ symINI(ex)
             return;
         }
     }
-    fseek(fp, symoff, L_SET);
+    fseek(fp, symoff, SEEK_SET);
     sp = symtab;
     for (symcnt = 0; symcnt < symnum; symcnt++) {
         fread(&sym, 1, sizeof (sym), fp);
@@ -217,7 +218,6 @@ symINI(ex)
     if (globals_only)
         print("%s: could only do global symbols\n", myname);
     symset();
-    return(0);
 }
 
 static char *
@@ -229,7 +229,7 @@ sgets(soff)
     int c;
     register int i;
 
-    fseek(strfp, stroff + soff, L_SET);
+    fseek(strfp, stroff + soff, SEEK_SET);
     for (i = 0; i < MAXSYMLEN; i++) {
         c = getc(strfp);
         *buf++ = c;

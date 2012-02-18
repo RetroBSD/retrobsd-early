@@ -36,7 +36,7 @@ extern char *myname;
 int
 command(buf, defcom)
     char    *buf;
-    char    defcom;
+    int     defcom;
 {
     int     itype, ptype, modifier, regptr;
     char    longpr, eqcom;

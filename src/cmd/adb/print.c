@@ -1,5 +1,5 @@
 #include "defs.h"
-#include <sys/file.h>
+#include <fcntl.h>
 
 MAP     txtmap;
 MAP     datmap;
@@ -33,51 +33,99 @@ extern u_int corhdr[];
 extern long var[];
 
 REGLIST reglist [FRAME_WORDS] = {
-    "r1",       FRAME_R1,           /* 0  */
-    "r2",       FRAME_R2,           /* 1  */
-    "r3",       FRAME_R3,           /* 2  */
-    "r4",       FRAME_R4,           /* 3  */
-    "r5",       FRAME_R5,           /* 4  */
-    "r6",       FRAME_R6,           /* 5  */
-    "r7",       FRAME_R7,           /* 6  */
-    "r8",       FRAME_R8,           /* 7  */
-    "r9",       FRAME_R9,           /* 8  */
-    "r10",      FRAME_R10,          /* 9  */
-    "r11",      FRAME_R11,          /* 10 */
-    "r12",      FRAME_R12,          /* 11 */
-    "r13",      FRAME_R13,          /* 12 */
-    "r14",      FRAME_R14,          /* 13 */
-    "r15",      FRAME_R15,          /* 14 */
-    "r16",      FRAME_R16,          /* 15 */
-    "r17",      FRAME_R17,          /* 16 */
-    "r18",      FRAME_R18,          /* 17 */
-    "r19",      FRAME_R19,          /* 18 */
-    "r20",      FRAME_R20,          /* 19 */
-    "r21",      FRAME_R21,          /* 20 */
-    "r22",      FRAME_R22,          /* 21 */
-    "r23",      FRAME_R23,          /* 22 */
-    "r24",      FRAME_R24,          /* 23 */
-    "r25",      FRAME_R25,          /* 24 */
-    "gp",       FRAME_GP,           /* 25 */
-    "sp",       FRAME_SP,           /* 26 */
-    "fp",       FRAME_FP,           /* 27 */
-    "ra",       FRAME_RA,           /* 28 */
-    "lo",       FRAME_LO,           /* 29 */
-    "hi",       FRAME_HI,           /* 30 */
-    "status",   FRAME_STATUS,       /* 31 */
-    "pc",       FRAME_PC,           /* 32 */
+    { "r1",     FRAME_R1    },      /* 0  */
+    { "r2",     FRAME_R2    },      /* 1  */
+    { "r3",     FRAME_R3    },      /* 2  */
+    { "r4",     FRAME_R4    },      /* 3  */
+    { "r5",     FRAME_R5    },      /* 4  */
+    { "r6",     FRAME_R6    },      /* 5  */
+    { "r7",     FRAME_R7    },      /* 6  */
+    { "r8",     FRAME_R8    },      /* 7  */
+    { "r9",     FRAME_R9    },      /* 8  */
+    { "r10",    FRAME_R10   },      /* 9  */
+    { "r11",    FRAME_R11   },      /* 10 */
+    { "r12",    FRAME_R12   },      /* 11 */
+    { "r13",    FRAME_R13   },      /* 12 */
+    { "r14",    FRAME_R14   },      /* 13 */
+    { "r15",    FRAME_R15   },      /* 14 */
+    { "r16",    FRAME_R16   },      /* 15 */
+    { "r17",    FRAME_R17   },      /* 16 */
+    { "r18",    FRAME_R18   },      /* 17 */
+    { "r19",    FRAME_R19   },      /* 18 */
+    { "r20",    FRAME_R20   },      /* 19 */
+    { "r21",    FRAME_R21   },      /* 20 */
+    { "r22",    FRAME_R22   },      /* 21 */
+    { "r23",    FRAME_R23   },      /* 22 */
+    { "r24",    FRAME_R24   },      /* 23 */
+    { "r25",    FRAME_R25   },      /* 24 */
+    { "gp",     FRAME_GP    },      /* 25 */
+    { "sp",     FRAME_SP    },      /* 26 */
+    { "fp",     FRAME_FP    },      /* 27 */
+    { "ra",     FRAME_RA    },      /* 28 */
+    { "lo",     FRAME_LO    },      /* 29 */
+    { "hi",     FRAME_HI    },      /* 30 */
+    { "status", FRAME_STATUS},      /* 31 */
+    { "pc",     FRAME_PC    },      /* 32 */
 };
 
 REGLIST kregs[] = {
     // TODO
-    "r1",       FRAME_R1,           /* 0  */
-    "r2",       FRAME_R2,           /* 1  */
-    "r3",       FRAME_R3,           /* 2  */
-    "r4",       FRAME_R4,           /* 3  */
-    "r5",       FRAME_R5,           /* 4  */
-    "r6",       FRAME_R6,           /* 5  */
-    "sp",       FRAME_SP,           /* 26 */
+    { "r1",     FRAME_R1    },      /* 0  */
+    { "r2",     FRAME_R2    },      /* 1  */
+    { "r3",     FRAME_R3    },      /* 2  */
+    { "r4",     FRAME_R4    },      /* 3  */
+    { "r5",     FRAME_R5    },      /* 4  */
+    { "r6",     FRAME_R6    },      /* 5  */
+    { "sp",     FRAME_SP    },      /* 26 */
 };
+
+static void
+printmap(s, amap)
+    char    *s;
+    MAP     *amap;
+{
+    int file;
+
+    file = amap->ufd;
+    print("%s%12t`%s'\n", s, file < 0 ? "-" :
+                             file == fcor ? corfil : symfil);
+    print("b1 = %-16Q", amap->b1);
+    print("e1 = %-16Q", amap->e1);
+    print("f1 = %-16Q", amap->f1);
+    if (amap->bo) {
+        print("\n\t{ bo = %-16Q", amap->bo);
+        print("eo = %-16Q", amap->eo);
+        print("fo = %-16Q}", amap->fo);
+    }
+    print("\nb2 = %-16Q", amap->b2);
+    print("e2 = %-16Q", amap->e2);
+    print("f2 = %-16Q", amap->f2);
+    printc(EOR);
+}
+
+static void
+printregs()
+{
+    register REGPTR p;
+    int v;
+
+    if (kernel) {
+        for (p=kregs; p<&kregs[7]; p++) {
+            v = corhdr[p->roffs];
+            print("%s%8t%o%8t", p->rname, v);
+            valpr(v, DSYM);
+            printc(EOR);
+        }
+    } else {
+        for (p=reglist; p < &reglist[NREG]; p++) {
+            v = uar0[p->roffs];
+            print("%s%8t%o%8t", p->rname, v);
+            valpr(v, (p->roffs == FRAME_PC) ? ISYM : DSYM);
+            printc(EOR);
+        }
+        printpc();
+    }
+}
 
 /*
  * general printing routines ($)
@@ -89,7 +137,7 @@ printtrace(modif)
     u_int   dynam;
     register BKPTR bkptr;
     char    hi, lo;
-    int     word, stack;
+    int     word, stack = 0;
     char    *comptr;
     long    argp, frame, link;
     register struct SYMbol  *symp;
@@ -355,52 +403,6 @@ printtrace(modif)
     }
 }
 
-printmap(s, amap)
-    char    *s;
-    MAP     *amap;
-{
-    int file;
-
-    file = amap->ufd;
-    print("%s%12t`%s'\n", s, file < 0 ? "-" :
-                             file == fcor ? corfil : symfil);
-    print("b1 = %-16Q", amap->b1);
-    print("e1 = %-16Q", amap->e1);
-    print("f1 = %-16Q", amap->f1);
-    if (amap->bo) {
-        print("\n\t{ bo = %-16Q", amap->bo);
-        print("eo = %-16Q", amap->eo);
-        print("fo = %-16Q}", amap->fo);
-    }
-    print("\nb2 = %-16Q", amap->b2);
-    print("e2 = %-16Q", amap->e2);
-    print("f2 = %-16Q", amap->f2);
-    printc(EOR);
-}
-
-printregs()
-{
-    register REGPTR p;
-    int v;
-
-    if (kernel) {
-        for (p=kregs; p<&kregs[7]; p++) {
-            v = corhdr[p->roffs];
-            print("%s%8t%o%8t", p->rname, v);
-            valpr(v, DSYM);
-            printc(EOR);
-        }
-    } else {
-        for (p=reglist; p < &reglist[NREG]; p++) {
-            v = uar0[p->roffs];
-            print("%s%8t%o%8t", p->rname, v);
-            valpr(v, (p->roffs == FRAME_PC) ? ISYM : DSYM);
-            printc(EOR);
-        }
-        printpc();
-    }
-}
-
 int
 getreg(regnam)
 {
@@ -420,6 +422,7 @@ getreg(regnam)
     return NOREG;
 }
 
+void
 printpc()
 {
     dot = uar0[FRAME_PC];
@@ -428,6 +431,7 @@ printpc()
     printc(EOR);
 }
 
+void
 sigprint()
 {
     if (signo >= 0 && signo < NSIG)

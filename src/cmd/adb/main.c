@@ -85,8 +85,8 @@ main(argc, argv)
         myname = "adb";
     mynamelen = strlen(myname);
 
-    gtty(0, &adbtty);
-    gtty(0, &usrtty);
+    ioctl(0, TIOCGETP, &adbtty);
+    ioctl(0, TIOCGETP, &usrtty);
     while (argc > 1) {
         if (! strcmp("-w", argv[1])) {
             wtflag = 2;
@@ -179,6 +179,7 @@ main(argc, argv)
     }
 }
 
+void
 done()
 {
     endpcs();

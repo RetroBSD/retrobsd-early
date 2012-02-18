@@ -1,5 +1,5 @@
 #include "defs.h"
-#include <sys/file.h>
+#include <fcntl.h>
 
 MAP     txtmap;
 MAP     datmap;
@@ -27,6 +27,28 @@ off_t   symoff, stroff;
 
 extern long var[];
 
+static int
+getfile(filnam, cnt)
+    char    *filnam;
+    int     cnt;
+{
+    register int f;
+
+    if (strcmp("-", filnam)) {
+        f = open(filnam, wtflag);
+        if (f < 0 && argcount > cnt) {
+            if (wtflag)
+                f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
+            if (f < 0)
+                print("cannot open `%s'\n", filnam);
+        }
+    } else {
+        f = -1;
+    }
+    return f;
+}
+
+void
 setsym()
 {
     struct exec hdr;
@@ -72,6 +94,7 @@ setsym()
     }
 }
 
+void
 setcor()
 {
     fcor = getfile(corfil, 2);
@@ -142,24 +165,4 @@ setcor()
     } else {
         datmap.e1 = maxfile;
     }
-}
-
-getfile(filnam, cnt)
-    char    *filnam;
-    int     cnt;
-{
-    register int f;
-
-    if (strcmp("-", filnam)) {
-        f = open(filnam, wtflag);
-        if (f < 0 && argcount > cnt) {
-            if (wtflag)
-                f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
-            if (f < 0)
-                print("cannot open `%s'\n", filnam);
-        }
-    } else {
-        f = -1;
-    }
-    return f;
 }

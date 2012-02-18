@@ -177,6 +177,7 @@ int     sigpause (int mask);
 int     sigblock (int mask);
 int     sigsetmask (int mask);
 int     sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+int     siginterrupt(int sig, int flag);
 
 #define	BADSIG	SIG_ERR
 

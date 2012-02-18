@@ -12,7 +12,7 @@ SRCS		= ${STDSRC}
 OBJS		= ${STDOBJ}
 
 STDSRC		= abort.c alarm.c atof.c atoi.c atol.c calloc.c closedir.c crypt.c \
-		  ctime.c ctype_.c daemon.c devname.c err.c \
+		  ctime.c ctype_.c daemon.c devname.c ecvt.c err.c \
 		  execvp.c fakcu.c frexp.c fstab.c gcvt.c getenv.c getgrent.c \
                   getgrgid.c getgrnam.c getlogin.c \
 		  getgrouplist.c gethostname.c getpagesize.c \
@@ -29,7 +29,7 @@ STDSRC		= abort.c alarm.c atof.c atoi.c atol.c calloc.c closedir.c crypt.c \
 		  strdup.c uname.c wait.c wait3.c waitpid.c
 
 STDOBJ		= abort.o alarm.o atof.o atoi.o atol.o calloc.o closedir.o crypt.o \
-		  ctime.o ctype_.o daemon.o devname.o err.o \
+		  ctime.o ctype_.o daemon.o devname.o ecvt.o err.o \
 		  execvp.o fakcu.o frexp.o fstab.o gcvt.o getenv.o getgrent.o \
                   getgrgid.o getgrnam.o getlogin.o \
 		  getgrouplist.o gethostname.o getpagesize.o \

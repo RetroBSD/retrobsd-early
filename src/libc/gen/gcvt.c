@@ -2,8 +2,7 @@
  * gcvt  - Floating output conversion to
  * minimal length string
  */
-
-char	*ecvt();
+#include <stdlib.h>
 
 char *
 gcvt(number, ndigit, buf)

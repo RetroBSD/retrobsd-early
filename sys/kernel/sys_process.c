@@ -46,7 +46,7 @@ ptrace()
 	setrun(p);
 	while (ipc.ip_req > 0)
 		sleep((caddr_t)&ipc, PZERO);
-	u.u_rval = (short)ipc.ip_data;
+	u.u_rval = ipc.ip_data;
 	if (ipc.ip_req < 0)
 		u.u_error = EIO;
 	ipc.ip_lock = 0;
