@@ -2,19 +2,6 @@
 #include <ctype.h>
 #include <sys/wait.h>
 
-int     mkfault;
-char    *lp;
-char    *printptr;
-int     maxoff;
-char    *errflg;
-char    lastc;
-long    dot;
-int     dotinc;
-
-extern struct SYMbol *symbol;
-extern char printbuf[];
-extern long var[];
-
 void
 scanform(icount, ifp, itype, ptype)
     long    icount;
@@ -96,7 +83,7 @@ exform(fcount, ifp, itype, ptype)
     u_int   w;
     long    savdot, wx;
     char    *fp = 0;
-    char    c, modifier, longpr;
+    int     c, modifier, longpr;
     struct {
         long    sa;
         int     sb, sc;
@@ -111,11 +98,10 @@ exform(fcount, ifp, itype, ptype)
             w = dot;
         } else {
             w = get(dot, itype);
-            if (longpr) {
-                wx = itol(w, get(inkdot(2), itype));
-            } else {
-                wx = w;
-            }
+            //if (longpr)
+            //    wx = itol(w, get(inkdot(2), itype));
+            //else
+            wx = w;
         }
         if (c == 'F') {
             fw.sb = get(inkdot(4), itype);
@@ -127,7 +113,7 @@ exform(fcount, ifp, itype, ptype)
             error((char *)0);
         var[0] = wx;
         modifier = *fp++;
-        dotinc = (longpr ? 4 : 2);
+        dotinc = 4;
 
         if (! (printptr - printbuf) && modifier != 'a')
             print("%16m");
@@ -172,7 +158,7 @@ exform(fcount, ifp, itype, ptype)
             break;
 
         case 'b': case 'B':
-            print("%-8o", w & LOBYTE);
+            print("%-4x", w & LOBYTE);
             dotinc = 1;
             break;
 

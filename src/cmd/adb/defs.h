@@ -25,7 +25,7 @@
 #define LINSIZ          512
 
 #define LPRMODE         "%Q"
-#define OFFMODE         "+%o"
+#define OFFMODE         "+%x"
 
 /*
  * This is the memory resident portion of a symbol.  The only difference
@@ -36,9 +36,9 @@
  * even the kernel's symbol table of ~28kb only has a strings table of 21kb.
  */
 struct  SYMbol {
-    u_short value;
-    char    type;
-    u_short soff;           /* low order of string table offset */
+    u_int value;
+    u_int type;
+    char *sname;
 };
 
 #define SYMTYPE(symflag) (( symflag>=041 || (symflag>=02 && symflag<=04))\
@@ -53,15 +53,12 @@ typedef struct user     U;
 
 /* file address maps */
 struct map {
-    long    b1;
-    long    e1;
-    long    f1;
-    long    bo;
-    long    eo;
-    long    fo;
-    long    b2;
-    long    e2;
-    long    f2;
+    long    b1;         /* text base address */
+    long    e1;         /* text end address */
+    long    f1;         /* file start to text offset */
+    long    b2;         /* data base address */
+    long    e2;         /* data end address */
+    long    f2;         /* file start to data offset */
     int     ufd;
 };
 
@@ -80,7 +77,6 @@ struct reglist {
     int     roffs;
 };
 typedef struct reglist REGLIST;
-typedef REGLIST *REGPTR;
 
 /*
  * Internal variables ---
@@ -116,20 +112,18 @@ typedef REGLIST *REGPTR;
 #define NREG            FRAME_WORDS
 
 /*
- * UAR0 is the value used for subprocesses when there is no core file.
- * If it doesn't correspond to reality, use pstat -u on a core file to
- * get uar0, subtract 0140000, and divide by 2 (sizeof int).
+ * UFRAME is the value used for subprocesses when there is no core file.
  */
-#define UAR0    (&corhdr[USIZE/sizeof(u_int) - 3]) /* default address of r0 (u.u_ar0) */
+#define UFRAME  (&corhdr[1])            /* default address of r0 (u.u_frame) */
 
-#define KR0     (0300/2)       /* location of r0 in kernel dump */
+#define KR0     (0300/2)                /* location of r0 in kernel dump */
 #define KR1     (KR0+1)
 #define KR2     (KR0+2)
 #define KR3     (KR0+3)
 #define KR4     (KR0+4)
 #define KR5     (KR0+5)
 #define KSP     (KR0+6)
-#define KA6     (KR0+7)       /* saved ka6 in kernel dump */
+#define KA6     (KR0+7)                 /* saved ka6 in kernel dump */
 
 #define MAXOFF  255
 #define MAXPOS  80
@@ -145,21 +139,76 @@ typedef REGLIST *REGPTR;
 #define TB      '\t'
 #define EOR     '\n'
 #define QUOTE   0200
-#define EVEN    (~1)
+#define ALIGNED (~3)
 
 /* long to ints and back (puns) */
-union {
-    int  I[2];
-    long L;
-} itolws;
-
 #define leng(a)         ((long)((unsigned)(a)))
-#define shorten(a)      ((int)(a))
-#define itol(a,b)       (itolws.I[0]=(a), itolws.I[1]=(b), itolws.L)
+#define shorten(a)      ((int)a)
 
 struct sgttyb adbtty, usrtty;
 jmp_buf erradb;
 sig_t sigint, sigqit;
+
+MAP     txtmap;
+MAP     datmap;
+
+BKPTR   bkpthead;       /* breakpoints */
+
+struct SYMbol *symbol;
+
+extern u_int *uframe;
+const char *errflg;
+char    *lp;
+char    *myname;        /* program name */
+char    *printptr;
+extern char *Ipath;
+extern char *symfil;
+extern char *corfil;
+char    printbuf[MAXLIN];
+int     wtflag;
+int     pid;
+int     executing;
+int     fcor;
+int     fsym;
+int     mkfault;
+int     dotinc;
+int     adrflg;
+int     cntflg;
+int     lastframe;
+int     kernel;
+int     callpc;
+int     octal;
+int     localok;
+int     maxoff;
+int     maxpos;
+int     eof;
+int     infile;
+int     argcount;
+int     magic;
+int     signo;
+extern int lastc;
+extern int lastcom;
+extern int outfile;
+long    dot;
+long    ditto;
+long    expv;
+long    adrval;
+long    cntval;
+long    localval;
+long    maxfile;
+long    txtsiz;
+long    datsiz;
+long    datbas;
+long    stksiz;
+long    entrypt;
+long    loopcnt;
+
+long    var[36];
+u_int   corhdr [USIZE/sizeof(u_int)];
+
+off_t   symoff;
+
+extern const REGLIST reglist [];
 
 extern const char BADMOD[];
 extern const char BADCOM[];

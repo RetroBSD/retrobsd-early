@@ -1,21 +1,8 @@
+/*
+ * Sub process control
+ */
 #include "defs.h"
 
-/* breakpoints */
-BKPTR   bkpthead;
-
-char    *lp;
-char    lastc;
-u_int   corhdr [USIZE/sizeof(u_int)];
-MAP     txtmap;
-int     signo;
-long    dot;
-int     pid;
-long    cntval;
-long    loopcnt;
-
-/*
- * sub process control
- */
 void
 subpcs(modif)
 {

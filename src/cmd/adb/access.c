@@ -1,14 +1,7 @@
+/*
+ * File handling and access routines
+ */
 #include "defs.h"
-
-MAP     txtmap;
-MAP     datmap;
-int     wtflag;
-const char *errflg;
-int     pid;
-
-extern long     var[];
-
-/* file handling and access routines */
 
 static int
 within(adr, lbd, ubd)
@@ -29,10 +22,6 @@ chkmap(adr, space)
     case ISP:
         if (within(*adr, amap->b1, amap->e1)) {
             *adr += (amap->f1) - (amap->b1);
-            break;
-        }
-        if (within(*adr, amap->bo, amap->eo)) {
-            *adr += (amap->fo) - (amap->bo);
             break;
         }
         /* falls through */
@@ -77,7 +66,7 @@ acces(mode, adr, space, value)
     rd = (mode == RD);
 
     if (pid) {                          /* tracing on? */
-        if ((adr & 01) && ! rd)
+        if ((adr & 3) && ! rd)
             error(ODDADR);
         pmode = (space & DSP) ?
                         (rd ? PT_READ_D : PT_WRITE_D) :
@@ -108,7 +97,7 @@ acces(mode, adr, space, value)
 
     file = (space & DSP) ? datmap.ufd : txtmap.ufd;
     if (lseek(file, adr, 0) == -1L ||
-        (rd ? read(file, &w, 2) : write(file, &value, 2)) < 1) {
+        (rd ? read(file, &w, 4) : write(file, &value, 4)) < 1) {
         errflg = (space & DSP) ? BADDAT : BADTXT;
     }
     return w;

@@ -1,15 +1,9 @@
+/*
+ * Symbol table and file handling service routines
+ */
 #include <stdio.h>
 #include "defs.h"
 #include <fcntl.h>
-
-struct  SYMbol  *symbol;
-char    localok;
-int     lastframe;
-u_int   maxoff;
-long    maxstor;
-MAP     txtmap;
-long    localval;
-char    *errflg;
 
 struct  SYMcache {
     char    *name;
@@ -28,11 +22,6 @@ static  FILE    *strfp;
 static  int     symcnt;
 static  int     symnum;
 
-extern  char    *myname, *symfil, *strdup();
-extern  off_t   symoff, stroff;
-
-/* symbol table and file handling service routines */
-
 u_int
 findsym(svalue, type)
     u_int   svalue;
@@ -44,7 +33,7 @@ findsym(svalue, type)
     int     i;
 
     value = svalue;
-    diff = 0377777L;
+    diff = 0xffffff;
 
     if (type != NSYM && symnum) {
         for (i = 0, sp = symtab; diff && i < symnum; i++, sp++) {
@@ -138,21 +127,66 @@ symget()
     return symbol;
 }
 
+static unsigned int
+fgetword (f)
+    register FILE *f;
+{
+        register unsigned int h;
+
+        h = getc (f);
+        h |= getc (f) << 8;
+        h |= getc (f) << 16;
+        h |= getc (f) << 24;
+        return h;
+}
+
+/*
+ * Read a symbol table entry.
+ * Return a number of bytes read, or -1 on EOF.
+ * Format of symbol record:
+ *  1 byte: length of name in bytes
+ *  1 byte: type of symbol (N_UNDF, N_ABS, N_TEXT, etc)
+ *  4 bytes: value
+ *  N bytes: name
+ */
+static int
+fgetsym (fi, name, value, type)
+        register FILE *fi;
+        register char *name;
+        unsigned *value, *type;
+{
+        register int len;
+        unsigned nbytes;
+
+        len = getc (fi);
+        if (len <= 0)
+                return -1;
+        *type = getc (fi);
+        *value = fgetword (fi);
+        nbytes = len + 6;
+        if (name) {
+                while (len-- > 0)
+                        *name++ = getc (fi);
+                *name = '\0';
+        } else
+                fseek (fi, len, SEEK_CUR);
+        return nbytes;
+}
+
 /*
  * This only _looks_ expensive ;-)  The extra scan over the symbol
- * table allows us to cut down the amount of memory needed.  This is
- * where symbols with string table offsets over 64kb are excluded.  Also,
- * a late addition to the program excludes register symbols - the assembler
+ * table allows us to cut down the amount of memory needed.
+ * A late addition to the program excludes register symbols - the assembler
  * generates *lots* of them and they're useless to us.
-*/
+ */
 void
 symINI(ex)
     struct exec *ex;
 {
     register struct SYMbol  *sp;
     register FILE   *fp;
-    struct  nlist   sym;
-    int     i, nused, globals_only = 0;
+    int     nused, globals_only = 0;
+    u_int   value, type;
 
     fp = fopen(symfil, "r");
     strfp = fp;
@@ -160,84 +194,71 @@ symINI(ex)
         return;
     fcntl(fileno(fp), F_SETFD, 1);
 
-    symnum = ex->a_syms / sizeof (sym);
-
+    /* First pass: count the number of symbols used. */
     fseek(fp, symoff, SEEK_SET);
     nused = 0;
-    for (i = 0; i < symnum; i++) {
-        fread(&sym, sizeof (sym), 1, fp);
-        if (sym.n_type == N_REG)
+    symnum = ex->a_syms;
+    while (symnum > 0) {
+        int nbytes = fgetsym(fp, 0, &value, &type);
+        if (nbytes <= 0)
+                break;
+        symnum -= nbytes;
+        if (type == N_REG)
             continue;
-        if ((unsigned) sym.n_name >= 0200000L) // TODO
-            print("symbol %d string offset > 64k - ignored\n", i);
-        else
-            nused++;
+        nused++;
     }
-    fseek(fp, symoff, SEEK_SET);
 
     symtab = (struct SYMbol *)malloc(nused * sizeof (struct SYMbol));
     if (! symtab) {
+        /* Second pass: count only globals. */
+        fseek(fp, symoff, SEEK_SET);
         globals_only = 1;
         nused = 0;
-        for (symcnt = 0; symcnt < symnum; symcnt++) {
-            fread(&sym, 1, sizeof (sym), fp);
-            if (sym.n_type == N_REG)
-                continue;
-            if ((sym.n_type & N_EXT) == 0)
-                continue;
-            if ((unsigned) sym.n_name >= 0200000L) // TODO
+        symnum = ex->a_syms;
+        while (symnum > 0) {
+            int nbytes = fgetsym(fp, 0, &value, &type);
+            if (nbytes <= 0)
+                    break;
+            symnum -= nbytes;
+            if (type == N_REG || ! (type & N_EXT))
                 continue;
             nused++;
         }
         symtab = (struct SYMbol *)malloc(nused * sizeof(struct SYMbol));
         if (! symtab) {
-            print("%s: no memory for symbols\n", myname);
+            print("%s: no memory for %d symbols\n", myname, nused);
             symnum = 0;
             return;
         }
     }
+
+    /* Third pass: read the symbols. */
     fseek(fp, symoff, SEEK_SET);
     sp = symtab;
-    for (symcnt = 0; symcnt < symnum; symcnt++) {
-        fread(&sym, 1, sizeof (sym), fp);
-        if (sym.n_type == N_REG)
+    symnum = ex->a_syms;
+    while (symnum > 0) {
+        char name[256];
+        int nbytes = fgetsym(fp, name, &value, &type);
+        if (nbytes <= 0)
+                break;
+        symnum -= nbytes;
+        if (type == N_REG)
             continue;
-        if (globals_only && !(sym.n_type & N_EXT))
+        if (globals_only && ! (type & N_EXT))
             continue;
-        if ((unsigned) sym.n_name >= 0200000L) // TODO
-            continue;
-        sp->value = sym.n_value;
-        sp->type = sym.n_type;
-        sp->soff = shorten ((unsigned) sym.n_name);
+        sp->value = value;
+        sp->type = type;
+        sp->sname = strdup(name);
         sp++;
+//print("%s = %08x (%x)\n", name, value, type);
     }
     symnum = nused;
-#ifdef  debug
+#if 1
     print("%d symbols loaded\n", nused);
 #endif
     if (globals_only)
         print("%s: could only do global symbols\n", myname);
     symset();
-}
-
-static char *
-sgets(soff)
-    u_short soff;
-{
-    static char symname[MAXSYMLEN + 2];
-    register char *buf = symname;
-    int c;
-    register int i;
-
-    fseek(strfp, stroff + soff, SEEK_SET);
-    for (i = 0; i < MAXSYMLEN; i++) {
-        c = getc(strfp);
-        *buf++ = c;
-        if (c == '\0')
-            break;
-    }
-    *buf = '\0';
-    return symname;
 }
 
 /*
@@ -268,11 +289,9 @@ cache_sym(symp)
         }
     }
     sc = current;
-    if (sc->name)
-        free(sc->name);
     sc->used = 1;
     sc->syment = symp;
-    sc->name = strdup(sgets(symp->soff));
+    sc->name = symp->sname;
     return sc->name;
 }
 
@@ -298,7 +317,7 @@ no_cache_sym(symp)
             return sc->name;
         }
     }
-    return sgets(symp->soff);
+    return symp->sname;
 }
 
 /*

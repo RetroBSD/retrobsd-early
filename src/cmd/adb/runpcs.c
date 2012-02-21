@@ -1,29 +1,11 @@
+/*
+ * Service routines for sub process control
+ */
 #include "defs.h"
 #include <fcntl.h>
 #include <sys/wait.h>
 
-char    *lp;
-BKPTR   bkpthead;
-char    lastc;
-u_int   *uar0;
-int     fcor;
-int     fsym;
-const char *errflg;
-int     signo;
-long    dot;
-char    *symfil;
-int     wtflag;
-int     pid;
-long    expv;
-int     adrflg;
-long    loopcnt;
-int     userpc=1;
-
-extern REGLIST reglist[];
-extern u_int corhdr[];
-extern long var[];
-
-/* service routines for sub process control */
+static int userpc = 1;
 
 int
 getsig(sig)
@@ -80,8 +62,8 @@ readregs()
     register u_int i;
 
     for (i=0; i<NREG; i++) {
-        uar0[reglist[i].roffs] = ptrace(PT_READ_U, pid,
-            (int *)((int)&uar0[reglist[i].roffs] - (int)&corhdr),
+        uframe[reglist[i].roffs] = ptrace(PT_READ_U, pid,
+            (int *)((int)&uframe[reglist[i].roffs] - (int)&corhdr),
             0);
     }
 }
@@ -125,9 +107,9 @@ runpcs(runmode, execsig)
         readregs();
 
         /* look for bkpt */
-        if (signo == 0 && (bkpt = scanbkpt(uar0[FRAME_PC] - 2))) {
+        if (signo == 0 && (bkpt = scanbkpt(uframe[FRAME_PC] - 2))) {
             /* stopped at bkpt */
-            userpc = uar0[FRAME_PC] = bkpt->loc;
+            userpc = uframe[FRAME_PC] = bkpt->loc;
             if (bkpt->flag == BKPTEXEC ||
                 ((bkpt->flag = BKPTEXEC, command(bkpt->comm, ':')) &&
                 --bkpt->count))

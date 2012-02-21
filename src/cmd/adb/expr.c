@@ -1,26 +1,9 @@
 #include "defs.h"
 #include <ctype.h>
 
-int     lastframe;
-int     kernel;
-int     savlastf;
-long    savframe;
-int     savpc;
-int     callpc;
-char    *lp;
-int     octal;
-char    *errflg;
-long    localval;
-char    lastc;
-u_int   *uar0;
-long    dot;
-long    ditto;
-int     dotinc;
-long    expv;
-
-extern struct SYMbol *symbol;
-extern long var[];
-extern u_int corhdr[];
+static int savlastf;
+static long savframe;
+static int savpc;
 
 static char isymbol[MAXSYMLEN + 2];
 
@@ -121,16 +104,16 @@ item(a)
     if (symchar(0)) {
         readsym();
         if (lastc == '.') {
-            frame = (kernel ? corhdr[KR5] : uar0[FRAME_R5]) & EVEN;
+            frame = (kernel ? corhdr[KR5] : uframe[FRAME_R5]) & ALIGNED;
             lastframe = 0;
-            callpc = kernel ? (-2) : uar0[FRAME_PC];
+            callpc = kernel ? (-2) : uframe[FRAME_PC];
             while (errflg == 0) {
                 savpc = callpc;
                 findroutine(frame);
                 if (eqsym(cache_sym(symbol), isymbol, '~'))
                     break;
                 lastframe = frame;
-                frame = get(frame, DSP) & EVEN;
+                frame = get(frame, DSP) & ALIGNED;
                 if (frame == 0) {
                     error(NOCFN);
                 }
@@ -209,7 +192,7 @@ item(a)
         savc = rdc();
         regptr = getreg(savc);
         if (regptr != NOREG) {
-            expv = uar0[regptr];
+            expv = uframe[regptr];
         } else if ((base = varchk(savc)) != -1) {
             expv = var[base];
         } else {

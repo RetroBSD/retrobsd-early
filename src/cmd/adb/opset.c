@@ -1,15 +1,7 @@
+/*
+ * Instruction printing
+ */
 #include "defs.h"
-
-char    *errflg;
-long    dot;
-int     dotinc;
-MAP     datmap;
-
-extern long var[];
-
-#undef  SINGLE
-
-/* instruction printing */
 
 #define DOUBLE  0
 #define DOUBLW  1

@@ -1,33 +1,8 @@
 #include "defs.h"
 
-char    *myname;        /* program name */
-int     argcount;
-int     mkfault;
-int     executing;
-int     infile;
-char    *lp;
-int     maxoff;
-int     maxpos;
-int     wtflag;
-int     kernel;
-long    maxfile;
-long    maxstor;
-long    txtsiz;
-long    datsiz;
-long    datbas;
-long    stksiz;
-const char *errflg;
-int     exitflg;
-int     magic;
-long    entrypt;
-char    lastc;
-int     eof;
-int     lastcom;
-long    var[36];
-char    *symfil;
-char    *corfil;
-char    *printptr;
-char    *Ipath = "/share/adb";
+char *Ipath = "/share/adb";
+
+static int exitflg;
 
 long
 roundn(a, b)
@@ -78,7 +53,6 @@ main(argc, argv)
     short   mynamelen;              /* length of program name */
 
     maxfile = 1L << 24;
-    maxstor = 1L << 16;
     if (isatty(0))
         myname = *argv;
     else

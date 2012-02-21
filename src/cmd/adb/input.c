@@ -1,13 +1,11 @@
+/*
+ * Input routines
+ */
 #include "defs.h"
 
-int     mkfault;
-char    line[LINSIZ];
-int     infile;
-char    *lp;
-char    lastc = EOR;
-int     eof;
+int lastc = EOR;
 
-/* input routines */
+static char line[LINSIZ];
 
 int
 eol(c)

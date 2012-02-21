@@ -1,38 +1,16 @@
+/*
+ * Command decoding
+ */
 #include "defs.h"
 
-MAP     txtmap;
-MAP     datmap;
+int lastcom = '=';
 
-int     executing;
-char    *lp;
-int     fcor;
-int     fsym;
-int     mkfault;
-const char *errflg;
-char    lastc;
-char    eqformat[512] = "o";
-char    stformat[512] = "o\"= \"^i";
-u_int   *uar0;
-long    dot;
-long    ditto;
-int     dotinc;
-int     lastcom = '=';
-long    locval;
-long    locmsk;
-int     pid;
-long    expv;
-long    adrval;
-int     adrflg;
-long    cntval;
-int     cntflg;
+static char eqformat[512] = "o";
+static char stformat[512] = "o\"= \"^i";
 
-extern u_int corhdr[];
-extern long var[];
-extern char *myname;
+static long locval;
+static long locmsk;
 
-/*
- * command decoding
- */
 int
 command(buf, defcom)
     char    *buf;
@@ -154,7 +132,7 @@ trypr:
                 for (;;) {
                     w = leng(get(dot, itype));
                     if (longpr) {
-                        w = itol(w, get(inkdot(2), itype));
+                        //w = itol(w, get(inkdot(2), itype));
                     }
                     if (errflg || mkfault || (w & locmsk) == locval)
                         break;
@@ -211,9 +189,9 @@ trypr:
             savc = rdc();
             regptr = getreg(savc);
             if (regptr != NOREG) {
-                uar0[regptr] = shorten(dot);
-                ptrace(PT_WRITE_U, pid, &uar0[regptr] - (int)&corhdr,
-                    uar0[regptr]);
+                uframe[regptr] = shorten(dot);
+                ptrace(PT_WRITE_U, pid, &uframe[regptr] - (int)&corhdr,
+                    uframe[regptr]);
             } else if ((modifier = varchk(savc)) != -1) {
                 var[modifier] = dot;
             } else {

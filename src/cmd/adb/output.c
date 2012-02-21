@@ -1,14 +1,9 @@
 #include "defs.h"
 
-int     mkfault;
-int     infile;
 int     outfile = 1;
-int     maxpos;
-char    printbuf[MAXLIN];
 char    *printptr = printbuf;
-char    *digitptr;
 
-extern long var[];
+static char *digitptr;
 
 void
 printc(c)
@@ -145,35 +140,26 @@ printoct(o, s)
 }
 
 static void
-printdbl(lx, ly, fmat, base)
-    int     lx, ly;
-    char    fmat;
-    int     base;
+printlong(lx, fmat, base)
+    long    lx;
+    int     fmat, base;
 {
     int digs[20], *dptr;
     char k;
-    double  f, g;
-    long q;
+    unsigned long f, g;
 
     dptr = digs;
-    if (fmat != 'D') {
-        f = leng(lx);
-        f *= itol(1, 0);
-        f += leng(ly);
-        if (fmat == 'x')
-             *digitptr++ = '#';
-    } else {
-        f = itol(lx, ly);
-        if (f < 0) {
-            *digitptr++ = '-';
-            f = -f;
-        }
+    f = lx;
+    if (fmat == 'x')
+        *digitptr++ = '#';
+    else if (fmat == 'D' && lx < 0) {
+        *digitptr++ = '-';
+        f = -lx;
     }
     while (f) {
-        q = f / base;
-        g = q;
+        g = f / base;
         *dptr++ = f - g * base;
-        f = q;
+        f = g;
     }
     if (dptr == digs) {
         *dptr++ = 0;
@@ -240,7 +226,8 @@ print(char *fmat, ...)
                 prec = -1;
 
             digitptr = digits;
-            dptr = (long*) (rptr = (double*) vptr);
+            rptr = (double*) vptr;
+            dptr = (long*) vptr;
             lx = *dptr;
             x = *vptr++;
             s = 0;
@@ -250,35 +237,34 @@ print(char *fmat, ...)
                 printnum(x, c, 10);
                 break;
             case 'o':
-                printoct(0, x, 0);
+                printoct((long) (unsigned) x, 0);
                 break;
             case 'q':
-                lx = x;
-                printoct(lx, -1);
+                printlong((long) (unsigned) x, 'x', 16);
                 break;
             case 'x':
-                printdbl(0, x, c, 16);
+                printlong((long) (unsigned) x, c, 16);
                 break;
             case 'Y':
                 printdate(lx);
-                vptr++;
+                //vptr++;
                 break;
             case 'D':
             case 'U':
-                printdbl(lx, c, 10);
-                vptr++;
+                printlong(lx, c, 10);
+                //vptr++;
                 break;
             case 'O':
                 printoct(lx, 0);
-                vptr++;
+                //vptr++;
                 break;
             case 'Q':
-                printoct(lx, -1);
-                vptr++;
+                printlong(lx, 'x', 16);
+                //vptr++;
                 break;
             case 'X':
-                printdbl(lx, 'x', 16);
-                vptr++;
+                printlong(lx, 'x', 16);
+                //vptr++;
                 break;
             case 'c':
                 printc(x);
@@ -288,7 +274,7 @@ print(char *fmat, ...)
                 break;
             case 'f':
             case 'F':
-                vptr += 7;
+                //vptr += 7;
                 s = ecvt(*rptr, prec, &decpt, &n);
                 *digitptr++ = (n?'-':'+');
                 *digitptr++ = (decpt <= 0) ? '0' : *s++;

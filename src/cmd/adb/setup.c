@@ -1,31 +1,11 @@
 #include "defs.h"
 #include <fcntl.h>
 
-MAP     txtmap;
-MAP     datmap;
-int     wtflag;
-int     kernel;
-int     fcor;
-int     fsym;
-long    maxfile;
-long    maxstor;
-long    txtsiz;
-long    datsiz;
-long    bss;
-long    datbas;
-long    stksiz;
-char    *errflg;
-int     magic;
-long    entrypt;
-int     argcount;
-int     signo;
-u_int   corhdr[USIZE/sizeof(u_int)];
-u_int   *uar0 = UAR0;
+u_int   *uframe = UFRAME;
 char    *symfil  = "a.out";
 char    *corfil  = "core";
-off_t   symoff, stroff;
 
-extern long var[];
+static long bss;
 
 static int
 getfile(filnam, cnt)
@@ -66,18 +46,14 @@ setsym()
 
         txtmap.f1 = N_TXTOFF(hdr);
         symoff = N_SYMOFF(hdr);
-        // TODO: stroff = N_STROFF(hdr);
 
         switch (magic) {
-        case 0407:
-            txtmap.e1 = txtmap.e2 = txtsiz+datsiz;
+        case OMAGIC:                    /* 0407 */
+            txtmap.b1 = USER_DATA_START;
+            txtmap.e1 = USER_DATA_START + txtsiz + datsiz;
+            txtmap.b2 = txtmap.b1;
+            txtmap.e2 = txtmap.e1;
             txtmap.f2 = txtmap.f1;
-            break;
-        case 0405:
-        case 0411:
-            txtmap.e1 = txtsiz;
-            txtmap.e2 = datsiz;
-            txtmap.f2 = txtsiz + txtmap.f1;
             break;
         default:
             magic = 0;
@@ -101,38 +77,27 @@ setcor()
     datmap.ufd = fcor;
     if (read(fcor, corhdr, sizeof corhdr) == sizeof corhdr) {
         if (! kernel) {
-            txtsiz = ((U*)corhdr)->u_tsize << 6;
-            datsiz = ((U*)corhdr)->u_dsize << 6;
-            stksiz = ((U*)corhdr)->u_ssize << 6;
+            txtsiz = ((U*)corhdr)->u_tsize;
+            datsiz = ((U*)corhdr)->u_dsize;
+            stksiz = ((U*)corhdr)->u_ssize;
             datmap.f1 = USIZE;
-            datmap.b2 = maxstor-stksiz;
-            datmap.e2 = maxstor;
+            datmap.b2 = USER_DATA_END - stksiz;
+            datmap.e2 = USER_DATA_END;
         } else {
-            datsiz = roundn(datsiz + bss, 64L);
+            datsiz = datsiz + bss;
             stksiz = (long) USIZE;
             datmap.f1 = 0;
             datmap.b2 = 0140000L;
             datmap.e2 = 0140000L + USIZE;
         }
         switch (magic) {
-        case 0407:
-            datmap.b1 = 0;
-            datmap.e1 = txtsiz + datsiz;
+        case OMAGIC:                    /* 0407 */
+            datmap.b1 = USER_DATA_START;
+            datmap.e1 = USER_DATA_START + txtsiz + datsiz;
             if (kernel) {
                 datmap.f2 = (long)corhdr[KA6] * 0100L;
             } else {
                 datmap.f2 = USIZE + txtsiz + datsiz;
-            }
-            break;
-
-        case 0405:
-        case 0411:
-            datmap.b1 = 0;
-            datmap.e1 = datsiz;
-            if (kernel) {
-                datmap.f2 = (long)corhdr[KA6] * 0100L;
-            } else {
-                datmap.f2 = datsiz + USIZE;
             }
             break;
 
@@ -146,22 +111,15 @@ setcor()
             datmap.f2 = 0;
         }
         datbas = datmap.b1;
-#if 0
         if (! kernel && magic) {
-            /*
-             * Note that we can no longer compare the magic
-             * number of the core against that of the object
-             * since the user structure no longer contains
-             * the exec header ...
-             */
-            register u_int *ar0;
-            ar0 = (u_int *)(((U *)corhdr)->u_ar0);
-            if (ar0 > (u_int *)0140000
-                && ar0 < (u_int *)(0140000 + USIZE)
-                && !((unsigned)ar0&01))
-                uar0 = (u_int *)&corhdr[ar0-(u_int *)0140000];
+            register u_int *frame;
+            frame = (u_int*) ((U*)corhdr)->u_frame;
+            if (frame > (u_int*) (KERNEL_DATA_END - USIZE) &&
+                frame < (u_int*) KERNEL_DATA_END &&
+                ! ((unsigned)frame & 3))
+                uframe = (u_int*) &corhdr[frame -
+                                          (u_int*) (KERNEL_DATA_END - USIZE)];
         }
-#endif
     } else {
         datmap.e1 = maxfile;
     }

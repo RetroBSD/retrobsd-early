@@ -1,12 +1,5 @@
 #include "defs.h"
 
-int     callpc;
-char    localok;
-long    var[36];
-const char *errflg;
-
-extern struct SYMbol *symbol;
-
 int
 findroutine(cframe)
     long cframe;
