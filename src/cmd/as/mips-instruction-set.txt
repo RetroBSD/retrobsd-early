@@ -9,88 +9,88 @@ ADD         Integer Add                                 Rd = Rs + Rt
 
 ADDI        Integer Add Immediate                       Rt = Rs + Immed
 
-ADDIU       Unsigned Integer Add Immediate              Rt = Rs +U Immed
+ADDIU       Unsigned Integer Add Immediate              Rt = Rs +u Immed
 
 ADDIUPC     Unsigned Integer Add Immediate to PC
             (MIPS16e only)                              Rt = PC +u Immed
 
-ADDU        Unsigned Integer Add                        Rd = Rs +U Rt
+ADDU        Unsigned Integer Add                        Rd = Rs +u Rt
 
 AND         Logical AND                                 Rd = Rs & Rt
 
-ANDI        Logical AND Immediate                       Rt = Rs & (016 || Immed)
+ANDI        Logical AND Immediate                       Rt = Rs & Immed[15:0]
 
 B           Unconditional Branch
-            (Assembler idiom for: BEQ r0, r0, offset)   PC += (int)offset
+            (Assembler idiom for: BEQ r0, r0, offset)   PC += (signed)offset
 
 BAL         Branch and Link                             GPR[31] = PC + 8
-            (Assembler idiom for: BGEZAL r0, offset)    PC += (int)offset
+            (Assembler idiom for: BGEZAL r0, offset)    PC += (signed)offset
 
 BEQ         Branch On Equal                             if Rs == Rt
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BEQL        Branch On Equal Likely                      if Rs == Rt
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BGEZ        Branch on Greater Than or Equal To Zero     if !Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BGEZAL      Branch on Greater Than or                   GPR[31] = PC + 8
             Equal To Zero And Link                      if !Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BGEZALL     Branch on Greater Than or                   GPR[31] = PC + 8
             Equal To Zero And Link Likely               if !Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BGEZL       Branch on Greater Than or                   if !Rs[31]
-            Equal To Zero Likely                            PC += (int)offset
+            Equal To Zero Likely                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BGTZ        Branch on Greater Than Zero                 if !Rs[31] && Rs != 0
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BGTZL       Branch on Greater Than Zero Likely          if !Rs[31] && Rs != 0
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BLEZ        Branch on Less Than or Equal to Zero        if Rs[31] || Rs == 0
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BLEZL       Branch on Less Than or Equal to Zero Likely if Rs[31] || Rs == 0
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BLTZ        Branch on Less Than Zero                    if Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BLTZAL      Branch on Less Than Zero And Link           GPR[31] = PC + 8
                                                         if Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BLTZALL     Branch on Less Than Zero And Link Likely    GPR[31] = PC + 8
                                                         if Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BLTZL       Branch on Less Than Zero Likely             if Rs[31]
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
 BNE         Branch on Not Equal                         if Rs != Rt
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
 
 BNEL        Branch on Not Equal Likely                  if Rs != Rt
-                                                            PC += (int)offset
+                                                            PC += (signed)offset
                                                         else
                                                             Ignore Next Instruction
 
@@ -107,8 +107,8 @@ DERET       Return from Debug Exception                 PC = DEPC
 
 DI          Atomically Disable Interrupts               Rt = Status; Status.IE = 0
 
-DIV         Divide                                      LO = (int)Rs / (int)Rt
-                                                        HI = (int)Rs % (int)Rt
+DIV         Divide                                      LO = (signed)Rs / (signed)Rt
+                                                        HI = (signed)Rs % (signed)Rt
 
 DIVU        Unsigned Divide                             LO = (uns)Rs / (uns)Rt
                                                         HI = (uns)Rs % (uns)Rt
@@ -177,7 +177,7 @@ LWL         Load Word Left                              See Architecture Referen
 
 LWR         Load Word Right                             See Architecture Reference Manual
 
-MADD        Multiply-Add                                HI | LO += (int)Rs * (int)Rt
+MADD        Multiply-Add                                HI | LO += (signed)Rs * (signed)Rt
 
 MADDU       Multiply-Add Unsigned                       HI | LO += (uns)Rs * (uns)Rt
 
@@ -193,7 +193,7 @@ MOVN        Move Conditional on Not Zero                if Rt != 0 then
 MOVZ        Move Conditional on Zero                    if Rt = 0 then
                                                             Rd = Rs
 
-MSUB        Multiply-Subtract                           HI | LO -= (int)Rs * (int)Rt
+MSUB        Multiply-Subtract                           HI | LO -= (signed)Rs * (signed)Rt
 
 MSUBU       Multiply-Subtract Unsigned                  HI | LO -= (uns)Rs * (uns)Rt
 
@@ -204,9 +204,9 @@ MTHI        Move To HI                                  HI = Rs
 MTLO        Move To LO                                  LO = Rs
 
 MUL         Multiply with register write                HI | LO = Unpredictable
-                                                        Rd = ((int)Rs * (int)Rt) [31:0]
+                                                        Rd = ((signed)Rs * (signed)Rt) [31:0]
 
-MULT        Integer Multiply                            HI | LO = (int)Rs * (int)Rd
+MULT        Integer Multiply                            HI | LO = (signed)Rs * (signed)Rd
 
 MULTU       Unsigned Multiply                           HI | LO = (uns)Rs * (uns)Rd
 
@@ -253,12 +253,12 @@ SLL         Shift Left Logical                          Rd = Rt << sa
 
 SLLV        Shift Left Logical Variable                 Rd = Rt << Rs[4:0]
 
-SLT         Set on Less Than                            if (int)Rs < (int)Rt
+SLT         Set on Less Than                            if (signed)Rs < (signed)Rt
                                                             Rd = 1
                                                         else
                                                             Rd = 0
 
-SLTI        Set on Less Than Immediate                  if (int)Rs < (int)Immed
+SLTI        Set on Less Than Immediate                  if (signed)Rs < (signed)Immed
                                                             Rt = 1
                                                         else
                                                             Rt = 0
@@ -273,9 +273,9 @@ SLTU        Set on Less Than Unsigned                   if (uns)Rs < (uns)Immed
                                                         else
                                                             Rd = 0
 
-SRA         Shift Right Arithmetic                      Rd = (int)Rt >> sa
+SRA         Shift Right Arithmetic                      Rd = (signed)Rt >> sa
 
-SRAV        Shift Right Arithmetic Variable             Rd = (int)Rt >> Rs[4:0]
+SRAV        Shift Right Arithmetic Variable             Rd = (signed)Rt >> Rs[4:0]
 
 SRL         Shift Right Logical                         Rd = (uns)Rt >> sa
 
@@ -283,7 +283,7 @@ SRLV        Shift Right Logical Variable                Rd = (uns)Rt >> Rs[4:0]
 
 SSNOP       Superscalar Inhibit No Operation            NOP
 
-SUB         Integer Subtract                            Rt = (int)Rs - (int)Rd
+SUB         Integer Subtract                            Rt = (signed)Rs - (signed)Rd
 
 SUBU        Unsigned Subtract                           Rt = (uns)Rs - (uns)Rd
 
@@ -300,13 +300,13 @@ SYSCALL     System Call                                 SystemCallException
 TEQ         Trap if Equal                               if Rs == Rt
                                                             TrapException
 
-TEQI        Trap if Equal Immediate                     if Rs == (int)Immed
+TEQI        Trap if Equal Immediate                     if Rs == (signed)Immed
                                                             TrapException
 
-TGE         Trap if Greater Than or Equal               if (int)Rs >= (int)Rt
+TGE         Trap if Greater Than or Equal               if (signed)Rs >= (signed)Rt
                                                             TrapException
 
-TGEI        Trap if Greater Than or Equal Immediate     if (int)Rs >= (int)Immed
+TGEI        Trap if Greater Than or Equal Immediate     if (signed)Rs >= (signed)Immed
                                                             TrapException
 
 TGEIU       Trap if Greater Than or                     if (uns)Rs >= (uns)Immed
@@ -315,10 +315,10 @@ TGEIU       Trap if Greater Than or                     if (uns)Rs >= (uns)Immed
 TGEU        Trap if Greater Than or Equal Unsigned      if (uns)Rs >= (uns)Rt
                                                             TrapException
 
-TLT         Trap if Less Than                           if (int)Rs < (int)Rt
+TLT         Trap if Less Than                           if (signed)Rs < (signed)Rt
                                                             TrapException
 
-TLTI        Trap if Less Than Immediate                 if (int)Rs < (int)Immed
+TLTI        Trap if Less Than Immediate                 if (signed)Rs < (signed)Immed
                                                             TrapException
 
 TLTIU       Trap if Less Than Immediate Unsigned        if (uns)Rs < (uns)Immed
@@ -330,7 +330,7 @@ TLTU        Trap if Less Than Unsigned                  if (uns)Rs < (uns)Rt
 TNE         Trap if Not Equal                           if Rs != Rt
                                                             TrapException
 
-TNEI        Trap if Not Equal Immediate                 if Rs != (int)Immed
+TNEI        Trap if Not Equal Immediate                 if Rs != (signed)Immed
                                                             TrapException
 
 WAIT        Wait for Interrupts                         Stall until interrupt occurs

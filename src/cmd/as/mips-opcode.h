@@ -226,17 +226,15 @@ struct mips_opcode
   const char *args;
   /* The basic opcode for the instruction.  When assembling, this
      opcode is modified by the arguments to produce the actual opcode
-     that is used.  If pinfo is INSN_MACRO, then this is 0.  */
+     that is used. */
   unsigned match;
-  /* If pinfo is not INSN_MACRO, then this is a bit mask for the
+  /* This is a bit mask for the
      relevant portions of the opcode when disassembling.  If the
      actual opcode anded with the match field equals the opcode field,
-     then we have found the correct instruction.  If pinfo is
-     INSN_MACRO, then this field is the macro identifier.  */
+     then we have found the correct instruction. */
   unsigned mask;
-  /* For a macro, this is INSN_MACRO.  Otherwise, it is a collection
-     of bits describing the instruction, notably any relevant hazard
-     information.  */
+  /* A collection of bits describing the instruction,
+     notably any relevant hazard information.  */
   unsigned pinfo;
   /* A collection of additional bits describing the instruction. */
   unsigned pinfo2;
@@ -406,7 +404,7 @@ struct mips_opcode
 */
 
 /* These are the bits which may be set in the pinfo field of an
-   instructions, if it is not equal to INSN_MACRO.  */
+   instructions.  */
 
 /* Modifies the general purpose register in OP_*_RD.  */
 #define INSN_WRITE_GPR_D            0x00000001
@@ -472,9 +470,6 @@ struct mips_opcode
 #define INSN_MULT                   0x40000000
 /* Instruction synchronize shared memory.  */
 #define INSN_SYNC		    0x80000000
-/* Instruction is actually a macro.  It should be ignored by the
-   disassembler, and requires special treatment by the assembler.  */
-#define INSN_MACRO                  0xffffffff
 
 /* These are the bits which may be set in the pinfo2 field of an
    instruction. */

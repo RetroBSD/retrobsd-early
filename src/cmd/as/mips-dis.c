@@ -744,8 +744,7 @@ print_insn_mips (unsigned memaddr,
 
         for (i = 0; i <= OP_MASK_OP; i++) {
             for (op = mips_opcodes; op < &mips_opcodes[mips_num_opcodes]; op++) {
-                if (op->pinfo == INSN_MACRO
-                    || (no_aliases && (op->pinfo2 & INSN2_ALIAS)))
+                if (no_aliases && (op->pinfo2 & INSN2_ALIAS))
                     continue;
                 if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP)) {
                     mips_hash[i] = op;
@@ -765,8 +764,7 @@ print_insn_mips (unsigned memaddr,
     op = mips_hash[(word >> OP_SH_OP) & OP_MASK_OP];
     if (op != NULL) {
         for (; op < &mips_opcodes[mips_num_opcodes]; op++) {
-            if (op->pinfo != INSN_MACRO
-                && !(no_aliases && (op->pinfo2 & INSN2_ALIAS))
+            if (! (no_aliases && (op->pinfo2 & INSN2_ALIAS))
                 && (word & op->mask) == op->match) {
                 const char *d;
 
@@ -1371,8 +1369,7 @@ print_insn_mips16 (unsigned memaddr, FILE *stream,
 
     opend = mips16_opcodes + mips16_num_opcodes;
     for (op = mips16_opcodes; op < opend; op++) {
-        if (op->pinfo != INSN_MACRO
-            && !(no_aliases && (op->pinfo2 & INSN2_ALIAS))
+        if (! (no_aliases && (op->pinfo2 & INSN2_ALIAS))
             && (insn & op->mask) == op->match) {
             const char *s;
 

@@ -91,6 +91,9 @@ enum {
 #define FSA     (1 << 16)       /* 5-bit shift amount */
 #define FSEL    (1 << 17)       /* optional 3-bit COP0 register select */
 #define FSIZE   (1 << 18)       /* bit field size */
+#define FMSB    (1 << 19)       /* bit field msb */
+#define FRTD    (1 << 20)       /* set rt to rd number */
+#define FCODE16 (1 << 21)       /* immediate shifted <<16 */
 
 /*
  * Sizes of tables.
@@ -181,9 +184,9 @@ const struct optable optable [] = {
     { 0x04020000,   "bltzl",	FRS1 | FOFF18 },
     { 0x14000000,   "bne",	FRS1 | FRT2 | FOFF18 },
     { 0x54000000,   "bnel",	FRS1 | FRT2 | FOFF18 },
-    { 0x0000000d,   "break",	FCODE },
-    { 0x70000021,   "clo",	FRD1 | FRS2 },
-    { 0x70000020,   "clz",	FRD1 | FRS2 },
+    { 0x0000000d,   "break",	FCODE16 },
+    { 0x70000021,   "clo",	FRD1 | FRS2 | FRTD },
+    { 0x70000020,   "clz",	FRD1 | FRS2 | FRTD },
     { 0x4200001f,   "deret",	0 },
     { 0x41606000,   "di",	FRT1 },
     { 0x0000001a,   "div",	FRS1 | FRT2 },
@@ -192,7 +195,7 @@ const struct optable optable [] = {
     { 0x41606020,   "ei",	FRT1 },
     { 0x42000018,   "eret",	0 },
     { 0x7c000000,   "ext",	FRT1 | FRS2 | FSA | FSIZE },
-    { 0x7c000004,   "ins",	FRT1 | FRS2 | FSA | FSIZE },
+    { 0x7c000004,   "ins",	FRT1 | FRS2 | FSA | FMSB },
     { 0x08000000,   "j",	FAOFF28 },
     { 0x0c000000,   "jal",	FAOFF28 },
     { 0x00000009,   "jalr",	FRD1 | FRS2 },
@@ -215,7 +218,7 @@ const struct optable optable [] = {
     { 0x40000000,   "mfc0",	FRT1 | FRD2 | FSEL },
     { 0x00000010,   "mfhi",	FRD1 },
     { 0x00000012,   "mflo",	FRD1 },
-    { 0x00000020,   "move",	FRD1 | FRS2 },
+    { 0x00000021,   "move",	FRD1 | FRS2 },          // addu
     { 0x0000000b,   "movn",	FRD1 | FRS2 | FRT3 },
     { 0x0000000a,   "movz",	FRD1 | FRS2 | FRT3 },
     { 0x70000004,   "msub",	FRS1 | FRT2 },
@@ -232,8 +235,8 @@ const struct optable optable [] = {
     { 0x34000000,   "ori",	FRT1 | FRS2 | FOFF16 },
     { 0x7c00003b,   "rdhwr",	FRT1 | FRD2 },
     { 0x41400000,   "rdpgpr",	FRD1 | FRT2 },
-    { 0x00200002,   "rotr",	FRD1 | FRT2 | FSA },
-    { 0x00000046,   "rotrv",	FRD1 | FRT2 | FRS3 },
+    { 0x00200002,   "ror",	FRD1 | FRT2 | FSA },
+    { 0x00000046,   "rorv",	FRD1 | FRT2 | FRS3 },
     { 0xa0000000,   "sb",	FRT1 | FOFF16 | FRSB },
     { 0xe0000000,   "sc",	FRT1 | FOFF16 | FRSB },
     { 0x7000003f,   "sdbbp",	FCODE },
@@ -1172,6 +1175,9 @@ void makecmd (opcode, type, emitfunc)
             uerror ("bad rs register");
         opcode |= cval << 21;           /* rs, ... */
     }
+    if (type & FRTD) {
+        opcode |= cval << 16;           /* rt equals rd */
+    }
 
     /*
      * Second register.
@@ -1227,7 +1233,7 @@ void makecmd (opcode, type, emitfunc)
     if (type & FSEL) {
         /* optional COP0 register select */
         clex = getlex (&cval);
-        if (getlex (&cval) == ',') {
+        if (clex == ',') {
             offset = getexpr (&segment);
             if (segment != SABS)
                 uerror ("absolute value required");
@@ -1235,36 +1241,43 @@ void makecmd (opcode, type, emitfunc)
         } else
             ungetlex (clex, cval);
 
-    } else if (type & (FCODE | FSA)) {
+    } else if (type & (FCODE | FCODE16 | FSA)) {
         /* Non-relocatable offset */
         if ((type & FSA) && getlex (&cval) != ',')
             uerror ("comma expected");
         offset = getexpr (&segment);
         if (segment != SABS)
             uerror ("absolute value required");
-        switch (type & (FCODE | FSA)) {
+        switch (type & (FCODE | FCODE16 | FSA)) {
         case FCODE:                     /* immediate shifted <<6 */
             opcode |= offset << 6;
+            break;
+        case FCODE16:                   /* immediate shifted <<16 */
+            opcode |= offset << 16;
             break;
         case FSA:                       /* shift amount */
             opcode |= (offset & 0x1f) << 6;
             break;
         }
-    } else if (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28)) {
+    } else if (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28 | FHIGH16)) {
         /* Relocatable offset */
-        if ((type & (FOFF16 | FOFF18)) && getlex (&cval) != ',')
+        if ((type & (FOFF16 | FOFF18 | FHIGH16)) && getlex (&cval) != ',')
             uerror ("comma expected");
         offset = getexpr (&segment);
         relinfo = segmrel [segment];
         if (relinfo == REXT)
             relinfo |= RSETINDEX (extref);
-        switch (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28)) {
+        switch (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28 | FHIGH16)) {
         case FOFF16:                    /* low 16-bit byte address */
             opcode |= offset & 0xffff;
             break;
         case FHIGH16:                   /* high 16-bit byte address */
-            opcode |= (offset >> 16) & 0xffff;
-            relinfo |= RHIGH16;
+            if (relinfo == RABS)
+                opcode |= offset & 0xffff;
+            else {
+                opcode |= (offset >> 16) & 0xffff;
+                relinfo |= RHIGH16;
+            }
             /* TODO: keep full offset in relinfo value */
             break;
         case FOFF18:                    /* 18-bit PC-relative word address */
@@ -1306,6 +1319,17 @@ void makecmd (opcode, type, emitfunc)
             uerror ("absolute value required");
         opcode |= ((offset - 1) & 0x1f) << 11; /* bit field size */
     }
+    if (type & FMSB) {
+        if (getlex (&cval) != ',')
+            uerror ("comma expected");
+        offset += getexpr (&segment);
+        if (segment != SABS)
+            uerror ("absolute value required");
+        if (offset > 32)
+            offset = 32;
+        opcode |= ((offset - 1) & 0x1f) << 11; /* msb */
+    }
+
 
     /* Output resulting values. */
     if (! emitfunc)
