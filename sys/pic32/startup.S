@@ -37,7 +37,7 @@
 		.extern exception
 
 #---------------------------------------
-# Reset vector at 0x9D006000
+# Reset vector: main entry point
 #
 		.section .startup,"ax",@progbits
 		.org	0
@@ -97,19 +97,21 @@ _reset_vector_:	.globl	_reset_vector_
 
 
 #---------------------------------------
-# Exception vector at 0x0x9D005200
+# Secondary entry point for RetroBSD bootloader.
 #
 		.section .exception,"ax",@progbits
 _exception_base_: .globl _exception_base_
 
-#		.org	0x100                           # ???
-		.org	0                               # For RetroBSD bootloader
+		.org	0
 		.type	_entry_vector_, @function
 _entry_vector_: .globl  _entry_vector_
                 la      $k0, _reset_vector_
                 jr      $k0
                 nop
 
+#---------------------------------------
+# Exception vector: handle interrupts and exceptions
+#
 		.org	0x200
 		.type	_exception_vector_, @function
 _exception_vector_: .globl _exception_vector_
@@ -228,14 +230,60 @@ restore_regs:
 
 		lw	$k0, (16+FRAME_PC*4) ($sp)	# K0 = EPC
 		mtc0	$k0, $C0_EPC			# put PC in EPC
+                ext     $k1, $31, 27, 1                 # get RP bit: single-step request
 
 		lw	$31, (16+FRAME_RA*4) ($sp)
 		lw	$sp, (16+FRAME_SP*4) ($sp)	# Restore stack
 
 		# Return from exception
+                bnez    $k1, debug_request              # single-step request
 		ehb
 		eret					# PC <= EPC; EXL <= 0
-		nop					# just to be safe
+debug_request:
+		sdbbp					# enter debug mode
+
+#---------------------------------------
+# Debug exception processing.
+#
+		.org	0x480
+		.type	_debug_vector_, @function
+_debug_vector_: .globl _debug_vector_
+
+		mfc0	$k0, $C0_DEPC
+		la	$k1, debug_request
+		bne     $k0, $k1, single_step_done
+		nop
+
+                # single step request
+		mfc0	$k0, $C0_DEBUG
+		ori     $k0, DB_SST                     # set SST bit
+		mtc0	$k0, $C0_DEBUG
+
+		mfc0	$k1, $C0_EPC
+		mtc0	$k1, $C0_DEPC                   # DEPC <= EPC
+		mfc0	$k0, $C0_STATUS
+		xori	$k0, ST_EXL                     # Clear EXL
+		mtc0	$k0, $C0_STATUS
+		ehb
+		deret					# PC <= DEPC; DM <= 0
+
+single_step_done:
+		mtc0	$k0, $C0_EPC                    # EPC <= DEPC
+
+		la      $k1, _exception_vector_
+		mtc0	$k1, $C0_DEPC                   # DEPC <= exception handler
+
+		mfc0	$k0, $C0_DEBUG
+		sw	$k0, c0_debug                   # save Debug register
+		ori     $k0, DB_SST
+		xori    $k0, DB_SST                     # clear SST bit
+		mtc0	$k0, $C0_DEBUG
+
+		mfc0	$k1, $C0_STATUS
+		ori	$k1, ST_EXL                     # Set EXL
+		mtc0	$k1, $C0_STATUS
+		ehb
+		deret					# PC <= DEPC; DM <= 0
 
 #---------------------------------------
 # Icode is copied out to process 1 to exec /sbin/init.

@@ -88,6 +88,27 @@
 #define CA_Ov		(12 << 2)	/* Arithmetic overflow */
 #define CA_Tr		(13 << 2)	/* Trap */
 
+#define DB_DBD          (1 << 31)       /* Debug exception in a branch delay slot */
+#define DB_DM           (1 << 30)       /* Debug mode */
+#define DB_NODCR        (1 << 29)       /* No dseg present */
+#define DB_LSNM         (1 << 28)       /* Load/stores in dseg go to main memory */
+#define DB_DOZE         (1 << 27)       /* Processor was in low-power mode */
+#define DB_HALT         (1 << 26)       /* Internal system bus clock was running */
+#define DB_COUNTDM      (1 << 25)       /* Count register is running in Debug mode */
+#define DB_IBUSEP       (1 << 24)       /* Instruction fetch bus error exception */
+#define DB_DBUSEP       (1 << 21)       /* Data access bus error exception */
+#define DB_IEXI         (1 << 20)       /* Imprecise error exception */
+#define DB_VER          (7 << 15)       /* EJTAG version number */
+#define DB_DEXCCODE     (0x1f << 10)    /* Cause of exception in Debug mode */
+#define DB_SST          (1 << 8)        /* Single step exception enabled */
+#define DB_DIBImpr      (1 << 6)        /* Imprecise debug instruction break */
+#define DB_DINT         (1 << 5)        /* Debug interrupt exception */
+#define DB_DIB          (1 << 4)        /* Debug instruction break exception */
+#define DB_DDBS         (1 << 3)        /* Debug data break exception on store */
+#define DB_DDBL         (1 << 2)        /* Debug data break exception on load */
+#define DB_DBP          (1 << 1)        /* Debug software breakpoint exception */
+#define DB_DSS          (1 << 0)        /* Debug single-step exception */
+
 /*--------------------------------------
  * Peripheral registers.
  */

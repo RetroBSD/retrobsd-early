@@ -20,6 +20,10 @@ extern void power_switch_check();
 #include "adc.h"
 #endif
 
+/*
+ * Copy of COP0 Debug register, saved by exception handler (in startup.S).
+ */
+int c0_debug;
 
 #ifdef TRACE_EXCEPTIONS
 static void
@@ -225,8 +229,14 @@ exception (frame)
 		/*NOTREACHED*/
         }
 	status = frame [FRAME_STATUS];
-	cause = mips_read_c0_register (C0_CAUSE, 0);
-	cause &= CA_EXC_CODE;
+        if (c0_debug & DB_DM) {
+            cause = CA_Bp;
+            c0_debug = 0;
+            // TODO: save DBD bit
+        } else {
+            cause = mips_read_c0_register (C0_CAUSE, 0);
+            cause &= CA_EXC_CODE;
+        }
 	if (USERMODE (status))
 		cause |= USER;
 
