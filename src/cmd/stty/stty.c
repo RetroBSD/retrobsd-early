@@ -252,6 +252,11 @@ args:
 				perror("ioctl");
 			continue;
 		}
+		if (eq("sane")){
+                        mode.sg_flags &= ~CBREAK;
+                        mode.sg_flags |= ECHO | CRMOD | XTABS;
+			continue;
+		}
 		if (eq("dec")){
 			mode.sg_erase = 0177;
 			mode.sg_kill = CTRL('u');
