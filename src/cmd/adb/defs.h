@@ -275,7 +275,7 @@ int quotchar (void);
 u_int chkget (long, int);
 u_int findsym (u_int, int);
 void endline (void);
-void printins (int, int);
+void printins (int, unsigned, unsigned);
 void iclose (int, int);
 void oclose (void);
 void setsym (void);

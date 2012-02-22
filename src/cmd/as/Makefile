@@ -9,6 +9,8 @@ include $(TOPSRC)/target.mk
 CFLAGS		+= -Werror -Wall -Os
 LDFLAGS         += -g
 
+AOUTOBJS        = aout.o mips-dis.o
+
 all:            as aout
 
 as:             as.o
@@ -17,8 +19,8 @@ as:             as.o
 		${SIZE} as.elf
 		${ELF2AOUT} as.elf $@ && rm as.elf
 
-aout:           aout.o mips-dis.o
-		${CC} ${LDFLAGS} -o aout.elf aout.o mips-dis.o ${LIBS}
+aout:           $(AOUTOBJS)
+		${CC} ${LDFLAGS} -o aout.elf $(AOUTOBJS) ${LIBS}
 		${OBJDUMP} -S aout.elf > aout.dis
 		${SIZE} aout.elf
 		${ELF2AOUT} aout.elf $@ && rm aout.elf
@@ -33,7 +35,7 @@ install:        all
 		install as $(DESTDIR)/bin/
 		install aout $(DESTDIR)/bin/
 
-test-gcc.dis:   test.s
+test.dis-gcc:   test.s
 		$(AS) $< -o test.o
 		${OBJDUMP} -D test.o > $@
 

@@ -1330,7 +1330,6 @@ void makecmd (opcode, type, emitfunc)
         opcode |= ((offset - 1) & 0x1f) << 11; /* msb */
     }
 
-
     /* Output resulting values. */
     if (! emitfunc)
         emitfunc = emitword;

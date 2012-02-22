@@ -391,7 +391,7 @@ printpc()
 {
     dot = uframe[FRAME_PC];
     psymoff(dot, ISYM, ":%16t");
-    printins(ISP, chkget(dot, ISP));
+    printins(ISP, dot, chkget(dot, ISP));
     printc(EOR);
 }
 

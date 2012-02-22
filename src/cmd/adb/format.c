@@ -209,7 +209,7 @@ exform(fcount, ifp, itype, ptype)
             break;
 
         case 'i':
-            printins(itype, w); printc(EOR);
+            printins(itype, dot, w); printc(EOR);
             break;
 
         case 'd':
