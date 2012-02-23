@@ -55,7 +55,7 @@ static char *symtab_add(char *key, struct tree **, int *, int *);
 #define	getree() permalloc(sizeof(struct tree))
 
 char *
-addname(char *key)      
+addname(char *key)
 {
 	return symtab_add(key, &firstname, &nametabs, &namestrlen);
 }
@@ -81,7 +81,7 @@ symtab_add(char *key, struct tree **first, int *tabs, int *stlen)
 	/* Count full string length */
 	for (k = key, len = 0; *k; k++, len++)
 		;
-	
+
 	switch (*tabs) {
 	case 0:
 		*first = (struct tree *)newstring(key, len);
@@ -181,7 +181,7 @@ lookup(char *key, int stype)
 	struct tree *w, *new, *last;
 	int cix, bit, fbit, svbit, bitno;
 	int type, uselvl;
-	intptr_t ix, match, code = (intptr_t)key;
+	size_t ix, match, code = (size_t)key;
 
 	type = stype & SMASK;
 	uselvl = (blevel > 0 && type != SSTRING);
@@ -228,7 +228,7 @@ lookup(char *key, int stype)
 	}
 
 	sym = (struct symtab *)w;
-	match = (intptr_t)sym->sname;
+	match = (size_t)sym->sname;
 
 	ix = code ^ match;
 	if (ix == 0)

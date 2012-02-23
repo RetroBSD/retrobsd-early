@@ -551,7 +551,7 @@ emulop(NODE *p)
 	else if (p->n_op == RS && p->n_type == LONGLONG) ch = "ashrdi3";
 	else if (p->n_op == RS && (p->n_type == LONG || p->n_type == INT))
 		ch = "ashrsi3";
-	
+
 	else if (p->n_op == DIV && p->n_type == LONGLONG) ch = "divdi3";
 	else if (p->n_op == DIV && (p->n_type == LONG || p->n_type == INT))
 		ch = "divsi3";
@@ -616,7 +616,7 @@ twollcomp(NODE *p)
 		cb1 = LT;
 		cb2 = GT;
 		break;
-	
+
 	default:
 		cb1 = cb2 = 0; /* XXX gcc */
 	}
@@ -1123,7 +1123,7 @@ rmove(int s, int d, TWORD t)
 			print_reg64name(stdout, s, 0);
 			printf("\t# 64-bit rmove\n");
                         printf("\tmove ");
-			print_reg64name(stdout, d, 1); 
+			print_reg64name(stdout, d, 1);
 			printf(",");
 			print_reg64name(stdout, s, 1);
 			printf("\n");
@@ -1293,9 +1293,9 @@ special(NODE *p, int shape)
 void
 mflags(char *str)
 {
-	if (strcasecmp(str, "big-endian") == 0) {
+	if (strcmp(str, "big-endian") == 0) {
 		bigendian = 1;
-	} else if (strcasecmp(str, "little-endian") == 0) {
+	} else if (strcmp(str, "little-endian") == 0) {
 		bigendian = 0;
 	} else {
 		fprintf(stderr, "unknown m option '%s'\n", str);
@@ -1303,17 +1303,17 @@ mflags(char *str)
 	}
 
 #if 0
-	 else if (strcasecmp(str, "ips2")) {
-	} else if (strcasecmp(str, "ips2")) {
-	} else if (strcasecmp(str, "ips3")) {
-	} else if (strcasecmp(str, "ips4")) {
-	} else if (strcasecmp(str, "hard-float")) {
-	} else if (strcasecmp(str, "soft-float")) {
-	} else if (strcasecmp(str, "abi=32")) {
+	 else if (strcmp(str, "ips2")) {
+	} else if (strcmp(str, "ips2")) {
+	} else if (strcmp(str, "ips3")) {
+	} else if (strcmp(str, "ips4")) {
+	} else if (strcmp(str, "hard-float")) {
+	} else if (strcmp(str, "soft-float")) {
+	} else if (strcmp(str, "abi=32")) {
 		nargregs = MIPS_O32_NARGREGS;
-	} else if (strcasecmp(str, "abi=n32")) {
+	} else if (strcmp(str, "abi=n32")) {
 		nargregs = MIPS_N32_NARGREGS;
-	} else if (strcasecmp(str, "abi=64")) {
+	} else if (strcmp(str, "abi=64")) {
 		nargregs = MIPS_N32_NARGREGS;
 	}
 #endif

@@ -53,7 +53,7 @@
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
  * HOWEVER CAUSED AND ON ANY THEORY OFLIABILITY, WHETHER IN CONTRACT,
  * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -404,7 +404,7 @@ defid(NODE *q, int class)
 	case PARAM:
 		oalloc(p, &argoff);
 		break;
-		
+
 	case STATIC:
 	case EXTDEF:
 	case EXTERN:
@@ -751,7 +751,7 @@ enumdcl(struct symtab *sp)
 	else
 		t = ctype(INT);
 #endif
-	
+
 	if (sp) {
 		sp->stype = t;
 		ap = attr_find(sp->sap, ATTR_BASETYP);
@@ -924,10 +924,10 @@ soumemb(NODE *n, char *name, int class)
 	struct symtab *sp, *lsp;
 	int incomp;
 	TWORD t;
- 
+
 	if (rpole == NULL)
 		cerror("soumemb");
- 
+
 	/* check if tag name exists */
 	lsp = NULL;
 	for (sp = rpole->rb; sp != NULL; lsp = sp, sp = sp->snext)
@@ -1080,7 +1080,7 @@ talign(unsigned int ty, struct attr *apl)
 			}
 		}
 
-	
+
 	if ((al = attr_find(apl, GCC_ATYP_ALIGNED)))
 		return al->iarg(0);
 	al = attr_find(apl, ATTR_BASETYP);
@@ -1126,7 +1126,7 @@ tsize(TWORD ty, union dimfun *d, struct attr *apl)
 
 	ap = attr_find(apl, ATTR_BASETYP);
 	sz = ap->atypsz;
-	
+
 #ifdef GCC_COMPAT
 	if (ty == VOID)
 		sz = SZCHAR;
@@ -1313,7 +1313,7 @@ edelay(NODE *p)
 }
 
 /*
- * Traverse through the array args, evaluate them and put the 
+ * Traverse through the array args, evaluate them and put the
  * resulting temp numbers in the dim fields.
  */
 static void
@@ -1868,13 +1868,13 @@ tymerge(NODE *typ, NODE *idp)
 		if (bap->atype == ATTR_BASETYP)
 			bap = MKAP(t);
 		else {
-			for (ap = bap; 
+			for (ap = bap;
 			    ap->next->atype != ATTR_BASETYP; ap = ap->next)
 				;
 			ap->next = MKAP(t);
 		}
 	}
-	
+
 	if (idp->n_op != NAME) {
 		for (p = idp->n_left; p->n_op != NAME; p = p->n_left)
 			nfree(p);
@@ -1958,7 +1958,7 @@ arglist(NODE *n)
 		if (ty == UNIONTY &&
 		    attr_find(ap[j]->n_ap, GCC_ATYP_TRANSP_UNION)){
 			/* transparent unions must have compatible types
-			 * shortcut here: if pointers, set void *, 
+			 * shortcut here: if pointers, set void *,
 			 * otherwise btype.
 			 */
 			struct symtab *sp = strmemb(ap[j]->n_ap);
@@ -1992,7 +1992,7 @@ arglist(NODE *n)
 void
 tyreduce(NODE *p, struct tylnk **tylkp, int *ntdim)
 {
-	union dimfun dim;
+	union dimfun dim = {0};
 	NODE *r = NULL;
 	int o;
 	TWORD t, q;
@@ -3066,9 +3066,9 @@ cxop(int op, NODE *l, NODE *r)
 
 	case PLUS:
 	case MINUS:
-		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real), 
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, real),
 		    buildtree(op, real_l, real_r)));
-		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag), 
+		p = comop(p, buildtree(ASSIGN, structref(ccopy(q), DOT, imag),
 		    buildtree(op, imag_l, imag_r)));
 		break;
 
@@ -3141,13 +3141,13 @@ imop(int op, NODE *l, NODE *r)
 			r = bcon(0);
 		}
 		p = buildtree(ASSIGN, l, r);
-		p->n_type = p->n_type += (FIMAG-FLOAT);
+		p->n_type += (FIMAG-FLOAT);
 		break;
 
 	case PLUS:
 		if (li && ri) {
 			p = buildtree(PLUS, l, r);
-			p->n_type = p->n_type += (FIMAG-FLOAT);
+			p->n_type += (FIMAG-FLOAT);
 		} else {
 			/* If one is imaginary and one is real, make complex */
 			if (li)
@@ -3164,7 +3164,7 @@ imop(int op, NODE *l, NODE *r)
 	case MINUS:
 		if (li && ri) {
 			p = buildtree(MINUS, l, r);
-			p->n_type = p->n_type += (FIMAG-FLOAT);
+			p->n_type += (FIMAG-FLOAT);
 		} else if (li) {
 			q = cxstore(mxtyp);
 			p = buildtree(ASSIGN, structref(ccopy(q), DOT, real),
@@ -3188,7 +3188,7 @@ imop(int op, NODE *l, NODE *r)
 		if (li && ri)
 			p = buildtree(UMINUS, p, NIL);
 		if (li ^ ri)
-			p->n_type = p->n_type += (FIMAG-FLOAT);
+			p->n_type += (FIMAG-FLOAT);
 		break;
 
 	case DIV:
@@ -3196,7 +3196,7 @@ imop(int op, NODE *l, NODE *r)
 		if (ri && !li)
 			p = buildtree(UMINUS, p, NIL);
 		if (li ^ ri)
-			p->n_type = p->n_type += (FIMAG-FLOAT);
+			p->n_type += (FIMAG-FLOAT);
 		break;
 	default:
 		cerror("imop");
@@ -3248,7 +3248,7 @@ cxret(NODE *p, NODE *q)
 		p = structref(p, DOT, ISFTY(q->n_type) ? real : imag);
 		if (p->n_type != q->n_type)
 			p = cast(p, q->n_type, 0);
-	} else 
+	} else
 		cerror("cxred failing type");
 	return p;
 }

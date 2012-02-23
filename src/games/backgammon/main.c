@@ -80,9 +80,11 @@ main (argc,argv)
 	ioctl (0, TIOCGETP, &tty);                      /* get old tty mode */
 	old = tty.sg_flags;
 #ifdef V7
-	raw = ((noech = old & ~ECHO) | CBREAK);		/* set up modes */
+        noech = old & ~(ECHO | CRMOD | XTABS);
+	raw = noech | CBREAK;                           /* set up modes */
 #else
-	raw = ((noech = old & ~ECHO) | RAW);		/* set up modes */
+        noech = old & ~ECHO;
+	raw = noech | RAW;                              /* set up modes */
 #endif
 
 							/* check user count */

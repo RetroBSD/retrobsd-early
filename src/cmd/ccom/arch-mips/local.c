@@ -121,7 +121,7 @@ clocal(NODE *p)
 
 	case FUNARG:
 		/* Args smaller than int are given as int */
-		if (p->n_type != CHAR && p->n_type != UCHAR && 
+		if (p->n_type != CHAR && p->n_type != UCHAR &&
 		    p->n_type != SHORT && p->n_type != USHORT)
 			break;
 		p->n_left = block(SCONV, p->n_left, NIL, INT, 0, MKAP(INT));
@@ -360,11 +360,11 @@ myp2tree(NODE *p)
 {
 	struct symtab *sp;
 
-	if (p->n_op != FCON) 
+	if (p->n_op != FCON)
 		return;
 
 	/* Write float constants to memory */
- 
+
 	sp = IALLOC(sizeof(struct symtab));
 	sp->sclass = STATIC;
 	sp->sap = MKAP(p->n_type);
@@ -534,9 +534,9 @@ ninval(CONSZ off, int fsz, NODE *p)
                 u.d = (double)p->n_dcon;
 		if (bigendian) {
 	                printf("\t.word\t%d\n", u.i[0]);
-			printf("\t.word\t%d\n", u.i[1]);
+			//printf("\t.word\t%d\n", u.i[1]);
 		} else {
-			printf("\t.word\t%d\n", u.i[1]);
+			//printf("\t.word\t%d\n", u.i[1]);
 	                printf("\t.word\t%d\n", u.i[0]);
 		}
                 break;
@@ -587,7 +587,7 @@ noinit(void)
 }
 
 void
-calldec(NODE *p, NODE *q) 
+calldec(NODE *p, NODE *q)
 {
 }
 
@@ -842,7 +842,7 @@ mips_builtin_va_arg(NODE *f, NODE *a, TWORD t)
 
 	nfree(a->n_right);
 	nfree(a);
-	nfree(f); 
+	nfree(f);
 
 	p = tempnode(tmpnr, INCREF(r->n_type), r->n_df, r->n_ap);
 	p = buildtree(UMUL, p, NIL);
@@ -887,10 +887,10 @@ static int destructor;
 int
 mypragma(char **ary)
 {
-	if (strcmp(ary[1], "tls") == 0) { 
+	if (strcmp(ary[1], "tls") == 0) {
 		uerror("thread-local storage not supported for this target");
 		return 1;
-	} 
+	}
 	if (strcmp(ary[1], "constructor") == 0 || strcmp(ary[1], "init") == 0) {
 		constructor = 1;
 		return 1;

@@ -406,6 +406,7 @@ newpos ()
 		mode = 0;
 		m = tgoto (CM, c, r);
 		count = strlen (m);
+                goto skip;
 	}
 
 					/* try HO and local movement */
@@ -455,7 +456,7 @@ newpos ()
 						/* space over */
 	if (curr == r && c > curc && linect[r] < curc && c-curc < count)
 		mode = 8;
-
+skip:
 	switch (mode)  {
 
 	case -1:				/* error! */

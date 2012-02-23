@@ -2,13 +2,13 @@
 # Makefile for ccom
 #
 TOPSRC		= $(shell cd ../../..; pwd)
-#include $(TOPSRC)/target.mk
-include $(TOPSRC)/cross.mk
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
 ARCHDIR         = arch-mips
 MIPDIR          = mip
-CFLAGS          += -DGCC_COMPAT -DPCC_DEBUG -D_ISOC99_SOURCE -Dmach_mips -I/usr/include -I. -I${MIPDIR} -I${ARCHDIR}
-CFLAGS		+= -g #-Werror -Wall
+CFLAGS          += -DGCC_COMPAT -DPCC_DEBUG -D_ISOC99_SOURCE -DYY_NO_INPUT -Dmach_mips -I. -I${MIPDIR} -I${ARCHDIR}
+CFLAGS		+= -g -Werror -Wall
 LDFLAGS		+= -g
 
 OBJS1           = optim.o pftn.o scan.o trees.o cgram.o inline.o symtabs.o \

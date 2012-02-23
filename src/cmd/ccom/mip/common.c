@@ -463,17 +463,9 @@ tprint(FILE *fp, TWORD t, TWORD q)
  * next time a function is ended (via tmpfree()).
  */
 
-#define	MEMCHUNKSZ 8192	/* 8k per allocation */
-struct balloc {
-	char a1;
-	union {
-		long long l;
-		long double d;
-	} a2;
-};
-
-#define ALIGNMENT ((long)&((struct balloc *)0)->a2)
-#define	ROUNDUP(x) (((x) + ((ALIGNMENT)-1)) & ~((ALIGNMENT)-1))
+#define	MEMCHUNKSZ  1024     /* 1k per allocation */
+#define ALIGNMENT   4
+#define	ROUNDUP(x)  (((x) + ((ALIGNMENT)-1)) & ~((ALIGNMENT)-1))
 
 static char *allocpole;
 static int allocleft;
@@ -536,15 +528,12 @@ tmpstrdup(char *str)
 #define	ALLDEBUG(x)
 #endif
 
-#define	NELEM	((MEMCHUNKSZ-ROUNDUP(sizeof(struct xalloc *)))/ALIGNMENT)
+#define	NELEM	(MEMCHUNKSZ/ALIGNMENT - 1)
 #define	ELEMSZ	(ALIGNMENT)
 #define	MAXSZ	(NELEM*ELEMSZ)
 struct xalloc {
 	struct xalloc *next;
-	union {
-		struct balloc b; /* for initial alignment */
-		char elm[MAXSZ];
-	} u;
+	char elm[MAXSZ];
 } *tapole, *tmpole;
 int uselem = NELEM; /* next unused element */
 
@@ -565,8 +554,8 @@ tmpalloc(int size)
 		    size + ROUNDUP(sizeof(struct xalloc *)), xp));
 		xp->next = tmpole;
 		tmpole = xp;
-		ALLDEBUG(("rv %p\n", &xp->u.elm[0]));
-		return &xp->u.elm[0];
+		ALLDEBUG(("rv %p\n", &xp->elm[0]));
+		return &xp->elm[0];
 	}
 	if (nelem + uselem >= NELEM) {
 		ALLDEBUG(("MOREMEM! "));
@@ -578,7 +567,7 @@ tmpalloc(int size)
 		uselem = 0;
 	} else
 		xp = tapole;
-	rv = &xp->u.elm[uselem * ELEMSZ];
+	rv = &xp->elm[uselem * ELEMSZ];
 	ALLDEBUG(("elemno %d ", uselem));
 	uselem += nelem;
 	ALLDEBUG(("new %d rv %p\n", uselem, rv));

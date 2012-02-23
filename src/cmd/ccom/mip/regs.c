@@ -41,7 +41,7 @@
 #ifndef MAX
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
 #endif
- 
+
 /*
  * New-style register allocator using graph coloring.
  * The design is based on the George and Appel paper
@@ -75,19 +75,19 @@
 /*
  * Data structure overview for this implementation of graph coloring:
  *
- * Each temporary (called "node") is described by the type REGW.  
- * Space for all nodes is allocated initially as an array, so 
+ * Each temporary (called "node") is described by the type REGW.
+ * Space for all nodes is allocated initially as an array, so
  * the nodes can be can be referenced both by the node number and
  * by pointer.
- * 
- * All moves are represented by the type REGM, allocated when needed. 
+ *
+ * All moves are represented by the type REGM, allocated when needed.
  *
  * The "live" set used during graph building is represented by a bitset.
  *
  * Interference edges are represented by struct AdjSet, hashed and linked
  * from index into the edgehash array.
  *
- * A mapping from each node to the moves it is assiciated with is 
+ * A mapping from each node to the moves it is assiciated with is
  * maintained by an array moveList which for each node number has a linked
  * list of MOVL types, each pointing to a REGM.
  *
@@ -165,7 +165,7 @@ static int tempmin, tempmax, basetemp, xbits;
  * Each entry in the array may have the values:
  * 0	: register coalesced, just ignore.
  * 1	: save register on stack
- * If the entry is 0 but the resulting color differs from the 
+ * If the entry is 0 but the resulting color differs from the
  * corresponding permregs index, add moves.
  * XXX - should be a bitfield!
  */
@@ -460,7 +460,7 @@ popwlist(REGW *l)
 /*
  * Move lists, a move node is always on only one list.
  */
-static REGM coalescedMoves, constrainedMoves, frozenMoves, 
+static REGM coalescedMoves, constrainedMoves, frozenMoves,
 	worklistMoves, activeMoves;
 enum { COAL, CONSTR, FROZEN, WLIST, ACTIVE };
 
@@ -485,7 +485,7 @@ popmlist(REGM *l)
  * and killed variables. Therefore, for a temp number, the bit number must
  * be biased with tempmin.
  *
- * There may be an idea to use a different data structure to store 
+ * There may be an idea to use a different data structure to store
  * pass2 allocated temporaries, because they are very sparse.
  */
 
@@ -742,7 +742,7 @@ MkWorklist(void)
 	DLIST_INIT(&selectStack, link);
 
 	/*
-	 * Remove all nodes from the initial list and put them on 
+	 * Remove all nodes from the initial list and put them on
 	 * one of the worklists.
 	 */
 	while (!DLIST_ISEMPTY(&initial, link)) {
@@ -866,7 +866,7 @@ argswalk(NODE *p)
 
 /*
  * Add to (or remove from) live set variables that must not
- * be clobbered when traversing down on the other leg for 
+ * be clobbered when traversing down on the other leg for
  * a BITYPE node.
  */
 static void
@@ -1027,7 +1027,7 @@ insnwalk(NODE *p)
 	}
 
 	/* Add edges for the result of this node */
-	if (rv && (q->visit & INREGS || o == TEMP || VALIDREG(p)))	
+	if (rv && (q->visit & INREGS || o == TEMP || VALIDREG(p)))
 		addalledges(rv);
 
 	/* special handling of CALL operators */
@@ -1196,7 +1196,7 @@ insnwalk(NODE *p)
 			break;
 
 		case OREG: /* XXX - not yet */
-			break; 
+			break;
 
 		default:
 			break;
@@ -1332,7 +1332,7 @@ deldead(NODE *p, bittype *lvar)
 	if (asgop(p->n_op) && p->n_left->n_op == TEMP &&
 	    TESTBIT(lvar, BNO(p->n_left)) == 0) {
 		/*
-		 * Not live, must delete the right tree at least 
+		 * Not live, must delete the right tree at least
 		 * down to next statement with side effects.
 		 */
 		BDEBUG(("DCE deleting temp %d\n", regno(p->n_left)));
@@ -1490,7 +1490,7 @@ unionize(NODE *p, int bb)
 }
 
 /*
- * Do variable liveness analysis.  Only analyze the long-lived 
+ * Do variable liveness analysis.  Only analyze the long-lived
  * variables, and save the live-on-exit temporaries in a bit-field
  * at the end of each basic block. This bit-field is later used
  * when doing short-range liveness analysis in Build().
@@ -1553,7 +1553,7 @@ Build(struct p2env *p2e)
 	if (xtemps == 0) {
 		/*
 		 * No basic block splitup is done if not optimizing,
-		 * so fake one basic block to keep the liveness analysis 
+		 * so fake one basic block to keep the liveness analysis
 		 * happy.
 		 */
 		p2e->nbblocks = 1;
@@ -1830,7 +1830,7 @@ OK(REGW *t, REGW *r)
 	}
 #endif
 
-	if (trivially_colorable(t) || ONLIST(t) == &precolored || 
+	if (trivially_colorable(t) || ONLIST(t) == &precolored ||
 	    (adjSet(t, r) || !aliasmap(CLASS(t), COLOR(r))))/* XXX - check aliasmap */
 		return 1;
 	return 0;
@@ -1855,7 +1855,7 @@ adjok(REGW *v, REGW *u)
 }
 
 /*
- * Do a conservative estimation of whether two temporaries can 
+ * Do a conservative estimation of whether two temporaries can
  * be coalesced.  This is "Briggs-style" check.
  * Neither u nor v is precolored when called.
  */
@@ -1938,7 +1938,7 @@ Combine(REGW *u, REGW *v)
 	PUSHWLIST(v, coalescedNodes);
 	ALIAS(v) = u;
 #ifdef PCC_DEBUG
-	if (rdebug) { 
+	if (rdebug) {
 		printf("adjlist(%d): ", ASGNUM(v));
 		for (l = ADJLIST(v); l; l = l->r_next)
 			printf("%d ", l->a_temp->nodnum);
@@ -2088,7 +2088,7 @@ Freeze(void)
 
 	/*
 	 * To find out:
-	 * Check if the moves to freeze have exactly the same 
+	 * Check if the moves to freeze have exactly the same
 	 * interference edges.  If they do, coalesce them instead, it
 	 * may free up other nodes that they interfere with.
 	 */
@@ -2162,7 +2162,7 @@ SelectSpill(void)
 		/* May not be useable */
 		w = DLIST_NEXT(&spillWorklist, link);
 	}
- 
+
         DLIST_REMOVE(w, link);
 
 	PUSHWLIST(w, simplifyWorklist);
@@ -2253,7 +2253,7 @@ colfind(int okColors, REGW *r)
 		okColors &= c;
 		RDEBUG(("colfind: Recommend color from %d\n", ASGNUM(w)));
 		break;
-		
+
 	}
 	return ffs(okColors)-1;
 }
@@ -2672,7 +2672,7 @@ ngenregs(struct p2env *p2e)
 	/*
 	 * Allocate space for the permanent registers in the
 	 * same block as the long-lived temporaries.
-	 * These temporaries will be handled the same way as 
+	 * These temporaries will be handled the same way as
 	 * all other variables.
 	 */
 	basetemp = tempmin;
@@ -2697,8 +2697,8 @@ ngenregs(struct p2env *p2e)
 
 		nblock -= tempmin;
 #ifdef HAVE_C99_FORMAT
-		RDEBUG(("nblock %p num %d size %zu\n",
-		    nblock, tbits, (size_t)(tbits * sizeof(REGW))));
+		RDEBUG(("nblock %p num %d size %u\n",
+		    nblock, tbits, (unsigned)(tbits * sizeof(REGW))));
 #endif
 	}
 	live = tmpalloc(BIT2BYTE(xbits));
@@ -2745,7 +2745,7 @@ onlyperm: /* XXX - should not have to redo all */
 		walkf(ip->ip_node, traclass, 0);
 	}
 	nodepole = NIL;
-	RDEBUG(("nsucomp allocated %d temps (%d,%d)\n", 
+	RDEBUG(("nsucomp allocated %d temps (%d,%d)\n",
 	    tempmax-tempmin, tempmin, tempmax));
 
 #ifdef PCC_DEBUG
