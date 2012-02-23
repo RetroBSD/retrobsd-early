@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)init.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include <sgtty.h>
 
 /*
@@ -15,8 +10,8 @@ static char sccsid[] = "@(#)init.c	5.1 (Berkeley) 5/29/85";
  */
 
 				/* name of executable object programs */
-char	EXEC[] = "/usr/games/backgammon";
-char	TEACH[] = "/usr/games/teachgammon";
+char	EXEC[] = "/games/backgammon";
+char	TEACH[] = "/games/teachgammon";
 
 int	pnum	= 2;		/* color of player:
 					-1 = white
@@ -35,4 +30,4 @@ int	tflag	= 0;		/* cursor addressing flag */
 int	iroll	= 0;		/* special flag for inputting rolls */
 int	rfl	= 0;
 
-char	*color[] = {"White","Red","white","red"};
+char	*color[] = {"White", "Red", "white", "red"};

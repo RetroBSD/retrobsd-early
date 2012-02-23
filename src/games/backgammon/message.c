@@ -3,13 +3,7 @@
  * All rights reserved. The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char Msccsid[] = "@(#)Mesgfix	5.2 (Berkeley) 1/8/86";
-static char sccsid[] = "@(#)message.c	4.3 (Berkeley) 1/11/86";
-#endif not lint
-
-char	*message[] = {
+char *message[] = {
 	"Last update on Friday, November 26, 1999.",
 	0
 };

@@ -3,14 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)check.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
-getmove ()  {
+void
+getmove ()
+{
 	register int	i, c;
 
 	c = 0;
@@ -72,10 +69,10 @@ getmove ()  {
 		}
 	}
 }
-
-movokay (mv)
-register int	mv;
 
+int
+movokay (mv)
+        register int	mv;
 {
 	register int	i, m;
 

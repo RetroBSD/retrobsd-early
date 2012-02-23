@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)tutor.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 #include "tutor.h"
 
@@ -18,7 +13,36 @@ extern struct situatn	test[];
 
 static char	better[] = "That is a legal move, but there is a better one.\n";
 
-tutor ()  {
+static int
+brdeq (b1,b2)
+        register int  *b1, *b2;
+{
+	register int  *e;
+
+	e = b1+26;
+	while (b1 < e)
+		if (*b1++ != *b2++)
+			return(0);
+	return(1);
+}
+
+static void
+clrest ()
+{
+	register int	r, c, j;
+
+	r = curr;
+	c = curc;
+	for (j = r+1; j < 24; j++)  {
+		curmove (j,0);
+		cline();
+	}
+	curmove (r,c);
+}
+
+void
+tutor ()
+{
 	register int	i, j;
 
 	i = 0;
@@ -59,7 +83,7 @@ tutor ()  {
 		}
 		if (tflag)
 			curmove (18,0);
-		text (*test[i].com);
+		text (test[i].com);
 		if (! tflag)
 			writec ('\n');
 		if (i == maxmoves)
@@ -100,29 +124,4 @@ tutor ()  {
 		}
 	}
 	leave();
-}
-
-clrest ()  {
-	register int	r, c, j;
-
-	r = curr;
-	c = curc;
-	for (j = r+1; j < 24; j++)  {
-		curmove (j,0);
-		cline();
-	}
-	curmove (r,c);
-}
-
-brdeq (b1,b2)
-register int  *b1, *b2;
-
-{
-	register int  *e;
-
-	e = b1+26;
-	while (b1 < e)
-		if (*b1++ != *b2++)
-			return(0);
-	return(1);
 }

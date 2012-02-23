@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)subs.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <unistd.h>
 #include "back.h"
 
 int	buffnum;
@@ -31,34 +31,39 @@ char  *descr[] = {
 	0
 };
 
+void
 errexit (s)
-register char	*s;
+        register char	*s;
 {
 	write (2,"\n",1);
 	perror (s);
-	getout();
+	getout (0);
 }
 
+void
 strset (s1,s2)
-register char	*s1, *s2;
+        register char	*s1, *s2;
 {
 	while ( (*s1++ = *s2++) != '\0');
 }
 
+int
 addbuf (c)
-register char	c;
-
+        register int	c;
 {
 	buffnum++;
 	if (buffnum == BUFSIZ)  {
-		if (write(1,outbuff,BUFSIZ) != BUFSIZ)
+		if (write(1, outbuff, BUFSIZ) != BUFSIZ)
 			errexit ("addbuf (write):");
 		buffnum = 0;
 	}
 	outbuff[buffnum] = c;
+	return 0;
 }
 
-buflush ()  {
+void
+buflush ()
+{
 	if (buffnum < 0)
 		return;
 	buffnum++;
@@ -67,7 +72,9 @@ buflush ()  {
 	buffnum = -1;
 }
 
-readc () {
+int
+readc ()
+{
 	char	c;
 
 	if (tflag)  {
@@ -78,7 +85,7 @@ readc () {
 	if (read(0,&c,1) != 1)
 		errexit ("readc");
 	if (c == '\177')
-		getout();
+		getout (0);
 	if (c == '\033' || c == '\015')
 		return ('\n');
 	if (cflag)
@@ -90,8 +97,9 @@ readc () {
 	return (c);
 }
 
+void
 writec (c)
-char	c;
+        int	c;
 {
 	if (tflag)
 		fancyc (c);
@@ -99,15 +107,16 @@ char	c;
 		addbuf (c);
 }
 
+void
 writel (l)
-register char	*l;
+        register const char	*l;
 {
 #ifdef DEBUG
-	register char	*s;
+	register const char	*s;
 
 	if (trace == NULL)
 		trace = fopen ("bgtrace","w");
-	
+
 	fprintf (trace,"writel: \"");
 	for (s = l; *s; s++) {
 		if (*s < ' ' || *s == '\177')
@@ -123,7 +132,9 @@ register char	*l;
 		writec (*l++);
 }
 
-proll ()   {
+void
+proll ()
+{
 	if (d0)
 		swap;
 	if (cturn == 1)
@@ -137,8 +148,9 @@ proll ()   {
 		cline();
 }
 
+void
 wrint (n)
-int	n;
+        int	n;
 {
 	register int	i, j, t;
 
@@ -152,8 +164,10 @@ int	n;
 	writec (n%10+'0');
 }
 
-gwrite()  {
-	register int	r, c;
+void
+gwrite()
+{
+	register int	r = 0, c = 0;
 
 	if (tflag)  {
 		r = curr;
@@ -190,13 +204,13 @@ gwrite()  {
 
 	if (tflag)  {
 		cline();
-		curmove (r,c);
+		curmove (r, c);
 	}
 }
 
-quit ()  {
-	register int	i;
-
+int
+quit ()
+{
 	if (tflag)  {
 		curmove (20,0);
 		clend();
@@ -215,14 +229,15 @@ quit ()  {
 	return (0);
 }
 
+int
 yorn (special)
-register char	special;			/* special response */
+        register int	special;		/* special response */
 {
-	register char	c;
+	register int	c;
 	register int	i;
 
 	i = 1;
-	while ( (c = readc()) != 'Y' && c != 'N')  {
+	while ((c = readc()) != 'Y' && c != 'N')  {
 		if (special && c == special)
 			return (2);
 		if (i)  {
@@ -245,8 +260,9 @@ register char	special;			/* special response */
 	return (c == 'Y');
 }
 
+void
 wrhit (i)
-register int	i;
+        register int	i;
 {
 	writel ("Blot hit on ");
 	wrint (i);
@@ -254,7 +270,9 @@ register int	i;
 	writec ('\n');
 }
 
-nexturn ()  {
+void
+nexturn ()
+{
 	register int	c;
 
 	cturn = -cturn;
@@ -269,9 +287,9 @@ nexturn ()  {
 	colorptr += c;
 }
 
+void
 getarg (arg)
-register char	***arg;
-
+        register char	***arg;
 {
 	register char	**s;
 
@@ -351,7 +369,9 @@ register char	***arg;
 		recover(s[0]);
 }
 
-init ()  {
+void
+init ()
+{
 	register int	i;
 	for (i = 0; i < 26;)
 		board[i++] = 0;
@@ -367,7 +387,9 @@ init ()  {
 	dlast = 0;
 }
 
-wrscore ()  {
+void
+wrscore ()
+{
 	writel ("Score:  ");
 	writel (color[1]);
 	writec (' ');
@@ -378,18 +400,20 @@ wrscore ()  {
 	wrint (wscore);
 }
 
+void
 fixtty (mode)
-int	mode;
+        int	mode;
 {
 	if (tflag)
 		newpos();
 	buflush();
 	tty.sg_flags = mode;
-	if (stty (0,&tty) < 0)
-		errexit("fixtty");
+	ioctl (0, TIOCSETP, &tty);
 }
 
-getout ()  {
+void
+getout (sig)
+{
 	/* go to bottom of screen */
 	if (tflag)  {
 		curmove (23,0);
@@ -399,12 +423,15 @@ getout ()  {
 
 	/* fix terminal status */
 	fixtty (old);
-	exit();
+	exit(-1);
 }
-roll ()  {
+
+void
+roll ()
+{
 	register char	c;
-	register int	row;
-	register int	col;
+	register int	row = 0;
+	register int	col = 0;
 
 	if (iroll)  {
 		if (tflag)  {

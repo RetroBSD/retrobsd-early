@@ -3,15 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)extra.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
 #ifdef DEBUG
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 FILE	*trace;
 #endif
 
@@ -19,8 +18,9 @@ FILE	*trace;
  * dble()
  *	Have the current player double and ask opponent to accept.
  */
-
-dble ()  {
+void
+dble ()
+{
 	register int	resp;			/* response to y/n */
 
 	for (;;)  {
@@ -73,7 +73,27 @@ dble ()  {
 		return;
 	}
 }
-
+
+static int
+eval ()
+{
+	register int	i, j;
+
+	for (j = i = 0; i < 26; i++)
+		j += (board[i] >= 0 ? i*board[i] : (25-i)*board[i]);
+
+	if (off[1] >= 0)
+		j += 25*off[1];
+	else
+		j += 25*(off[1]+15);
+
+	if (off[0] >= 0)
+		j -= 25*off[0];
+	else
+		j -= 25*(off[0]+15);
+	return (j);
+}
+
 /*
  * dblgood ()
  *	Returns 1 if the computer would double in this position.  This
@@ -84,8 +104,9 @@ dble ()  {
  * value of 7 for each move ahead, or a negative value of 7 for each one
  * behind.
  */
-
-dblgood ()  {
+int
+dblgood ()
+{
 	register int	n;			/* accumulated judgment */
 	register int	OFFC = *offptr;		/* no. of computer's men off */
 	register int	OFFO = *offopp;		/* no. of player's men off */
@@ -159,10 +180,10 @@ dblgood ()  {
 		return(1);
 	return (0);
 }
-
-freemen (b)
-int	b;
 
+int
+freemen (b)
+        int	b;
 {
 	register int	i, inc, lim;
 
@@ -178,10 +199,10 @@ int	b;
 		return ((36-count())/5);
 	return (count()/5);
 }
-
-trapped (n,inc)
-int	n, inc;
 
+int
+trapped (n, inc)
+        int	n, inc;
 {
 	register int	i, j, k;
 	int		c, l, ct;
@@ -204,23 +225,4 @@ int	n, inc;
 		}
 	}
 	return (ct/5);
-}
-
-eval ()  {
-
-	register int	i, j;
-
-	for (j = i = 0; i < 26; i++)
-		j += (board[i] >= 0 ? i*board[i] : (25-i)*board[i]);
-
-	if (off[1] >= 0)
-		j += 25*off[1];
-	else
-		j += 25*(off[1]+15);
-
-	if (off[0] >= 0)
-		j -= 25*off[0];
-	else
-		j -= 25*(off[0]+15);
-	return (j);
 }

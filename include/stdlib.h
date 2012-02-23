@@ -55,7 +55,7 @@
 #define	RAND_MAX	0x7fff
 
 void	abort();
-int	abs();
+int	abs (int);
 int	atexit (void (*)(void));
 double	atof();
 int	atoi();

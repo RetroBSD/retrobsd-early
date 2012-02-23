@@ -3,16 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)ttext2.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
-char *prompt, *list, *opts;
+char *prompt, *opts;
+extern const char *list[];
 
-char	*doubl[] = {
+const char	*doubl[] = {
     "\nDoubling:",
     "\n   If a player thinks he is in a good position, he may double the",
     "value of the game.  However, his opponent may not accept the pro-",
@@ -27,7 +23,7 @@ char	*doubl[] = {
     "",
     0};
 
-char	*stragy[] = {
+const char	*stragy[] = {
     "\nStrategy:",
     "\n   Some general hints when playing:  Try not to leave men open",
     "unless absolutely necessary.  Also, it is good to make as many",
@@ -43,7 +39,7 @@ char	*stragy[] = {
     "",
     0};
 
-char	*prog[] = {
+const char	*prog[] = {
    "\nThe Program and How It Works:",
    "\n   A general rule of thumb is when you don't know what to do,",
    "type a question mark, and you should get some help.  When it is",
@@ -77,7 +73,7 @@ char	*prog[] = {
    "",
    0};
 
-char	*lastch[] = {
+const char	*lastch[] = {
    "\nTutorial (Practice Game):",
    "\n   This tutorial, for simplicity's sake, will let you play one",
    "predetermined game.  All the rolls have been pre-arranged, and",
@@ -95,19 +91,17 @@ char	*lastch[] = {
    "torial starts.",
    "",
    0};
-
-text (txt)
-char	**txt;
 
+int
+text (txt)
+        const char	**txt;
 {
-	char	**begin;
-	char	*a;
+	const char	*a;
+	const char	*c;
 	char	b;
-	char	*c;
 	int	i;
 
 	fixtty (noech);
-	begin = txt;
 	while (*txt)  {
 		a = *(txt++);
 		if (*a != '\0')  {
@@ -119,7 +113,8 @@ char	**txt;
 			fixtty (raw);
 			writel (prompt);
 			for (;;)  {
-				if ((b = readc()) == '?')  {
+			        b = readc();
+				if (b == '?')  {
 					if (tflag)  {
 						if (begscr)  {
 							curmove (18,0);
@@ -158,7 +153,6 @@ char	**txt;
 			fixtty (noech);
 			if (tflag)
 				curmove (curr,0);
-			begin = txt;
 		}
 	}
 	fixtty (raw);

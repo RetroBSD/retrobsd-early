@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)text.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
 char *instr[] = {
@@ -75,14 +70,13 @@ char *instr[] = {
     "    Now you should be ready to begin the game.  Good luck!",
     "",
     0};
-
 
+int
 text (t)
-char	**t;
-
+        const char	**t;
 {
 	register int	i;
-	register char	*s, *a;
+	register const char	*s, *a;
 
 	fixtty (noech);
 	while (*t != 0)  {
@@ -102,4 +96,5 @@ char	**t;
 		t++;
 	}
 	fixtty (raw);
+	return 0;
 }

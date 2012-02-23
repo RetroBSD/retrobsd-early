@@ -3,40 +3,37 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+#include <unistd.h>
+#include <time.h>
+#include <signal.h>
 #include "back.h"
 
 #define MVPAUSE	5				/* time to sleep when stuck */
 #define MAXUSERS 35				/* maximum number of users */
 
-char	*instr[];				/* text of instructions */
-char	*message[];				/* update message */
+extern const char *instr[];			/* text of instructions */
+extern const char *message[];			/* update message */
 char	ospeed;					/* tty output speed */
 
-char	*helpm[] = {				/* help message */
+const char	*helpm[] = {			/* help message */
 	"Enter a space or newline to roll, or",
 	"     R   to reprint the board\tD   to double",
 	"     S   to save the game\tQ   to quit",
 	0
 };
 
-char	*contin[] = {				/* pause message */
+const char	*contin[] = {			/* pause message */
 	"(Type a newline to continue.)",
 	"",
 	0
 };
 
+# ifdef CORY
 static char user1a[] =
 	"Sorry, you cannot play backgammon when there are more than ";
 static char user1b[] =
@@ -45,6 +42,7 @@ static char user2a[] =
 	"\nThere are now more than ";
 static char user2b[] =
 	" users on the system, so you cannot play\nanother game.  ";
+#endif
 static char	rules[] = "\nDo you want the rules of the game?";
 static char	noteach[] = "Teachgammon not available!\n\007";
 static char	need[] = "Do you need instructions for this program?";
@@ -66,28 +64,26 @@ static char	svpromt[] = "Would you like to save this game?";
 static char	password[] = "losfurng";
 static char	pbuf[10];
 
+int
 main (argc,argv)
-int	argc;
-char	**argv;
-
+        int	argc;
+        char	**argv;
 {
 	register int	i;		/* non-descript index */
 	register int	l;		/* non-descript index */
 	register char	c;		/* non-descript character storage */
-	long	t,time();		/* time for random num generator */
+	long	t;                      /* time for random num generator */
 
 	/* initialization */
 	bflag = 2;					/* default no board */
-	signal (2,getout);				/* trap interrupts */
-	if (gtty (0,&tty) == -1)			/* get old tty mode */
-		errexit ("backgammon(gtty)");
+	signal (2, getout);				/* trap interrupts */
+	ioctl (0, TIOCGETP, &tty);                      /* get old tty mode */
 	old = tty.sg_flags;
 #ifdef V7
 	raw = ((noech = old & ~ECHO) | CBREAK);		/* set up modes */
 #else
 	raw = ((noech = old & ~ECHO) | RAW);		/* set up modes */
 #endif
-	ospeed = old.sg_ospeed;				/* for termlib */
 
 							/* check user count */
 # ifdef CORY
@@ -95,7 +91,7 @@ char	**argv;
 		writel (user1a);
 		wrint (MAXUSERS);
 		writel (user1b);
-		getout();
+		getout (0);
 	}
 # endif
 
@@ -111,11 +107,7 @@ char	**argv;
 	t = time(0);
 	srandom(t);					/* 'random' seed */
 
-#ifdef V7
 	while (*++argv != 0)				/* process arguments */
-#else
-	while (*++argv != -1)				/* process arguments */
-#endif
 		getarg (&argv);
 	args[acnt] = '\0';
 	if (tflag)  {					/* clear screen */
@@ -125,10 +117,10 @@ char	**argv;
 	}
 	fixtty (raw);					/* go into raw mode */
 
-							/* check if restored
+	rfl = rflag;					/* check if restored
 							 * game and save flag
 							 * for later */
-	if (rfl = rflag)  {
+	if (rfl)  {
 		text (message);				/* print message */
 		text (contin);
 		wrboard();				/* print board */
@@ -147,11 +139,11 @@ char	**argv;
 			if (yorn(0))  {
 
 				fixtty (old);		/* restore tty */
-				execl (TEACH,"backgammon",args,0);
+				execl (TEACH, "backgammon", args, (char*)0);
 
 				tflag = 0;		/* error! */
 				writel (noteach);
-				exit();
+				exit(-1);
 			} else  {			/* if not rules, then
 							 * instructions */
 				writel (need);
@@ -191,7 +183,7 @@ char	**argv;
 					else
 						writec ('\n');
 					writel ("Password:");
-					signal (14,getout);
+					signal (14, getout);
 					cflag = 1;
 					alarm (10);
 					for (i = 0; i < 10; i++)  {
@@ -207,7 +199,7 @@ char	**argv;
 						pbuf[i] = '\0';
 					for (i = 0; i < 9; i++)
 						if (pbuf[i] != password[i])
-							getout();
+							getout (0);
 					iroll = 1;
 					if (tflag)
 						curmove (curr,0);
@@ -560,5 +552,6 @@ char	**argv;
 	}
 
 							/* leave peacefully */
-	getout ();
+	getout (0);
+        return 0;
 }

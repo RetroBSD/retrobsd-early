@@ -3,15 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
+#include <unistd.h>
 
 #ifdef DEBUG
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 FILE	*trace;
 static char	tests[20];
 #endif
@@ -25,8 +25,8 @@ struct BOARD  {				/* structure of game position */
 	struct BOARD	*b_next;		/* forward queue pointer */
 };
 
-struct BOARD *freeq = -1;
-struct BOARD *checkq = -1;
+struct BOARD *freeq = (struct BOARD *) -1;
+struct BOARD *checkq = (struct BOARD *) -1;
 struct BOARD *bsave();
 struct BOARD *nextfree();
 
@@ -55,12 +55,361 @@ static int	cp[5];				/* candidate start position */
 static int	cg[5];				/* candidate finish position */
 
 static int	race;				/* game reduced to a race */
-
+
+static int
+bcomp (a, b)
+        struct BOARD	*a;
+        struct BOARD	*b;
+{
+	register int	*aloc = a->b_board;	/* pointer to board a */
+	register int	*bloc = b->b_board;	/* pointer to board b */
+	register int	i;			/* index */
+	int		result;			/* comparison result */
+
+	for (i = 0; i < 26; i++)  {		/* compare boards */
+		result = cturn*(aloc[i]-bloc[i]);
+		if (result)
+			return (result);		/* found inequality */
+	}
+	return (0);				/* same position */
+}
+
+static void
+mvcheck (incumbent, candidate)
+        register struct BOARD 	*incumbent;
+        register struct BOARD 	*candidate;
+{
+	register int	i;
+	register int	result;
+
+	for (i = 0; i < mvlim; i++)  {
+		result = cturn*(candidate->b_st[i]-incumbent->b_st[i]);
+		if (result > 0)
+			return;
+		if (result < 0)
+			break;
+	}
+	if (i == mvlim)
+		return;
+	for (i = 0; i < mvlim; i++)  {
+		incumbent->b_st[i] = candidate->b_st[i];
+		incumbent->b_fn[i] = candidate->b_fn[i];
+	}
+}
+
+static void
+makefree (dead)
+        struct BOARD	*dead;			/* dead position */
+{
+	dead->b_next = freeq;			/* add to freeq */
+	freeq = dead;
+}
+
+static void
+binsert (new)
+        struct BOARD	*new;				/* item to insert */
+{
+	register struct BOARD	*p = checkq;		/* queue pointer */
+	register int		result;			/* comparison result */
+
+	if (p == (struct BOARD*) -1)  {			/* check if queue empty */
+		checkq = p = new;
+		p->b_next = (struct BOARD*) -1;
+		return;
+	}
+
+	result = bcomp (new, p);			/* compare to first element */
+	if (result < 0)  {				/* insert in front */
+		new->b_next = p;
+		checkq = new;
+		return;
+	}
+	if (result == 0)  {				/* duplicate entry */
+		mvcheck (p,new);
+		makefree (new);
+		return;
+	}
+
+	while (p->b_next != (struct BOARD*) -1)  {	/* traverse queue */
+		result = bcomp (new,p->b_next);
+		if (result < 0)  {			/* found place */
+			new->b_next = p->b_next;
+			p->b_next = new;
+			return;
+		}
+		if (result == 0)  {			/* duplicate entry */
+			mvcheck (p->b_next,new);
+			makefree (new);
+			return;
+		}
+		p = p->b_next;
+	}
+						/* place at end of queue */
+	p->b_next = new;
+	new->b_next = (struct BOARD*) -1;
+}
+
+static void
+trymove (mvnum, swapped)
+        register int	mvnum;				/* number of move (rel zero) */
+        int		swapped;			/* see if swapped also tested */
+{
+	register int	pos;			/* position on board */
+	register int	rval;			/* value of roll */
+
+						/* if recursed through all dice
+						 * values, compare move */
+	if (mvnum == mvlim)  {
+		binsert (bsave());
+		return;
+	}
+
+						/* make sure dice in always
+						 * same order */
+	if (d0 == swapped)
+		swap;
+						/* choose value for this move */
+	rval = dice[mvnum != 0];
+
+						/* find all legitimate moves */
+	for (pos = bar; pos != home; pos += cturn)  {
+						/* fix order of dice */
+		if (d0 == swapped)
+			swap;
+						/* break if stuck on bar */
+		if (board[bar] != 0 && pos != bar)
+			break;
+						/* on to next if not occupied */
+		if (board[pos]*cturn <= 0)
+			continue;
+						/* set up arrays for move */
+		p[mvnum] = pos;
+		g[mvnum] = pos+rval*cturn;
+		if (g[mvnum]*cturn >= home)  {
+			if (*offptr < 0)
+				break;
+			g[mvnum] = home;
+		}
+						/* try to move */
+		if (makmove (mvnum))
+			continue;
+		else
+			trymove (mvnum+1,2);
+						/* undo move to try another */
+		backone (mvnum);
+	}
+
+						/* swap dice and try again */
+	if ((!swapped) && D0 != D1)
+		trymove (0,1);
+}
+
+static void
+brcopy (s)
+        register struct BOARD	*s;		/* game situation */
+{
+	register int	i;			/* index */
+
+	for (i = 0; i < 26; i++)
+		board[i] = s->b_board[i];
+	for (i = 0; i < 2; i++)  {
+		in[i] = s->b_in[i];
+		off[i] = s->b_off[i];
+	}
+	for (i = 0; i < mvlim; i++)  {
+		p[i] = s->b_st[i];
+		g[i] = s->b_fn[i];
+	}
+}
+
+static int
+movegood ()
+{
+	register int	n;
+
+	if (*offptr == 15)
+		return (1);
+	if (menoff == 15)
+		return (0);
+	if (race)  {
+#ifdef DEBUG
+		strcat (tests,"o");
+#endif
+		if (*offptr-menoff)
+			return (*offptr > menoff);
+#ifdef DEBUG
+		strcat (tests,"e");
+#endif
+		if (endman-em)
+			return (endman > em);
+#ifdef DEBUG
+		strcat (tests,"i");
+#endif
+		if (menin == 15)
+			return (0);
+		if (*inptr == 15)
+			return (1);
+#ifdef DEBUG
+		strcat (tests,"i");
+#endif
+		if (*inptr-menin)
+			return (*inptr > menin);
+		return (rnum(2));
+	} else  {
+		n = barmen-abs(board[home]);
+#ifdef DEBUG
+		strcat (tests,"c");
+#endif
+		if (abs(chance-ch)+25*n > rnum(150))
+			return (n? (n < 0): (ch < chance));
+#ifdef DEBUG
+		strcat (tests,"o");
+#endif
+		if (*offptr-menoff)
+			return (*offptr > menoff);
+#ifdef DEBUG
+		strcat (tests,"o");
+#endif
+		if (abs(openmen-op) > 7+rnum(12))
+			return (openmen > op);
+#ifdef DEBUG
+		strcat (tests,"b");
+#endif
+		if (n)
+			return (n < 0);
+#ifdef DEBUG
+		strcat (tests,"e");
+#endif
+		if (abs(endman-em) > rnum(2))
+			return (endman > em);
+#ifdef DEBUG
+		strcat (tests,"f");
+#endif
+		if (abs(frc-oldfrc) > rnum(2))
+			return (frc < oldfrc);
+#ifdef DEBUG
+		strcat (tests,"p");
+#endif
+		if (abs(n = pt-points) > rnum(4))
+			return (n > 0);
+#ifdef DEBUG
+		strcat (tests,"i");
+#endif
+		if (*inptr-menin)
+			return (*inptr > menin);
+#ifdef DEBUG
+		strcat (tests,"f");
+#endif
+		if (abs(frp-oldfrp) > rnum(2))
+			return (frp > oldfrp);
+		return (rnum(2));
+	}
+}
+
+static void
+movcmp ()
+{
+	register int	i;
+
+#ifdef DEBUG
+	if (trace == NULL)
+		trace = fopen ("bgtrace","w");
+#endif
+
+	odds (0,0,0);
+	if (!race)  {
+		ch = op = pt = 0;
+		for (i = 1; i < 25; i++)  {
+			if (board[i] == cturn)
+				ch = canhit (i,1);
+				op += abs (bar-i);
+		}
+		for (i = bar+cturn; i != home; i += cturn)
+			if (board[i]*cturn > 1)
+				pt += abs(bar-i);
+		frc = freemen (bar)+trapped (bar,cturn);
+		frp = freemen (home)+trapped (home,-cturn);
+	}
+	for (em = bar; em != home; em += cturn)
+		if (board[em]*cturn > 0)
+			break;
+	em = abs(home-em);
+#ifdef DEBUG
+	fputs ("Board: ",trace);
+	for (i = 0; i < 26; i++)
+		fprintf (trace, " %d",board[i]);
+	if (race)
+		fprintf (trace,"\n\tem = %d\n",em);
+	else
+		fprintf (trace,
+			"\n\tch = %d, pt = %d, em = %d, frc = %d, frp = %d\n",
+			ch,pt,em,frc,frp);
+	fputs ("\tMove: ",trace);
+	for (i = 0; i < mvlim; i++)
+		fprintf (trace," %d-%d",p[i],g[i]);
+	fputs ("\n",trace);
+	fflush (trace);
+	strcpy (tests,"");
+#endif
+	if ((cp[0] == 0 && cg[0] == 0) || movegood())  {
+#ifdef DEBUG
+		fprintf (trace,"\t[%s] ... wins.\n",tests);
+		fflush (trace);
+#endif
+		for (i = 0; i < mvlim; i++)  {
+			cp[i] = p[i];
+			cg[i] = g[i];
+		}
+		if (!race)  {
+			chance = ch;
+			openmen = op;
+			points = pt;
+			endman = em;
+			barmen = abs(board[home]);
+			oldfrc = frc;
+			oldfrp = frp;
+		}
+		menin = *inptr;
+		menoff = *offptr;
+	}
+#ifdef DEBUG
+	else  {
+		fprintf (trace,"\t[%s] ... loses.\n",tests);
+		fflush (trace);
+	}
+#endif
+}
+
+static void
+pickmove ()
+{
+						/* current game position */
+	register struct BOARD	*now = bsave();
+	register struct BOARD	*next;		/* next move */
+
+#ifdef DEBUG
+	if (trace == NULL)
+		trace = fopen ("bgtrace","w");
+	fprintf (trace,"\nRoll:  %d %d%s\n",D0,D1,race? " (race)": "");
+	fflush (trace);
+#endif
+	do  {				/* compare moves */
+		brcopy (checkq);
+		next = checkq->b_next;
+		makefree (checkq);
+		checkq = next;
+		movcmp();
+	} while (checkq != (struct BOARD*) -1);
+
+	brcopy (now);
+}
+
+void
 move (okay)
-int	okay;					/* zero if first move */
+        int	okay;				/* zero if first move */
 {
 	register int	i;		/* index */
-	register int	l;		/* last man */
+	register int	l = 0;		/* last man */
 
 	if (okay)  {
 						/* see if comp should double */
@@ -145,64 +494,10 @@ int	okay;					/* zero if first move */
 	}
 	fixtty (raw);				/* no more tty interrupt */
 }
-
-trymove (mvnum,swapped)
-register int	mvnum;				/* number of move (rel zero) */
-int		swapped;			/* see if swapped also tested */
 
-{
-	register int	pos;			/* position on board */
-	register int	rval;			/* value of roll */
-
-						/* if recursed through all dice
-						 * values, compare move */
-	if (mvnum == mvlim)  {
-		binsert (bsave());
-		return;
-	}
-
-						/* make sure dice in always
-						 * same order */
-	if (d0 == swapped)
-		swap;
-						/* choose value for this move */
-	rval = dice[mvnum != 0];
-
-						/* find all legitimate moves */
-	for (pos = bar; pos != home; pos += cturn)  {
-						/* fix order of dice */
-		if (d0 == swapped)
-			swap;
-						/* break if stuck on bar */
-		if (board[bar] != 0 && pos != bar)
-			break;
-						/* on to next if not occupied */
-		if (board[pos]*cturn <= 0)
-			continue;
-						/* set up arrays for move */
-		p[mvnum] = pos;
-		g[mvnum] = pos+rval*cturn;
-		if (g[mvnum]*cturn >= home)  {
-			if (*offptr < 0)
-				break;
-			g[mvnum] = home;
-		}
-						/* try to move */
-		if (makmove (mvnum))
-			continue;
-		else
-			trymove (mvnum+1,2);
-						/* undo move to try another */
-		backone (mvnum);
-	}
-
-						/* swap dice and try again */
-	if ((!swapped) && D0 != D1)
-		trymove (0,1);
-}
-
 struct BOARD *
-bsave ()  {
+bsave ()
+{
 	register int	i;		/* index */
 	struct BOARD	*now;		/* current position */
 
@@ -221,304 +516,23 @@ bsave ()  {
 	}
 	return (now);
 }
-
-binsert (new)
-struct BOARD	*new;					/* item to insert */
-{
-	register struct BOARD	*p = checkq;		/* queue pointer */
-	register int		result;			/* comparison result */
-
-	if (p == -1)  {				/* check if queue empty */
-		checkq = p = new;
-		p->b_next = -1;
-		return;
-	}
-
-	result = bcomp (new,p);			/* compare to first element */
-	if (result < 0)  {				/* insert in front */
-		new->b_next = p;
-		checkq = new;
-		return;
-	}
-	if (result == 0)  {				/* duplicate entry */
-		mvcheck (p,new);
-		makefree (new);
-		return;
-	}
-
-	while (p->b_next != -1)  {		/* traverse queue */
-		result = bcomp (new,p->b_next);
-		if (result < 0)  {			/* found place */
-			new->b_next = p->b_next;
-			p->b_next = new;
-			return;
-		}
-		if (result == 0)  {			/* duplicate entry */
-			mvcheck (p->b_next,new);
-			makefree (new);
-			return;
-		}
-		p = p->b_next;
-	}
-						/* place at end of queue */
-	p->b_next = new;
-	new->b_next = -1;
-}
-
-bcomp (a,b)
-struct BOARD	*a;
-struct BOARD	*b;
-{
-	register int	*aloc = a->b_board;	/* pointer to board a */
-	register int	*bloc = b->b_board;	/* pointer to board b */
-	register int	i;			/* index */
-	int		result;			/* comparison result */
-
-	for (i = 0; i < 26; i++)  {		/* compare boards */
-		result = cturn*(aloc[i]-bloc[i]);
-		if (result)
-			return (result);		/* found inequality */
-	}
-	return (0);				/* same position */
-}
-
-mvcheck (incumbent,candidate)
-register struct BOARD 	*incumbent;
-register struct BOARD 	*candidate;
-{
-	register int	i;
-	register int	result;
-
-	for (i = 0; i < mvlim; i++)  {
-		result = cturn*(candidate->b_st[i]-incumbent->b_st[i]);
-		if (result > 0)
-			return;
-		if (result < 0)
-			break;
-	}
-	if (i == mvlim)
-		return;
-	for (i = 0; i < mvlim; i++)  {
-		incumbent->b_st[i] = candidate->b_st[i];
-		incumbent->b_fn[i] = candidate->b_fn[i];
-	}
-}
-
-makefree (dead)
-struct BOARD	*dead;			/* dead position */
-{
-	dead->b_next = freeq;			/* add to freeq */
-	freeq = dead;
-}
 
 struct BOARD *
-nextfree ()  {
+nextfree ()
+{
 	struct BOARD	*new;
 
-	if (freeq == -1)  {
+	if (freeq == (struct BOARD*) -1)  {
 		new = calloc (1,sizeof (struct BOARD));
 		if (new == 0)  {
 			writel ("\nOut of memory\n");
-			getout();
+			getout (0);
 		}
-		new->b_next = -1;
+		new->b_next = (struct BOARD*) -1;
 		return (new);
 	}
 
 	new = freeq;
 	freeq = freeq->b_next;
-}
-
-pickmove ()  {
-						/* current game position */
-	register struct BOARD	*now = bsave();
-	register struct BOARD	*next;		/* next move */
-
-#ifdef DEBUG
-	if (trace == NULL)
-		trace = fopen ("bgtrace","w");
-	fprintf (trace,"\nRoll:  %d %d%s\n",D0,D1,race? " (race)": "");
-	fflush (trace);
-#endif
-	do  {				/* compare moves */
-		bcopy (checkq);
-		next = checkq->b_next;
-		makefree (checkq);
-		checkq = next;
-		movcmp();
-	} while (checkq != -1);
-
-	bcopy (now);
-}
-
-bcopy (s)
-register struct BOARD	*s;			/* game situation */
-{
-	register int	i;			/* index */
-
-	for (i = 0; i < 26; i++)
-		board[i] = s->b_board[i];
-	for (i = 0; i < 2; i++)  {
-		in[i] = s->b_in[i];
-		off[i] = s->b_off[i];
-	}
-	for (i = 0; i < mvlim; i++)  {
-		p[i] = s->b_st[i];
-		g[i] = s->b_fn[i];
-	}
-}
-
-movcmp ()  {
-	register int	i;
-	register int	c;
-
-#ifdef DEBUG
-	if (trace == NULL)
-		trace = fopen ("bgtrace","w");
-#endif
-
-	odds (0,0,0);
-	if (!race)  {
-		ch = op = pt = 0;
-		for (i = 1; i < 25; i++)  {
-			if (board[i] == cturn)
-				ch = canhit (i,1);
-				op += abs (bar-i);
-		}
-		for (i = bar+cturn; i != home; i += cturn)
-			if (board[i]*cturn > 1)
-				pt += abs(bar-i);
-		frc = freemen (bar)+trapped (bar,cturn);
-		frp = freemen (home)+trapped (home,-cturn);
-	}
-	for (em = bar; em != home; em += cturn)
-		if (board[em]*cturn > 0)
-			break;
-	em = abs(home-em);
-#ifdef DEBUG
-	fputs ("Board: ",trace);
-	for (i = 0; i < 26; i++)
-		fprintf (trace, " %d",board[i]);
-	if (race)
-		fprintf (trace,"\n\tem = %d\n",em);
-	else
-		fprintf (trace,
-			"\n\tch = %d, pt = %d, em = %d, frc = %d, frp = %d\n",
-			ch,pt,em,frc,frp);
-	fputs ("\tMove: ",trace);
-	for (i = 0; i < mvlim; i++)
-		fprintf (trace," %d-%d",p[i],g[i]);
-	fputs ("\n",trace);
-	fflush (trace);
-	strcpy (tests,"");
-#endif
-	if ((cp[0] == 0 && cg[0] == 0) || movegood())  {
-#ifdef DEBUG
-		fprintf (trace,"\t[%s] ... wins.\n",tests);
-		fflush (trace);
-#endif
-		for (i = 0; i < mvlim; i++)  {
-			cp[i] = p[i];
-			cg[i] = g[i];
-		}
-		if (!race)  {
-			chance = ch;
-			openmen = op;
-			points = pt;
-			endman = em;
-			barmen = abs(board[home]);
-			oldfrc = frc;
-			oldfrp = frp;
-		}
-		menin = *inptr;
-		menoff = *offptr;
-	}
-#ifdef DEBUG
-	else  {
-		fprintf (trace,"\t[%s] ... loses.\n",tests);
-		fflush (trace);
-	}
-#endif
-}
-
-movegood ()  {
-	register int	n;
-
-	if (*offptr == 15)
-		return (1);
-	if (menoff == 15)
-		return (0);
-	if (race)  {
-#ifdef DEBUG
-		strcat (tests,"o");
-#endif
-		if (*offptr-menoff)
-			return (*offptr > menoff);
-#ifdef DEBUG
-		strcat (tests,"e");
-#endif
-		if (endman-em)
-			return (endman > em);
-#ifdef DEBUG
-		strcat (tests,"i");
-#endif
-		if (menin == 15)
-			return (0);
-		if (*inptr == 15)
-			return (1);
-#ifdef DEBUG
-		strcat (tests,"i");
-#endif
-		if (*inptr-menin)
-			return (*inptr > menin);
-		return (rnum(2));
-	} else  {
-		n = barmen-abs(board[home]);
-#ifdef DEBUG
-		strcat (tests,"c");
-#endif
-		if (abs(chance-ch)+25*n > rnum(150))
-			return (n? (n < 0): (ch < chance));
-#ifdef DEBUG
-		strcat (tests,"o");
-#endif
-		if (*offptr-menoff)
-			return (*offptr > menoff);
-#ifdef DEBUG
-		strcat (tests,"o");
-#endif
-		if (abs(openmen-op) > 7+rnum(12))
-			return (openmen > op);
-#ifdef DEBUG
-		strcat (tests,"b");
-#endif
-		if (n)
-			return (n < 0);
-#ifdef DEBUG
-		strcat (tests,"e");
-#endif
-		if (abs(endman-em) > rnum(2))
-			return (endman > em);
-#ifdef DEBUG
-		strcat (tests,"f");
-#endif
-		if (abs(frc-oldfrc) > rnum(2))
-			return (frc < oldfrc);
-#ifdef DEBUG
-		strcat (tests,"p");
-#endif
-		if (abs(n = pt-points) > rnum(4))
-			return (n > 0);
-#ifdef DEBUG
-		strcat (tests,"i");
-#endif
-		if (*inptr-menin)
-			return (*inptr > menin);
-#ifdef DEBUG
-		strcat (tests,"f");
-#endif
-		if (abs(frp-oldfrp) > rnum(2))
-			return (frp > oldfrp);
-		return (rnum(2));
-	}
+        return new;
 }

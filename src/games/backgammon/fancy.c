@@ -3,12 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)fancy.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
+#include <string.h>
+#include <unistd.h>
+#include <term.h>
 
 char	PC;			/* padding character */
 char	*BC;			/* backspace sequence */
@@ -51,104 +49,6 @@ int	oldw;
 int	realr;
 int	realc;
 
-fboard ()  {
-	register int	i, j, l;
-
-	curmove (0,0);				/* do top line */
-	for (i = 0; i < 53; i++)
-		fancyc ('_');
-
-	curmove (15,0);				/* do botttom line */
-	for (i = 0; i < 53; i++)
-		fancyc ('_');
-
-	l = 1;					/* do vertical lines */
-	for (i = 52; i > -1; i -= 28)  {
-		curmove ( (l == 1? 1: 15) ,i);
-		fancyc ('|');
-		for (j = 0; j < 14; j++)  {
-			curmove (curr+l,curc-1);
-			fancyc ('|');
-		}
-		if (i == 24)
-			i += 32;
-		l = -l;				/* alternate directions */
-	}
-
-	curmove (2,1);				/* label positions 13-18 */
-	for (i = 13; i < 18; i++)  {
-		fancyc ('1');
-		fancyc ((i % 10)+'0');
-		curmove (curr,curc+2);
-	}
-	fancyc ('1');
-	fancyc ('8');
-
-	curmove (2,29);				/* label positions 19-24 */
-	fancyc ('1');
-	fancyc ('9');
-	for (i = 20; i < 25; i++)  {
-		curmove (curr,curc+2);
-		fancyc ('2');
-		fancyc ((i % 10)+'0');
-	}
-
-	curmove (14,1);				/* label positions 12-7 */
-	fancyc ('1');
-	fancyc ('2');
-	for (i = 11; i > 6; i--)  {
-		curmove (curr,curc+2);
-		fancyc (i > 9? '1': ' ');
-		fancyc ((i % 10)+'0');
-	}
-
-	curmove (14,30);			/* label positions 6-1 */
-	fancyc ('6');
-	for (i = 5; i > 0; i--) {
-		curmove (curr,curc+3);
-		fancyc (i+'0');
-	}
-
-	for (i = 12; i > 6; i--)		/* print positions 12-7 */
-		if (board[i])
-			bsect (board[i],13,1+4*(12-i),-1);
-
-	if (board[0])				/* print red men on bar */
-		bsect (board[0],13,25,-1);
-
-	for (i = 6; i > 0; i--)			/* print positions 6-1 */
-		if (board[i])
-			bsect (board[i],13,29+4*(6-i),-1);
-
-	l = (off[1] < 0? off[1]+15: off[1]);	/* print white's home */
-	bsect (l,3,54,1);
-
-	curmove (8,25);				/* print the word BAR */
-	fancyc ('B');
-	fancyc ('A');
-	fancyc ('R');
-
-	for (i = 13; i < 19; i++)		/* print positions 13-18 */
-		if (board[i])
-			bsect (board[i],3,1+4*(i-13),1);
-
-	if (board[25])				/* print white's men on bar */
-		bsect (board[25],3,25,1);
-
-	for (i = 19; i < 25; i++)		/* print positions 19-24 */
-		if (board[i])
-			bsect (board[i],3,29+4*(i-19),1);
-
-	l = (off[0] < 0? off[0]+15: off[0]);	/* print red's home */
-	bsect (-l,13,54,-1);
-
-	for (i = 0; i < 26; i++)		/* save board position
-						 * for refresh later */
-		oldb[i] = board[i];
-	oldr = (off[1] < 0? off[1]+15: off[1]);
-	oldw = -(off[0] < 0? off[0]+15: off[0]);
-}
-
 /*
  * bsect (b,rpos,cpos,cnext)
  *	Print the contents of a board position.  "b" has the value of the
@@ -158,17 +58,16 @@ fboard ()  {
  * to see if the position is a player's home, since those are printed
  * differently.
  */
-
-bsect (b,rpos,cpos,cnext)
-int	b;					/* contents of position */
-int	rpos;					/* row of position */
-int	cpos;					/* column of position */
-int	cnext;					/* direction of position */
-
+static void
+bsect (b, rpos, cpos, cnext)
+        int	b;				/* contents of position */
+        int	rpos;				/* row of position */
+        int	cpos;				/* column of position */
+        int	cnext;				/* direction of position */
 {
 	register int	j;			/* index */
 	register int	n;			/* number of men on position */
-	register int	bct;			/* counter */
+	register int	bct = 0;		/* counter */
 	int		k;			/* index */
 	char		pc;			/* color of men on position */
 
@@ -176,9 +75,9 @@ int	cnext;					/* direction of position */
 	pc = (b > 0? 'r': 'w');
 
 	if (n < 6 && cpos < 54)			/* position cursor at start */
-		curmove (rpos,cpos+1);
+		curmove (rpos, cpos + 1);
 	else
-		curmove (rpos,cpos);
+		curmove (rpos, cpos);
 
 	for (j = 0; j < 5; j++)  {		/* print position row by row */
 
@@ -214,74 +113,132 @@ int	cnext;					/* direction of position */
 						bct = 3;
 				}
 			}
-			curmove (curr+cnext,curc-bct);	/* reposition cursor */
+			curmove (curr + cnext, curc - bct);	/* reposition cursor */
 		}
 	}
 }
-
-refresh()  {
-	register int	i, r, c;
 
-	r = curr;				/* save current position */
-	c = curc;
+void
+fboard ()
+{
+	register int	i, j, l;
 
-	for (i = 12; i > 6; i--)		/* fix positions 12-7 */
-		if (board[i] != oldb[i])  {
-			fixpos (oldb[i],board[i],13,1+(12-i)*4,-1);
-			oldb[i] = board[i];
+	curmove (0, 0);				/* do top line */
+	for (i = 0; i < 53; i++)
+		fancyc ('_');
+
+	curmove (15, 0);			/* do botttom line */
+	for (i = 0; i < 53; i++)
+		fancyc ('_');
+
+	l = 1;					/* do vertical lines */
+	for (i = 52; i > -1; i -= 28)  {
+		curmove ((l == 1) ? 1 : 15, i);
+		fancyc ('|');
+		for (j = 0; j < 14; j++)  {
+			curmove (curr + l, curc - 1);
+			fancyc ('|');
 		}
-
-	if (board[0] != oldb[0])  {		/* fix red men on bar */
-		fixpos (oldb[0],board[0],13,25,-1);
-		oldb[0] = board[0];
+		if (i == 24)
+			i += 32;
+		l = -l;				/* alternate directions */
 	}
 
-	for (i = 6; i > 0; i--)			/* fix positions 6-1 */
-		if (board[i] != oldb[i])  {
-			fixpos (oldb[i],board[i],13,29+(6-i)*4,-1);
-			oldb[i] = board[i];
-		}
+	curmove (2, 1);				/* label positions 13-18 */
+	for (i = 13; i < 18; i++)  {
+		fancyc ('1');
+		fancyc ((i % 10)+'0');
+		curmove (curr, curc + 2);
+	}
+	fancyc ('1');
+	fancyc ('8');
 
-	i = -(off[0] < 0? off[0]+15: off[0]);	/* fix white's home */
-	if (oldw != i)  {
-		fixpos (oldw,i,13,54,-1);
-		oldw = i;
+	curmove (2, 29);			/* label positions 19-24 */
+	fancyc ('1');
+	fancyc ('9');
+	for (i = 20; i < 25; i++)  {
+		curmove (curr, curc + 2);
+		fancyc ('2');
+		fancyc ((i % 10)+'0');
 	}
 
-	for (i = 13; i < 19; i++)		/* fix positions 13-18 */
-		if (board[i] != oldb[i])  {
-			fixpos (oldb[i],board[i],3,1+(i-13)*4,1);
-			oldb[i] = board[i];
-		}
-
-	if (board[25] != oldb[25])  {		/* fix white men on bar */
-		fixpos (oldb[25],board[25],3,25,1);
-		oldb[25] = board[25];
+	curmove (14, 1);			/* label positions 12-7 */
+	fancyc ('1');
+	fancyc ('2');
+	for (i = 11; i > 6; i--)  {
+		curmove (curr, curc + 2);
+		fancyc (i > 9? '1': ' ');
+		fancyc ((i % 10)+'0');
 	}
 
-	for (i = 19; i < 25; i++)		/* fix positions 19-24 */
-		if (board[i] != oldb[i])  {
-			fixpos (oldb[i],board[i],3,29+(i-19)*4,1);
-			oldb[i] = board[i];
-		}
-
-	i = (off[1] < 0? off[1]+15: off[1]);	/* fix red's home */
-	if (oldr != i)  {
-		fixpos (oldr,i,3,54,1);
-		oldr = i;
+	curmove (14, 30);			/* label positions 6-1 */
+	fancyc ('6');
+	for (i = 5; i > 0; i--) {
+		curmove (curr, curc + 3);
+		fancyc (i+'0');
 	}
 
-	curmove (r,c);				/* return to saved position */
-	newpos();
-	buflush();
+	for (i = 12; i > 6; i--)		/* print positions 12-7 */
+		if (board[i])
+			bsect (board[i],13,1+4*(12-i),-1);
+
+	if (board[0])				/* print red men on bar */
+		bsect (board[0],13,25,-1);
+
+	for (i = 6; i > 0; i--)			/* print positions 6-1 */
+		if (board[i])
+			bsect (board[i],13,29+4*(6-i),-1);
+
+	l = (off[1] < 0? off[1]+15: off[1]);	/* print white's home */
+	bsect (l,3,54,1);
+
+	curmove (8, 25);			/* print the word BAR */
+	fancyc ('B');
+	fancyc ('A');
+	fancyc ('R');
+
+	for (i = 13; i < 19; i++)		/* print positions 13-18 */
+		if (board[i])
+			bsect (board[i],3,1+4*(i-13),1);
+
+	if (board[25])				/* print white's men on bar */
+		bsect (board[25],3,25,1);
+
+	for (i = 19; i < 25; i++)		/* print positions 19-24 */
+		if (board[i])
+			bsect (board[i],3,29+4*(i-19),1);
+
+	l = (off[0] < 0? off[0]+15: off[0]);	/* print red's home */
+	bsect (-l,13,54,-1);
+
+	for (i = 0; i < 26; i++)		/* save board position
+						 * for refresh later */
+		oldb[i] = board[i];
+	oldr = (off[1] < 0? off[1]+15: off[1]);
+	oldw = -(off[0] < 0? off[0]+15: off[0]);
 }
-
-fixpos (old,new,r,c,inc)
-int	old, new, r, c, inc;
 
+void
+fixcol (r, c, l, ch, inc)
+        register int	l, ch;
+        int		r, c, inc;
+{
+	register int	i;
+
+	curmove (r, c);
+	fancyc (ch);
+	for (i = 1; i < l; i++)  {
+		curmove (curr + inc, curc - 1);
+		fancyc (ch);
+	}
+}
+
+void
+fixpos (old, new, r, c, inc)
+        int	old, new, r, c, inc;
 {
 	register int	o, n, nv;
-	int		ov, nc;
+	int		ov, nc = 0;
 	char		col;
 
 	if (old*new >= 0)  {
@@ -346,24 +303,68 @@ int	old, new, r, c, inc;
 	fixcol (r+inc*new,c+1,abs(old+new),' ',inc);
 }
 
-fixcol (r,c,l,ch,inc)
-register int	l, ch;
-int		r, c, inc;
-
+void
+refresh()
 {
-	register int	i;
+	register int	i, r, c;
 
-	curmove (r,c);
-	fancyc (ch);
-	for (i = 1; i < l; i++)  {
-		curmove (curr+inc,curc-1);
-		fancyc (ch);
+	r = curr;				/* save current position */
+	c = curc;
+
+	for (i = 12; i > 6; i--)		/* fix positions 12-7 */
+		if (board[i] != oldb[i])  {
+			fixpos (oldb[i],board[i],13,1+(12-i)*4,-1);
+			oldb[i] = board[i];
+		}
+
+	if (board[0] != oldb[0])  {		/* fix red men on bar */
+		fixpos (oldb[0],board[0],13,25,-1);
+		oldb[0] = board[0];
 	}
-}
-
-curmove (r,c)
-register int	r, c;
 
+	for (i = 6; i > 0; i--)			/* fix positions 6-1 */
+		if (board[i] != oldb[i])  {
+			fixpos (oldb[i],board[i],13,29+(6-i)*4,-1);
+			oldb[i] = board[i];
+		}
+
+	i = -(off[0] < 0? off[0]+15: off[0]);	/* fix white's home */
+	if (oldw != i)  {
+		fixpos (oldw,i,13,54,-1);
+		oldw = i;
+	}
+
+	for (i = 13; i < 19; i++)		/* fix positions 13-18 */
+		if (board[i] != oldb[i])  {
+			fixpos (oldb[i],board[i],3,1+(i-13)*4,1);
+			oldb[i] = board[i];
+		}
+
+	if (board[25] != oldb[25])  {		/* fix white men on bar */
+		fixpos (oldb[25],board[25],3,25,1);
+		oldb[25] = board[25];
+	}
+
+	for (i = 19; i < 25; i++)		/* fix positions 19-24 */
+		if (board[i] != oldb[i])  {
+			fixpos (oldb[i],board[i],3,29+(i-19)*4,1);
+			oldb[i] = board[i];
+		}
+
+	i = (off[1] < 0? off[1]+15: off[1]);	/* fix red's home */
+	if (oldr != i)  {
+		fixpos (oldr,i,3,54,1);
+		oldr = i;
+	}
+
+	curmove (r, c);				/* return to saved position */
+	newpos();
+	buflush();
+}
+
+void
+curmove (r, c)
+        register int	r, c;
 {
 	if (curr == r && curc == c)
 		return;
@@ -375,18 +376,17 @@ register int	r, c;
 	curc = c;
 }
 
-newpos ()  {
+void
+newpos ()
+{
 	register int	r;		/* destination row */
 	register int	c;		/* destination column */
 	register int	mode = -1;	/* mode of movement */
 
 	int	count = 1000;		/* character count */
 	int	i;			/* index */
-	int	j;			/* index */
 	int	n;			/* temporary variable */
-	char	*m;			/* string containing CM movement */
-	int	addbuf();		/* add a char to the output buffer */
-
+	char	*m = 0;			/* string containing CM movement */
 
 	if (realr == -1)		/* see if already there */
 		return;
@@ -404,7 +404,7 @@ newpos ()  {
 
 	if (CM)  {			/* try CM to get there */
 		mode = 0;
-		m = tgoto (CM,c,r);
+		m = tgoto (CM, c, r);
 		count = strlen (m);
 	}
 
@@ -460,11 +460,11 @@ newpos ()  {
 
 	case -1:				/* error! */
 		write (2,"\r\nInternal cursor error.\r\n",26);
-		getout();
+		getout (0);
 
 						/* direct cursor motion */
 	case  0:
-		tputs (m,abs(curr-r),addbuf);
+		tputs (m, abs(curr-r),addbuf);
 		break;
 
 						/* relative to "home" */
@@ -484,7 +484,7 @@ newpos ()  {
 		for (i = 0; i < c; i++)
 			tputs (ND,1,addbuf);
 		break;
-	
+
 						/* down and over */
 	case  3:
 		for (i = 0; i < r-curr; i++)
@@ -492,7 +492,7 @@ newpos ()  {
 		for (i = 0; i < c-curc; i++)
 			tputs (ND,1,addbuf);
 		break;
-	
+
 						/* down and back */
 	case  4:
 		for (i = 0; i < r-curr; i++)
@@ -500,7 +500,7 @@ newpos ()  {
 		for (i = 0; i < curc-c; i++)
 			addbuf ('\010');
 		break;
-	
+
 						/* CR and up and over */
 	case  5:
 		addbuf ('\015');
@@ -509,7 +509,7 @@ newpos ()  {
 		for (i = 0; i < c; i++)
 			tputs (ND,1,addbuf);
 		break;
-	
+
 						/* up and over */
 	case  6:
 		for (i = 0; i < curr-r; i++)
@@ -517,7 +517,7 @@ newpos ()  {
 		for (i = 0; i < c-curc; i++)
 			tputs (ND,1,addbuf);
 		break;
-	
+
 						/* up and back */
 	case  7:
 		for (i = 0; i < curr-r; i++)
@@ -542,8 +542,10 @@ newpos ()  {
 	realr = -1;
 	realc = -1;
 }
-
-clear ()  {
+
+void
+clear ()
+{
 	register int	i;
 	int		addbuf();
 
@@ -561,12 +563,25 @@ clear ()  {
 	tputs (CL,CO,addbuf);		/* put CL in buffer */
 }
 
-tos ()  {				/* home cursor */
+void
+tos ()
+{					/* home cursor */
 	curmove (0,0);
 }
-
+
+static void
+newline ()
+{
+	cline();
+	if (curr == LI-1)
+		curmove (begscr,0);
+	else
+		curmove (curr+1,0);
+}
+
+void
 fancyc (c)
-register char	c;			/* character to output */
+        register int	c;		/* character to output */
 {
 	register int	sp;		/* counts spaces in a tab */
 
@@ -620,12 +635,11 @@ register char	c;			/* character to output */
 					/* use cursor movement routine */
 		curmove (curr,curc+1);
 }
-
-clend()  {
-	register int	i;
-	register char	*s;
-	int		addbuf();
 
+void
+clend()
+{
+	register int	i;
 
 	if (CD)  {
 		tputs (CD,CO-curr,addbuf);
@@ -644,11 +658,10 @@ clend()  {
 	curmove (i,0);
 }
 
-cline ()  {
-	register int	i;
+void
+cline ()
+{
 	register int	c;
-	register char	*s;
-	int		addbuf();
 
 	if (curc > linect[curr])
 		return;
@@ -667,17 +680,9 @@ cline ()  {
 	}
 }
 
-newline ()  {
-	cline();
-	if (curr == LI-1)
-		curmove (begscr,0);
-	else
-		curmove (curr+1,0);
-}
-
+int
 getcaps (s)
-register char	*s;
-
+        register char	*s;
 {
 	register char	*code;		/* two letter code */
 	register char	***cap;		/* pointer to cap string */

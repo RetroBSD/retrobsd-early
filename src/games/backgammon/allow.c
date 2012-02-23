@@ -3,15 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)allow.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
-movallow ()  {
-
+int
+movallow ()
+{
 	register int	i, m, iold;
 	int		r;
 
@@ -30,7 +26,8 @@ movallow ()  {
 				g[i] = bar+cturn*D1;
 			else
 				g[i] = bar+cturn*D0;
-			if (r = makmove(i))  {
+                        r = makmove(i);
+			if (r)  {
 				if (d0 || m == 4)
 					break;
 				swap;

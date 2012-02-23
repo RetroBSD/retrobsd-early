@@ -3,21 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)odds.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
-odds (r1,r2,val)
-register int	r1;
-int		r2, val;
+void
+odds (r1, r2, val)
+        register int	r1;
+        int		r2, val;
 {
 	register int	i, j;
 
 	if (r1 == 0)  {
-		for (i = 0; i < 6; i++)  
+		for (i = 0; i < 6; i++)
 			for (j = 0; j < 6; j++)
 				table[i][j] = 0;
 		return;
@@ -35,7 +31,9 @@ int		r2, val;
 	}
 }
 
-count ()  {
+int
+count ()
+{
 	register int	i;
 	register int	j;
 	register int	total;
@@ -46,13 +44,13 @@ count ()  {
 			total += table[i][j];
 	return (total);
 }
-
-canhit (i,c)
-int	i, c;
 
+int
+canhit (i, c)
+        int	i, c;
 {
 	register int	j, k, b;
-	int		a, d, diff, place, addon, menstuck;
+	int		a, diff, place, addon, menstuck;
 
 	if (c == 0)
 		odds (0,0,0);

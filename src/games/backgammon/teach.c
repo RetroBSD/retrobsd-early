@@ -3,29 +3,24 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)teach.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
+#include <signal.h>
+#include <unistd.h>
 
-char	*hello[];
-char	*list[];
-char	*intro1[];
-char	*intro2[];
-char	*moves[];
-char	*remove[];
-char	*hits[];
-char	*endgame[];
-char	*doubl[];
-char	*stragy[];
-char	*prog[];
-char	*lastch[];
+extern const char	*hello[];
+extern const char	*list[];
+extern const char	*intro1[];
+extern const char	*intro2[];
+extern const char	*moves[];
+extern const char	*remove[];
+extern const char	*hits[];
+extern const char	*endgame[];
+extern const char	*doubl[];
+extern const char	*stragy[];
+extern const char	*prog[];
+extern const char	*lastch[];
 
-extern char	ospeed;			/* tty output speed for termlib */
-
-char *helpm[] = {
+const char *helpm[] = {
 	"\nEnter a space or newline to roll, or",
 	"     b   to display the board",
 	"     d   to double",
@@ -33,21 +28,20 @@ char *helpm[] = {
 	0
 };
 
-char *contin[] = {
+const char *contin[] = {
 	"",
 	0
 };
 
+int
 main (argc,argv)
-int	argc;
-char	**argv;
-
+        int	argc;
+        char	**argv;
 {
-	register char	*s, *ts[];
 	register int	i;
 
 	signal (2,getout);
-	if (gtty (0,&tty) == -1)			/* get old tty mode */
+	if (ioctl (0, TIOCGETP, &tty) == -1)		/* get old tty mode */
 		errexit ("teachgammon(gtty)");
 	old = tty.sg_flags;
 #ifdef V7
@@ -55,13 +49,8 @@ char	**argv;
 #else
 	raw = ((noech = old & ~ECHO) | RAW);		/* set up modes */
 #endif
-	ospeed = old.sg_ospeed;				/* for termlib */
 	tflag = getcaps (getenv ("TERM"));
-#ifdef V7
 	while (*++argv != 0)
-#else
-	while (*++argv != -1)
-#endif
 		getarg (&argv);
 	if (tflag)  {
 		noech &= ~(CRMOD|XTABS);
@@ -76,59 +65,62 @@ char	**argv;
 	init();
 	while (i)
 		switch (i)  {
-		
 		case 1:
 			leave();
-		
 		case 2:
-			if (i = text(intro1))
+			i = text(intro1);
+			if (i)
 				break;
 			wrboard();
-			if (i = text(intro2))
+			i = text(intro2);
+			if (i)
 				break;
-		
 		case 3:
-			if (i = text(moves))
+			i = text(moves);
+			if (i)
 				break;
-		
 		case 4:
-			if (i = text(remove))
+			i = text(remove);
+			if (i)
 				break;
-		
 		case 5:
-			if (i = text(hits))
+			i = text(hits);
+			if (i)
 				break;
-		
 		case 6:
-			if (i = text(endgame))
+			i = text(endgame);
+			if (i)
 				break;
-		
 		case 7:
-			if (i = text(doubl))
+			i = text(doubl);
+			if (i)
 				break;
-		
 		case 8:
-			if (i = text(stragy))
+			i = text(stragy);
+			if (i)
 				break;
-		
 		case 9:
-			if (i = text(prog))
+			i = text(prog);
+			if (i)
 				break;
-		
 		case 10:
-			if (i = text(lastch))
+			i = text(lastch);
+			if (i)
 				break;
 		}
 	tutor();
+        return 0;
 }
 
-leave()  {
+void
+leave()
+{
 	if (tflag)
 		clear();
 	else
 		writec ('\n');
 	fixtty(old);
-	execl (EXEC,"backgammon",args,"n",0);
+	execl (EXEC, "backgammon", args, "n", (char*)0);
 	writel ("Help! Backgammon program is missing\007!!\n");
 	exit (-1);
 }

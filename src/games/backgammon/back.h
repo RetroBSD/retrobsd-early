@@ -1,12 +1,9 @@
-
 /*
  * Copyright (c) 1980 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *
- *	@(#)back.h	5.1 (Berkeley) 5/29/85
  */
-
+#include <stdlib.h>
 #include <sgtty.h>
 
 #define rnum(r)	(random()%r)
@@ -27,8 +24,8 @@
  *
  */
 
-char	EXEC[];			/* object for main program */
-char	TEACH[];		/* object for tutorial program */
+extern char EXEC[];		/* object for main program */
+extern char TEACH[];		/* object for tutorial program */
 
 int	pnum;			/* color of player:
 					-1 = white
@@ -82,7 +79,7 @@ char	cin[100];		/* input line of current move
 				   (used for reconstructing input after
 				   a backspace) */
 
-char	*color[];
+extern char *color[];
 				/* colors as strings */
 char	**colorptr;		/* color of current player */
 char	**Colorptr;		/* color of current player, capitalized */
@@ -98,4 +95,54 @@ int	curc;			/* column position of cursor */
 int	begscr;			/* 'beginning' of screen
 				   (not including board) */
 
-int	getout();		/* function to exit backgammon cleanly */
+void	getout (int);		/* function to exit backgammon cleanly */
+
+int     makmove (int);
+void    movback (int);
+void    fixtty (int);
+void    clear (void);
+void    fboard (void);
+void    writel (const char *);
+void    gwrite (void);
+void    curmove (int, int);
+void    writec (int);
+int     checkmove (int);
+int     movokay (int);
+void    wrhit (int);
+void    nexturn (void);
+void    refresh (void);
+int     quit (void);
+void    proll (void);
+void    cline (void);
+void    moverr (int);
+int     dblgood (void);
+int     yorn (int);
+void    buflush (void);
+void    wrboard (void);
+int     freemen (int);
+int     trapped (int, int);
+void    odds (int, int, int);
+int     count (void);
+void    fancyc (int);
+void    newpos (void);
+int     addbuf (int);
+void    errexit (char *);
+int     getcaps (char *);
+void    getarg (char ***);
+int     text (const char **);
+void    init (void);
+int     readc (void);
+void    roll (void);
+void    move (int);
+int     movallow (void);
+void    getmove (void);
+void    clend (void);
+void    save (int);
+void    dble (void);
+void    wrint (int);
+void    wrscore (void);
+void    backone (int);
+int     canhit (int, int);
+void    recover (char *);
+void    leave (void);
+void    tutor (void);

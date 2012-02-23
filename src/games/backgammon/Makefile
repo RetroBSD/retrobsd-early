@@ -3,49 +3,44 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) 1/11/86
-#
-DESTDIR=
-SEPFLAG= -i
-CFLAGS= -O -DV7 -w
-OBJS= allow.o board.o check.o extra.o fancy.o init.o main.o move.o\
-	odds.o one.o save.o subs.o table.o text.o message.o
-TOBJS= allow.o board.o check.o data.o fancy.o init.o odds.o one.o save.o subs.o\
-	table.o teach.o ttext1.o ttext2.o tutor.o
-SRCS= allow.c board.c check.c data.c extra.c fancy.c init.c main.c\
-	move.c odds.c one.c save.c subs.c table.c teach.c text.c ttext1.c\
-	ttext2.c tutor.c message.c
+TOPSRC		= $(shell cd ../../..; pwd)
+include $(TOPSRC)/target.mk
+#include $(TOPSRC)/cross.mk
 
-all: backgammon teachgammon backgammon.doc
+CFLAGS		+= -O -g -Werror -Wall #-DV7
+LIBS            += -ltermcap
 
-#	Backgammon program
-backgammon: $(OBJS)
-	-rm -f backgammon
-	cc ${SEPFLAG} -o backgammon $(OBJS) -ltermlib
+OBJS            = allow.o board.o check.o extra.o fancy.o init.o main.o \
+                  move.o odds.o one.o save.o subs.o table.o text.o message.o
+TOBJS           = allow.o board.o check.o data.o fancy.o init.o odds.o one.o \
+                  save.o subs.o table.o teach.o ttext1.o ttext2.o tutor.o
+MAN		= backgammon.0
+MANSRC		= backgammon.6
 
-#	Backgammon rules and tutorial
-teachgammon: ${TOBJS}
-	-rm -f teachgammon
-	cc ${SEPFLAG} -o teachgammon $(TOBJS) -ltermlib
+all:            backgammon teachgammon $(MAN)
 
-#	Header files back.h and tutor.h
-allow.o board.o check.o extra.o fancy.o main.o move.o odds.o one.o save.o\
-	subs.o table.o teach.o text.o ttext1.o ttext2.o: back.h
-data.o tutor.o: back.h tutor.h
+backgammon:     $(OBJS)
+		$(CC) $(LDFLAGS) -o backgammon.elf $(OBJS) $(LIBS)
+		$(OBJDUMP) -S backgammon.elf > backgammon.dis
+		$(SIZE) backgammon.elf
+		$(ELF2AOUT) backgammon.elf $@ && rm backgammon.elf
 
-#	Update message.  /tmp is always changing, so use it to ensure execution
-message.c: /tmp
-	ex - message.c < Mesgfix
+teachgammon:    $(TOBJS)
+		$(CC) $(LDFLAGS) -o teachgammon.elf $(TOBJS) $(LIBS)
+		$(OBJDUMP) -S teachgammon.elf > teachgammon.dis
+		$(SIZE) teachgammon.elf
+		$(ELF2AOUT) teachgammon.elf $@ && rm teachgammon.elf
 
-#	Documentation
-backgammon.doc: backgammon.src
-	-rm -f backgammon.doc
-	nroff -man -Tcrt backgammon.src > backgammon.doc
-
-#	Installation
-install: all
-	install -s backgammon ${DESTDIR}/usr/games/backgammon
-	install -s teachgammon ${DESTDIR}/usr/games/teachgammon
+$(MAN):         $(MANSRC)
+		$(MANROFF) $< > $@
 
 clean:
-	rm -f ${OBJS} ${TOBJS} backgammon teachgammon backgammon.doc errs
+		rm -f *.o *.0 *.elf $(MAN) backgammon teachgammon *.elf *.dis tags *~
+
+install:        all
+		install backgammon $(DESTDIR)/games/
+		install teachgammon $(DESTDIR)/games/
+		cp $(MAN) $(DESTDIR)/share/man/cat6/
+
+$(OBJS) $(TOBJS): back.h
+data.o tutor.o: tutor.h

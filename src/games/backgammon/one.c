@@ -3,16 +3,31 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)one.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
 
+static int
+last ()
+{
+	register int	i;
+
+	for (i = home-6*cturn; i != home; i += cturn)
+		if (board[i]*cturn > 0)
+			return (abs(home-i));
+        return 0;
+}
+
+static int
+checkd (d)
+        register int	d;
+{
+	if (d0 != d)
+		swap;
+	return (0);
+}
+
+int
 makmove (i)
-register int	i;
- 
+        register int	i;
 {
 	register int	n, d;
 	int		max;
@@ -63,10 +78,10 @@ register int	i;
 	}
 	return (0);
 }
-
-moverr (i)
-register int	i;
 
+void
+moverr (i)
+        register int	i;
 {
 	register int	j;
 
@@ -86,27 +101,9 @@ register int	i;
 	movback (i);
 }
 
-
-checkd (d)
-register int	d;
-
-{
-	if (d0 != d)
-		swap;
-	return (0);
-}
-
-last ()  {
-	register int	i;
-
-	for (i = home-6*cturn; i != home; i += cturn)
-		if (board[i]*cturn > 0)
-			return (abs(home-i));
-}
-
+void
 movback (i)
-register int	i;
-
+        register int	i;
 {
 	register int	j;
 
@@ -114,9 +111,9 @@ register int	i;
 		backone(j);
 }
 
+void
 backone (i)
-register int	i;
-
+        register int	i;
 {
 	board[p[i]] += cturn;
 	if (g[i] != home)  {

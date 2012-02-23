@@ -3,17 +3,36 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)board.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
+#include <string.h>
 
 static int	i, j, k;
 static char	ln[60];
 
-wrboard ()  {
+static void
+wrbsub ()
+{
+	register int	m;
+	register char	d;
+
+	if (board[k] > 0)  {
+		m = board[k];
+		d = 'r';
+	} else {
+		m = -board[k];
+		d = 'w';
+	}
+	if (m>i)
+		ln[j+1] = d;
+	if (m>i+5)
+		ln[j] = d;
+	if (m>i+10)
+		ln[j+2] = d;
+}
+
+void
+wrboard ()
+{
 	register int	l;
 	static char	bl[] =
 		"|                       |   |                       |\n";
@@ -127,23 +146,4 @@ lastline:
 		writec ('\n');
 	}
 	fixtty(raw);
-}
-
-wrbsub () {
-	register int	m;
-	register char	d;
-
-	if (board[k] > 0)  {
-		m = board[k];
-		d = 'r';
-	} else {
-		m = -board[k];
-		d = 'w';
-	}
-	if (m>i)
-		ln[j+1] = d;
-	if (m>i+5)
-		ln[j] = d;
-	if (m>i+10)
-		ln[j+2] = d;
 }

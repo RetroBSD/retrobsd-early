@@ -3,14 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)save.c	5.1 (Berkeley) 5/29/85";
-#endif not lint
-
 #include "back.h"
-
-extern int	errno;
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 static char	confirm[] = "Are you sure you want to leave now?";
 static char	prompt[] = "Enter a file name:  ";
@@ -23,9 +19,9 @@ static char	type[] = "'.\nType \"backgammon ";
 static char	rec[] = "\" to recover your game.\n\n";
 static char	cantrec[] = "Can't recover file:  ";
 
+void
 save (n)
-register int	n;
-
+        register int	n;
 {
 	register int	fdesc;
 	register char	*fs;
@@ -60,7 +56,7 @@ register int	n;
 			writec (*fs++);
 		}
 		*fs = '\0';
-		if ((fdesc = open(fname,2)) == -1 && errno == 2)  {
+		if ((fdesc = open(fname,2)) == -1 /*&& errno == 2*/)  {
 			if ((fdesc = creat (fname,0700)) != -1)
 			break;
 		}
@@ -111,15 +107,28 @@ register int	n;
 	writel (rec);
 	if (tflag)
 		clend();
-	getout ();
+	getout (0);
 }
-
-recover (s)
-char	*s;
 
+static void
+norec (s)
+        register char	*s;
 {
-	register int	i;
-	int		fdesc;
+	register char	*c;
+
+	tflag = 0;
+	writel (cantrec);
+	c = s;
+	while (*c != '\0')
+		writec (*c++);
+	getout (0);
+}
+
+void
+recover (s)
+        char	*s;
+{
+	int	fdesc;
 
 	if ((fdesc = open (s,0)) == -1)
 		norec (s);
@@ -136,18 +145,4 @@ char	*s;
 	read (fdesc,&raflag,sizeof raflag);
 	close (fdesc);
 	rflag = 1;
-}
-
-norec (s)
-register char	*s;
-
-{
-	register char	*c;
-
-	tflag = 0;
-	writel (cantrec);
-	c = s;
-	while (*c != '\0')
-		writec (*c++);
-	getout ();
 }
