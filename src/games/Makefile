@@ -13,7 +13,7 @@ CFLAGS          += -Werror -Wall -Os
 #
 SUBDIR          = adventure backgammon
 # TODO: atc battlestar boggle btlgammon cribbage
-# fortune hack hangman hunt mille monop phantasia quiz robots
+# fortune hangman hunt mille monop phantasia quiz robots
 # rogue sail snake trek warp
 
 # C programs that live in the current directory and do not need
