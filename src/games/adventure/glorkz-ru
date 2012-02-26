@@ -144,10 +144,8 @@
 76	Каньон в этом месте становится слишком узким. Дальше идти нельзя.
 77	Вы в высоком в/з каньоне. Низкий узкий лаз ведет к северу и расширяется.
 78	Каньон забит мессой валунов - тупик.
-
 79	The stream flows out through a pair of 1 foot diameter sewer pipes.
 79	It would be advisable to use the exit.
-
 80	Вы в лабиринте небольших извилистых похожих друг на друга проходов.
 81	Здесь тупик.
 82	Здесь тупик.
@@ -158,14 +156,10 @@
 87	Вы в лабиринте небольших извилистых похожих друг на друга проходов.
 88	Вы в длинном, узком коридоре, уходящем далеко на запад. В восточном
 88	конце есть отверстие, в котором видна листва деревьев.
-
 89	There is nothing here to climb.  Use "up" or "out" to leave the pit.
-
 90	You have climbed up the plant and out of the pit.
-
 91	Вы на верху крутого склона над большим гротом. Здесь можно слезть, но
 91	невозможно забраться обратно. Имеется проход на север.
-
 92	Вы в громадном гроте. Потолок так высок, что лампа не может его
 92	осветить. Проходы ведут на восток, север и юг. На западной стене
 92	нацарапана надпись:
@@ -1165,155 +1159,163 @@
 3147	swim
 -1
 5
-1	Set of keys
-000	There are some keys on the ground here.
-2	Brass lantern
-000	There is a shiny brass lamp nearby.
-100	There is a lamp shining nearby.
-3	*Grate
-000	The grate is locked.
-100	The grate is open.
-4	Wicker cage
-000	There is a small wicker cage discarded nearby.
-5	Black rod
-000	A three foot black rod with a rusty star on an end lies nearby.
-6	Black rod
-000	A three foot black rod with a rusty mark on an end lies nearby.
+1	связку ключей
+000	Здесь на земле несколько ключей.
+2	латунную лампу
+000	Здесь блестящая латунная лампа.
+100	TЗдесь рядом горящая лампа.
+3	*решетка
+000	Решетка заперта.
+100	Решетка открыта.
+4	проволочную клетку
+000	Здесь брошена маленькая проволочная клетка.
+5	черный жезл
+000	Здесь лежит 3-футовый черный жезл с ржавой звездой на конце.
+6	черный жезл
+000	Здесь лежит 3-футовый черный жезл с ржавой звездой на конце.
 7	*Steps
 000	Rough stone steps lead down the pit.
 100	Rough stone steps lead up the dome.
-8	Little bird in cage
-000	A cheerful little bird is sitting here singing.
-100	There is a little bird in the cage.
-9	*Rusty door
-000	The way north is barred by a massive, rusty, iron door.
-100	The way north leads through a massive, rusty, iron door.
-10	Velvet pillow
-000	A small velvet pillow lies on the floor.
-11	*Snake
-000	A huge green fierce snake bars the way!
+8	маленькую птичку в клетке
+000	Здесь сидит маленькая веселая птичка и поет.
+100	Маленькая птичка сидит в клетке.
+9	*ржавая дверь
+000	Путь преграждает массивная ржавая железная дверь.
+100	Путь ведет через массивную ржавую железную дверь.
+10	бархатную подушку
+000	На полу лежит небольшая бархатная подушка.
+11	*змея
+000	Огромная свирепая зеленая змея преграждает путь!
 100	>$<  (Chased away)
 12	*Fissure
 000	>$<
-100	A crystal bridge now spans the fissure.
+100	Хрустальный мост перекрывает пропасть.
 200	The crystal bridge has vanished!
-13	*Stone tablet
-000	A massive stone tablet imbedded in the wall reads:
-000	"Congratulations on bringing light into the dark-room!"
-14	Giant clam  >grunt!<
-000	There is an enormous clam here with its shell tightly closed.
-15	Giant oyster  >groan!<
-000	There is an enormous oyster here with its shell tightly closed.
+13	*каменная плита
+000	На массивной каменной плите на стене надпись:
+000
+000       "ПОЗДРАВЛЯЕМ ТОГО, КТО ПРИНЕС СВЕТ В ТЕМНЫЙ ГРОТ !"
+000
+14	гигантского моллюска  >grunt!<
+000	Здесь громадный моллюск. Его раковина крепко закрыта.
+15	гигантскую устрицу  >groan!<
+000	Здесь громадная устрица. Ее раковина крепко закрыта.
 100	Interesting.  There seems to be something written on the underside of
 100	The oyster.
-16	"Spelunker today"
-000	There are a few recent issues of "Spelunker today" magazine here.
-19	Tasty food
-000	There is food here.
-20	Small bottle
-000	There is a bottle of water here.
-100	There is an empty bottle here.
-200	There is a bottle of oil here.
-21	Water in the bottle
-22	Oil in the bottle
-23	*Mirror
+16	"Новости пещеры"
+000	Здесь несколько свежих номеров журнала "Новости пещеры".
+19	вкусную еду
+000	Здесь есть еда.
+20	небольшую бутылку
+000	Здесь бутылка с водой.
+100	Здесь пустая бутылка.
+200	Здесь бутылка с маслом.
+21	Вода в бутылке
+22	Масло в бутылке
+23	*зеркало
 000	>$<
 24	*Plant
-000	There is a tiny little plant in the pit, murmuring "water, water, ..."
+000	В яме маленький росток, он шепчет: "воды, воды, ...".
 100	The plant spurts into furious growth for a few seconds.
-200	There is a 12-foot-tall beanstalk stretching up out of the pit,
-200	Bellowing "water!! water!!"
+200	4-х метровое дерево высится над ямой. Слышен рев: "ВОДЫ!! ВОДЫ!!".
 300	The plant grows explosively, almost filling the bottom of the pit.
-400	There is a gigantic beanstalk stretching all the way up to the hole.
+400	Здесь гигантское дерево, оно протянулось до самого потолка.
 500	You've over-watered the plant!  It's shriveling up!  It's, it's...
 25	*Phony plant (seen in twopit room only when tall enough)
 000	>$<
-100	The top of a 12-foot-tall beanstalk is poking out of the west pit.
-200	There is a huge beanstalk growing out of the west pit up to the hole.
-26	*Stalactite
+100	Вершина 4-х метрового дерева выступает над западной ямой.
+200	Громадное дерево высится над западной ямой и достает до потолка.
+26	*сталактит
 000	>$<
-27	*Shadowy figure
-000	The shadowy figure seems to be trying to attract your attention.
-28	Dwarf's axe
-000	There is a little axe here.
+27	*темная фигура
+000	Кажется, темная фигура пытается привлечь ваше внимание.
+28	топор карлика
+000	Здесь небольшой топор.
 100	There is a little axe lying beside the bear.
-29	*Cave drawings
+29	*надпись
 000	>$<
-30	*Pirate
+30	*пират
 000	>$<
-31	*Dragon
-000	A huge green fierce dragon bars the way!
+31	*дракон
+000	Огромный свирепый зеленый дракон преграждает путь!
 100	Congratulations!  You have just vanquished a dragon with your bare
 100	Hands!  (unbelievable, isn't it?)
-200	The body of a huge green dead dragon is lying off to one side.
-32	*Chasm
-000	A rickety wooden bridge extends across the chasm, vanishing into the
-000	Mist.  A sign posted on the bridge reads, "stop! pay troll!"
-100	The wreckage of a bridge (and a dead bear) can be seen at the bottom
-100	Of the chasm.
-33	*Troll
-000	A burly troll stands by the bridge and insists you throw him a
-000	Treasure before you may cross.
+200	Тело громадного зеленого дракона лежит в стороне от прохода.
+32	*расселина
+000	Шаткий деревянный мост перекрывает расселину, исчезая в тумане. На
+000	мосту табличка:
+000
+000                    "Стой! Заплати троллю!"
+000
+100	Обломки моста (и мертвый медведь) видны на дне расселины.
+33	*тролль
+000	Дородный тролль стоит у моста и требует, чтобы вы бросили ему
+000	что-нибудь ценное.
 100	The troll steps out from beneath the bridge and blocks your way.
 200	>$<  (Chased away)
 34	*Phony troll
-000	The troll is nowhere to be seen.
+000	Тролля нигде не видно.
 35	>$<  (Bear uses rtext 141)
-000	There is a ferocious cave bear eying you from the far end of the room!
-100	There is a gentle cave bear sitting placidly in one corner.
-200	There is a contented-looking bear wandering about nearby.
+000	Дикий пещерный медведь смотрит на вас из дальнего конца грота!
+100	Ручной пещерный медведь спокойно сидит в углу.
+200	Ручной медведь бродит неподалеку.
 300	>$<  (Dead)
 36	*Message in second maze
-000	There is a message scrawled in the dust in a flowery script, reading:
-000	"This is not the maze where the pirate leaves his treasure chest."
-37	*Volcano and/or geyser
+000	Надпись, выведенная на пыли, гласит:
+000
+000	  этО         ЛабИрИНТ,                       суНДуК С Сок
+000	      не тОТ              ГдЕ  ПирАт  ПрячЕт              РОвиЩАми
+000
+37	*вулкан and/or гейзер
 000	>$<
-38	*Vending machine
-000	There is a massive vending machine here.  The instructions on it read:
-000	"Drop coins here to receive fresh batteries."
-39	Batteries
-000	There are fresh batteries here.
-100	Some worn-out batteries have been discarded nearby.
-40	*Carpet and/or moss
+38	*автомат
+000	Здесь стоит массивный автомат, на нем надпись:
+000
+000	     "БРОСЬ МОНЕТЫ И ПОЛУЧИ СВЕЖИЕ БАТАРЕЙКИ"
+000
+39	батарейки
+000	Здесь есть свежие батарейки.
+100	Несколько старых батареек лежат неподалеку.
+40	*ковер and/or мох
 000	>$<
-50	Large gold nugget
-000	There is a large sparkling nugget of gold here!
-51	Several diamonds
-000	There are diamonds here!
-52	Bars of silver
-000	There are bars of silver here!
-53	Precious jewelry
-000	There is precious jewelry here!
-54	Rare coins
-000	There are many coins here!
-55	Treasure chest
-000	The pirate's treasure chest is here!
-56	Golden eggs
-000	There is a large nest here, full of golden eggs!
+50	большой золотой самородок
+000	Здесь большой сияющий золотой самородок!
+51	несколько алмазов
+000	Здесь алмазы!
+52	слитки серебра
+000	Здесь слитки серебра!
+53	драгоценные камни
+000	Здесь лежат драгоценные камни!
+54	редкие монеты
+000	Здесь много монет!
+55	сундук с сокровищами
+000	Здесь сундук пирата с сокровищами!
+56	золотые яйца
+000	Здесь большое гнездо, полное золотых яиц!
 100	The nest of golden eggs has vanished!
 200	Done!
-57	Jeweled trident
-000	There is a jewel-encrusted trident here!
-58	Ming vase
-000	There is a delicate, precious, ming vase here!
+57	драгоценный трезубец
+000	Здесь трезубец, инкрустированный драгоценными камнями!
+58	фарфоровую вазу
+000	Здесь изящная, дорогая фарфоровая ваза!
 100	The vase is now resting, delicately, on a velvet pillow.
-200	The floor is littered with worthless shards of pottery.
+200	Пол покрыт осколками фарфоровой вазы.
 300	The ming vase drops with a delicate crash.
-59	Egg-sized emerald
-000	There is an emerald here the size of a plover's egg!
-60	Platinum pyramid
-000	There is a platinum pyramid here, 8 inches on a side!
-61	Glistening pearl
-000	Off to one side lies a glistening pearl!
-62	Persian rug
-000	There is a persian rug spread out on the floor!
+59	изумруд размером с голубиное яйцо
+000	Здесь лежит изумруд размером с голубиное яйцо!
+60	платиновую пирамиду
+000	Здесь платиновая 20-тисантиметровая пирамида!
+61	блестящую жемчужину
+000	В стороне лежит блестящая жемчужина!
+62	персидский ковер
+000	На полу расстелен персидский ковер!
 100	The dragon is sprawled out on a persian rug!!
-63	Rare spices
-000	There are rare spices here!
-64	Golden chain
-000	There is a golden chain lying in a heap on the floor!
-100	The bear is locked to the wall with a golden chain!
-200	There is a golden chain locked to the wall!
+63	редкие пряности
+000	Здесь редкие пряности!
+64	золотую цепь
+000	На полу кучей лежит золотая цепь!
+100	Медведь прикован к стене золотой цепью с замком!
+200	Здесь золотая цепь, прикрепленая к стене замком!
 -1
 6
 1	Неподалеку находится колоссальная пещера, где одни нашли золото и
@@ -1334,89 +1336,84 @@
 7	Он попал в вас!
 8	Тихий голос говорит "плоф".
 9	В этом направлении пути нет.
-10	I am unsure how you are facing.  Use compass points or nearby objects.
+10	Я не знаю, в какую сторону вы стоите лицом, поэтому укажите сторону
+10	света, куда идти (север, юг, сз, юв ...).
 11	I don't know in from out here.  Use compass points or name something
 11	in the general direction you want to go.
-12	I don't know how to apply that word here.
-13	I don't understand that!
+12	Я не знаю, как применить здесь это слово.
+13	Я не знаю этого слова.
 14	I'm game.  Would you care to explain how?
-15	Sorry, but I am not allowed to give more detail.  I will repeat the
-15	long description of your location.
-16	It is now pitch dark.  If you proceed you will likely fall into a pit.
+15	Я повторю полное описание вашего местонахождения:
+16	Кромешная тьма. Если будете двигаться дальше, свалитесь в яму.
 17	If you prefer, simply type w rather than west.
-18	Are you trying to catch the bird?
+18	Вы пытаетесь поймать птицу?
 19	The bird is frightened right now and you cannot catch it no matter
 19	what you try.  Perhaps you might try later.
-20	Are you trying to somehow deal with the snake?
+20	Вы пытаетесь как-то справиться со змеей?
 21	You can't kill the snake, or drive it away, or avoid it, or anything
 21	like that.  There is a way to get by, but you don't have the necessary
 21	resources right now.
-22	Do you really want to quit now?
-23	You fell into a pit and broke every bone in your body!
+22	Вы действительно хотите сдаться?
+23	Вы свалились в яму и поломали себе все кости!
 24	You are already carrying it!
-25	You can't be serious!
+25	Несерьезно!
 26	The bird was unafraid when you entered, but as you approach it becomes
 26	disturbed and you cannot catch it.
 27	You can catch the bird, but you cannot carry it.
-28	There is nothing here with a lock!
-29	You aren't carrying it!
+28	Здесь нет ничего с замком!
+29	У вас этого нет!
 30	The little bird attacks the green snake, and in an astounding flurry
 30	drives the snake away.
-31	You have no keys!
-32	It has no lock.
+31	У вас нет ключей!
+32	Здесь нет ничего с замком!
 33	I don't know how to lock or unlock such a thing.
-34	It was already locked.
+34	Она уже заперта.
 35	The grate is now locked.
 36	The grate is now unlocked.
-37	It was already unlocked.
-38	You have no source of light.
+37	Она уже отперта.
+38	У вас нет источника света.
 39	Your lamp is now on.
 40	Your lamp is now off.
 41	There is no way to get past the bear to unlock the chain, which is
 41	probably just as well.
-42	Nothing happens.
+42	Ничего не произошло.
 43	Where?
-44	There is nothing here to attack.
+44	Здесь некого атаковать.
 45	The little bird is now dead.  Its body disappears.
-46	Attacking the snake both doesn't work and is very dangerous.
-47	You killed a little dwarf.
-48	You attack a little dwarf, but he dodges out of the way.
-49	With what?  Your bare hands?
+46	Атаковать змею опасно, да и бесполезно.
+47	Вы убили маленького карлика.
+48	Вы таковали маленького карлика, но он увернулся.
+49	Чем?  Голыми руками?
 50	Good try, but that is an old worn-out magic word.
-51	I know of places, actions, and things.  Most of my vocabulary
-51	describes places and is used to move you there.  To move, try words
-51	like forest, building, downstream, enter, east, west, north, south,
-51	up, or down.  I know about a few special objects, like a black rod
-51	hidden in the cave.  These objects can be manipulated using some of
-51	the action words that I know.  Usually you will need to give both the
-51	object and action words (in either order), but sometimes I can infer
-51	the object from the verb alone.  Some objects also imply verbs; in
-51	particular, "inventory" implies "take inventory", which causes me to
-51	give you a list of what you're carrying.  The objects have side
-51	effects; for instance, the rod scares the bird.  Usually people having
-51	trouble moving just need to try a few more words.  Usually people
-51	trying unsuccessfully to manipulate an object are attempting something
-51	beyond their (or my!) capabilities and should try a completely
-51	different tack.  To speed the game you can sometimes move long
-51	distances with a single word.  For example, "building" usually gets
-51	you to the building from anywhere above ground except when lost in the
-51	forest.  Also, note that cave passages turn a lot, and that leaving a
-51	room to the north does not guarantee entering the next from the south.
-51	Good luck!
-52	It misses!
-53	It gets you!
-54	OK
+51	Я знаю действия, места и вещи. Большая часть моего словаря описывает
+51	места; их названия можно использовать, чтобы передвигаться. например:
+51	лес,ручей,войди,ю,з,вверх. Мне известны несколько особых предметов,
+51	таких как черный жезл, клетка и т.п. эти объекты можно использовать
+51	с помощью нескольких известных мне глаголов. Обычно вам нужно давать
+51	оба слова: объект и действие (в любом порядке), но иногда можно
+51	понять предмет по глаголу,а иногда хватает предмета. например, вместо
+51	"полей растение" можно набрать "полей". Объекты имеют побочные
+51	действия; например, жезл отпугивает птицу. Для того, чтобы ускорить
+51	игру, вы можете перемещаться на большие расстояния с помощью одного
+51	слова. Например, "дом" обычно доставит вас в дом из любого места на
+51	поверхности земли, кроме того случая, когда вы потерялись в лесу.
+51	Надо заметить, что ходы пещеры имеют массу поворотов, и если вы
+51	выйдете на север, то не всегда войдете обратно с юга. Дополнитульную
+51	информацию вы можете получить, набрав "инфор".
+52	Он промахнулся!
+53	Он попал в вас!
+54	Готово!
 55	You can't unlock the keys.
-56	You have crawled around in some little holes and wound up back in the
-56	main passage.
-57	I don't know where the cave is, but hereabouts no stream can run on
-57	the surface for long.  I would try the stream.
+56	Вы пролезли через несколько маленьких ходов, запутались и вернулись
+56	назад в главный проход.
+57	Я не знаю, где находится пещера. Я попытался бы найти ручей, который
+57	в нее течет.
 58	I need more detailed instructions to do that.
 59	I can only tell you what you see as you move about and manipulate
 59	things.  I cannot tell you where remote things are.
-60	I don't know that word.
-61	What?
-62	Are you trying to get into the cave?
+60	Я вас не понимаю.
+61	Что?
+62	Вы пытаетесь проникнуть в пещеру?
 63	The grate is very solid and has a hardened steel lock.  You cannot
 63	enter without a key, and there are no keys nearby.  I would recommend
 63	looking elsewhere for the keys.
@@ -1426,9 +1423,9 @@
 64	various sorts.  This time of year visibility is quite restricted by
 64	all the leaves, but travel is quite easy if you detour around the
 64	spruce and berry bushes.
-65	Welcome to adventure!!  Would you like instructions?
-66	Digging without a shovel is quite impractical.  Even with a shovel
-66	progress is unlikely.
+65	Приглашаем в путешествие! Вам нужны инструкции?
+66	Копать без лопаты непрактично, даже с лопатой едва ли что-нибудь
+66	получится.
 67	Blasting requires dynamite.
 68	I'm as confused as you are.
 69	Mist is a white vapor, usually water, seen from time to time in
@@ -1467,33 +1464,33 @@
 93	You can't go through a locked steel grate!
 94	I believe what you want is right here with you.
 95	You don't fit through a two-inch slit!
-96	I respectfully suggest you go across the bridge instead of jumping.
-97	There is no way across the fissure.
-98	You're not carrying anything.
-99	You are currently holding the following:
+96	Советую вам идти через мост, а не прыгать.
+97	Пути через пропасть нет.
+98	Вы ничего не несете.
+99	В данный момент вы несете следующее:
 100	It's not hungry (it's merely pinin' for the fjords).  Besides, you
 100	have no bird seed.
 101	The snake has now devoured your bird.
 102	There's nothing here it wants to eat (except perhaps you).
 103	You fool, dwarves eat only coal!  Now you've made him *really* mad!!
 104	You have nothing in which to carry it.
-105	Your bottle is already full.
+105	Ваша бутылка уже полна.
 106	There is nothing here with which to fill the bottle.
-107	Your bottle is now full of water.
-108	Your bottle is now full of oil.
+107	Ваша бутылка теперь полна воды.
+108	Ваша бутылка теперь полна масла.
 109	You can't fill that.
-110	Don't be ridiculous!
+110	Не будьте смешны!
 111	The door is extremely rusty and refuses to open.
 112	The plant indignantly shakes the oil off its leaves and asks, "water?"
 113	The hinges are quite thoroughly rusted now and won't budge.
-114	The oil has freed up the hinges so that the door will now move,
-114	although it requires some effort.
+114	Масло смазало дверь так, что ее можно открыть, но это потребует
+114	некоторых усилий.
 115	The plant has exceptionally deep roots and cannot be pulled free.
 116	The dwarves' knives vanish as they strike the walls of the cave.
-117	Something you're carrying won't fit through the tunnel with you.
-117	You'd best take inventory and drop something.
-118	You can't fit this five-foot clam through that little passage!
-119	You can't fit this five-foot oyster through that little passage!
+117	Что-то из того, что вы несете, не проходит. вам лучше посмотреть
+117	список и чего-нибудь бросить.
+118	Вам не пролезть с полутораметровым моллюском через этот проход!
+119	Вам не пролезть с полутораметровой устрицей через этот проход!
 120	I advise you to put down the clam before opening it.  >strain!<
 121	I advise you to put down the oyster before opening it.  >wrench!<
 122	You don't have anything strong enough to open the clam.
@@ -1503,8 +1500,8 @@
 124	bivalves.)  Whatever it is, it has now snapped shut again.
 125	The oyster creaks open, revealing nothing but oyster inside.  It
 125	promptly snaps shut again.
-126	You have crawled around in some little holes and found your way
-126	blocked by a recent cave-in.  You are now back in the main passage.
+126	Вы ползли по нескольким маленьким проходам, пока путь не был
+126	прегражден недавним обвалом. Вы вернулись назад в главный проход.
 127	There are faint rustling noises from the darkness behind you.
 128	Out from the shadows behind you pounces a bearded pirate!  "Har, har,"
 128	he chortles, "I'll just take all this booty and hide it away with me
@@ -1516,21 +1513,29 @@
 130	   "This exit is closed.  Please leave via main office."
 131	It looks as though you're dead.  Well, seeing as how it's so close to
 131	closing time anyway, I think we'll just call it a day.
-132	The sepulchral voice entones, "The cave is now closed."  As the echoes
-132	fade, there is a blinding flash of light (and a small puff of orange
-132	Smoke). . . .    As your eyes refocus, you look around and find...
-133	there is a loud explosion, and a twenty-foot hole appears in the far
-133	wall, burying the dwarves in the rubble.  You march through the hole
-133	and find yourself in the main office, where a cheering band of
-133	friendly elves carry the conquering adventurer off into the sunset.
-134	There is a loud explosion, and a twenty-foot hole appears in the far
-134	wall, burying the snakes in the rubble.  A river of molten lava pours
-134	in through the hole, destroying everything in its path, including you!
+132	Загробный голос возвестил:
+132
+132                  П Е Щ Е Р А   З А К Р Ы Т А !!!
+132
+132	Когда звуки смолкли, на  мгновенье  ослепительно  вспыхнул  оранжевый
+132	свет и осталось только тающее облако оранжевого  дыма...  Как  только
+132	ваши глаза начинают видеть вы обнаруживаете...
+132
+133	Происходит сильный взрыв, который заваливает карликов щебнем.
+133	В дальней стене образовалась большая дыра. Вы проходите через нее
+133	и обнаруживаете, что вы в главной конторе. Веселая компания
+133	дружелюбных эльфов выносит счастливого путешественника к выходу,
+133	в лучи заходящего Солнца.
+133
+134	Происходит сильный взрыв, который заваливает щебнем всех змей.
+134	В дальней стене появляется большая дыра, из нее льется расплавленная
+134	лава, уничтожая все на своем пути, включая вас.
+134
 135	There is a loud explosion, and you are suddenly splashed across the
 135	walls of the room.
-136	The resulting ruckus has awakened the dwarves.  There are now several
-136	threatening little dwarves in the room with you!  Most of them throw
-136	knives at you!  All of them get you!
+136	Возникший шум будит карликов.Карлики напали на вас !
+136	Большинство из них бросают в вас ножи! Они попали!
+136
 137	Oh, leave the poor unhappy bird alone.
 138	I daresay whatever you want is around here somewhere.
 139	I don't know the word "stop".  Use "quit" if you want to give up.
@@ -1558,16 +1563,16 @@
 142	the full description of a place unless you explicitly ask me to.
 143	Do you indeed wish to quit now?
 144	There is nothing here with which to fill the vase.
-145	The sudden change in temperature has delicately shattered the vase.
+145	От резкого изменения температуры ваза потрескалась.
 146	It is beyond your power to do that.
 147	I don't know how.
 148	It is too far up for you to reach.
 149	You killed a little dwarf.  The body vanishes in a cloud of greasy
 149	black smoke.
 150	The shell is very strong and is impervious to attack.
-151	What's the matter, can't you read?  Now you'd best start over.
+151	В чем дело? Вы что, читать не умеете? Начните лучше сначала.
 152	The axe bounces harmlessly off the dragon's thick scales.
-153	The dragon looks rather nasty.  You'd best not try to get by.
+153	Дракон довольно опасен. Лучше не ходить мимо него.
 154	The little bird attacks the green dragon, and in an astounding flurry
 154	gets burnt to a cinder.  The ashes blow away.
 155	On what?
@@ -1577,35 +1582,34 @@
 157	that of a rhinoceros.  The troll fends off your blows effortlessly.
 158	The troll deftly catches the axe, examines it carefully, and tosses it
 158	back, declaring, "good workmanship, but it's not valuable enough."
-159	The troll catches your treasure and scurries away out of sight.
-160	The troll refuses to let you cross.
-161	There is no longer any way across the chasm.
-162	Just as you reach the other side, the bridge buckles beneath the
-162	weight of the bear, which was still following you around.  You
-162	scrabble desperately for support, but as the bridge collapses you
-162	stumble back and fall into the chasm.
+159	Тролль ловит вашу драгоценность и скрывается из виду.
+160	Тролль не пропускает вас.
+161	Пути через расселину теперь нет.
+162	Вы почти достигли другой стороны, когда мост прогнулся под
+162	тяжестью медведя, топающего за вами. Вы отчаянно пытаетесь
+162	выбраться, но мост рушится и вы падаете в расселину.
 163	The bear lumbers toward the troll, who lets out a startled shriek and
 163	scurries away.  The bear soon gives up the pursuit and wanders back.
 164	The axe misses and lands near the bear where you can't get at it.
 165	With what?  Your bare hands?  Against *his* bear hands??
 166	The bear is confused; he only wants to be your friend.
-167	For crying out loud, the poor thing is already dead!
+167	Не стоит так горевать, бедняга уже мертв.
 168	The bear eagerly wolfs down your food, after which he seems to calm
 168	Down considerably and even becomes rather friendly.
 169	The bear is still chained to the wall.
 170	The chain is still locked.
-171	The chain is now unlocked.
+171	Цепь теперь освобождена.
 172	The chain is now locked.
 173	There is nothing here to which the chain can be locked.
 174	There is nothing here to eat.
 175	Do you want the hint?
-176	Do you need help getting out of the maze?
+176	Вам подсказать, как выбраться из лабиринта?
 177	You can make the passages look less alike by dropping things.
-178	Are you trying to explore beyond the plover room?
+178	Вы собираетесь исследовать голубиный грот?
 179	There is a way to explore that region without having to worry about
 179	falling into a pit.  None of the objects available is immediately
 179	useful in discovering the secret.
-180	Do you need help getting out of here?
+180	Вам подсказать, как отсюда выбраться?
 181	Don't go west.
 182	Gluttony is not one of the troll's vices.  Avarice, however, is.
 183	Your lamp is getting dim.  You'd best start wrapping this up, unless
@@ -1747,15 +1751,15 @@
 9	108
 -1
 10
-35	You are obviously a rank amateur.  Better luck next time.
-100	Your score qualifies you as a novice class adventurer.
-130	You have achieved the rating: "experienced adventurer".
-200	You may now consider yourself a "seasoned adventurer".
-250	You have reached "junior master" status.
-300	Your score puts you in master adventurer class c.
-330	Your score puts you in master adventurer class b.
-349	Your score puts you in master adventurer class a.
-9999	All of adventuredom gives tribute to you, adventurer grandmaster!
+35	Ясно, что вы относитесь к категории дилетантов.  Удачи в следующий раз.
+100	Вас можно отнести к категории "начинающий спелеолог".
+130	Вы достигли уровня "опытный спелеолог".
+200	Теперь вы можете считать себя закаленным спелеологом.
+250	Вы достигли ранга "младший Мастер-спелеолог".
+300	Вы теперь "Мастер-спелеолог 3 класса".
+330	Вы теперь "Мастер-спелеолог 2 класса".
+349	Вы теперь "Мастер-спелеолог 1 класса".
+9999	Все спелеологи преклоняются перед вами, Великий Спелеолог !!!
 -1
 11
 2	9999	10	0	0
