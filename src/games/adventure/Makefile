@@ -12,7 +12,7 @@ all:            adventure $(MAN) adventure.dat
 
 # Data file format is compatible for all little-endian machines.
 # To rebuild it, compile the program on Linux.
-adventure.dat:  glorkz
+adventure.dat:  #glorkz
 		./adventure glorkz
 
 adventure:      ${OBJS}
