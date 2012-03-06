@@ -173,7 +173,7 @@ int	xcflag;
 int 	ascpp;
 
 char	*passp = "/bin/" PREPROCESSOR;
-char	*pass0 = LIBEXECDIR COMPILER;
+char	*pass0 = LIBEXECDIR "/" COMPILER;
 char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*Bflag;
