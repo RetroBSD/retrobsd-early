@@ -16,9 +16,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <libelf.h>
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "mips_memory.h"
 #include "mips_exec.h"

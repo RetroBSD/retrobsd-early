@@ -49,20 +49,28 @@
 #define SD_MHZ          13      /* speed 13.33 MHz */
 #endif
 
-#define TIMO_WAIT_READY 1000000
-#define TIMO_CMD        20000
-#define TIMO_SEND_OP    100000
-#define TIMO_SEND_CSD   250000
-#define TIMO_READ       2500000
+#define TIMO_WAIT_WDONE 400000
+#define TIMO_WAIT_WIDLE 200000
+#define TIMO_WAIT_CMD   100000
+#define TIMO_WAIT_WDATA 30000
+#define TIMO_READ       9000
+#define TIMO_SEND_OP    8000
+#define TIMO_CMD        7000
+#define TIMO_SEND_CSD   6000
+#define TIMO_WAIT_WSTOP 5000
 
 int sd_type[NSD];               /* Card type */
 int sd_dkn = -1;                /* Statistics slot number */
 
-int sd_timo_wait_ready;         /* Max timeouts, for sysctl */
-int sd_timo_cmd;
+int sd_timo_cmd;                /* Max timeouts, for sysctl */
 int sd_timo_send_op;
 int sd_timo_send_csd;
 int sd_timo_read;
+int sd_timo_wait_cmd;
+int sd_timo_wait_wdata;
+int sd_timo_wait_wdone;
+int sd_timo_wait_wstop;
+int sd_timo_wait_widle;
 
 /*
  * Definitions for MMC/SDC commands.
@@ -158,19 +166,19 @@ spi_select (unit, on)
  * Wait while busy, up to 300 msec.
  */
 static void
-spi_wait_ready ()
+spi_wait_ready (int limit, int *maxcount)
 {
         int i;
 
         spi_io (0xFF);
-	for (i=0; i<TIMO_WAIT_READY; i++) {
+	for (i=0; i<limit; i++) {
                 if (spi_io (0xFF) == 0xFF) {
-                        if (sd_timo_wait_ready < i)
-                                sd_timo_wait_ready = i;
+                        if (*maxcount < i)
+                                *maxcount = i;
                         return;
                 }
         }
-        printf ("sd: wait_ready failed\n");
+        printf ("sd: wait_ready(%d) failed\n", limit);
 }
 
 /*
@@ -295,7 +303,8 @@ card_cmd (cmd, addr)
 	int i, reply;
 
         /* Wait for not busy, up to 300 msec. */
-        spi_wait_ready ();
+        if (cmd != CMD_GO_IDLE)
+            spi_wait_ready (TIMO_WAIT_CMD, &sd_timo_wait_cmd);
 
 	/* Send a comand packet (6 bytes). */
 	spi_io (cmd | 0x40);
@@ -599,7 +608,7 @@ card_write (unit, offset, data, bcount)
 again:
         /* Select, wait while busy. */
 	spi_select (unit, 1);
-        spi_wait_ready ();
+        spi_wait_ready (TIMO_WAIT_WDATA, &sd_timo_wait_wdata);
 
 	/* Send data. */
 	spi_io (WRITE_MULTIPLE_TOKEN);
@@ -627,7 +636,7 @@ again:
 
 	/* Wait for write completion. */
        	int x = spl0();
-        spi_wait_ready ();
+        spi_wait_ready (TIMO_WAIT_WDONE, &sd_timo_wait_wdone);
         splx(x);
 	spi_select (unit, 0);
 
@@ -639,9 +648,9 @@ again:
 
         /* Stop a write-multiple sequence. */
 	spi_select (unit, 1);
-        spi_wait_ready ();
+        spi_wait_ready (TIMO_WAIT_WSTOP, &sd_timo_wait_wstop);
 	spi_io (STOP_TRAN_TOKEN);
-        spi_wait_ready ();
+        spi_wait_ready (TIMO_WAIT_WIDLE, &sd_timo_wait_widle);
 	spi_select (unit, 0);
 	return 1;
 }

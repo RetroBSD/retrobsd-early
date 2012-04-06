@@ -13,7 +13,7 @@ CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DMAX32
 #CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DUBW32
 
 CC          = gcc -g
-CFLAGS		+= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include
+CFLAGS		+= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include -I/opt/local/include/libelf
 LIBS		= -lconfuse -lpthread -lelf
 
 ifneq ($(wildcard /usr/lib/librt.a),)
