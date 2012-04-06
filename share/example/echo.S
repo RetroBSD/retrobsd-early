@@ -21,7 +21,7 @@ start:  .globl  start                   // entry point for ld
         // Program gets three arguments:
         // argc in $a0 - number of words in command line
         // argv in $a1 - address of list of pointers to words
-        // env  in $a3 - address of list of pointers to environment variables
+        // env  in $a2 - address of list of pointers to environment variables
         //
         addi    $s0, $a0, -1            // argc - 1
         beq     $s0, $zero, done        // if (argc == 0) goto gone
