@@ -10,22 +10,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-static	char	*fmsg = "Can't fchdir() back to starting directory";
 static	int	oct, status, fflag, rflag;
-static	u_short	set, clear;
+static	unsigned set, clear;
 static	struct	stat st;
-static	void	usage();
 
-extern	int	optind, errno;
-extern	u_short	string_to_flags();	/* from ../ls */
+/* from ../ls/ */
+extern unsigned string_to_flags (char **stringp, unsigned *setp, unsigned *clrp);
 
-/* VARARGS1 */
-void die(char *fmt, ...)
+void
+die(char *fmt, ...)
 {
 	va_list	ap;
 
@@ -36,75 +37,29 @@ void die(char *fmt, ...)
 	exit(1);
 }
 
-main(argc, argv)
-	int	argc;
-	char	*argv[];
+int
+warning(msg)
+	char *msg;
 {
-	register char *p;
-	char	*flags, *ep;
-	int	ch, fcurdir;
-	long	tmp;
-
-	while ((ch = getopt(argc, argv, "Rf")) != EOF) {
-		switch (ch) {
-                case 'R':
-                        rflag++;
-                        break;
-                case 'f':
-                        fflag++;
-                        break;
-                case '?':
-                default:
-                        usage();
-                }
-        }
-	argv += optind;
-	argc += optind;
-	if (argc < 2)
-		usage();
-
-	flags = *argv++;
-	if (*flags >= '0' && *flags <= '7') {
-		tmp = strtol(flags, &ep, 8);
-		if (tmp < 0 || tmp >= 64L*1024*1024 || *ep)
-			die("invalid flags: %s", flags);
-		oct = 1;
-		set = tmp;
-	} else {
-		if (string_to_flags(&flags, &set, &clear))
-			die("invalid flag: %s", flags);
-		clear = ~clear;
-		oct = 0;
-	}
-
-	if (rflag) {
-		fcurdir = open(".", O_RDONLY);
-		if (fcurdir < 0)
-			die("Can't open .");
-	}
-
-	while (p = *argv++) {
-		if (lstat(p, &st) < 0) {
-			status |= warning(p);
-			continue;
-		}
-		if (rflag && (st.st_mode&S_IFMT) == S_IFDIR) {
-			status |= recurse(p, fcurdir);
-			continue;
-		}
-		if ((st.st_mode&S_IFMT) == S_IFLNK && stat(p, &st) < 0) {
-			status |= warning(p);
-			continue;
-		}
-		if (chflags(p, newflags(st.st_flags)) < 0) {
-			status |= warning(p);
-			continue;
-		}
-	}
-	close(fcurdir);
-	exit(status);
+	if (! fflag)
+		fprintf(stderr, "chflags: %s: %s\n", msg, strerror(errno));
+	return ! fflag;
 }
 
+int
+newflags(flags)
+	int flags;
+{
+	if (oct)
+		flags = set;
+	else {
+		flags |= set;
+		flags &= clear;
+	}
+	return flags;
+}
+
+int
 recurse(dir, savedir)
 	char	*dir;
 	int	savedir;
@@ -131,13 +86,13 @@ recurse(dir, savedir)
 				break;
 			continue;
 		}
-		if ((st.st_mode&S_IFMT) == S_IFDIR) {
+		if ((st.st_mode & S_IFMT) == S_IFDIR) {
 			ecode = recurse(dp->d_name, dirfd(dirp));
 			if (ecode)
 				break;
 			continue;
 		}
-		if ((st.st_mode&S_IFMT) == S_IFLNK)
+		if ((st.st_mode & S_IFMT) == S_IFLNK)
 			continue;
 		if (chflags(dp->d_name, newflags(st.st_flags)) < 0 &&
 		    (ecode = warning(dp->d_name)))
@@ -151,30 +106,10 @@ recurse(dir, savedir)
 		die("can't fstat .");
 	if (fchflags(dirfd(dirp), newflags(st.st_flags)) < 0)
 		ecode = warning(dir);
-	if (fchdir(savedir) < 0)
-		die(fmsg);
+	if (savedir >= 0 && fchdir(savedir) < 0)
+		die("Can't fchdir() back to starting directory");
 	closedir(dirp);
 	return(ecode);
-}
-
-warning(msg)
-	char *msg;
-{
-	if (! fflag)
-		fprintf(stderr, "chflags: %s: %s\n", msg, strerror(errno));
-	return(!fflag);
-}
-
-newflags(flags)
-	u_short	flags;
-{
-	if (oct)
-		flags = set;
-	else {
-		flags |= set;
-		flags &= clear;
-	}
-	return(flags);
 }
 
 static void
@@ -182,4 +117,75 @@ usage()
 {
 	fputs("usage: chflags [-Rf] flags file ...\n", stderr);
 	exit(1);
+}
+
+int
+main(argc, argv)
+	int	argc;
+	char	*argv[];
+{
+	register char *p;
+	char	*flags, *ep;
+	int	ch, fcurdir = -1;
+	long	tmp;
+
+	while ((ch = getopt(argc, argv, "Rf")) != EOF) {
+		switch (ch) {
+                case 'R':
+                        rflag++;
+                        break;
+                case 'f':
+                        fflag++;
+                        break;
+                case '?':
+                default:
+                        usage();
+                }
+        }
+	argv += optind;
+	argc -= optind;
+	if (argc < 2)
+		usage();
+
+	flags = *argv++;
+	if (*flags >= '0' && *flags <= '7') {
+		tmp = strtol(flags, &ep, 8);
+		if (tmp < 0 || tmp >= 64L*1024*1024 || *ep)
+			die("invalid flags: %s", flags);
+		oct = 1;
+		set = tmp;
+	} else {
+		if (string_to_flags(&flags, &set, &clear))
+			die("invalid flag: %s", flags);
+		clear = ~clear;
+		oct = 0;
+	}
+
+	if (rflag) {
+		fcurdir = open(".", O_RDONLY);
+		if (fcurdir < 0)
+			die("Can't open .");
+	}
+
+	while ((p = *argv++)) {
+		if (lstat(p, &st) < 0) {
+			status |= warning(p);
+			continue;
+		}
+		if (rflag && (st.st_mode & S_IFMT) == S_IFDIR) {
+			status |= recurse(p, fcurdir);
+			continue;
+		}
+		if ((st.st_mode & S_IFMT) == S_IFLNK && stat(p, &st) < 0) {
+			status |= warning(p);
+			continue;
+		}
+		if (chflags(p, newflags(st.st_flags)) < 0) {
+			status |= warning(p);
+			continue;
+		}
+	}
+	if (fcurdir >= 0)
+                close(fcurdir);
+	exit(status);
 }

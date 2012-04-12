@@ -218,7 +218,7 @@ void
 exception (frame)
 	int *frame;
 {
-	register int i;
+	register int psig;
 	time_t syst;
 	unsigned c, irq, status, cause, sp;
 
@@ -228,7 +228,11 @@ exception (frame)
 		panic ("stack overflow");
 		/*NOTREACHED*/
         }
+        /* Switch to kernel mode, keep interrupts disabled. */
 	status = frame [FRAME_STATUS];
+        mips_write_c0_register (C0_STATUS, 0,
+                status & ~(ST_UM | ST_EXL | ST_IE));
+
         if (c0_debug & DB_DM) {
             cause = CA_Bp;
             c0_debug = 0;
@@ -257,29 +261,34 @@ exception (frame)
                         /*NOTREACHED*/
                 case CA_IBE + USER:	/* Bus error, instruction fetch */
                 case CA_DBE + USER:	/* Bus error, load or store */
-                        i = SIGBUS;
+                        printf ("*** 0x%08x: bus error\n", frame [FRAME_PC]);
+                        psig = SIGBUS;
                         break;
                 case CA_RI + USER:	/* Reserved instruction */
-                        i = SIGILL;
+                        psig = SIGILL;
                         break;
                 case CA_Bp + USER:	/* Breakpoint */
-                        i = SIGTRAP;
+                        psig = SIGTRAP;
                         break;
                 case CA_Tr + USER:	/* Trap */
-                        i = SIGIOT;
+                        psig = SIGIOT;
                         break;
                 case CA_CPU + USER:	/* Coprocessor unusable */
-                        i = SIGEMT;
+                        psig = SIGEMT;
                         break;
                 case CA_Ov:		/* Arithmetic overflow */
                 case CA_Ov + USER:
-                        i = SIGFPE;
+                        psig = SIGFPE;
                         break;
                 case CA_AdEL + USER:	/* Address error, load or instruction fetch */
                 case CA_AdES + USER:	/* Address error, store */
-                        i = SIGSEGV;
+                        printf ("*** 0x%08x: bad address 0x%08x\n",
+                                frame [FRAME_PC], mips_read_c0_register (C0_BADVADDR, 0));
+                        psig = SIGSEGV;
                         break;
                 }
+                /* Enable interrupts. */
+                mips_intr_enable();
                 break;
 
 	/*
@@ -368,11 +377,9 @@ exception (frame)
                         break;
                 }
 		if ((cause & USER) && runrun) {
-		        /* Process switch: in user mode only. */
-                        /* Switch to kernel mode, enable interrupts. */
-                        mips_write_c0_register (C0_STATUS, 0,
-                                status & ~(ST_UM | ST_EXL));
-                        mips_ehb();
+		        /* Need to switch processes: in user mode only.
+                         * Enable interrupts first. */
+                        mips_intr_enable();
                         goto out;
                 }
                 goto ret;
@@ -384,10 +391,8 @@ exception (frame)
 #ifdef UCB_METER
 		cnt.v_syscall++;
 #endif
-                /* Switch to kernel mode, enable interrupts. */
-                mips_write_c0_register (C0_STATUS, 0,
-                        status & ~(ST_UM | ST_EXL));
-                mips_ehb();
+                /* Enable interrupts. */
+                mips_intr_enable();
 		u.u_error = 0;
                 u.u_frame = frame;
                 u.u_code = frame [FRAME_PC];            /* For signal handler */
@@ -397,7 +402,7 @@ exception (frame)
                 if (sp < u.u_procp->p_daddr + u.u_dsize) {
                         /* Process has trashed its stack; give it an illegal
                          * instruction violation to halt it in its tracks. */
-                        i = SIGSEGV;
+                        psig = SIGSEGV;
                         break;
                 }
                 if (u.u_procp->p_ssize < USER_DATA_END - sp) {
@@ -473,21 +478,26 @@ exception (frame)
 		}
 		goto out;
 	}
-	psignal (u.u_procp, i);
+        /* From this point and further the interrupts must be enabled. */
+	psignal (u.u_procp, psig);
 out:
 	/* Process all received signals. */
 	for (;;) {
-		i = CURSIG (u.u_procp);
-		if (i <= 0)
+		psig = CURSIG (u.u_procp);
+		if (psig <= 0)
 			break;
-		postsig (i);
+		postsig (psig);
 	}
 	curpri = setpri (u.u_procp);
+
+	/* Switch to another process. */
 	if (runrun) {
 		setrq (u.u_procp);
 		u.u_ru.ru_nivcsw++;
 		swtch();
 	}
+
+        /* Update profiling information. */
 	if (u.u_prof.pr_scale)
 		addupc ((caddr_t) frame [FRAME_PC],
 			&u.u_prof, (int) (u.u_ru.ru_stime - syst));
