@@ -1,19 +1,12 @@
 /*
- * inventory.c
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  No portion of this notice shall be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)inventory.c	5.2 (Berkeley) 1/2/88";
-#endif /* not lint */
-
+#include <string.h>
 #include "rogue.h"
 
 boolean is_wood[WANDS];
@@ -140,9 +133,9 @@ struct id_com_s com_id_tab[COMS] = {
 	'b',	"b       down & left",
 	'c',	"c       call object",
 	'n',	"n       down & right",
-	NULL,	"<SHIFT><dir>: run that way",
+	0,	"<SHIFT><dir>: run that way",
 	')',	")       print current weapon",
-	NULL,	"<CTRL><dir>: run till adjacent",
+	0,	"<CTRL><dir>: run till adjacent",
 	']',	"]       print current armor",
 	'f',	"f<dir>  fight till death or near death",
 	'=',	"=       print current rings",

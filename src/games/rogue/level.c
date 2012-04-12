@@ -1,19 +1,11 @@
 /*
- * level.c
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  No portion of this notice shall be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)level.c	5.1 (Berkeley) 11/25/87";
-#endif /* not lint */
-
 #include "rogue.h"
 
 #define swap(x,y) {t = x; x = y; y = t;}
@@ -26,16 +18,16 @@ short party_room = NO_ROOM;
 short r_de;
 
 long level_points[MAX_EXP_LEVEL] = {
-		  10L,
-		  20L,
-		  40L,
-		  80L,
-		 160L,
-		 320L,
-		 640L,
-		1300L,
-		2600L,
-		5200L,
+              10L,
+              20L,
+              40L,
+              80L,
+             160L,
+             320L,
+             640L,
+            1300L,
+            2600L,
+            5200L,
 	   10000L,
 	   20000L,
 	   40000L,

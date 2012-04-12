@@ -1,16 +1,11 @@
 /*
- * rogue.h
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  This notice shall not be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
- *	@(#)rogue.h	5.2 (Berkeley) 11/25/87
  */
-
 #define boolean char
 
 #define NOTHING		((unsigned short)     0)
@@ -117,13 +112,13 @@
 #define RATION 0
 #define FRUIT 1
 
-#define NOT_USED		((unsigned short)   0)
+#define NOT_USED	((unsigned short)   0)
 #define BEING_WIELDED	((unsigned short)  01)
-#define BEING_WORN		((unsigned short)  02)
+#define BEING_WORN	((unsigned short)  02)
 #define ON_LEFT_HAND	((unsigned short)  04)
 #define ON_RIGHT_HAND	((unsigned short) 010)
 #define ON_EITHER_HAND	((unsigned short) 014)
-#define BEING_USED		((unsigned short) 017)
+#define BEING_USED	((unsigned short) 017)
 
 #define NO_TRAP -1
 #define TRAP_DOOR 0
@@ -137,9 +132,9 @@
 #define STEALTH_FACTOR 3
 #define R_TELE_PERCENT 8
 
-#define UNIDENTIFIED ((unsigned short) 00)	/* MUST BE ZERO! */
-#define IDENTIFIED ((unsigned short) 01)
-#define CALLED ((unsigned short) 02)
+#define UNIDENTIFIED    ((unsigned short) 00)	/* MUST BE ZERO! */
+#define IDENTIFIED      ((unsigned short) 01)
+#define CALLED          ((unsigned short) 02)
 
 #define DROWS 24
 #define DCOLS 80
@@ -195,14 +190,14 @@ struct obj {				/* comment is monster meaning */
 	short is_cursed;		/* level ends */
 	short class;			/* chance of hitting you */
 	short identified;		/* 'F' damage, 1,2,3... */
-	unsigned short which_kind; /* item carry/drop % */
-	short o_row, o_col, o;	/* o is how many times stuck at o_row, o_col */
+	unsigned short which_kind;      /* item carry/drop % */
+	short o_row, o_col, o;          /* o is how many times stuck at o_row, o_col */
 	short row, col;			/* current row, col */
 	short d_enchant;		/* room char when detect_monster */
 	short quiver;			/* monster slowed toggle */
 	short trow, tcol;		/* target row, col */
 	short hit_enchant;		/* how many moves is confused */
-	unsigned short what_is;	/* imitator's charactor (?!%: */
+	unsigned short what_is;         /* imitator's charactor (?!%: */
 	short picked_up;		/* sleep from wand of sleep */
 	unsigned short in_use_flags;
 	struct obj *next_object;	/* next monster */
@@ -244,7 +239,7 @@ struct dr {
 	short oth_row,
 	      oth_col;
 	short door_row,
-		  door_col;
+              door_col;
 };
 
 typedef struct dr door;
@@ -321,35 +316,35 @@ extern object level_monsters;
 
 #define MONSTERS 26
 
-#define HASTED					01L
-#define SLOWED					02L
-#define INVISIBLE				04L
-#define ASLEEP				   010L
-#define WAKENS				   020L
-#define WANDERS				   040L
-#define FLIES				  0100L
-#define FLITS				  0200L
-#define CAN_FLIT			  0400L		/* can, but usually doesn't, flit */
-#define CONFUSED	 		 01000L
-#define RUSTS				 02000L
-#define HOLDS				 04000L
-#define FREEZES				010000L
-#define STEALS_GOLD			020000L
-#define STEALS_ITEM			040000L
-#define STINGS			   0100000L
-#define DRAINS_LIFE		   0200000L
-#define DROPS_LEVEL		   0400000L
-#define SEEKS_GOLD		  01000000L
+#define HASTED			01L
+#define SLOWED			02L
+#define INVISIBLE		04L
+#define ASLEEP                 010L
+#define WAKENS                 020L
+#define WANDERS                040L
+#define FLIES                 0100L
+#define FLITS                 0200L
+#define CAN_FLIT	      0400L	/* can, but usually doesn't, flit */
+#define CONFUSED	     01000L
+#define RUSTS		     02000L
+#define HOLDS		     04000L
+#define FREEZES		    010000L
+#define STEALS_GOLD         020000L
+#define STEALS_ITEM	    040000L
+#define STINGS		   0100000L
+#define DRAINS_LIFE	   0200000L
+#define DROPS_LEVEL	   0400000L
+#define SEEKS_GOLD	  01000000L
 #define FREEZING_ROGUE	  02000000L
 #define RUST_VANISHED	  04000000L
-#define CONFUSES		 010000000L
-#define IMITATES		 020000000L
-#define FLAMES			 040000000L
-#define STATIONARY		0100000000L		/* damage will be 1,2,3,... */
-#define NAPPING			0200000000L		/* can't wake up for a while */
+#define CONFUSES	 010000000L
+#define IMITATES	 020000000L
+#define FLAMES		 040000000L
+#define STATIONARY	0100000000L	/* damage will be 1,2,3,... */
+#define NAPPING		0200000000L	/* can't wake up for a while */
 #define ALREADY_MOVED	0400000000L
 
-#define SPECIAL_HIT		(RUSTS|HOLDS|FREEZES|STEALS_GOLD|STEALS_ITEM|STINGS|DRAINS_LIFE|DROPS_LEVEL)
+#define SPECIAL_HIT	(RUSTS|HOLDS|FREEZES|STEALS_GOLD|STEALS_ITEM|STINGS|DRAINS_LIFE|DROPS_LEVEL)
 
 #define WAKE_PERCENT 45
 #define FLIT_PERCENT 40
@@ -393,10 +388,6 @@ extern object level_monsters;
 
 /* external routine declarations.
  */
-char *strcpy();
-char *strncpy();
-char *strcat();
-
 char *mon_name();
 char *get_ench_color();
 char *name_of();
@@ -427,13 +418,13 @@ unsigned short gr_what_is();
 long rrandom();
 long lget_number();
 long xxx();
-int byebye(), onintr(), error_save();
+void byebye(int), onintr(int), error_save(int);
 
 struct rogue_time {
-	short year;		/* >= 1987 */
+	short year;	/* >= 1987 */
 	short month;	/* 1 - 12 */
-	short day;		/* 1 - 31 */
-	short hour;		/* 0 - 23 */
+	short day;	/* 1 - 31 */
+	short hour;	/* 0 - 23 */
 	short minute;	/* 0 - 59 */
 	short second;	/* 0 - 59 */
 };
@@ -452,6 +443,15 @@ extern char *CL;
 
 char *md_gdtcf();
 
+//int sprintf(char *str, const char *format, ...);
+//int printf(const char *format, ...);
+
 #else
 #include <curses.h>
+#endif
+
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
 #endif

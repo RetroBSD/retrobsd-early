@@ -1,20 +1,12 @@
 /*
- * score.c
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  No portion of this notice shall be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)score.c	5.2 (Berkeley) 11/25/87";
-#endif /* not lint */
-
-#include <stdio.h>
+#include <string.h>
 #include "rogue.h"
 
 extern char login_name[];
@@ -298,7 +290,7 @@ object *monster;
 			}
 		}
 	}
-	sprintf(buf, "%2d    %6d   %s: ", rank+1, rogue.gold, login_name);
+	sprintf(buf, "%2d    %6d   %s: ", rank+1, (int)rogue.gold, login_name);
 
 	if (other) {
 		switch(other) {

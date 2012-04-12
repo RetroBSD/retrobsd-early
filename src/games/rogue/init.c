@@ -1,20 +1,12 @@
 /*
- * init.c
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  No portion of this notice shall be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)init.c	5.1 (Berkeley) 11/25/87";
-#endif /* not lint */
-
-#include <stdio.h>
+#include <string.h>
 #include "rogue.h"
 
 char login_name[MAX_OPT_LEN];
@@ -165,7 +157,8 @@ stop_window()
 	md_control_keybord(1);
 }
 
-byebye()
+void
+byebye(int sig)
 {
 	md_ignore_signals();
 	if (ask_quit) {
@@ -176,7 +169,8 @@ byebye()
 	md_heed_signals();
 }
 
-onintr()
+void
+onintr(int sig)
 {
 	md_ignore_signals();
 	if (cant_int) {
@@ -188,7 +182,8 @@ onintr()
 	md_heed_signals();
 }
 
-error_save()
+void
+error_save(int sig)
 {
 	save_is_interactive = 0;
 	save_into_file(error_file);

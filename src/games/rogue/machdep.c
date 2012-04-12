@@ -1,18 +1,11 @@
 /*
- * machdep.c
- *
  * This source herein may be modified and/or distributed by anybody who
  * so desires, with the following restrictions:
  *    1.)  No portion of this notice shall be removed.
  *    2.)  Credit shall not be taken for the creation of this source.
  *    3.)  This code is not to be traded, sold, or used for personal
  *         gain or profit.
- *
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) 11/25/87";
-#endif /* not lint */
 
 /* Included in this file are all system dependent routines.  Extensive use
  * of #ifdef's will be used to compile the appropriate code on each system:
@@ -24,7 +17,7 @@ static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) 11/25/87";
  *
  * All UNIX code should be included between the single "#ifdef UNIX" at the
  * top of this file, and the "#endif" at the bottom.
- * 
+ *
  * To change a routine to include a new UNIX system, simply #ifdef the
  * existing routine, as in the following example:
  *
@@ -50,12 +43,11 @@ static char sccsid[] = "@(#)machdep.c	5.2 (Berkeley) 11/25/87";
  * If the correct #define doesn't exist, "UNIX_SYSV" in this case, make it up
  * and insert it in the list at the top of the file.  Alter the CFLAGS
  * in you Makefile appropriately.
- *
  */
-
 #ifdef UNIX
 
-#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -98,8 +90,9 @@ md_slurp()
 	ln = 0;
 #endif
 
-	ln += stdin->_cnt;
-
+#ifndef CROSS
+        ln += stdin->_cnt;
+#endif
 	for (; ln > 0; ln--) {
 		(void) getchar();
 	}
@@ -268,7 +261,7 @@ char *fname;
  * system doesn't provide all of the time units requested here, then you
  * can provide only those that it does, and return zeros for the others.
  * If you cannot provide good time values, then users may be able to copy
- * saved-game files and play them.  
+ * saved-game files and play them.
  */
 
 md_gct(rt_buf)
@@ -299,7 +292,7 @@ struct rogue_time *rt_buf;
  * exactly the same here.
  * Or if md_gct() is implemented correctly, but your system does not provide
  * file modification dates, you may return some date far in the past so
- * that the program will never know that a saved-game file being modified.  
+ * that the program will never know that a saved-game file being modified.
  * You may also do this if you wish to be able to restore games from
  * saved-games that have been modified.
  */
@@ -440,7 +433,6 @@ char *
 md_malloc(n)
 int n;
 {
-	char *malloc();
 	char *t;
 
 	t = malloc(n);
@@ -458,7 +450,7 @@ int n;
  * You need to find some single random integer, such as:
  *   process id.
  *   current time (minutes + seconds) returned from md_gct(), if implemented.
- *   
+ *
  * It will not help to return "get_rand()" or "rand()" or the return value of
  * any pseudo-RNG.  If you don't have a random number, you can just return 1,
  * but this means your games will ALWAYS start the same way, and will play
@@ -540,7 +532,7 @@ char *shell;
 
 		uid = getuid();
 		setuid(uid);
-		execl(shell, shell, 0);
+		execl(shell, shell, (char*)0);
 	}
 	wait(w);
 }
@@ -575,7 +567,7 @@ char *shell;
  * program is compiled with CURSES defined to use the enclosed curses
  * emulation package.  If you are not using this, then this routine is
  * totally unnecessary.
- * 
+ *
  * Notice that information is saved between calls.  This is used to
  * restore the terminal to an initial saved state.
  *
