@@ -18,10 +18,9 @@
 #include <sys/spi.h>
 #include <wiznet/w5100.h>
 
-#define SPI_DEVNAME         "/dev/spi"
-#define SPI_CHANNEL         2       // W5100 chip is connected to SPI2
-#define SPI_KHZ             5000    // Clock speed 5 MHz
-#define SPI_SELPIN          0x0404  // chipKIT board: select pin D4
+#define SPI_DEVNAME         "/dev/spi2" // W5100 chip is connected to SPI2
+#define SPI_KHZ             5000        // Clock speed 5 MHz
+#define SPI_SELPIN          0x0404      // chipKIT board: select pin D4
 
 #define TX_RX_MAX_BUF_SIZE  2048
 #define TX_BUF              0x1100
@@ -50,7 +49,6 @@ void w5100_init()
         exit (-1);
     }
 
-    ioctl (spi, SPICTL_SETCHAN, SPI_CHANNEL);
     ioctl (spi, SPICTL_SETRATE, SPI_KHZ);
     ioctl (spi, SPICTL_SETSELPIN, SPI_SELPIN);
 
