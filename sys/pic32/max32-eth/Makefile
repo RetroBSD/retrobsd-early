@@ -41,6 +41,9 @@ DEFS            += -DLED_KERNEL_PORT=TRISA -DLED_KERNEL_PIN=3
 # General Purpose I/O
 DRIVER_GPIO         = yes
 
+# Generic SPI
+DRIVER_SPI          = yes
+
 # Basic ADC interface
 DRIVER_ADC          = yes
 

@@ -23,6 +23,10 @@
 #include "adc.h"
 #endif
 
+#ifdef SPI_ENABLED
+#include "spi.h"
+#endif
+
 #ifndef SWAPDEV
 #define swopen      nulldev
 #define swstrategy  nostrategy
@@ -123,6 +127,18 @@ const struct cdevsw	cdevsw[] = {
 { /* adc = 8 */
 	adc_open,	adc_close,	adc_read,	adc_write,
 	adc_ioctl,	nulldev,	0,              seltrue,
+	nostrategy,	},
+#else
+{
+        nulldev,        nulldev,        norw,           norw,
+        noioctl,        nulldev,        0,              seltrue,
+        nostrategy,     },
+#endif
+
+#ifdef SPI_ENABLED
+{ /* spi = 9 */
+	spi_open,	spi_close,	spi_read,	spi_write,
+	spi_ioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
 #else
 {

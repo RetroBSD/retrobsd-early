@@ -20,3 +20,8 @@ ifeq ($(DRIVER_ADC),yes)
 	KERNOBJ += adc.o
 	DEFS    += -DADC_ENABLED
 endif
+
+ifeq ($(DRIVER_SPI),yes)
+	KERNOBJ += spi.o
+	DEFS    += -DSPI_ENABLED
+endif

@@ -12,11 +12,13 @@
 
 #include <sys/ioctl.h>
 
-#define SPICTL_SETCHAN      _IO(p, 0)           /* set SPI channel */
+#define SPICTL_SETMODE      _IO(p, 0)           /* set SPI mode */
 #define SPICTL_SETRATE      _IO(p, 1)           /* set clock rate */
-#define SPICTL_SETMODE      _IO(p, 2)           /* set SPI mode */
-#define SPICTL_SETSELPIN    _IO(p, 3)           /* set select pin */
-#define SPICTL_IO32         _IOWR(p, 4, int)    /* transfer 32 bits */
+#define SPICTL_SETSELPIN    _IO(p, 2)           /* set select pin */
+#define SPICTL_IO8          _IOWR(p, 3, int)    /* transfer 8 bits */
+#define SPICTL_IO16         _IOWR(p, 4, int)    /* transfer 16 bits */
+#define SPICTL_IO24         _IOWR(p, 5, int)    /* transfer 24 bits */
+#define SPICTL_IO32         _IOWR(p, 6, int)    /* transfer 32 bits */
 
 #ifdef KERNEL
 int spi_open (dev_t dev, int flag, int mode);
