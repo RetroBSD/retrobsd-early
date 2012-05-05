@@ -81,6 +81,9 @@ struct pic32_system {
     unsigned bmx_ram_upba;          /* RAM user program base address */
     unsigned bmx_flash_upba;        /* Flash user program base address */
 
+    struct vdevice *rtcdev;         /* RTCC controller */
+    unsigned rtccon;                /* RTC control */
+
     struct vdevice *dmadev;         /* DMA controller */
     unsigned dmacon;                /* DMA control */
     unsigned dmastat;               /* DMA status */
@@ -129,6 +132,7 @@ int dev_pic32_syscon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_adc_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_prefetch_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
+int dev_pic32_rtcc_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq);
 int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr);

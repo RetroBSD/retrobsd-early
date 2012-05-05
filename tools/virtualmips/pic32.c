@@ -220,6 +220,8 @@ static int pic32_init_platform (pic32_t *pic32)
         return (-1);
     if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
         return (-1);
+    if (dev_pic32_rtcc_init (vm, "PIC32 RTCC", PIC32_RTCCON) == -1)
+        return (-1);
     if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
         return (-1);
     if (dev_pic32_spi_init (vm, "PIC32 SPI1", PIC32_SPI1CON,

@@ -287,6 +287,16 @@
 #define PIC32_BMXBOOTSZ PIC32_R (0x82070) /* Boot Flash size */
 
 /*--------------------------------------
+ * Real time clock and calendar.
+ */
+#define PIC32_RTCCON    PIC32_R (0x0200)  /* RTC control */
+#define PIC32_RTCALRM   PIC32_R (0x0210)  /* RTC alarm control */
+#define PIC32_RTCTIME   PIC32_R (0x0220)  /* RTC time value */
+#define PIC32_RTCDATE   PIC32_R (0x0230)  /* RTC date value */
+#define PIC32_ALRMTIME  PIC32_R (0x0240)  /* Alarm time value */
+#define PIC32_ALRMDATE  PIC32_R (0x0250)  /* Alarm date value */
+
+/*--------------------------------------
  * UART registers.
  */
 #define PIC32_U1MODE            PIC32_R (0x6000) /* Mode */
