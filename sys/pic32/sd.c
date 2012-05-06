@@ -53,7 +53,7 @@
 #define TIMO_WAIT_WIDLE 200000
 #define TIMO_WAIT_CMD   100000
 #define TIMO_WAIT_WDATA 30000
-#define TIMO_READ       9000
+#define TIMO_READ       90000
 #define TIMO_SEND_OP    8000
 #define TIMO_CMD        7000
 #define TIMO_SEND_CSD   6000
