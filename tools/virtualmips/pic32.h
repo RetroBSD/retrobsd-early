@@ -128,8 +128,8 @@ vm_instance_t *create_instance (char *conf);
 int init_instance (vm_instance_t *vm);
 int pic32_reset (vm_instance_t *vm);
 void pic32_update_irq_flag (pic32_t *pic32);
-void pic32_set_irq (vm_instance_t *vm, u_int irq);
-void pic32_clear_irq (vm_instance_t *vm, u_int irq);
+void pic32_set_irq (vm_instance_t *vm, unsigned irq);
+void pic32_clear_irq (vm_instance_t *vm, unsigned irq);
 int dev_pic32_flash_init (vm_instance_t *vm, char *name,
     unsigned flash_kbytes, unsigned flash_address, char *filename);
 int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
