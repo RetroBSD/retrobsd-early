@@ -70,7 +70,7 @@ void *dev_pic32_rtcc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_RTCALRM & 0x1f0:     /*  */
+    case PIC32_RTCALRM & 0x1f0:     /* RTC alarm control */
         if (op_type == MTS_READ) {
             *data = 0;
         } else {
@@ -78,7 +78,7 @@ void *dev_pic32_rtcc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_RTCTIME & 0x1f0:     /* */
+    case PIC32_RTCTIME & 0x1f0:     /* RTC time value */
         if (op_type == MTS_READ) {
             *data = 0;
         } else {
@@ -86,7 +86,7 @@ void *dev_pic32_rtcc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_RTCDATE & 0x1f0:     /*  */
+    case PIC32_RTCDATE & 0x1f0:     /* RTC date value */
         if (op_type == MTS_READ) {
             *data = 0;
         } else {
@@ -94,7 +94,7 @@ void *dev_pic32_rtcc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_ALRMTIME & 0x1f0:    /*  */
+    case PIC32_ALRMTIME & 0x1f0:    /* Alarm time value */
         if (op_type == MTS_READ) {
             *data = 0;
         } else {
@@ -102,7 +102,7 @@ void *dev_pic32_rtcc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_ALRMDATE & 0x1f0:    /*  */
+    case PIC32_ALRMDATE & 0x1f0:    /* Alarm date value */
         if (op_type == MTS_READ) {
             *data = 0;
         } else {

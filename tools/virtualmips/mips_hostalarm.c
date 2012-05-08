@@ -55,9 +55,11 @@ struct hpet_info {
 #define	HPET_DPI	_IO('h', 0x05)  /* disable periodic */
 #define	HPET_IRQFREQ	_IOW('h', 0x6, unsigned long)   /* IRQFREQ usec */
 
-/*host alarm. fired once 1 ms.
-It will find whether a timer has been expired. If so, run timers.
-*/
+/*
+ * Host alarm, fired once 1 ms.
+ * It will find whether a timer has been expired.
+ * If so, run timers.
+ */
 void host_alarm_handler (int host_signum)
 {
     if (unlikely (current_cpu->state != CPU_STATE_RUNNING))
@@ -79,6 +81,8 @@ void host_alarm_handler (int host_signum)
         }
     }
 /*printf ("-- count = %u, compare = %u\n", current_cpu->cp0.reg[MIPS_CP0_COUNT], current_cpu->cp0.reg[MIPS_CP0_COMPARE]);*/
+
+    host_alarm (current_cpu, KHZ);
 }
 
 #ifdef __linux__

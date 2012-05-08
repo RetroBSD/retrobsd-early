@@ -26,7 +26,6 @@
 
 struct pic32_spi_data {
     struct vdevice  *dev;
-    vtty_t          *vtty;
     vm_instance_t   *vm;
     pic32_t         *pic32;
 

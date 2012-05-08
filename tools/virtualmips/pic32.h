@@ -74,6 +74,12 @@ struct pic32_system {
     unsigned ipc[12];               /* interrupt priority control */
     unsigned ivprio[64];            /* priority of interrupt vectors */
 
+    struct vdevice *timer1;         /* timer 1 */
+    struct vdevice *timer2;         /* timer 2 */
+    struct vdevice *timer3;         /* timer 3 */
+    struct vdevice *timer4;         /* timer 4 */
+    struct vdevice *timer5;         /* timer 5 */
+
     struct vdevice *bmxdev;         /* memory controller */
     unsigned bmxcon;                /* memory control */
     unsigned bmx_ram_kpba;          /* RAM kernel program base address */
@@ -122,6 +128,8 @@ vm_instance_t *create_instance (char *conf);
 int init_instance (vm_instance_t *vm);
 int pic32_reset (vm_instance_t *vm);
 void pic32_update_irq_flag (pic32_t *pic32);
+void pic32_set_irq (vm_instance_t *vm, u_int irq);
+void pic32_clear_irq (vm_instance_t *vm, u_int irq);
 int dev_pic32_flash_init (vm_instance_t *vm, char *name,
     unsigned flash_kbytes, unsigned flash_address, char *filename);
 int dev_pic32_uart_init (vm_instance_t *vm, char *name, unsigned paddr,
@@ -135,8 +143,11 @@ int dev_pic32_bmxcon_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_rtcc_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_spi_init (vm_instance_t *vm, char *name, unsigned paddr,
     unsigned irq);
+struct vdevice *dev_pic32_timer_init (vm_instance_t *vm, char *name,
+    unsigned paddr, unsigned irq);
 int dev_pic32_gpio_init (vm_instance_t *vm, char *name, unsigned paddr);
 int dev_pic32_devcfg_init (vm_instance_t *vm, char *name, unsigned paddr);
+void dev_pic32_timer_tick (cpu_mips_t *cpu, struct vdevice *dev, unsigned nclocks);
 void dumpregs (cpu_mips_t *cpu);
 
 #endif

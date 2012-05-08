@@ -1679,12 +1679,21 @@ static int xor_op (cpu_mips_t * cpu, mips_insn_t insn)
     return (0);
 }
 
+static int rdpgpr_op (cpu_mips_t * cpu, mips_insn_t insn)
+{
+    int rt = bits (insn, 16, 20);
+    int rd = bits (insn, 11, 15);
+
+    printf ("%08x: unsupported RDPGPR $%u,$%u instruction.\n", cpu->pc, rd, rt);
+    return (0);
+}
+
 static int wrpgpr_op (cpu_mips_t * cpu, mips_insn_t insn)
 {
-    //int rt = bits (insn, 16, 20);
-    //int rd = bits (insn, 11, 15);
+    int rt = bits (insn, 16, 20);
+    int rd = bits (insn, 11, 15);
 
-    printf ("%08x: unsupported WRPGPR instruction.\n", cpu->pc);
+    printf ("%08x: unsupported WRPGPR $%u,$%u instruction.\n", cpu->pc, rd, rt);
     return (0);
 }
 
@@ -1925,7 +1934,7 @@ static const struct mips_op_desc mips_cop0_opcodes[] = {
     {"?cop0",   undef_cop0,	0x7},
     {"?cop0",   undef_cop0,	0x8},
     {"?cop0",   undef_cop0,	0x9},
-    {"?cop0",   undef_cop0,	0xa},
+    {"?cop0",   rdpgpr_op,	0xa},
     {"?cop0",   mfmc0_op,	0xb},
     {"?cop0",   undef_cop0,	0xc},
     {"?cop0",   undef_cop0,	0xd},

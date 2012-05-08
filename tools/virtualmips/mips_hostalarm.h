@@ -12,5 +12,6 @@ struct qemu_alarm_timer {
 };
 
 void mips_init_host_alarm (void);
+void host_alarm (cpu_mips_t *cpu, int nclocks);
 
 #endif

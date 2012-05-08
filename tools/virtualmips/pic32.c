@@ -182,71 +182,79 @@ static int pic32_init_platform (pic32_t *pic32)
             return (-1);
 
     /* Initialize peripherals */
-    if (dev_pic32_uart_init (vm, "PIC32 UART1", PIC32_U1MODE,
+    if (dev_pic32_uart_init (vm, "UART1", PIC32_U1MODE,
             PIC32_IRQ_U1E, vm->vtty_con[0]) == -1)
         return (-1);
-    if (dev_pic32_uart_init (vm, "PIC32 UART2", PIC32_U2MODE,
+    if (dev_pic32_uart_init (vm, "UART2", PIC32_U2MODE,
             PIC32_IRQ_U2E, vm->vtty_con[1]) == -1)
         return (-1);
 #if NVTTY >= 3
-    if (dev_pic32_uart_init (vm, "PIC32 UART3", PIC32_U3MODE,
+    if (dev_pic32_uart_init (vm, "UART3", PIC32_U3MODE,
             PIC32_IRQ_U3E, vm->vtty_con[2]) == -1)
         return (-1);
 #endif
 #if NVTTY >= 4
-    if (dev_pic32_uart_init (vm, "PIC32 UART4", PIC32_U4MODE,
+    if (dev_pic32_uart_init (vm, "UART4", PIC32_U4MODE,
             PIC32_IRQ_U4E, vm->vtty_con[3]) == -1)
         return (-1);
 #endif
 #if NVTTY >= 5
-    if (dev_pic32_uart_init (vm, "PIC32 UART5", PIC32_U5MODE,
+    if (dev_pic32_uart_init (vm, "UART5", PIC32_U5MODE,
             PIC32_IRQ_U5E, vm->vtty_con[4]) == -1)
         return (-1);
 #endif
 #if NVTTY >= 6
-    if (dev_pic32_uart_init (vm, "PIC32 UART6", PIC32_U6MODE,
+    if (dev_pic32_uart_init (vm, "UART6", PIC32_U6MODE,
             PIC32_IRQ_U6E, vm->vtty_con[5]) == -1)
         return (-1);
 #endif
-    if (dev_pic32_intcon_init (vm, "PIC32 INTCON", PIC32_INTCON) == -1)
+    if (dev_pic32_intcon_init (vm, "INTCON", PIC32_INTCON) == -1)
         return (-1);
-    if (dev_pic32_dmacon_init (vm, "PIC32 DMACON", PIC32_DMACON) == -1)
+    if (dev_pic32_dmacon_init (vm, "DMACON", PIC32_DMACON) == -1)
         return (-1);
-    if (dev_pic32_syscon_init (vm, "PIC32 SYSCON", PIC32_OSCCON) == -1)
+    if (dev_pic32_syscon_init (vm, "SYSCON", PIC32_OSCCON) == -1)
         return (-1);
-    if (dev_pic32_adc_init (vm, "PIC32 ADC", PIC32_AD1CON1) == -1)
+    if (dev_pic32_adc_init (vm, "ADC", PIC32_AD1CON1) == -1)
         return (-1);
-    if (dev_pic32_prefetch_init (vm, "PIC32 Prefetch", PIC32_CHECON) == -1)
+    if (dev_pic32_prefetch_init (vm, "Prefetch", PIC32_CHECON) == -1)
         return (-1);
-    if (dev_pic32_bmxcon_init (vm, "PIC32 BMX", PIC32_BMXCON) == -1)
+    if (dev_pic32_bmxcon_init (vm, "BMX", PIC32_BMXCON) == -1)
         return (-1);
-    if (dev_pic32_rtcc_init (vm, "PIC32 RTCC", PIC32_RTCCON) == -1)
+    if (dev_pic32_rtcc_init (vm, "RTCC", PIC32_RTCCON) == -1)
         return (-1);
-    if (dev_pic32_gpio_init (vm, "PIC32 GPIO", PIC32_TRISA) == -1)
+    if (dev_pic32_gpio_init (vm, "GPIO", PIC32_TRISA) == -1)
         return (-1);
-    if (dev_pic32_spi_init (vm, "PIC32 SPI1", PIC32_SPI1CON,
+    if (dev_pic32_spi_init (vm, "SPI1", PIC32_SPI1CON,
             PIC32_IRQ_SPI1E) == -1)
         return (-1);
-    if (dev_pic32_spi_init (vm, "PIC32 SPI2", PIC32_SPI2CON,
+    if (dev_pic32_spi_init (vm, "SPI2", PIC32_SPI2CON,
             PIC32_IRQ_SPI2E) == -1)
         return (-1);
-    if (dev_pic32_spi_init (vm, "PIC32 SPI3", PIC32_SPI3CON,
+    if (dev_pic32_spi_init (vm, "SPI3", PIC32_SPI3CON,
             PIC32_IRQ_SPI3E) == -1)
         return (-1);
-    if (dev_pic32_spi_init (vm, "PIC32 SPI4", PIC32_SPI4CON,
+    if (dev_pic32_spi_init (vm, "SPI4", PIC32_SPI4CON,
             PIC32_IRQ_SPI4E) == -1)
         return (-1);
-    if (dev_sdcard_init (&pic32->sdcard[0], "SD Card 0", pic32->sdcard0_size,
+    pic32->timer1 = dev_pic32_timer_init (vm, "Timer1", PIC32_T1CON, PIC32_IRQ_T1);
+    pic32->timer2 = dev_pic32_timer_init (vm, "Timer2", PIC32_T2CON, PIC32_IRQ_T2);
+    pic32->timer3 = dev_pic32_timer_init (vm, "Timer3", PIC32_T3CON, PIC32_IRQ_T3);
+    pic32->timer4 = dev_pic32_timer_init (vm, "Timer4", PIC32_T4CON, PIC32_IRQ_T4);
+    pic32->timer5 = dev_pic32_timer_init (vm, "Timer5", PIC32_T5CON, PIC32_IRQ_T5);
+    if (! pic32->timer1 || ! pic32->timer2 || ! pic32->timer3 ||
+        ! pic32->timer4 || ! pic32->timer5)
+        return (-1);
+    if (dev_sdcard_init (&pic32->sdcard[0], "SD0", pic32->sdcard0_size,
             pic32->sdcard0_file_name) < 0)
         return (-1);
-    if (dev_sdcard_init (&pic32->sdcard[1], "SD Card 1", pic32->sdcard1_size,
+    if (dev_sdcard_init (&pic32->sdcard[1], "SD1", pic32->sdcard1_size,
             pic32->sdcard1_file_name) < 0)
         return (-1);
     if (dev_swap_init (&pic32->swap, "Swap") < 0)
         return (-1);
 
     /* Initialize DEVCFG area */
-    if (dev_pic32_devcfg_init (vm, "PIC32 DEVCFG", 0x1fc02f00) < 0)
+    if (dev_pic32_devcfg_init (vm, "DEVCFG", 0x1fc02f00) < 0)
         return (-1);
 
     pic32->sdcard[1].unit = 1;
@@ -333,6 +341,20 @@ void set_timer_irq (cpu_mips_t *cpu)
 void clear_timer_irq (cpu_mips_t *cpu)
 {
     pic32_clear_irq (cpu->vm, PIC32_VECT_CT);
+}
+
+/*
+ * Increment timers.
+ */
+void host_alarm (cpu_mips_t *cpu, int nclocks)
+{
+    pic32_t *pic32 = (pic32_t*) cpu->vm->hw_data;
+
+    dev_pic32_timer_tick (cpu, pic32->timer1, nclocks);
+    dev_pic32_timer_tick (cpu, pic32->timer2, nclocks);
+    dev_pic32_timer_tick (cpu, pic32->timer3, nclocks);
+    dev_pic32_timer_tick (cpu, pic32->timer4, nclocks);
+    dev_pic32_timer_tick (cpu, pic32->timer5, nclocks);
 }
 
 COMMON_CONFIG_INFO_ARRAY;

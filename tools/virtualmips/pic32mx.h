@@ -297,6 +297,47 @@
 #define PIC32_ALRMDATE  PIC32_R (0x0250)  /* Alarm date value */
 
 /*--------------------------------------
+ * Timer registers.
+ */
+#define PIC32_T1CON     PIC32_R (0x0600)  /* Timer 1 control */
+#define PIC32_TMR1      PIC32_R (0x0610)  /* Timer 1 count */
+#define PIC32_PR1       PIC32_R (0x0620)  /* Timer 1 period */
+#define PIC32_T2CON     PIC32_R (0x0800)  /* Timer 2 control */
+#define PIC32_TMR2      PIC32_R (0x0810)  /* Timer 2 count */
+#define PIC32_PR2       PIC32_R (0x0820)  /* Timer 2 period */
+#define PIC32_T3CON     PIC32_R (0x0A00)  /* Timer 3 control */
+#define PIC32_TMR3      PIC32_R (0x0A10)  /* Timer 3 count */
+#define PIC32_PR3       PIC32_R (0x0A20)  /* Timer 3 period */
+#define PIC32_T4CON     PIC32_R (0x0C00)  /* Timer 4 control */
+#define PIC32_TMR4      PIC32_R (0x0C10)  /* Timer 4 count */
+#define PIC32_PR4       PIC32_R (0x0C20)  /* Timer 4 period */
+#define PIC32_T5CON     PIC32_R (0x0E00)  /* Timer 5 control */
+#define PIC32_TMR5      PIC32_R (0x0E10)  /* Timer 5 count */
+#define PIC32_PR5       PIC32_R (0x0E20)  /* Timer 5 period */
+
+/*
+ * Timer Control register.
+ */
+#define PIC32_TCON_ON           0x8000  /* Timer is enabled */
+#define PIC32_TCON_FRZ          0x4000  /* Freeze when CPU is in Debug mode */
+#define PIC32_TCON_SIDL         0x2000  /* Stop in Idle mode */
+#define PIC32_TCON_TWDIS        0x1000  /* (Timer A) Asynchronous Timer Write Disable */
+#define PIC32_TCON_TWIP         0x0800  /* (Timer A) Asynchronous Timer Write in Progress */
+#define PIC32_TCON_TGATE        0x0080  /* Enable gated time accumulation (only when TCS=0) */
+#define PIC32_TCON_TCKPS_MASK   0x0070  /* Timer Input Clock Prescale Select */
+#define PIC32_TCON_TCKPS_256    0x0070  /* 1:256 */
+#define PIC32_TCON_TCKPS_64     0x0060  /* 1:64 */
+#define PIC32_TCON_TCKPS_32     0x0050  /* 1:32 */
+#define PIC32_TCON_TCKPS_16     0x0040  /* 1:16 */
+#define PIC32_TCON_TCKPS_8      0x0030  /* 1:8 */
+#define PIC32_TCON_TCKPS_4      0x0020  /* 1:4 */
+#define PIC32_TCON_TCKPS_2      0x0010  /* 1:2 */
+#define PIC32_TCON_TCKPS_1      0x0000  /* 1:1 */
+#define PIC32_TCON_T32          0x0008  /* (Timer B) TMRx and TMRy form a 32-bit timer */
+#define PIC32_TCON_TSYNC        0x0004  /* (Timer A) External clock input is synchronized */
+#define PIC32_TCON_TCS          0x0002  /* External clock from TxCKI pin */
+
+/*--------------------------------------
  * UART registers.
  */
 #define PIC32_U1MODE            PIC32_R (0x6000) /* Mode */
