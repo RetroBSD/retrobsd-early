@@ -93,7 +93,7 @@ KERNOBJ		+= usb_console.o usb_device.o usb_function_cdc.o
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o
 
-include ../common/Makefile.internalDrivers
+include ../drivers.mk
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf

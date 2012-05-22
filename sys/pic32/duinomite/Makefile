@@ -106,7 +106,7 @@ KERNOBJ		+= sd.o
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
 
-include ../common/Makefile.internalDrivers
+include ../drivers.mk
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf

@@ -98,7 +98,7 @@ KERNOBJ		+= main.o subr_prf.o
 KERNOBJ		+= sd.o
 
 # This makefile does the work including the right files and options for the drivers
-include ../common/Makefile.internalDrivers
+include ../drivers.mk
 
 all:		.deps sys machine diag.elf
 		$(SIZE) diag.elf

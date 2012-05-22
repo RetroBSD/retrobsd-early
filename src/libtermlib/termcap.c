@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)termcap.c	5.1 (Berkeley) 6/5/85";
-#endif not lint
-
 #include <string.h>
 
 #define	BUFSIZ		1024

@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)tc3.c	5.1 (Berkeley) 6/5/85";
-#endif not lint
-
 /*
  * tc3 [term]
  * Dummy program to test out termlib.

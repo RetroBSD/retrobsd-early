@@ -164,7 +164,7 @@ unsigned w5100_write_byte (unsigned addr, int byte)
     data[1] = addr >> 8;
     data[2] = addr;
     data[3] = byte;
-    ioctl (spi, SPICTL_IO32, data);
+    ioctl (spi, SPICTL_IO8(4), data);
     return 1;
 }
 
@@ -178,7 +178,7 @@ unsigned w5100_write (unsigned addr, uint8_t *buf, unsigned len)
         data[1] = addr >> 8;
         data[2] = addr;
         data[3] = buf[i];
-        ioctl (spi, SPICTL_IO32, data);
+        ioctl (spi, SPICTL_IO8(4), data);
         addr++;
     }
     return len;
@@ -192,7 +192,7 @@ unsigned w5100_read_byte (unsigned addr)
     data[1] = addr >> 8;
     data[2] = addr;
     data[3] = 0xFF;
-    ioctl (spi, SPICTL_IO32, data);
+    ioctl (spi, SPICTL_IO8(4), data);
 
     return data[3];
 }
@@ -207,7 +207,7 @@ unsigned w5100_read (unsigned addr, uint8_t *buf, unsigned len)
         data[1] = addr >> 8;
         data[2] = addr;
         data[3] = 0xFF;
-        ioctl (spi, SPICTL_IO32, data);
+        ioctl (spi, SPICTL_IO8(4), data);
         addr++;
         buf[i] = data[3];
     }

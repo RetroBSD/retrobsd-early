@@ -78,7 +78,8 @@ CDEVS           = dev/console!c0:0 \
                   dev/porta!c7:0 dev/portb!c7:1 dev/portc!c7:2 \
                   dev/portd!c7:3 dev/porte!c7:4 dev/portf!c7:5 dev/portg!c7:6 \
                   dev/confa!c7:64 dev/confb!c7:65 dev/confc!c7:66 \
-                  dev/confd!c7:67 dev/confe!c7:68 dev/conff!c7:69 dev/confg!c7:70
+                  dev/confd!c7:67 dev/confe!c7:68 dev/conff!c7:69 dev/confg!c7:70 \
+                  dev/spi1!c9:0 dev/spi2!c9:1 dev/spi3!c9:2 dev/spi4!c9:3
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
                   dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \
