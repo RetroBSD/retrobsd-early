@@ -62,7 +62,7 @@ struct spireg {
 
 typedef struct {
     struct spireg *reg; /* hardware registers */
-    int channel;        /* SPI channel number (0...5) */
+    int channel;        /* SPI channel number (0...3) */
     int select_pin;     /* index of select pin */
     int mode;           /* clock polarity and phase */
     int khz;            /* data rate */
@@ -126,7 +126,7 @@ static void spi_setup (spi_t *spi)
         /* Do not change mode of SD card port. */
         return;
     }
-    PRINTDBG ("spi%d: %u kHz, mode %d\n", spi->channel, spi->khz, spi->mode);
+    PRINTDBG ("spi%d: %u kHz, mode %d\n", spi->channel+1, spi->khz, spi->mode);
 
     reg->con = 0;
     reg->stat = 0;
@@ -141,14 +141,12 @@ static void spi_setup (spi_t *spi)
 
 /*
  * Control the select pin.
- * Pin number: XXXYYYY
+ * Pin number: 00000XXX0000YYYY
  *  XXX: 0 for port A, 1 for port B, ... 6 for port G
  * YYYY: pin number, from 0 to 15
  */
 static void spi_select (spi_t *spi, int on)
 {
-    int mask = 1 << (spi->select_pin & 15);
-    int portnum = spi->select_pin >> 4 & 7;
     static unsigned volatile *const latset[7] = {
         &LATASET, &LATBSET, &LATCSET, &LATDSET, &LATESET, &LATFSET, &LATGSET,
     };
@@ -158,6 +156,12 @@ static void spi_select (spi_t *spi, int on)
     static unsigned volatile *const trisclr[7] = {
         &TRISACLR,&TRISBCLR,&TRISCCLR,&TRISDCLR,&TRISECLR,&TRISFCLR,&TRISGCLR,
     };
+    int mask, portnum;
+
+    if (! spi->select_pin)
+        return;
+    mask = 1 << (spi->select_pin & 15);
+    portnum = (spi->select_pin >> 8) & 7;
 
     /* Output pin on/off */
     if (on > 0)
@@ -177,16 +181,21 @@ static void spi_io32 (spi_t *spi, unsigned int *data, int nelem)
 {
     register struct spireg *reg = spi->reg;
 
+    PRINTDBG ("spi%d [%d]", spi->channel+1, nelem);
     spi_select (spi, 1);
     reg->conset = PIC32_SPICON_MODE32;
     while (nelem-- > 0) {
+        PRINTDBG (" %08x", *data);
         reg->buf = *data;
         while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
             continue;
-        *data++ = reg->buf;
+        *data = reg->buf;
+        PRINTDBG ("-%08x", *data);
+        data++;
     }
     reg->conclr = PIC32_SPICON_MODE32;
     spi_select (spi, 0);
+    PRINTDBG ("\n");
 }
 
 /*
@@ -196,16 +205,21 @@ static void spi_io16 (spi_t *spi, unsigned short *data, int nelem)
 {
     register struct spireg *reg = spi->reg;
 
+    PRINTDBG ("spi%d [%d]", spi->channel+1, nelem);
     spi_select (spi, 1);
     reg->conset = PIC32_SPICON_MODE16;
     while (nelem-- > 0) {
+        PRINTDBG (" %04x", *data);
         reg->buf = *data;
         while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
             continue;
-        *data++ = reg->buf;
+        *data = reg->buf;
+        PRINTDBG ("-%04x", *data);
+        data++;
     }
     reg->conclr = PIC32_SPICON_MODE16;
     spi_select (spi, 0);
+    PRINTDBG ("\n");
 }
 
 /*
@@ -215,14 +229,19 @@ static void spi_io8 (spi_t *spi, unsigned char *data, int nelem)
 {
     register struct spireg *reg = spi->reg;
 
+    PRINTDBG ("spi%d [%d]", spi->channel+1, nelem);
     spi_select (spi, 1);
     while (nelem-- > 0) {
+        PRINTDBG (" %02x", *data);
         reg->buf = *data;
         while (! (reg->stat & PIC32_SPISTAT_SPIRBF))
             continue;
-        *data++ = reg->buf;
+        *data = reg->buf;
+        PRINTDBG ("-%02x", *data);
+        data++;
     }
     spi_select (spi, 0);
+    PRINTDBG ("\n");
 }
 
 /*
@@ -240,13 +259,10 @@ int spi_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
     int channel = minor (dev);
     int nelem;
 
-    PRINTDBG ("gpioioctl (cmd=%08x, addr=%08x, flag=%d)\n", cmd, addr, flag);
+    PRINTDBG ("spi%d: ioctl (cmd=%08x, addr=%08x)\n", channel+1, cmd, addr);
     if (channel >= NSPI)
         return ENXIO;
-
     spi = &spi_data[channel];
-    if (! spi->select_pin)
-        return EINVAL;
 
     switch (cmd & ~(IOCPARM_MASK << 16)) {
     default:
@@ -271,7 +287,8 @@ int spi_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
 
     case SPICTL_SETSELPIN:      /* set select pin */
         spi->select_pin = (unsigned) addr;
-        PRINTDBG ("spi%d: select pin %x\n", spi->channel, spi->select_pin);
+        PRINTDBG ("spi%d: select pin %c%d\n", spi->channel+1,
+            "?ABCDEFG"[spi->select_pin >> 8], spi->select_pin & 15);
         spi_select (spi, -1);
         return 0;
 
