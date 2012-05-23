@@ -32,11 +32,12 @@
 #define NSPI    4       /* Ports SPI1...SPI4 */
 
 /*
- * To enable debug output, comment out the first line,
- * and uncomment the second line.
+ * To enable debug output, uncomment the first line.
  */
-//#define PRINTDBG(...) /*empty*/
-#define PRINTDBG printf
+//#define PRINTDBG printf
+#ifndef PRINTDBG
+#   define PRINTDBG(...) /*empty*/
+#endif
 
 /*
  * SPI registers.
@@ -132,7 +133,7 @@ static void spi_setup (spi_t *spi)
     reg->stat = 0;
     reg->brg = (BUS_KHZ / spi->khz + 1) / 2 - 1;
     reg->con = PIC32_SPICON_MSTEN;              // SPI master
-    if (spi->mode & 1)
+    if (! (spi->mode & 1))
         reg->conset = PIC32_SPICON_CKE;         // sample on trailing clock edge
     if (spi->mode & 2)
         reg->conset = PIC32_SPICON_CKP;         // clock idle high
@@ -147,21 +148,21 @@ static void spi_setup (spi_t *spi)
  */
 static void spi_select (spi_t *spi, int on)
 {
-    static unsigned volatile *const latset[7] = {
-        &LATASET, &LATBSET, &LATCSET, &LATDSET, &LATESET, &LATFSET, &LATGSET,
+    static unsigned volatile *const latset[8] = {
+        0, &LATASET, &LATBSET, &LATCSET, &LATDSET, &LATESET, &LATFSET, &LATGSET,
     };
-    static unsigned volatile *const latclr[7] = {
-        &LATACLR, &LATBCLR, &LATCCLR, &LATDCLR, &LATECLR, &LATFCLR, &LATGCLR,
+    static unsigned volatile *const latclr[8] = {
+        0, &LATACLR, &LATBCLR, &LATCCLR, &LATDCLR, &LATECLR, &LATFCLR, &LATGCLR,
     };
-    static unsigned volatile *const trisclr[7] = {
-        &TRISACLR,&TRISBCLR,&TRISCCLR,&TRISDCLR,&TRISECLR,&TRISFCLR,&TRISGCLR,
+    static unsigned volatile *const trisclr[8] = {
+        0, &TRISACLR,&TRISBCLR,&TRISCCLR,&TRISDCLR,&TRISECLR,&TRISFCLR,&TRISGCLR,
     };
     int mask, portnum;
 
-    if (! spi->select_pin)
-        return;
     mask = 1 << (spi->select_pin & 15);
     portnum = (spi->select_pin >> 8) & 7;
+    if (! portnum)
+        return;
 
     /* Output pin on/off */
     if (on > 0)
@@ -170,8 +171,11 @@ static void spi_select (spi_t *spi, int on)
         *latset[portnum] = mask;
 
     /* Direction output */
-    if (on < 0)
+    if (on < 0) {
         *trisclr[portnum] = mask;
+        PRINTDBG ("spi%d: select pin %c%d\n", spi->channel+1,
+            "?ABCDEFG"[portnum], spi->select_pin & 15);
+    }
 }
 
 /*
@@ -259,7 +263,7 @@ int spi_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
     int channel = minor (dev);
     int nelem;
 
-    PRINTDBG ("spi%d: ioctl (cmd=%08x, addr=%08x)\n", channel+1, cmd, addr);
+    //PRINTDBG ("spi%d: ioctl (cmd=%08x, addr=%08x)\n", channel+1, cmd, addr);
     if (channel >= NSPI)
         return ENXIO;
     spi = &spi_data[channel];
@@ -287,8 +291,6 @@ int spi_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
 
     case SPICTL_SETSELPIN:      /* set select pin */
         spi->select_pin = (unsigned) addr;
-        PRINTDBG ("spi%d: select pin %c%d\n", spi->channel+1,
-            "?ABCDEFG"[spi->select_pin >> 8], spi->select_pin & 15);
         spi_select (spi, -1);
         return 0;
 
