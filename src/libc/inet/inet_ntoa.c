@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 char *
 inet_ntoa(in)

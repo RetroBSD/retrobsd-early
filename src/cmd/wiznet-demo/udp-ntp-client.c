@@ -13,8 +13,10 @@
  * This code is in the public domain.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <wiznet/ethernet.h>
 #include <wiznet/udp.h>
 
@@ -46,6 +48,48 @@ unsigned char packetBuffer [NTP_PACKET_SIZE];
 udp_t udp;
 
 /*
+ * Get MAC address from string to byte array.
+ */
+void parse_mac (char *str)
+{
+    register unsigned c, val;
+    unsigned char *macp = mac;
+
+    do {
+        /* Collect number up to ":". */
+        val = 0;
+        while ((c = (unsigned char) *str)) {
+            if (c >= '0' && c <= '9')
+                val = (val << 4) + (c - '0');
+            else if (c >= 'a' && c <= 'f')
+                val = (val << 4) + (c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F')
+                val = (val << 4) + (c - 'A' + 10);
+            else
+                break;
+            str++;
+        }
+        *macp++ = val;
+    } while (*str++ == ':' && macp < mac + 6);
+}
+
+/*
+ * Get IP address from string to byte array.
+ */
+void parse_ip (unsigned char *val, char *str)
+{
+    unsigned long addr;
+
+    if (! str)
+        return;
+    addr = inet_addr (str);
+    val[0] = addr >> 24;
+    val[1] = addr >> 16;
+    val[2] = addr >> 8;
+    val[3] = addr >> 0;
+}
+
+/*
  * Send an NTP request to the time server at the given address.
  */
 void send_ntp_packet (unsigned char *address)
@@ -73,9 +117,18 @@ void send_ntp_packet (unsigned char *address)
 
 int main()
 {
+    /* Get parameters from environment */
+    parse_mac(getenv("MAC"));
+    parse_ip(ip, getenv("IP"));
+
     /* Start Ethernet and UDP. */
     ethernet_init (mac, ip, 0, 0);
     udp_init (&udp, LOCAL_PORT);
+
+    printf("local MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    printf("local IP address %u.%u.%u.%u\n",
+        ip[0], ip[1], ip[2], ip[3]);
 
     for (;;) {
         send_ntp_packet (timeServer); // send an NTP packet to a time server

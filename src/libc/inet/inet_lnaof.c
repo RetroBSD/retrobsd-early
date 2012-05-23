@@ -5,6 +5,7 @@
  */
 #include <sys/types.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  * Return the local network address portion of an
