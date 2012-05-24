@@ -13,7 +13,6 @@
  * This code is in the public domain.
  */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -25,17 +24,9 @@
 #define NTP_PACKET_SIZE     48      /* NTP time stamp is in the first 48 bytes of the message */
 
 /*
- * Enter a MAC address and IP address for your controller below.
- * The IP address will be dependent on your local network.
+ * IP address of the server.
  */
-unsigned char mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-
-unsigned char ip[] = { 192,168,1,177 };
-
-/*
- * time.nist.gov NTP server.
- */
-unsigned char timeServer[] = { 192,43,244,18 };
+unsigned char server[4];
 
 /*
  * Buffer to hold incoming and outgoing packets.
@@ -46,48 +37,6 @@ unsigned char packetBuffer [NTP_PACKET_SIZE];
  * A UDP instance to let us send and receive packets over UDP.
  */
 udp_t udp;
-
-/*
- * Get MAC address from string to byte array.
- */
-void parse_mac (char *str)
-{
-    register unsigned c, val;
-    unsigned char *macp = mac;
-
-    do {
-        /* Collect number up to ":". */
-        val = 0;
-        while ((c = (unsigned char) *str)) {
-            if (c >= '0' && c <= '9')
-                val = (val << 4) + (c - '0');
-            else if (c >= 'a' && c <= 'f')
-                val = (val << 4) + (c - 'a' + 10);
-            else if (c >= 'A' && c <= 'F')
-                val = (val << 4) + (c - 'A' + 10);
-            else
-                break;
-            str++;
-        }
-        *macp++ = val;
-    } while (*str++ == ':' && macp < mac + 6);
-}
-
-/*
- * Get IP address from string to byte array.
- */
-void parse_ip (unsigned char *val, char *str)
-{
-    unsigned long addr;
-
-    if (! str)
-        return;
-    addr = inet_addr (str);
-    val[0] = addr >> 24;
-    val[1] = addr >> 16;
-    val[2] = addr >> 8;
-    val[3] = addr >> 0;
-}
 
 /*
  * Send an NTP request to the time server at the given address.
@@ -115,25 +64,32 @@ void send_ntp_packet (unsigned char *address)
     udp_send_packet (&udp, packetBuffer, NTP_PACKET_SIZE, address, NTP_PORT);
 }
 
-int main()
+int main (int argc, char **argv)
 {
-    /* Get parameters from environment */
-    parse_mac(getenv("MAC"));
-    parse_ip(ip, getenv("IP"));
+    if (argc > 1) {
+        /* Command argument: IP address of server. */
+        unsigned addr = inet_addr (argv[1]);
+        server[0] = addr >> 24;
+        server[1] = addr >> 16;
+        server[2] = addr >> 8;
+        server[3] = addr >> 0;
+    } else {
+        /* time.nist.gov NTP server */
+        server[0] = 192;
+        server[1] = 43;
+        server[2] = 244;
+        server[3] = 18;
+    }
 
     /* Start Ethernet and UDP. */
-    ethernet_init (mac, ip, 0, 0);
+    ethernet_init ();
     udp_init (&udp, LOCAL_PORT);
 
-    printf("local MAC address %02x:%02x:%02x:%02x:%02x:%02x\n",
-        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    printf("local IP address %u.%u.%u.%u\n",
-        ip[0], ip[1], ip[2], ip[3]);
-
     for (;;) {
-        send_ntp_packet (timeServer); // send an NTP packet to a time server
+        /* Send an NTP packet to a time server. */
+        send_ntp_packet (server);
 
-        // wait to see if a reply is available
+        /* Wait to see if a reply is available. */
         usleep (1000000);
 
         if (udp_available (&udp)) {
