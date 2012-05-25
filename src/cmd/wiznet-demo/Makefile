@@ -4,8 +4,8 @@ include $(TOPSRC)/target.mk
 CFLAGS          += -O -Wall -Werror
 LIBS            += -lwiznet
 
-EXAMPLES        = telnet-client \
-                  udp-ntp-client \
+EXAMPLES        = telnet \
+                  ntpdate \
                   chat-server \
                   web-client \
                   web-server
@@ -24,13 +24,13 @@ web-server:     web-server.o
 		${SIZE} $@.elf
 		${ELF2AOUT} $@.elf $@
 
-telnet-client:  telnet-client.o
+telnet:         telnet.o
 		${CC} ${LDFLAGS} -o $@.elf $< ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf
 		${ELF2AOUT} $@.elf $@
 
-udp-ntp-client: udp-ntp-client.o
+ntpdate:        ntpdate.o
 		${CC} ${LDFLAGS} -o $@.elf $< ${LIBS}
 		${OBJDUMP} -S $@.elf > $@.dis
 		${SIZE} $@.elf

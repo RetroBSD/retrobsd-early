@@ -50,9 +50,8 @@ int main (int argc, char **argv)
 
     /* Initialize the Ethernet client library
      * with the IP address and port of the server
-     * that you want to connect to (port 23 is default for telnet;
-     * if you're using Processing's ChatServer, use  port 10002). */
-    client_init (&client, server, 10002);
+     * that you want to connect to (port 23 is default for telnet). */
+    client_init (&client, server, 23);
 
     printf("connecting to %u.%u.%u.%u\n",
         server[0], server[1], server[2], server[3]);
