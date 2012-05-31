@@ -45,10 +45,10 @@ static void parse_ip (unsigned char *val, char *str)
     if (! str)
         return;
     addr = inet_addr (str);
-    val[0] = addr >> 24;
-    val[1] = addr >> 16;
-    val[2] = addr >> 8;
-    val[3] = addr >> 0;
+    val[0] = addr >> 0;
+    val[1] = addr >> 8;
+    val[2] = addr >> 16;
+    val[3] = addr >> 24;
 }
 
 /*
