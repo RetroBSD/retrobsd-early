@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include <arpa/inet.h>
 #include <wiznet/ethernet.h>
 #include <wiznet/udp.h>
@@ -68,11 +69,7 @@ int main (int argc, char **argv)
 {
     if (argc > 1) {
         /* Command argument: IP address of server. */
-        unsigned addr = inet_addr (argv[1]);
-        server[0] = addr >> 24;
-        server[1] = addr >> 16;
-        server[2] = addr >> 8;
-        server[3] = addr >> 0;
+        *(int*)server = inet_addr (argv[1]);
     } else {
         /* time.nist.gov NTP server */
         server[0] = 192;
@@ -90,20 +87,25 @@ int main (int argc, char **argv)
         send_ntp_packet (server);
 
         /* Wait to see if a reply is available. */
-        usleep (1000000);
+        sleep (1);
 
         if (udp_available (&udp)) {
             /* Read the packet into the buffer. */
             udp_read_packet (&udp, packetBuffer, NTP_PACKET_SIZE, 0, 0);
 
+            int i;
+            for (i=0; i<NTP_PACKET_SIZE; i++)
+                printf ("%02x-", packetBuffer[i]);
+            printf ("\n");
+
             /* The timestamp starts at byte 40 of the received packet
              * and is four bytes, or two words, long.
              * Combine the four bytes into a long integer.
              * This is NTP time (seconds since Jan 1 1900). */
-            unsigned long secsSince1900 = packetBuffer[40] << 24 |
-                                          packetBuffer[41] << 16 |
-                                          packetBuffer[42] << 8 |
-                                          packetBuffer[43];
+            time_t secsSince1900 = packetBuffer[40] << 24 |
+                                   packetBuffer[41] << 16 |
+                                   packetBuffer[42] << 8 |
+                                   packetBuffer[43];
             printf ("Seconds since Jan 1 1900 = %lu\n", secsSince1900);
 
             /* Now convert NTP time into everyday time.
@@ -111,20 +113,23 @@ int main (int argc, char **argv)
              * In seconds, that's 2208988800.
              * Subtract seventy years. */
             const unsigned long seventyYears = 2208988800UL;
-            unsigned long epoch = secsSince1900 - seventyYears;
+            time_t epoch = secsSince1900 - seventyYears;
 
             /* Print Unix time. */
             printf ("Unix time = %lu\n", epoch);
 
+            struct tm *L = gmtime (&epoch);
+
             /* Print the hour, minute and second.
              * UTC is the time at Greenwich Meridian (GMT). */
-            printf ("The UTC time is %lu:%02lu:%02lu\n",
+            printf ("The UTC time is %04d-%02d-%02d %lu:%02lu:%02lu\n",
+                L->tm_year, L->tm_mon + 1, L->tm_mday,
                 (epoch  % 86400L) / 3600,   // hour (86400 equals secs per day)
                 (epoch  % 3600) / 60,       // minute (3600 equals secs per minute)
                 epoch % 60);                // second
         }
 
-        /* Wait ten seconds before asking for the time again. */
-        sleep (10);
+        /* Wait before asking for the time again. */
+        sleep (1);
     }
 }

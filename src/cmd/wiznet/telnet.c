@@ -29,18 +29,12 @@ client_t client;
 
 int main (int argc, char **argv)
 {
-    unsigned addr;
-
     /* Command argument: IP address of server. */
     if (argc != 2) {
         printf ("Usage: %s <ip-address>\n", argv[0]);
         return -1;
     }
-    addr = inet_addr (argv[1]);
-    server[0] = addr >> 24;
-    server[1] = addr >> 16;
-    server[2] = addr >> 8;
-    server[3] = addr >> 0;
+    *(int*)server = inet_addr (argv[1]);
 
     /* Start the Ethernet connection. */
     ethernet_init ();

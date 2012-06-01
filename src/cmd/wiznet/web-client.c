@@ -23,11 +23,7 @@ int main (int argc, char **argv)
 {
     if (argc > 1) {
         /* Command argument: IP address of server. */
-        unsigned addr = inet_addr (argv[1]);
-        server[0] = addr >> 24;
-        server[1] = addr >> 16;
-        server[2] = addr >> 8;
-        server[3] = addr >> 0;
+        *(int*)server = inet_addr (argv[1]);
     } else {
         /* Google */
         server[0] = 173;
