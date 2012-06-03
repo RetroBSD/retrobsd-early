@@ -11,7 +11,7 @@ CFLAGS          += -Werror
 # Programs that live in subdirectories, and have makefiles of their own.
 # /bin
 SUBDIR		= adb adc-demo ar as awk basic cc chflags chpass \
-                  cpp dc diff find forth fstat hostname \
+                  cpp dc diff env find forth fstat hostname \
                   id la ld ls login make man med \
                   more nm passwd portio printf \
                   ranlib re renice retroforth scm setty sl \
@@ -34,7 +34,7 @@ SCRIPT		= false nohup true #lorder mkdep
 #
 STD		= basename cal cat cb chgrp chmod cmp col comm cp date dd du \
 		  echo ed fgrep file grep head hostid join kill last ln \
-                  mesg mkdir mv nice od pagesize pr pwd rev rm rmail rmdir \
+                  mesg mkdir mv nice od pagesize pr printenv pwd rev rm rmail rmdir \
                   size sleep sort split sum sync tail tar tee time touch tr \
                   tsort tty uniq w wc whereis who
 
