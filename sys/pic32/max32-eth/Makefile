@@ -30,7 +30,7 @@ DEFS		+= -DBUS_KHZ=80000
 # Console on UART1
 DEFS            += -DCONSOLE_UART1
 # SD/MMC card driver on SPI2
-DEFS            += -DSD_PORT=SPI2CON
+DEFS            += -DSD_PORT=SPI2CON -DSD_MHZ=8
 # /CS0 at pin C14, /ETHCS at pin D4
 DEFS            += -DSD_CS0_PORT=TRISC -DSD_CS0_PIN=14
 # LED at pin A3

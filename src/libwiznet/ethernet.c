@@ -110,8 +110,22 @@ void ethernet_init ()
         ethernet_netmask[2], ethernet_netmask[3]);
 
     w5100_init();
-    w5100_setMACAddress (ethernet_mac);
-    w5100_setIPAddress (ethernet_ip);
-    w5100_setGatewayIp (ethernet_gateway);
-    w5100_setSubnetMask (ethernet_netmask);
+
+    /* Set Ethernet MAC address. */
+    w5100_writeSHAR (ethernet_mac);
+
+    /* Set local IP address. */
+    w5100_writeSIPR (ethernet_ip);
+
+    /* Set gateway IP address. */
+    w5100_writeGAR (ethernet_gateway);
+
+    /* Set subnet mask. */
+    w5100_writeSUBR (ethernet_netmask);
+
+    /* Set retransmission timeout to 200 msec. */
+    w5100_writeRTR (200*10);
+
+    /* Set retransmission count. */
+    //w5100_writeRCR (3);
 }

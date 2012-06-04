@@ -22,26 +22,22 @@
 #define SPI_KHZ             5000        // Clock speed 5 MHz
 #define SPI_SELPIN          0x0404      // chipKIT board: select pin D4
 
-#define TX_RX_MAX_BUF_SIZE  2048
-#define TX_BUF              0x1100
-#define RX_BUF              (TX_BUF + TX_RX_MAX_BUF_SIZE)
-
 #define TXBUF_BASE          0x4000
 #define RXBUF_BASE          0x6000
 
-#define RST                 7       // Reset BIT
+#define RST                 7           // Reset BIT
 
-#define SMASK               0x07FF  // Tx buffer MASK
-#define RMASK               0x07FF  // Rx buffer MASK
+#define TXBUF_MASK          (TXBUF_SIZE-1)      // Tx buffer MASK
+#define RXBUF_MASK          (RXBUF_SIZE-1)      // Rx buffer MASK
 
 static uint16_t SBASE [MAX_SOCK_NUM];   // Tx buffer base address
 static uint16_t RBASE [MAX_SOCK_NUM];   // Rx buffer base address
 
-static int spi;                     // SPI driver descriptor
+static int spi;                         // SPI driver descriptor
 
 void w5100_init()
 {
-    int i;
+    int i, failed;
 
     spi = open (SPI_DEVNAME, O_RDWR);
     if (spi < 0) {
@@ -52,75 +48,116 @@ void w5100_init()
     ioctl (spi, SPICTL_SETRATE, SPI_KHZ);
     ioctl (spi, SPICTL_SETSELPIN, SPI_SELPIN);
 
-    w5100_writeMR (1 << RST);
+    /* Reset the chip. */
+    w5100_writeMR (MR_RST);
+
+    /* Assign 2 kbytes of memory to RX and TX of each socket. */
     w5100_writeTMSR (0x55);
     w5100_writeRMSR (0x55);
 
     for (i=0; i<MAX_SOCK_NUM; i++) {
-        SBASE[i] = TXBUF_BASE + W5100_SSIZE * i;
-        RBASE[i] = RXBUF_BASE + W5100_RSIZE * i;
+        SBASE[i] = TXBUF_BASE + TXBUF_SIZE * i;
+        RBASE[i] = RXBUF_BASE + RXBUF_SIZE * i;
     }
+
+    /* Self test. */
+    failed = 0;
+    for (i=0; i<16; i++) {
+        unsigned val, got;
+
+        val = 1 << i;
+        w5100_writeRTR (val);
+        got = w5100_readRTR();
+        if (got != val) {
+            failed++;
+            fprintf (stderr, "w5100 self test failed: written %08x, got %08x\n",
+                val, got);
+        }
+    }
+    if (failed)
+        exit (-1);
 }
 
 unsigned w5100_getTXFreeSize (unsigned sock)
 {
-    unsigned val = 0, val1 = 0;
+    unsigned val, val2;
 
-    do {
-        val1 = w5100_readSnTX_FSR (sock);
-        if (val1 != 0)
-            val = w5100_readSnTX_FSR (sock);
+    for (;;) {
+        /* Nonzero value expected. */
+        val = w5100_readSnTX_FSR (sock);
+        if (val == 0)
+            return 0;
+
+        /* Do it twice until value matches. */
+        val2 = w5100_readSnTX_FSR (sock);
+        if (val == val2) {
+            W5100_DEBUG ("TX free = %u\n", val);
+            return val;
+        }
     }
-    while (val != val1);
-    return val;
 }
 
 unsigned w5100_getRXReceivedSize (unsigned sock)
 {
-    unsigned val = 0, val1 = 0;
+    unsigned val, val2;
 
-    do {
-        val1 = w5100_readSnRX_RSR (sock);
-        if (val1 != 0)
-            val = w5100_readSnRX_RSR (sock);
+    for (;;) {
+        /* Nonzero value expected. */
+        val = w5100_readSnRX_RSR (sock);
+        if (val == 0)
+            return 0;
+
+        /* Do it twice until value matches. */
+        val2 = w5100_readSnRX_RSR (sock);
+        if (val == val2) {
+            W5100_DEBUG ("RX received = %u\n", val);
+            return val;
+        }
     }
-    while (val != val1);
-    return val;
 }
 
-void w5100_send_data_processing (unsigned sock, uint8_t *data, unsigned len)
+void w5100_send_chunk (unsigned sock, const uint8_t *data, unsigned len)
 {
     unsigned ptr = w5100_readSnTX_WR (sock);
-    unsigned offset = ptr & SMASK;
+    unsigned offset = ptr & TXBUF_MASK;
     unsigned dstAddr = offset + SBASE[sock];
 
-    if (offset + len > W5100_SSIZE) {
+    W5100_DEBUG ("send chunk: TX write pointer = %04x\n", ptr);
+    if (offset + len > TXBUF_SIZE) {
         // Wrap around circular buffer
-        unsigned size = W5100_SSIZE - offset;
+        unsigned size = TXBUF_SIZE - offset;
         w5100_write (dstAddr, data, size);
         w5100_write (SBASE[sock], data + size, len - size);
+        W5100_DEBUG ("TX %04x-%04x, %04x-%04x\n", dstAddr, dstAddr+size-1, SBASE[sock], SBASE[sock]+len-size-1);
     } else {
         w5100_write (dstAddr, data, len);
+        W5100_DEBUG ("TX %04x-%04x\n", dstAddr, dstAddr+len-1);
     }
 
     ptr += len;
     w5100_writeSnTX_WR (sock, ptr);
+    W5100_DEBUG ("set TX write pointer = %04x\n", ptr);
 }
 
-void w5100_recv_data_processing (unsigned sock, uint8_t *data,
-    unsigned len, int peek)
+void w5100_recv_chunk (unsigned sock, uint8_t *data, unsigned len)
 {
     unsigned ptr = w5100_readSnRX_RD (sock);
 
-    /* removed unint8_t pointer cast in read_data due to pic32 pointer
-     * values are 32 bit and compiler errors out due to data loss
-     * from cast to 16-bit int -LSH */
+    W5100_DEBUG ("recv chunk: RX pointer = %04x\n", ptr);
     w5100_read_data (sock, ptr, data, len);
 
-    if (! peek) {
-        ptr += len;
-        w5100_writeSnRX_RD (sock, ptr);
-    }
+    ptr += len;
+    w5100_writeSnRX_RD (sock, ptr);
+    W5100_DEBUG ("set RX pointer = %04x\n", ptr);
+}
+
+unsigned w5100_recv_peek (unsigned sock)
+{
+    unsigned ptr = w5100_readSnRX_RD (sock);
+    unsigned char byte;
+
+    w5100_read_data (sock, ptr, &byte, 1);
+    return byte;
 }
 
 void w5100_socket_cmd (unsigned sock, int cmd)
@@ -133,27 +170,21 @@ void w5100_socket_cmd (unsigned sock, int cmd)
         ;
 }
 
-/* removed unint8_t pointer cast in read_data due to pic32 pointer
- * values are 32 bit and compiler errors out due to data loss
- * from cast to 16-bit int -LSH */
-void w5100_read_data (unsigned sock,  unsigned src,
-    volatile uint8_t *dst, unsigned len)
+void w5100_read_data (unsigned sock, unsigned ptr, uint8_t *dst, unsigned len)
 {
-    unsigned size;
-    unsigned src_mask;
-    unsigned src_ptr;
+    unsigned offset = ptr & RXBUF_MASK;
+    unsigned srcAddr = offset + RBASE[sock];
 
-    src_mask = src & RMASK;
-    src_ptr = RBASE[sock] + src_mask;
-
-    if (src_mask + len > W5100_RSIZE)
+    if (offset + len > RXBUF_SIZE)
     {
-        size = W5100_RSIZE - src_mask;
-        w5100_read (src_ptr, (uint8_t *) dst, size);
-        dst += size;
-        w5100_read (RBASE[sock], (uint8_t *) dst, len - size);
-    } else
-        w5100_read (src_ptr, (uint8_t *) dst, len);
+        unsigned size = RXBUF_SIZE - offset;
+        w5100_read (srcAddr, dst, size);
+        w5100_read (RBASE[sock], dst + size, len - size);
+        W5100_DEBUG ("RX %04x-%04x, %04x-%04x\n", srcAddr, srcAddr+size-1, SBASE[sock], SBASE[sock]+len-size-1);
+    } else {
+        w5100_read (srcAddr, dst, len);
+        W5100_DEBUG ("RX %04x-%04x\n", srcAddr, srcAddr+len-1);
+    }
 }
 
 unsigned w5100_write_byte (unsigned addr, int byte)
@@ -168,7 +199,7 @@ unsigned w5100_write_byte (unsigned addr, int byte)
     return 1;
 }
 
-unsigned w5100_write (unsigned addr, uint8_t *buf, unsigned len)
+unsigned w5100_write (unsigned addr, const uint8_t *buf, unsigned len)
 {
     uint8_t data[4];
     unsigned i;

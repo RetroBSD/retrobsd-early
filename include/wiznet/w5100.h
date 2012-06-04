@@ -16,20 +16,30 @@
 
 #define MAX_SOCK_NUM    4
 
-#define IDM_OR          0x8000
-#define IDM_AR0         0x8001
-#define IDM_AR1         0x8002
-#define IDM_DR          0x8003
+/*
+ * Common Mode Register.
+ */
+#define MR_IND          0x01    /* Indirect bus interface mode */
+#define MR_AI           0x02    /* Address auto-increment for indirect mode */
+#define MR_PPPoE        0x08    /* PPPoE mode */
+#define MR_PB           0x10    /* Ping block mode */
+#define MR_RST          0x80    /* Software reset */
 
+/*
+ * Socket Mode Register.
+ */
 #define SnMR_CLOSE      0x00
 #define SnMR_TCP        0x01
 #define SnMR_UDP        0x02
 #define SnMR_IPRAW      0x03
 #define SnMR_MACRAW     0x04
 #define SnMR_PPPOE      0x05
-#define SnMR_ND         0x20
-#define SnMR_MULTI      0x80
+#define SnMR_ND         0x20    /* No delayed ACK */
+#define SnMR_MULTI      0x80    /* Enable multicasting */
 
+/*
+ * Socket Command Register.
+ */
 #define Sock_OPEN       0x01
 #define Sock_LISTEN     0x02
 #define Sock_CONNECT    0x04
@@ -40,12 +50,18 @@
 #define Sock_SEND_KEEP  0x22
 #define Sock_RECV       0x40
 
+/*
+ * Socket Interrupt Register.
+ */
 #define SnIR_SEND_OK    0x10
 #define SnIR_TIMEOUT    0x08
 #define SnIR_RECV       0x04
 #define SnIR_DISCON     0x02
 #define SnIR_CON        0x01
 
+/*
+ * Socket Status Register.
+ */
 #define SnSR_CLOSED     0x00
 #define SnSR_INIT       0x13
 #define SnSR_LISTEN     0x14
@@ -62,19 +78,8 @@
 #define SnSR_MACRAW     0x42
 #define SnSR_PPPOE      0x5F
 
-#define IPPROTO_IP      0
-#define IPPROTO_ICMP    1
-#define IPPROTO_IGMP    2
-#define IPPROTO_GGP     3
-#define IPPROTO_TCP     6
-#define IPPROTO_PUP     12
-#define IPPROTO_UDP     17
-#define IPPROTO_IDP     22
-#define IPPROTO_ND      77
-#define IPPROTO_RAW     255
-
-#define W5100_SSIZE     2048    // Max Tx buffer size
-#define W5100_RSIZE     2048    // Max Rx buffer size
+#define TXBUF_SIZE      2048    // Max Tx buffer size
+#define RXBUF_SIZE      2048    // Max Rx buffer size
 
 #define CH_BASE         0x0400
 #define CH_SIZE         0x0100
@@ -83,7 +88,7 @@
  * W5100 Registers
  */
 unsigned w5100_write_byte (unsigned addr, int byte);
-unsigned w5100_write (unsigned addr, uint8_t *buf, unsigned len);
+unsigned w5100_write (unsigned addr, const uint8_t *buf, unsigned len);
 unsigned w5100_read_byte (unsigned addr);
 unsigned w5100_read (unsigned addr, uint8_t *buf, unsigned len);
 
@@ -221,79 +226,37 @@ void w5100_init();
  * the data from Receive buffer. Here also take care of the condition
  * while it exceed the Rx memory uper-bound of socket.
  */
-void w5100_read_data (unsigned sock, unsigned src, volatile uint8_t * dst, unsigned len);
+void w5100_read_data (unsigned sock, unsigned src, uint8_t *dst, unsigned len);
 
 /*
  * This function is being called by send() and sendto() function also.
  *
  * This function read the Tx write pointer register and after copy the data
- * in buffer update the Tx write pointer register. User should read
- * upper byte first and lower byte later to get proper value.
+ * in buffer update the Tx write pointer register.
  */
-void w5100_send_data_processing (unsigned sock, uint8_t *data, unsigned len);
+void w5100_send_chunk (unsigned sock, const uint8_t *data, unsigned len);
 
 /*
  * This function is being called by recv() also.
  *
  * This function read the Rx read pointer register and after copy
  * the data from receive buffer update the Rx write pointer register.
- * User should read upper byte first and lower byte later to get proper value.
  */
-void w5100_recv_data_processing (unsigned sock, uint8_t *data, unsigned len, int peek);
+void w5100_recv_chunk (unsigned sock, uint8_t *data, unsigned len);
 
-static inline void w5100_getGatewayIp (uint8_t *addr)
-{
-    w5100_readGAR (addr);
-}
-
-static inline void w5100_setGatewayIp (uint8_t *addr)
-{
-    w5100_writeGAR (addr);
-}
-
-static inline void w5100_getSubnetMask (uint8_t *addr)
-{
-    w5100_readSUBR (addr);
-}
-
-static inline void w5100_setSubnetMask (uint8_t *addr)
-{
-    w5100_writeSUBR (addr);
-}
-
-static inline void w5100_getMACAddress (uint8_t *addr)
-{
-    w5100_readSHAR (addr);
-}
-
-static inline void w5100_setMACAddress (uint8_t *addr)
-{
-    w5100_writeSHAR (addr);
-}
-
-static inline void w5100_getIPAddress (uint8_t *addr)
-{
-    w5100_readSIPR (addr);
-}
-
-static inline void w5100_setIPAddress (uint8_t *addr)
-{
-    w5100_writeSIPR (addr);
-}
-
-static inline void w5100_setRetransmissionTime (unsigned timeout)
-{
-    w5100_writeRTR (timeout);
-}
-
-static inline void w5100_setRetransmissionCount (unsigned retry)
-{
-    w5100_writeRCR (retry);
-}
+unsigned w5100_recv_peek (unsigned sock);
 
 void w5100_socket_cmd (unsigned sock, int cmd);
 
 unsigned w5100_getTXFreeSize (unsigned sock);
 unsigned w5100_getRXReceivedSize (unsigned sock);
+
+/*
+ * Debug output.
+ */
+//#define W5100_DEBUG printf
+#ifndef W5100_DEBUG
+#   define W5100_DEBUG(...) /* empty */
+#endif
 
 #endif

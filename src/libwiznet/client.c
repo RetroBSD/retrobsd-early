@@ -104,7 +104,7 @@ int client_peek (client_t *c)
     if (! client_available (c))
       return -1;
 
-    socket_peek (c->sock, &b);
+    b = socket_peek (c->sock);
     return b;
 }
 

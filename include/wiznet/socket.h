@@ -39,7 +39,7 @@ unsigned socket_send (unsigned sock, const uint8_t *buf, unsigned len);
  * Receive data (TCP)
  */
 unsigned socket_recv (unsigned sock, uint8_t *buf, unsigned len);
-unsigned socket_peek (unsigned sock, uint8_t *buf);
+unsigned socket_peek (unsigned sock);
 
 /*
  * Send data (UDP/IP RAW)

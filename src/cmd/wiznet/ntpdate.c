@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <wiznet/ethernet.h>
 #include <wiznet/udp.h>
@@ -67,6 +68,11 @@ void send_ntp_packet (unsigned char *address)
 
 int main (int argc, char **argv)
 {
+    struct timeval tv;
+    struct timezone tz;
+
+    gettimeofday (&tv, &tz);
+
     if (argc > 1) {
         /* Command argument: IP address of server. */
         *(int*)server = inet_addr (argv[1]);
@@ -92,12 +98,12 @@ int main (int argc, char **argv)
         if (udp_available (&udp)) {
             /* Read the packet into the buffer. */
             udp_read_packet (&udp, packetBuffer, NTP_PACKET_SIZE, 0, 0);
-
+#if 0
             int i;
             for (i=0; i<NTP_PACKET_SIZE; i++)
                 printf ("%02x-", packetBuffer[i]);
             printf ("\n");
-
+#endif
             /* The timestamp starts at byte 40 of the received packet
              * and is four bytes, or two words, long.
              * Combine the four bytes into a long integer.
@@ -106,26 +112,27 @@ int main (int argc, char **argv)
                                    packetBuffer[41] << 16 |
                                    packetBuffer[42] << 8 |
                                    packetBuffer[43];
-            printf ("Seconds since Jan 1 1900 = %lu\n", secsSince1900);
+            //printf ("Seconds since Jan 1 1900 = %lu\n", secsSince1900);
 
             /* Now convert NTP time into everyday time.
              * Unix time starts on Jan 1 1970.
              * In seconds, that's 2208988800.
              * Subtract seventy years. */
             const unsigned long seventyYears = 2208988800UL;
-            time_t epoch = secsSince1900 - seventyYears;
+            time_t epoch = secsSince1900 - seventyYears -
+                tz.tz_minuteswest * 60;
 
             /* Print Unix time. */
-            printf ("Unix time = %lu\n", epoch);
+            //printf ("Unix time = %lu\n", epoch);
 
             struct tm *L = gmtime (&epoch);
 
             /* Print the hour, minute and second.
              * UTC is the time at Greenwich Meridian (GMT). */
-            printf ("The UTC time is %04d-%02d-%02d %lu:%02lu:%02lu\n",
-                L->tm_year, L->tm_mon + 1, L->tm_mday,
-                (epoch  % 86400L) / 3600,   // hour (86400 equals secs per day)
-                (epoch  % 3600) / 60,       // minute (3600 equals secs per minute)
+            printf ("Local date and time is %04d-%02d-%02d %lu:%02lu:%02lu\n",
+                L->tm_year + 1900, L->tm_mon + 1, L->tm_mday,
+                (epoch % 86400L) / 3600,    // hour (86400 equals secs per day)
+                (epoch % 3600) / 60,        // minute (3600 equals secs per minute)
                 epoch % 60);                // second
         }
 
