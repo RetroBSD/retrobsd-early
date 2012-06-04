@@ -242,6 +242,7 @@ int main (int argc, char **argv)
     if (! client_connect (&client)) {
         /* If you didn't get a connection to the server. */
         printf("connection failed\n");
+        client_stop (&client);
         return 0;
     }
     printf("connected\n");

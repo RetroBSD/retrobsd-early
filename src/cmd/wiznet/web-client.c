@@ -45,25 +45,25 @@ int main (int argc, char **argv)
 
     printf("connecting to %u.%u.%u.%u\n",
         server[0], server[1], server[2], server[3]);
-
-    /* if you get a connection, report back via serial */
-    if (client_connect (&client)) {
-        printf ("connected\n");
-
-        /* Make a HTTP request. */
-        client_puts (&client, "GET /search?q=arduino HTTP/1.0\n\n");
-    } else {
+    if (! client_connect (&client)) {
         /* If you didn't get a connection to the server. */
         printf ("connection failed\n");
+        client_stop (&client);
+        return 0;
     }
+
+    /* if you get a connection, report back via serial */
+    printf ("connected\n");
+
+    /* Make a HTTP request. */
+    client_puts (&client, "GET / HTTP/1.0\r\n\r\n");
 
     while (client_connected (&client)) {
         /* If there are incoming bytes available
          * from the server, read them and print them. */
-        if (client_available (&client)) {
-            char c = client_getc (&client);
+        int c = client_getc (&client);
+        if (c > 0)
             putchar(c);
-        }
     }
 
     /* If the server's disconnected, stop the client. */
