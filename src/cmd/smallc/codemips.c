@@ -2,716 +2,705 @@
 #include "defs.h"
 #include "data.h"
 
-//int     needr0;
-
 /*
- *      Some predefinitions:
+ * Some predefinitions:
  *
- *      INTSIZE is the size of an integer in the target machine
- *      BYTEOFF is the offset of an byte within an integer on the
- *              target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
- *              360 = 3)
- *      This compiler assumes that an integer is the SAME length as
- *      a pointer - in fact, the compiler uses INTSIZE for both.
+ * INTSIZE is the size of an integer in the target machine
+ * BYTEOFF is the offset of an byte within an integer on the
+ *         target machine. (ie: 8080,pdp11 = 0, 6809 = 1,
+ *         360 = 3)
+ * This compiler assumes that an integer is the SAME length as
+ * a pointer - in fact, the compiler uses INTSIZE for both.
  */
 #define INTSIZE 4
 #define BYTEOFF 0
 
 /*
- *      print all assembler info before any code is generated
- *
+ * Print all assembler info before any code is generated.
  */
-header ()
+header()
 {
-        outstr ("#\tSmall C MIPS32\n#\tCoder 1.0, 2012/06/18\n#");
-        FEvers ();
-        nl ();
-        //ol ("global\tTlneg");
-        //ol ("global\tTcase");
-        //ol ("global\tTeq");
-        //ol ("global\tTne");
-        //ol ("global\tTlt");
-        //ol ("global\tTle");
-        //ol ("global\tTgt");
-        //ol ("global\tTge");
-        //ol ("global\tTult");
-        //ol ("global\tTule");
-        //ol ("global\tTugt");
-        //ol ("global\tTuge");
-        //ol ("global\tTbool");
-        //ol ("global\tTmult");
-        //ol ("global\tTdiv");
-        //ol ("global\tTmod");
+    outstr ("#\tSmall C MIPS32\n#\tCoder 1.0, 2012/06/18\n#");
+    FEvers();
+    nl();
+    //ol ("global\tTlneg");
+    //ol ("global\tTcase");
+    //ol ("global\tTeq");
+    //ol ("global\tTne");
+    //ol ("global\tTlt");
+    //ol ("global\tTle");
+    //ol ("global\tTgt");
+    //ol ("global\tTge");
+    //ol ("global\tTult");
+    //ol ("global\tTule");
+    //ol ("global\tTugt");
+    //ol ("global\tTuge");
+    //ol ("global\tTbool");
+    //ol ("global\tTmult");
+    //ol ("global\tTdiv");
+    //ol ("global\tTmod");
 }
 
 nl()
 {
-        //if (needr0) {
-        //        needr0 = 0;
-        //        outstr(",%d0");
-        //}
-        outbyte(EOL);
+    outbyte (EOL);
 }
 
 galign(t)
-        int t;
+    int t;
 {
-        int sign;
-        if (t < 0) {
-                sign = 1;
-                t = -t;
-        } else
-                sign = 0;
-        t = (t + INTSIZE - 1) & ~(INTSIZE - 1);
-        t = sign? -t: t;
-        return (t);
+    int sign;
+    if (t < 0) {
+        sign = 1;
+        t = -t;
+    } else
+        sign = 0;
+    t = (t + INTSIZE - 1) & ~(INTSIZE - 1);
+    t = sign? -t: t;
+    return (t);
 }
 
 /*
- *      return size of an integer
+ * Return size of an integer.
  */
 intsize()
 {
-        return(INTSIZE);
+    return INTSIZE;
 }
 
 /*
- *      return offset of ls byte within word
- *      (ie: 8080 & pdp11 is 0, 6809 is 1, 360 is 3)
+ * Return offset of ls byte within word.
+ * (ie: 8080 & pdp11 is 0, 6809 is 1, 360 is 3)
  */
 byteoff()
 {
-        return(BYTEOFF);
+    return BYTEOFF;
 }
 
 /*
- *      Output internal generated label prefix
+ * Output internal generated label prefix.
  */
 olprfix()
 {
-        outstr("LL");
+    outstr ("$_");
 }
 
 /*
- *      Output a label definition terminator
+ * Output a label definition terminator.
  */
-col ()
+col()
 {
-        outstr (":\n");
+    outstr (":");
 }
 
 /*
- *      begin a comment line for the assembler
- *
+ * Begin a comment line for the assembler.
  */
-comment ()
+comment()
 {
-        outbyte ('#');
+    outbyte ('#');
 }
 
 /*
- *      Output a prefix in front of user labels
+ * Output a prefix in front of user labels.
  */
-prefix ()
+prefix()
 {
-/*      outbyte ('_'); */
+    //outbyte ('_');
 }
 
 /*
- *      print any assembler stuff needed after all code
- *
+ * Print any assembler stuff needed after all code.
  */
-trailer ()
+trailer()
 {
 }
 
 /*
- *      function prologue
+ * Function prologue.
  */
-prologue ()
+prologue()
 {
-        /* this is where we'd put splimit stuff */
+    /* todo */
 }
 
 /*
- *      text (code) segment
+ * Text (code) segment.
  */
-gtext ()
+gtext()
 {
-        ol ("text");
+    ol (".text");
 }
 
 /*
- *      data segment
+ * Data segment.
  */
-gdata ()
+gdata()
 {
-        ol ("data");
+    ol (".data");
 }
 
 /*
- *  Output the variable symbol at scptr as an extrn or a public
+ * Output the variable symbol at scptr as an extrn or a public.
  */
-ppubext(scptr)
-        char *scptr;
+ppubext (scptr)
+    char *scptr;
 {
-        if (scptr[STORAGE] == STATIC)
-                return;
-        ot ("global\t");
-        prefix ();
-        outstr (scptr);
-        nl();
+    if (scptr[STORAGE] == STATIC)
+        return;
+    ot (".globl\t");
+    //prefix();
+    outstr (scptr);
+    nl();
 }
 
 /*
  * Output the function symbol at scptr as an extrn or a public
  */
-fpubext(scptr)
-        char *scptr;
+fpubext (scptr)
+    char *scptr;
 {
-        ppubext(scptr);
+    ppubext (scptr);
 }
 
 /*
- *  Output a decimal number to the assembler file
+ *  Output a decimal number to the assembler file.
  */
-onum(num)
-        int num;
+onum (num)
+    int num;
 {
-        outdec(num);    /* pdp11 needs a "." here */
+    outdec (num);
 }
 
 /*
- *      fetch a static memory cell into the primary register
+ * Fetch a static memory cell into the primary register.
  */
 getmem (sym)
-        char    *sym;
+    char    *sym;
 {
-        int ischr;
-        if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-                ischr = 1;
-                ot ("mov.b\t");
-                prefix ();
-                outstr (sym + NAME);
-        } else {
-                ischr = 0;
-                ot ("mov.l\t");
-                prefix ();
-                outstr (sym + NAME);
-        }
-        outstr(",%d0\n");
-        if (ischr)
-                ol ("ext.b\t%d0");
+    if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
+        ot ("lb\t$v0, ");
+        //prefix();
+        outstr (sym + NAME);
+    } else {
+        ot ("lw\t$v0, ");
+        //prefix();
+        outstr (sym + NAME);
+    }
 }
 
 /*
- *      fetch the address of the specified symbol into the primary register
+ * Fetch the address of the specified symbol into the primary register.
  */
 getloc (sym)
-        char    *sym;
+    char    *sym;
 {
-        if (sym[STORAGE] == LSTATIC) {
-                immed();
-                printlabel(glint(sym));
-                nl();
-        } else {
-                ot ("lea.l\t");
-                onum (glint(sym) - stkp);
-                outstr (",%a0\n");
-                ol ("mov.l\t%a0,%d0");
-        }
+    if (sym[STORAGE] == LSTATIC) {
+        ot ("la $v0, ");
+        printlabel(glint(sym));
+        nl();
+    } else {
+        ot ("la $v0, ");
+        onum (glint(sym) - stkp);
+        outstr ("($sp)\n");
+    }
 }
 
 /*
- *      store the primary register into the specified static memory cell
+ * Store the primary register into the specified static memory cell.
  */
 putmem (sym)
-        char    *sym;
+    char *sym;
 {
-        if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-                ot ("mov.b\t%d0,");
-        } else
-                ot ("mov.l\t%d0,");
-        prefix ();
-        outstr (sym + NAME);
-        nl ();
+    if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
+        ot ("sb\t$v0, ");
+    } else
+        ot ("sw\t$v0, ");
+
+    //prefix();
+    outstr (sym + NAME);
+    nl();
 }
 
 /*
- *      store the specified object type in the primary register
- *      at the address on the top of the stack
+ * Store the specified object type in the primary register
+ * at the address on the top of the stack.
  */
 putstk (typeobj)
-        char    typeobj;
+    char typeobj;
 {
-        ol ("mov.l\t(%sp)+,%a0");
-        if (typeobj == CCHAR)
-                ol ("mov.b\t%d0,(%a0)");
-        else
-                ol ("mov.l\t%d0,(%a0)");
-        stkp = stkp + INTSIZE;
+    ol ("lw\t$at, ($sp)");
+    ol ("addiu\t$sp, 4");
+    if (typeobj == CCHAR)
+        ol ("sb\t$v0, ($at)");
+    else
+        ol ("sw\t$v0, ($at)");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      fetch the specified object type indirect through the primary
- *      register into the primary register
+ * Fetch the specified object type indirect through the primary
+ * register into the primary register.
  */
 indirect (typeobj)
-        char    typeobj;
+    char typeobj;
 {
-        ol ("mov.l\t%d0,%a0");
-        if (typeobj == CCHAR)
-                ol ("mov.b\t(%a0),%d0");
-        else
-                ol ("mov.l\t(%a0),%d0");
+    if (typeobj == CCHAR)
+        ol ("lb\t$v0, ($v0)");
+    else
+        ol ("lw\t$v0, ($v0)");
 }
 
 /*
- *      swap the primary and secondary registers
+ * Swap the primary and secondary registers.
  */
-swap ()
+swap()
 {
-        ol ("mov.l\t%d0,%d2\n\tmov.l\t%d1,%d0\n\tmov.l\t%d2,%d1");
+    ol ("move\t$at, %v0\n\tmove\t$v0, $v1\n\tmove\t$v1, $at");
 }
 
 /*
- *      print partial instruction to get an immediate value into
- *      the primary register
+ * Print partial instruction to get an immediate value into
+ * the primary register.
  */
-immed ()
+immed()
 {
-        ot ("mov.l\t&");
-        //needr0 = 1;
+    ot ("la\t$v0, ");
+}
+
+immedi()
+{
+    ot ("li\t$v0, ");
 }
 
 /*
- *      push the primary register onto the stack
+ * Push the primary register onto the stack.
  */
-gpush ()
+gpush()
 {
-        ol ("mov.l\t%d0,-(%sp)");
-        stkp = stkp - INTSIZE;
+    ol ("addiu\t$sp, -4");
+    ol ("sw\t$v0, ($sp)");
+    stkp = stkp - INTSIZE;
 }
 
 /*
- *      pop the top of the stack into the secondary register
+ * Pop the top of the stack into the secondary register.
  */
-gpop ()
+gpop()
 {
-        ol ("mov.l\t(%sp)+,%d1");
-        stkp = stkp + INTSIZE;
+    ol ("lw\t$v1, ($sp)");
+    ol ("addiu\t$sp, 4");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      swap the primary register and the top of the stack
+ * Swap the primary register and the top of the stack.
  */
-swapstk ()
+swapstk()
 {
-        ol ("mov.l\t(%sp)+,%d2\nmov.l\t%d0,-(%sp)\nmov.l\t%d2,%d0");
+    ol ("mov.l\t(%sp)+,%d2\nmov.l\t%d0,-(%sp)\nmov.l\t%d2,%d0");
 }
 
 /*
- *      call the specified subroutine name
+ * Call the specified subroutine name.
  */
 gcall (sname)
-        char    *sname;
+    char *sname;
 {
-        if (*sname == '^') {
-                ot ("jsr\tT");
-                outstr (++sname);
-        } else {
-                ot ("jsr\t");
-                prefix ();
-                outstr (sname);
-        }
-        nl ();
+    if (*sname == '^') {
+        ot ("jsr\tT");
+        outstr (++sname);
+    } else {
+        ot ("jsr\t");
+        //prefix();
+        outstr (sname);
+    }
+    nl();
 }
 
 /*
- *      return from subroutine
+ * Return from subroutine.
  */
-gret ()
+gret()
 {
-        ol ("rts");
+    ol ("jr\t$ra\nnop");
 }
 
 /*
- *      perform subroutine call to value on top of stack
+ * Perform subroutine call to value on top of stack.
  */
-callstk ()
+callstk()
 {
-        ol ("jsr\t(%sp)+");
-        stkp = stkp + INTSIZE;
+    ol ("jsr\t(%sp)+");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      jump to specified internal label number
+ * Jump to specified internal label number.
  */
 jump (label)
-        int     label;
+    int label;
 {
-        ot ("jmp\t");
-        printlabel (label);
-        nl ();
+    ot ("j\t");
+    printlabel (label);
+    ol ("\nnop");
 }
 
 /*
- *      test the primary register and jump if false to label
- *
+ * Test the primary register and jump if false to label.
  */
 testjump (label, ft)
-        int label;
-        int ft;
+    int label;
+    int ft;
 {
-        ol ("cmp.l\t%d0,&0");
-        if (ft)
-                ot ("beq\t");
-        else
-                ot ("bne\t");
-        printlabel (label);
-        nl ();
+    ol ("cmp.l\t%d0,&0");
+    if (ft)
+        ot ("beq\t");
+    else
+        ot ("bne\t");
+    printlabel (label);
+    nl();
 }
 
 /*
- *      print pseudo-op  to define a byte
+ * Print pseudo-op to define a byte.
  */
-defbyte ()
+defbyte()
 {
-        ot ("byte\t");
+    ot (".byte\t");
 }
 
 /*
- *      print pseudo-op to define storage
+ * Print pseudo-op to define storage.
  */
-defstorage ()
+defstorage()
 {
-        ot ("space\t");
+    ot (".space\t");
 }
 
 /*
- *      print pseudo-op to define a word
+ * Print pseudo-op to define a word.
  */
-defword ()
+defword()
 {
-        ot ("long\t");
+    ot (".word\t");
 }
 
 /*
- *      modify the stack pointer to the new value indicated
+ * Modify the stack pointer to the new value indicated.
  */
 modstk (newstkp)
-        int     newstkp;
+    int newstkp;
 {
-        int     k;
+    int k;
 
-        k = newstkp - stkp;
-        if (k % INTSIZE)
-                error("Bad stack alignment (compiler error)");
-        if (k == 0)
-                return (newstkp);
-        ot ("add.l\t&");
-        onum (k);
-        outstr (",sp");
-        nl();
+    k = newstkp - stkp;
+    if (k % INTSIZE)
+        error("Bad stack alignment (compiler error)");
+    if (k == 0)
         return (newstkp);
+    ot ("add.l\t&");
+    onum (k);
+    outstr (",sp");
+    nl();
+    return (newstkp);
 }
 
 /*
- *      multiply the primary register by INTSIZE
+ * Multiply the primary register by INTSIZE.
  */
-gaslint ()
+gaslint()
 {
-        ol ("asl.l\t&2,%d0");
+    ol ("asl.l\t&2,%d0");
 }
 
 /*
- *      divide the primary register by INTSIZE
+ * Divide the primary register by INTSIZE.
  */
 gasrint()
 {
-        ol ("asr.l\t&2,%d0");
+    ol ("asr.l\t&2,%d0");
 }
 
 /*
- *      Case jump instruction
+ * Case jump instruction.
  */
 gjcase()
 {
-        gcall ("^case");
+    gcall ("^case");
 }
 
 /*
- *      add the primary and secondary registers
- *      if lval2 is int pointer and lval is int, scale lval
+ * Add the primary and secondary registers.
+ * If lval2 is int pointer and lval is int, scale lval.
  */
 gadd (lval, lval2)
-        int *lval, *lval2;
+    int *lval, *lval2;
 {
-        if (dbltest (lval2, lval)) {
-                ol ("asl.l\t&2,(%sp)");
-        }
-        ol ("add.l\t(%sp)+,%d0");
-        stkp = stkp + INTSIZE;
-
+    if (dbltest (lval2, lval)) {
+        ol ("asl.l\t&2,(%sp)");
+    }
+    ol ("add.l\t(%sp)+,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      subtract the primary register from the secondary
+ * Subtract the primary register from the secondary.
  */
-gsub ()
+gsub()
 {
-        ol ("mov.l\t(%sp)+,%d2");
-        ol ("sub.l\t%d0,%d2");
-        ol ("mov.l\t%d2,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("mov.l\t(%sp)+,%d2");
+    ol ("sub.l\t%d0,%d2");
+    ol ("mov.l\t%d2,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      multiply the primary and secondary registers
- *      (result in primary)
+ * Multiply the primary and secondary registers.
+ * (result in primary)
  */
-gmult ()
+gmult()
 {
-        gcall ("^mult");
-        stkp = stkp + INTSIZE;
+    gcall ("^mult");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      divide the secondary register by the primary
- *      (quotient in primary, remainder in secondary)
+ * Divide the secondary register by the primary.
+ * (quotient in primary, remainder in secondary)
  */
-gdiv ()
+gdiv()
 {
-        gcall ("^div");
-        stkp = stkp + INTSIZE;
+    gcall ("^div");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      compute the remainder (mod) of the secondary register
- *      divided by the primary register
- *      (remainder in primary, quotient in secondary)
+ * Compute the remainder (mod) of the secondary register
+ * divided by the primary register.
+ * (remainder in primary, quotient in secondary)
  */
-gmod ()
+gmod()
 {
-        gcall ("^mod");
-        stkp = stkp + INTSIZE;
+    gcall ("^mod");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      inclusive 'or' the primary and secondary registers
+ * Inclusive 'or' the primary and secondary registers.
  */
-gor ()
+gor()
 {
-        ol ("or.l\t(%sp)+,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("or.l\t(%sp)+,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      exclusive 'or' the primary and secondary registers
+ * Exclusive 'or' the primary and secondary registers.
  */
-gxor ()
+gxor()
 {
-        ol ("mov.l\t(%sp)+,%d1");
-        ol ("eor.l\t%d1,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("mov.l\t(%sp)+,%d1");
+    ol ("eor.l\t%d1,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      'and' the primary and secondary registers
+ * 'And' the primary and secondary registers.
  */
-gand ()
+gand()
 {
-        ol ("and.l\t(%sp)+,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("and.l\t(%sp)+,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      arithmetic shift right the secondary register the number of
- *      times in the primary register
- *      (results in primary register)
+ * Arithmetic shift right the secondary register the number of
+ * times in the primary register.
+ * (results in primary register)
  */
-gasr ()
+gasr()
 {
-        ol ("mov.l\t(%sp)+,%d1");
-        ol ("asr.l\t%d0,%d1");
-        ol ("mov.l\t%d1,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("mov.l\t(%sp)+,%d1");
+    ol ("asr.l\t%d0,%d1");
+    ol ("mov.l\t%d1,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      arithmetic shift left the secondary register the number of
- *      times in the primary register
- *      (results in primary register)
+ * Arithmetic shift left the secondary register the number of
+ * times in the primary register.
+ * (results in primary register)
  */
-gasl ()
+gasl()
 {
-        ol ("mov.l\t(%sp)+,%d1");
-        ol ("asl.l\t%d0,%d1");
-        ol ("mov.l\t%d1,%d0");
-        stkp = stkp + INTSIZE;
+    ol ("mov.l\t(%sp)+,%d1");
+    ol ("asl.l\t%d0,%d1");
+    ol ("mov.l\t%d1,%d0");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      two's complement of primary register
+ * Two's complement of primary register.
  */
-gneg ()
+gneg()
 {
-        ol ("neg.l\t%d0");
+    ol ("neg.l\t%d0");
 }
 
 /*
- *      logical complement of primary register
+ * Logical complement of primary register.
  */
-glneg ()
+glneg()
 {
-        gcall ("^lneg");
+    gcall ("^lneg");
 }
 
 /*
- *      one's complement of primary register
+ * One's complement of primary register.
  */
-gcom ()
+gcom()
 {
-        ol ("not\t%d0");
+    ol ("not\t%d0");
 }
 
 /*
- *      convert primary register into logical value
+ * Convert primary register into logical value.
  */
-gbool ()
+gbool()
 {
-        gcall ("^bool");
+    gcall ("^bool");
 }
 
 /*
- *      increment the primary register by 1 if char, INTSIZE if int
+ * Increment the primary register by 1 if char, INTSIZE if int.
  */
 ginc (lval)
-        int lval[];
+    int lval[];
 {
-        if (lval[2] == CINT)
-                ol ("addq.l\t&4,%d0");
-        else
-                ol ("addq.l\t&1,%d0");
+    if (lval[2] == CINT)
+        ol ("addq.l\t&4,%d0");
+    else
+        ol ("addq.l\t&1,%d0");
 }
 
 /*
- *      decrement the primary register by one if char, INTSIZE if int
+ * Decrement the primary register by one if char, INTSIZE if int.
  */
 gdec (lval)
-        int lval[];
+    int lval[];
 {
-        if (lval[2] == CINT)
-                ol ("subq.l\t&4,%d0");
-        else
-                ol ("subq.l\t&1,%d0");
+    if (lval[2] == CINT)
+        ol ("subq.l\t&4,%d0");
+    else
+        ol ("subq.l\t&1,%d0");
 }
 
 /*
- *      following are the conditional operators.
- *      they compare the secondary register against the primary register
- *      and put a literl 1 in the primary if the condition is true,
- *      otherwise they clear the primary register
+ * Following are the conditional operators.
+ * They compare the secondary register against the primary register
+ * and put a literl 1 in the primary if the condition is true,
+ * otherwise they clear the primary register.
  */
 
 /*
- *      equal
+ * equal
  */
-geq ()
+geq()
 {
-        gcall ("^eq");
-        stkp = stkp + INTSIZE;
+    gcall ("^eq");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      not equal
+ * not equal
  */
-gne ()
+gne()
 {
-        gcall ("^ne");
-        stkp = stkp + INTSIZE;
+    gcall ("^ne");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      less than (signed)
+ * less than (signed)
  */
-glt ()
+glt()
 {
-        gcall ("^lt");
-        stkp = stkp + INTSIZE;
+    gcall ("^lt");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      less than or equal (signed)
+ * less than or equal (signed)
  */
-gle ()
+gle()
 {
-        gcall ("^le");
-        stkp = stkp + INTSIZE;
+    gcall ("^le");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      greater than (signed)
+ * greater than (signed)
  */
-ggt ()
+ggt()
 {
-        gcall ("^gt");
-        stkp = stkp + INTSIZE;
+    gcall ("^gt");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      greater than or equal (signed)
+ * greater than or equal (signed)
  */
-gge ()
+gge()
 {
-        gcall ("^ge");
-        stkp = stkp + INTSIZE;
+    gcall ("^ge");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      less than (unsigned)
+ * less than (unsigned)
  */
-gult ()
+gult()
 {
-        gcall ("^ult");
-        stkp = stkp + INTSIZE;
+    gcall ("^ult");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      less than or equal (unsigned)
+ * less than or equal (unsigned)
  */
-gule ()
+gule()
 {
-        gcall ("^ule");
-        stkp = stkp + INTSIZE;
+    gcall ("^ule");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      greater than (unsigned)
+ * greater than (unsigned)
  */
-gugt ()
+gugt()
 {
-        gcall ("^ugt");
-        stkp = stkp + INTSIZE;
+    gcall ("^ugt");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      greater than or equal (unsigned)
+ * greater than or equal (unsigned)
  */
-guge ()
+guge()
 {
-        gcall ("^uge");
-        stkp = stkp + INTSIZE;
+    gcall ("^uge");
+    stkp = stkp + INTSIZE;
 }
 
 /*
- *      Squirrel away argument count in a register that modstk/getloc/stloc
- *      doesn't touch.
+ * Squirrel away argument count in a register that modstk/getloc/stloc
+ * doesn't touch.
  */
 gnargs (d)
-        int d;
+    int d;
 {
-        ot ("mov.l\t&");
-        onum(d);
-        outstr(",%d3\n");
+    ot ("mov.l\t&");
+    onum (d);
+    outstr (",%d3\n");
 }

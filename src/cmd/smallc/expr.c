@@ -18,7 +18,6 @@ expression (comma)
                 if (!comma)
                         return;
         } while (match (","));
-
 }
 
 heir1 (lval)
@@ -90,7 +89,6 @@ heir1 (lval)
                 } else
                         return (k);
         }
-
 }
 
 heir1a (lval)

@@ -17,7 +17,7 @@ primary (lval)
         }
         if (amatch("sizeof", 6)) {
                 needbrack("(");
-                immed();
+                immedi();
                 if (amatch("int", 3))
                         onum(intsize());
                 else if (amatch("char", 4))
@@ -47,17 +47,16 @@ primary (lval)
                 if (ptr = findloc (sname)) {
                         getloc (ptr);
                         lval[0] = ptr;
-                        lval[1] =  ptr[TYPE];
+                        lval[1] = ptr[TYPE];
                         if (ptr[IDENT] == POINTER) {
                                 lval[1] = CINT;
                                 lval[2] = ptr[TYPE];
                         }
                         if (ptr[IDENT] == ARRAY) {
-                                lval[2] = ptr[TYPE];
+                                lval[1] = ptr[TYPE];
                                 lval[2] = 0;
                                 return (0);
-                        }
-                        else
+                        } else
                                 return (1);
                 }
                 if (ptr = findglb (sname))
@@ -89,7 +88,7 @@ primary (lval)
                 return (lval[0] = lval[1] = 0);
         else {
                 error ("invalid expression");
-                immed ();
+                immedi ();
                 onum (0);
                 nl ();
                 junk ();
@@ -132,7 +131,7 @@ constant (val)
         int     val[];
 {
         if (number (val))
-                immed ();
+                immedi ();
         else if (pstr (val))
                 immed ();
         else if (qstr (val)) {
@@ -265,6 +264,7 @@ callfunction (ptr)
         blanks ();
         if (ptr == 0)
                 gpush ();
+
         while (!streq (line + lptr, ")")) {
                 if (endst ())
                         break;
@@ -279,10 +279,12 @@ callfunction (ptr)
         needbrack (")");
         if (aflag)
                 gnargs(nargs / intsize());
+
         if (ptr)
                 gcall (ptr);
         else
                 callstk ();
+
         stkp = modstk (stkp + nargs);
 }
 
