@@ -1,8 +1,3 @@
-/*      File stmt.c: 2.1 (83/03/20,16:02:17) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -17,9 +12,8 @@
  *      must be compound, and must contain "statement_list" (even if
  *      "declaration_list" is omitted)
  */
-
 statement (func)
-int     func;
+        int     func;
 {
         if ((ch () == 0) & feof (input))
                 return (0);
@@ -35,7 +29,6 @@ int     func;
         else
                 stst ();
         return (lastst);
-
 }
 
 /*
@@ -53,11 +46,10 @@ stdecl ()
         else
                 return (NO);
         return (YES);
-
 }
 
 doldcls(stclass)
-int     stclass;
+        int     stclass;
 {
         blanks();
         if (amatch("char", 4))
@@ -70,7 +62,6 @@ int     stclass;
                 return(0);
         ns();
         return(1);
-
 }
 
 /*
@@ -114,7 +105,7 @@ stst ()
         } else if (amatch ("default", 7)) {
                 dodefault ();
                 lastst = statement (NO);
-        } else if (match ("#asm")) {
+        } else if (match ("__asm__")) {
                 doasm ();
                 lastst = STASM;
         } else if (match ("{"))
@@ -129,7 +120,6 @@ stst ()
                         lastst = STEXP;
 /*              }
 */      }
-
 }
 
 /*
@@ -141,7 +131,7 @@ stst ()
  *      must contain "statement_list"
  */
 compound (func)
-int     func;
+        int     func;
 {
         int     decls;
 
@@ -157,7 +147,6 @@ int     func;
                         stst ();
         }
         ncmp--;
-
 }
 
 /*
@@ -185,7 +174,6 @@ doif ()
         stkp = modstk (fstkp);
         locptr = flev;
         gnlabel (flab2);
-
 }
 
 /*
@@ -209,7 +197,6 @@ dowhile ()
         locptr = ws[WSSYM];
         stkp = modstk (ws[WSSP]);
         delwhile ();
-
 }
 
 /*
@@ -238,7 +225,6 @@ dodo ()
         locptr = ws[WSSYM];
         stkp = modstk (ws[WSSP]);
         delwhile ();
-
 }
 
 /*
@@ -285,7 +271,6 @@ dofor ()
         locptr = pws[WSSYM];
         stkp = modstk (pws[WSSP]);
         delwhile ();
-
 }
 
 /*
@@ -321,7 +306,6 @@ doswitch ()
         stkp = modstk (ptr[WSSP]);
         swstp = ptr[WSCASEP];
         delwhile ();
-
 }
 
 /*
@@ -341,7 +325,6 @@ docase ()
                         error ("missing colon");
         } else
                 error ("no active switch");
-
 }
 
 /*
@@ -359,7 +342,6 @@ dodefault ()
                         error ("missing colon");
         } else
                 error ("no active switch");
-
 }
 
 /*
@@ -370,7 +352,6 @@ doreturn ()
         if (endst () == 0)
                 expression (YES);
         jump(fexitlab);
-
 }
 
 /*
@@ -384,7 +365,6 @@ dobreak ()
                 return;
         modstk (ptr[WSSP]);
         jump (ptr[WSEXIT]);
-
 }
 
 /*
@@ -401,14 +381,13 @@ docont ()
                 jump (ptr[WSINCR]);
         else
                 jump (ptr[WSTEST]);
-
 }
 
 /*
  *      dump switch table
  */
 dumpsw (ws)
-int     ws[];
+        int     ws[];
 {
         int     i,j;
 
@@ -437,4 +416,3 @@ int     ws[];
         nl ();
         gtext ();
 }
-

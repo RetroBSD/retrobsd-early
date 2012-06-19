@@ -1,8 +1,3 @@
-/*      File io.c: 2.1 (83/03/20,16:02:07) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -10,7 +5,8 @@
 /*
  *      open input file
  */
-openin (p) char *p;
+openin (p)
+        char *p;
 {
         strcpy(fname, p);
         fixname (fname);
@@ -22,7 +18,6 @@ openin (p) char *p;
         }
         kill ();
         return (YES);
-
 }
 
 /*
@@ -37,39 +32,35 @@ openout ()
         }
         kill ();
         return (YES);
-
 }
 
 /*
  *      change input filename to output filename
  */
 outfname (s)
-char    *s;
+        char    *s;
 {
         while (*s)
                 s++;
         *--s = 's';
-
 }
 
 /*
  *      remove NL from filenames
- *
  */
 fixname (s)
-char    *s;
+        char    *s;
 {
         while (*s && *s++ != EOL);
         if (!*s) return;
         *(--s) = 0;
-
 }
 
 /*
  *      check that filename is "*.c"
  */
 checkname (s)
-char    *s;
+        char    *s;
 {
         while (*s)
                 s++;
@@ -78,14 +69,12 @@ char    *s;
         if (*--s != '.')
                 return (NO);
         return (YES);
-
 }
 
 kill ()
 {
         lptr = 0;
         line[lptr] = 0;
-
 }
 
 readline ()
@@ -93,7 +82,7 @@ readline ()
         int     k;
         FILE    *unit;
 
-        FOREVER {
+        for (;;) {
                 if (feof (input))
                         return;
                 if ((unit = input2) == NULL)
@@ -120,7 +109,6 @@ readline ()
                         return;
                 }
         }
-
 }
 
 inbyte ()
@@ -128,10 +116,9 @@ inbyte ()
         while (ch () == 0) {
                 if (feof (input))
                         return (0);
-                preprocess ();
+                readline ();
         }
         return (gch ());
-
 }
 
 inchar ()
@@ -141,7 +128,6 @@ inchar ()
         if (feof (input))
                 return (0);
         return (gch ());
-
 }
 
 gch ()
@@ -150,7 +136,6 @@ gch ()
                 return (0);
         else
                 return (line[lptr++] & 127);
-
 }
 
 nch ()
@@ -159,21 +144,18 @@ nch ()
                 return (0);
         else
                 return (line[lptr + 1] & 127);
-
 }
 
 ch ()
 {
         return (line[lptr] & 127);
-
 }
 
 /*
  *      print a carriage return and a string only to console
- *
  */
 pl (str)
-char    *str;
+        char    *str;
 {
         int     k;
 
@@ -182,4 +164,3 @@ char    *str;
         while (str[k])
                 putchar (str[k++]);
 }
-

@@ -1,8 +1,3 @@
-/*      File data.c: 2.2 (84/11/27,16:26:13) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 
@@ -17,11 +12,8 @@ int     swstlab[SWSTSZ];
 int     swstp;
 char    litq[LITABSZ];
 int     litptr;
-char    macq[MACQSIZE];
-int     macptr;
 char    line[LINESIZE];
-char    mline[LINESIZE];
-int     lptr, mptr;
+int     lptr;
 
 /* miscellaneous storage */
 
@@ -45,7 +37,6 @@ char    quote[2];
 char    *cptr;
 int     *iptr;
 int     fexitlab;
-int     iflevel, skiplevel;
 int     errfile;
 int     sflag;
 int     cflag;

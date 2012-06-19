@@ -1,14 +1,6 @@
-/*      File code8080.c: 2.2 (84/08/31,10:05:09) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
-
-/*      Define ASNM and LDNM to the names of the assembler and linker
-        respectively */
 
 /*
  *      Some predefinitions:
@@ -25,7 +17,6 @@
 
 /*
  *      print all assembler info before any code is generated
- *
  */
 header ()
 {
@@ -39,7 +30,6 @@ header ()
         ol ("extrn ?asr,?asl");
         ol ("extrn ?sub,?neg,?com,?lneg,?mul,?div");
         ol ("extrn ?case");
-
 }
 
 nl ()
@@ -47,45 +37,35 @@ nl ()
         outbyte (EOL);
 }
 
-initmac()
-{
-        defmac("cpm\t1");
-        defmac("I8080\t1");
-        defmac("RMAC\t1");
-        defmac("smallc\t1");
-
-}
-
-galign(t)
-int     t;
+galign (t)
+        int t;
 {
         return(t);
-
 }
 
 /*
  *      return size of an integer
  */
-intsize() {
+intsize()
+{
         return(INTSIZE);
-
 }
 
 /*
  *      return offset of ls byte within word
  *      (ie: 8080 & pdp11 is 0, 6809 is 1, 360 is 3)
  */
-byteoff() {
+byteoff()
+{
         return(BYTEOFF);
-
 }
 
 /*
  *      Output internal generated label prefix
  */
-olprfix() {
+olprfix()
+{
         outbyte('?');
-
 }
 
 /*
@@ -94,17 +74,14 @@ olprfix() {
 col ()
 {
         outbyte (58);
-
 }
 
 /*
  *      begin a comment line for the assembler
- *
  */
 comment ()
 {
         outbyte (';');
-
 }
 
 /*
@@ -112,17 +89,14 @@ comment ()
  */
 prefix ()
 {
-
 }
 
 /*
  *      print any assembler stuff needed after all code
- *
  */
 trailer ()
 {
         ol ("end");
-
 }
 
 /*
@@ -130,7 +104,6 @@ trailer ()
  */
 prologue ()
 {
-
 }
 
 /*
@@ -139,7 +112,6 @@ prologue ()
 gtext ()
 {
         ol ("cseg");
-
 }
 
 /*
@@ -148,14 +120,16 @@ gtext ()
 gdata ()
 {
         ol ("dseg");
-
 }
 
 /*
  *  Output the variable symbol at scptr as an extrn or a public
  */
-ppubext(scptr) char *scptr; {
-        if (cptr[STORAGE] == STATIC) return;
+ppubext(scptr)
+        char *scptr;
+{
+        if (cptr[STORAGE] == STATIC)
+                return;
         ot (scptr[STORAGE] == EXTERN ? "extrn\t" : "public\t");
         prefix ();
         outstr (scptr);
@@ -166,28 +140,31 @@ ppubext(scptr) char *scptr; {
 /*
  * Output the function symbol at scptr as an extrn or a public
  */
-fpubext(scptr) char *scptr; {
-        if (scptr[STORAGE] == STATIC) return;
+fpubext(scptr)
+        char *scptr;
+{
+        if (scptr[STORAGE] == STATIC)
+                return;
         ot (scptr[OFFSET] == FUNCTION ? "public\t" : "extrn\t");
         prefix ();
         outstr (scptr);
         nl ();
-
 }
 
 /*
  *  Output a decimal number to the assembler file
  */
-onum(num) int num; {
+onum(num)
+        int num;
+{
         outdec(num);    /* pdp11 needs a "." here */
-
 }
 
 /*
  *      fetch a static memory cell into the primary register
  */
 getmem (sym)
-char    *sym;
+        char *sym;
 {
         if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
                 ot ("lda\t");
@@ -204,10 +181,9 @@ char    *sym;
 
 /*
  *      fetch the address of the specified symbol into the primary register
- *
  */
 getloc (sym)
-char    *sym;
+        char *sym;
 {
         immed ();
         if (sym[STORAGE] == LSTATIC) {
@@ -225,7 +201,7 @@ char    *sym;
  * @param sym
  */
 putmem (sym)
-char    *sym;
+        char *sym;
 {
         if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
                 ol ("mov\ta,l");
@@ -242,7 +218,7 @@ char    *sym;
  * @param typeobj
  */
 putstk (typeobj)
-char    typeobj;
+        char typeobj;
 {
         gpop ();
         if (typeobj == CCHAR)
@@ -257,7 +233,7 @@ char    typeobj;
  * @param typeobj object type
  */
 indirect (typeobj)
-char    typeobj;
+        char typeobj;
 {
         if (typeobj == CCHAR)
                 gcall ("?gchar");
@@ -268,7 +244,8 @@ char    typeobj;
 /**
  * swap the primary and secondary registers
  */
-swap () {
+swap ()
+{
         ol ("xchg");
 }
 
@@ -276,14 +253,16 @@ swap () {
  * print partial instruction to get an immediate value into
  * the primary register
  */
-immed () {
+immed ()
+{
         ot ("lxi\th,");
 }
 
 /**
  * push the primary register onto the stack
  */
-gpush () {
+gpush ()
+{
         ol ("push\th");
         stkp = stkp - INTSIZE;
 }
@@ -291,7 +270,8 @@ gpush () {
 /**
  * pop the top of the stack into the secondary register
  */
-gpop () {
+gpop ()
+{
         ol ("pop\td");
         stkp = stkp + INTSIZE;
 }
@@ -299,7 +279,8 @@ gpop () {
 /**
  * swap the primary register and the top of the stack
  */
-swapstk () {
+swapstk ()
+{
         ol ("xthl");
 }
 
@@ -308,7 +289,7 @@ swapstk () {
  * @param sname subroutine name
  */
 gcall (sname)
-char    *sname;
+        char *sname;
 {
         ot ("call\t");
         outstr (sname);
@@ -318,14 +299,16 @@ char    *sname;
 /**
  * return from subroutine
  */
-gret () {
+gret ()
+{
         ol ("ret");
 }
 
 /**
  * perform subroutine call to value on top of stack
  */
-callstk () {
+callstk ()
+{
         immed ();
         outstr ("$+5 <tel:+5>");
         nl ();
@@ -339,7 +322,7 @@ callstk () {
  * @param label the label
  */
 jump (label)
-int     label;
+        int label;
 {
         ot ("jmp\t");
         printlabel (label);
@@ -352,8 +335,8 @@ int     label;
  * @param ft if true jnz is generated, jz otherwise
  */
 testjump (label, ft)
-int     label,
-        ft;
+        int label;
+        int ft;
 {
         ol ("mov\ta,h");
         ol ("ora\tl");
@@ -368,21 +351,24 @@ int     label,
 /**
  * print pseudo-op  to define a byte
  */
-defbyte () {
+defbyte ()
+{
         ot ("db\t");
 }
 
 /**
  * print pseudo-op to define storage
  */
-defstorage () {
+defstorage ()
+{
         ot ("ds\t");
 }
 
 /**
  * print pseudo-op to define a word
  */
-defword () {
+defword ()
+{
         ot ("dw\t");
 }
 
@@ -391,9 +377,9 @@ defword () {
  * @param newstkp new value
  */
 modstk (newstkp)
-int     newstkp;
+        int newstkp;
 {
-        int     k;
+        int k;
 
         k = galign(newstkp - stkp);
         if (k == 0)
@@ -431,15 +417,14 @@ int     newstkp;
         ol ("sphl");
         swap ();
         return (newstkp);
-
 }
 
 /**
  * multiply the primary register by INTSIZE
  */
-gaslint () {
+gaslint ()
+{
         ol ("dad\th");
-
 }
 
 /**
@@ -452,16 +437,15 @@ gasrint()
         onum (1);
         nl ();
         gasr ();  /* divide by two */
-
 }
 
 /**
  * Case jump instruction
  */
-gjcase() {
+gjcase()
+{
         ot ("jmp\t?case");
         nl ();
-
 }
 
 /**
@@ -470,7 +454,10 @@ gjcase() {
  * @param lval
  * @param lval2
  */
-gadd (lval,lval2) int *lval,*lval2; {
+gadd (lval, lval2)
+        int *lval;
+        int *lval2;
+{
         gpop ();
         if (dbltest (lval2, lval)) {
                 swap ();
@@ -478,178 +465,151 @@ gadd (lval,lval2) int *lval,*lval2; {
                 swap ();
         }
         ol ("dad\td");
-
 }
 
 /*
  *      subtract the primary register from the secondary
- *
  */
 gsub ()
 {
         gpop ();
         gcall ("?sub");
-
 }
 
 /*
  *      multiply the primary and secondary registers
  *      (result in primary)
- *
  */
 gmult ()
 {
         gpop();
         gcall ("?mul");
-
 }
 
 /*
  *      divide the secondary register by the primary
  *      (quotient in primary, remainder in secondary)
- *
  */
 gdiv ()
 {
         gpop();
         gcall ("?div");
-
 }
 
 /*
  *      compute the remainder (mod) of the secondary register
  *      divided by the primary register
  *      (remainder in primary, quotient in secondary)
- *
  */
 gmod ()
 {
         gdiv ();
         swap ();
-
 }
 
 /*
  *      inclusive 'or' the primary and secondary registers
- *
  */
 gor ()
 {
         gpop();
         gcall ("?or");
-
 }
 
 /*
  *      exclusive 'or' the primary and secondary registers
- *
  */
 gxor ()
 {
         gpop();
         gcall ("?xor");
-
 }
 
 /*
  *      'and' the primary and secondary registers
- *
  */
 gand ()
 {
         gpop();
         gcall ("?and");
-
 }
 
 /*
  *      arithmetic shift right the secondary register the number of
  *      times in the primary register
  *      (results in primary register)
- *
  */
 gasr ()
 {
         gpop();
         gcall ("?asr");
-
 }
 
 /*
  *      arithmetic shift left the secondary register the number of
  *      times in the primary register
  *      (results in primary register)
- *
  */
 gasl ()
 {
         gpop ();
         gcall ("?asl");
-
 }
 
 /*
  *      two's complement of primary register
- *
  */
 gneg ()
 {
         gcall ("?neg");
-
 }
 
 /*
  *      logical complement of primary register
- *
  */
 glneg ()
 {
         gcall ("?lneg");
-
 }
 
 /*
  *      one's complement of primary register
- *
  */
 gcom ()
 {
         gcall ("?com");
-
 }
 
 /*
  *      Convert primary value into logical value (0 if 0, 1 otherwise)
- *
  */
 gbool ()
 {
         gcall ("?bool");
-
 }
 
 /*
  *      increment the primary register by 1 if char, INTSIZE if
  *      int
  */
-ginc (lval) int lval[];
+ginc (lval)
+        int lval[];
 {
         ol ("inx\th");
         if (lval[2] == CINT)
                 ol ("inx\th");
-
 }
 
 /*
  *      decrement the primary register by one if char, INTSIZE if
  *      int
  */
-gdec (lval) int lval[];
+gdec (lval)
+        int lval[];
 {
         ol ("dcx\th");
         if (lval[2] == CINT)
                 ol("dcx\th");
-
 }
 
 /*
@@ -657,18 +617,15 @@ gdec (lval) int lval[];
  *      they compare the secondary register against the primary register
  *      and put a literl 1 in the primary if the condition is true,
  *      otherwise they clear the primary register
- *
  */
 
 /*
  *      equal
- *
  */
 geq ()
 {
         gpop();
         gcall ("?eq");
-
 }
 
 /*
@@ -679,51 +636,42 @@ gne ()
 {
         gpop();
         gcall ("?ne");
-
 }
 
 /*
  *      less than (signed)
- *
  */
 glt ()
 {
         gpop();
         gcall ("?lt");
-
 }
 
 /*
  *      less than or equal (signed)
- *
  */
 gle ()
 {
         gpop();
         gcall ("?le");
-
 }
 
 /*
  *      greater than (signed)
- *
  */
 ggt ()
 {
         gpop();
         gcall ("?gt");
-
 }
 
 /*
  *      greater than or equal (signed)
- *
  */
 gge ()
 {
         gpop();
         gcall ("?ge");
-
 }
 
 /**
@@ -733,7 +681,6 @@ gult ()
 {
         gpop();
         gcall ("?ult");
-
 }
 
 /**
@@ -743,7 +690,6 @@ gule ()
 {
         gpop();
         gcall ("?ule");
-
 }
 
 /**
@@ -753,62 +699,24 @@ gugt ()
 {
         gpop();
         gcall ("?ugt");
-
 }
 
 /**
  * greater than or equal (unsigned)
- *
  */
 guge ()
 {
         gpop();
         gcall ("?uge");
-
-}
-
-inclib() {
-#ifdef  cpm
-        return("B:");
-#endif
-#ifdef  unix
-        //return(INCDIR);
-        return(""); // FIXME
-#endif
-
 }
 
 /**
  * Squirrel away argument count in a register that modstk doesn't touch.
  */
 gnargs(d)
-int     d; {
+        int d;
+{
         ot ("mvi\ta,");
         onum(d);
         nl ();
-
 }
-
-assemble(s)
-char    *s; {
-#ifdef  ASNM
-        char buf[100];
-        strcpy(buf, ASNM);
-        strcat(buf, " ");
-        strcat(buf, s);
-        buf[strlen(buf)-1] = 's';
-        return(system(buf));
-#else
-        return(0);
-#endif
-
-}
-
-link() {
-#ifdef  LDNM
-        fputs("I don't know how to link files yet\n", stderr);
-#else
-        return(0);
-#endif
-}
-

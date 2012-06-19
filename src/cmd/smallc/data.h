@@ -1,5 +1,3 @@
-/*      File data.h: 2.2 (84/11/27,16:26:11) */
-
 /* storage words */
 
 extern  char    symtab[];
@@ -11,11 +9,8 @@ extern  int     swstlab[];
 extern  int     swstp;
 extern  char    litq[];
 extern  int     litptr;
-extern  char    macq[];
-extern  int     macptr;
 extern  char    line[];
-extern  char    mline[];
-extern  int     lptr, mptr;
+extern  int     lptr;
 
 /* miscellaneous storage */
 
@@ -39,7 +34,6 @@ extern  char    quote[];
 extern  char    *cptr;
 extern  int     *iptr;
 extern  int     fexitlab;
-extern  int     iflevel, skiplevel;
 extern  int     errfile;
 extern  int     sflag;
 extern  int     cflag;

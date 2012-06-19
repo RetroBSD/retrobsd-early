@@ -1,8 +1,3 @@
-/*      File lex.c: 2.1 (83/03/20,16:02:09) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -17,7 +12,6 @@ ns ()
 {
         if (!match (";"))
                 error ("missing semicolon");
-
 }
 
 junk ()
@@ -32,18 +26,16 @@ junk ()
                         gch ();
                 }
         blanks ();
-
 }
 
 endst ()
 {
         blanks ();
         return ((streq (line + lptr, ";") | (ch () == 0)));
-
 }
 
 needbrack (str)
-char    *str;
+        char    *str;
 {
         if (!match (str)) {
                 error ("missing bracket");
@@ -51,53 +43,47 @@ char    *str;
                 outstr (str);
                 nl ();
         }
-
 }
 
 /*
  *      test if given character is alpha
- *
  */
 alpha (c)
-char    c;
+        char    c;
 {
         c = c & 127;
         return (((c >= 'a') & (c <= 'z')) |
                 ((c >= 'A') & (c <= 'Z')) |
                 (c == '_'));
-
 }
 
 /*
  *      test if given character is numeric
- *
  */
 numeric (c)
-char    c;
+        char    c;
 {
         c = c & 127;
         return ((c >= '0') & (c <= '9'));
-
 }
 
 /*
  *      test if given character is alphanumeric
- *
  */
 an (c)
-char    c;
+        char    c;
 {
         return ((alpha (c)) | (numeric (c)));
-
 }
 
-sstreq (str1) char *str1; {
+sstreq (str1)
+        char *str1;
+{
         return (streq(line + lptr, str1));
-
 }
 
 streq (str1, str2)
-char    str1[], str2[];
+        char    str1[], str2[];
 {
         int     k;
 
@@ -108,12 +94,11 @@ char    str1[], str2[];
                 k++;
         }
         return (k);
-
 }
 
 astreq (str1, str2, len)
-char    str1[], str2[];
-int     len;
+        char    str1[], str2[];
+        int     len;
 {
         int     k;
 
@@ -132,11 +117,10 @@ int     len;
         if (an (str2[k]))
                 return (0);
         return (k);
-
 }
 
 match (lit)
-char    *lit;
+        char    *lit;
 {
         int     k;
 
@@ -146,12 +130,11 @@ char    *lit;
                 return (1);
         }
         return (0);
-
 }
 
 amatch (lit, len)
-char    *lit;
-int     len;
+        char    *lit;
+        int     len;
 {
         int     k;
 
@@ -163,14 +146,13 @@ int     len;
                 return (1);
         }
         return (0);
-
 }
 
 blanks ()
 {
-        FOREVER {
+        for (;;) {
                 while (ch () == 0) {
-                        preprocess ();
+                        readline ();
                         if (feof (input))
                                 break;
                 }
@@ -182,4 +164,3 @@ blanks ()
                         return;
         }
 }
-

@@ -1,21 +1,14 @@
-/*      File main.c: 2.7 (84/11/28,10:14:56) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "defs.h"
 #include "data.h"
 
-main(argc, argv)
-int argc;
-char *argv[];
+main (argc, argv)
+    int argc;
+    char *argv[];
 {
     char *p = NULL, *bp;
-    int smacptr;
-    macptr = 0;
     ctext = 0;
     errs = 0;
     aflag = 1;
@@ -31,20 +24,11 @@ char *argv[];
                     case 's': case 'S':
                         sflag = 1;
                         break;
-                    case 'c': case 'C': 
+                    case 'c': case 'C':
                         cflag = 1;
                         break;
                     case 'a': case 'A':
                         aflag = 0;
-                        break;
-                    case 'd': case 'D': // define macro
-                        bp = ++p;
-                        if (!*p) usage();
-                        while (*p && *p != '=') p++;
-                        if (*p == '=') *p = '\t';
-                        while (*p) p++;
-                        p--;
-                        defmac(bp);
                         break;
                     default:
                         usage();
@@ -55,7 +39,6 @@ char *argv[];
         }
     }
 
-    smacptr = macptr;
     if (!p) {
         usage();
     }
@@ -68,8 +51,6 @@ char *argv[];
             locptr = STARTLOC;
             wsptr = ws;
             inclsp =
-            iflevel =
-            skiplevel =
             swstp =
             litptr =
             stkp =
@@ -78,21 +59,18 @@ char *argv[];
             lastst =
             quote[1] =
             0;
-            macptr = smacptr;
             input2 = NULL;
             quote[0] = '"';
             cmode = 1;
             glbflag = 1;
             nxtlab = 0;
             litlab = getlabel();
-            defmac("end\tmemory");
             addglb("memory", ARRAY, CCHAR, 0, EXTERN);
             addglb("stack", ARRAY, CCHAR, 0, EXTERN);
             rglbptr = glbptr;
             addglb("etext", ARRAY, CCHAR, 0, EXTERN);
             addglb("edata", ARRAY, CCHAR, 0, EXTERN);
-            defmac("short\tint");
-            initmac();
+
             /*
              *      compiler body
              */
@@ -112,37 +90,27 @@ char *argv[];
             fclose(output);
             pl("");
             errs = errs || errfile;
-#ifndef NOASLD
-        }
-        if (!errfile && !sflag) {
-            errs = errs || assemble(p);
-        }
-#else
         } else {
             fputs("Don't understand file ", stderr);
             fputs(p, stderr);
             errs = 1;
         }
-#endif
     }
-#ifndef NOASLD
-    if (!errs && !sflag && !cflag)
-        errs = errs || link();
-#endif
     exit(errs != 0);
-
 }
 
-FEvers() {
-    outstr("\tFront End (2.7,84/11/28)");
+FEvers()
+{
+    outstr("\tFront End 2.7, 1984/11/28");
 }
 
 /**
  * prints usage
  * @return exits the execution
  */
-usage() {
-    fputs("usage: sccXXXX [-tcsa] [-dSYM[=VALUE]] files\n", stderr);
+usage()
+{
+    fputs("usage: scc [-tcsa] files\n", stderr);
     exit(1);
 }
 
@@ -151,23 +119,17 @@ usage() {
  *
  * at this level, only static declarations, defines, includes,
  * and function definitions are legal.
- *
  */
-parse() {
+parse()
+{
     while (!feof(input)) {
         if (amatch("extern", 6))
             dodcls(EXTERN);
         else if (amatch("static", 6))
             dodcls(STATIC);
         else if (dodcls(PUBLIC));
-        else if (match("#asm"))
+        else if (match("__asm__"))
             doasm();
-        else if (match("#include"))
-            doinclude();
-        else if (match("#define"))
-            dodefine();
-        else if (match("#undef"))
-            doundef();
         else
             newfunc();
         blanks();
@@ -177,10 +139,10 @@ parse() {
 /**
  * parse top level declarations
  * @param stclass
- * @return 
+ * @return
  */
-dodcls(stclass)
-int stclass;
+dodcls (stclass)
+    int stclass;
 {
     blanks();
     if (amatch("char", 4))
@@ -198,7 +160,8 @@ int stclass;
 /**
  * dump the literal pool
  */
-dumplits() {
+dumplits()
+{
     int j, k;
 
     if (litptr == 0)
@@ -223,7 +186,8 @@ dumplits() {
 /**
  * dump all static variables
  */
-dumpglbs() {
+dumpglbs()
+{
     int j;
 
     if (!glbflag)
@@ -254,7 +218,8 @@ dumpglbs() {
 /*
  *      report errors
  */
-errorsummary() {
+errorsummary()
+{
     if (ncmp)
         error("missing closing bracket");
     nl();
@@ -272,9 +237,6 @@ errorsummary() {
     outdec(glbptr - rglbptr);
     nl();
     comment();
-    ot("Macro pool:");
-    outdec(macptr);
-    nl();
     pl(errcnt ? "Error(s)" : "No errors");
 }
 
@@ -283,8 +245,8 @@ errorsummary() {
  * @param s the filename
  * @return the last char if it contains dot, space otherwise
  */
-filename_typeof(s)
-char *s;
+filename_typeof (s)
+    char *s;
 {
     s += strlen(s) - 2;
     if (*s == '.')
@@ -292,3 +254,23 @@ char *s;
     return (' ');
 }
 
+/**
+ * "asm" pseudo-statement
+ * enters mode where assembly language statements are passed
+ * intact through parser
+ */
+doasm ()
+{
+        cmode = 0;
+        for (;;) {
+                readline ();
+                if (match ("__endasm__"))
+                        break;
+                if (feof (input))
+                        break;
+                outstr (line);
+                nl ();
+        }
+        kill ();
+        cmode = 1;
+}

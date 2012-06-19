@@ -1,14 +1,9 @@
-/*      File primary.c: 2.4 (84/11/27,16:26:07) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
 primary (lval)
-int     *lval;
+        int     *lval;
 {
         char    *ptr, sname[NAMESIZE];
         int     num[1];
@@ -23,8 +18,10 @@ int     *lval;
         if (amatch("sizeof", 6)) {
                 needbrack("(");
                 immed();
-                if (amatch("int", 3)) onum(intsize());
-                else if (amatch("char", 4)) onum(1);
+                if (amatch("int", 3))
+                        onum(intsize());
+                else if (amatch("char", 4))
+                        onum(1);
                 else if (symname(sname)) {
                         if ((ptr = findloc(sname)) ||
                                 (ptr = findglb(sname))) {
@@ -98,14 +95,13 @@ int     *lval;
                 junk ();
                 return (0);
         }
-
 }
 
 /*
  *      true if val1 -> int pointer or int array and val2 not pointer or array
  */
 dbltest (val1, val2)
-int     val1[], val2[];
+        int     val1[], val2[];
 {
         if (val1 == NULL)
                 return (FALSE);
@@ -114,15 +110,14 @@ int     val1[], val2[];
         if (val2[2])
                 return (FALSE);
         return (TRUE);
-
 }
 
 /*
  *      determine type of binary operation
  */
 result (lval, lval2)
-int     lval[],
-        lval2[];
+        int     lval[];
+        int     lval2[];
 {
         if (lval[2] && lval2[2])
                 lval[2] = 0;
@@ -131,11 +126,10 @@ int     lval[],
                 lval[1] = lval2[1];
                 lval[2] = lval2[2];
         }
-
 }
 
 constant (val)
-int     val[];
+        int     val[];
 {
         if (number (val))
                 immed ();
@@ -150,11 +144,10 @@ int     val[];
         onum (val[0]);
         nl ();
         return (1);
-
 }
 
 number (val)
-int     val[];
+        int     val[];
 {
         int     k, minus, base;
         char    c;
@@ -190,11 +183,10 @@ int     val[];
                 k = (-k);
         val[0] = k;
         return (1);
-
 }
 
 pstr (val)
-int     val[];
+        int     val[];
 {
         int     k;
         char    c;
@@ -208,11 +200,10 @@ int     val[];
         }
         val[0] = k;
         return (1);
-
 }
 
 qstr (val)
-int     val[];
+        int     val[];
 {
         char    c;
 
@@ -235,13 +226,13 @@ int     val[];
         gch ();
         litq[litptr++] = 0;
         return (1);
-
 }
 
 /*
  *      decode special characters (preceeded by back slashes)
  */
-spechar() {
+spechar()
+{
         char c;
         c = ch();
 
@@ -255,7 +246,6 @@ spechar() {
 
         gch();
         return (c);
-
 }
 
 /*
@@ -267,7 +257,7 @@ spechar() {
  *
  */
 callfunction (ptr)
-char    *ptr;
+        char    *ptr;
 {
         int     nargs;
 
@@ -294,11 +284,9 @@ char    *ptr;
         else
                 callstk ();
         stkp = modstk (stkp + nargs);
-
 }
 
 needlval ()
 {
         error ("must be lvalue");
 }
-

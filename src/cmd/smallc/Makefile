@@ -1,53 +1,32 @@
-#       Requires System V make
-#       @(#)Makefile 1.5 86/05/13
-.SUFFIXES:      .o .c .c~ .h .h~
-.PRECIOUS:      scclib.a
-#       You'll probably want to change these.  These are used by the compilers
-#       to figure out where the include files should go.
-TARGDIR = /home/notebook/Public/work/smallCextended/lib
-INCDIR = "/home/notebook/Public/work/smallCextended/src/scc/include/"
+CFLAGS          = -O
 
-INSTFLAGS = -DINCDIR=$(INCDIR)
-#CFLAGS = '$(INSTFLAGS)' -O
-CFLAGS = 
+ARCH            = mips
 
-SRC = data.c error.c expr.c function.c gen.c io.c lex.c main.c preproc.c \
-      primary.c stmt.c sym.c while.c
-OBJ = $(addsuffix .o, $(basename $(SRC)))
+OBJ             = data.o error.o expr.o function.o gen.o io.o lex.o main.o \
+                  primary.o stmt.o sym.o while.o code$(ARCH).o
 
-all:    scc8080 sccm68k sccas09 sccvax
-#all:    scc8080
+all:		smallc
 
-#$(FE) code8080.o codeas09.o codevax.o codem68k.o: defs.h data.h
+smallc: 	$(OBJ)
+		$(CC) -o $@ $(CFLAGS) $(OBJ)
 
-install:        all
-	mv sccvax scc8080 sccas09 sccm68k $(TARGDIR)
-
-#Alternately, you may have to do an lorder
-#$(LIB): $(FE)
-#	-ranlib $(LIB)
-#	-ucb ranlib $(LIB)
-
-#scc8080:        code8080.o $(LIB)
-#	$(CC) -o scc8080 $(CFLAGS) $(LIB) code8080.o
-scc8080: code8080.o $(OBJ)
-	$(CC) -o scc8080 $(CFLAGS) $(OBJ) code8080.o
-
-sccm68k: codem68k.o $(OBJ)
-	$(CC) -o sccm68k $(CFLAGS) $(OBJ) codem68k.o
-
-sccas09:        codeas09.o $(OBJ)
-	$(CC) -o sccas09 $(CFLAGS) $(OBJ) codeas09.o
-
-sccvax:         codevax.o $(OBJ)
-	$(CC) -o sccvax $(CFLAGS) $(OBJ) codevax.o
-
-print:
-	pr -n defs.h data.h data.c error.c expr.c function.c gen.c \
-	        io.c lex.c main.c preproc.c primary.c stmt.c \
-	        sym.c while.c code*.c | lp
 clean:
-	rm -f code8080.o codem68k.o codevax.o codeas09.o \
-		     $(OBJ) *.exe \
-	               sccvax scc8080 sccas09 sccm68k
-
+		rm -f *.o smallc
+###
+code8080.o: code8080.c defs.h data.h
+codeas09.o: codeas09.c defs.h data.h
+codem68k.o: codem68k.c defs.h data.h
+codemips.o: codemips.c defs.h data.h
+codevax.o: codevax.c defs.h data.h
+data.o: data.c defs.h
+error.o: error.c defs.h data.h
+expr.o: expr.c defs.h data.h
+function.o: function.c defs.h data.h
+gen.o: gen.c defs.h data.h
+io.o: io.c defs.h data.h
+lex.o: lex.c defs.h data.h
+main.o: main.c defs.h data.h
+primary.o: primary.c defs.h data.h
+stmt.o: stmt.c defs.h data.h
+sym.o: sym.c defs.h data.h
+while.o: while.c defs.h data.h

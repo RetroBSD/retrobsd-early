@@ -1,8 +1,3 @@
-/*      File expr.c: 2.2 (83/06/21,11:24:26) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -12,9 +7,8 @@
  *      lval[1] - type indirect object to fetch, else 0 for static object
  *      lval[2] - type pointer or array, else 0
  */
-
 expression (comma)
-int     comma;
+        int     comma;
 {
         int     lval[3];
 
@@ -28,7 +22,7 @@ int     comma;
 }
 
 heir1 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
         char    fc;
@@ -45,8 +39,7 @@ int     lval[];
                         rvalue (lval2);
                 store (lval);
                 return (0);
-        } else
-        {      
+        } else {
                 fc = ch();
                 if  (match ("-=") ||
                     match ("+=") ||
@@ -101,7 +94,7 @@ int     lval[];
 }
 
 heir1a (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3], lab1, lab2;
 
@@ -111,7 +104,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER
+        for (;;) {
                 if (match ("?")) {
                         testjump (lab1 = getlabel (), FALSE);
                         if (heir1b (lval2))
@@ -132,11 +125,11 @@ int     lval[];
                         nl ();
                 } else
                         return (0);
-
+        }
 }
 
 heir1b (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3], lab;
 
@@ -146,7 +139,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER
+        for (;;) {
                 if (match ("||")) {
                         testjump (lab = getlabel (), TRUE);
                         if (heir1c (lval2))
@@ -157,11 +150,11 @@ int     lval[];
                         gbool();
                 } else
                         return (0);
-
+        }
 }
 
 heir1c (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3], lab;
 
@@ -171,7 +164,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER
+        for (;;) {
                 if (match ("&&")) {
                         testjump (lab = getlabel (), FALSE);
                         if (heir2 (lval2))
@@ -182,11 +175,11 @@ int     lval[];
                         gbool();
                 } else
                         return (0);
-
+        }
 }
 
 heir2 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -196,7 +189,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '|') & (nch() != '|') & (nch() != '=')) {
                         inbyte ();
                         gpush ();
@@ -207,11 +200,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir3 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -221,7 +213,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '^') & (nch() != '=')){
                         inbyte ();
                         gpush ();
@@ -232,11 +224,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir4 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -246,7 +237,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '&') & (nch() != '&') & (nch() != '=')) {
                         inbyte ();
                         gpush ();
@@ -257,11 +248,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir5 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -272,7 +262,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if (match ("==")) {
                         gpush ();
                         if (heir6 (lval2))
@@ -286,11 +276,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir6 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -305,7 +294,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if (match ("<=")) {
                         gpush ();
                         if (heir7 (lval2))
@@ -350,11 +339,10 @@ int     lval[];
                         return (0);
                 blanks ();
         }
-
 }
 
 heir7 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -365,7 +353,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if (sstreq(">>") && ! sstreq(">>=")) {
                         inbyte(); inbyte();
                         gpush ();
@@ -382,11 +370,10 @@ int     lval[];
                         return (0);
                 blanks();
         }
-
 }
 
 heir8 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -396,7 +383,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if (match ("+")) {
                         gpush ();
                         if (heir9 (lval2))
@@ -426,11 +413,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir9 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k, lval2[3];
 
@@ -441,7 +427,7 @@ int     lval[];
                 return (k);
         if (k)
                 rvalue (lval);
-        FOREVER {
+        for (;;) {
                 if (match ("*")) {
                         gpush ();
                         if (heir10 (lval2))
@@ -460,11 +446,10 @@ int     lval[];
                 } else
                         return (0);
         }
-
 }
 
 heir10 (lval)
-int     lval[];
+        int     lval[];
 {
         int     k;
         char    *ptr;
@@ -567,11 +552,10 @@ int     lval[];
                 } else
                         return (k);
         }
-
 }
 
 heir11 (lval)
-int     *lval;
+        int     *lval;
 {
         int     k;
         char    *ptr;
@@ -580,7 +564,7 @@ int     *lval;
         ptr = lval[0];
         blanks ();
         if ((ch () == '[') | (ch () == '('))
-                FOREVER {
+                for (;;) {
                         if (match ("[")) {
                                 if (ptr == 0) {
                                         error ("can't subscript");
@@ -625,4 +609,3 @@ int     *lval;
         }
         return (k);
 }
-

@@ -1,26 +1,23 @@
-/*      File error.c: 2.1 (83/03/20,16:02:00) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
 error (ptr)
-char    ptr[];
+        char    *ptr;
 {
         FILE *tempfile;
 
         tempfile = output;
         output = stdout;
-        doerror(ptr);
+        doerror (ptr);
         output = tempfile;
-        doerror(ptr);
+        doerror (ptr);
         errcnt++;
 }
 
-doerror(ptr) char *ptr; {
+doerror(ptr)
+        char *ptr;
+{
         int k;
         comment ();
         outstr (line);
@@ -42,4 +39,3 @@ doerror(ptr) char *ptr; {
         outstr ("  ******");
         nl ();
 }
-

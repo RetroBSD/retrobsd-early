@@ -1,102 +1,87 @@
-/*      File gen.c: 2.1 (83/03/20,16:02:06) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
 /*
  *      return next available internal label number
- *
  */
 getlabel ()
 {
         return (nxtlab++);
-
 }
 
 /*
  *      print specified number as label
  */
 printlabel (label)
-int     label;
+        int     label;
 {
         olprfix ();
         outdec (label);
-
 }
 
 /*
  *      glabel - generate label
  */
 glabel (lab)
-char    *lab;
+        char    *lab;
 {
         prefix ();
         outstr (lab);
         col ();
         nl ();
-
 }
 
 /*
  *      gnlabel - generate numeric label
  */
 gnlabel (nlab)
-int     nlab;
+        int     nlab;
 {
         printlabel (nlab);
         col ();
         nl ();
-
 }
 
 outbyte (c)
-char    c;
+        char    c;
 {
         if (c == 0)
                 return (0);
         fputc (c, output);
         return (c);
-
 }
 
 outstr (ptr)
-char    ptr[];
+        char    ptr[];
 {
         int     k;
 
         k = 0;
         while (outbyte (ptr[k++]));
-
 }
 
 tab ()
 {
         outbyte (9);
-
 }
 
 ol (ptr)
-char    ptr[];
+        char    ptr[];
 {
         ot (ptr);
         nl ();
-
 }
 
 ot (ptr)
-char    ptr[];
+        char    ptr[];
 {
         tab ();
         outstr (ptr);
-
 }
 
 outdec (number)
-int     number;
+        int     number;
 {
         int     k, zs;
         char    c;
@@ -120,36 +105,32 @@ int     number;
                 number = number % k;
                 k = k / 10;
         }
-
 }
 
 store (lval)
-int     *lval;
+        int     *lval;
 {
         if (lval[1] == 0)
                 putmem (lval[0]);
         else
                 putstk (lval[1]);
-
 }
 
 rvalue (lval)
-int     *lval;
+        int     *lval;
 {
         if ((lval[0] != 0) & (lval[1] == 0))
                 getmem (lval[0]);
         else
                 indirect (lval[1]);
-
 }
 
 test (label, ft)
-int     label,
-        ft;
+        int label;
+        int ft;
 {
         needbrack ("(");
         expression (YES);
         needbrack (")");
         testjump (label, ft);
 }
-

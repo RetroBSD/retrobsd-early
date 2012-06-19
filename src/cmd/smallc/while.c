@@ -1,14 +1,9 @@
-/*      File while.c: 2.1 (83/03/20,16:02:22) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
 addwhile (ptr)
-int     ptr[];
+        int     ptr[];
 {
         int     k;
 
@@ -19,14 +14,12 @@ int     ptr[];
         k = 0;
         while (k < WSSIZ)
                 *wsptr++ = ptr[k++];
-
 }
 
 delwhile ()
 {
         if (readwhile ())
                 wsptr = wsptr - WSSIZ;
-
 }
 
 readwhile ()
@@ -36,7 +29,6 @@ readwhile ()
                 return (0);
         } else
                 return (wsptr-WSSIZ);
-
 }
 
 findwhile ()
@@ -50,7 +42,6 @@ findwhile ()
         }
         error ("no active do/for/while");
         return (0);
-
 }
 
 readswitch ()
@@ -61,11 +52,10 @@ readswitch ()
                 if (ptr[WSTYP] == WSSWITCH)
                         return (ptr);
         return (0);
-
 }
 
 addcase (val)
-int     val;
+        int     val;
 {
         int     lab;
 
@@ -79,4 +69,3 @@ int     val;
                 nl ();
         }
 }
-

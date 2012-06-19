@@ -2,6 +2,8 @@
 #include "defs.h"
 #include "data.h"
 
+//int     needr0;
+
 /*
  *      Some predefinitions:
  *
@@ -12,29 +14,56 @@
  *      This compiler assumes that an integer is the SAME length as
  *      a pointer - in fact, the compiler uses INTSIZE for both.
  */
-#define INTSIZE 2
-#define BYTEOFF 1
+#define INTSIZE 4
+#define BYTEOFF 0
 
 /*
  *      print all assembler info before any code is generated
+ *
  */
 header ()
 {
-        outstr("|\tSmall C MC6809\n|\tCoder (2.4,84/11/27)\n|");
-        FEvers();
+        outstr ("#\tSmall C MIPS32\n#\tCoder 1.0, 2012/06/18\n#");
+        FEvers ();
         nl ();
-        ol (".globl\tsmul,sdiv,smod,asr,asl,neg,lneg,case");
-        ol (".globl\teq,ne,lt,le,gt,ge,ult,ule,ugt,uge,bool");
+        //ol ("global\tTlneg");
+        //ol ("global\tTcase");
+        //ol ("global\tTeq");
+        //ol ("global\tTne");
+        //ol ("global\tTlt");
+        //ol ("global\tTle");
+        //ol ("global\tTgt");
+        //ol ("global\tTge");
+        //ol ("global\tTult");
+        //ol ("global\tTule");
+        //ol ("global\tTugt");
+        //ol ("global\tTuge");
+        //ol ("global\tTbool");
+        //ol ("global\tTmult");
+        //ol ("global\tTdiv");
+        //ol ("global\tTmod");
 }
 
-nl ()
+nl()
 {
-        outbyte (EOL);
+        //if (needr0) {
+        //        needr0 = 0;
+        //        outstr(",%d0");
+        //}
+        outbyte(EOL);
 }
 
 galign(t)
         int t;
 {
+        int sign;
+        if (t < 0) {
+                sign = 1;
+                t = -t;
+        } else
+                sign = 0;
+        t = (t + INTSIZE - 1) & ~(INTSIZE - 1);
+        t = sign? -t: t;
         return (t);
 }
 
@@ -68,15 +97,16 @@ olprfix()
  */
 col ()
 {
-        outstr ("=.\n");
+        outstr (":\n");
 }
 
 /*
  *      begin a comment line for the assembler
+ *
  */
 comment ()
 {
-        outbyte ('|');
+        outbyte ('#');
 }
 
 /*
@@ -84,15 +114,15 @@ comment ()
  */
 prefix ()
 {
-        outbyte ('_');
+/*      outbyte ('_'); */
 }
 
 /*
  *      print any assembler stuff needed after all code
+ *
  */
 trailer ()
 {
-        ol (".end");
 }
 
 /*
@@ -100,6 +130,7 @@ trailer ()
  */
 prologue ()
 {
+        /* this is where we'd put splimit stuff */
 }
 
 /*
@@ -107,7 +138,7 @@ prologue ()
  */
 gtext ()
 {
-        ol (".text");
+        ol ("text");
 }
 
 /*
@@ -115,7 +146,7 @@ gtext ()
  */
 gdata ()
 {
-        ol (".data");
+        ol ("data");
 }
 
 /*
@@ -126,7 +157,7 @@ ppubext(scptr)
 {
         if (scptr[STORAGE] == STATIC)
                 return;
-        ot (".globl\t");
+        ot ("global\t");
         prefix ();
         outstr (scptr);
         nl();
@@ -148,7 +179,6 @@ onum(num)
         int num;
 {
         outdec(num);    /* pdp11 needs a "." here */
-        outbyte('.');
 }
 
 /*
@@ -157,24 +187,25 @@ onum(num)
 getmem (sym)
         char    *sym;
 {
+        int ischr;
         if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-                ot ("ldb\t");
+                ischr = 1;
+                ot ("mov.b\t");
                 prefix ();
                 outstr (sym + NAME);
-                nl ();
-                ot ("sex");
-                nl ();
         } else {
-                ot ("ldd\t");
+                ischr = 0;
+                ot ("mov.l\t");
                 prefix ();
                 outstr (sym + NAME);
-                nl ();
         }
+        outstr(",%d0\n");
+        if (ischr)
+                ol ("ext.b\t%d0");
 }
 
 /*
  *      fetch the address of the specified symbol into the primary register
- *
  */
 getloc (sym)
         char    *sym;
@@ -184,9 +215,10 @@ getloc (sym)
                 printlabel(glint(sym));
                 nl();
         } else {
-                ot ("leay\t");
+                ot ("lea.l\t");
                 onum (glint(sym) - stkp);
-                outstr ("(s)\n\ttfr\ty,d\n");
+                outstr (",%a0\n");
+                ol ("mov.l\t%a0,%d0");
         }
 }
 
@@ -197,9 +229,9 @@ putmem (sym)
         char    *sym;
 {
         if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-                ot ("stb\t");
+                ot ("mov.b\t%d0,");
         } else
-                ot ("std\t");
+                ot ("mov.l\t%d0,");
         prefix ();
         outstr (sym + NAME);
         nl ();
@@ -212,10 +244,11 @@ putmem (sym)
 putstk (typeobj)
         char    typeobj;
 {
+        ol ("mov.l\t(%sp)+,%a0");
         if (typeobj == CCHAR)
-                ol ("stb\t@(s)++");
+                ol ("mov.b\t%d0,(%a0)");
         else
-                ol ("std\t@(s)++");
+                ol ("mov.l\t%d0,(%a0)");
         stkp = stkp + INTSIZE;
 }
 
@@ -226,11 +259,11 @@ putstk (typeobj)
 indirect (typeobj)
         char    typeobj;
 {
-        ol("tfr\td,y");
+        ol ("mov.l\t%d0,%a0");
         if (typeobj == CCHAR)
-                ol ("ldb\t(y)\n\tsex");
+                ol ("mov.b\t(%a0),%d0");
         else
-                ol ("ldd\t(y)");
+                ol ("mov.l\t(%a0),%d0");
 }
 
 /*
@@ -238,7 +271,7 @@ indirect (typeobj)
  */
 swap ()
 {
-        ol ("exg\td,x");
+        ol ("mov.l\t%d0,%d2\n\tmov.l\t%d1,%d0\n\tmov.l\t%d2,%d1");
 }
 
 /*
@@ -247,7 +280,8 @@ swap ()
  */
 immed ()
 {
-        ot ("ldd\t#");
+        ot ("mov.l\t&");
+        //needr0 = 1;
 }
 
 /*
@@ -255,7 +289,7 @@ immed ()
  */
 gpush ()
 {
-        ol ("pshs\td");
+        ol ("mov.l\t%d0,-(%sp)");
         stkp = stkp - INTSIZE;
 }
 
@@ -264,7 +298,7 @@ gpush ()
  */
 gpop ()
 {
-        ol ("puls\td");
+        ol ("mov.l\t(%sp)+,%d1");
         stkp = stkp + INTSIZE;
 }
 
@@ -273,7 +307,7 @@ gpop ()
  */
 swapstk ()
 {
-        ol ("ldy\t(s)\nstd\t(s)\n\ttfr\ty,d");
+        ol ("mov.l\t(%sp)+,%d2\nmov.l\t%d0,-(%sp)\nmov.l\t%d2,%d0");
 }
 
 /*
@@ -282,10 +316,11 @@ swapstk ()
 gcall (sname)
         char    *sname;
 {
-        ot ("jsr\t");
-        if (*sname == '^')
+        if (*sname == '^') {
+                ot ("jsr\tT");
                 outstr (++sname);
-        else {
+        } else {
+                ot ("jsr\t");
                 prefix ();
                 outstr (sname);
         }
@@ -305,8 +340,8 @@ gret ()
  */
 callstk ()
 {
-        gpop();
-        ol ("jsr\t(x)");
+        ol ("jsr\t(%sp)+");
+        stkp = stkp + INTSIZE;
 }
 
 /*
@@ -315,23 +350,24 @@ callstk ()
 jump (label)
         int     label;
 {
-        ot ("lbra\t");
+        ot ("jmp\t");
         printlabel (label);
         nl ();
 }
 
 /*
  *      test the primary register and jump if false to label
+ *
  */
 testjump (label, ft)
         int label;
         int ft;
 {
-        ol ("cmpd\t#0");
+        ol ("cmp.l\t%d0,&0");
         if (ft)
-                ot ("lbne\t");
+                ot ("beq\t");
         else
-                ot ("lbeq\t");
+                ot ("bne\t");
         printlabel (label);
         nl ();
 }
@@ -341,7 +377,7 @@ testjump (label, ft)
  */
 defbyte ()
 {
-        ot (".byte\t");
+        ot ("byte\t");
 }
 
 /*
@@ -349,7 +385,7 @@ defbyte ()
  */
 defstorage ()
 {
-        ot (".blkb\t");
+        ot ("space\t");
 }
 
 /*
@@ -357,7 +393,7 @@ defstorage ()
  */
 defword ()
 {
-        ot (".word\t");
+        ot ("long\t");
 }
 
 /*
@@ -368,12 +404,15 @@ modstk (newstkp)
 {
         int     k;
 
-        k = galign(newstkp - stkp);
+        k = newstkp - stkp;
+        if (k % INTSIZE)
+                error("Bad stack alignment (compiler error)");
         if (k == 0)
                 return (newstkp);
-        ot ("leas\t");
+        ot ("add.l\t&");
         onum (k);
-        outstr ("(s)\n");
+        outstr (",sp");
+        nl();
         return (newstkp);
 }
 
@@ -382,7 +421,7 @@ modstk (newstkp)
  */
 gaslint ()
 {
-        ol ("aslb\n\trola");
+        ol ("asl.l\t&2,%d0");
 }
 
 /*
@@ -390,7 +429,7 @@ gaslint ()
  */
 gasrint()
 {
-        ol ("asra\n\trorb");
+        ol ("asr.l\t&2,%d0");
 }
 
 /*
@@ -398,8 +437,7 @@ gasrint()
  */
 gjcase()
 {
-        ot ("jmp\tcase");
-        nl ();
+        gcall ("^case");
 }
 
 /*
@@ -410,10 +448,11 @@ gadd (lval, lval2)
         int *lval, *lval2;
 {
         if (dbltest (lval2, lval)) {
-                ol ("asl\t1(s)\n\trol\t(s)");
+                ol ("asl.l\t&2,(%sp)");
         }
-        ol ("addd\t(s)++");
+        ol ("add.l\t(%sp)+,%d0");
         stkp = stkp + INTSIZE;
+
 }
 
 /*
@@ -421,7 +460,9 @@ gadd (lval, lval2)
  */
 gsub ()
 {
-        ol ("subd\t(s)++\n\tcoma\n\tcomb\n\taddd\t#1");
+        ol ("mov.l\t(%sp)+,%d2");
+        ol ("sub.l\t%d0,%d2");
+        ol ("mov.l\t%d2,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -431,7 +472,7 @@ gsub ()
  */
 gmult ()
 {
-        gcall ("^smul");
+        gcall ("^mult");
         stkp = stkp + INTSIZE;
 }
 
@@ -441,7 +482,7 @@ gmult ()
  */
 gdiv ()
 {
-        gcall ("^sdiv");
+        gcall ("^div");
         stkp = stkp + INTSIZE;
 }
 
@@ -452,7 +493,7 @@ gdiv ()
  */
 gmod ()
 {
-        gcall ("^smod");
+        gcall ("^mod");
         stkp = stkp + INTSIZE;
 }
 
@@ -461,7 +502,7 @@ gmod ()
  */
 gor ()
 {
-        ol ("ora\t(s)+\n\torb\t(s)+");
+        ol ("or.l\t(%sp)+,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -470,7 +511,8 @@ gor ()
  */
 gxor ()
 {
-        ol ("eora\t(s)+\n\teorb\t(s)+");
+        ol ("mov.l\t(%sp)+,%d1");
+        ol ("eor.l\t%d1,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -479,7 +521,7 @@ gxor ()
  */
 gand ()
 {
-        ol ("anda\t(s)+\n\tandb\t(s)+");
+        ol ("and.l\t(%sp)+,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -490,7 +532,9 @@ gand ()
  */
 gasr ()
 {
-        gcall ("^asr");
+        ol ("mov.l\t(%sp)+,%d1");
+        ol ("asr.l\t%d0,%d1");
+        ol ("mov.l\t%d1,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -501,7 +545,9 @@ gasr ()
  */
 gasl ()
 {
-        gcall ("^asl");
+        ol ("mov.l\t(%sp)+,%d1");
+        ol ("asl.l\t%d0,%d1");
+        ol ("mov.l\t%d1,%d0");
         stkp = stkp + INTSIZE;
 }
 
@@ -510,7 +556,7 @@ gasl ()
  */
 gneg ()
 {
-        gcall ("^neg");
+        ol ("neg.l\t%d0");
 }
 
 /*
@@ -526,7 +572,7 @@ glneg ()
  */
 gcom ()
 {
-        ol ("coma\n\tcomb");
+        ol ("not\t%d0");
 }
 
 /*
@@ -544,9 +590,9 @@ ginc (lval)
         int lval[];
 {
         if (lval[2] == CINT)
-                ol ("addd\t#2");
+                ol ("addq.l\t&4,%d0");
         else
-                ol ("addd\t#1");
+                ol ("addq.l\t&1,%d0");
 }
 
 /*
@@ -556,9 +602,9 @@ gdec (lval)
         int lval[];
 {
         if (lval[2] == CINT)
-                ol ("subd\t#2");
+                ol ("subq.l\t&4,%d0");
         else
-                ol ("subd\t#1");
+                ol ("subq.l\t&1,%d0");
 }
 
 /*
@@ -665,7 +711,7 @@ guge ()
 gnargs (d)
         int d;
 {
-        ot ("ldu\t#");
+        ot ("mov.l\t&");
         onum(d);
-        nl ();
+        outstr(",%d3\n");
 }

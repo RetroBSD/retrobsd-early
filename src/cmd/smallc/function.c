@@ -1,8 +1,3 @@
-/*      File function.c: 2.1 (83/03/20,16:02:04) */
-/*% cc -O -c %
- *
- */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
@@ -13,9 +8,9 @@
  *      called from "parse", this routine tries to make a function out
  *      of what follows
  *      modified version.  p.l. woods
- *
  */
 int argtop;
+
 newfunc ()
 {
         char    n[NAMESIZE], *ptr;
@@ -94,7 +89,6 @@ newfunc ()
         gret ();
         stkp = 0;
         locptr = STARTLOC;
-
 }
 
 /*
@@ -103,15 +97,14 @@ newfunc ()
  *      called from "newfunc", this routine add an entry in the local
  *      symbol table for each named argument
  *      completely rewritten version.  p.l. woods
- *
  */
 getarg (t)
-int     t;
+        int     t;
 {
         int     j, legalname, address;
         char    n[NAMESIZE], c, *argptr;
 
-        FOREVER {
+        for (;;) {
                 if (argstk == 0)
                         return;
                 if (match ("*"))
@@ -145,4 +138,3 @@ int     t;
                         error ("expected comma");
         }
 }
-
