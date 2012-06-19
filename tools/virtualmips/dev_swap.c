@@ -92,8 +92,8 @@ void dev_swap_ldaddr (cpu_mips_t *cpu, int on)
 
     if (on && ! d->ldaddr) {
         d->ldaddr = 1;
-        d->offset >>= 8;
-        d->offset |= d->data << 16;
+        d->offset >>= 4;
+        d->offset |= d->data << 20;
         TRACE ("swap: LDADDR on, offset = %06X\n", d->offset);
     } else if (! on && d->ldaddr) {
         TRACE ("swap: LDADDR off\n");

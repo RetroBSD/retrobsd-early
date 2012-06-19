@@ -302,7 +302,7 @@ exception (frame)
 		/* Get the current irq number */
 		c = INTSTAT;
 		if ((c & PIC32_INTSTAT_SRIPL_MASK) == 0) {
-                        printf ("*** unexpected interrupt: INTSTAT %08x\n", c);
+                        //printf ("*** unexpected interrupt: INTSTAT %08x\n", c);
 			goto ret;
                 }
 		irq = PIC32_INTSTAT_VEC (c);
