@@ -984,12 +984,11 @@ main(int argc, char *argv[])
 			av[na++] = clist[i];
 		else
 			av[na++] = tmp4; /* created by cpp */
-		if (pflag || exfail)
-			{
+		if (pflag || exfail) {
 			cflag++;
 			continue;
-			}
-		if(sflag) {
+		}
+		if (sflag) {
 			if (outfile)
 				tmp3 = outfile;
 			else
