@@ -154,14 +154,16 @@ makespace(Tokenrow *trp)
 		return;
 	if (tp->wslen) {
 		if (tp->flag&XPWS
-		 && (wstab[tp->type] || trp->tp>trp->bp && wstab[(tp-1)->type])) {
+		 && (wstab[tp->type] ||
+                    (trp->tp>trp->bp && wstab[(tp-1)->type]))) {
 			tp->wslen = 0;
 			return;
 		}
 		tp->t[-1] = ' ';
 		return;
 	}
-	if (wstab[tp->type] || trp->tp>trp->bp && wstab[(tp-1)->type])
+	if (wstab[tp->type] ||
+            (trp->tp>trp->bp && wstab[(tp-1)->type]))
 		return;
 	tt = newstring(tp->t, tp->len, 1);
 	*tt++ = ' ';
@@ -267,7 +269,7 @@ peektokens(Tokenrow *trp, char *str)
 	if (str)
 		fprintf(stderr, "%s ", str);
 	if (tp<trp->bp || tp>trp->lp)
-		fprintf(stderr, "(tp offset %d) ", tp-trp->bp);
+		fprintf(stderr, "(tp offset %ld) ", tp-trp->bp);
 	for (tp=trp->bp; tp<trp->lp && tp<trp->bp+32; tp++) {
 		if (tp->type!=NL) {
 			int c = tp->t[tp->len];
@@ -308,7 +310,7 @@ puttokens(Tokenrow *trp)
 				fwrite(wbuf, 1, wbp-wbuf, stdout);
 			fwrite((char *)p, 1, len, stdout);
 			wbp = wbuf;
-		} else {	
+		} else {
 			memcpy(wbp, p, len);
 			wbp += len;
 		}

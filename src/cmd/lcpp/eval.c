@@ -224,8 +224,10 @@ evalop(struct pri pri)
 	long rv1, rv2;
 	int rtype, oper;
 
-	rv2=0;
-	rtype=0;
+	v2.val = 0;
+	v2.type = 0;
+	rv2 = 0;
+	rtype = 0;
 	while (pri.pri < priority[op[-1]].pri) {
 		oper = *--op;
 		if (priority[oper].arity==2) {
