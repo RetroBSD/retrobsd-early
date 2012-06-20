@@ -1,15 +1,14 @@
-#include "profio.c"
+/*
+ * bprint [ -c | -Idir... | -f | -b | -n ] [ file... ]
+ *
+ * annotate listings of files with prof.out data
+ */
+#include "../lccom/profio.c"
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/* bprint [ -c | -Idir... | -f | -b | -n ] [ file... ]
- * annotate listings of files with prof.out data
- */
-
-static char rcsid2[] = "$Id: bprint.c,v 4.1 2002/08/28 23:12:20 drh Exp $";
 
 #define NDIRS (sizeof dirs/sizeof dirs[0] - 1)
 #define NELEMS(a) ((int)(sizeof (a)/sizeof ((a)[0])))
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
 	}
 	for (i = 1; i < argc && *argv[i] == '-'; i++)
 		if (strcmp(argv[i], "-c") == 0) {
-			emitdata("prof.out"); 
+			emitdata("prof.out");
 			exit(0);
 		} else if (strcmp(argv[i], "-b") == 0)
 			f = printfile;
@@ -69,7 +68,7 @@ int main(int argc, char *argv[]) {
 	if (i < argc) {
 		int nf = i < argc - 1 ? 1 : 0;
 		for ( ; i < argc; i++, nf ? nf++ : 0)
-			if (p = findfile(string(argv[i])))
+			if ((p = findfile(string(argv[i]))))
 				(*f)(p, nf);
 			else
 				fprintf(stderr, "%s: no data for `%s'\n", progname, argv[i]);
@@ -93,7 +92,7 @@ void *alloc(unsigned n) {
 void emitdata(char *file) {
 	FILE *fp;
 
-	if (fp = fopen(file, "w")) {
+	if ((fp = fopen(file, "w"))) {
 		struct file *p;
 		for (p = filelist; p; p = p->link) {
 			int i;
@@ -101,7 +100,7 @@ void emitdata(char *file) {
 			struct caller *r;
 			fprintf(fp, "1\n%s\n", p->name);
 			for (i = 0, q = p->funcs; q; i++, q = q->link)
-				if (r = q->callers)
+				if ((r = q->callers))
 					for (i--; r; r = r->link)
 						i++;
 			fprintf(fp, "%d\n", i);
@@ -128,11 +127,11 @@ FILE *openfile(char *name) {
 	int i;
 	FILE *fp;
 
-	if (*name != '/')	
+	if (*name != '/')
 		for (i = 0; dirs[i]; i++) {
 			char buf[200];
 			sprintf(buf, "%s/%s", dirs[i], name);
-			if (fp = fopen(buf, "r"))
+			if ((fp = fopen(buf, "r")))
 				return fp;
 		}
 	return fopen(name, "r");
@@ -195,7 +194,7 @@ void printfuncs(struct file *p, int nf) {
 				printf("%d\t%s\tfrom %s\tin %s:%d.%d\n", r->count, q->name, r->name,
 					r->file, r->y, r->x + 1);
 		}
-		
+
 }
 
 /* string - save a copy of str, if necessary */

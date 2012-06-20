@@ -14,7 +14,7 @@ char *suffixes[] = { ".c", ".i", ".s", ".o", ".out", 0 };
 char inputs[256] = "";
 
 char *cpp[] = {
-        LCCDIR "cpp",
+        "/bin/lcpp",
         "-D__STDC__=1",
 	"-DLANGUAGE_C",
 	"-DMIPSEB",
@@ -60,7 +60,7 @@ extern char *concat (char *, char *);
 int option (char *arg)
 {
 	if (strncmp(arg, "-lccdir=", 8) == 0) {
-		cpp[0] = concat(&arg[8], "/cpp");
+		/*cpp[0] = concat(&arg[8], "/cpp");*/
 		include[0] = concat("-I", concat(&arg[8], "/include"));
 		com[0] = concat(&arg[8], "/rcc");
 		ld[6] = concat("-L", &arg[8]);

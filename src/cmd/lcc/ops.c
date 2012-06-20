@@ -1,10 +1,9 @@
-#include "c.h"
-
-/* ops [ {csilhfdxp}=n ]...
+/*
+ * ops [ {csilhfdxp}=n ]...
+ *
  * prints lcc dag operator set for a given set of type sizes.
  */
-
-static char rcsid[] = "$Id: ops.c,v 4.1 2002/08/28 23:12:20 drh Exp $";
+#include "../lccom/c.h"
 
 static char list[] = { 'c', 's', 'i', 'l', 'h', 'f', 'd', 'x', 'p', 0 };
 static int sizes[] = {  1,   2,   4,   4,   8,   4,   8,  16,   8 };
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]) {
 	}
 #define gop(x,n)
 #define op(x,t,s) count += doop(x,t,#s,#x #t);
-#include "ops.h"
+#include "../lccom/ops.h"
 #undef gop
 #undef op
 	fprintf(stderr, "%d operators\n", count);

@@ -12,7 +12,7 @@ CFLAGS          += -Werror
 # /bin
 SUBDIR		= adb adc-demo ar as awk basic cc chflags chpass \
                   cpp dc diff env find forth fstat hostname \
-                  id la ld ls login make man med \
+                  id la lcc lcpp ld ls login make man med \
                   more nm passwd portio printf \
                   ranlib re renice retroforth scm setty sl \
                   sed sh stty sysctl test uname wiznet xargs \

@@ -1,5 +1,9 @@
-/* $Id: cpp.h,v 1.6 2001/06/04 22:42:04 drh Exp $ */
-#include <stdio.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
+
 #define	INS	4096		/* input buffer */
 #define	OBS	2048		/* outbut buffer */
 #define	NARG	32		/* Max number arguments to a macro */
