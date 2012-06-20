@@ -110,8 +110,8 @@ static Tree root1(Tree p) {
 				warning("expression with no effect elided\n");
 		return root1(p->kids[0]);
 	case CVU: case CVP:
-		if (optype(p->op) == U && p->type->size <  p->kids[0]->type->size
-		||  optype(p->op) == I && p->type->size <= p->kids[0]->type->size)
+		if ((optype(p->op) == U && p->type->size <  p->kids[0]->type->size)
+		||  (optype(p->op) == I && p->type->size <= p->kids[0]->type->size))
 			if (warn++ == 0)
 				warning("expression with no effect elided\n");
 		return root1(p->kids[0]);

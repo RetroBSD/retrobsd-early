@@ -24,7 +24,6 @@ YYCONST static char yysccsid[] = "@(#)yaccpar	1.8 (Berkeley +Cygnus.28) 01/20/91
 #line 2 "lburg/gram.y"
 #include <stdio.h>
 #include "lburg.h"
-static char rcsid[] = "$Id: gram.c,v 2.1 2002/08/28 23:28:22 drh Exp $";
 /*lint -e616 -e527 -e652 -esym(552,yynerrs) -esym(563,yynewstate,yyerrlab) */
 static int yylineno = 0;
 #line 8 "lburg/gram.y"
@@ -228,7 +227,9 @@ inline
 #endif
 yygrow ()
 {
+#if YYDEBUG
     int old_stacksize = yystacksize;
+#endif
     short *new_yyss;
     YYSTYPE *new_yyvs;
 
@@ -402,7 +403,6 @@ void yywarn(char *fmt, ...) {
 #line 403 "y.tab.c"
 #define YYABORT goto yyabort
 #define YYACCEPT goto yyaccept
-#define YYERROR goto yyerrlab
 
 #if YYDEBUG
 #ifdef __cplusplus
@@ -470,7 +470,7 @@ yypush:
     *++yyvsp = yyval;
 
 yyloop:
-    if (yyn = yydefred[yystate]) goto yyreduce;
+    if ((yyn = yydefred[yystate])) goto yyreduce;
     yyn = yysindex[yystate];
     if (yychar < 0)
     {
@@ -508,15 +508,7 @@ yyloop:
         goto yyreduce;
     }
     if (yyerrflag) goto yyinrecovery;
-#ifdef lint
-    goto yynewerror;
-#endif
-yynewerror:
     yyerror("syntax error");
-#ifdef lint
-    goto yyerrlab;
-#endif
-yyerrlab:
     ++yynerrs;
 yyinrecovery:
     if (yyerrflag < 3)

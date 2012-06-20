@@ -39,13 +39,20 @@ static void I(defconst)(int suffix, int size, Value v) {
 	case P: print("byte %d %U\n", size, (unsigned long)v.p); return;
 	case F:
 		if (size == 4) {
-			float f = v.d;
-			print("byte 4 %u\n", *(unsigned *)&f);
+                        union {
+                                float f32;
+                                unsigned u32;
+                        } u;
+			u.f32 = v.d;
+			print("byte 4 %u\n", u.u32);
 		} else {
-			double d = v.d;
-			unsigned *p = (unsigned *)&d;
-			print("byte 4 %u\n", p[swap]);
-			print("byte 4 %u\n", p[1 - swap]);
+                        union {
+                                double d64;
+                                unsigned u32[2];
+                        } u;
+                        u.d64 = v.d;
+			print("byte 4 %u\n", u.u32[swap]);
+			print("byte 4 %u\n", u.u32[1 - swap]);
 		}
 		return;
 	}
@@ -235,16 +242,16 @@ static void I(stabline)(Coordinate *cp) {
 #define b_blockend blockend
 
 Interface bytecodeIR = {
-	1, 1, 0,	/* char */
-	2, 2, 0,	/* short */
-	4, 4, 0,	/* int */
-	4, 4, 0,	/* long */
-	4, 4, 0,	/* long long */
-	4, 4, 1,	/* float */
-	8, 8, 1,	/* double */
-	8, 8, 1,	/* long double */
-	4, 4, 0,	/* T* */
-	0, 4, 0,	/* struct */
+	{ 1, 1, 0 },	/* char */
+	{ 2, 2, 0 },	/* short */
+	{ 4, 4, 0 },	/* int */
+	{ 4, 4, 0 },	/* long */
+	{ 4, 4, 0 },	/* long long */
+	{ 4, 4, 1 },	/* float */
+	{ 8, 8, 1 },	/* double */
+	{ 8, 8, 1 },	/* long double */
+	{ 4, 4, 0 },	/* T* */
+	{ 0, 4, 0 },	/* struct */
 	0,		/* little_endian */
 	0,		/* mulops_calls */
 	0,		/* wants_callb */

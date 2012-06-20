@@ -38,7 +38,7 @@ char *cpp[] = {
 0 };
 
 char *com[] = {
-        LCCDIR "rcc", "-target=mips/eb", "$1", "$2", "$3", "",
+        "/libexec/lccom", "-target=mips/eb", "$1", "$2", "$3", "",
 0 };
 
 char *include[] = {
@@ -60,7 +60,7 @@ extern char *concat (char *, char *);
 int option (char *arg)
 {
 	if (strncmp(arg, "-lccdir=", 8) == 0) {
-		/*cpp[0] = concat(&arg[8], "/cpp");*/
+		cpp[0] = concat(&arg[8], "/cpp");
 		include[0] = concat("-I", concat(&arg[8], "/include"));
 		com[0] = concat(&arg[8], "/rcc");
 		ld[6] = concat("-L", &arg[8]);

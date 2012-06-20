@@ -183,8 +183,8 @@ Symbol constant(Type ty, Value v) {
 					float z1 = v.d, z2 = p->sym.u.c.v.d;
 					char *b1 = (char *)&z1, *b2 = (char *)&z2;
 					if (z1 == z2
-					&& (!little.endian && b1[0] == b2[0]
-					||   little.endian && b1[sizeof (z1)-1] == b2[sizeof (z2)-1]))
+					&& ((!little.endian && b1[0] == b2[0])
+					||   (little.endian && b1[sizeof (z1)-1] == b2[sizeof (z2)-1])))
 						return &p->sym;
 				} else if (equalp(d))
 					return &p->sym;
@@ -311,10 +311,11 @@ Symbol mksymbol(int sclass, const char *name, Type ty) {
 	return p;
 }
 
-/* vtoa - return string for the constant v of type ty */
-char *vtoa(Type ty, Value v) {
-	char buf[50];
-
+/*
+ * vtoa - return string for the constant v of type ty
+ */
+char *vtoa(Type ty, Value v)
+{
 	ty = unqual(ty);
 	switch (ty->op) {
 	case INT:      return stringd(v.i);
@@ -328,5 +329,6 @@ char *vtoa(Type ty, Value v) {
 	case POINTER:  return stringf("%p", v.p);
 	case FUNCTION: return stringf("%p", v.g);
 	}
-	assert(0); return NULL;
+	assert(0);
+        return NULL;
 }

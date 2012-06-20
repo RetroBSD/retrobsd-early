@@ -7,7 +7,6 @@ MAN             = lcc.0
 MANSRC          = lcc.1
 
 LDFLAGS         += -g
-
 CFLAGS		+= -Werror -Wall -Os
 
 all:            lcc $(MAN)

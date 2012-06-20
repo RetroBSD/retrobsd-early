@@ -35,9 +35,8 @@ Code code(int kind) {
 	codelist = cp;
 	return cp;
 }
-int reachable(int kind) {
-	Code cp;
 
+int reachable(int kind) {
 	if (kind > Start) {
 		Code cp;
 		for (cp = codelist; cp->kind < Label; )
@@ -47,6 +46,7 @@ int reachable(int kind) {
 	}
 	return 1;
 }
+
 void addlocal(Symbol p) {
 	if (!p->defined) {
 		code(Local)->u.var = p;
@@ -431,9 +431,10 @@ void swcode(Swtch swp, int b[], int lb, int ub) {
 				cmp(GT, swp->sym, v[u], hilab);
 			else if (k < ub)
 				cmp(LT, swp->sym, v[l], lolab);
-			else
-				assert(lolab == hilab),
+			else {
+				assert(lolab == hilab);
 				branch(lolab);
+                        }
 			walk(NULL, 0, 0);
 		}
 	else {

@@ -10,12 +10,14 @@
 static char rcsid[] = "$Id: lburg.c,v 2.10 2002/03/08 18:45:21 drh Exp $";
 static char *prefix = "";
 static int Tflag = 0;
+static int nflag = 0;
 static int ntnumber = 0;
 static Nonterm start = 0;
 static Term terms;
 static Nonterm nts;
 static Rule rules;
 static int nrules;
+
 static struct block {
 	struct block *link;
 } *memlist;			/* list of allocated blocks */
@@ -37,13 +39,16 @@ static void emitstring(Rule rules);
 static void emitstruct(Nonterm nts, int ntnumber);
 static void emittest(Tree t, char *v, char *suffix);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	int c, i;
 	Nonterm p;
-	
+
 	for (i = 1; i < argc; i++)
 		if (strcmp(argv[i], "-T") == 0)
 			Tflag = 1;
+		else if (strcmp(argv[i], "-n") == 0)
+			nflag = 1;
 		else if (strncmp(argv[i], "-p", 2) == 0 && argv[i][2])
 			prefix = &argv[i][2];
 		else if (strncmp(argv[i], "-p", 2) == 0 && i + 1 < argc)
@@ -81,10 +86,11 @@ int main(int argc, char *argv[]) {
 			yyerror("can't reach nonterminal `%s'\n", p->name);
 	}
 	emitheader();
-	emitdefs(nts, ntnumber);
+        emitdefs(nts, ntnumber);
 	emitstruct(nts, ntnumber);
 	emitnts(rules, nrules);
-	emitstring(rules);
+	if (! nflag)
+                emitstring(rules);
 	emitrule(nts);
 	emitclosure(nts);
 	if (start)
@@ -123,7 +129,7 @@ static char *stringf(char *fmt, ...) {
 	vsprintf(buf, fmt, ap);
 	va_end(ap);
 	return strcpy(alloc(strlen(buf) + 1), buf);
-}	
+}
 
 struct entry {
 	union {
@@ -313,7 +319,7 @@ static void print(char *fmt, ...) {
 					putc('\t', outfp);
 				break;
 				}
-			default: putc(*fmt, outfp); break;			
+			default: putc(*fmt, outfp); break;
 			}
 		else
 			putc(*fmt, outfp);
@@ -451,10 +457,12 @@ static void emitdefs(Nonterm nts, int ntnumber) {
 	for (p = nts; p; p = p->link)
 		print("#define %P%S_NT %d\n", p, p->number);
 	print("\n");
-	print("static char *%Pntname[] = {\n%10,\n");
-	for (p = nts; p; p = p->link)
-		print("%1\"%S\",\n", p);
-	print("%10\n};\n\n");
+	if (! nflag) {
+                print("static char *%Pntname[] = {\n%10,\n");
+                for (p = nts; p; p = p->link)
+                        print("%1\"%S\",\n", p);
+                print("%10\n};\n\n");
+        }
 }
 
 /* emitheader - emit initial definitions */
@@ -652,7 +660,7 @@ static void emitstruct(Nonterm nts, int ntnumber) {
 	for ( ; nts; nts = nts->link) {
 		int n = 1, m = nts->lhscount;
 		while ((m >>= 1) != 0)
-			n++;		
+			n++;
 		print("%2unsigned int %P%S:%d;\n", nts, n);
 	}
 	print("%1} rule;\n};\n\n");

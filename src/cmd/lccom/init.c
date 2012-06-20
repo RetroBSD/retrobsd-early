@@ -80,7 +80,7 @@ static int initarray(int len, Type ty, int lev) {
 	do {
 		initializer(ty, lev);
 		n += ty->size;
-		if (len > 0 && n >= len || t != ',')
+		if ((len > 0 && n >= len) || t != ',')
 			break;
 		t = gettok();
 	} while (t != '}');
@@ -98,7 +98,7 @@ static int initchar(int len, Type ty) {
 			(*IR->defstring)(inttype->size, buf);
 			s = buf;
 		}
-		if (len > 0 && n >= len || t != ',')
+		if ((len > 0 && n >= len) || t != ',')
 			break;
 		t = gettok();
 	} while (t != '}');
@@ -122,9 +122,9 @@ static int initfields(Field p, Field q) {
 	do {
 		i = initvalue(inttype)->u.v.i;
 		if (fieldsize(p) < 8*p->type->size) {
-			if (p->type == inttype &&
-			   (i < -(int)(fieldmask(p)>>1)-1 || i > (int)(fieldmask(p)>>1))
-			||  p->type == unsignedtype && (i&~fieldmask(p)) !=  0)
+			if ((p->type == inttype &&
+			    (i < -(int)(fieldmask(p)>>1)-1 || i > (int)(fieldmask(p)>>1)))
+			|| (p->type == unsignedtype && (i&~fieldmask(p)) !=  0))
 				warning("initializer exceeds bit-field width\n");
 			i &= fieldmask(p);
 		}
@@ -184,7 +184,7 @@ static int initstruct(int len, Type ty, int lev) {
 			(*IR->space)(a - n%a);
 			n = roundup(n, a);
 		}
-		if (len > 0 && n >= len || t != ',')
+		if ((len > 0 && n >= len) || t != ',')
 			break;
 		t = gettok();
 	} while (t != '}');

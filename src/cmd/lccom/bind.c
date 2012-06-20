@@ -15,26 +15,26 @@ extern Interface x86linuxIR;
 
 Binding bindings[] = {
 #ifdef TARGET_ALPHA
-        "alpha-osf",            &alphaIR,
+        { "alpha-osf",            &alphaIR },
 #endif
 #ifdef TARGET_MIPS
-        "mips-eb",              &mipsebIR,
-        "mips-el",              &mipselIR,
+        { "mips-eb",              &mipsebIR },
+        { "mips-el",              &mipselIR },
 #endif
 #ifdef TARGET_SPARC
-        "sparc-sun",            &sparcIR,
+        { "sparc-sun",            &sparcIR },
 #endif
 #ifdef TARGET_SOLARIS
-        "sparc-solaris",        &solarisIR,
+        { "sparc-solaris",        &solarisIR },
 #endif
 #ifdef TARGET_X86
-        "x86-win32",            &x86IR,
-        "x86-linux",            &x86linuxIR,
+        { "x86-win32",            &x86IR },
+        { "x86-linux",            &x86linuxIR },
 #endif
-        "symbolic64",           &symbolic64IR,
-        "symbolic",             &symbolicIR,
-        "bytecode",             &bytecodeIR,
-        "null",                 &nullIR,
+        { "symbolic64",           &symbolic64IR },
+        { "symbolic",             &symbolicIR },
+        { "bytecode",             &bytecodeIR },
+        { "null",                 &nullIR },
 
-	NULL, NULL,
+	{ NULL, NULL },
 };

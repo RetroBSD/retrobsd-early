@@ -4,7 +4,7 @@ static char *outs(const char *str, FILE *f, char *bp) {
 	if (f)
 		fputs(str, f);
 	else
-		while (*bp = *str++)
+		while ((*bp = *str++))
 			bp++;
 	return bp;
 }

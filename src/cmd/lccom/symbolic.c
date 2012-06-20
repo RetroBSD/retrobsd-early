@@ -158,8 +158,8 @@ static void I(defconst)(int suffix, int size, Value v) {
 			if (d == 0.0) {
 				static union { int x; char endian; } little = { 1 };
 				signed char *b = (signed char *)&d;
-				if (!little.endian && b[0] < 0
-				||   little.endian && b[sizeof (d)-1] < 0)
+				if ((!little.endian && b[0] < 0)
+				||   (little.endian && b[sizeof (d)-1] < 0))
 					print("-0.0");
 				else
 					print("0.0");
@@ -434,16 +434,16 @@ static void I(stabsym)(Symbol p) {}
 static void I(stabtype)(Symbol p) {}
 
 Interface symbolicIR = {
-	1, 1, 0,	/* char */
-	2, 2, 0,	/* short */
-	4, 4, 0,	/* int */
-	4, 4, 0,	/* long */
-	4, 4, 0,	/* long long */
-	4, 4, 1,	/* float */
-	8, 8, 1,	/* double */
-	8, 8, 1,	/* long double */
-	4, 4, 0,	/* T* */
-	0, 4, 0,	/* struct */
+	{ 1, 1, 0 },	/* char */
+	{ 2, 2, 0 },	/* short */
+	{ 4, 4, 0 },	/* int */
+	{ 4, 4, 0 },	/* long */
+	{ 4, 4, 0 },	/* long long */
+	{ 4, 4, 1 },	/* float */
+	{ 8, 8, 1 },	/* double */
+	{ 8, 8, 1 },	/* long double */
+	{ 4, 4, 0 },	/* T* */
+	{ 0, 4, 0 },	/* struct */
 	0,		/* little_endian */
 	0,		/* mulops_calls */
 	0,		/* wants_callb */
@@ -479,16 +479,16 @@ Interface symbolicIR = {
 };
 
 Interface symbolic64IR = {
-	1, 1, 0,	/* char */
-	2, 2, 0,	/* short */
-	4, 4, 0,	/* int */
-	8, 8, 0,	/* long */
-	8, 8, 0,	/* long long */
-	4, 4, 1,	/* float */
-	8, 8, 1,	/* double */
-	8, 8, 1,	/* long double */
-	8, 8, 0,	/* T* */
-	0, 1, 0,	/* struct */
+	{ 1, 1, 0 },	/* char */
+	{ 2, 2, 0 },	/* short */
+	{ 4, 4, 0 },	/* int */
+	{ 8, 8, 0 },	/* long */
+	{ 8, 8, 0 },	/* long long */
+	{ 4, 4, 1 },	/* float */
+	{ 8, 8, 1 },	/* double */
+	{ 8, 8, 1 },	/* long double */
+	{ 8, 8, 0 },	/* T* */
+	{ 0, 1, 0 },	/* struct */
 	1,		/* little_endian */
 	0,		/* mulops_calls */
 	0,		/* wants_callb */

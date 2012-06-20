@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id: run.sh,v 1.11 1997/07/03 00:15:10 drh Exp $
 # run .../tst/target/foo.s
 
 #set -x

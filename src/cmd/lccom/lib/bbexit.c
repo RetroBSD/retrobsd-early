@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#ifndef EXPORT
-#define EXPORT
-#endif
 
-static char rcsid[] = "$Id: bbexit.c,v 1.6 2001/06/15 20:58:40 drh Exp $";
+#ifndef EXPORT
+#   define EXPORT
+#endif
 
 EXPORT struct callsite {
 	char *file, *name;
@@ -15,7 +14,8 @@ EXPORT struct callsite {
 	} u;
 } *_caller, **_callerp = &_caller;
 
-EXPORT void _setcallerp(struct callsite **p) {
+EXPORT void _setcallerp(struct callsite **p)
+{
 	_callerp = p;
 }
 
@@ -36,7 +36,8 @@ static struct _bbdata {
 	} *funcs;
 } tail, *_bblist = &tail;
 
-static void unpack(unsigned int coord, int *index, int *x, int *y) {
+static void unpack(unsigned int coord, int *index, int *x, int *y)
+{
 	static union { int x; char endian; } little = { 1 };
 	union coordinate u;
 
@@ -50,9 +51,10 @@ static void unpack(unsigned int coord, int *index, int *x, int *y) {
 		*x = u.be.x;
 		*y = u.be.y;
 	}
-}				
+}
 
-static void profout(struct _bbdata *p, FILE *fp) {
+static void profout(struct _bbdata *p, FILE *fp)
+{
 	int i, index, x, y;
 	struct func *f;
 	struct caller *q;
@@ -63,7 +65,7 @@ static void profout(struct _bbdata *p, FILE *fp) {
 	for (i = 0; p->files[i]; i++)
 		fprintf(fp, "%s\n", p->files[i]);
 	for (i = 0, f = p->funcs; f; i++, f = f->link)
-		if (q = f->callers)
+		if ((q = f->callers))
 			for (i--; q; q = q->link)
 				i++;
 	fprintf(fp, "%d\n", i);
@@ -82,7 +84,7 @@ static void profout(struct _bbdata *p, FILE *fp) {
 			unpack(f->src.coord, &index, &x, &y);
 			fprintf(fp, "%s %d %d %d 0 ? ? 0 0\n", f->name, index, x, y);
 		}
-	}		
+	}
 	fprintf(fp, "%d\n", p->npoints);
 	for (i = 0; i < p->npoints; i++) {
 		unpack(p->coords[i].coord, &index, &x, &y);
@@ -90,7 +92,8 @@ static void profout(struct _bbdata *p, FILE *fp) {
 	}
 }
 
-static void bbexit(void) {
+static void bbexit(void)
+{
 	FILE *fp;
 
 	if (_bblist != &tail && (fp = fopen("prof.out", "a"))) {
@@ -100,11 +103,13 @@ static void bbexit(void) {
 	}
 }
 
-EXPORT void _epilogue(struct func *callee) {
+EXPORT void _epilogue(struct func *callee)
+{
 	*_callerp = 0;
 }
 
-EXPORT void _prologue(struct func *callee, struct _bbdata *yylink) {
+EXPORT void _prologue(struct func *callee, struct _bbdata *yylink)
+{
 	static struct caller callers[4096];
 	static int next;
 	struct caller *p;

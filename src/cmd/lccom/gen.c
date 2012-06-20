@@ -366,7 +366,7 @@ unsigned emitasm(Node p, int nt) {
 void emit(Node p) {
 	for (; p; p = p->x.next) {
 		assert(p->x.registered);
-		if (p->x.equatable && requate(p) || moveself(p))
+		if ((p->x.equatable && requate(p)) || moveself(p))
 			;
 		else
 			(*emitter)(p, p->x.inst);
@@ -707,9 +707,10 @@ static void spillr(Symbol r, Node here) {
 	Symbol tmp;
 	Node p = r->x.lastuse;
 	assert(p);
-	while (p->x.prevuse)
-		assert(r == p->syms[RX]),
+	while (p->x.prevuse) {
+		assert(r == p->syms[RX]);
 		p = p->x.prevuse;
+        }
 	assert(p->x.registered && !readsreg(p));
 	tmp = newtemp(AUTO, optype(p->op), opsize(p->op));
 	genspill(r, p, tmp);
