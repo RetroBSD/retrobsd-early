@@ -11,7 +11,7 @@ AR              = ar ruv
 RANLIB          = ranlib
 RM              = rm -f
 BUILDDIR        = build
-TSTDIR          = $(BUILDDIR)/tst/mips-irix
+TSTDIR          = tst/mips-eb
 B               = $(BUILDDIR)/
 T               = $(TSTDIR)/
 
@@ -20,7 +20,7 @@ all::		build lburg rcc cpp lcc bprint liblcc
 what:
 		-@echo make all rcc lburg cpp lcc bprint liblcc triple clean
 
-clean::
+clean::         testclean
 		$(RM) -r $B
 
 rcc:		$Brcc$E

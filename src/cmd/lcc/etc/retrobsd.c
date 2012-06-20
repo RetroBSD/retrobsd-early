@@ -52,7 +52,7 @@ char *as[] = {
 
 char *ld[] = {
         "/bin/ld", "-o", "$3", LIBDIR "crt0.o",
-	"$1", "$2", "-L" LCCDIR, "-llcc", "-lc",
+	"$1", "$2", "", "-L" LCCDIR, "-llcc", "-lc",
 0 };
 
 extern char *concat (char *, char *);
@@ -63,12 +63,12 @@ int option (char *arg)
 		cpp[0] = concat(&arg[8], "/cpp");
 		include[0] = concat("-I", concat(&arg[8], "/include"));
 		com[0] = concat(&arg[8], "/rcc");
-		ld[18] = concat("-L", &arg[8]);
+		ld[6] = concat("-L", &arg[8]);
 
 	} else if (strcmp(arg, "-g") == 0) {
 		;
 	} else if (strcmp(arg, "-p") == 0) {
-		ld[13] = LIBDIR "mcrt1.o";
+		ld[3] = LIBDIR "mcrt1.o";
 
 	} else if (strcmp(arg, "-b") == 0) {
 		;

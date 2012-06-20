@@ -853,9 +853,12 @@ static void defconst(int suffix, int size, Value v) {
                 print(".word 0x%x\n", *(unsigned *)&f);
         }
         else if (suffix == F && size == 8) {
-                double d = v.d;
-                unsigned *p = (unsigned *)&d;
-                print(".word 0x%x\n.word 0x%x\n", p[swap], p[!swap]);
+                union {
+                        double d64;
+                        unsigned u32[2];
+                } u;
+                u.d64 = v.d;
+                print(".word 0x%x\n.word 0x%x\n", u.u32[swap], u.u32[!swap]);
         }
         else if (suffix == P)
                 print(".word 0x%x\n", (unsigned)v.p);
