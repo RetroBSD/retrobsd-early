@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: trace.c,v 1.1 2002/08/28 23:12:47 drh Exp $";
-
 static char *fmt, *fp, *fmtend;	/* format string, current & limit pointer */
 static Tree args;		/* printf arguments */
 static Symbol frameno;		/* local holding frame number */

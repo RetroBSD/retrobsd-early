@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: tree.c,v 1.1 2002/08/28 23:12:47 drh Exp $";
-
 int where = STMT;
 static int warn;
 static int nid = 1;		/* identifies trees & nodes in debugging output */
@@ -75,7 +73,7 @@ static Tree root1(Tree p) {
 			return p->kids[0]->kids[1];
 		p = tree(RIGHT, p->type, root1(p->kids[0]), root1(p->kids[1]));
 		return p->kids[0] || p->kids[1] ? p : (Tree)0;
-	case EQ:  case NE:  case GT:   case GE:  case LE:  case LT: 
+	case EQ:  case NE:  case GT:   case GE:  case LE:  case LT:
 	case ADD: case SUB: case MUL:  case DIV: case MOD:
 	case LSH: case RSH: case BAND: case BOR: case BXOR:
 		if (warn++ == 0)

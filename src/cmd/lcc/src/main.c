@@ -1,6 +1,6 @@
 #include "c.h"
 
-static char rcsid[] = "$Name: v4_2 $($Id: main.c,v 1.1 2002/08/28 23:12:44 drh Exp $)";
+static const char *version = "RetroBSD revision " VERSION;
 
 static void typestab(Symbol, void *);
 
@@ -21,8 +21,11 @@ static char *currentfile;       /* current file name */
 static int currentline;		/* current line number */
 static FILE *srcfp;		/* stream for current file, if non-NULL */
 static int srcpos;		/* position of srcfp, if srcfp is non-NULL */
-int main(int argc, char *argv[]) {
+
+int main(int argc, char *argv[])
+{
 	int i, j;
+
 	for (i = argc - 1; i > 0; i--)
 		if (strncmp(argv[i], "-target=", 8) == 0)
 			break;
@@ -102,8 +105,12 @@ int main(int argc, char *argv[]) {
 	deallocate(PERM);
 	return errcnt > 0;
 }
-/* main_init - process program arguments */
-void main_init(int argc, char *argv[]) {
+
+/*
+ * main_init - process program arguments
+ */
+void main_init(int argc, char *argv[])
+{
 	char *infile = NULL, *outfile = NULL;
 	int i;
 	static int inited;
@@ -128,7 +135,7 @@ void main_init(int argc, char *argv[]) {
 					IR->stabline = stabline;
 					IR->stabend = stabend;
 				}
-			}	
+			}
 		} else if (strcmp(argv[i], "-x") == 0)
 			xref++;
 		else if (strcmp(argv[i], "-A") == 0) {
@@ -138,7 +145,7 @@ void main_init(int argc, char *argv[]) {
 		else if (strcmp(argv[i], "-w") == 0)
 			wflag++;
 		else if (strcmp(argv[i], "-v") == 0)
-			fprint(stderr, "%s %s\n", argv[0], rcsid);
+			fprint(stderr, "%s %s\n", argv[0], version);
 		else if (strncmp(argv[i], "-s", 2) == 0)
 			density = strtod(&argv[i][2], NULL);
 		else if (strncmp(argv[i], "-errout=", 8) == 0) {
@@ -184,16 +191,23 @@ void main_init(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 }
-/* typestab - emit stab entries for p */
-static void typestab(Symbol p, void *cl) {
+
+/*
+ * typestab - emit stab entries for p
+ */
+static void typestab(Symbol p, void *cl)
+{
 	if (*(Symbol *)cl == 0 && p->sclass && p->sclass != TYPEDEF)
 		*(Symbol *)cl = p;
 	if ((p->sclass == TYPEDEF || p->sclass == 0) && IR->stabtype)
 		(*IR->stabtype)(p);
 }
 
-/* stabline - emit source code for source coordinate *cp */
-static void stabline(Coordinate *cp) {
+/*
+ * stabline - emit source code for source coordinate *cp
+ */
+static void stabline(Coordinate *cp)
+{
 	if (cp->file && cp->file != currentfile) {
 		if (srcfp)
 			fclose(srcfp);
@@ -222,7 +236,8 @@ static void stabline(Coordinate *cp) {
 		(*stabIR.stabline)(cp);
 }
 
-static void stabend(Coordinate *cp, Symbol p, Coordinate **cpp, Symbol *sp, Symbol *stab) {
+static void stabend(Coordinate *cp, Symbol p, Coordinate **cpp, Symbol *sp, Symbol *stab)
+{
 	if (stabIR.stabend)
 		(*stabIR.stabend)(cp, p, cpp, sp, stab);
 	if (srcfp)

@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: init.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
-
 static int curseg;		/* current segment */
 
 /* defpointer - initialize a pointer to p or to 0 if p==0 */
@@ -298,7 +296,7 @@ Type initializer(Type ty, int lev) {
 			error("missing { in initialization of `%t'\n", ty);
 			n = initarray(aty->size, aty, lev + 1);
 		}
-	}	
+	}
 	if (ty->size) {
 		if (n > ty->size)
 			error("too many initializers\n");

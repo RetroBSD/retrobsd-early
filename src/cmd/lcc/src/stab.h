@@ -1,19 +1,13 @@
-/*      @(#)stab.h 1.11 92/05/11 SMI      */
-/* $Id: stab.h,v 1.1 2002/08/28 23:12:46 drh Exp $ */
 /*
  * Copyright (c) 1990 by Sun Microsystems, Inc.
- */
-
-/*
+ *
  * This file gives definitions supplementing <a.out.h>
  * for permanent symbol table entries.
  * These must have one of the N_STAB bits on,
  * and are subject to relocation according to the masks in <a.out.h>.
  */
-
 #ifndef _STAB_H
 #define _STAB_H
-
 
 #if !defined(_a_out_h) && !defined(_A_OUT_H)
 /* this file contains fragments of a.out.h and stab.h relevant to
@@ -28,9 +22,9 @@ struct  nlist {
         unsigned char   n_type;      /* type flag (N_TEXT,..)  */
         char    n_other;             /* unused */
         short   n_desc;              /* see <stab.h> */
-        unsigned long   n_value;     /* value of symbol (or sdb offset) */ 
+        unsigned long   n_value;     /* value of symbol (or sdb offset) */
 };
- 
+
 /*
  * Simple values for n_type.
  */
@@ -41,7 +35,7 @@ struct  nlist {
 #define N_BSS   0x8             /* bss */
 #define N_COMM  0x12            /* common (internal to ld) */
 #define N_FN    0x1f            /* file name symbol */
- 
+
 #define N_EXT   01              /* external bit, or'ed in */
 #define N_TYPE  0x1e            /* mask for all the type bits */
 

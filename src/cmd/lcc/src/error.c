@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: error.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
-
 static void printtoken(void);
 int errcnt   = 0;
 int errlimit = 20;

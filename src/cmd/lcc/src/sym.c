@@ -1,8 +1,6 @@
 #include "c.h"
 #include <stdio.h>
 
-static char rcsid[] = "$Id: sym.c,v 1.1 2002/08/28 23:12:47 drh Exp $";
-
 #define equalp(x) v.x == p->sym.u.c.v.x
 
 struct table {
@@ -14,7 +12,9 @@ struct table {
 	} *buckets[256];
 	Symbol all;
 };
+
 #define HASHSIZE NELEMS(((Table)0)->buckets)
+
 static struct table
 	cns = { CONSTANTS },
 	ext = { GLOBAL },

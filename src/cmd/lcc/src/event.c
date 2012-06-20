@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: event.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
-
 struct entry {
 	Apply func;
 	void *cl;
@@ -26,4 +24,3 @@ void apply(List event, void *arg1, void *arg2) {
 		} while (lp != event);
 	}
 }
-

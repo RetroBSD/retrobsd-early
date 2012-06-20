@@ -1,12 +1,11 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: string.c,v 1.1 2002/08/28 23:12:46 drh Exp $";
-
 static struct string {
 	char *str;
 	int len;
 	struct string *link;
 } *buckets[1024];
+
 static int scatter[] = {	/* map characters to random values */
 	2078917053, 143302914, 1027100827, 1953210302, 755253631,
 	2002600785, 1405390230, 45248011, 1099951567, 433832350,
@@ -61,6 +60,7 @@ static int scatter[] = {	/* map characters to random values */
 	92778659, 1856406685, 1884137923, 53392249, 1735424165,
 	1602280572
 };
+
 char *string(const char *str) {
 	const char *s;
 
@@ -68,6 +68,7 @@ char *string(const char *str) {
 		;
 	return stringn(str, s - str);
 }
+
 char *stringd(long n) {
 	char str[25], *s = str + sizeof (str);
 	unsigned long m;
@@ -85,6 +86,7 @@ char *stringd(long n) {
 		*--s = '-';
 	return stringn(s, str + sizeof (str) - s);
 }
+
 char *stringn(const char *str, int len) {
 	int i;
 	unsigned int h;

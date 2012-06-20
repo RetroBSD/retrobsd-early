@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: dag.c,v 1.1 2002/08/28 23:12:42 drh Exp $";
-
 #define iscall(op) (generic(op) == CALL \
 	|| IR->mulops_calls \
 	&& (generic(op)==DIV||generic(op)==MOD||generic(op)==MUL) \
@@ -737,4 +735,3 @@ static void typestab(Symbol p, void *cl) {
 	else if ((p->sclass == TYPEDEF || p->sclass == 0) && IR->stabtype)
 		(*IR->stabtype)(p);
 }
-

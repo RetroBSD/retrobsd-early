@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: prof.c,v 1.1 2002/08/28 23:12:45 drh Exp $";
-
 struct callsite {
 	char *file, *name;
 	union coordinate {
@@ -58,7 +56,7 @@ static void bbcall(Symbol yycounts, Coordinate *cp, Tree *e) {
 		u.be.y = cp->y;
 	}
 	(*IR->defconst)(U, unsignedtype->size, (v.u = u.coord, v));
-	bbpad(2*voidptype->size + unsignedtype->size, p->type->align);	
+	bbpad(2*voidptype->size + unsignedtype->size, p->type->align);
 	if (caller == 0) {
 		caller = mksymbol(EXTERN, "_caller", ptr(voidptype));
 		caller->defined = 0;

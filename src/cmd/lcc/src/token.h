@@ -1,7 +1,6 @@
-/* $Id: token.h,v 1.1 2002/08/28 23:12:47 drh Exp $ */
 /*
-xx(symbol,	value,	prec,	op,	optree,	kind,	string)
-*/
+ * xx(symbol, value, prec, op, optree,	kind,	string)
+ */
 yy(0,         0, 0,  0,    0,      0,      0)
 xx(FLOAT,     1, 0,  0,    0,      CHAR,   "float")
 xx(DOUBLE,    2, 0,  0,    0,      CHAR,   "double")

@@ -1,5 +1,3 @@
-/* $Id: ops.h,v 1.2 2002/09/03 23:39:33 drh Exp $ */
-
 gop(CNST,1)
 	op(CNST,F,fdx)
 	op(CNST,I,csilh)

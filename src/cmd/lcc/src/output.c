@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: output.c,v 1.1 2002/08/28 23:12:45 drh Exp $";
-
 static char *outs(const char *str, FILE *f, char *bp) {
 	if (f)
 		fputs(str, f);

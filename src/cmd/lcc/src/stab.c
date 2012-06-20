@@ -3,8 +3,6 @@
 #include "c.h"
 #include "stab.h"
 
-static char rcsid[] = "$Id: stab.c,v 1.1 2002/08/28 23:12:46 drh Exp $";
-
 static char *currentfile;       /* current file name */
 static int ntypes;
 

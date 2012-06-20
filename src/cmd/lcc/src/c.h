@@ -1,4 +1,3 @@
-/* $Id: c.h,v 1.1 2002/08/28 23:12:41 drh Exp $ */
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -228,7 +227,7 @@ struct code {
 		struct {
 			Coordinate src;
 			int point;
-		} point; 
+		} point;
 		Node forest;
 		struct {
 			Symbol sym;
@@ -597,4 +596,3 @@ extern Type qual(int, Type);
 extern void rmtypes(int);
 extern int ttob(Type);
 extern int variadic(Type);
-

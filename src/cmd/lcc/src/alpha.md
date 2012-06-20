@@ -67,7 +67,7 @@ static char *currentfile;
 %term CNSTU2=2070
 %term CNSTU4=4118
 %term CNSTU8=8214
- 
+
 %term ARGB=41
 %term ARGF4=4129
 %term ARGF8=8225
@@ -1186,7 +1186,3 @@ Interface alphaIR = {
         }
 
 };
-
-
-static char rcsid[] = "$Id: alpha.md,v 1.1 2002/08/28 23:12:41 drh Exp $";
-

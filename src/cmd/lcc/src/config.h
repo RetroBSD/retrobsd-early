@@ -1,4 +1,3 @@
-/* $Id: config.h,v 1.1 2002/08/28 23:12:42 drh Exp $ */
 typedef struct {
 	unsigned char max_unaligned_load;
 	Symbol (*rmap)(int);

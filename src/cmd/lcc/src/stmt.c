@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: stmt.c,v 1.1 2002/08/28 23:12:46 drh Exp $";
-
 #define SWSIZE 512
 
 #define den(i,j) ((j-buckets[i]+1.0)/(v[j]-v[buckets[i]]+1))
@@ -266,7 +264,7 @@ static void forstmt(int lab, Swtch swp, int lev) {
 	int once = 0;
 	Tree e1 = NULL, e2 = NULL, e3 = NULL;
 	Coordinate pt2, pt3;
-	
+
 	t = gettok();
 	expect('(');
 	definept(NULL);

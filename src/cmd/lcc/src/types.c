@@ -1,8 +1,6 @@
 #include "c.h"
 #include <float.h>
 
-static char rcsid[] = "$Id: types.c,v 1.1 2002/08/28 23:12:47 drh Exp $";
-
 static Field isfield(const char *, Field);
 static Type type(int, Type, int, int, void *);
 
@@ -752,4 +750,3 @@ char *typestring(Type ty, char *str) {
 	}
 	assert(0); return 0;
 }
-

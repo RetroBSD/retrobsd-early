@@ -33,7 +33,6 @@ extern void stabsym(Symbol);
 extern void stabtype(Symbol);
 
 static int pflag = 0;
-static char rcsid[] = "$Id: x86linux.md,v 1.1 2002/08/28 23:12:48 drh Exp $";
 
 #define hasargs(p) (p->syms[0] && p->syms[0]->u.c.v.i > 0 ? 0 : LBURG_MAX)
 %}
@@ -51,7 +50,7 @@ static char rcsid[] = "$Id: x86linux.md,v 1.1 2002/08/28 23:12:48 drh Exp $";
 %term CNSTU2=2070
 %term CNSTU4=4118
 %term CNSTU8=8214
- 
+
 %term ARGB=41
 %term ARGF4=4129
 %term ARGF8=8225
@@ -705,7 +704,7 @@ static void progbeg(int argc, char *argv[]) {
         parseflags(argc, argv);
         for (i = 0; i < argc; i++)
                 if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "-pg") == 0)
-                        pflag = 1;      
+                        pflag = 1;
         intreg[EAX]   = mkreg("%%eax", EAX, 1, IREG);
         intreg[EDX]   = mkreg("%%edx", EDX, 1, IREG);
         intreg[ECX]   = mkreg("%%ecx", ECX, 1, IREG);

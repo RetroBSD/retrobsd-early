@@ -2,8 +2,6 @@
 #include <float.h>
 #include <errno.h>
 
-static char rcsid[] = "$Id: lex.c,v 1.1 2002/08/28 23:12:44 drh Exp $";
-
 #define MAXTOKEN 32
 
 enum { BLANK=01,  NEWLINE=02, LETTER=04,
@@ -208,7 +206,7 @@ int gettok(void) {
 		case '+': return *rcp == '+' ? cp++, INCR   : '+';
 		case ';': case ',': case ':':
 		case '*': case '~': case '%': case '^': case '?':
-		case '[': case ']': case '{': case '}': case '(': case ')': 
+		case '[': case ']': case '{': case '}': case '(': case ')':
 			return rcp[-1];
 		case '\n': case '\v': case '\r': case '\f':
 			nextline();

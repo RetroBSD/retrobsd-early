@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: input.c,v 1.1 2002/08/28 23:12:44 drh Exp $";
-
 static void pragma(void);
 static void resynch(void);
 
@@ -93,7 +91,7 @@ static void pragma(void) {
 			if ((t = gettok()) == ID && tsym) {
 				tsym->ref++;
 				use(tsym, src);
-			}	
+			}
 		}
 }
 
@@ -143,4 +141,3 @@ static void resynch(void) {
 			} else
 				break;
 }
-

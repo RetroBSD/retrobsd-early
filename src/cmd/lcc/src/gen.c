@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: gen.c,v 1.1 2002/08/28 23:12:43 drh Exp $";
-
 #define readsreg(p) \
 	(generic((p)->op)==INDIR && (p)->kids[0]->op==VREG+P)
 #define setsrc(d) ((d) && (d)->x.regnode && \
@@ -283,7 +281,7 @@ static void dumptree(Node p) {
 		if (p->kids[0])
 			dumptree(p->kids[0]);
 		break;
-	case CVF: case CVI: case CVP: case CVU: case JUMP: 
+	case CVF: case CVI: case CVP: case CVU: case JUMP:
 	case ARG: case BCOM: case NEG: case INDIR:
 		dumptree(p->kids[0]);
 		break;
@@ -685,7 +683,7 @@ static Symbol spillee(Symbol set, unsigned mask[], Node here) {
 	}
 	assert(bestreg); /* Must be able to spill something. Reconfigure the register allocator
 		to ensure that we can allocate a register for all nodes without spilling
-		the node's necessary input regs. */	
+		the node's necessary input regs. */
 	assert(bestreg->x.regnode->vbl == NULL); /* Can't spill register variables because
 		the reload site might be in other blocks. Reconfigure the register allocator
 		to ensure that this register is never allocated to a variable. */
@@ -827,4 +825,3 @@ unsigned regloc(Symbol p) {
 	assert(p && p->sclass == REGISTER && p->sclass == REGISTER && p->x.regnode);
 	return p->x.regnode->set<<8 | p->x.regnode->number;
 }
-

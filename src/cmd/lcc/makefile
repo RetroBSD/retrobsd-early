@@ -1,24 +1,27 @@
+TARGET          = TARGET_MIPS
+HOSTFILE        = etc/retrobsd.c
 A               = .a
 O               = .o
 E               =
 CC              = cc
-CFLAGS          = -g
+CFLAGS          = -g -Os
 LDFLAGS         = -g
 LD              = $(CC)
 AR              = ar ruv
 RANLIB          = ranlib
-DIFF            = diff
 RM              = rm -f
 BUILDDIR        = build
 TSTDIR          = $(BUILDDIR)/tst/mips-irix
 B               = $(BUILDDIR)/
 T               = $(TSTDIR)/
-HOSTFILE        = etc/retrobsd.c
 
-all::		build rcc lburg cpp lcc bprint liblcc
+all::		build lburg rcc cpp lcc bprint liblcc
 
 what:
 		-@echo make all rcc lburg cpp lcc bprint liblcc triple clean
+
+clean::
+		$(RM) -r $B
 
 rcc:		$Brcc$E
 lburg:		$Blburg$E
@@ -28,23 +31,23 @@ bprint:		$Bbprint$E
 liblcc:		$Bliblcc$A
 build:;         mkdir -p $(BUILDDIR)
 
+#
+# rcc: the C compiler
+#
 RCCOBJS         = $Balloc$O $Bbind$O $Bdag$O $Bdagcheck$O $Bdecl$O $Benode$O \
 		  $Berror$O $Bexpr$O $Bevent$O $Binit$O $Binits$O $Binput$O \
-		  $Blex$O $Blist$O $Bmain$O $Boutput$O $Bprof$O $Bprofio$O \
+		  $Blex$O $Blist$O $Boutput$O $Bprof$O $Bprofio$O \
 		  $Bsimp$O $Bstmt$O $Bstring$O $Bsym$O $Btrace$O $Btree$O \
 		  $Btypes$O $Bnull$O $Bsymbolic$O $Bgen$O $Bbytecode$O \
-		  $Balpha$O $Bmips$O $Bsparc$O $Bstab$O $Bx86$O $Bx86linux$O
+		  $Bmips$O
 
-$Brcc$E::	$Bmain$O $Blibrcc$A $(EXTRAOBJS)
-		$(LD) $(LDFLAGS) -o $@ $Bmain$O $(EXTRAOBJS) $Blibrcc$A $(EXTRALIBS)
-
-$Blibrcc$A:	$(RCCOBJS)
-		$(AR) $@ $(RCCOBJS); $(RANLIB) $@ || true
+$Brcc$E::	$Bmain$O $(RCCOBJS)
+		$(LD) $(LDFLAGS) -o $@ $Bmain$O $(RCCOBJS)
 
 $(RCCOBJS):	src/c.h src/ops.h src/token.h src/config.h
 
 $Balloc$O:	src/alloc.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/alloc.c
-$Bbind$O:	src/bind.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/bind.c
+$Bbind$O:	src/bind.c;	$(CC) $(CFLAGS) -D$(TARGET) -c -Isrc -o $@ src/bind.c
 $Bdag$O:	src/dag.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/dag.c
 $Bdecl$O:	src/decl.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/decl.c
 $Benode$O:	src/enode.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/enode.c
@@ -57,7 +60,7 @@ $Binits$O:	src/inits.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/inits.c
 $Binput$O:	src/input.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/input.c
 $Blex$O:	src/lex.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/lex.c
 $Blist$O:	src/list.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/list.c
-$Bmain$O:	src/main.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/main.c
+$Bmain$O:	src/main.c;	$(CC) $(CFLAGS) -DVERSION=\"`svnversion`\" -c -Isrc -o $@ src/main.c
 $Bnull$O:	src/null.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/null.c
 $Boutput$O:	src/output.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/output.c
 $Bprof$O:	src/prof.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ src/prof.c
@@ -87,17 +90,26 @@ $Bsparc.c:	$Blburg$E src/sparc.md;    $Blburg src/sparc.md    $@
 $Bx86.c:	$Blburg$E src/x86.md;      $Blburg src/x86.md      $@
 $Bx86linux.c:	$Blburg$E src/x86linux.md; $Blburg src/x86linux.md $@
 
+#
+# bprint and ops
+#
 $Bbprint$E:	$Bbprint$O;		$(LD) $(LDFLAGS) -o $@ $Bbprint$O
 $Bops$E:	$Bops$O;		$(LD) $(LDFLAGS) -o $@ $Bops$O
 
 $Bbprint$O:	etc/bprint.c src/profio.c;	$(CC) $(CFLAGS) -c -Isrc -o $@ etc/bprint.c
 $Bops$O:	etc/ops.c src/ops.h;		$(CC) $(CFLAGS) -c -Isrc -o $@ etc/ops.c
 
+#
+# lcc: front end
+#
 $Blcc$E:	$Blcc$O $Bhost$O;	$(LD) $(LDFLAGS) -o $@ $Blcc$O $Bhost$O
 
 $Blcc$O:	etc/lcc.c;		$(CC) $(CFLAGS) -c -o $@ etc/lcc.c
-$Bhost$O:	$(HOSTFILE);	$(CC) $(CFLAGS) -c -o $@ $(HOSTFILE)
+$Bhost$O:	$(HOSTFILE);		$(CC) $(CFLAGS) -c -o $@ $(HOSTFILE)
 
+#
+# liblcc: run time library
+#
 LIBOBJS=$Bassert$O $Bbbexit$O $Byynull$O
 
 $Bliblcc$A:	$(LIBOBJS);	$(AR) $@ $Bassert$O $Bbbexit$O $Byynull$O; $(RANLIB) $@ || true
@@ -106,6 +118,9 @@ $Bassert$O:	lib/assert.c;	$(CC) $(CFLAGS) -c -o $@ lib/assert.c
 $Byynull$O:	lib/yynull.c;	$(CC) $(CFLAGS) -c -o $@ lib/yynull.c
 $Bbbexit$O:	lib/bbexit.c;	$(CC) $(CFLAGS) -c -o $@ lib/bbexit.c
 
+#
+# lburg: meta code generator
+#
 $Blburg$E:	$Blburg$O $Bgram$O;	$(LD) $(LDFLAGS) -o $@ $Blburg$O $Bgram$O
 
 $Blburg$O $Bgram$O:	lburg/lburg.h
@@ -113,6 +128,9 @@ $Blburg$O $Bgram$O:	lburg/lburg.h
 $Blburg$O:	lburg/lburg.c;	$(CC) $(CFLAGS) -c -Ilburg -o $@ lburg/lburg.c
 $Bgram$O:	lburg/gram.c;	$(CC) $(CFLAGS) -c -Ilburg -o $@ lburg/gram.c
 
+#
+# cpp: preprocessor
+#
 CPPOBJS=$Bcpp$O $Blexer$O $Bnlist$O $Btokens$O $Bmacro$O $Beval$O \
 	$Binclude$O $Bhideset$O $Bgetopt$O $Bunix$O
 
@@ -132,6 +150,9 @@ $Bhideset$O:	cpp/hideset.c;	$(CC) $(CFLAGS) -c -Icpp -o $@ cpp/hideset.c
 $Bgetopt$O:	cpp/getopt.c;	$(CC) $(CFLAGS) -c -Icpp -o $@ cpp/getopt.c
 $Bunix$O:	cpp/unix.c;	$(CC) $(CFLAGS) -c -Icpp -o $@ cpp/unix.c
 
+#
+# Tests
+#
 test:           $T8q.s $Tarray.s $Tcf.s $Tcq.s $Tcvt.s $Tfields.s $Tfront.s \
 		$Tincr.s $Tinit.s $Tlimits.s $Tparanoia.s $Tsort.s \
 		$Tspill.s $Tstdarg.s $Tstruct.s $Tswitch.s $Twf1.s $Tyacc.s
@@ -174,31 +195,3 @@ testclean:
 		$(RM) $Tswitch$E $Tswitch.s $Tswitch.2 $Tswitch.1
 		$(RM) $Twf1$E $Twf1.s $Twf1.2 $Twf1.1
 		$(RM) $Tyacc$E $Tyacc.s $Tyacc.2 $Tyacc.1
-
-clean::
-		$(RM) -r $B
-
-RCCSRCS         = src/alloc.c src/bind.c src/dag.c src/decl.c src/enode.c \
-		  src/error.c src/expr.c src/event.c src/init.c \
-		  src/inits.c src/input.c src/lex.c src/list.c src/main.c \
-		  src/output.c src/prof.c src/profio.c src/simp.c \
-		  src/stmt.c src/string.c src/sym.c src/trace.c src/tree.c \
-		  src/types.c src/null.c src/symbolic.c src/bytecode.c \
-		  src/gen.c src/stab.c $Bdagcheck.c $Balpha.c $Bmips.c \
-		  $Bsparc.c $Bx86linux.c $Bx86.c
-
-C               = $Blcc -A -d0.6 -Wo-lccdir=$(BUILDDIR) -Isrc -I$(BUILDDIR)
-
-triple:         $B2rcc$E
-		strip $B1rcc$E $B2rcc$E
-		dd if=$B1rcc$E of=$Brcc1$E bs=512 skip=1
-		dd if=$B2rcc$E of=$Brcc2$E bs=512 skip=1
-		if cmp $Brcc1$E $Brcc2$E; then \
-			mv $B2rcc$E $Brcc$E; \
-			$(RM) $B1rcc$E $Brcc[12]$E; fi
-
-$B1rcc$E:	$Brcc$E $Blcc$E $Bcpp$E
-		$C -o $@ -B$B $(RCCSRCS)
-
-$B2rcc$E:	$B1rcc$E
-		$C -o $@ -B$B1 $(RCCSRCS)

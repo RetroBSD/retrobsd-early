@@ -1,7 +1,5 @@
 #include "c.h"
 
-static char rcsid[] = "$Id: decl.c,v 1.1 2002/08/28 23:12:42 drh Exp $";
-
 #define add(x,n) (x > inttype->u.sym->u.limits.max.i-(n) ? (overflow=1,x) : x+(n))
 #define chkoverflow(x,n) ((void)add(x,n))
 #define bits2bytes(n) (((n) + 7)/8)
@@ -32,7 +30,7 @@ static Type structdcl(int);
 static Type tnode(int, Type);
 void program(void) {
 	int n;
-	
+
 	level = GLOBAL;
 	for (n = 0; t != EOI; n++)
 		if (kind[t] == CHAR || kind[t] == STATIC
@@ -1054,7 +1052,7 @@ static void doglobal(Symbol p, void *cl) {
 }
 void doconst(Symbol p, void *cl) {
 	if (p->u.c.loc) {
-		assert(p->u.c.loc->u.seg == 0); 
+		assert(p->u.c.loc->u.seg == 0);
 		defglobal(p->u.c.loc, LIT);
 		if (isarray(p->type) && p->type->type == widechar) {
 			unsigned int *s = p->u.c.v.p;
@@ -1160,4 +1158,3 @@ Type typename(void) {
 	}
 	return ty;
 }
-
