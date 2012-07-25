@@ -77,7 +77,10 @@ void usb_device_init(void)
     U1IR = 0xFF;
 
     U1EIE = 0x9F;                   // Unmask all USB error interrupts
-    U1IE = 0xFB;                    // Enable all interrupts except ACTIVE
+    U1IE = PIC32_U1I_URST |         // Unmask Reset interrupt
+           PIC32_U1I_IDLE |         // Unmask Idle interrupt
+           PIC32_U1I_UERR |         // Unmask Error interrupt
+           PIC32_U1I_TRN;           // Transaction Complete Interrupt
 
     // Power up the module
     U1PWRC |= PIC32_U1PWRC_USBPWR;

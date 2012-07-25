@@ -255,7 +255,7 @@ void cpuidentify()
                                          "HS crystal", "(disabled)" };
 
         printf ("cpu: ");
-        switch (devid) {
+        switch (devid & 0x0fffffff) {
         case 0x04307053: printf ("795F512L"); break;
         case 0x0430E053: printf ("795F512H"); break;
         case 0x04341053: printf ("695F512L"); break;

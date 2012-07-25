@@ -97,7 +97,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   vm_sched.o vm_swap.o vm_swp.o
 
 # Drivers.
-KERNOBJ		+= sd.o kbd.o #video.o
+KERNOBJ		+= sd.o #kbd.o video.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
