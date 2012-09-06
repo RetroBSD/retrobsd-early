@@ -25,3 +25,13 @@ ifeq ($(DRIVER_SPI),yes)
 	KERNOBJ += spi.o
 	DEFS    += -DSPI_ENABLED
 endif
+
+ifeq ($(DRIVER_GLCD),yes)
+	KERNOBJ += glcd.o
+	DEFS	+= -DGLCD_ENABLED
+endif
+
+ifeq ($(DRIVER_OC),yes)
+	KERNOBJ += oc.o
+	DEFS 	+= -DOC_ENABLED
+endif

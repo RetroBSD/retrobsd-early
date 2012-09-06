@@ -29,6 +29,7 @@
 #include "systm.h"
 #include "uio.h"
 #include "adc.h"
+#include "debug.h"
 
 extern int uwritec(struct uio *);
 
@@ -49,6 +50,8 @@ int adc_open(dev_t dev, int flag, int mode)
     channel = minor(dev);
     if(channel>ADCMAX)
         return ENODEV;
+
+    DEBUG("adc%2: opened\n",channel);
 
     AD1PCFG &= ~(1<<channel);
     adc[channel].active = 1;

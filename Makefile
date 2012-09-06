@@ -21,6 +21,7 @@ DUINOMITE       = pic32/duinomite
 PINGUINO        = pic32/pinguino-micro
 DIP             = pic32/dip
 BAREMETAL       = pic32/baremetal
+RETROONE	= pic32/retroone
 
 # Select target board
 TARGET          ?= $(MAX32)
@@ -33,7 +34,7 @@ SWAP_KBYTES     = 2048
 # enabled you can use "make installfs" to copy the filesys.img
 # to the SD card.
 
-# SDCARD          = /dev/sdb
+#SDCARD          = /dev/sdb
 
 #
 # C library options: passed to libc makefile.
@@ -79,7 +80,8 @@ CDEVS           = dev/console!c0:0 \
                   dev/portd!c7:3 dev/porte!c7:4 dev/portf!c7:5 dev/portg!c7:6 \
                   dev/confa!c7:64 dev/confb!c7:65 dev/confc!c7:66 \
                   dev/confd!c7:67 dev/confe!c7:68 dev/conff!c7:69 dev/confg!c7:70 \
-                  dev/spi1!c9:0 dev/spi2!c9:1 dev/spi3!c9:2 dev/spi4!c9:3
+                  dev/spi1!c9:0 dev/spi2!c9:1 dev/spi3!c9:2 dev/spi4!c9:3 \
+		  dev/glcd0!c10:0
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
                   dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \
@@ -94,6 +96,7 @@ ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
                   dev/adc4!c8:4 dev/adc5!c8:5 dev/adc6!c8:6 dev/adc7!c8:7 \
                   dev/adc8!c8:8 dev/adc9!c8:9 dev/adc10!c8:10 dev/adc11!c8:11 \
                   dev/adc12!c8:12 dev/adc13!c8:13 dev/adc14!c8:14 dev/adc15!c8:15
+OCDEVS		= dev/oc0!c11:0 dev/oc1!c11:1 dev/oc2!c11:2 dev/oc3!c11:3 dev/oc4!c11:4
 
 all:            build kernel
 		$(MAKE) fs
@@ -114,6 +117,7 @@ filesys.img:	$(FSUTIL) $(ALLFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
 		$(FSUTIL) -a $@ $(ADCDEVS)
+		$(FSUTIL) -a $@ $(OCDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)
 
 user.img:	$(FSUTIL)

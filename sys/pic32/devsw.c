@@ -27,6 +27,14 @@
 #include "spi.h"
 #endif
 
+#ifdef GLCD_ENABLED
+#include "glcd.h"
+#endif
+
+#ifdef OC_ENABLED
+#include "oc.h"
+#endif
+
 #ifndef SWAPDEV
 #define swopen      nulldev
 #define swstrategy  nostrategy
@@ -140,6 +148,30 @@ const struct cdevsw	cdevsw[] = {
 	spi_open,	spi_close,	spi_read,	spi_write,
 	spi_ioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
+#else
+{
+        nulldev,        nulldev,        norw,           norw,
+        noioctl,        nulldev,        0,              seltrue,
+        nostrategy,     },
+#endif
+// GLCD = 10
+#ifdef GLCD_ENABLED
+{
+        glcd_open,      glcd_close,     glcd_read,      glcd_write,
+        glcd_ioctl,     nulldev,        0,              seltrue,
+        nostrategy,     },
+#else
+{
+        nulldev,        nulldev,        norw,           norw,
+        noioctl,        nulldev,        0,              seltrue,
+        nostrategy,     },
+#endif
+// OC = 11
+#ifdef OC_ENABLED
+{
+        oc_open,        oc_close,       oc_read,        oc_write,
+        oc_ioctl,       nulldev,        0,              seltrue,
+        nostrategy,     },
 #else
 {
         nulldev,        nulldev,        norw,           norw,
