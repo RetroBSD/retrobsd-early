@@ -184,9 +184,6 @@ check(tfp)
 			    p, USHRT_MAX);
 			goto bad;
 		}
-		(void)strsep(&bp, ":");		/* class */
-		(void)strsep(&bp, ":");		/* change */
-		(void)strsep(&bp, ":");		/* expire */
 		(void)strsep(&bp, ":");		/* gecos */
 		(void)strsep(&bp, ":");		/* directory */
 		if (!(p = strsep(&bp, ":")))	/* shell */

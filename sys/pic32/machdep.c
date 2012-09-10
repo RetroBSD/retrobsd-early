@@ -134,7 +134,7 @@ startup()
 	mips_write_c0_register (C0_CAUSE, 0, CA_IV);
 
 	/* Setup memory. */
-        BMXPUPBA = 256 << 10;                   /* Kernel Flash memory size */
+        BMXPUPBA = 512 << 10;                   /* Kernel Flash memory size */
         BMXDKPBA = 32 << 10;                    /* Kernel RAM size */
         BMXDUDBA = BMXDKPBA;                    /* No executable RAM in kernel */
         BMXDUPBA = BMXDUDBA;                    /* All user RAM is executable */
