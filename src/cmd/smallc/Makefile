@@ -1,14 +1,25 @@
-CFLAGS          = -O
+TOPSRC          = $(shell cd ../../..; pwd)
+include $(TOPSRC)/target.mk
+
+CFLAGS          = -Os
+LIBS		= -lc
 
 ARCH            = mips
 
-OBJ             = data.o error.o expr.o function.o gen.o io.o lex.o main.o \
+OBJS            = data.o error.o expr.o function.o gen.o io.o lex.o main.o \
                   primary.o stmt.o sym.o while.o code$(ARCH).o
 
 all:		smallc
 
-smallc: 	$(OBJ)
-		$(CC) -o $@ $(CFLAGS) $(OBJ)
+smallc: 	$(OBJS)
+		${CC} ${LDFLAGS} -o $@.elf ${OBJS} ${LIBS}
+		${OBJDUMP} -S $@.elf > $@.dis
+		${SIZE} $@.elf
+		${ELF2AOUT} $@.elf $@
+
+install:
+		cp smallc $(TOPSRC)/bin/
+
 
 clean:
 		rm -f *.o smallc

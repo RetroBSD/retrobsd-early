@@ -15,7 +15,7 @@ SUBDIR		= adb adc-demo ar as awk basic cc chflags chpass \
                   id la lcc lcpp ld ls login make man med \
                   more nm passwd portio printf pwm \
                   ranlib re renice retroforth scm setty sl \
-                  sed sh stty sysctl test uname wiznet xargs \
+                  sed sh smallc stty sysctl test uname wiznet xargs \
                   zmodem
 
 # /sbin
