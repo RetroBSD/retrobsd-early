@@ -22,7 +22,7 @@ install:
 
 
 clean:
-		rm -f *.o smallc
+		rm -f *.o smallc smallc.dis smallc.elf
 ###
 code8080.o: code8080.c defs.h data.h
 codeas09.o: codeas09.c defs.h data.h

@@ -133,6 +133,12 @@ clean:
 
 cleanall:       clean
 		rm -f sys/pic32/*/unix.hex bin/* sbin/* lib/* games/[a-k]* games/[m-z]* libexec/* share/man/cat*/*
+		rm -f games/lib/adventure.dat
+		rm -f games/lib/cfscores
+		rm -f share/re.help
+		rm -f share/misc/more.help
+		rm -f etc/termcap
+
 
 # TODO
 buildlib:

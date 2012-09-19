@@ -41,4 +41,4 @@ install: 	all
 #		$(RANLIB) ${DESTDIR}/lib/libvmf_p.a
 
 clean:
-	rm -f *.o profiled/*.o a.out core test errs ../libvmf*.a
+	rm -f *.o profiled/*.o a.out core test errs ../libvmf*.a vmf.0

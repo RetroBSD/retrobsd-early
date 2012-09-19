@@ -24,7 +24,7 @@ glcdtest:    ${OBJS}
 		${MANROFF} $*.1 > $@
 
 clean:
-		rm -f *.o *.elf ${MAN} *.elf *.dis tags *~
+		rm -f *.o *.elf ${MAN} *.elf *.dis tags *~ glcdtest
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

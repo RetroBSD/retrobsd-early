@@ -4,7 +4,7 @@ include $(TOPSRC)/target.mk
 CFLAGS          += ${DEFS} -Werror -Wall
 
 SRCS            = login.c logout.c logwtmp.c
-OBJS            = asin.o atan.o exp.o erf.o floor.o hypot.o j0.o j1.o \
+OBJS            = asin.o atan.o exp.o erf.o floor.o fmod.o hypot.o j0.o j1.o \
                   jn.o log.o pow.o sin.o sinh.o sqrt.o tan.o tanh.o
 
 all:            ../libm.a

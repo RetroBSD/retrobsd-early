@@ -19,7 +19,7 @@ $(MAN):         ${MANSRC}
 		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o chown chown.elf chown.dis tags *~
+		rm -f *.o chown chown.elf chown.dis tags *~ chown.0
 
 depend:         ${SRCS}
 		mkdep ${CFLAGS} ${SRCS}

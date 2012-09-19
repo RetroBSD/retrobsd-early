@@ -29,3 +29,5 @@ double frexp(double x, int *exp);
 
 float ldexpf(float x, int exp);
 double ldexp(double x, int exp);
+
+double fmod(double x, double y);

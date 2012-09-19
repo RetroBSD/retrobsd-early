@@ -1,3 +1,5 @@
+#ifndef _SETJMP_H
+#define _SETJMP_H
 /*
  * Total 12 registers for MIPS architecture:
  *	0  - $s0
@@ -17,3 +19,4 @@ typedef int jmp_buf [12];
 
 int setjmp (jmp_buf env);
 void longjmp (jmp_buf env, int val);
+#endif
