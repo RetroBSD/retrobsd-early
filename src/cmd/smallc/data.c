@@ -39,6 +39,5 @@ int     *iptr;
 int     fexitlab;
 int     errfile;
 int     sflag;
-int     cflag;
 int     errs;
 int     aflag;

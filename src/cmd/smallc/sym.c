@@ -121,7 +121,7 @@ findglb (sname)
         ptr = STARTGLB;
         while (ptr != glbptr) {
                 if (astreq (sname, ptr, NAMEMAX))
-                        return (ptr);
+                        return (CAST_INT ptr);
                 ptr = ptr + SYMSIZ;
         }
         return (0);
@@ -136,7 +136,7 @@ findloc (sname)
         while (ptr != STARTLOC) {
                 ptr = ptr - SYMSIZ;
                 if (astreq (sname, ptr, NAMEMAX))
-                        return (ptr);
+                        return (CAST_INT ptr);
         }
         return (0);
 }
@@ -147,8 +147,9 @@ addglb (sname, id, typ, value, stor)
 {
         char    *ptr;
 
-        if (cptr = findglb (sname))
-                return (cptr);
+        cptr = CAST_CHAR_PTR findglb (sname);
+        if (cptr)
+                return (CAST_INT cptr);
         if (glbptr >= ENDGLB) {
                 error ("global symbol table overflow");
                 return (0);
@@ -161,7 +162,7 @@ addglb (sname, id, typ, value, stor)
         cptr[OFFSET] = value & 0xff;
         cptr[OFFSET+1] = (value >> 8) & 0xff;
         glbptr = glbptr + SYMSIZ;
-        return (cptr);
+        return (CAST_INT cptr);
 }
 
 addloc (sname, id, typ, value, stclass)
@@ -171,8 +172,9 @@ addloc (sname, id, typ, value, stclass)
         char    *ptr;
         int     k;
 
-        if (cptr = findloc (sname))
-                return (cptr);
+        cptr = CAST_CHAR_PTR findloc (sname);
+        if (cptr)
+                return (CAST_INT cptr);
         if (locptr >= ENDLOC) {
                 error ("local symbol table overflow");
                 return (0);
@@ -196,7 +198,7 @@ addloc (sname, id, typ, value, stclass)
         cptr[OFFSET] = value & 0xff;
         cptr[OFFSET+1] = (value >> 8) & 0xff;
         locptr = locptr + SYMSIZ;
-        return (cptr);
+        return (CAST_INT cptr);
 }
 
 /*

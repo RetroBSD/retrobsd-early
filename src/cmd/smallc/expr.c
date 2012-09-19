@@ -497,7 +497,8 @@ heir10 (lval)
                 k = heir10 (lval);
                 if (k)
                         rvalue (lval);
-                if (ptr = lval[0])
+                ptr = CAST_CHAR_PTR lval[0];
+                if (ptr)
                         lval[1] = ptr[TYPE];
                 else
                         lval[1] = CINT;
@@ -510,14 +511,15 @@ heir10 (lval)
                         error ("illegal address");
                         return (0);
                 }
-                ptr = lval[0];
+                ptr = CAST_CHAR_PTR lval[0];
                 lval[2] = ptr[TYPE];
                 if (lval[1])
                         return (0);
                 /* global and non-array */
                 immed ();
                 prefix ();
-                outstr (ptr = lval[0]);
+                ptr = CAST_CHAR_PTR lval[0];
+                outstr (ptr);
                 nl ();
                 lval[1] = ptr[TYPE];
                 return (0);
@@ -559,7 +561,7 @@ heir11 (lval)
         char    *ptr;
 
         k = primary (lval);
-        ptr = lval[0];
+        ptr = CAST_CHAR_PTR lval[0];
         blanks ();
         if ((ch () == '[') | (ch () == '('))
                 for (;;) {

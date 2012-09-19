@@ -21,12 +21,6 @@ main (argc, argv)
                     case 't': case 'T': // output c source as asm comment
                         ctext = 1;
                         break;
-                    case 's': case 'S':
-                        sflag = 1;
-                        break;
-                    case 'c': case 'C':
-                        cflag = 1;
-                        break;
                     case 'a': case 'A':
                         aflag = 0;
                         break;
@@ -110,7 +104,11 @@ FEvers()
  */
 usage()
 {
-    fputs("usage: scc [-tcsa] files\n", stderr);
+    fputs("Usage:\n", stderr);
+    fputs("    smallc [-t] [-a] file.c ...\n", stderr);
+    fputs("\nOptions:\n", stderr);
+    fputs("    -t    Output C source as asm comment\n", stderr);
+    fputs("    -a    Do not use arg count register\n", stderr);
     exit(1);
 }
 

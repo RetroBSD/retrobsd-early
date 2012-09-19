@@ -27,8 +27,8 @@ readwhile ()
         if (wsptr == ws) {
                 error ("no active do/for/while/switch");
                 return (0);
-        } else
-                return (wsptr-WSSIZ);
+        }
+        return CAST_INT (wsptr - WSSIZ);
 }
 
 findwhile ()
@@ -38,7 +38,7 @@ findwhile ()
         for (ptr = wsptr; ptr != ws;) {
                 ptr = ptr - WSSIZ;
                 if (ptr[WSTYP] != WSSWITCH)
-                        return (ptr);
+                        return (CAST_INT ptr);
         }
         error ("no active do/for/while");
         return (0);
@@ -48,9 +48,10 @@ readswitch ()
 {
         int     *ptr;
 
-        if (ptr = readwhile ())
+        ptr = CAST_INT_PTR readwhile ();
+        if (ptr)
                 if (ptr[WSTYP] == WSSWITCH)
-                        return (ptr);
+                        return (CAST_INT ptr);
         return (0);
 }
 

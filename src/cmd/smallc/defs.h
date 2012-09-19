@@ -118,3 +118,11 @@
 #define STDO            8
 #define STFOR           9
 #define STSWITCH        10
+
+/* casts, to make gcc happy */
+
+#ifdef __GNUC__
+#define CAST_INT        (int)
+#define CAST_INT_PTR    (int*)
+#define CAST_CHAR_PTR   (char*)
+#endif

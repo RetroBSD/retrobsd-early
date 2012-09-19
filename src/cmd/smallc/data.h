@@ -35,7 +35,5 @@ extern  char    *cptr;
 extern  int     *iptr;
 extern  int     fexitlab;
 extern  int     errfile;
-extern  int     sflag;
-extern  int     cflag;
 extern  int     errs;
 extern  int     aflag;

@@ -21,7 +21,8 @@ newfunc ()
                 kill ();
                 return;
         }
-        if (ptr = findglb (n)) {
+        ptr = CAST_CHAR_PTR findglb (n);
+        if (ptr) {
                 if (ptr[IDENT] != FUNCTION)
                         multidef (n);
                 else if (ptr[OFFSET] == FUNCTION)
@@ -120,7 +121,8 @@ getarg (t)
                         j = POINTER;
                 }
                 if (legalname) {
-                        if (argptr = findloc (n)) {
+                        argptr = CAST_CHAR_PTR findloc (n);
+                        if (argptr) {
                                 argptr[IDENT] = j;
                                 argptr[TYPE] = t;
                                 address = argtop - glint(argptr);

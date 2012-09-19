@@ -700,7 +700,5 @@ guge()
 gnargs (d)
     int d;
 {
-    ot ("mov.l\t&");
-    onum (d);
-    outstr (",%d3\n");
+    /* Empty for now. */
 }

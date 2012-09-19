@@ -23,8 +23,9 @@ primary (lval)
                 else if (amatch("char", 4))
                         onum(1);
                 else if (symname(sname)) {
-                        if ((ptr = findloc(sname)) ||
-                                (ptr = findglb(sname))) {
+                        if ((ptr = CAST_CHAR_PTR findloc(sname)) ||
+                            (ptr = CAST_CHAR_PTR findglb(sname)))
+                        {
                                 if (ptr[STORAGE] == LSTATIC)
                                         error("sizeof local static");
                                 k = glint(ptr);
@@ -44,9 +45,10 @@ primary (lval)
                 return(lval[0] = lval[1] = 0);
         }
         if (symname (sname)) {
-                if (ptr = findloc (sname)) {
+                ptr = CAST_CHAR_PTR findloc (sname);
+                if (ptr) {
                         getloc (ptr);
-                        lval[0] = ptr;
+                        lval[0] = CAST_INT ptr;
                         lval[1] = ptr[TYPE];
                         if (ptr[IDENT] == POINTER) {
                                 lval[1] = CINT;
@@ -59,9 +61,10 @@ primary (lval)
                         } else
                                 return (1);
                 }
-                if (ptr = findglb (sname))
+                ptr = CAST_CHAR_PTR findglb (sname);
+                if (ptr)
                         if (ptr[IDENT] != FUNCTION) {
-                                lval[0] = ptr;
+                                lval[0] = CAST_INT ptr;
                                 lval[1] = 0;
                                 if (ptr[IDENT] != ARRAY) {
                                         if (ptr[IDENT] == POINTER)
@@ -79,8 +82,8 @@ primary (lval)
                 blanks ();
                 if (ch() != '(')
                         error("undeclared variable");
-                ptr = addglb (sname, FUNCTION, CINT, 0, PUBLIC);
-                lval[0] = ptr;
+                ptr = CAST_CHAR_PTR addglb (sname, FUNCTION, CINT, 0, PUBLIC);
+                lval[0] = CAST_INT ptr;
                 lval[1] = 0;
                 return (0);
         }
