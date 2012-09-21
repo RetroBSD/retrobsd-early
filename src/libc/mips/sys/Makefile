@@ -31,7 +31,8 @@ SYSOBJS		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o \
 		  lseek.o sigsuspend.o \
 		  getgid.o getegid.o getpgrp.o getpid.o \
 		  getppid.o getuid.o geteuid.o profil.o sigpending.o sync.o \
-                  ufetch.o ustore.o ucall.o umask.o vfork.o vhangup.o
+                  ufetch.o ustore.o ucall.o umask.o vfork.o vhangup.o \
+		  rdglob.o wrglob.o
 
 OBJS		= ${COBJS} ${ASMOBJS} ${SYSOBJS}
 

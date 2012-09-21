@@ -7,6 +7,7 @@
  */
 #include "param.h"
 #include "systm.h"
+#include "glob.h"
 
 #ifdef INET
 #   define ifnet(narg, name)	narg, name
@@ -103,8 +104,8 @@ const struct sysent sysent[] = {
 	{ 0, nosys },			/*  67 = unused */
 	{ 0, nosys },			/*  68 = unused */
 	{ 1, brk },			/*  69 = brk */
-	{ 0, nosys },			/*  70 = unused */
-	{ 0, nosys },			/*  71 = unused */
+	{ 1, rdglob },			/*  70 = read from global */
+	{ 2, wrglob },			/*  71 = write to global */
 	{ 0, nosys },			/*  72 = unused */
 	{ 0, nosys },			/*  73 = unused */
 	{ 0, nosys },			/*  74 = unused */

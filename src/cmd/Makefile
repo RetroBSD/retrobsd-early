@@ -16,7 +16,7 @@ SUBDIR		= adb adc-demo ar as awk basic cc chflags chpass \
                   more nm passwd picoc portio printf pwm \
                   ranlib re renice retroforth scm setty sl \
                   sed sh smallc stty sysctl test uname wiznet xargs \
-                  zmodem
+                  zmodem gtest
 
 # /sbin
 SUBDIR         += chown chroot disktool fsck getty init \
