@@ -98,9 +98,20 @@ void refresh_screen()
     char c;
     struct vseg *seg;
     char temp[100];
+    int coff = 0;
+    int cpos;
+    unsigned char t;
 
     if(cursor_column<0)
         cursor_column=0;
+
+    cpos = cursor_column;
+
+    if(cpos>79)
+    {
+        coff = cpos-79;
+        cpos = 79;
+    }
     for(c=0; c<screen_height; c++)
     {
         seg = vmmapseg(&space,offset_line+c);
@@ -109,7 +120,36 @@ void refresh_screen()
             mvwaddstr(win,c,0,"~");
             clrtoeol();
         } else {
-            mvwaddstr(win,c,0,seg->s_cinfo);
+            if(c == cursor_line-offset_line)
+            {
+		memcpy(temp,seg->s_cinfo+coff,80);
+		temp[79]=0;
+		temp[80]=0;
+		for(t=0; t<strlen(temp); t++)
+			if(temp[t]=='\t')
+				temp[t] = ' ';
+		if(strlen(seg->s_cinfo+coff)>79)
+		{
+			temp[79]='>';
+		}
+		if(coff>0)
+		{
+			temp[0]='<';
+		}
+                mvwaddstr(win,c,0,temp);
+            } else {
+		memcpy(temp,seg->s_cinfo,80);
+		temp[79]=0;
+		temp[80]=0;
+		for(t=0; t<strlen(temp); t++)
+			if(temp[t]=='\t')
+				temp[t] = ' ';
+		if(strlen(seg->s_cinfo)>79)
+		{
+			temp[79] = '>';
+		}
+                mvwaddstr(win,c,0,temp);
+            }
             clrtoeol();
         }
     }
@@ -123,7 +163,7 @@ void refresh_screen()
     mvwaddstr(win,screen_height,0,temp);
     standend();
     
-    mvwinch(win,cursor_line,cursor_column);
+    mvwinch(win,cursor_line,cpos);
     refresh();
 }
 
@@ -422,7 +462,7 @@ int main(int argc, char **argv)
                     }
                 }
                 break;
-            case CTRL_S:
+            case CTRL_V:
             case CTRL_X:
                 save_file(filename);
                 modified=0;
@@ -466,7 +506,9 @@ int main(int argc, char **argv)
                 refresh_screen();
                 break;
             case CTRL_I:
-                insert_char_at_cursor(CTRL_I);
+                insert_char_at_cursor(' ');
+		while(cursor_column%8>0)
+			insert_char_at_cursor(' ');
                 modified=1;
                 refresh_screen();
                 break;

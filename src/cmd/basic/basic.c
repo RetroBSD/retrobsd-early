@@ -104,6 +104,8 @@
 #include <time.h>
 #include <limits.h>
 #include <unistd.h>
+#include <curses.h>
+#include <signal.h>
 
 /* Fixed parameters */
 #define BUFFER_SIZE	100	/* input buffer size */
@@ -251,6 +253,8 @@ char *char_vars[NUM_VAR];		/* Character variables */
 
 int eval_sub(void);
 
+WINDOW *win;
+
 void beep (int i, int t)
 {
 	printf("BEEP not implemented yet, at line %u\n", line);
@@ -261,10 +265,29 @@ void delay (int msec)
         usleep (msec * 1000);
 }
 
+
+int sigint(int sn)
+{
+	nocbreak();
+	echo();
+	endwin();
+	exit(0);
+}
+
 unsigned kbtst ()
 {
-	printf("KBTST not implemented yet, at line %u\n", line);
-	return 0;
+	unsigned int chr;
+
+	signal(SIGINT,(sig_t)sigint);
+	win = initscr();
+	cbreak();
+	noecho();
+	chr = getch();
+	nocbreak();
+	echo();
+	endwin();
+	signal(SIGINT,SIG_DFL);
+	return chr;
 }
 
 void out (int addr, int value)
@@ -1120,7 +1143,7 @@ input:		if(ii == -1)
 		direct_only();
 		if(skip_blank()) {
 			eval_char();
-			concat(filename, sa1, ".bas");
+			concat(filename, sa1, "");
 		}
 		fileout = fopen(filename, "wv");
 		if(fileout) {
@@ -1131,7 +1154,7 @@ input:		if(ii == -1)
 		break;
 	case LOAD:
 		eval_char();
-		concat(filename, sa1, ".bas");
+		concat(filename, sa1, "");
 		filein = fopen(filename, "rv");
 		if(filein) {
 			if(!mode) clear_vars();
@@ -1411,7 +1434,7 @@ int main(int argc, char *argv[])
 	 * then proceed to an interactive session
 	 */
 	if(j) {
-		concat(filename, char_vars[0], ".bas");
+		concat(filename, char_vars[0], "");
 		filein = fopen(filename, "rv");
 		if(filein) {
 			while(fgets(buffer, sizeof(buffer)-1, filein))
