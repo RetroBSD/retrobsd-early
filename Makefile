@@ -106,7 +106,7 @@ fs:             filesys.img user.img
 kernel:
 		$(MAKE) -C sys/$(TARGET)
 
-build $(ALLFILES):
+build:
 		$(MAKE) -C tools
 		$(MAKE) -C src install
 
