@@ -12,19 +12,13 @@ OBJS            = med.o
 SRCS            = med.c
 LIBS            += -lcurses -ltermcap -lvmf
 
-all:            med chars
+all:            med 
 
 med: 		${OBJS}
 		${CC} ${LDFLAGS} -o med.elf ${OBJS} ${LIBS}
 		${OBJDUMP} -S med.elf > med.dis
 		${SIZE} med.elf
 		${ELF2AOUT} med.elf $@ && rm med.elf
-
-chars: 		chars.o
-		${CC} ${LDFLAGS} -o chars.elf chars.o ${LIBS}
-		${OBJDUMP} -S chars.elf > chars.dis
-		${SIZE} chars.elf
-		${ELF2AOUT} chars.elf $@ && rm chars.elf
 
 clean:
 		-rm -f med ${OBJS} med.elf med.dis
