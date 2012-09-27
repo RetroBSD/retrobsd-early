@@ -33,9 +33,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <sys/param.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/dir.h>
 #include "archive.h"
 #include "extern.h"

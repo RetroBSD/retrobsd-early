@@ -35,12 +35,13 @@
  */
 #ifdef CROSS
 #   include </usr/include/stdio.h>
+#   include </usr/include/errno.h>
 #else
 #   include <stdio.h>
+#   include <errno.h>
 #endif
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <sys/dir.h>
 #include <sys/file.h>
 #include <ar.h>
@@ -324,7 +325,7 @@ skip_arobj(fd)
 {
 	off_t len;
 
-	len = chdr.size + (chdr.size + (chdr.lname & 1));
+	len = chdr.size + (chdr.lname & 1);
 	if (lseek(fd, len, L_INCR) == (off_t)-1)
 		error(archive);
 }

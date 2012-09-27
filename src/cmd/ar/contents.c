@@ -33,6 +33,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -40,7 +45,6 @@
 #include <tzfile.h>
 #include <sys/dir.h>
 #include <ar.h>
-#include <stdio.h>
 #include <string.h>
 #include "archive.h"
 #include "extern.h"

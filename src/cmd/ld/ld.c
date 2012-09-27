@@ -308,7 +308,7 @@ int fgetarhdr (fd, h)
 	char buf[20];
 
         /* Read file magic. */
-	nr = read(fd, buf, SARMAG);
+	nr = fread(buf, 1, SARMAG, fd);
 	if (nr != SARMAG || strncmp (buf, ARMAG, SARMAG) != 0)
                 return 0;
 
