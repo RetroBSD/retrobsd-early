@@ -223,14 +223,31 @@ badoptions(arg)
 static void
 usage()
 {
-	(void)fprintf(stderr, "usage:  ar -d [-Tv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-Tv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -m [-abiTv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -p [-Tv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -q [-cTv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-cuTv] archive file ...\n");
-	(void)fprintf(stderr, "\tar -r [-abciuTv] position archive file ...\n");
-	(void)fprintf(stderr, "\tar -t [-Tv] archive [file ...]\n");
-	(void)fprintf(stderr, "\tar -x [-ouTv] archive [file ...]\n");
+	(void)fprintf(stderr, "Usage:\n");
+	(void)fprintf(stderr, "  ar -d [-Tv] archive file ...\n");
+	(void)fprintf(stderr, "  ar -m [-Tv] archive file ...\n");
+	(void)fprintf(stderr, "  ar -m [-abiTv] position archive file ...\n");
+	(void)fprintf(stderr, "  ar -p [-Tv] archive [file ...]\n");
+	(void)fprintf(stderr, "  ar -q [-cTv] archive file ...\n");
+	(void)fprintf(stderr, "  ar -r [-cuTv] archive file ...\n");
+	(void)fprintf(stderr, "  ar -r [-abciuTv] position archive file ...\n");
+	(void)fprintf(stderr, "  ar -t [-Tv] archive [file ...]\n");
+	(void)fprintf(stderr, "  ar -x [-ouTv] archive [file ...]\n");
+	(void)fprintf(stderr, "Commands:\n");
+	(void)fprintf(stderr, "  -d      Delete file(s) from the archive\n");
+	(void)fprintf(stderr, "  -m      Move file(s) in the archive\n");
+	(void)fprintf(stderr, "  -p      Print file(s) found in the archive\n");
+	(void)fprintf(stderr, "  -q      Quick append file(s) to the archive\n");
+	(void)fprintf(stderr, "  -r      Replace existing or insert new file(s) into the archive\n");
+	(void)fprintf(stderr, "  -t      Display contents of archive\n");
+	(void)fprintf(stderr, "  -x      Extract file(s) from the archive\n");
+	(void)fprintf(stderr, "Modifiers:\n");
+	(void)fprintf(stderr, "  -a      Put file(s) after [member-name]\n");
+	(void)fprintf(stderr, "  -b, -i  Put file(s) before [member-name]\n");
+	(void)fprintf(stderr, "  -c      Do not warn if the library had to be created\n");
+	(void)fprintf(stderr, "  -u      Only replace files that are newer than current archive contents\n");
+	(void)fprintf(stderr, "  -o      Preserve original dates\n");
+	(void)fprintf(stderr, "  -T      Make a thin archive\n");
+	(void)fprintf(stderr, "  -v      Be verbose\n");
 	exit(1);
 }

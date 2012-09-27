@@ -34,6 +34,8 @@
 
 #define WORDSZ          4               /* word size in bytes */
 
+#define IS_LOCAL(s)     ((s)->n_name[0] == 'L' || (s)->n_name[0] == '.')
+
 /*
  * Types of lexemes.
  */
@@ -306,7 +308,7 @@ int segm;
 char *infile, *outfile = "a.out";
 char tfilename[] = "/tmp/asXXXXXX";
 int line;                               /* Source line number */
-int xflags, Xflag, uflag, vflag;
+int xflags, Xflag, uflag;
 int stlength;                           /* Symbol table size in bytes */
 int stalign;                            /* Symbol table alignment */
 unsigned tbase, dbase, adbase, bbase;
@@ -1574,7 +1576,7 @@ void middle ()
         if (xflags)
             newindex[i] = snum;
         if (! xflags || (stab[i].n_type & N_EXT) ||
-            (Xflag && stab[i].n_name[0] != 'L'))
+            (Xflag && ! IS_LOCAL(&stab[i])))
         {
             stlength += 2 + WORDSZ + stab[i].n_len;
             snum++;
@@ -1844,9 +1846,6 @@ int main (argc, argv)
                 case 'u':       /* treat undefines as error */
                     uflag++;
                     break;
-                case 'v':       /* verbose mode */
-                    vflag++;
-                    break;
                 case 'o':       /* output file name */
                     if (ofile)
                         uerror ("too many -o flags");
@@ -1861,7 +1860,13 @@ int main (argc, argv)
                         outfile = argv[++i];
                     break;
                 default:
-usage:              fprintf (stderr, "Usage: as [-uxX] [infile] [-o outfile]\n");
+usage:              fprintf (stderr, "Usage:\n");
+                    fprintf (stderr, "  as [-uxX] [-o outfile] [infile]\n");
+                    fprintf (stderr, "Options:\n");
+                    fprintf (stderr, "  -o filename     Set output file name, default stdout\n");
+                    fprintf (stderr, "  -u              Treat undefined names as error\n");
+                    fprintf (stderr, "  -x              Discard local symbols\n");
+                    fprintf (stderr, "  -X              Discard locals starting with 'L' or '.'\n");
                     return (1);
                 }
             }

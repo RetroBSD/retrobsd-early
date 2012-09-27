@@ -1,21 +1,6 @@
 /*
  * Linker for RetroBSD, MIPS32 architecture.
  *
- * Usage:
- *      -o filename     output file name
- *      -u symbol       'use'
- *      -e symbol       'entry'
- *      -D size         set data size
- *      -Taddress       base address of loading
- *      -llibname       library
- *      -x              discard local symbols
- *      -X              discard locals starting with 'L'
- *      -S              discard all symbols except locals and globals
- *      -s              discard all symbols
- *      -r              preserve relocation info, don't define commons
- *      -d              define commons even with rflag
- *      -t              debug tracing
- *
  * Copyright (C) 2011 Serge Vakulenko, <serge@vak.ru>
  *
  * Permission to use, copy, modify, and distribute this software
@@ -53,13 +38,12 @@
 #include <ar.h>
 #include <ranlib.h>
 
-#define W      4               /* word size in bytes */
-#define LOCSYM 'L'             /* strip local symbols 'L*' */
-#define BADDR  0x7f008000      /* start address in memory */
-#define SYMDEF "__.SYMDEF"
-
-#define ishex(c)       ((c)<='9' && (c)>='0' || (c)<='F' && (c)>='A' || (c)<='f' && (c)>='a')
-#define hexdig(c)      ((c)<='9' ? (c)-'0' : ((c)&7) + 9)
+#define W               4               /* word size in bytes */
+#define BADDR           0x7f008000      /* start address in memory */
+#define SYMDEF          "__.SYMDEF"
+#define IS_LOCSYM(s)    ((s)->n_name[0] == 'L' || \
+                         (s)->n_name[0] == '.')
+#define hexdig(c)       ((c)<='9' ? (c) - '0' : ((c)&7) + 9)
 
 struct exec filhdr;             /* aout header */
 
@@ -116,7 +100,7 @@ struct nlist *p_etext, *p_edata, *p_end, *entrypt;
  */
 int     trace;                  /* internal trace flag */
 int     xflag;                  /* discard local symbols */
-int     Xflag;                  /* discard locals starting with LOCSYM */
+int     Xflag;                  /* discard locals starting with 'L' or '.' */
 int     Sflag;                  /* discard all except locals and globals*/
 int     rflag;                  /* preserve relocation bits, don't define commons */
 int     arflag;                 /* original copy of rflag */
@@ -837,8 +821,9 @@ int load1 (loc, libflg, nloc)
 			continue;
 		}
 		if (! (type & N_EXT)) {
-			if (!sflag && !xflag &&
-			    (!Xflag || cursym.n_name[0] != LOCSYM)) {
+			if (! (sflag || xflag ||
+                            (Xflag && IS_LOCSYM(&cursym))))
+                        {
 				nsymbol++;
 				nloc += symlen;
 			}
@@ -975,7 +960,6 @@ void pass1 (argc, argv)
         char **argv;
 {
 	register int c, i;
-	unsigned num;
 	register char *ap, **p;
 	char save;
 
@@ -997,7 +981,7 @@ void pass1 (argc, argv)
 				/* output file name */
 			case 'o':
 				if (++c >= argc)
-					error (2, "-o: argument missed");
+					error (2, "-o: argument missing");
 				ofilename = *p++;
 				ofilfnd++;
 				continue;
@@ -1005,26 +989,16 @@ void pass1 (argc, argv)
 				/* 'use' */
 			case 'u':
 				if (++c >= argc)
-					error (2, "-u: argument missed");
+					error (2, "-u: argument missing");
 				enter (slookup (*p++));
 				continue;
 
 				/* 'entry' */
 			case 'e':
 				if (++c >= argc)
-					error (2, "-e: argument missed");
+					error (2, "-e: argument missing");
 				enter (slookup (*p++));
 				entrypt = lastsym;
-				continue;
-
-				/* set data size */
-			case 'D':
-				if (++c >= argc)
-					error (2, "-D: argument missed");
-				num = atoi (*p++);
-				if (dsize > num)
-					error (2, "-D: too small");
-				dsize = num;
 				continue;
 
 				/* base address of loading */
@@ -1045,7 +1019,7 @@ void pass1 (argc, argv)
 				xflag++;
 				continue;
 
-				/* discard locals starting with LOCSYM */
+				/* discard locals starting with 'L' or '.' */
 			case 'X':
 				Xflag++;
 				continue;
@@ -1248,8 +1222,8 @@ void load2 (loc)
 			continue;
 		}
 		if (! (type & N_EXT)) {
-			if (!sflag && !xflag &&
-			    (!Xflag || cursym.n_name [0] != LOCSYM))
+			if (! (sflag || xflag ||
+                            (Xflag && IS_LOCSYM(&cursym))))
 				fputsym (&cursym, soutb);
 			free (cursym.n_name);
 			continue;
@@ -1330,7 +1304,6 @@ void pass2 (argc, argv)
         char **argv;
 {
 	register int c, i;
-	unsigned dnum;
 	register char *ap, **p;
 
 	p = argv + 1;
@@ -1344,16 +1317,6 @@ void pass2 (argc, argv)
 		for (i=1; ap[i]; i++) {
 			switch (ap[i]) {
 
-			case 'D':
-                                /* ??? for (dnum=atoi(*p); dorigin<dnum; dorigin++) { */
-				for (dnum=atoi(*p); dnum>0; --dnum) {
-					fputword (0L, doutb);
-					fputword (0L, doutb);
-					if (rflag) {
-						fputword (0L, droutb);
-						fputword (0L, droutb);
-					}
-				}
 			case 'u':
 			case 'e':
 			case 'o':
@@ -1426,8 +1389,21 @@ int main (argc, argv)
         char **argv;
 {
 	if (argc == 1) {
-		printf ("Usage: %s [-xXsSrndt] [-lname] [-D num] [-u name] [-e name] [-o file] file...\n",
-			argv [0]);
+		printf ("Usage:\n");
+		printf ("  ld [-sSxXrdt] [-o file] [-lname] [-u name] [-e name] [-T num] file...\n");
+		printf ("Options:\n");
+                printf ("  -o filename     Set output file name, default a.out\n");
+                printf ("  -llibname       Search for library libname\n");
+                printf ("  -u symbol       Start with undefined reference to symbol\n");
+                printf ("  -e symbol       Set start address\n");
+                printf ("  -T address      Set address of .text segment, default %#x\n", basaddr);
+                printf ("  -s              Discard all symbols\n");
+                printf ("  -S              Discard all symbols except locals and globals\n");
+                printf ("  -x              Discard local symbols\n");
+                printf ("  -X              Discard locals starting with 'L' or '.'\n");
+                printf ("  -r              Generate relocatable output\n");
+                printf ("  -d              Force common symbols to be defined\n");
+                printf ("  -t              Enable trace output\n");
 		exit (4);
 	}
 	if (signal (SIGINT, SIG_IGN) != SIG_IGN)
