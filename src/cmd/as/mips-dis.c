@@ -12,8 +12,12 @@
  */
 //#define NEED_MIPS16
 
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include "mips-opcode.h"
 #include "mips-opc.c"

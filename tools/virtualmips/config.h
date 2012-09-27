@@ -25,7 +25,7 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 			CFG_SIMPLE_INT("flash_phy_address", &(vm->flash_address)),   \
 			CFG_SIMPLE_INT("boot_method", &(vm->boot_method)),   \
 			CFG_SIMPLE_INT("boot_from", &(vm->boot_from)),   \
-			CFG_SIMPLE_STR("kernel_file_name", &(vm->kernel_filename)),      \
+			CFG_SIMPLE_STR("kernel_file_name", &(vm->kernel_filename)),
 
 #define  PRINT_COMMON_CONFIG_OPTION    \
     printf("Using configure file: %s\n",vm->configure_filename);  \
@@ -53,7 +53,7 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 	{   \
 		printf("GDB debug enable\n");   \
 		printf("GDB port: %d \n",vm->gdb_port);    \
-	}   \
+	}
 
 #define VALID_COMMON_CONFIG_OPTION    \
    ASSERT(vm->ram_size!=0,"ram_size can not be 0\n");   \
@@ -99,6 +99,6 @@ static char *flash_type_string[2]={"NOR FLASH","NAND FLASH"};
 		ASSERT(vm->kernel_filename!=0,"kernel_file_name can not be NULL\n ");   \
 	}   \
 	else    \
-		ASSERT(0,"error boot_method. valid value: 1:binary  2:elf \n");   \
+		ASSERT(0,"error boot_method. valid value: 1:binary  2:elf \n");
 
 #endif

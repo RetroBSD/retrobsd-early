@@ -75,7 +75,7 @@ contents(argv)
 		if (options & AR_V) {
 			(void)strmode(chdr.mode, buf);
 			(void)printf("%s %6d/%-6d %8ld ",
-			    buf + 1, chdr.uid, chdr.gid, chdr.size);
+			    buf + 1, chdr.uid, chdr.gid, (long) chdr.size);
 			tp = localtime(&chdr.date);
 #ifdef	bloat
 			(void)strftime(buf, sizeof(buf), "%b %e %H:%M %Y", tp);

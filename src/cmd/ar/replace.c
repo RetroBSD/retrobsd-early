@@ -74,7 +74,6 @@ replace(argv)
 	CF cf;
 	off_t size, tsize;
 	int err, exists, tfd1, tfd2;
-	char *rname();
 
 	err = 0;
 	/*

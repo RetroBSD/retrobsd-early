@@ -44,8 +44,11 @@ typedef	u_int	ino_t;
 typedef	u_int	size_t;
 #endif
 #ifndef __ssize_t_defined
+#ifndef _SSIZE_T
 typedef int     ssize_t;
 #define __ssize_t_defined
+#define _SSIZE_T
+#endif
 #endif
 typedef	long	time_t;
 typedef	int	dev_t;

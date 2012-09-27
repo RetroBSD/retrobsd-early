@@ -296,7 +296,7 @@ void fputsym (s, file)
 }
 
 /*
- * Read the archive header.
+ * Read the file header of the archive.
  */
 int fgetarhdr (fd, h)
         register FILE *fd;
@@ -306,11 +306,6 @@ int fgetarhdr (fd, h)
 	register int len, nr;
 	register char *p;
 	char buf[20];
-
-        /* Read file magic. */
-	nr = fread(buf, 1, SARMAG, fd);
-	if (nr != SARMAG || strncmp (buf, ARMAG, SARMAG) != 0)
-                return 0;
 
 	/* Read arhive name.  Spaces should never happen. */
 	nr = fread (buf, 1, sizeof (hdr.ar_name), fd);
@@ -668,6 +663,7 @@ int getfile (cp)
 	int c;
 	struct stat x;
         static char libname [] = "/lib/libxxxxxxxxxxxxxxx";
+        char magic [SARMAG];
 
 	text = 0;
 	filname = cp;
@@ -688,7 +684,10 @@ int getfile (cp)
 	if (! reloc)
 		error (2, "cannot open");
 
-	if (! fgetarhdr (text, &archdr))
+        /* Read file magic. */
+	if (fread(magic, 1, SARMAG, text) != SARMAG ||
+            strncmp (magic, ARMAG, SARMAG) != 0 ||
+            ! fgetarhdr (text, &archdr))
 		return (0);     /* regular file */
 	if (strncmp (archdr.ar_name, SYMDEF, sizeof (archdr.ar_name)) != 0)
 		return (1);     /* regular archive */
@@ -950,7 +949,7 @@ void load1arg (cp)
 		load1 (0L, 0, mkfsym (cp, 0));
 		break;
 	case 1:                 /* regular archive */
-		nloc = W;
+		nloc = SARMAG;
 archive:
 		while (step (nloc))
 			nloc += archdr.ar_size + ARHDRSZ;

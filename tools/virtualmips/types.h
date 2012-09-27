@@ -9,19 +9,15 @@
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+#include <sys/types.h>
+
 /*types from qemu*/
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 
-// Linux/Sparc64 defines uint64_t
-#if !(defined (__sparc_v9__) && defined(__linux__))
-/* XXX may be done for all 64 bits targets ? */
-#if defined (__x86_64__) || defined(__ia64)
-typedef unsigned long uint64_t;
-#else
-typedef unsigned long long uint64_t;
-#endif
+#ifdef __APPLE__
+typedef u_int64_t uint64_t;
 #endif
 
 #ifndef __sun__
@@ -29,14 +25,6 @@ typedef signed char int8_t;
 #endif
 typedef signed short int16_t;
 typedef signed int int32_t;
-// Linux/Sparc64 defines int64_t
-#if !(defined (__sparc_v9__) && defined(__linux__))
-#if defined (__x86_64__) || defined(__ia64)
-typedef signed long int64_t;
-#else
-typedef signed long long int64_t;
-#endif
-#endif
 
 /*used in dynamips. so just typedef again*/
 /* Common types */
