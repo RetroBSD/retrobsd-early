@@ -16,7 +16,7 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 
-#ifdef __APPLE__
+#if defined(__linux__) || defined(__APPLE__)
 typedef u_int64_t uint64_t;
 #endif
 
