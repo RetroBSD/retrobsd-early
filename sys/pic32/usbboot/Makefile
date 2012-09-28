@@ -45,7 +45,7 @@ I               = ..
 #CFLAGS         += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
 
 # Fubarino
-CFLAGS          += -DFUBARINO -DFLASH_USER=0x1d000000
+CFLAGS          += -DFUBARINO -DFLASH_JUMP=0x9d000000
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

@@ -30,12 +30,10 @@ DEFS            += -DSD_CS0_PORT=TRISG -DSD_CS0_PIN=9
 DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=5
 
 # Include or exclude drivers
-
-# General Purpose I/O
-DRIVER_GPIO         = yes
-
-# Basic ADC interface
-DRIVER_ADC          = no
+DRIVER_GPIO         = yes   # General Purpose I/O
+DRIVER_ADC          = yes   # Basic ADC interface
+DRIVER_SPI          = yes   # Generic SPI interface
+DRIVER_OC           = yes   # Output Compare driver
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
