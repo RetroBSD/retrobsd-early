@@ -6,6 +6,7 @@
 #   - Microchip PIC32 USB Starter Kit
 #   - Microchip PIC32 Ethernet Starter Kit
 #   - eflightworks PIC32-on-a-DIP
+#   - Fubarino
 #
 # Select a board by uncommenting a needed line below.
 #
@@ -32,7 +33,7 @@ OBJS            = usb_boot.o usb_device.o usb_function_hid.o
 I               = ..
 
 # UBW32
-#CFLAGS          += -DUBW32 -DFLASH_USER=0x1d005000
+#CFLAGS         += -DUBW32 -DFLASH_USER=0x1d005000
 
 # Maximite
 #CFLAGS         += -DMAXIMITE -DFLASH_USER=0x1d003000
@@ -41,7 +42,10 @@ I               = ..
 #CFLAGS         += -DDIP -DFLASH_JUMP=0x9d000000
 
 # Microchip USB/Ethernet Starter Kit
-CFLAGS          += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
+#CFLAGS         += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
+
+# Fubarino
+CFLAGS          += -DFUBARINO -DFLASH_USER=0x1d000000
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

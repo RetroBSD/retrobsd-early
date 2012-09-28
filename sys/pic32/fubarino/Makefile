@@ -35,7 +35,7 @@ DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=5
 DRIVER_GPIO         = yes
 
 # Basic ADC interface
-DRIVER_ADC          = yes
+DRIVER_ADC          = no
 
 DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
 CFLAGS		= -O $(DEFS) $(DEPFLAGS)
@@ -106,8 +106,8 @@ unix.elf:	$(KERNOBJ) using-bootloader.ld
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
 		chmod -x $@ unix.bin
 
-load:           unix.elf
-		$(PROGTOOL) -v -U flash:w:unix.hex:i
+load:           unix.hex
+		pic32prog unix.hex
 
 vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh ../newvers.sh > vers.c
