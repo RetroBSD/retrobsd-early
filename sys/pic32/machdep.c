@@ -151,7 +151,9 @@ startup()
 	IPC(8) = IPC(9) = IPC(10) = IPC(11) =
 	IPC(12) =
 		PIC32_IPC_IP0(1) | PIC32_IPC_IP1(1) |
-		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1);
+		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1) |
+		PIC32_IPC_IS0(0) | PIC32_IPC_IS1(0) |
+		PIC32_IPC_IS2(0) | PIC32_IPC_IS3(0) ;
 
         /*
          * Setup wait states.
