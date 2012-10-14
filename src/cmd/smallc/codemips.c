@@ -237,12 +237,12 @@ putmem (sym)
 putstk (typeobj)
     char typeobj;
 {
-    ol ("lw\t$at, 0($sp)");
+    ol ("lw\t$t1, 0($sp)");
     ol ("addiu\t$sp, $sp, 4");
     if (typeobj == CCHAR)
-        ol ("sb\t$v0, 0($at)");
+        ol ("sb\t$v0, 0($t1)");
     else
-        ol ("sw\t$v0, 0($at)");
+        ol ("sw\t$v0, 0($t1)");
     stkp = stkp + INTSIZE;
 }
 
@@ -443,7 +443,7 @@ modstk (newstkp)
  */
 gaslint()
 {
-    ol ("asl.l\t&2,%d0");
+    ol ("sll\t$v0, $v0, 2");
 }
 
 /*
@@ -451,7 +451,7 @@ gaslint()
  */
 gasrint()
 {
-    ol ("asr.l\t&2,%d0");
+    ol ("sra\t$v0, $v0, 2");
 }
 
 /*
@@ -488,10 +488,6 @@ gsub()
     ol ("lw\t$t1, 0($sp)");
     ol ("addiu\t$sp, $sp, 4");
     ol ("sub\t$v0, $t1, $v0");
-
-    //ol ("mov.l\t(%sp)+,%d2");
-    //ol ("sub.l\t%d0,%d2");
-    //ol ("mov.l\t%d2,%d0");
     stkp = stkp + INTSIZE;
 }
 
@@ -545,7 +541,10 @@ gmod()
  */
 gor()
 {
-    ol ("or.l\t(%sp)+,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("or\t$v0, $v0, $t1");
+    //ol ("or.l\t(%sp)+,%d0");
     stkp = stkp + INTSIZE;
 }
 
@@ -554,8 +553,11 @@ gor()
  */
 gxor()
 {
-    ol ("mov.l\t(%sp)+,%d1");
-    ol ("eor.l\t%d1,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("xor\t$v0, $v0, $t1");
+    //ol ("mov.l\t(%sp)+,%d1");
+    //ol ("eor.l\t%d1,%d0");
     stkp = stkp + INTSIZE;
 }
 
@@ -578,9 +580,9 @@ gand()
  */
 gasr()
 {
-    ol ("mov.l\t(%sp)+,%d1");
-    ol ("asr.l\t%d0,%d1");
-    ol ("mov.l\t%d1,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("srav\t$v0, $t1, $v0");
     stkp = stkp + INTSIZE;
 }
 
@@ -591,9 +593,9 @@ gasr()
  */
 gasl()
 {
-    ol ("mov.l\t(%sp)+,%d1");
-    ol ("asl.l\t%d0,%d1");
-    ol ("mov.l\t%d1,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("sllv\t$v0, $t1, $v0");
     stkp = stkp + INTSIZE;
 }
 
@@ -620,6 +622,7 @@ glneg()
 gcom()
 {
     ol ("not\t%d0");
+    ol ("xor\t$v0, $v0, -1");
 }
 
 /*
