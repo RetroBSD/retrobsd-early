@@ -58,6 +58,7 @@ enum {
     LTEXT,              /* .text */
     LEQU,               /* .equ */
     LWORD,              /* .word */
+    LBYTE,              /* .byte */
 };
 
 /*
@@ -589,6 +590,7 @@ int lookacmd ()
         break;
     case 'b':
         if (! strcmp (".bss", name)) return (LBSS);
+        if (! strcmp (".byte", name)) return (LBYTE);
         break;
     case 'c':
         if (! strcmp (".comm", name)) return (LCOMM);
@@ -1411,7 +1413,7 @@ void makeascii ()
 void pass1 ()
 {
     register int clex;
-    int cval, tval, csegm;
+    int cval, tval, csegm, nbytes, c, nwords;
     register unsigned addr;
 
     segm = STEXT;
@@ -1513,6 +1515,27 @@ void pass1 ()
                     break;
                 }
             }
+            break;
+        case LBYTE:
+	    nbytes = 0;
+            for (;;) {
+                getexpr (&cval);
+		fputc (intval, sfile[segm]);
+		nbytes++;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+	
+            c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
+    	    count[segm] += nbytes + c;
+            nwords = (unsigned) (nbytes + c) / WORDSZ;
+            while (c--)
+               fputc (0, sfile[segm]);
+            while (nwords--)
+              fputrel (RABS, rfile[segm]);
             break;
         case LASCII:
             makeascii ();
