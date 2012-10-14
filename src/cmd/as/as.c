@@ -1508,7 +1508,7 @@ void pass1 ()
                     addr |= RSETINDEX (extref);
                 fputword (intval, sfile[segm]);
                 fputrel (addr, rfile[segm]);
-                count[segm] += 2;
+                count[segm] += WORDSZ; 
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
