@@ -136,7 +136,7 @@ constant (val)
         if (number (val))
                 immedi ();
         else if (pstr (val))
-                immed ();
+                immedi ();
         else if (qstr (val)) {
                 immed ();
                 printlabel (litlab);

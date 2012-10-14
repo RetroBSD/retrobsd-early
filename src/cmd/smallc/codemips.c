@@ -82,7 +82,7 @@ byteoff()
  */
 olprfix()
 {
-    outstr ("$_");
+    outstr ("._");
 }
 
 /*
@@ -122,6 +122,12 @@ trailer()
 prologue()
 {
     /* todo */
+}
+
+fentry()
+{
+    ol("addiu\t$sp, $sp, -4");
+    ol("sw\t$ra, 0($sp)");
 }
 
 /*
@@ -200,9 +206,11 @@ getloc (sym)
         printlabel(glint(sym));
         nl();
     } else {
-        ot ("la $v0, ");
+        //ot ("la $v0, ");
+	ot("addiu\t$v0, $sp, ");
         onum (glint(sym) - stkp);
-        outstr ("($sp)\n");
+        //outstr ("($sp)\n");
+	nl();
     }
 }
 
@@ -229,12 +237,12 @@ putmem (sym)
 putstk (typeobj)
     char typeobj;
 {
-    ol ("lw\t$at, ($sp)");
-    ol ("addiu\t$sp, 4");
+    ol ("lw\t$at, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
     if (typeobj == CCHAR)
-        ol ("sb\t$v0, ($at)");
+        ol ("sb\t$v0, 0($at)");
     else
-        ol ("sw\t$v0, ($at)");
+        ol ("sw\t$v0, 0($at)");
     stkp = stkp + INTSIZE;
 }
 
@@ -246,9 +254,9 @@ indirect (typeobj)
     char typeobj;
 {
     if (typeobj == CCHAR)
-        ol ("lb\t$v0, ($v0)");
+        ol ("lb\t$v0, 0($v0)");
     else
-        ol ("lw\t$v0, ($v0)");
+        ol ("lw\t$v0, 0($v0)");
 }
 
 /*
@@ -256,7 +264,7 @@ indirect (typeobj)
  */
 swap()
 {
-    ol ("move\t$at, %v0\n\tmove\t$v0, $v1\n\tmove\t$v1, $at");
+    ol ("move\t$at, $v0\n\tmove\t$v0, $v1\n\tmove\t$v1, $at");
 }
 
 /*
@@ -278,8 +286,8 @@ immedi()
  */
 gpush()
 {
-    ol ("addiu\t$sp, -4");
-    ol ("sw\t$v0, ($sp)");
+    ol ("addiu\t$sp, $sp, -4");
+    ol ("sw\t$v0, 0($sp)");
     stkp = stkp - INTSIZE;
 }
 
@@ -288,8 +296,8 @@ gpush()
  */
 gpop()
 {
-    ol ("lw\t$v1, ($sp)");
-    ol ("addiu\t$sp, 4");
+    ol ("lw\t$v1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
     stkp = stkp + INTSIZE;
 }
 
@@ -298,7 +306,10 @@ gpop()
  */
 swapstk()
 {
-    ol ("mov.l\t(%sp)+,%d2\nmov.l\t%d0,-(%sp)\nmov.l\t%d2,%d0");
+    ol ("move\t$t1, $v0");
+    ol ("lw\t$v0, 0($sp)");
+    ol ("sw\t$t1, 0($sp)");
+    //ol ("mov.l\t(%sp)+,%d2\nmov.l\t%d0,-(%sp)\nmov.l\t%d2,%d0");
 }
 
 /*
@@ -307,15 +318,23 @@ swapstk()
 gcall (sname)
     char *sname;
 {
+    //ol("addiu\t$sp, $sp, -4");
+    //ol("sw\t$ra, 0($sp)");
     if (*sname == '^') {
-        ot ("jsr\tT");
+        ot ("jal\tT");
         outstr (++sname);
+	nl();
+	ot ("nop" ); /* fill delay slot */
     } else {
-        ot ("jsr\t");
+        ot ("jal\t");
         //prefix();
         outstr (sname);
+	nl();
+	ot ("nop"); /* fill delay slot */
     }
     nl();
+    //ol("lw\t$ra, 0($sp)");
+    //ol("addiu\t$sp, $sp, 4");
 }
 
 /*
@@ -323,7 +342,10 @@ gcall (sname)
  */
 gret()
 {
-    ol ("jr\t$ra\nnop");
+    ol("lw\t$ra, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("jr\t$ra");
+    ol ("nop");
 }
 
 /*
@@ -331,8 +353,12 @@ gret()
  */
 callstk()
 {
-    ol ("jsr\t(%sp)+");
+    ////ol("addiu\t$sp, $sp, -4");
+    ////ol("sw\t$ra, 0($sp)");
+    ol ("jsr\t0(sp)+\nnop");
     stkp = stkp + INTSIZE;
+    ////ol("lw\t$ra, 0($sp)");
+    ////ol("addiu\t$sp, $sp, 4");
 }
 
 /*
@@ -343,7 +369,8 @@ jump (label)
 {
     ot ("j\t");
     printlabel (label);
-    ol ("\nnop");
+    nl();
+    ol ("nop");
 }
 
 /*
@@ -353,13 +380,18 @@ testjump (label, ft)
     int label;
     int ft;
 {
-    ol ("cmp.l\t%d0,&0");
+    //ol ("cmp.l\t%d0,&0");
     if (ft)
-        ot ("beq\t");
+        //ot ("beq\t");
+        //ot("blez\t$v0, ");
+        ot("bne\t$v0, $zero, ");
     else
-        ot ("bne\t");
+        //ot ("bne\t");
+        //ot("bgtz\t$v0, ");
+        ot("beq\t$v0, $zero, ");
     printlabel (label);
     nl();
+    ol("nop"); // fill delay slot
 }
 
 /*
@@ -399,9 +431,9 @@ modstk (newstkp)
         error("Bad stack alignment (compiler error)");
     if (k == 0)
         return (newstkp);
-    ot ("add.l\t&");
+    ot ("addiu\t");
+    outstr ("$sp, $sp, ");
     onum (k);
-    outstr (",sp");
     nl();
     return (newstkp);
 }
@@ -437,21 +469,29 @@ gjcase()
 gadd (lval, lval2)
     int *lval, *lval2;
 {
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
     if (dbltest (lval2, lval)) {
-        ol ("asl.l\t&2,(%sp)");
+        //ol ("asl.l\t&2,(%sp)");
+        ol("sll\t$t1, $t1, 2");
     }
-    ol ("add.l\t(%sp)+,%d0");
+    //ol ("add.l\t(%sp)+,%d0");
+    ol ("add\t$v0, $v0, $t1");
     stkp = stkp + INTSIZE;
 }
 
 /*
- * Subtract the primary register from the secondary.
+ * Subtract the primary register from the secondary. // *** from TOS
  */
 gsub()
 {
-    ol ("mov.l\t(%sp)+,%d2");
-    ol ("sub.l\t%d0,%d2");
-    ol ("mov.l\t%d2,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("sub\t$v0, $t1, $v0");
+
+    //ol ("mov.l\t(%sp)+,%d2");
+    //ol ("sub.l\t%d0,%d2");
+    //ol ("mov.l\t%d2,%d0");
     stkp = stkp + INTSIZE;
 }
 
@@ -461,7 +501,11 @@ gsub()
  */
 gmult()
 {
-    gcall ("^mult");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("mult\t$v0, $t1");
+    ol ("mflo\t$v0");
+    //gcall ("^mult");
     stkp = stkp + INTSIZE;
 }
 
@@ -471,7 +515,12 @@ gmult()
  */
 gdiv()
 {
-    gcall ("^div");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("div\t$t1, $v0");
+    ol ("mflo\t$v0");
+    ol ("mfhi\t$t1");
+    //gcall ("^div");
     stkp = stkp + INTSIZE;
 }
 
@@ -482,7 +531,12 @@ gdiv()
  */
 gmod()
 {
-    gcall ("^mod");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("div\t$t1, $v0");
+    ol ("mflo\t$t1");
+    ol ("mfhi\t$v0");
+    //gcall ("^mod");
     stkp = stkp + INTSIZE;
 }
 
@@ -510,7 +564,10 @@ gxor()
  */
 gand()
 {
-    ol ("and.l\t(%sp)+,%d0");
+    //ol ("and.l\t(%sp)+,%d0");
+    ol ("lw\t$t1, 0($sp)");
+    ol ("addiu\t$sp, $sp, 4");
+    ol ("and\t$v0, $v0, $t1");
     stkp = stkp + INTSIZE;
 }
 
@@ -545,7 +602,8 @@ gasl()
  */
 gneg()
 {
-    ol ("neg.l\t%d0");
+    //ol ("neg.l\t%d0");
+    ol ("sub\t$v0, $zero, $v0");
 }
 
 /*
@@ -579,9 +637,11 @@ ginc (lval)
     int lval[];
 {
     if (lval[2] == CINT)
-        ol ("addq.l\t&4,%d0");
+        //ol ("addq.l\t&4,%d0");
+	ol("addiu\t$v0, $v0, 4");
     else
-        ol ("addq.l\t&1,%d0");
+        //ol ("addq.l\t&1,%d0");
+	ol("addiu\t$v0, $v0, 1");
 }
 
 /*
@@ -591,9 +651,11 @@ gdec (lval)
     int lval[];
 {
     if (lval[2] == CINT)
-        ol ("subq.l\t&4,%d0");
+        //ol ("subq.l\t&4,%d0");
+	ol("subiu\t$v0, $v0, 4");
     else
-        ol ("subq.l\t&1,%d0");
+        //ol ("subq.l\t&1,%d0");
+	ol("subiu\t$v0, $v0, 1");
 }
 
 /*
@@ -602,13 +664,19 @@ gdec (lval)
  * and put a literl 1 in the primary if the condition is true,
  * otherwise they clear the primary register.
  */
-
+///// BEEP BEEP actually, compare tos
 /*
  * equal
  */
 geq()
 {
-    gcall ("^eq");
+    ol("lw\t$t1, 0($sp)");
+    ol("sltu\t$t2, $v0, $t1");
+    ol("sltu\t$v0, $t1, $v0");
+    ol("or\t$v0, $v0, $t2");
+    ol("xori\t$v0, $v0, 1");
+    ol("addiu\t$sp, $sp, 4");
+    //gcall ("^eq");
     stkp = stkp + INTSIZE;
 }
 
@@ -617,25 +685,37 @@ geq()
  */
 gne()
 {
-    gcall ("^ne");
+    ol("lw\t$t1, 0($sp)");
+    ol("sltu\t$t2, $v0, $t1");
+    ol("sltu\t$v0, $t1, $v0");
+    ol("or\t$v0, $v0, $t2");
+    ol("addiu\t$sp, $sp, 4");
+    //gcall ("^ne");
     stkp = stkp + INTSIZE;
 }
 
 /*
- * less than (signed)
+ * less than (signed) - TOS < primary
  */
 glt()
 {
-    gcall ("^lt");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("slt\t$v0, $t1, $v0");
+    //gcall ("^lt");
     stkp = stkp + INTSIZE;
 }
 
 /*
- * less than or equal (signed)
+ * less than or equal (signed) TOS <= primary
  */
 gle()
 {
-    gcall ("^le");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("slt\t$v0, $v0, $t1");
+    ol("xori\t$v0, $v0, 1");
+    //gcall ("^le");
     stkp = stkp + INTSIZE;
 }
 
@@ -662,7 +742,10 @@ gge()
  */
 gult()
 {
-    gcall ("^ult");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("sltu\t$v0, $t1, $v0");
+    //gcall ("^ult");
     stkp = stkp + INTSIZE;
 }
 

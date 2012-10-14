@@ -86,12 +86,12 @@ outdec (number)
         int     k, zs;
         char    c;
 
-        if (number == -32768) {
-                outstr ("-32768");
+        if (number == -2147483648) {
+                outstr ("-2147483648");
                 return;
         }
         zs = 0;
-        k = 10000;
+        k = 1000000000;
         if (number < 0) {
                 number = (-number);
                 outbyte ('-');

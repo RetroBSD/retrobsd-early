@@ -61,13 +61,15 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/ashello.S share/example/chello.c \
                   share/example/blkjack.bas share/example/hilow.bas \
                   share/example/stars.bas share/example/prime.scm \
-                  share/example/fact.fth share/example/echo.S
+                  share/example/fact.fth share/example/echo.S \
+                  share/smallc/lib.c share/smallc/Makefile share/smallc/primelist.c \
+                  share/smallc/primesum.c share/smallc/sys.s
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
-                  share/misc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
-                  games/ games/lib/
+                  share/misc/ share/smallc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
+                  games/ games/lib/ 
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \

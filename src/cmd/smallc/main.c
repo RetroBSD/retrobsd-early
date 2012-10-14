@@ -62,8 +62,10 @@ main (argc, argv)
             addglb("memory", ARRAY, CCHAR, 0, EXTERN);
             addglb("stack", ARRAY, CCHAR, 0, EXTERN);
             rglbptr = glbptr;
-            addglb("etext", ARRAY, CCHAR, 0, EXTERN);
-            addglb("edata", ARRAY, CCHAR, 0, EXTERN);
+
+	    /* FIXME currently not defined so comment out for the moment */
+            /*addglb("etext", ARRAY, CCHAR, 0, EXTERN);*/
+            /*addglb("edata", ARRAY, CCHAR, 0, EXTERN);*/
 
             /*
              *      compiler body

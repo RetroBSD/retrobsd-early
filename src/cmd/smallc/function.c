@@ -38,6 +38,7 @@ newfunc ()
         outstr (n);
         col ();
         nl ();
+	fentry();
         locptr = STARTLOC;
         argstk = 0;
         while (!match (")")) {
