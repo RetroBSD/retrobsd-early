@@ -604,7 +604,6 @@ gasl()
  */
 gneg()
 {
-    //ol ("neg.l\t%d0");
     ol ("sub\t$v0, $zero, $v0");
 }
 
@@ -613,7 +612,11 @@ gneg()
  */
 glneg()
 {
-    gcall ("^lneg");
+    //gcall ("^lneg");
+    ol ("sltu\t$t1, $v0, $zero");
+    ol ("sltu\t$t2, $zero, $v0");
+    ol ("or\t$v0, $t1, $t2");
+    ol ("xori\t$v0, $v0, 1");
 }
 
 /*
@@ -621,8 +624,8 @@ glneg()
  */
 gcom()
 {
-    ol ("not\t%d0");
-    ol ("xor\t$v0, $v0, -1");
+    ol ("addiu\t$t1, $zero, -1");
+    ol ("xor\t$v0, $v0, $t1");
 }
 
 /*
@@ -630,7 +633,10 @@ gcom()
  */
 gbool()
 {
-    gcall ("^bool");
+    ol ("sltu\t$t1, $v0, $zero");
+    ol ("sltu\t$t2, $zero, $v0");
+    ol ("or\t$v0, $t1, $t2");
+    //gcall ("^bool");
 }
 
 /*
@@ -655,10 +661,10 @@ gdec (lval)
 {
     if (lval[2] == CINT)
         //ol ("subq.l\t&4,%d0");
-	ol("subiu\t$v0, $v0, 4");
+	ol("addiu\t$v0, $v0, -4");
     else
         //ol ("subq.l\t&1,%d0");
-	ol("subiu\t$v0, $v0, 1");
+	ol("addiu\t$v0, $v0, -1");
 }
 
 /*
@@ -716,27 +722,35 @@ gle()
 {
     ol("lw\t$t1, 0($sp)");
     ol("addiu\t$sp, $sp, 4");
-    ol("slt\t$v0, $v0, $t1");
-    ol("xori\t$v0, $v0, 1");
+    ol("slt\t$v0, $v0, $t1"); // primary < tos
+    ol("xori\t$v0, $v0, 1");  // primary >= tos
     //gcall ("^le");
     stkp = stkp + INTSIZE;
 }
 
 /*
- * greater than (signed)
+ * greater than (signed) TOS > primary
  */
 ggt()
 {
-    gcall ("^gt");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("slt\t$v0, $v0, $t1");   //pimary < TOS
+    //ol("xori\t$v0, $v0, 1");
+    //gcall ("^gt");
     stkp = stkp + INTSIZE;
 }
 
 /*
- * greater than or equal (signed)
+ * greater than or equal (signed) TOS >= primary
  */
 gge()
 {
-    gcall ("^ge");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("slt\t$v0, $t1, $v0");   //tos < primary
+    ol("xori\t$v0, $v0, 1");    //tos >= primary
+    //gcall ("^ge");
     stkp = stkp + INTSIZE;
 }
 
@@ -757,7 +771,11 @@ gult()
  */
 gule()
 {
-    gcall ("^ule");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("sltu\t$v0, $v0, $t1"); // primary < tos
+    ol("xori\t$v0, $v0, 1");  // primary >= tos
+    //gcall ("^ule");
     stkp = stkp + INTSIZE;
 }
 
@@ -766,7 +784,10 @@ gule()
  */
 gugt()
 {
-    gcall ("^ugt");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("sltu\t$v0, $v0, $t1");   //pimary < TOS
+    //gcall ("^ugt");
     stkp = stkp + INTSIZE;
 }
 
@@ -775,7 +796,11 @@ gugt()
  */
 guge()
 {
-    gcall ("^uge");
+    ol("lw\t$t1, 0($sp)");
+    ol("addiu\t$sp, $sp, 4");
+    ol("sltu\t$v0, $t1, $v0");   //tos < primary
+    ol("xori\t$v0, $v0, 1");    //tos >= primary
+    //gcall ("^uge");
     stkp = stkp + INTSIZE;
 }
 
