@@ -48,7 +48,7 @@ DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=10
 DEFS            += -DSD_CS0_PORT=TRISB -DSD_CS0_PIN=1
 
 # LEDs at pins D0 (red), D1 (yellow), D2 (green)
-DEFS            += -DLED_TTY_PORT=TRISD    -DLED_TTY_PIN=0
+# Pin D0 is used for SD/MMC as signal SDO1
 DEFS            += -DLED_DISK_PORT=TRISD   -DLED_DISK_PIN=1
 DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=2
 
