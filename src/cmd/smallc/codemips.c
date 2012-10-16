@@ -106,7 +106,7 @@ comment()
  */
 prefix()
 {
-    //outbyte ('_');
+    outbyte ('_');
 }
 
 /*
@@ -155,7 +155,7 @@ ppubext (scptr)
     if (scptr[STORAGE] == STATIC)
         return;
     ot (".globl\t");
-    //prefix();
+    prefix();
     outstr (scptr);
     nl();
 }
@@ -184,14 +184,14 @@ onum (num)
 getmem (sym)
     char    *sym;
 {
+    ot ("la\t$t0, ");
+    prefix();
+    outstr (sym + NAME);
+    nl();
     if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-        ot ("lb\t$v0, ");
-        //prefix();
-        outstr (sym + NAME);
+        ol ("lb\t$v0, 0($t0)");
     } else {
-        ot ("lw\t$v0, ");
-        //prefix();
-        outstr (sym + NAME);
+        ol ("lw\t$v0, 0($t0)");
     }
 }
 
@@ -220,14 +220,15 @@ getloc (sym)
 putmem (sym)
     char *sym;
 {
-    if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
-        ot ("sb\t$v0, ");
-    } else
-        ot ("sw\t$v0, ");
-
-    //prefix();
+    ot ("la\t$t0, ");
+    prefix();
     outstr (sym + NAME);
     nl();
+    if ((sym[IDENT] != POINTER) & (sym[TYPE] == CCHAR)) {
+        ol ("sb\t$v0, 0($t0)");
+    } else {
+        ol ("sw\t$v0, 0($t0)");
+    }
 }
 
 /*
@@ -327,7 +328,7 @@ gcall (sname)
 	ot ("nop" ); /* fill delay slot */
     } else {
         ot ("jal\t");
-        //prefix();
+        prefix();
         outstr (sname);
 	nl();
 	ot ("nop"); /* fill delay slot */

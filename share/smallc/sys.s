@@ -1,6 +1,6 @@
 	.text
 
-write:	
+_write:	
 	lw	$a0, 8($sp)
 	lw	$a1, 4($sp)
 	lw	$a2, 0($sp)
@@ -19,14 +19,14 @@ write:
 	jr	$ra
 	nop
 
-exit:
+_exit:
 	lw	$a0, 0($sp)
 	addiu   $sp, $sp, -4
 	syscall	1
 	nop
 
 serrn:
-        la	$t1, errno
+        la	$t1, _errno
 	sw	$t0, 0($t1)
 	jr	$ra
 	nop
@@ -68,9 +68,9 @@ Tcase:
         nop
 
 	.data
-errno:	.byte	0,0,0,0
+_errno:	.byte	0,0,0,0
 
-	.globl write
-	.globl exit
-        .globl errno
+	.globl _write
+	.globl _exit
+        .globl _errno
         .globl Tcase
