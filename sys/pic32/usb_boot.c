@@ -563,7 +563,7 @@ int main()
     CHECONSET = 0x30;
 
     /* Disable JTAG port, to use it for i/o. */
-    DDPCON = 0;
+    /*DDPCON = 0;*/
 
     /* Config register: enable kseg0 caching. */
     mips_write_c0_register (C0_CONFIG, 0,
