@@ -59,6 +59,7 @@ enum {
     LEQU,               /* .equ */
     LWORD,              /* .word */
     LBYTE,              /* .byte */
+    LSPACE,             /* .space */
 };
 
 /*
@@ -606,6 +607,7 @@ int lookacmd ()
         break;
     case 's':
         if (! strcmp (".short", name)) return (LSHORT);
+        if (! strcmp (".space", name)) return (LSPACE);
         if (! strcmp (".strng", name)) return (LSTRNG);
         break;
     case 't':
@@ -1537,6 +1539,20 @@ void pass1 ()
             while (nwords--)
               fputrel (RABS, rfile[segm]);
             break;
+        case LSPACE:
+            getexpr (&cval);
+            for (nbytes=0;nbytes<intval;nbytes++) {
+		fputc (0, sfile[segm]);
+            }
+            c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
+    	    count[segm] += nbytes + c;
+            nwords = (unsigned) (nbytes + c) / WORDSZ;
+            while (c--)
+               fputc (0, sfile[segm]);
+            while (nwords--)
+              fputrel (RABS, rfile[segm]);
+            break;
+
         case LASCII:
             makeascii ();
             break;
