@@ -512,7 +512,7 @@ heir10 (lval)
                         return (0);
                 }
                 ptr = CAST_CHAR_PTR lval[0];
-                lval[2] = ptr[TYPE];
+		if( ptr ) lval[2] = ptr[TYPE];
                 if (lval[1])
                         return (0);
                 /* global and non-array */
