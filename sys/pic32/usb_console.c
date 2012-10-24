@@ -45,8 +45,10 @@ void cninit()
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
 
     /* Wait for any user input. */
+    led_control (LED_KERNEL, 1);
     while (! cdc_consume(0))
         usb_device_tasks();
+    led_control (LED_KERNEL, 0);
 }
 
 void cnidentify()
