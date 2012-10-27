@@ -37,7 +37,10 @@ DEFS            += -DLED_AUX_PORT=TRISG    -DLED_AUX_PIN=13
 DRIVER_GPIO         = yes
 
 # Basic ADC interface
-DRIVER_ADC          = no
+DRIVER_ADC          = yes
+
+DRIVER_OC	= yes
+DRIVER_GLCD	= yes
 
 # Power control (power LED, and soft power-off by button)
 # requires supported PSU (ATX)

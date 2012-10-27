@@ -63,7 +63,7 @@ int adc_open(dev_t dev, int flag, int mode)
         AD1CON3 = 0b0000011100000111;
         AD1CON1 = 0b1000000011100110;
         IECSET(1) = 1<<(PIC32_IRQ_AD1-32);
-	IPC(6) |= PIC32_IPC_IP0(3);
+	IPC(6) = 0x04040404;
     }
     nactive++;
     return 0;
