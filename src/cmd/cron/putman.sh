@@ -20,7 +20,7 @@ if [ ! -d $MDIR ]; then
 fi
 
 nroff -man $PAGE >$DEST
-chmod 444 $DEST
+chmod 644 $DEST
 set +x
 
 exit 0
