@@ -1,155 +1,166 @@
+/*
+ * File primary.c: 2.4 (84/11/27,16:26:07)
+ */
+
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
-primary (lval)
-        int     *lval;
-{
-        char    *ptr, sname[NAMESIZE];
-        int     num[1];
-        int     k;
+primary (lvalue_t *lval) {
+        char    sname[NAMESIZE];
+        int     num[1], k, symbol_table_idx, offset, reg;
+        SYMBOL *symbol;
 
-        lval[2] = 0;  /* clear pointer/array type */
+        lval->ptr_type = 0;  /* clear pointer/array type */
         if (match ("(")) {
-                k = heir1 (lval);
+                k = hier1 (lval);
                 needbrack (")");
                 return (k);
         }
         if (amatch("sizeof", 6)) {
                 needbrack("(");
-                immedi();
-                if (amatch("int", 3))
-                        onum(intsize());
-                else if (amatch("char", 4))
-                        onum(1);
+                gen_immediate_c();
+                if (amatch("int", 3)) output_number(INTSIZE);
+                else if (amatch("char", 4)) output_number(1);
                 else if (symname(sname)) {
-                        if ((ptr = CAST_CHAR_PTR findloc(sname)) ||
-                            (ptr = CAST_CHAR_PTR findglb(sname)))
-                        {
-                                if (ptr[STORAGE] == LSTATIC)
+                        if ((symbol_table_idx = findloc(sname)) ||
+                                (symbol_table_idx = findglb(sname))) {
+                                symbol = &symbol_table[symbol_table_idx];
+                                if (symbol->storage == LSTATIC)
                                         error("sizeof local static");
-                                k = glint(ptr);
-                                if ((ptr[TYPE] == CINT) ||
-                                        (ptr[IDENT] == POINTER))
-                                        k *= intsize();
-                                onum(k);
+                                offset = symbol->count; 
+                                if ((symbol->type & CINT) ||
+                                        (symbol->identity == POINTER))
+                                        offset *= INTSIZE;
+                                output_number(offset);
                         } else {
                                 error("sizeof undeclared variable");
-                                onum(0);
+                                output_number(0);
                         }
                 } else {
-                        error("sizeof only on type or variable");
+                        error("sizeof only on simple type or variable");
                 }
                 needbrack(")");
-                nl();
-                return(lval[0] = lval[1] = 0);
+                newline();
+                lval->symbol = 0;
+                lval->indirect = 0;
+                return(0);
         }
         if (symname (sname)) {
-                ptr = CAST_CHAR_PTR findloc (sname);
-                if (ptr) {
-                        getloc (ptr);
-                        lval[0] = CAST_INT ptr;
-                        lval[1] = ptr[TYPE];
-                        if (ptr[IDENT] == POINTER) {
-                                lval[1] = CINT;
-                                lval[2] = ptr[TYPE];
+                if (symbol_table_idx = findloc (sname)) {
+                        symbol = &symbol_table[symbol_table_idx];
+                        reg = gen_get_location (symbol);
+                        lval->symbol = symbol;
+                        lval->indirect =  symbol->type;
+                        if (symbol->identity == ARRAY) {
+                                lval->ptr_type = symbol->type;
+                                //lval->ptr_type = 0;
+                                return 0;
                         }
-                        if (ptr[IDENT] == ARRAY) {
-                                lval[1] = ptr[TYPE];
-                                lval[2] = 0;
-                                return (0);
-                        } else
-                                return (1);
+                        if (symbol->identity == POINTER) {
+                                lval->indirect = UINT;
+                                lval->ptr_type = symbol->type;
+                        }
+                        return reg;
                 }
-                ptr = CAST_CHAR_PTR findglb (sname);
-                if (ptr)
-                        if (ptr[IDENT] != FUNCTION) {
-                                lval[0] = CAST_INT ptr;
-                                lval[1] = 0;
-                                if (ptr[IDENT] != ARRAY) {
-                                        if (ptr[IDENT] == POINTER)
-                                                lval[2] = ptr[TYPE];
-                                        return (1);
+                if (symbol_table_idx = findglb (sname)) {
+                        symbol = &symbol_table[symbol_table_idx];
+                        if (symbol->identity != FUNCTION) {
+                                lval->symbol = symbol;
+                                lval->indirect = 0;
+                                if (symbol->identity != ARRAY) {
+                                        if (symbol->identity == POINTER) {
+                                                lval->ptr_type = symbol->type;
+                                        }
+                                        return 1;
                                 }
-                                immed ();
-                                prefix ();
-                                outstr (ptr);
-                                nl ();
-                                lval[1] = lval[2] = ptr[TYPE];
-                                lval[2] = 0;
-                                return (0);
+                                gen_immediate_a ();
+                                prefix();
+                                output_string (symbol->name);
+                                newline ();
+                                lval->indirect = lval->ptr_type = symbol_table[symbol_table_idx].type;
+                                lval->ptr_type = 0;
+                                return 0;
                         }
+                }
                 blanks ();
                 if (ch() != '(')
                         error("undeclared variable");
-                ptr = CAST_CHAR_PTR addglb (sname, FUNCTION, CINT, 0, PUBLIC);
-                lval[0] = CAST_INT ptr;
-                lval[1] = 0;
-                return (0);
+                symbol_table_idx = add_global (sname, FUNCTION, CINT, 0, PUBLIC, 1);
+                symbol = &symbol_table[symbol_table_idx];
+                lval->symbol = symbol;
+                lval->indirect = 0;
+                return 0;
         }
-        if (constant (num))
-                return (lval[0] = lval[1] = 0);
+        if (constant (num)) {
+            lval->symbol = 0;
+            lval->indirect = 0;
+            return 0;
+        }
         else {
                 error ("invalid expression");
-                immedi ();
-                onum (0);
-                nl ();
+                gen_immediate_c ();
+                output_number(0);
+                newline ();
                 junk ();
-                return (0);
+                return 0;
         }
+
 }
 
-/*
- *      true if val1 -> int pointer or int array and val2 not pointer or array
+/**
+ * true if val1 -> int pointer or int array and val2 not pointer or array
+ * @param val1
+ * @param val2
+ * @return 
  */
-dbltest (val1, val2)
-        int     val1[], val2[];
-{
+dbltest (lvalue_t *val1, lvalue_t *val2) {
         if (val1 == NULL)
                 return (FALSE);
-        if (val1[2] != CINT)
+        if (!(val1->ptr_type & CINT))
                 return (FALSE);
-        if (val2[2])
+        if (val2->ptr_type)
                 return (FALSE);
         return (TRUE);
 }
 
-/*
- *      determine type of binary operation
+/**
+ * determine type of binary operation
+ * @param lval
+ * @param lval2
+ * @return 
  */
-result (lval, lval2)
-        int     lval[];
-        int     lval2[];
-{
-        if (lval[2] && lval2[2])
-                lval[2] = 0;
-        else if (lval2[2]) {
-                lval[0] = lval2[0];
-                lval[1] = lval2[1];
-                lval[2] = lval2[2];
+result (lvalue_t *lval, lvalue_t *lval2) {
+        if (lval->ptr_type && lval2->ptr_type)
+                lval->ptr_type = 0;
+        else if (lval2->ptr_type) {
+                lval->symbol = lval2->symbol;
+                lval->indirect = lval2->indirect;
+                lval->ptr_type = lval2->ptr_type;
         }
 }
 
 constant (val)
-        int     val[];
+int     val[];
 {
         if (number (val))
-                immedi ();
-        else if (pstr (val))
-                immedi ();
-        else if (qstr (val)) {
-                immed ();
-                printlabel (litlab);
-                outbyte ('+');
+                gen_immediate_c ();
+        else if (quoted_char (val))
+                gen_immediate_c ();
+        else if (quoted_string (val)) {
+                gen_immediate_a ();
+                print_label (litlab);
+                output_byte ('+');
         } else
                 return (0);
-        onum (val[0]);
-        nl ();
+        output_number (val[0]);
+        newline ();
         return (1);
+
 }
 
 number (val)
-        int     val[];
+int     val[];
 {
         int     k, minus, base;
         char    c;
@@ -184,40 +195,51 @@ number (val)
         if (minus < 0)
                 k = (-k);
         val[0] = k;
-        return (1);
+        if(k < 0) {
+            return (UINT);
+        } else {
+            return (CINT);
+        }
 }
 
-pstr (val)
-        int     val[];
-{
+/**
+ * Test if we have one char enclosed in single quotes
+ * @param value returns the char found
+ * @return 1 if we have, 0 otherwise
+ */
+quoted_char (int *value) {
         int     k;
         char    c;
 
         k = 0;
         if (!match ("'"))
                 return (0);
-        while ((c = gch ()) != 39) {
+        while ((c = gch ()) != '\'') {
                 c = (c == '\\') ? spechar(): c;
                 k = (k & 255) * 256 + (c & 255);
         }
-        val[0] = k;
+        *value = k;
         return (1);
 }
 
-qstr (val)
-        int     val[];
-{
+/**
+ * Test if we have string enclosed in double quotes. e.g. "abc".
+ * Load the string into literal pool.
+ * @param position returns beginning of the string
+ * @return 1 if such string found, 0 otherwise
+ */
+quoted_string (int *position) {
         char    c;
 
-        if (!match (quote))
+        if (!match ("\""))
                 return (0);
-        val[0] = litptr;
+        *position = litptr;
         while (ch () != '"') {
                 if (ch () == 0)
                         break;
                 if (litptr >= LITMAX) {
                         error ("string space exhausted");
-                        while (!match (quote))
+                        while (!match ("\""))
                                 if (gch () == 0)
                                         break;
                         return (1);
@@ -230,68 +252,64 @@ qstr (val)
         return (1);
 }
 
-/*
- *      decode special characters (preceeded by back slashes)
+/**
+ * decode special characters (preceeded by back slashes)
  */
-spechar()
-{
+spechar() {
         char c;
         c = ch();
 
-        if      (c == 'n') c = EOL;
+        if      (c == 'n') c = LF;
         else if (c == 't') c = TAB;
         else if (c == 'r') c = CR;
         else if (c == 'f') c = FFEED;
         else if (c == 'b') c = BKSP;
         else if (c == '0') c = EOS;
-        else if (c == EOS) return;
+        else if (c == EOS) return 0;
 
         gch();
         return (c);
 }
 
-/*
- *      perform a function call
- *
- *      called from "heir11", this routine will either call the named
- *      function, or if the supplied ptr is zero, will call the contents
- *      of HL
- *
+/**
+ * perform a function call
+ * called from "hier11", this routine will either call the named
+ * function, or if the supplied ptr is zero, will call the contents
+ * of HL
+ * @param ptr name of the function
  */
-callfunction (ptr)
-        char    *ptr;
+void callfunction (ptr)
+char    *ptr;
 {
         int     nargs;
 
         nargs = 0;
         blanks ();
         if (ptr == 0)
-                gpush ();
-
+                gen_push (HL_REG);
         while (!streq (line + lptr, ")")) {
                 if (endst ())
                         break;
                 expression (NO);
                 if (ptr == 0)
-                        swapstk ();
-                gpush ();
-                nargs = nargs + intsize();
+                        gen_swap_stack ();
+                gen_push (HL_REG);
+                nargs = nargs + INTSIZE;
                 if (!match (","))
                         break;
         }
         needbrack (")");
         if (aflag)
-                gnargs(nargs / intsize());
-
+                gnargs(nargs / INTSIZE);
         if (ptr)
-                gcall (ptr);
+                gen_call (ptr);
         else
                 callstk ();
-
-        stkp = modstk (stkp + nargs);
+        stkp = gen_modify_stack (stkp + nargs);
 }
 
 needlval ()
 {
         error ("must be lvalue");
 }
+

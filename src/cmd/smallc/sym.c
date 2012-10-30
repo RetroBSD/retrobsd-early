@@ -1,19 +1,23 @@
+/*
+ * File sym.c: 2.1 (83/03/20,16:02:19)
+ */
+
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
-/*
- *      declare a static variable
+/**
+ * declare a static variable
+ * @param type
+ * @param storage
+ * @return 
  */
-declglb (typ, stor)
-        int     typ;
-        int     stor;
-{
-        int     k, j;
+declare_global(int type, int storage) {
+        int     k, j, count;
         char    sname[NAMESIZE];
 
-        for (;;) {
-                for (;;) {
+        FOREVER {
+                FOREVER {
                         if (endst ())
                                 return;
                         k = 1;
@@ -25,14 +29,17 @@ declglb (typ, stor)
                                 illname ();
                         if (findglb (sname))
                                 multidef (sname);
+                        count = 1;
                         if (match ("[")) {
                                 k = needsub ();
-                                if (k || stor == EXTERN)
+                                count = k;
+                                //if (k || storage == EXTERN)
                                         j = ARRAY;
-                                else
-                                        j = POINTER;
+                                //else
+                                //        j = POINTER;
                         }
-                        addglb (sname, j, typ, k, stor);
+                        j = initials(sname, type, j, k);
+                        add_global (sname, j, type, (k == 0 ? -1 : k), storage, count);
                         break;
                 }
                 if (!match (","))
@@ -40,20 +47,21 @@ declglb (typ, stor)
         }
 }
 
-/*
- *      declare local variables
- *
- *      works just like "declglb", but modifies machine stack and adds
- *      symbol table entry with appropriate stack offset to find it again
+/**
+ * declare local variables
+ * works just like "declglb", but modifies machine stack and adds
+ * symbol table entry with appropriate stack offset to find it again
+ * @param typ
+ * @param stclass
  */
-declloc (typ, stclass)
-        int     typ, stclass;
+declare_local (typ, stclass)
+int     typ, stclass;
 {
-        int     k, j;
+        int     k, j, count;
         char    sname[NAMESIZE];
 
-        for (;;) {
-                for (;;) {
+        FOREVER {
+                FOREVER {
                         if (endst ())
                                 return;
                         if (match ("*"))
@@ -64,27 +72,29 @@ declloc (typ, stclass)
                                 illname ();
                         if (findloc (sname))
                                 multidef (sname);
+                        count = 1;
                         if (match ("[")) {
                                 k = needsub ();
+                                count = k;
                                 if (k) {
                                         j = ARRAY;
-                                        if (typ == CINT)
-                                                k = k * intsize();
+                                        if (typ & CINT)
+                                                k = k * INTSIZE;
                                 } else {
                                         j = POINTER;
-                                        k = intsize();
+                                        k = INTSIZE;
                                 }
                         } else
-                                if ((typ == CCHAR) & (j != POINTER))
+                                if ((typ & CCHAR) && (j != POINTER))
                                         k = 1;
                                 else
-                                        k = intsize();
+                                        k = INTSIZE;
                         if (stclass != LSTATIC) {
                                 k = galign(k);
-                                stkp = modstk (stkp - k);
-                                addloc (sname, j, typ, stkp, AUTO);
+                                stkp = gen_modify_stack (stkp - k);
+                                add_local (sname, j, typ, stkp, AUTO, count);
                         } else
-                                addloc( sname, j, typ, k, LSTATIC);
+                                add_local( sname, j, typ, k, LSTATIC, count);
                         break;
                 }
                 if (!match (","))
@@ -92,11 +102,83 @@ declloc (typ, stclass)
         }
 }
 
-/*
- *      get required array size
+/**
+ * initialize global objects
+ * @param symbol_name
+ * @param size char 1 or integer 2
+ * @param identity
+ * @param dim
+ * @return 1 if variable is initialized
  */
-needsub ()
-{
+int initials(char *symbol_name, int size, int identity, int dim) {
+    int dim_unknown = 0;
+    litptr = 0;
+    if(dim == 0) { // allow for xx[] = {..}; declaration
+        dim_unknown = 1;
+    }
+    if (!(size & CCHAR) && !(size & CINT)) {
+        error("unsupported storage size");
+    }
+    if(match("=")) {
+        // an array
+        if(match("{")) {
+            while((dim > 0) || (dim_unknown)) {
+                if (init(symbol_name, size, identity, &dim) && dim_unknown) {
+                    dim_unknown++;
+                }
+                if(match(",") == 0) {
+                    break;
+                }
+            }
+            needbrack("}");
+            if(--dim_unknown == 0)
+                identity = POINTER;
+        // single constant
+        } else {
+            init(symbol_name, size, identity, &dim);
+        }
+    }
+    return identity;
+}
+
+/**
+ * evaluate one initializer, add data to table
+ * @param size
+ * @param ident
+ * @param dim
+ * @return
+ */
+init(char *symbol_name, int size, int ident, int *dim) {
+    int value, number_of_chars;
+    if(ident == POINTER) {
+        error("cannot assign to pointer");
+    }
+    if(quoted_string(&value)) {
+        if((ident == VARIABLE) || (size != 1))
+            error("found string: must assign to char pointer or array");
+        number_of_chars = litptr - value;
+        *dim = *dim - number_of_chars;
+        while (number_of_chars > 0) {
+            add_data(symbol_name, CCHAR, litq[value++]);
+            number_of_chars = number_of_chars - 1;
+        }
+    } else if (number(&value)) {
+        add_data(symbol_name, CINT, value);
+        *dim = *dim - 1;
+    } else if(quoted_char(&value)) {
+        add_data(symbol_name, CCHAR, value);
+        *dim = *dim - 1;
+    } else {
+        return 0;
+    }
+    return 1;
+}
+
+/**
+ * get required array size. [xx]
+ * @return array size
+ */
+needsub () {
         int     num[1];
 
         if (match ("]"))
@@ -113,134 +195,149 @@ needsub ()
         return (num[0]);
 }
 
-findglb (sname)
-        char    *sname;
-{
-        char    *ptr;
+/**
+ * search global table for given symbol name
+ * @param sname
+ * @return table index
+ */
+int findglb (char *sname) {
+        int idx;
 
-        ptr = STARTGLB;
-        while (ptr != glbptr) {
-                if (astreq (sname, ptr, NAMEMAX))
-                        return (CAST_INT ptr);
-                ptr = ptr + SYMSIZ;
+        idx = 1;
+        while (idx < global_table_index) {
+                if (astreq (sname, symbol_table[idx].name, NAMEMAX))
+                        return (idx);
+                idx++;
         }
         return (0);
 }
 
-findloc (sname)
-        char    *sname;
-{
-        char    *ptr;
+/**
+ * search local table for given symbol name
+ * @param sname
+ * @return table index
+ */
+int findloc (char *sname) {
+        int idx;
 
-        ptr = locptr;
-        while (ptr != STARTLOC) {
-                ptr = ptr - SYMSIZ;
-                if (astreq (sname, ptr, NAMEMAX))
-                        return (CAST_INT ptr);
+        idx = local_table_index;
+        while (idx >= NUMBER_OF_GLOBALS) {
+                idx--;
+                if (astreq (sname, symbol_table[idx].name, NAMEMAX))
+                        return (idx);
         }
         return (0);
 }
 
-addglb (sname, id, typ, value, stor)
-        char    *sname, id, typ;
-        int     value, stor;
-{
-        char    *ptr;
-
-        cptr = CAST_CHAR_PTR findglb (sname);
-        if (cptr)
-                return (CAST_INT cptr);
-        if (glbptr >= ENDGLB) {
+/**
+ * add new symbol to global table
+ * @param sname
+ * @param identity
+ * @param type
+ * @param value
+ * @param storage
+ * @return new index
+ */
+int add_global (char *sname, int identity, int type, int offset, int storage, int count) {
+        SYMBOL *symbol;
+        char *buffer_ptr;
+//printf("global - symbol: %s offset: %d count: %d\n", sname, offset, count); 
+        if (current_symbol_table_idx = findglb (sname)) {
+                return (current_symbol_table_idx);
+        }
+        if (global_table_index >= NUMBER_OF_GLOBALS) {
                 error ("global symbol table overflow");
                 return (0);
         }
-        cptr = ptr = glbptr;
-        while (an (*ptr++ = *sname++));
-        cptr[IDENT] = id;
-        cptr[TYPE] = typ;
-        cptr[STORAGE] = stor;
-        cptr[OFFSET] = value & 0xff;
-        cptr[OFFSET+1] = (value >> 8) & 0xff;
-        glbptr = glbptr + SYMSIZ;
-        return (CAST_INT cptr);
+        current_symbol_table_idx = global_table_index;
+        symbol = &symbol_table[current_symbol_table_idx];
+        buffer_ptr = symbol->name;
+        while (alphanumeric(*buffer_ptr++ = *sname++));
+        symbol->identity = identity;
+        symbol->type = type;
+        symbol->storage = storage;
+        symbol->count = count;
+        symbol->offset = offset;        
+        global_table_index++;
+        return (current_symbol_table_idx);
 }
 
-addloc (sname, id, typ, value, stclass)
-        char    *sname, id, typ;
-        int     value, stclass;
-{
-        char    *ptr;
-        int     k;
-
-        cptr = CAST_CHAR_PTR findloc (sname);
-        if (cptr)
-                return (CAST_INT cptr);
-        if (locptr >= ENDLOC) {
+/**
+ * add new symbol to local table
+ * @param sname
+ * @param identity
+ * @param type
+ * @param value
+ * @param storage_class
+ * @return 
+ */
+int add_local (char *sname, int identity, int type, int offset, int storage_class, int count) {
+        int k;
+        SYMBOL *symbol;
+        char *buffer_ptr;
+//printf("local - symbol: %s offset: %d count: %d\n", sname, offset, count); 
+        
+        if (current_symbol_table_idx = findloc (sname)) {
+                return (current_symbol_table_idx);
+        }
+        if (local_table_index >= NUMBER_OF_GLOBALS + NUMBER_OF_LOCALS) {
                 error ("local symbol table overflow");
                 return (0);
         }
-        cptr = ptr = locptr;
-        while (an (*ptr++ = *sname++));
-        cptr[IDENT] = id;
-        cptr[TYPE] = typ;
-        cptr[STORAGE] = stclass;
-        if (stclass == LSTATIC) {
-                gdata();
-                printlabel(k = getlabel());
-                col();
-                defstorage();
-                onum(value);
-                nl();
-                gtext();
-                value = k;
-        } else
-                value = galign(value);
-        cptr[OFFSET] = value & 0xff;
-        cptr[OFFSET+1] = (value >> 8) & 0xff;
-        locptr = locptr + SYMSIZ;
-        return (CAST_INT cptr);
+        current_symbol_table_idx = local_table_index;
+        symbol = &symbol_table[current_symbol_table_idx];
+        buffer_ptr = symbol->name;
+        while (alphanumeric(*buffer_ptr++ = *sname++));
+        symbol->identity = identity;
+        symbol->type = type;
+        symbol->storage = storage_class;
+        symbol->count = count;
+        if (storage_class == LSTATIC) {
+                data_segment_gdata();
+                print_label(k = getlabel());
+                output_label_terminator();
+                gen_def_storage();
+                output_number(offset);
+                newline();
+                code_segment_gtext();
+                offset = k;
+        }
+        symbol->offset = offset;
+        local_table_index++;
+        return (current_symbol_table_idx);
 }
 
 /*
  *      test if next input string is legal symbol name
  *
  */
-symname (sname)
-        char    *sname;
-{
-        int     k;
-        char    c;
+symname(char *sname) {
+    int k;
 
-        blanks ();
-        if (!alpha (ch ()))
-                return (0);
-        k = 0;
-        while (an (ch ()))
-                sname[k++] = gch ();
-        sname[k] = 0;
-        return (1);
+    blanks();
+    if (!alpha (ch ()))
+        return (0);
+    k = 0;
+    while (alphanumeric(ch ()))
+        sname[k++] = gch ();
+    sname[k] = 0;
+    return (1);
 }
 
-illname ()
-{
-        error ("illegal symbol name");
+illname() {
+    error ("illegal symbol name");
 }
 
-multidef (sname)
-        char    *sname;
-{
-        error ("already defined");
-        comment ();
-        outstr (sname);
-        nl ();
+/**
+ * print error message
+ * @param symbol_name
+ * @return 
+ */
+multidef (char *symbol_name) {
+    error ("already defined");
+    gen_comment ();
+    output_string (symbol_name);
+    newline ();
 }
 
-glint(syment)
-        char *syment;
-{
-        int l, u, r;
-        l = syment[OFFSET];
-        u = syment[OFFSET+1];
-        r = (l & 0xff) + ((u << 8) & ~0x00ff);
-        return (r);
-}
+

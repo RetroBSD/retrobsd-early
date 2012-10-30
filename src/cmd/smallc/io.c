@@ -1,3 +1,8 @@
+/*      File io.c: 2.1 (83/03/20,16:02:07) */
+/*% cc -O -c %
+ *
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include "defs.h"
@@ -6,8 +11,7 @@
 /*
  *      open input file
  */
-openin (p)
-        char *p;
+openin (p) char *p;
 {
         strcpy(fname, p);
         fixname (fname);
@@ -19,6 +23,7 @@ openin (p)
         }
         kill ();
         return (YES);
+
 }
 
 /*
@@ -33,35 +38,38 @@ openout ()
         }
         kill ();
         return (YES);
+
 }
 
 /*
  *      change input filename to output filename
  */
 outfname (s)
-        char    *s;
+char    *s;
 {
         while (*s)
                 s++;
         *--s = 's';
+
 }
 
-/*
- *      remove NL from filenames
+/**
+ * remove NL from filenames
  */
 fixname (s)
-        char    *s;
+char    *s;
 {
-        while (*s && *s++ != EOL);
+        while (*s && *s++ != LF);
         if (!*s) return;
         *(--s) = 0;
+
 }
 
-/*
- *      check that filename is "*.c"
+/**
+ * check that filename is "*.c"
  */
 checkname (s)
-        char    *s;
+char    *s;
 {
         while (*s)
                 s++;
@@ -70,27 +78,26 @@ checkname (s)
         if (*--s != '.')
                 return (NO);
         return (YES);
+
 }
 
-kill ()
-{
+kill () {
         lptr = 0;
         line[lptr] = 0;
 }
 
-readline ()
-{
+readline () {
         int     k;
         FILE    *unit;
 
-        for (;;) {
+        FOREVER {
                 if (feof (input))
                         return;
                 if ((unit = input2) == NULL)
                         unit = input;
                 kill ();
                 while ((k = fgetc (unit)) != EOF) {
-                        if ((k == EOL) | (lptr >= LINEMAX))
+                        if ((k == CR) || (k == LF) | (lptr >= LINEMAX))
                                 break;
                         line[lptr++] = k;
                 }
@@ -102,9 +109,9 @@ readline ()
                         }
                 if (lptr) {
                         if ((ctext) & (cmode)) {
-                                comment ();
-                                outstr (line);
-                                nl ();
+                                gen_comment ();
+                                output_string (line);
+                                newline ();
                         }
                         lptr = 0;
                         return;
@@ -112,18 +119,16 @@ readline ()
         }
 }
 
-inbyte ()
-{
+inbyte () {
         while (ch () == 0) {
                 if (feof (input))
                         return (0);
-                readline ();
+                preprocess ();
         }
         return (gch ());
 }
 
-inchar ()
-{
+inchar () {
         if (ch () == 0)
                 readline ();
         if (feof (input))
@@ -131,37 +136,51 @@ inchar ()
         return (gch ());
 }
 
-gch ()
-{
+/**
+ * gets current char from input line and moves to the next one
+ * @return current char
+ */
+gch () {
         if (ch () == 0)
                 return (0);
         else
                 return (line[lptr++] & 127);
 }
 
-nch ()
-{
+/**
+ * returns next char
+ * @return next char
+ */
+nch () {
         if (ch () == 0)
                 return (0);
         else
                 return (line[lptr + 1] & 127);
 }
 
-ch ()
-{
+/**
+ * returns current char
+ * @return current char
+ */
+ch () {
         return (line[lptr] & 127);
 }
 
 /*
  *      print a carriage return and a string only to console
+ *
  */
 pl (str)
-        char    *str;
+char    *str;
 {
         int     k;
 
         k = 0;
-        putchar (EOL);
+#if __CYGWIN__ == 1
+        putchar (CR);
+#endif
+        putchar (LF);
         while (str[k])
                 putchar (str[k++]);
 }
+

@@ -42,7 +42,7 @@ main()
    w_s("*pi="); w_n(*pi,10); w_s(" (10)\n");
    w_s("*pi+1="); w_n(*pi+1,10); w_s(" (11)\n");
    w_s("*(pi+1)="); w_n(*(pi+1),10); w_s(" (20)\n");
-   w_s("&arr[3]-&arr[0]="); w_n(&arr[3]-&arr[0],10); w_s(" (3) broken\n");
+   w_s("&arr[3]-&arr[0]="); w_n(&arr[3]-&arr[0],10); w_s(" (3)\n");
 
    w_s("*pic="); w_n(*pic,10); w_s(" (13)\n");
    w_s("*pic+1="); w_n(*pic+1,10); w_s(" (14)\n");
@@ -206,7 +206,17 @@ main()
          break;
    }
    w_s("\n");
-
+   
+   pi = &arr[0];
+   pip = &arr[3];
+   w_s("*pip-*pi: "); w_n(*pip-*pi,10); w_s(" 30\n");
+   w_s("pip-pi: "); w_n(pip-pi,10); w_s(" 3\n");
+   w_s("*pip: "); w_n( *pip, 10 ); w_s(" 40\n");
+   w_s("*(pip-3): "); w_n(*(pip-3),10); w_s(" 10\n");
+   w_s("*&arr[3]: "); w_n( *&arr[3], 10 ); w_s(" 40\n");
+   // The following causes an address error, so it has been removed
+   // and needs to be fixed
+   w_s("*(&arr[3]-3): "); w_n(0/**(&arr[3]-3)*/,10); w_s(" 10 broken - causes address error\n");
    exit(0);
 }
 

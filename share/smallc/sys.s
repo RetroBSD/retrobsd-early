@@ -1,32 +1,106 @@
 	.text
 
+#
+# int open( char* file, int flags, int mode )
+#
+_open:	
+	lw	$a0, 8($sp)
+	lw	$a1, 4($sp)
+	lw	$a2, 0($sp)
+
+	# errno handling code after syscall is not ideal,
+	# but I don't think the assembler handles specifying
+	# relocations for %hi and %lo yet, so the handling
+	# shown in the retrobsd code is not really doable
+	
+	syscall	5
+	nop
+	j	serrn
+	nop
+
+	jr	$ra
+	nop
+
+#
+# int read( int fd, void* dest, int count)
+# returns: count of chars read or -1 if error (see errno)
+#
+_read:
+	lw	$a0, 8($sp)
+	lw	$a1, 4($sp)
+	lw	$a2, 0($sp)
+
+	# errno handling code after syscall is not ideal,
+	# but I don't think the assembler handles specifying
+	# relocations for %hi and %lo yet, so the handling
+	# shown in the retrobsd code is not really doable
+	
+	syscall	3
+	nop
+	j	serrn
+	nop
+
+	jr	$ra
+	nop
+
+
+
+#
+# int write( int fd, void* string, int count );
+# returns: count of chars written or -1 if error (see errno)
+#
 _write:	
 	lw	$a0, 8($sp)
 	lw	$a1, 4($sp)
 	lw	$a2, 0($sp)
 
-	addiu   $sp, $sp, -4
-	sw	$ra, 0($sp)
-
+	# errno handling code after syscall is not ideal,
+	# but I don't think the assembler handles specifying
+	# relocations for %hi and %lo yet, so the handling
+	# shown in the retrobsd code is not really doable
+	
 	syscall	4
-
-	jal	serrn
 	nop
-
-	lw	$ra, 0($sp)
-	addiu   $sp, $sp, 4
+	j	serrn
+	nop
 
 	jr	$ra
 	nop
 
+#
+# int close( int fd );
+#
+_close:
+	lw	$a0, 0($sp)
+
+	# errno handling code after syscall is not ideal,
+	# but I don't think the assembler handles specifying
+	# relocations for %hi and %lo yet, so the handling
+	# shown in the retrobsd code is not really doable
+	
+	syscall	6
+	nop
+	j	serrn
+	nop
+
+	jr	$ra
+	nop
+
+#
+# exit( int n );
+#
 _exit:
 	lw	$a0, 0($sp)
 	addiu   $sp, $sp, -4
 	syscall	1
 	nop
 
+
+
+
+
 serrn:
-        la	$t1, _errno
+	la	$t1, _errno
 	sw	$t0, 0($t1)
 	jr	$ra
 	nop
@@ -67,10 +141,19 @@ Tcase:
 	jr	$t3
         nop
 
+Tcallstk:
+	jr	$t1
+	nop
+
 	.data
 _errno:	.byte	0,0,0,0
 
+	.globl _open
+	.globl _read
 	.globl _write
+	.globl _close
 	.globl _exit
         .globl _errno
         .globl Tcase
+        .globl Tcallstk
+        

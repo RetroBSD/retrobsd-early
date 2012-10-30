@@ -7,8 +7,8 @@ LIBS		= -lc
 
 ARCH            = mips
 
-OBJS            = data.o error.o expr.o function.o gen.o io.o lex.o main.o \
-                  primary.o stmt.o sym.o while.o code$(ARCH).o
+OBJS            = data.o error.o expr.o function.o gen.o initialise.o io.o lex.o main.o \
+                  preproc.o primary.o stmt.o sym.o while.o code$(ARCH).o
 
 all:		smallc
 
@@ -35,10 +35,13 @@ error.o: error.c defs.h data.h
 expr.o: expr.c defs.h data.h
 function.o: function.c defs.h data.h
 gen.o: gen.c defs.h data.h
+initialise.o: initialise.c defs.h data.h
 io.o: io.c defs.h data.h
 lex.o: lex.c defs.h data.h
 main.o: main.c defs.h data.h
+preproc.o: preproc.c defs.h data.h
 primary.o: primary.c defs.h data.h
 stmt.o: stmt.c defs.h data.h
 sym.o: sym.c defs.h data.h
 while.o: while.c defs.h data.h
+

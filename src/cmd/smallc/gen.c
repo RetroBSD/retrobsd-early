@@ -1,50 +1,66 @@
+/*      File gen.c: 2.1 (83/03/20,16:02:06) */
+/*% cc -O -c %
+ *
+ */
+
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
 /*
  *      return next available internal label number
+ *
  */
 getlabel ()
 {
         return (nxtlab++);
+
 }
 
-/*
- *      print specified number as label
+/**
+ * print specified number as label
+ * @param label
  */
-printlabel (label)
-        int     label;
+print_label (label)
+int     label;
 {
-        olprfix ();
-        outdec (label);
+        output_label_prefix ();
+        output_decimal (label);
 }
 
-/*
- *      glabel - generate label
+/**
+ * glabel - generate label
+ * not used ?
+ * @param lab label number
  */
 glabel (lab)
-        char    *lab;
+char    *lab;
 {
-        prefix ();
-        outstr (lab);
-        col ();
-        nl ();
+        output_string (lab);
+        output_label_terminator ();
+        newline ();
 }
 
-/*
- *      gnlabel - generate numeric label
+/**
+ * gnlabel - generate numeric label
+ * @param nlab label number
+ * @return 
  */
-gnlabel (nlab)
-        int     nlab;
+generate_label (nlab)
+int     nlab;
 {
-        printlabel (nlab);
-        col ();
-        nl ();
+        print_label (nlab);
+        output_label_terminator ();
+        newline ();
 }
 
-outbyte (c)
-        char    c;
+/**
+ * outputs one byte
+ * @param c
+ * @return 
+ */
+output_byte (c)
+char    c;
 {
         if (c == 0)
                 return (0);
@@ -52,85 +68,94 @@ outbyte (c)
         return (c);
 }
 
-outstr (ptr)
-        char    ptr[];
+/**
+ * outputs a string
+ * @param ptr the string
+ * @return 
+ */
+output_string (ptr)
+char    ptr[];
 {
         int     k;
-
         k = 0;
-        while (outbyte (ptr[k++]));
+        while (output_byte (ptr[k++]));
 }
 
-tab ()
+/**
+ * outputs a tab
+ * @return 
+ */
+print_tab ()
 {
-        outbyte (9);
+        output_byte ('\t');
 }
 
-ol (ptr)
-        char    ptr[];
+/**
+ * output line
+ * @param ptr
+ * @return 
+ */
+output_line (ptr)
+char    ptr[];
 {
-        ot (ptr);
-        nl ();
+        output_with_tab (ptr);
+        newline ();
 }
 
-ot (ptr)
-        char    ptr[];
+/**
+ * tabbed output
+ * @param ptr
+ * @return 
+ */
+output_with_tab (ptr)
+char    ptr[];
 {
-        tab ();
-        outstr (ptr);
+        print_tab ();
+        output_string (ptr);
 }
 
-outdec (number)
-        int     number;
-{
-        int     k, zs;
-        char    c;
-
-        if (number == -2147483648) {
-                outstr ("-2147483648");
-                return;
-        }
-        zs = 0;
-        k = 1000000000;
-        if (number < 0) {
-                number = (-number);
-                outbyte ('-');
-        }
-        while (k >= 1) {
-                c = number / k + '0';
-                if ((c != '0' | (k == 1) | zs)) {
-                        zs = 1;
-                        outbyte (c);
-                }
-                number = number % k;
-                k = k / 10;
-        }
+/**
+ * output decimal number
+ * @param number
+ * @return 
+ */
+output_decimal (int number) {
+    fprintf(output, "%d", number);
 }
 
-store (lval)
-        int     *lval;
-{
-        if (lval[1] == 0)
-                putmem (lval[0]);
-        else
-                putstk (lval[1]);
+/**
+ * stores values into memory
+ * @param lval TODO
+ * @return 
+ */
+store (lvalue_t *lval) {
+    if (lval->indirect == 0)
+        gen_put_memory (lval->symbol);
+    else
+        gen_put_indirect (lval->indirect);
 }
 
-rvalue (lval)
-        int     *lval;
-{
-        if ((lval[0] != 0) & (lval[1] == 0))
-                getmem (lval[0]);
-        else
-                indirect (lval[1]);
+rvalue (lvalue_t *lval, int reg) {
+    if ((lval->symbol != 0) & (lval->indirect == 0))
+        gen_get_memory (lval->symbol);
+    else
+        gen_get_indirect (lval->indirect, reg);
+    return HL_REG;
 }
 
+/**
+ * parses test part "(expression)" input and generates assembly for jump
+ * @param label
+ * @param ft
+ * @return 
+ */
 test (label, ft)
-        int label;
-        int ft;
+int     label,
+        ft;
 {
         needbrack ("(");
         expression (YES);
         needbrack (")");
-        testjump (label, ft);
+        gen_test_jump (label, ft);
 }
+
