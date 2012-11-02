@@ -96,7 +96,7 @@ void StringStrcoll(struct ParseState *Parser, struct Value *ReturnValue, struct 
 
 void StringStrerror(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)
 {
-    ReturnValue->Val->Pointer = strerror(Param[0]->Val->Integer);
+    ReturnValue->Val->Pointer = (void*) strerror(Param[0]->Val->Integer);
 }
 
 void StringStrspn(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs)

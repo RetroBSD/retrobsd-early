@@ -64,6 +64,7 @@ void	*calloc (size_t, size_t);
 void	exit (int);
 void	free (void *);
 char	*getenv();
+long    labs (long);
 void	*malloc (size_t);
 char	*mktemp (char *);
 int     mkstemp (char *);
