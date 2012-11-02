@@ -55,6 +55,7 @@ enum {
     LGLOBL,             /* .globl */
     LSHORT,             /* .short */
     LSTRNG,             /* .strng */
+    LRDATA,             /* .rdata */
     LTEXT,              /* .text */
     LEQU,               /* .equ */
     LWORD,              /* .word */
@@ -69,6 +70,13 @@ enum {
     LALIGN,             /* .align */
     LSET,               /* .set */
     LENT,               /* .ent */
+    LTYPE,              /* .type */
+    LFRAME,             /* .frame */
+    LMASK,              /* .mask */
+    LFMASK,             /* .fmask */
+    LEND,               /* .end */
+    LSIZE,              /* .size */
+    LIDENT,             /* .ident */
 };
 
 /*
@@ -651,27 +659,41 @@ int lookacmd ()
         break;
     case 'e':
         if (! strcmp (".equ", name)) return (LEQU);
+        if (! strcmp (".end", name)) return (LEND);
         if (! strcmp (".ent", name)) return (LENT);
         break;
     case 'f':
         if (! strcmp (".file", name)) return (LFILE);
+        if (! strcmp (".fmask", name)) return (LFMASK);
+        if (! strcmp (".frame", name)) return (LFRAME);
         break;
     case 'g':
         if (! strcmp (".globl", name)) return (LGLOBL);
         if (! strcmp (".gnu_attribute", name)) return (LGNUATTR);
         break;
+    case 'i':
+        if (! strcmp (".ident", name)) return (LIDENT);
+        break;
+    case 'm':
+        if (! strcmp (".mask", name)) return (LMASK);
+        break;
     case 'p':
         if (! strcmp (".previous", name)) return (LPREVIOUS);
+        break;
+    case 'r':
+        if (! strcmp (".rdata", name)) return (LRDATA);
         break;
     case 's':
         if (! strcmp (".section", name)) return (LSECTION);
         if (! strcmp (".set", name)) return (LSET);
         if (! strcmp (".short", name)) return (LSHORT);
+        if (! strcmp (".size", name)) return (LSIZE);
         if (! strcmp (".space", name)) return (LSPACE);
         if (! strcmp (".strng", name)) return (LSTRNG);
         break;
     case 't':
         if (! strcmp (".text", name)) return (LTEXT);
+        if (! strcmp (".type", name)) return (LTYPE);
         break;
     case 'w':
         if (! strcmp (".word", name)) return (LWORD);
@@ -1015,6 +1037,20 @@ int getterm ()
     case '.':
         intval = count[segm];
         return (segm);
+    case '%':
+        if (getlex (&cval) != LNAME)
+            uerror ("bad %function name");
+        if (strcmp (name, "gp_rel") == 0) {
+            // TODO
+        } else if (strcmp (name, "hi") == 0) {
+            // TODO
+        } else if (strcmp (name, "lo") == 0) {
+            // TODO
+        } else
+            uerror ("unknown function %s", name);
+        if (getlex (&cval) != '(')
+            uerror ("bad %s syntax", name);
+        /* fall through */
     case '(':
         getexpr (&s);
         if (getlex (&cval) != ')')
@@ -1058,7 +1094,7 @@ void getbitmask ()
  *
  * expression = [term] {op term}...
  * term       = LNAME | LNUM | "." | "(" expression ")"
- * op         = "+" | "-" | "&" | "|" | "^" | "~" | "<<" | ">>" | "/" | "*" | "%"
+ * op         = "+" | "-" | "&" | "|" | "^" | "~" | "<<" | ">>" | "/" | "*"
  */
 unsigned getexpr (s)
     register int *s;
@@ -1074,11 +1110,11 @@ unsigned getexpr (s)
         rez = 0;
         *s = SABS;
         break;
-    case LNAME:
-        cval = lookname();
     case LNUM:
+    case LNAME:
     case '.':
     case '(':
+    case '%':
         ungetlex (clex, cval);
         *s = getterm ();
         rez = intval;
@@ -1096,7 +1132,9 @@ unsigned getexpr (s)
             break;
         case '-':
             s2 = getterm ();
-            if (s2 != SABS)
+            if (s2 == *s && s2 != SEXT)
+                *s = SABS;
+            else if (s2 != SABS)
                 uerror ("too complex expression");
             rez -= intval;
             break;
@@ -1149,14 +1187,6 @@ unsigned getexpr (s)
             if (intval == 0)
                 uerror ("division by zero");
             rez /= intval;
-            break;
-        case '%':
-            s2 = getterm ();
-            if (*s != SABS || s2 != SABS)
-                uerror ("too complex expression");
-            if (intval == 0)
-                uerror ("division (%%) by zero");
-            rez %= intval;
             break;
         default:
             ungetlex (clex, cval);
@@ -1257,6 +1287,25 @@ void makecmd (opcode, type, emitfunc)
 
     offset = 0;
     relinfo = RABS;
+
+    /*
+     * GCC can generate "j" instead of "jr".
+     * Need to detect it early.
+     */
+    if (type == FAOFF28) {
+        clex = getlex (&cval);
+        ungetlex (clex, cval);
+        if (clex == LREG) {
+            if (opcode == 0x08000000) { /* j - replace by jr */
+                opcode = 0x00000008;
+                type = FRS1;
+            }
+            if (opcode == 0x0c000000) { /* jal - replace by jalr */
+                opcode = 0x00000009;
+                type = FRD1 | FRS2;
+            }
+        }
+    }
 
     /*
      * First register.
@@ -1660,6 +1709,7 @@ void pass1 ()
             segm = SDATA;
             break;
         case LSTRNG:
+        case LRDATA:
             segm = SSTRNG;
             break;
         case LBSS:
@@ -1764,11 +1814,23 @@ void pass1 ()
                 intval = 1;
             }
             stab[cval].n_value = intval;
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            getexpr (&tval);
+            if (tval != SABS)
+                uerror ("bad .comm alignment");
             break;
         case LFILE:
-            /* .comm line filename */
+            /* .file line filename */
             if (getlex (&cval) != LNUM)
                 uerror ("bad parameter of .file");
+            skipstring();
+            break;
+        case LIDENT:
+            /* .ident string */
             skipstring();
             break;
         case LSECTION:
@@ -1825,6 +1887,71 @@ void pass1 ()
             if (clex != LNAME)
                 uerror ("bad parameter of .ent");
             cval = lookname();
+            break;
+        case LEND:
+            /* .end name */
+            clex = getlex (&cval);
+            if (clex != LNAME)
+                uerror ("bad parameter of .end");
+            cval = lookname();
+            break;
+        case LTYPE:
+            /* .type name,type */
+            if (getlex (&cval) != LNAME)
+                uerror ("bad name of .type");
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            if (getlex (&cval) != LSYMTYPE)
+                uerror ("bad type of .type");
+            break;
+        case LFRAME:
+            /* .frame reg,num,reg */
+            if (getlex (&cval) != LREG)
+                uerror ("bad register of .frame");
+            clex = getlex (&cval);
+            if (clex != ',' || getlex (&cval) != LNUM)
+                uerror ("bad parameter of .frame");
+            clex = getlex (&cval);
+            if (clex != ',' || getlex (&cval) != LREG)
+                uerror ("bad register of .frame");
+            break;
+        case LMASK:
+            /* .mask mask,expr */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad mask of .mask");
+            clex = getlex (&cval);
+            if (clex != ',')
+                uerror ("bad parameter of .mask");
+            getexpr (&cval);
+            if (cval != SABS)
+                uerror ("bad expression of .mask");
+            break;
+        case LFMASK:
+            /* .fmask mask,expr */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad mask of .fmask");
+            clex = getlex (&cval);
+            if (clex != ',')
+                uerror ("bad parameter of .fmask");
+            getexpr (&cval);
+            if (cval != SABS)
+                uerror ("bad expression of .fmask");
+            break;
+        case LSIZE:
+            /* .size name,expr */
+            if (getlex (&cval) != LNAME)
+                uerror ("bad name of .size");
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            nbytes = getexpr (&csegm);
+            if (csegm != SABS)
+                uerror ("bad value of .size");
             break;
         default:
             uerror ("bad syntax");
