@@ -285,7 +285,11 @@ int main (argc, argv)
             dflag++;
             break;
         default:
-usage:      fprintf (stderr, "Usage: aout [-rd] file...\n");
+usage:      fprintf (stderr, "Usage:\n");
+            fprintf (stderr, "  aout [-rd] file...\n");
+            fprintf (stderr, "Options:\n");
+            fprintf (stderr, "  -r      Print relocation info\n");
+            fprintf (stderr, "  -d      Do not disassemble\n");
             return (1);
         }
     argc -= optind;

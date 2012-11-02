@@ -60,6 +60,15 @@ enum {
     LWORD,              /* .word */
     LBYTE,              /* .byte */
     LSPACE,             /* .space */
+    LFILE,              /* .file */
+    LSECTION,           /* .section */
+    LSYMTYPE,           /* @type of symbol */
+    LSECTYPE,           /* @type of section */
+    LPREVIOUS,          /* .previous */
+    LGNUATTR,           /* .gnu_attribute */
+    LALIGN,             /* .align */
+    LSET,               /* .set */
+    LENT,               /* .ent */
 };
 
 /*
@@ -296,7 +305,7 @@ const struct optable optable [] = {
 const char ctype [256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,8,0,0,0,0,0,0,0,0,0,8,0,7,7,7,7,7,7,7,7,5,5,0,0,0,0,0,0,
-    0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
+    8,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,8,
     0,9,9,9,9,9,9,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -323,6 +332,10 @@ unsigned intval;
 int extref;
 int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
+int mode_reorder;
+int mode_macro;
+int mode_mips16;
+int mode_micromips;
 
 void getbitmask (void);
 unsigned getexpr (int *s);
@@ -583,11 +596,48 @@ void getname (c)
     ungetc (c, stdin);
 }
 
+int looktype ()
+{
+    switch (name [1]) {
+    case 'c':
+        if (! strcmp ("@common", name)) return (LSYMTYPE);
+        break;
+    case 'f':
+        if (! strcmp ("@fini_array", name)) return (LSECTYPE);
+        if (! strcmp ("@function", name)) return (LSYMTYPE);
+        break;
+    case 'g':
+        if (! strcmp ("@gnu_indirect_function", name)) return (LSYMTYPE);
+        if (! strcmp ("@gnu_unique_object", name)) return (LSYMTYPE);
+        break;
+    case 'i':
+        if (! strcmp ("@init_array", name)) return (LSECTYPE);
+        break;
+    case 'n':
+        if (! strcmp ("@nobits", name)) return (LSECTYPE);
+        if (! strcmp ("@note", name)) return (LSECTYPE);
+        if (! strcmp ("@notype", name)) return (LSYMTYPE);
+        break;
+    case 'o':
+        if (! strcmp ("@object", name)) return (LSYMTYPE);
+        break;
+    case 'p':
+        if (! strcmp ("@progbits", name)) return (LSECTYPE);
+        if (! strcmp ("@preinit_array", name)) return (LSECTYPE);
+        break;
+    case 't':
+        if (! strcmp ("@tls_object", name)) return (LSYMTYPE);
+        break;
+    }
+    return (-1);
+}
+
 int lookacmd ()
 {
     switch (name [1]) {
     case 'a':
         if (! strcmp (".ascii", name)) return (LASCII);
+        if (! strcmp (".align", name)) return (LALIGN);
         break;
     case 'b':
         if (! strcmp (".bss", name)) return (LBSS);
@@ -601,11 +651,21 @@ int lookacmd ()
         break;
     case 'e':
         if (! strcmp (".equ", name)) return (LEQU);
+        if (! strcmp (".ent", name)) return (LENT);
+        break;
+    case 'f':
+        if (! strcmp (".file", name)) return (LFILE);
         break;
     case 'g':
         if (! strcmp (".globl", name)) return (LGLOBL);
+        if (! strcmp (".gnu_attribute", name)) return (LGNUATTR);
+        break;
+    case 'p':
+        if (! strcmp (".previous", name)) return (LPREVIOUS);
         break;
     case 's':
+        if (! strcmp (".section", name)) return (LSECTION);
+        if (! strcmp (".set", name)) return (LSET);
         if (! strcmp (".short", name)) return (LSHORT);
         if (! strcmp (".space", name)) return (LSPACE);
         if (! strcmp (".strng", name)) return (LSTRNG);
@@ -618,6 +678,36 @@ int lookacmd ()
         break;
     }
     return (-1);
+}
+
+/*
+ * Change a segment based on a section name.
+ */
+void setsection ()
+{
+    struct {
+        const char *name;
+        int len;
+        int segm;
+    } *p, map[] = {
+        { ".text",   5, STEXT  },
+        { ".data",   5, SDATA  },
+        { ".sdata",  6, SDATA  },
+        { ".rodata", 7, SSTRNG },
+        { ".mdebug", 7, SSTRNG },
+        { 0 },
+    };
+
+    for (p=map; p->name; p++) {
+        if (strncmp (name, p->name, p->len) == 0 &&
+            (p->name [p->len] == 0 ||
+             p->name [p->len] == '.'))
+        {
+            segm = p->segm;
+            return;
+        }
+    }
+    uerror ("bad .section name");
 }
 
 int lookreg ()
@@ -788,6 +878,8 @@ int lookname ()
  * LTEXT   - .text assembler instruction.
  * LEQU    - .equ assembler instruction.
  * LWORD   - .word assembler instruction.
+ * LFILE   - .file assembler instruction.
+ * LSECTION - .section assembler instruction.
  */
 int getlex (pval)
     register int *pval;
@@ -880,10 +972,14 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 if (*pval != -1)
                     return (LREG);
             }
+            if (name[0] == '@') {
+                *pval = looktype();
+                if (*pval != -1)
+                    return (*pval);
+            }
             *pval = lookcmd();
             if (*pval != -1)
                 return (LCMD);
-            *pval = lookname ();
             return (LNAME);
         }
     }
@@ -908,6 +1004,7 @@ int getterm ()
         return (SABS);
     case LNAME:
         intval = 0;
+        cval = lookname();
         ty = stab[cval].n_type & N_TYPE;
         if (ty==N_UNDF || ty==N_COMM) {
             extref = cval;
@@ -977,8 +1074,9 @@ unsigned getexpr (s)
         rez = 0;
         *s = SABS;
         break;
-    case LNUM:
     case LNAME:
+        cval = lookname();
+    case LNUM:
     case '.':
     case '(':
         ungetlex (clex, cval);
@@ -1412,6 +1510,84 @@ void makeascii ()
         fputrel (RABS, rfile[segm]);
 }
 
+/*
+ * Skip a string from the input file.
+ */
+void skipstring ()
+{
+    int c, cval;
+
+    c = getlex (&cval);
+    if (c != '"')
+        uerror ("no string parameter");
+    for (;;) {
+        c = getchar ();
+        switch (c) {
+        case EOF:
+            uerror ("EOF in text string");
+        case '"':
+            break;
+        case '\\':
+            c = getchar ();
+            switch (c) {
+            case EOF:
+                uerror ("EOF in text string");
+            case '\n':
+                continue;
+            case '0': case '1': case '2': case '3':
+            case '4': case '5': case '6': case '7':
+                c = getchar ();
+                if (c>='0' && c<='7') {
+                    c = getchar ();
+                    if (c>='0' && c<='7') {
+                    } else
+                        ungetc (c, stdin);
+                } else
+                    ungetc (c, stdin);
+                break;
+            }
+        default:
+            continue;
+        }
+        break;
+    }
+}
+
+/*
+ * Set assembler option.
+ */
+void setoption ()
+{
+    const char *option = name;
+    int enable = 1;
+
+    if (option[0] == 'n' && option[1] == 'o') {
+        enable = 0;
+        option += 2;
+    }
+    if (! strcmp ("reorder", option)) {
+        /* reorder mode */
+        mode_reorder = enable;
+        return;
+    }
+    if (! strcmp ("macro", option)) {
+        /* macro mode */
+        mode_macro = enable;
+        return;
+    }
+    if (! strcmp ("mips16", option)) {
+        /* mips16 mode */
+        mode_mips16 = enable;
+        return;
+    }
+    if (! strcmp ("micromips", option)) {
+        /* micromips mode */
+        mode_micromips = enable;
+        return;
+    }
+    uerror ("unknown option %s", option);
+}
+
 void pass1 ()
 {
     register int clex;
@@ -1450,6 +1626,7 @@ void pass1 ()
             }
             break;
         case LNAME:
+            cval = lookname();
             clex = getlex (&tval);
             if (clex == ':') {
                 stab[cval].n_value = count[segm];
@@ -1471,7 +1648,7 @@ void pass1 ()
                 stab[cval].n_type = N_EXT | N_COMM;
                 getexpr (&tval);
                 if (tval != SABS)
-                    uerror ("bad length .comm");
+                    uerror ("bad .comm length");
                 stab[cval].n_value = intval;
                 break;
             }
@@ -1510,7 +1687,7 @@ void pass1 ()
                     addr |= RSETINDEX (extref);
                 fputword (intval, sfile[segm]);
                 fputrel (addr, rfile[segm]);
-                count[segm] += WORDSZ; 
+                count[segm] += WORDSZ;
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
@@ -1530,7 +1707,6 @@ void pass1 ()
                     break;
                 }
             }
-	
             c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
     	    count[segm] += nbytes + c;
             nwords = (unsigned) (nbytes + c) / WORDSZ;
@@ -1552,7 +1728,6 @@ void pass1 ()
             while (nwords--)
               fputrel (RABS, rfile[segm]);
             break;
-
         case LASCII:
             makeascii ();
             break;
@@ -1560,7 +1735,8 @@ void pass1 ()
             for (;;) {
                 clex = getlex (&cval);
                 if (clex != LNAME)
-                    uerror ("bad parameter .globl");
+                    uerror ("bad parameter of .globl");
+                cval = lookname();
                 stab[cval].n_type |= N_EXT;
                 clex = getlex (&cval);
                 if (clex != ',') {
@@ -1572,7 +1748,8 @@ void pass1 ()
         case LCOMM:
             /* .comm name,len */
             if (getlex (&cval) != LNAME)
-                uerror ("bad parameter .comm");
+                uerror ("bad parameter of .comm");
+            cval = lookname();
             if (stab[cval].n_type != N_UNDF &&
                 stab[cval].n_type != (N_EXT|N_COMM))
                 uerror ("name already defined");
@@ -1581,12 +1758,73 @@ void pass1 ()
             if (clex == ',') {
                 getexpr (&tval);
                 if (tval != SABS)
-                    uerror ("bad length .comm");
+                    uerror ("bad length of .comm");
             } else {
                 ungetlex (clex, cval);
                 intval = 1;
             }
             stab[cval].n_value = intval;
+            break;
+        case LFILE:
+            /* .comm line filename */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad parameter of .file");
+            skipstring();
+            break;
+        case LSECTION:
+            /* .section name[,"flags"[,type[,entsize]]] */
+            if (getlex (&cval) != LNAME)
+                uerror ("bad name of .section");
+            setsection();
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            skipstring();
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            if (getlex (&cval) != LSECTYPE)
+                uerror ("bad type of .section");
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                break;
+            }
+            if (getlex (&cval) != LNUM)
+                uerror ("bad entry size of .section");
+            break;
+        case LPREVIOUS:
+            /* .previous - ignore */
+            break;
+        case LGNUATTR:
+            /* .gnu_attribute num[,num] */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad parameter of .gnu_attribute");
+            clex = getlex (&cval);
+            if (clex != ',' || getlex (&cval) != LNUM)
+                uerror ("bad parameter of .gnu_attribute");
+            break;
+        case LALIGN:
+            /* .align num */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad parameter of .align");
+            break;
+        case LSET:
+            /* .set option */
+            if (getlex (&cval) != LNAME)
+                uerror ("bad parameter of .set");
+            setoption();
+            break;
+        case LENT:
+            /* .ent name */
+            clex = getlex (&cval);
+            if (clex != LNAME)
+                uerror ("bad parameter of .ent");
+            cval = lookname();
             break;
         default:
             uerror ("bad syntax");
