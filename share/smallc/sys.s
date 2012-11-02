@@ -1,6 +1,39 @@
 	.text
 
 #
+# unsigned int inp( unsigned int a )
+# Pito
+_inp:
+        lw      $a0, 0($sp)
+        # errno handling code after syscall is not ideal,
+        # but I don't think the assembler handles specifying
+        # relocations for %hi and %lo yet, so the handling
+        # shown in the retrobsd code is not really doable
+		
+        syscall 153
+		j       serrn
+        nop
+        jr      $ra
+        nop
+
+#
+#  outp( unsigned int a, unsigned int d )
+#  Pito
+_outp:
+        lw      $a0, 4($sp)
+        lw      $a1, 0($sp)
+        # errno handling code after syscall is not ideal,
+        # but I don't think the assembler handles specifying
+        # relocations for %hi and %lo yet, so the handling
+        # shown in the retrobsd code is not really doable
+        syscall 152
+        nop
+        j       serrn
+        nop
+        jr      $ra
+        nop
+
+#
 # int open( char* file, int flags, int mode )
 #
 _open:	
@@ -95,10 +128,6 @@ _exit:
 	syscall	1
 	nop
 
-
-
-
-
 serrn:
 	la	$t1, _errno
 	sw	$t0, 0($t1)
@@ -117,20 +146,20 @@ serrn:
 # address? If so, that should be used instead.
 #
 Tcase:
-	lw	$t1, 0($sp)	# t1=pointer to list of value/ptr pairs
-	addiu	$sp, $sp, 4	# pop stack that held pointer
+		lw	$t1, 0($sp)	# t1=pointer to list of value/ptr pairs
+		addiu	$sp, $sp, 4	# pop stack that held pointer
 .Tcl:
         lw      $t2, 0($t1)     # get value from pair
         lw      $t3, 4($t1)     # get ptr from pair
         beq     $t3, $zero, .Tcd
         nop
 
-	beq     $t2, $v0, .Tcm
+		beq     $t2, $v0, .Tcm
         nop 
 
         addiu   $t1, $t1, 8          # t1 += size of pair
         j       .Tcl
-	nop
+		nop
 
 .Tcd:   
         move	$t3, $t2
@@ -138,21 +167,23 @@ Tcase:
 	lui     $t2, 0xffff
 	and	$t2, $t2, $ra
         or      $t3, $t3, $t2
-	jr	$t3
+		jr	$t3
         nop
 
 Tcallstk:
-	jr	$t1
-	nop
+		jr	$t1
+		nop
 
 	.data
 _errno:	.byte	0,0,0,0
 
-	.globl _open
-	.globl _read
-	.globl _write
-	.globl _close
-	.globl _exit
+        .globl _inp
+        .globl _outp
+		.globl _open
+		.globl _read
+		.globl _write
+		.globl _close
+		.globl _exit
         .globl _errno
         .globl Tcase
         .globl Tcallstk
