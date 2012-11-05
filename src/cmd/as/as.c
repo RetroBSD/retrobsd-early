@@ -344,6 +344,8 @@ int mode_reorder;
 int mode_macro;
 int mode_mips16;
 int mode_micromips;
+int reorder_flag;
+unsigned reorder_word, reorder_rel;
 
 void getbitmask (void);
 unsigned getexpr (int *s);
@@ -504,27 +506,6 @@ int hexdig (c)
         return (c - 'A' + 10);
     else
         return (c - 'a' + 10);
-}
-
-/*
- * Get hexadecimal number 'ZZZ
- */
-void getlhex ()
-{
-    register int c;
-    register char *cp, *p;
-
-    c = getchar ();
-    for (cp=name; ISHEX(c); c=getchar())
-        *cp++ = hexdig (c);
-    ungetc (c, stdin);
-    intval = 0;
-    p = name;
-    for (c=28; c>=0; c-=4, ++p) {
-        if (p >= cp)
-            return;
-        intval |= *p << c;
-    }
 }
 
 /*
@@ -940,16 +921,13 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 return (LRSHIFT);
             ungetc (c, stdin);
             return ('\\');
-        case '+':       case '-':
+        case '+':       case '-':       case '\'':
         case '^':       case '&':       case '|':       case '~':
         case ';':       case '*':       case '/':       case '%':
         case '"':       case ',':       case '[':       case ']':
         case '(':       case ')':       case '{':       case '}':
         case '<':       case '>':       case '=':       case ':':
             return (c);
-        case '\'':
-            getlhex (c);
-            return (LNUM);
         case '0':
             if ((c = getchar ()) == 'x' || c=='X') {
                 gethnum ();
@@ -1197,6 +1175,34 @@ unsigned getexpr (s)
     /* NOTREACHED */
 }
 
+void reorder_flush ()
+{
+    if (reorder_flag) {
+        fputword (reorder_word, sfile[segm]);
+        fputrel (reorder_rel, rfile[segm]);
+        reorder_flag = 0;
+    }
+}
+
+/*
+ * Default emit function.
+ */
+void emitword (w, r)
+    register unsigned w;
+    register unsigned r;
+{
+    if (mode_reorder && segm == STEXT) {
+        reorder_flush();
+        reorder_word = w;
+        reorder_rel = r;
+        reorder_flag = 1;
+    } else {
+        fputword (w, sfile[segm]);
+        fputrel (r, rfile[segm]);
+    }
+    count[segm] += WORDSZ;
+}
+
 /*
  * LI pseudo instruction.
  */
@@ -1221,14 +1227,10 @@ void emit_li (opcode, relinfo)
     } else {
         /* lui d, %hi(value)
          * ori d, d, %lo(value) */
-        fputword (opcode | 0x3c000000 | (value >> 16), sfile[segm]);
-        fputrel (RABS, rfile[segm]);
-        count[segm] += WORDSZ;
+        emitword (opcode | 0x3c000000 | (value >> 16), RABS);
         opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
     }
-    fputword (opcode, sfile[segm]);
-    fputrel (relinfo, rfile[segm]);
-    count[segm] += WORDSZ;
+    emitword (opcode, relinfo);
 }
 
 /*
@@ -1252,26 +1254,10 @@ void emit_la (opcode, relinfo)
 
     /* lui d, %hi(value)
      * ori d, d, %lo(value) */
-    fputword (opcode | 0x3c000000 | (value >> 16), sfile[segm]);
-    fputrel (relinfo | RHIGH16, rfile[segm]);
-    count[segm] += WORDSZ;
+    emitword (opcode | 0x3c000000 | (value >> 16), relinfo | RHIGH16);
 
     opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
-    fputword (opcode, sfile[segm]);
-    fputrel (relinfo, rfile[segm]);
-    count[segm] += WORDSZ;
-}
-
-/*
- * Default emit function.
- */
-void emitword (w, r)
-    register unsigned w;
-    register unsigned r;
-{
-    fputword (w, sfile[segm]);
-    fputrel (r, rfile[segm]);
-    count[segm] += WORDSZ;
+    emitword (opcode, relinfo);
 }
 
 /*
@@ -1617,6 +1603,8 @@ void setoption ()
     if (! strcmp ("reorder", option)) {
         /* reorder mode */
         mode_reorder = enable;
+        if (! mode_reorder)
+            reorder_flush();
         return;
     }
     if (! strcmp ("macro", option)) {
@@ -1647,6 +1635,7 @@ void pass1 ()
     while ((clex = getlex (&cval)) != LEOF) {
         switch (clex) {
         case LEOF:
+            reorder_flush();
             return;
         case LEOL:
             continue;
@@ -1659,18 +1648,17 @@ void pass1 ()
         case '.':
             if (getlex (&cval) != '=')
                 uerror ("bad instruction");
-            addr = 2 * getexpr (&csegm);
+            addr = getexpr (&csegm);
             if (csegm != segm)
                 uerror ("bad count assignment");
             if (addr < count[segm])
                 uerror ("negative count increment");
+            reorder_flush();
             if (segm == SBSS)
                 count [segm] = addr;
             else {
                 while (count[segm] < addr) {
-                    fputword (0, sfile[segm]);
-                    fputrel (RABS, rfile[segm]);
-                    count[segm]++;
+                    emitword (0, RABS);
                 }
             }
             break;
@@ -1678,6 +1666,7 @@ void pass1 ()
             cval = lookname();
             clex = getlex (&tval);
             if (clex == ':') {
+                reorder_flush();
                 stab[cval].n_value = count[segm];
                 stab[cval].n_type &= ~N_TYPE;
                 stab[cval].n_type |= segmtype [segm];
@@ -1704,6 +1693,7 @@ void pass1 ()
             uerror ("bad instruction");
         case LTEXT:
             segm = STEXT;
+            reorder_flush();
             break;
         case LDATA:
             segm = SDATA;
@@ -1728,6 +1718,7 @@ void pass1 ()
                     break;
                 }
             }
+            reorder_flush();
             break;
         case LWORD:
             for (;;) {
@@ -1735,17 +1726,17 @@ void pass1 ()
                 addr = segmrel [cval];
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
-                fputword (intval, sfile[segm]);
-                fputrel (addr, rfile[segm]);
-                count[segm] += WORDSZ;
+                emitword (intval, addr);
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
                     break;
                 }
             }
+            reorder_flush();
             break;
         case LBYTE:
+            reorder_flush();
 	    nbytes = 0;
             for (;;) {
                 getexpr (&cval);
@@ -1767,6 +1758,7 @@ void pass1 ()
             break;
         case LSPACE:
             getexpr (&cval);
+            reorder_flush();
             for (nbytes=0;nbytes<intval;nbytes++) {
 		fputc (0, sfile[segm]);
             }
@@ -1779,6 +1771,7 @@ void pass1 ()
               fputrel (RABS, rfile[segm]);
             break;
         case LASCII:
+            reorder_flush();
             makeascii ();
             break;
         case LGLOBL:
