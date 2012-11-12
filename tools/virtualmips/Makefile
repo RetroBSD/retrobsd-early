@@ -14,7 +14,7 @@ CFLAGS		= -DSIM_PIC32 -DPIC32MX7 -DMAX32
 
 CC          = gcc -g
 CFLAGS		+= -Wall -MT $@ -MD -MP -MF .deps/$*.dep -I/opt/local/include -I/opt/local/include/libelf
-LIBS		= -lconfuse -lpthread -lelf
+LIBS		= -lpthread -lelf
 
 ifneq ($(wildcard /usr/lib/librt.a),)
 LIBS		+= -lrt                             # Linux
@@ -60,7 +60,7 @@ OBJS		+= dev_cs8900.o dev_nand_flash_1g.o dev_ram.o \
                mips_exec.o mips_fdd.o crc.o mips_hostalarm.o \
                mempool.o sbox.o utils.o vp_clock.o vp_timer.o net_io.o \
                mips_memory.o debug.o gdb_interface.o main.o \
-               mips-dis.o
+               mips-dis.o config.o
 
 all:		.deps $(PROG)
 

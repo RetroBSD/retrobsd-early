@@ -10,7 +10,6 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <confuse.h>
 
 #include "vp_lock.h"
 #include "utils.h"
@@ -357,49 +356,104 @@ void host_alarm (cpu_mips_t *cpu, int nclocks)
     dev_pic32_timer_tick (cpu, pic32->timer5, nclocks);
 }
 
-COMMON_CONFIG_INFO_ARRAY;
+/*
+ * Configuration information.
+ */
+static char *boot_method_string[2] = {"Binary", "ELF"};
+static char *boot_from_string[2] = {"NOR FLASH", "NAND FLASH"};
+static char *flash_type_string[2] = {"NOR FLASH", "NAND FLASH"};
+
+static char *start_address = 0;
+static char *trace_address = 0;
+static char *uart_type[NVTTY] = {0};
+static char *uart_port[NVTTY] = {0};
+
+static void configure_parameter (void *arg, char *section, char *param, char *value)
+{
+    pic32_t *pic32 = arg;
+    vm_instance_t *vm = pic32->vm;
+
+    if (strcmp (param, "ram_size") == 0)
+        vm->ram_size = strtoul (value, 0, 0);
+    else if (strcmp (param, "gdb_debug") == 0)
+        vm->gdb_debug = strtoul (value, 0, 0);
+    else if (strcmp (param, "gdb_port") == 0)
+        vm->gdb_port = strtoul (value, 0, 0);
+    else if (strcmp (param, "flash_size") == 0)
+        vm->flash_size = strtoul (value, 0, 0);
+    else if (strcmp (param, "flash_type") == 0)
+        vm->flash_type = strtoul (value, 0, 0);
+    else if (strcmp (param, "flash_file_name") == 0)
+        vm->flash_filename = strdup (value);
+    else if (strcmp (param, "flash_phy_address") == 0)
+        vm->flash_address = strtoul (value, 0, 0);
+    else if (strcmp (param, "boot_method") == 0)
+        vm->boot_method = strtoul (value, 0, 0);
+    else if (strcmp (param, "boot_from") == 0)
+        vm->boot_from = strtoul (value, 0, 0);
+    else if (strcmp (param, "kernel_file_name") == 0)
+        vm->kernel_filename = strdup (value);
+    else if (strcmp (param, "jit_use") == 0)
+        vm->jit_use = strtoul (value, 0, 0);
+    else if (strcmp (param, "debug_level") == 0)
+        vm->debug_level = strtoul (value, 0, 0);
+    else if (strcmp (param, "boot_flash_size") == 0)
+        pic32->boot_flash_size = strtoul (value, 0, 0);
+    else if (strcmp (param, "boot_flash_address")== 0)
+        pic32->boot_flash_address = strtoul (value, 0, 0);
+    else if (strcmp (param, "boot_file_name") == 0)
+        pic32->boot_file_name = strdup (value);
+    else if (strcmp (param, "start_address") == 0)
+        start_address = strdup (value);
+    else if (strcmp (param, "trace_address") == 0)
+        trace_address = strdup (value);
+    else if (strcmp (param, "sdcard_port") == 0)
+        pic32->sdcard_port = strtoul (value, 0, 0);
+    else if (strcmp (param, "sdcard0_size") == 0)
+        pic32->sdcard0_size = strtoul (value, 0, 0);
+    else if (strcmp (param, "sdcard1_size") == 0)
+        pic32->sdcard1_size = strtoul (value, 0, 0);
+    else if (strcmp (param, "sdcard0_file_name") == 0)
+        pic32->sdcard0_file_name = strdup (value);
+    else if (strcmp (param, "sdcard1_file_name") == 0)
+        pic32->sdcard1_file_name = strdup (value);
+    else if (strcmp (param, "uart1_type") == 0)
+        uart_type[0] = strdup (value);
+    else if (strcmp (param, "uart2_type") == 0)
+        uart_type[1] = strdup (value);
+    else if (strcmp (param, "uart3_type") == 0)
+        uart_type[2] = strdup (value);
+    else if (strcmp (param, "uart4_type") == 0)
+        uart_type[3] = strdup (value);
+    else if (strcmp (param, "uart5_type") == 0)
+        uart_type[4] = strdup (value);
+    else if (strcmp (param, "uart6_type") == 0)
+        uart_type[5] = strdup (value);
+    else if (strcmp (param, "uart1_port") == 0)
+        uart_port[0] = strdup (value);
+    else if (strcmp (param, "uart2_port") == 0)
+        uart_port[1] = strdup (value);
+    else if (strcmp (param, "uart3_port") == 0)
+        uart_port[2] = strdup (value);
+    else if (strcmp (param, "uart4_port") == 0)
+        uart_port[3] = strdup (value);
+    else if (strcmp (param, "uart5_port") == 0)
+        uart_port[4] = strdup (value);
+    else if (strcmp (param, "uart6_port") == 0)
+        uart_port[5] = strdup (value);
+    else {
+        fprintf (stderr, "%s: unknown parameter `%s'\n", vm->configure_filename, param);
+        exit (-1);
+    }
+    //printf ("Configure: %s = '%s'\n", param, value);
+}
 
 static void pic32_parse_configure (pic32_t *pic32)
 {
     vm_instance_t *vm = pic32->vm;
-    char *start_address = 0;
-    char *trace_address = 0;
-    char *uart_type[NVTTY] = {0};
-    char *uart_port[NVTTY] = {0};
-    cfg_opt_t opts[] = {
-        COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("jit_use", &(vm->jit_use)),
-        COMMON_CONFIG_OPTION CFG_SIMPLE_INT ("debug_level", &(vm->debug_level)),
-        CFG_SIMPLE_INT ("boot_flash_size", &pic32->boot_flash_size),
-        CFG_SIMPLE_INT ("boot_flash_address", &pic32->boot_flash_address),
-        CFG_SIMPLE_STR ("boot_file_name", &pic32->boot_file_name),
-        CFG_SIMPLE_STR ("start_address", &start_address),
-        CFG_SIMPLE_STR ("trace_address", &trace_address),
-        CFG_SIMPLE_INT ("sdcard_port", &pic32->sdcard_port),
-        CFG_SIMPLE_INT ("sdcard0_size", &pic32->sdcard0_size),
-        CFG_SIMPLE_INT ("sdcard1_size", &pic32->sdcard1_size),
-        CFG_SIMPLE_STR ("sdcard0_file_name", &pic32->sdcard0_file_name),
-        CFG_SIMPLE_STR ("sdcard1_file_name", &pic32->sdcard1_file_name),
-        CFG_SIMPLE_STR ("uart1_type", &uart_type[0]),
-        CFG_SIMPLE_STR ("uart2_type", &uart_type[1]),
-        CFG_SIMPLE_STR ("uart3_type", &uart_type[2]),
-        CFG_SIMPLE_STR ("uart4_type", &uart_type[3]),
-        CFG_SIMPLE_STR ("uart5_type", &uart_type[4]),
-        CFG_SIMPLE_STR ("uart6_type", &uart_type[5]),
-        CFG_SIMPLE_STR ("uart1_port", &uart_port[0]),
-        CFG_SIMPLE_STR ("uart2_port", &uart_port[1]),
-        CFG_SIMPLE_STR ("uart3_port", &uart_port[2]),
-        CFG_SIMPLE_STR ("uart4_port", &uart_port[3]),
-        CFG_SIMPLE_STR ("uart5_port", &uart_port[4]),
-        CFG_SIMPLE_STR ("uart6_port", &uart_port[5]),
-
-        CFG_END ()
-    };
-    cfg_t *cfg;
     int i;
 
-    cfg = cfg_init (opts, 0);
-    cfg_parse (cfg, vm->configure_filename);
-    cfg_free (cfg);
+    conf_parse (vm->configure_filename, configure_parameter, pic32);
     if (start_address)
         pic32->start_address = strtoul (start_address, 0, 0);
     if (trace_address)
@@ -424,7 +478,39 @@ static void pic32_parse_configure (pic32_t *pic32)
             }
         }
 
-    VALID_COMMON_CONFIG_OPTION;
+    ASSERT(vm->ram_size != 0, "ram_size can not be 0\n");
+    if (vm->flash_type == FLASH_TYPE_NOR_FLASH) {
+        if (vm->flash_size != 0) {
+            /*ASSERT(vm->flash_filename!=NULL, "flash_file_name can not be NULL\n");*/
+            /* flash_filename can be null. virtualmips will create it. */
+            ASSERT(vm->flash_address != 0, "flash_address can not be 0\n");
+        }
+    } else if (vm->flash_type == FLASH_TYPE_NAND_FLASH) {
+        ASSERT(vm->flash_size == 0x400, "flash_size should be 0x400.\n We only support 1G byte NAND flash emulation\n");
+        assert(1);
+    } else
+        ASSERT(0, "error flash_type. valid value: 1:NOR FLASH 2:NAND FLASH\n");
+
+    ASSERT(vm->boot_method != 0, "boot_method can not be 0\n 1:binary  2:elf \n");
+
+    if (vm->boot_method == BOOT_BINARY) {
+        /* boot from binary image */
+        ASSERT(vm->boot_from != 0, "boot_from can not be 0\n 1:NOR FLASH 2:NAND FLASH\n");
+        if (vm->boot_from==BOOT_FROM_NOR_FLASH) {
+            ASSERT(vm->flash_type == FLASH_TYPE_NOR_FLASH, "flash_type must be 1(NOR FLASH)\n");
+            ASSERT(vm->flash_size != 0, "flash_size can not be 0\n");
+            ASSERT(vm->flash_filename != NULL, "flash_filename can not be NULL\n");
+            ASSERT(vm->flash_address != 0, "flash_address can not be 0\n");
+        } else if (vm->boot_from == BOOT_FROM_NAND_FLASH) {
+            ASSERT(vm->flash_type == FLASH_TYPE_NAND_FLASH, "flash_type must be 2(NAND FLASH)\n");
+            ASSERT(vm->flash_size != 0, "flash_size can not be 0\n");
+            /*ASSERT(vm->flash_filename!=NULL,"flash_filename can not be NULL\n");*/
+        } else
+            ASSERT(0, "error boot_from. valid value: 1:NOR FLASH 2:NAND FLASH\n");
+    } else if (vm->boot_method == BOOT_ELF) {
+        ASSERT(vm->kernel_filename!=0,"kernel_file_name can not be NULL\n ");
+    } else
+        ASSERT(0, "error boot_method. valid value: 1:binary  2:elf \n");
 
     /* Add other configure information validation here */
     if (vm->jit_use) {
@@ -433,7 +519,28 @@ static void pic32_parse_configure (pic32_t *pic32)
     }
 
     /* Print the configure information */
-    PRINT_COMMON_CONFIG_OPTION;
+    printf("Using configure file: %s\n", vm->configure_filename);
+    printf("ram_size: %dk bytes \n", vm->ram_size);
+    printf("boot_method: %s \n", boot_method_string[vm->boot_method-1]);
+    if (vm->flash_size != 0) {
+        printf("flash_type: %s \n",flash_type_string[vm->flash_type-1]);
+    	printf("flash_size: %dk bytes \n",vm->flash_size);
+    	if (vm->flash_type == FLASH_TYPE_NOR_FLASH) {
+    	  printf("flash_file_name: %s \n",vm->flash_filename);
+    	  printf("flash_phy_address: 0x%x \n",vm->flash_address);
+    	}
+    }
+    if (vm->boot_method == BOOT_BINARY) {
+    	printf("boot_from: %s \n",boot_from_string[vm->boot_from-1]);
+    }
+    if (vm->boot_method == BOOT_ELF) {
+    	printf("kernel_file_name: %s \n",vm->kernel_filename);
+    }
+
+    if (vm->gdb_debug != 0) {
+    	printf("GDB debug enable\n");
+    	printf("GDB port: %d \n",vm->gdb_port);
+    }
 
     /* print other configure information here */
     if (pic32->boot_flash_size > 0) {
