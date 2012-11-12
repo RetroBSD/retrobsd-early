@@ -2,7 +2,7 @@ TOPSRC          = $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 CFLAGS          += -O -Wall -Werror
-LIBS            += -lwiznet
+LIBS            += -lwiznet -lc
 
 EXAMPLES        = telnet \
                   ntpdate \

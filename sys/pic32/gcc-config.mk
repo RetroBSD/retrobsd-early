@@ -11,6 +11,15 @@ ifndef GCCPREFIX
     LDFLAGS     = -Wl,--oformat=elf32-tradlittlemips
 endif
 
+# Generic MIPS toolchain
+# ~~~~~~~~~~~~~~~~~~~~~~
+# You can build it from sources, as described on page
+# http://retrobsd.org/wiki/doku.php/doc/toolchain-mips
+ifndef GCCPREFIX
+    GCCPREFIX   = /usr/local/mips-gcc-4.7.2/bin/mips-elf-
+    LDFLAGS     =
+endif
+
 # chipKIT MPIDE on Mac OS X
 ifneq (,$(wildcard /Applications/Mpide.app/Contents/Resources/Java/hardware/tools/avr))
     AVRDUDE     = /Applications/Mpide.app/Contents/Resources/Java/hardware/tools/avr/bin/avrdude \

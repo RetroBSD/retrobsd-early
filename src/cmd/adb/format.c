@@ -83,7 +83,7 @@ exform(fcount, ifp, itype, ptype)
     u_int   w;
     long    savdot, wx;
     char    *fp = 0;
-    int     c, modifier, longpr;
+    int     c, modifier;
     struct {
         long    sa;
         int     sb, sc;
@@ -92,7 +92,7 @@ exform(fcount, ifp, itype, ptype)
     while (fcount > 0) {
         fp = ifp;
         c = *fp;
-        longpr = (c >= 'A' && c <= 'Z') || (c == 'f');
+        //int longpr = (c >= 'A' && c <= 'Z') || (c == 'f');
         if (itype == NSP || *fp == 'a') {
             wx = dot;
             w = dot;

@@ -10,9 +10,9 @@ include $(TOPSRC)/target.mk
 
 OBJS            = med.o
 SRCS            = med.c
-LIBS            += -lcurses -ltermcap -lvmf
+LIBS            += -lcurses -ltermcap -lvmf -lc
 
-all:            med 
+all:            med
 
 med: 		${OBJS}
 		${CC} ${LDFLAGS} -o med.elf ${OBJS} ${LIBS}

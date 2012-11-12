@@ -10,7 +10,7 @@ include $(TOPSRC)/target.mk
 
 OBJS            = sl.o
 SRCS            = sl.c
-LIBS            += -lcurses -ltermcap
+LIBS            += -lcurses -ltermcap -lc
 
 all:            sl
 

@@ -137,24 +137,23 @@ int adc_read(dev_t dev, struct uio *uio, int flag)
 int adc_write(dev_t dev, struct uio *uio, int flag)
 {
     int channel;
-    char c;
 
     channel = minor(dev);
     if(channel>ADCMAX)
         return ENODEV;
 
-    c = uwritec(uio);
+    uwritec(uio);
     while(uio->uio_iov->iov_len>0)
     {
-        c = uwritec(uio);
+        uwritec(uio);
     }
     return 0;
 }
 
 int adc_ioctl(dev_t dev, register u_int cmd, caddr_t addr, int flag)
 {
-    int unit;
-    unit = minor(dev);
+    //int unit;
+    //unit = minor(dev);
 
     switch(cmd)
     {

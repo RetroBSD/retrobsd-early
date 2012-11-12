@@ -3,7 +3,6 @@
 #
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
-LIBS 		= 
 
 CFLAGS		+= -Werror -I../../../sys/include
 

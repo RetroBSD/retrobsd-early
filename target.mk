@@ -15,8 +15,18 @@ ifndef GCCPREFIX
     INCLUDES    = -I/usr/local/pic32-tools/lib/gcc/pic32mx/4.5.1/include
 endif
 
-CC		= $(GCCPREFIX)gcc -mips32r2 -EL -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
-CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
+# Generic MIPS toolchain
+# ~~~~~~~~~~~~~~~~~~~~~~
+# You can build it from sources, as described on page
+# http://retrobsd.org/wiki/doku.php/doc/toolchain-mips
+ifndef GCCPREFIX
+    GCCPREFIX   = /usr/local/mips-gcc-4.7.2/bin/mips-elf-
+    LDFLAGS     =
+    INCLUDES    =
+endif
+
+CC		= $(GCCPREFIX)gcc -mips32r2 -EL -msoft-float -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
+CXX             = $(GCCPREFIX)g++ -mips32r2 -EL -msoft-float -nostdinc -fshort-double -I$(TOPSRC)/include $(INCLUDES)
 LD		= $(GCCPREFIX)ld
 AR		= $(GCCPREFIX)ar
 RANLIB          = $(GCCPREFIX)ranlib

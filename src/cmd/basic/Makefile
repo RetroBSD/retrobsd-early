@@ -6,7 +6,7 @@ CFLAGS		+= -Wall -Werror
 
 OBJS            = basic.o
 
-LIBS		= -lcurses -ltermcap
+LIBS		= -lcurses -ltermcap -lc
 
 all:            basic renumber
 
