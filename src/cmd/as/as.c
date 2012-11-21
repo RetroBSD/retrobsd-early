@@ -117,7 +117,6 @@ enum {
 #define FRTD    (1 << 20)       /* set rt to rd number */
 #define FCODE16 (1 << 21)       /* immediate shifted <<16 */
 #define FMOD    (1 << 22)       /* modifies the first register */
-#define FMODRA  (1 << 23)       /* modifies the register $31 */
 
 /*
  * Sizes of tables.
@@ -221,9 +220,9 @@ const struct optable optable [] = {
     { 0x7c000000,   "ext",	FRT1 | FRS2 | FSA | FSIZE | FMOD },
     { 0x7c000004,   "ins",	FRT1 | FRS2 | FSA | FMSB | FMOD },
     { 0x08000000,   "j",	FAOFF28 | FDSLOT },
-    { 0x0c000000,   "jal",	FAOFF28 | FDSLOT | FMODRA },
-    { 0x00000009,   "jalr",	FRD1 | FRS2 | FDSLOT | FMODRA },
-    { 0x00000409,   "jalr.hb",	FRD1 | FRS2 | FDSLOT | FMODRA },
+    { 0x0c000000,   "jal",	FAOFF28 | FDSLOT },
+    { 0x00000009,   "jalr",	FRD1 | FRS2 | FDSLOT },
+    { 0x00000409,   "jalr.hb",	FRD1 | FRS2 | FDSLOT },
     { 0x00000008,   "jr",	FRS1 | FDSLOT },
     { 0x00000408,   "jr.hb",	FRS1 | FDSLOT },
     {          0,   "la",	FRT1 | FMOD, emit_la },
@@ -1324,9 +1323,7 @@ void makecmd (opcode, type, emitfunc)
     if (type & FRTD) {
         opcode |= cval << 16;           /* rt equals rd */
     }
-    if (type & FMODRA)
-        clobber_reg = 31;
-    else if ((type & FMOD) && (type & (FRD1 | FRT1 | FRS1)))
+    if ((type & FMOD) && (type & (FRD1 | FRT1 | FRS1)))
         clobber_reg = cval;
 
     /*
@@ -1485,8 +1482,14 @@ void makecmd (opcode, type, emitfunc)
         emitfunc (opcode, relinfo);
     } else if (mode_reorder && (type & FDSLOT) && segm == STEXT) {
         /* Need a delay slot. */
-        if (reorder_full && reorder_clobber) {
-            // TODO: analyse register dependency and flush it if needed.
+        if (reorder_full && reorder_clobber != 0) {
+            /* Analyse register dependency.
+             * Flush the instruction if needed. */
+            int rt = (opcode >> 16) & 31;
+            int rs = (opcode >> 21) & 31;
+            if (((type & (FRS1 | FRS2)) && rs == reorder_clobber) ||
+                ((type & FRT2) && rt == reorder_clobber))
+                reorder_flush();
         }
         fputword (opcode, sfile[segm]);
         fputrel (relinfo, rfile[segm]);
@@ -1498,6 +1501,7 @@ void makecmd (opcode, type, emitfunc)
             fputword (0, sfile[segm]);
             fputrel (RABS, rfile[segm]);
         }
+        count[segm] += WORDSZ + WORDSZ;
     } else {
         emitword (opcode, relinfo, clobber_reg);
     }
