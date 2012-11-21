@@ -10,13 +10,13 @@ LDFLAGS         += -g
 
 AOUTOBJS        = aout.o mips-dis.o
 
-all:            retrobsd-as retrobsd-aout
+all:            mips-as mips-aout
 
-retrobsd-as:    as.o
+mips-as:        as.o
 		${CC} ${LDFLAGS} -o $@ as.o ${LIBS}
 
-retrobsd-aout:  $(AOUTOBJS)
+mips-aout:      $(AOUTOBJS)
 		${CC} ${LDFLAGS} -o $@ $(AOUTOBJS) ${LIBS}
 
 clean:
-		rm -f *.o *.0 retrobsd-as retrobsd-aout tags *~
+		rm -f *.o *.0 mips-as mips-aout tags *~

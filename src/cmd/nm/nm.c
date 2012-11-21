@@ -3,8 +3,10 @@
  */
 #ifdef CROSS
 #   include </usr/include/stdio.h>
+#   include </usr/include/errno.h>
 #else
 #   include <stdio.h>
+#   include <errno.h>
 #endif
 #include <sys/types.h>
 #include <sys/dir.h>
@@ -254,7 +256,11 @@ void namelist()
 	setbuf(fi, ibuf);
 
 	off = 0;
-	fread((char *)&mag_un, 1, sizeof(mag_un), fi);
+	if (fread((char *)&mag_un, 1, sizeof(mag_un), fi) != sizeof(mag_un)) {
+		error(0, "read error");
+		goto out;
+	}
+
 	if (strncmp(mag_un.mag_armag, ARMAG, SARMAG)==0) {
 		archive++;
 		off = SARMAG;
@@ -277,7 +283,9 @@ void namelist()
 		struct nlist *symp = NULL;
 
 		curpos = ftell(fi);
-		fread((char *)&mag_un.mag_exp, 1, sizeof(struct exec), fi);
+		if (fread((char *)&mag_un.mag_exp, 1,
+                    sizeof(struct exec), fi) != sizeof(struct exec))
+			continue;
 		if (N_BADMAG(mag_un.mag_exp))
 			continue;
 
@@ -374,10 +382,21 @@ int main(argc, argv)
 		case 'o':
 			oflg++;
 			continue;
+		case 'h':
+usage:                  fprintf (stderr, "Usage:\n");
+                        fprintf (stderr, "  nm [-gunrpo] file...\n");
+                        fprintf (stderr, "Options:\n");
+                        fprintf (stderr, "  -g      Display only external symbols\n");
+                        fprintf (stderr, "  -u      Display only undefined symbols\n");
+                        fprintf (stderr, "  -n      Sort symbols numerically by address\n");
+                        fprintf (stderr, "  -r      Reverse the order of the sort\n");
+                        fprintf (stderr, "  -p      Do not sort the symbols\n");
+                        fprintf (stderr, "  -o      Precede each symbol by the file name\n");
+                        return(1);
 		default:
 			fprintf(stderr, "nm: invalid argument -%c\n",
 			    *argv[0]);
-			exit(2);
+                        goto usage;
 		}
 		argc--;
 	}
@@ -391,5 +410,5 @@ int main(argc, argv)
 		++xargv;
 		namelist();
 	}
-	exit(errs);
+	return(errs);
 }

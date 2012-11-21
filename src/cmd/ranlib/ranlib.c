@@ -35,8 +35,10 @@
  */
 #ifdef CROSS
 #   include </usr/include/stdio.h>
+#   include </usr/include/errno.h>
 #else
 #   include <stdio.h>
+#   include <errno.h>
 #endif
 #include <sys/types.h>
 #include <sys/dir.h>
@@ -50,7 +52,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <time.h>
-#include <errno.h>
 #include <paths.h>
 #include <ar.h>
 #include <ranlib.h>
@@ -399,7 +400,10 @@ int touch()
 
 void usage()
 {
-	(void)fprintf(stderr, "usage: ranlib [-t] archive ...\n");
+        fprintf(stderr, "Usage:\n");
+        fprintf(stderr, "  ranlib [-t] file...\n");
+        fprintf(stderr, "Options:\n");
+        fprintf(stderr, "  -t      Update the timestamp of the symbol map\n");
 	exit(1);
 }
 
@@ -415,6 +419,7 @@ int main(argc, argv)
 		case 't':
 			tflag = 1;
 			break;
+		case 'h':
 		case '?':
 		default:
 			usage();

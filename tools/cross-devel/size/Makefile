@@ -1,19 +1,16 @@
-#
-# Version 2.2 January 24, 1998
-#
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/cross.mk
 
 CFLAGS		+= -Werror -Wall -g
 LDFLAGS		+= -g
 
-SRCS		= ld.c
-OBJS            = ld.o
+SRCS		= size.c
+OBJS            = size.o
 
-all:            mips-ld
+all:            mips-size
 
-mips-ld:        ${OBJS}
+mips-size:      ${OBJS}
 		${CC} ${LDFLAGS} -o $@ ${OBJS} ${LIBS}
 
 clean:
-		rm -f *.o mips-ld a.out tags *~
+		rm -f *.o mips-size a.out tags *~
