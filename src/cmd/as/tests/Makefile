@@ -9,7 +9,7 @@ all:            ../as ../aout
                     $(AS) $$i.s -o $$i.o; \
                     $(OBJDUMP) -D $$i.o > $$i.gcc-dis; \
                     ../as $$i.s -o $$i.o; \
-                    ../aout $$i.o > $$i.dis; \
+                    ../aout -r $$i.o > $$i.dis; \
                 done
 
 clean:

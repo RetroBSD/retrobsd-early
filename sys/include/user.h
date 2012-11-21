@@ -17,8 +17,8 @@
 
 /*
  * data that doesn't need to be referenced while the process is swapped.
- * The user block is USIZE*64 bytes long; resides at virtual kernel loc
- * 0140000; contains the system stack (and possibly network stack) per
+ * For PIC32, the user block is USIZE bytes long; resides at virtual kernel loc
+ * 0x80007400; contains the system stack (and possibly network stack) per
  * user; is cross referenced with the proc structure for the same process.
  */
 #define	MAXCOMLEN	MAXNAMLEN	/* <= MAXNAMLEN, >= sizeof(ac_comm) */
@@ -26,7 +26,7 @@
 struct user {
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_frame;		/* address of users saved frame */
-	char	u_comm[MAXCOMLEN + 1];
+	char	u_comm[MAXCOMLEN + 1];  /* command file name */
 	label_t u_qsave;		/* for non-local gotos on interrupts */
 	label_t	u_rsave;		/* save info when exchanging stacks */
 	label_t	u_ssave;		/* label variable for swapping */

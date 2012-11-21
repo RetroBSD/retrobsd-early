@@ -135,6 +135,8 @@ void prrel (r)
     case RHIGH16:   putchar ('h');  break;
     case 0:         break;
     }
+    if (r & RGPREL)
+        putchar ('g');
     printf (">");
 }
 

@@ -96,7 +96,7 @@ void usb_device_init(void)
     U1ADDR = 0x00;
 
     // Clear all of the endpoint control registers
-    bzero((void*) &U1EP1, USB_MAX_EP_NUMBER - 1);
+    bzero((void*) &U1EP(1), USB_MAX_EP_NUMBER - 1);
 
     // Clear all of the BDT entries
     for (i=0; i<(sizeof(usb_buffer)/sizeof(BDT_ENTRY)); i++) {
@@ -104,7 +104,7 @@ void usb_device_init(void)
     }
 
     // Initialize EP0 as a Ctrl EP
-    U1EP0 = EP_CTRL | USB_HANDSHAKE_ENABLED;
+    U1EP(0) = EP_CTRL | USB_HANDSHAKE_ENABLED;
 
     // Flush any pending transactions
     while (U1IR & PIC32_U1I_TRN) {
@@ -373,7 +373,7 @@ void usb_stall_handler(void)
      */
 
     /* v2b fix */
-    if (U1EP0 & PIC32_U1EP_EPSTALL)
+    if (U1EP(0) & PIC32_U1EP_EPSTALL)
     {
         // UOWN - if 0, owned by CPU, if 1, owned by SIE
         if (pBDTEntryEP0OutCurrent->STAT.Val == _USIE &&
@@ -383,7 +383,7 @@ void usb_stall_handler(void)
             pBDTEntryEP0OutCurrent->STAT.Val = _USIE|_DAT0|_DTSEN|_BSTALL;
         }
 	// Clear stall status
-	U1EP0 &= ~PIC32_U1EP_EPSTALL;
+	U1EP(0) &= ~PIC32_U1EP_EPSTALL;
     }
 
     U1IR = PIC32_U1I_STALL;
@@ -866,7 +866,7 @@ void usb_std_feature_req_handler(void)
         } else {
             // If it was not a SET_FEATURE
             // point to the appropriate UEP register
-            pUEP = (unsigned int*) &U1EP0;
+            pUEP = (unsigned int*) &U1EP(0);
             pUEP += usb_setup_pkt.EPNum * 4;
 
 	    //Clear the STALL bit in the UEP register
@@ -1278,7 +1278,7 @@ void usb_std_set_cfg_handler(void)
     usb_in_pipe[0].info.bits.busy = 1;
 
     // disable all endpoints except endpoint 0
-    bzero((void*) &U1EP1, USB_MAX_EP_NUMBER - 1);
+    bzero((void*) &U1EP(1), USB_MAX_EP_NUMBER - 1);
 
     // clear the alternate interface settings
     bzero((void*) &usb_alternate_interface, USB_MAX_NUM_INT);
@@ -1383,7 +1383,7 @@ void usb_configure_endpoint (unsigned epnum, unsigned direction)
 void usb_enable_endpoint (unsigned ep, unsigned options)
 {
     // Set the options to the appropriate endpoint control register
-    unsigned int *p = (unsigned int*) (&U1EP0 + (4 * ep));
+    unsigned int *p = (unsigned int*) (&U1EP(0) + (4 * ep));
 
     *p = options;
 

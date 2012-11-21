@@ -69,6 +69,8 @@
 #define RSTRNG  0x60            /* for assembler */
 #define REXT    0x70            /* externals and bitmask */
 
+#define RGPREL  0x08            /* gp relative */
+
 #define RFMASK  0x07            /* bitmask for format */
 #define RHIGH16 0x02            /* upper part of byte address: bits 31:16 */
 #define RWORD16 0x03            /* word address: bits 17:2 */

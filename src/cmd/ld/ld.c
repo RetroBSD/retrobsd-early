@@ -93,7 +93,7 @@ unsigned liblist [NLIBS], *libp;
 /*
  * internal symbols
  */
-struct nlist *p_etext, *p_edata, *p_end, *entrypt;
+struct nlist *p_etext, *p_edata, *p_end, *p_gp, *entrypt;
 
 /*
  * options
@@ -103,7 +103,7 @@ int     xflag;                  /* discard local symbols */
 int     Xflag;                  /* discard locals starting with 'L' or '.' */
 int     Sflag;                  /* discard all except locals and globals*/
 int     rflag;                  /* preserve relocation bits, don't define commons */
-int     arflag;                 /* original copy of rflag */
+int     output_relinfo;
 int     sflag;                  /* discard all symbols */
 int     dflag;                  /* define common even with rflag */
 int     verbose;                /* verbose mode */
@@ -122,6 +122,10 @@ unsigned ctrel, cdrel, cbrel;
  * used after pass 1
  */
 unsigned torigin, dorigin, borigin;
+
+/* gp control, MIPS specific */
+unsigned gpoffset = 0x7ff0;     /* offset from data start */
+unsigned gp;                    /* allocated address */
 
 int	ofilfnd;
 char	*ofilename = "l.out";
@@ -221,7 +225,7 @@ unsigned int fputrel (r, f)
 void delexit (int sig)
 {
 	unlink ("l.out");
-	if (! delarg && !arflag)
+	if (! delarg && ! rflag)
                 chmod (ofilename, 0777 & ~umask(0));
 	exit (delarg);
 }
@@ -488,45 +492,50 @@ struct nlist *lookloc (lp, sn)
 	return 0;
 }
 
-void relword (lp, t, r, pt, pr, offset)
+/*
+ * Relocate the word by a given offset.
+ * Return updated values as *pword, *prel.
+ */
+void relword (lp, word, rel, pword, prel, offset)
         struct local *lp;
-        register unsigned t, r;
-        unsigned *pt, *pr, offset;
+        register unsigned word, rel;
+        unsigned *pword, *prel, offset;
 {
-	register unsigned a, delta;
+	register unsigned addr, delta;
 	register struct nlist *sp = 0;
 
 	if (trace > 2)
-		printf ("%08x %08x", t, r);
+		printf ("%08x %08x", word, rel);
 
-	/* extract address from command */
-
-	switch (r & RFMASK) {
+	/*
+         * Extract an address field from the instruction.
+         */
+	switch (rel & RFMASK) {
 	case 0:
-		a = t & 0xffff;
+		addr = word & 0xffff;
 		break;
 	case RWORD16:
-		a = t & 0xffff;
-		a <<= 2;
+		addr = word & 0xffff;
+		addr <<= 2;
 		break;
 	case RWORD26:
-		a = t & 0x3ffffff;
-		a <<= 2;
+		addr = word & 0x3ffffff;
+		addr <<= 2;
 		break;
 	case RHIGH16:
-		a = t & 0xffff;
-                a <<= 16;
+		addr = word & 0xffff;
+                addr <<= 16;
 		break;
 	default:
-		a = 0;
+		addr = 0;
 		break;
 	}
 
-	/* compute address shift `delta' */
-	/* update relocation word */
-
-	delta = 0;
-	switch (r & RSMASK) {
+	/*
+         * Compute a delta for address.
+         * Update the relocation info, if needed.
+         */
+	switch (rel & RSMASK) {
 	case RTEXT:
 		delta = ctrel;
 		break;
@@ -537,50 +546,63 @@ void relword (lp, t, r, pt, pr, offset)
 		delta = cbrel;
 		break;
 	case REXT:
-		sp = lookloc (lp, (int) RINDEX (r));
-		r &= RFMASK;
+		sp = lookloc (lp, (int) RINDEX (rel));
+		rel &= RFMASK | RGPREL;
 		if (sp->n_type == N_EXT+N_UNDF ||
-		    sp->n_type == N_EXT+N_COMM)
-		{
-			r |= REXT | RSETINDEX (nsym+(sp-symtab));
+		    sp->n_type == N_EXT+N_COMM) {
+			rel |= REXT | RSETINDEX (nsym+(sp-symtab));
 			sp = 0;
-			break;
+                        delta = 0;
+                } else {
+                        rel |= reltype (sp->n_type);
+                        delta = sp->n_value;
 		}
-		r |= reltype (sp->n_type);
-		delta = sp->n_value;
+		break;
+	default:
+                delta = 0;
 		break;
 	}
 
-	/* add updated address to command */
+	if ((rel & RGPREL) && ! output_relinfo) {
+            /*
+             * GP relative address.
+             */
+            delta -= gp;
+            rel &= ~RGPREL;
+	}
 
-	switch (r & RFMASK) {
+	/*
+         * Update the address field of the instruction.
+         * Update the relocation info, if needed.
+         */
+	switch (rel & RFMASK) {
 	case 0:
-		t &= ~0xffff;
-		t |= (a + delta) & 0xffff;
+		word &= ~0xffff;
+		word |= (addr + delta) & 0xffff;
 		break;
 	case RWORD16:
 	        if (! sp)
                     break;
                 delta -= offset + 4;
-                t &= ~0xffff;
-                t |= ((a + delta) >> 2) & 0xffff;
-                r = RABS;
+                word &= ~0xffff;
+                word |= ((addr + delta) >> 2) & 0xffff;
+                rel = RABS;
 		break;
 	case RWORD26:
-		t &= ~0x3ffffff;
-		t |= ((a + delta) >> 2) & 0x3ffffff;
+		word &= ~0x3ffffff;
+		word |= ((addr + delta) >> 2) & 0x3ffffff;
 		break;
 	case RHIGH16:
-		t &= ~0xffff;
-		t |= ((a + delta) >> 16) & 0xffff;
+		word &= ~0xffff;
+		word |= ((addr + delta) >> 16) & 0xffff;
 		break;
 	}
 
 	if (trace > 2)
-		printf (" -> %08x %08x\n", t, r);
+		printf (" -> %08x %08x\n", word, rel);
 
-	*pt = t;
-	*pr = r;
+	*pword = word;
+	*prel = rel;
 }
 
 void relocate (lp, b1, b2, len, origin)
@@ -588,15 +610,15 @@ void relocate (lp, b1, b2, len, origin)
         FILE *b1, *b2;
         unsigned len, origin;
 {
-	unsigned r, t, offset;
+	unsigned word, rel, offset;
 
 	for (offset=0; offset<len; offset+=W) {
-		t = fgetword (text);
-		r = fgetrel (reloc);
-		relword (lp, t, r, &t, &r, offset + origin);
-		fputword (t, b1);
-		if (rflag)
-                        fputrel (r, b2);
+		word = fgetword (text);
+		rel = fgetrel (reloc);
+		relword (lp, word, rel, &word, &rel, offset + origin);
+		fputword (word, b1);
+		if (output_relinfo)
+                        fputrel (rel, b2);
 	}
 }
 
@@ -1032,7 +1054,7 @@ void pass1 (argc, argv)
 				/* preserve rel. bits, don't define common */
 			case 'r':
 				rflag++;
-				arflag++;
+				output_relinfo++;
 				continue;
 
 				/* discard all symbols */
@@ -1079,27 +1101,32 @@ void middle()
 	 * If there are any undefined symbols, save the relocation bits.
 	 */
 	symp = &symtab[symindex];
-	if (!rflag) {
+	if (! output_relinfo) {
 		for (sp=symtab; sp<symp; sp++)
 			if (sp->n_type == N_EXT+N_UNDF &&
 				sp != p_end && sp != p_edata && sp != p_etext)
 			{
-				rflag++;
+				output_relinfo++;
 				dflag = 0;
 				break;
 			}
 	}
-	if (rflag)
+	if (output_relinfo)
                 sflag = 0;
 
 	/*
 	 * Assign common locations.
 	 */
 	cmsize = 0;
-	if (dflag || !rflag) {
+	if (dflag || ! output_relinfo) {
 		ldrsym (p_etext, tsize, N_EXT+N_TEXT);
 		ldrsym (p_edata, dsize, N_EXT+N_DATA);
 		ldrsym (p_end, bsize, N_EXT+N_BSS);
+
+                /* Set GP as offset from the start of data segment. */
+                p_gp = *slookup ("_gp");
+		ldrsym (p_gp, gpoffset, N_EXT+N_DATA);
+
 		for (sp=symtab; sp<symp; sp++) {
 			if ((sp->n_type & N_TYPE) == N_COMM) {
 				t = sp->n_value;
@@ -1114,13 +1141,14 @@ void middle()
 	 */
 	torigin = basaddr;
 	dorigin = torigin + tsize;
+	gp = dorigin + gpoffset;
 	cmorigin = dorigin + dsize;
 	borigin = cmorigin + cmsize;
 	nund = 0;
 	for (sp=symtab; sp<symp; sp++) {
 		switch (sp->n_type) {
 		case N_EXT+N_UNDF:
-			if (! arflag) {
+			if (! rflag) {
                                 errlev |= 1;
 				if (! nund)
 					printf ("Undefined:\n");
@@ -1175,7 +1203,7 @@ void setupout ()
 
 	if (! sflag || ! xflag)
                 tcreat (&soutb, 1);
-	if (rflag) {
+	if (output_relinfo) {
 		tcreat (&troutb, 1);
 		tcreat (&droutb, 1);
 	}
@@ -1344,7 +1372,7 @@ void finishout ()
 
 	copy_and_close (toutb);
 	copy_and_close (doutb);
-	if (rflag) {
+	if (output_relinfo) {
 		rtsize = copy_and_close (troutb);
 		while (rtsize % W) {
 			putc (0, outb);
@@ -1365,7 +1393,7 @@ void finishout ()
 		while (ssize++ % W)
 			putc (0, outb);
 	}
-	filhdr.a_magic = rflag ? RMAGIC : OMAGIC;
+	filhdr.a_magic = output_relinfo ? RMAGIC : OMAGIC;
 	filhdr.a_text = tsize;
 	filhdr.a_data = dsize;
 	filhdr.a_bss = bsize;

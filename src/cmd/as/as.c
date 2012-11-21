@@ -342,12 +342,14 @@ unsigned intval;
 int extref;
 int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
-int mode_reorder;
-int mode_macro;
-int mode_mips16;
-int mode_micromips;
-int reorder_full;
-unsigned reorder_word, reorder_rel, reorder_clobber;
+int mode_reorder;                       /* .set reorder enabled */
+int mode_macro;                         /* .set macro enabled */
+int mode_mips16;                        /* .set mips16 enabled */
+int mode_micromips;                     /* .set micromips enabled */
+int expr_gprel;                         /* gp relative relocation */
+int reorder_full;                       /* instruction buffered for reorder */
+unsigned reorder_word, reorder_rel;     /* buffered instruction... */
+unsigned reorder_clobber;               /* ...modified this register */
 
 void getbitmask (void);
 unsigned getexpr (int *s);
@@ -1021,7 +1023,8 @@ int getterm ()
         if (getlex (&cval) != LNAME)
             uerror ("bad %function name");
         if (strcmp (name, "gp_rel") == 0) {
-            // TODO
+            /* GP relative reverence. */
+            expr_gprel = 1;
         } else if (strcmp (name, "hi") == 0) {
             // TODO
         } else if (strcmp (name, "lo") == 0) {
@@ -1249,12 +1252,15 @@ void emit_la (opcode, relinfo)
 
     if (getlex (&cval) != ',')
         uerror ("comma expected");
+    expr_gprel = 0;
     value = getexpr (&segment);
     if (segment == SABS)
         uerror ("relocatable value required");
     relinfo = segmrel [segment];
     if (relinfo == REXT)
         relinfo |= RSETINDEX (extref);
+    if (expr_gprel)
+        relinfo |= RGPREL;
 
     /* lui d, %hi(value)
      * ori d, d, %lo(value) */
@@ -1410,10 +1416,13 @@ void makecmd (opcode, type, emitfunc)
         /* Relocatable offset */
         if ((type & (FOFF16 | FOFF18 | FHIGH16)) && getlex (&cval) != ',')
             uerror ("comma expected");
+        expr_gprel = 0;
         offset = getexpr (&segment);
         relinfo = segmrel [segment];
         if (relinfo == REXT)
             relinfo |= RSETINDEX (extref);
+        if (expr_gprel)
+            relinfo |= RGPREL;
         switch (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28 | FHIGH16)) {
         case FOFF16:                    /* low 16-bit byte address */
             opcode |= offset & 0xffff;
@@ -1737,27 +1746,15 @@ void pass1 ()
         case LBSS:
             segm = SBSS;
             break;
-        case LSHORT:
-            for (;;) {
-                getexpr (&cval);
-                addr = segmrel [cval];
-                if (cval == SEXT)
-                    addr |= RSETINDEX (extref);
-                emitword (intval, addr, 0);
-                clex = getlex (&cval);
-                if (clex != ',') {
-                    ungetlex (clex, cval);
-                    break;
-                }
-            }
-            reorder_flush();
-            break;
         case LWORD:
             for (;;) {
+                expr_gprel = 0;
                 getexpr (&cval);
                 addr = segmrel [cval];
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
+                if (expr_gprel)
+                    addr |= RGPREL;
                 emitword (intval, addr, 0);
                 clex = getlex (&cval);
                 if (clex != ',') {
@@ -1780,28 +1777,36 @@ void pass1 ()
                     break;
                 }
             }
-            c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
+align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
     	    count[segm] += nbytes + c;
             nwords = (unsigned) (nbytes + c) / WORDSZ;
             while (c--)
-               fputc (0, sfile[segm]);
+                fputc (0, sfile[segm]);
             while (nwords--)
-              fputrel (RABS, rfile[segm]);
+                fputrel (RABS, rfile[segm]);
             break;
+        case LSHORT:
+            reorder_flush();
+	    nbytes = 0;
+            for (;;) {
+                getexpr (&cval);
+		fputc (intval, sfile[segm]);
+		fputc (intval >> 8, sfile[segm]);
+		nbytes += 2;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+            goto align;
         case LSPACE:
             getexpr (&cval);
             reorder_flush();
-            for (nbytes=0;nbytes<intval;nbytes++) {
+            for (nbytes=0; nbytes<intval; nbytes++) {
 		fputc (0, sfile[segm]);
             }
-            c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
-    	    count[segm] += nbytes + c;
-            nwords = (unsigned) (nbytes + c) / WORDSZ;
-            while (c--)
-               fputc (0, sfile[segm]);
-            while (nwords--)
-              fputrel (RABS, rfile[segm]);
-            break;
+            goto align;
         case LASCII:
             reorder_flush();
             makeascii ();
@@ -2201,9 +2206,11 @@ unsigned relrel (relinfo)
         {
             /* Reindexing */
             if (xflags)
-                relinfo = (relinfo & (RFMASK | REXT)) | RSETINDEX (newindex [i]);
+                relinfo = (relinfo & (RFMASK | REXT | RGPREL)) |
+                          RSETINDEX (newindex [i]);
         } else
-            relinfo = (relinfo & RFMASK) | typerel (stab[i].n_type);
+            relinfo = (relinfo & (RFMASK | RGPREL)) |
+                      typerel (stab[i].n_type);
         break;
     }
     return (relinfo);
