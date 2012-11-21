@@ -1,1 +1,0 @@
-../../../src/cmd/ranlib/ranlib.c

@@ -1,0 +1,1 @@
+../../src/startup-mips/crt0.c

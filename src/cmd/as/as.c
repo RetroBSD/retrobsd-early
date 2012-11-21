@@ -2295,6 +2295,27 @@ int main (argc, argv)
                         /* -o file */
                         outfile = argv[++i];
                     break;
+                case 'v':       /* verbose mode */
+                    // TODO
+                    break;
+                case 'I':       /* include dir */
+                    // TODO
+                    while (*++cp);
+                    --cp;
+                    break;
+                case 'O':       /* optimization level */
+                    // TODO
+                    while (*++cp);
+                    --cp;
+                    break;
+                case '-':       /* long option - skip */
+                    while (*++cp);
+                    --cp;
+                    break;
+                case 'n':       /* -no-xyz option - skip */
+                    while (*++cp);
+                    --cp;
+                    break;
                 default:
 usage:              fprintf (stderr, "Usage:\n");
                     fprintf (stderr, "  as [-uxX] [-o outfile] [infile]\n");

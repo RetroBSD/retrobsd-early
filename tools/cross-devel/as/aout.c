@@ -1,1 +1,0 @@
-../../../src/cmd/as/aout.c

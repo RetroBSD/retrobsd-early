@@ -1,0 +1,1 @@
+../../src/cmd/nm/nm.c
