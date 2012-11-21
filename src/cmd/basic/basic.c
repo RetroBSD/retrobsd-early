@@ -21,7 +21,7 @@
  *	DATA			- Enter "inline" data statements
  *	DELAY ms		- Stops for the indicated time
  *	DIM var(size)[, ... ]	- Dimension an array
- *	DOS "comand"		- Execute a DOS program
+ *	DOS "command"		- Execute a DOS program
  *	END			- Terminate program with no message
  *	EXIT			- Terminate MICRO-BASIC
  *	FOR v=init TO limit [STEP increment] - Perform a counted loop
@@ -1132,6 +1132,7 @@ input:		if(ii == -1)
 		break;
 	case DOS:
 		eval_char();
+		fflush(stdout);
 		system(sa1);
 		break;
 	case OUT:
