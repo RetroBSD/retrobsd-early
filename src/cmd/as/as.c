@@ -104,6 +104,7 @@ enum {
 #define FRS3    (1 << 7)        /* .., .., rs */
 #define FRSB    (1 << 8)        /* ... (rs) */
 #define FCODE   (1 << 9)        /* immediate shifted <<6 */
+#define FDSLOT  (1 << 10)       /* have delay slot */
 #define FOFF16  (1 << 11)       /* 16-bit relocatable offset */
 #define FHIGH16 (1 << 12)       /* high 16-bit relocatable offset */
 #define FOFF18  (1 << 13)       /* 18-bit PC-relative relocatable offset shifted >>2 */
@@ -115,6 +116,8 @@ enum {
 #define FMSB    (1 << 19)       /* bit field msb */
 #define FRTD    (1 << 20)       /* set rt to rd number */
 #define FCODE16 (1 << 21)       /* immediate shifted <<16 */
+#define FMOD    (1 << 22)       /* modifies the first register */
+#define FMODRA  (1 << 23)       /* modifies the register $31 */
 
 /*
  * Sizes of tables.
@@ -181,102 +184,102 @@ void emit_li (unsigned, unsigned);
 void emit_la (unsigned, unsigned);
 
 const struct optable optable [] = {
-    { 0x00000020,   "add",      FRD1 | FRS2 | FRT3 },
-    { 0x20000000,   "addi",     FRT1 | FRS2 | FOFF16 },
-    { 0x24000000,   "addiu",    FRT1 | FRS2 | FOFF16 },
-    { 0x00000021,   "addu",     FRD1 | FRS2 | FRT3 },
-    { 0x00000024,   "and",      FRD1 | FRS2 | FRT3 },
-    { 0x30000000,   "andi",     FRT1 | FRS2 | FOFF16 },
-    { 0x10000000,   "b",        FAOFF18 },
-    { 0x04110000,   "bal",      FAOFF18 },
-    { 0x10000000,   "beq",      FRS1 | FRT2 | FOFF18 },
-    { 0x50000000,   "beql",	FRS1 | FRT2 | FOFF18 },
-    { 0x04010000,   "bgez",	FRS1 | FOFF18 },
-    { 0x04110000,   "bgezal",	FRS1 | FOFF18 },
-    { 0x04130000,   "bgezall",	FRS1 | FOFF18 },
-    { 0x04030000,   "bgezl",	FRS1 | FOFF18 },
-    { 0x1c000000,   "bgtz",	FRS1 | FOFF18 },
-    { 0x5c000000,   "bgtzl",	FRS1 | FOFF18 },
-    { 0x18000000,   "blez",	FRS1 | FOFF18 },
-    { 0x58000000,   "blezl",	FRS1 | FOFF18 },
-    { 0x04000000,   "bltz",	FRS1 | FOFF18 },
-    { 0x04100000,   "bltzal",	FRS1 | FOFF18 },
-    { 0x04120000,   "bltzall",	FRS1 | FOFF18 },
-    { 0x04020000,   "bltzl",	FRS1 | FOFF18 },
-    { 0x14000000,   "bne",	FRS1 | FRT2 | FOFF18 },
-    { 0x54000000,   "bnel",	FRS1 | FRT2 | FOFF18 },
+    { 0x00000020,   "add",      FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x20000000,   "addi",     FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x24000000,   "addiu",    FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x00000021,   "addu",     FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x00000024,   "and",      FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x30000000,   "andi",     FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x10000000,   "b",        FAOFF18 | FDSLOT },
+    { 0x04110000,   "bal",      FAOFF18 | FDSLOT },
+    { 0x10000000,   "beq",      FRS1 | FRT2 | FOFF18 | FDSLOT },
+    { 0x50000000,   "beql",	FRS1 | FRT2 | FOFF18 | FDSLOT },
+    { 0x04010000,   "bgez",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04110000,   "bgezal",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04130000,   "bgezall",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04030000,   "bgezl",	FRS1 | FOFF18 | FDSLOT },
+    { 0x1c000000,   "bgtz",	FRS1 | FOFF18 | FDSLOT },
+    { 0x5c000000,   "bgtzl",	FRS1 | FOFF18 | FDSLOT },
+    { 0x18000000,   "blez",	FRS1 | FOFF18 | FDSLOT },
+    { 0x58000000,   "blezl",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04000000,   "bltz",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04100000,   "bltzal",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04120000,   "bltzall",	FRS1 | FOFF18 | FDSLOT },
+    { 0x04020000,   "bltzl",	FRS1 | FOFF18 | FDSLOT },
+    { 0x14000000,   "bne",	FRS1 | FRT2 | FOFF18 | FDSLOT },
+    { 0x54000000,   "bnel",	FRS1 | FRT2 | FOFF18 | FDSLOT },
     { 0x0000000d,   "break",	FCODE16 },
-    { 0x70000021,   "clo",	FRD1 | FRS2 | FRTD },
-    { 0x70000020,   "clz",	FRD1 | FRS2 | FRTD },
+    { 0x70000021,   "clo",	FRD1 | FRS2 | FRTD | FMOD },
+    { 0x70000020,   "clz",	FRD1 | FRS2 | FRTD | FMOD },
     { 0x4200001f,   "deret",	0 },
-    { 0x41606000,   "di",	FRT1 },
+    { 0x41606000,   "di",	FRT1 | FMOD },
     { 0x0000001a,   "div",	FRS1 | FRT2 },
     { 0x0000001b,   "divu",	FRS1 | FRT2 },
     { 0x000000c0,   "ehb",	0 },
-    { 0x41606020,   "ei",	FRT1 },
+    { 0x41606020,   "ei",	FRT1 | FMOD },
     { 0x42000018,   "eret",	0 },
-    { 0x7c000000,   "ext",	FRT1 | FRS2 | FSA | FSIZE },
-    { 0x7c000004,   "ins",	FRT1 | FRS2 | FSA | FMSB },
-    { 0x08000000,   "j",	FAOFF28 },
-    { 0x0c000000,   "jal",	FAOFF28 },
-    { 0x00000009,   "jalr",	FRD1 | FRS2 },
-    { 0x00000409,   "jalr.hb",	FRD1 | FRS2 },
-    { 0x00000008,   "jr",	FRS1 },
-    { 0x00000408,   "jr.hb",	FRS1 },
-    {          0,   "la",	FRT1, emit_la },
-    { 0x80000000,   "lb",	FRT1 | FOFF16 | FRSB },
-    { 0x90000000,   "lbu",	FRT1 | FOFF16 | FRSB },
-    { 0x84000000,   "lh",	FRT1 | FOFF16 | FRSB },
-    { 0x94000000,   "lhu",	FRT1 | FOFF16 | FRSB },
-    {          0,   "li",	FRT1, emit_li },
-    { 0xc0000000,   "ll",	FRT1 | FOFF16 | FRSB },
-    { 0x3c000000,   "lui",	FRT1 | FHIGH16 },
-    { 0x8c000000,   "lw",	FRT1 | FOFF16 | FRSB },
-    { 0x88000000,   "lwl",	FRT1 | FOFF16 | FRSB },
-    { 0x98000000,   "lwr",	FRT1 | FOFF16 | FRSB },
-    { 0x70000000,   "madd",	FRS1 | FRT2 },
-    { 0x70000001,   "maddu",	FRS1 | FRT2 },
-    { 0x40000000,   "mfc0",	FRT1 | FRD2 | FSEL },
-    { 0x00000010,   "mfhi",	FRD1 },
-    { 0x00000012,   "mflo",	FRD1 },
-    { 0x00000021,   "move",	FRD1 | FRS2 },          // addu
-    { 0x0000000b,   "movn",	FRD1 | FRS2 | FRT3 },
-    { 0x0000000a,   "movz",	FRD1 | FRS2 | FRT3 },
-    { 0x70000004,   "msub",	FRS1 | FRT2 },
-    { 0x70000005,   "msubu",	FRS1 | FRT2 },
+    { 0x7c000000,   "ext",	FRT1 | FRS2 | FSA | FSIZE | FMOD },
+    { 0x7c000004,   "ins",	FRT1 | FRS2 | FSA | FMSB | FMOD },
+    { 0x08000000,   "j",	FAOFF28 | FDSLOT },
+    { 0x0c000000,   "jal",	FAOFF28 | FDSLOT | FMODRA },
+    { 0x00000009,   "jalr",	FRD1 | FRS2 | FDSLOT | FMODRA },
+    { 0x00000409,   "jalr.hb",	FRD1 | FRS2 | FDSLOT | FMODRA },
+    { 0x00000008,   "jr",	FRS1 | FDSLOT },
+    { 0x00000408,   "jr.hb",	FRS1 | FDSLOT },
+    {          0,   "la",	FRT1 | FMOD, emit_la },
+    { 0x80000000,   "lb",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x90000000,   "lbu",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x84000000,   "lh",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x94000000,   "lhu",	FRT1 | FOFF16 | FRSB | FMOD },
+    {          0,   "li",	FRT1 | FMOD, emit_li },
+    { 0xc0000000,   "ll",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x3c000000,   "lui",	FRT1 | FHIGH16 | FMOD },
+    { 0x8c000000,   "lw",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x88000000,   "lwl",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x98000000,   "lwr",	FRT1 | FOFF16 | FRSB | FMOD },
+    { 0x70000000,   "madd",	FRS1 | FRT2 | FMOD },
+    { 0x70000001,   "maddu",	FRS1 | FRT2 | FMOD },
+    { 0x40000000,   "mfc0",	FRT1 | FRD2 | FSEL | FMOD },
+    { 0x00000010,   "mfhi",	FRD1 | FMOD },
+    { 0x00000012,   "mflo",	FRD1 | FMOD },
+    { 0x00000021,   "move",	FRD1 | FRS2 | FMOD },          // addu
+    { 0x0000000b,   "movn",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x0000000a,   "movz",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x70000004,   "msub",	FRS1 | FRT2 | FMOD },
+    { 0x70000005,   "msubu",	FRS1 | FRT2 | FMOD },
     { 0x40800000,   "mtc0",	FRT1 | FRD2 | FSEL },
     { 0x00000011,   "mthi",	FRS1 },
     { 0x00000013,   "mtlo",	FRS1 },
-    { 0x70000002,   "mul",	FRD1 | FRS2 | FRT3 },
+    { 0x70000002,   "mul",	FRD1 | FRS2 | FRT3 | FMOD },
     { 0x00000018,   "mult",	FRS1 | FRT2 },
     { 0x00000019,   "multu",	FRS1 | FRT2 },
     { 0x00000000,   "nop",	0 },
-    { 0x00000027,   "nor",	FRD1 | FRS2 | FRT3 },
-    { 0x00000025,   "or",	FRD1 | FRS2 | FRT3 },
-    { 0x34000000,   "ori",	FRT1 | FRS2 | FOFF16 },
-    { 0x7c00003b,   "rdhwr",	FRT1 | FRD2 },
-    { 0x41400000,   "rdpgpr",	FRD1 | FRT2 },
-    { 0x00200002,   "ror",	FRD1 | FRT2 | FSA },
-    { 0x00000046,   "rorv",	FRD1 | FRT2 | FRS3 },
+    { 0x00000027,   "nor",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x00000025,   "or",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x34000000,   "ori",	FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x7c00003b,   "rdhwr",	FRT1 | FRD2 | FMOD },
+    { 0x41400000,   "rdpgpr",	FRD1 | FRT2 | FMOD },
+    { 0x00200002,   "ror",	FRD1 | FRT2 | FSA | FMOD },
+    { 0x00000046,   "rorv",	FRD1 | FRT2 | FRS3 | FMOD },
     { 0xa0000000,   "sb",	FRT1 | FOFF16 | FRSB },
     { 0xe0000000,   "sc",	FRT1 | FOFF16 | FRSB },
     { 0x7000003f,   "sdbbp",	FCODE },
     { 0x7c000420,   "seb",	FRD1 | FRT2 },
     { 0x7c000620,   "seh",	FRD1 | FRT2 },
     { 0xa4000000,   "sh",	FRT1 | FOFF16 | FRSB },
-    { 0x00000000,   "sll",	FRD1 | FRT2 | FSA },
-    { 0x00000004,   "sllv",	FRD1 | FRT2 | FRS3 },
-    { 0x0000002a,   "slt",	FRD1 | FRS2 | FRT3 },
-    { 0x28000000,   "slti",	FRT1 | FRS2 | FOFF16 },
-    { 0x2c000000,   "sltiu",	FRT1 | FRS2 | FOFF16 },
-    { 0x0000002b,   "sltu",	FRD1 | FRS2 | FRT3 },
-    { 0x00000003,   "sra",	FRD1 | FRT2 | FSA },
-    { 0x00000007,   "srav",	FRD1 | FRT2 | FRS3 },
-    { 0x00000002,   "srl",	FRD1 | FRT2 | FSA },
-    { 0x00000006,   "srlv",	FRD1 | FRT2 | FRS3 },
+    { 0x00000000,   "sll",	FRD1 | FRT2 | FSA | FMOD },
+    { 0x00000004,   "sllv",	FRD1 | FRT2 | FRS3 | FMOD },
+    { 0x0000002a,   "slt",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x28000000,   "slti",	FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x2c000000,   "sltiu",	FRT1 | FRS2 | FOFF16 | FMOD },
+    { 0x0000002b,   "sltu",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x00000003,   "sra",	FRD1 | FRT2 | FSA | FMOD },
+    { 0x00000007,   "srav",	FRD1 | FRT2 | FRS3 | FMOD },
+    { 0x00000002,   "srl",	FRD1 | FRT2 | FSA | FMOD },
+    { 0x00000006,   "srlv",	FRD1 | FRT2 | FRS3 | FMOD },
     { 0x00000040,   "ssnop",	0 },
-    { 0x00000022,   "sub",	FRD1 | FRS2 | FRT3 },
-    { 0x00000023,   "subu",	FRD1 | FRS2 | FRT3 },
+    { 0x00000022,   "sub",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x00000023,   "subu",	FRD1 | FRS2 | FRT3 | FMOD },
     { 0xac000000,   "sw",	FRT1 | FOFF16 | FRSB },
     { 0xa8000000,   "swl",	FRT1 | FOFF16 | FRSB },
     { 0xb8000000,   "swr",	FRT1 | FOFF16 | FRSB },
@@ -296,9 +299,9 @@ const struct optable optable [] = {
     { 0x040e0000,   "tnei",	FRS1 | FOFF16 },
     { 0x42000020,   "wait",	FCODE },
     { 0x41c00000,   "wrpgpr",	FRD1 | FRT2 },
-    { 0x7c0000a0,   "wsbh",	FRD1 | FRT2 },
-    { 0x00000026,   "xor",	FRD1 | FRS2 | FRT3 },
-    { 0x38000000,   "xori",	FRT1 | FRS2 | FOFF16 },
+    { 0x7c0000a0,   "wsbh",	FRD1 | FRT2 | FMOD },
+    { 0x00000026,   "xor",	FRD1 | FRS2 | FRT3 | FMOD },
+    { 0x38000000,   "xori",	FRT1 | FRS2 | FOFF16 | FMOD },
     { 0,            0,          0 },
 };
 
@@ -344,8 +347,8 @@ int mode_reorder;
 int mode_macro;
 int mode_mips16;
 int mode_micromips;
-int reorder_flag;
-unsigned reorder_word, reorder_rel;
+int reorder_full;
+unsigned reorder_word, reorder_rel, reorder_clobber;
 
 void getbitmask (void);
 unsigned getexpr (int *s);
@@ -1177,25 +1180,27 @@ unsigned getexpr (s)
 
 void reorder_flush ()
 {
-    if (reorder_flag) {
+    if (reorder_full) {
         fputword (reorder_word, sfile[segm]);
         fputrel (reorder_rel, rfile[segm]);
-        reorder_flag = 0;
+        reorder_full = 0;
     }
 }
 
 /*
  * Default emit function.
  */
-void emitword (w, r)
+void emitword (w, r, clobber_reg)
     register unsigned w;
     register unsigned r;
+    int clobber_reg;
 {
     if (mode_reorder && segm == STEXT) {
         reorder_flush();
         reorder_word = w;
         reorder_rel = r;
-        reorder_flag = 1;
+        reorder_full = 1;
+        reorder_clobber = clobber_reg;
     } else {
         fputword (w, sfile[segm]);
         fputrel (r, rfile[segm]);
@@ -1227,10 +1232,10 @@ void emit_li (opcode, relinfo)
     } else {
         /* lui d, %hi(value)
          * ori d, d, %lo(value) */
-        emitword (opcode | 0x3c000000 | (value >> 16), RABS);
+        emitword (opcode | 0x3c000000 | (value >> 16), RABS, value >> 16);
         opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
     }
-    emitword (opcode, relinfo);
+    emitword (opcode, relinfo, value >> 16);
 }
 
 /*
@@ -1254,10 +1259,10 @@ void emit_la (opcode, relinfo)
 
     /* lui d, %hi(value)
      * ori d, d, %lo(value) */
-    emitword (opcode | 0x3c000000 | (value >> 16), relinfo | RHIGH16);
+    emitword (opcode | 0x3c000000 | (value >> 16), relinfo | RHIGH16, value >> 16);
 
     opcode |= 0x34000000 | (opcode & 0x1f0000) << 5 | (value & 0xffff);
-    emitword (opcode, relinfo);
+    emitword (opcode, relinfo, value >> 16);
 }
 
 /*
@@ -1269,7 +1274,7 @@ void makecmd (opcode, type, emitfunc)
 {
     register int clex;
     register unsigned offset, relinfo;
-    int cval, segment;
+    int cval, segment, clobber_reg;
 
     offset = 0;
     relinfo = RABS;
@@ -1278,7 +1283,7 @@ void makecmd (opcode, type, emitfunc)
      * GCC can generate "j" instead of "jr".
      * Need to detect it early.
      */
-    if (type == FAOFF28) {
+    if (type == (FAOFF28 | FDSLOT)) {
         clex = getlex (&cval);
         ungetlex (clex, cval);
         if (clex == LREG) {
@@ -1296,6 +1301,8 @@ void makecmd (opcode, type, emitfunc)
     /*
      * First register.
      */
+    cval = 0;
+    clobber_reg = 0;
     if (type & FRD1) {
         clex = getlex (&cval);
         if (clex != LREG)
@@ -1317,6 +1324,10 @@ void makecmd (opcode, type, emitfunc)
     if (type & FRTD) {
         opcode |= cval << 16;           /* rt equals rd */
     }
+    if (type & FMODRA)
+        clobber_reg = 31;
+    else if ((type & FMOD) && (type & (FRD1 | FRT1 | FRS1)))
+        clobber_reg = cval;
 
     /*
      * Second register.
@@ -1470,9 +1481,26 @@ void makecmd (opcode, type, emitfunc)
     }
 
     /* Output resulting values. */
-    if (! emitfunc)
-        emitfunc = emitword;
-    emitfunc (opcode, relinfo);
+    if (emitfunc) {
+        emitfunc (opcode, relinfo);
+    } else if (mode_reorder && (type & FDSLOT) && segm == STEXT) {
+        /* Need a delay slot. */
+        if (reorder_full && reorder_clobber) {
+            // TODO: analyse register dependency and flush it if needed.
+        }
+        fputword (opcode, sfile[segm]);
+        fputrel (relinfo, rfile[segm]);
+        if (reorder_full) {
+            /* Delay slot: insert a previous instruction. */
+            reorder_flush();
+        } else {
+            /* Insert NOP in delay slot. */
+            fputword (0, sfile[segm]);
+            fputrel (RABS, rfile[segm]);
+        }
+    } else {
+        emitword (opcode, relinfo, clobber_reg);
+    }
 }
 
 void makeascii ()
@@ -1658,7 +1686,7 @@ void pass1 ()
                 count [segm] = addr;
             else {
                 while (count[segm] < addr) {
-                    emitword (0, RABS);
+                    emitword (0, RABS, 0);
                 }
             }
             break;
@@ -1711,7 +1739,7 @@ void pass1 ()
                 addr = segmrel [cval];
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
-                emitword (intval, addr);
+                emitword (intval, addr, 0);
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
@@ -1726,7 +1754,7 @@ void pass1 ()
                 addr = segmrel [cval];
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
-                emitword (intval, addr);
+                emitword (intval, addr, 0);
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
