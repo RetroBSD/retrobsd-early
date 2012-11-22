@@ -97,3 +97,24 @@ void	copy_ar();
 int	get_arobj();
 int	open_archive();
 void	put_arobj();
+
+int     delete (register char **argv);
+int     move (register char **argv);
+int     print (register char **argv);
+int     append (register char **argv);
+int     replace (register char **argv);
+int     contents (register char **argv);
+int     extract (register char **argv);
+
+#ifdef CROSS
+#ifdef __linux__
+#undef O_CREAT
+#define O_CREAT         00000100
+#undef O_EXCL
+#define O_EXCL          00000200
+#undef O_NOCTTY
+#define O_NOCTTY        00000400
+#undef O_TRUNC
+#define O_TRUNC         00001000
+#endif
+#endif

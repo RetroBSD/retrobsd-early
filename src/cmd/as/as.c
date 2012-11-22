@@ -43,7 +43,6 @@ enum {
     LEOF = 1,           /* end of file */
     LEOL,               /* end of line */
     LNAME,              /* identifier */
-    LCMD,               /* machine instruction */
     LREG,               /* machine register */
     LNUM,               /* integer number */
     LLSHIFT,            /* << */
@@ -125,6 +124,7 @@ enum {
 #define HASHSZ  1024            /* symbol name hash table size */
 #define HCMDSZ  256             /* instruction hash table size */
 #define STSIZE  (HASHSZ*9/10)   /* symbol name table size */
+#define MAXRLAB 200             /* max relative (digit) labels */
 
 /*
  * On second pass, hashtab[] is not needed.
@@ -176,8 +176,17 @@ struct optable {
     void (*func) (unsigned, unsigned);
 };
 
+struct labeltab {
+    int num;
+    int value;
+};
+
+#define RLAB_OFFSET     (1 << 23)       /* index offset of relative label */
+#define RLAB_MAXVAL     1000000         /* max value of relative label */
+
 /*
  * Implement pseudo-instructions.
+ * TODO: bge, bgeu, bgt, bgtu, ble, bleu, blt, bltu
  */
 void emit_li (unsigned, unsigned);
 void emit_la (unsigned, unsigned);
@@ -193,6 +202,7 @@ const struct optable optable [] = {
     { 0x04110000,   "bal",      FAOFF18 | FDSLOT },
     { 0x10000000,   "beq",      FRS1 | FRT2 | FOFF18 | FDSLOT },
     { 0x50000000,   "beql",	FRS1 | FRT2 | FOFF18 | FDSLOT },
+    { 0x50000000,   "beqz",	FRS1 | FOFF18 | FDSLOT },
     { 0x04010000,   "bgez",	FRS1 | FOFF18 | FDSLOT },
     { 0x04110000,   "bgezal",	FRS1 | FOFF18 | FDSLOT },
     { 0x04130000,   "bgezall",	FRS1 | FOFF18 | FDSLOT },
@@ -207,6 +217,7 @@ const struct optable optable [] = {
     { 0x04020000,   "bltzl",	FRS1 | FOFF18 | FDSLOT },
     { 0x14000000,   "bne",	FRS1 | FRT2 | FOFF18 | FDSLOT },
     { 0x54000000,   "bnel",	FRS1 | FRT2 | FOFF18 | FDSLOT },
+    { 0x54000000,   "bnez",	FRS1 | FOFF18 | FDSLOT },
     { 0x0000000d,   "break",	FCODE16 },
     { 0x70000021,   "clo",	FRD1 | FRS2 | FRTD | FMOD },
     { 0x70000020,   "clz",	FRD1 | FRS2 | FRTD | FMOD },
@@ -342,16 +353,18 @@ unsigned intval;
 int extref;
 int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
-int mode_reorder;                       /* .set reorder enabled */
-int mode_macro;                         /* .set macro enabled */
-int mode_mips16;                        /* .set mips16 enabled */
-int mode_micromips;                     /* .set micromips enabled */
+struct labeltab labeltab [MAXRLAB];     /* relative labels */
+int nlabels;
+int mode_reorder;                       /* .set reorder option */
+int mode_macro;                         /* .set macro option */
+int mode_mips16;                        /* .set mips16 option */
+int mode_micromips;                     /* .set micromips option */
+int mode_at;                            /* .set at option */
 int expr_gprel;                         /* gp relative relocation */
 int reorder_full;                       /* instruction buffered for reorder */
 unsigned reorder_word, reorder_rel;     /* buffered instruction... */
 unsigned reorder_clobber;               /* ...modified this register */
 
-void getbitmask (void);
 unsigned getexpr (int *s);
 
 void uerror (char *fmt, ...)
@@ -362,7 +375,8 @@ void uerror (char *fmt, ...)
     fprintf (stderr, "as: ");
     if (infile)
         fprintf (stderr, "%s, ", infile);
-    fprintf (stderr, "%d: ", line);
+    if (line)
+        fprintf (stderr, "%d: ", line);
     vfprintf (stderr, fmt, ap);
     va_end (ap);
     fprintf (stderr, "\n");
@@ -534,9 +548,8 @@ void gethnum ()
 
 /*
  * Get a number.
- * 1234 1234d 1234D - decimal
- * 01234 1234. 1234o 1234O - octal
- * 1234' 1234h 1234H - hexadecimal
+ * 1234 - decimal
+ * 01234 - octal
  */
 void getnum (c)
     register int c;
@@ -545,11 +558,12 @@ void getnum (c)
     int leadingzero;
 
     leadingzero = (c=='0');
-    for (cp=name; ISHEX(c); c=getchar())
+    for (cp=name; ISDIGIT(c); c=getchar())
         *cp++ = hexdig (c);
+    ungetc (c, stdin);
     intval = 0;
-    if (c=='.' || c=='o' || c=='O') {
-octal:
+    if (leadingzero) {
+        /* Octal. */
         for (c=0; c<=27; c+=3) {
             if (--cp < name)
                 return;
@@ -559,18 +573,8 @@ octal:
             return;
         intval |= *cp << 30;
         return;
-    } else if (c=='h' || c=='H' || c=='\'') {
-        for (c=0; c<32; c+=4) {
-            if (--cp < name)
-                return;
-            intval |= *cp << c;
-        }
-        return;
-    } else if (c!='d' && c!='D') {
-        ungetc (c, stdin);
-        if (leadingzero)
-            goto octal;
     }
+    /* Decimal. */
     for (c=1; ; c*=10) {
         if (--cp < name)
             return;
@@ -870,8 +874,7 @@ int lookname ()
  * LEOL    - End of line.  Value is a line number.
  * LEOF    - End of file.
  * LNUM    - Integer value (into intval), *val undefined.
- * LCMD    - Machine opcode.  Value is optable[] index.
- * LNAME   - Identifier.  Value is stab[] index.
+ * LNAME   - Identifier.  String value is in name[] array.
  * LREG    - Machine register.  Value is a register number.
  * LLSHIFT - << operator.
  * LRSHIFT - >> operator.
@@ -910,6 +913,7 @@ skiptoeol:  while ((c = getchar()) != '\n')
             if (c == '#')
                 goto skiptoeol;
             ungetc (c, stdin);
+        case ';':
             *pval = line;
             return (LEOL);
         case ' ':
@@ -925,9 +929,9 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 return (LRSHIFT);
             ungetc (c, stdin);
             return ('\\');
-        case '+':       case '-':       case '\'':
+        case '\'':      case '%':
         case '^':       case '&':       case '|':       case '~':
-        case ';':       case '*':       case '/':       case '%':
+        case '+':       case '-':       case '*':       case '/':
         case '"':       case ',':       case '[':       case ']':
         case '(':       case ')':       case '{':       case '}':
         case '<':       case '>':       case '=':       case ':':
@@ -947,22 +951,6 @@ skiptoeol:  while ((c = getchar()) != '\n')
         default:
             if (! ISLETTER (c))
                 uerror ("bad character: \\%o", c & 0377);
-            if (c == '.') {
-                c = getchar();
-                if (c == '[') {
-                    getbitmask ();
-                    return (LNUM);
-                } else if (ISOCTAL (c)) {
-                    getnum (c);
-                    c = intval;
-                    if (c < 0 || c >= 32)
-                        uerror ("bit number out of range 0..31");
-                    intval = 1 << c;
-                    return (LNUM);
-                }
-                ungetc (c, stdin);
-                c = '.';
-            }
             getname (c);
             if (name[0] == '.') {
                 if (name[1] == 0)
@@ -981,9 +969,6 @@ skiptoeol:  while ((c = getchar()) != '\n')
                 if (*pval != -1)
                     return (*pval);
             }
-            *pval = lookcmd();
-            if (*pval != -1)
-                return (LCMD);
             return (LNAME);
         }
     }
@@ -1005,7 +990,21 @@ int getterm ()
     default:
         uerror ("operand missed");
     case LNUM:
-        return (SABS);
+        cval = getchar ();
+        if (cval == 'b' || cval == 'B')
+            extref = RLAB_OFFSET - intval;
+        else if (cval == 'f' || cval == 'F')
+            extref = RLAB_OFFSET + intval;
+        else {
+            /* Integer literal. */
+            ungetc (cval, stdin);
+            return (SABS);
+        }
+        /* Local label. */
+        if (intval >= RLAB_MAXVAL)
+            uerror ("too large relative label");
+        intval = 0;
+        return (SEXT);
     case LNAME:
         intval = 0;
         cval = lookname();
@@ -1040,34 +1039,6 @@ int getterm ()
             uerror ("bad () syntax");
         return (s);
     }
-}
-
-/*
- * Get a number .[a:b], where a, b are bit numbers 0..31
- */
-void getbitmask ()
-{
-    register int c, a, b;
-    int v;
-
-    a = getexpr (&v) - 1;
-    if (v != SABS)
-        uerror ("illegal expression in bit mask");
-    c = getlex (&v);
-    if (c != ':')
-        uerror ("illegal bit mask delimiter");
-    b = getexpr (&v) - 1;
-    if (v != SABS)
-        uerror ("illegal expression in bit mask");
-    c = getlex (&v);
-    if (c != ']')
-        uerror ("illegal bit mask delimiter");
-    if (a<0 || a>=32 || b<0 || b>=32)
-        uerror ("bit number out of range 0..31");
-    if (a < b)
-        c = a, a = b, b = c;
-    /* a greater than or equal to b */
-    intval = (unsigned) ~0 >> (31 - a + b) << b;
 }
 
 /*
@@ -1347,16 +1318,34 @@ void makecmd (opcode, type, emitfunc)
         if (getlex (&cval) != ',')
             uerror ("comma expected");
         clex = getlex (&cval);
-        if (clex != LREG)
+        if (clex != LREG) {
+            if ((type & FRD1) && (type & FSA)) {
+                /* Second register operand omitted.
+                 * Need to restore the missing operand. */
+                ungetlex (clex, cval);
+                cval = (opcode >> 11) & 31; /* get 1-st register */
+                opcode |= cval << 16;       /* use 1-st reg as 2-nd */
+                goto fsa;
+            }
             uerror ("bad rt register");
+        }
         opcode |= cval << 16;           /* .., rt, ... */
     }
     if (type & FRS2) {
         if (getlex (&cval) != ',')
             uerror ("comma expected");
         clex = getlex (&cval);
-        if (clex != LREG)
+        if (clex != LREG) {
+            if ((type & FRT1) && (type & FOFF16)) {
+                /* Second register operand omitted.
+                 * Need to restore the missing operand. */
+                ungetlex (clex, cval);
+                cval = (opcode >> 16) & 31; /* get 1-st register */
+                opcode |= cval << 21;       /* use 1-st reg as 2-nd */
+                goto foff16;
+            }
             uerror ("bad rs register");
+        }
         opcode |= cval << 21;           /* .., rs, ... */
     }
 
@@ -1364,21 +1353,40 @@ void makecmd (opcode, type, emitfunc)
      * Third register.
      */
     if (type & FRT3) {
-        if (getlex (&cval) != ',')
-            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != ',') {
+            /* Three-operand instruction used with two operands.
+             * Need to restore the missing operand. */
+            ungetlex (clex, cval);
+            cval = (opcode >> 21) & 31;
+            opcode &= ~(31 << 21);                  /* clear 2-nd register */
+            opcode |= ((opcode >> 11) & 31) << 21;  /* use 1-st reg as 2-nd */
+            opcode |= cval << 16;                   /* add 3-rd register */
+            goto done3;
+        }
         clex = getlex (&cval);
         if (clex != LREG)
             uerror ("bad rt register");
         opcode |= cval << 16;           /* .., .., rt */
     }
     if (type & FRS3) {
-        if (getlex (&cval) != ',')
-            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != ',') {
+            /* Three-operand instruction used with two operands.
+             * Need to restore the missing operand. */
+            ungetlex (clex, cval);
+            cval = (opcode >> 16) & 31;
+            opcode &= ~(31 << 16);                  /* clear 2-nd register */
+            opcode |= ((opcode >> 11) & 31) << 16;  /* use 1-st reg as 2-nd */
+            opcode |= cval << 21;                   /* add 3-rd register */
+            goto done3;
+        }
         clex = getlex (&cval);
         if (clex != LREG)
             uerror ("bad rs register");
         opcode |= cval << 21;           /* .., .., rs */
     }
+done3:
 
     /*
      * Immediate argument.
@@ -1395,10 +1403,10 @@ void makecmd (opcode, type, emitfunc)
             ungetlex (clex, cval);
 
     } else if (type & (FCODE | FCODE16 | FSA)) {
-        /* Non-relocatable offset */
+    /* Non-relocatable offset */
         if ((type & FSA) && getlex (&cval) != ',')
             uerror ("comma expected");
-        offset = getexpr (&segment);
+fsa:    offset = getexpr (&segment);
         if (segment != SABS)
             uerror ("absolute value required");
         switch (type & (FCODE | FCODE16 | FSA)) {
@@ -1416,7 +1424,7 @@ void makecmd (opcode, type, emitfunc)
         /* Relocatable offset */
         if ((type & (FOFF16 | FOFF18 | FHIGH16)) && getlex (&cval) != ',')
             uerror ("comma expected");
-        expr_gprel = 0;
+foff16: expr_gprel = 0;
         offset = getexpr (&segment);
         relinfo = segmrel [segment];
         if (relinfo == REXT)
@@ -1444,7 +1452,7 @@ void makecmd (opcode, type, emitfunc)
             } else if (segment == SEXT) {
                 relinfo |= RWORD16;
             } else
-                uerror ("invalid segment");
+                uerror ("invalid segment %d", segment);
             opcode |= (offset >> 2) & 0xffff;
             break;
         case FAOFF28:                   /* 28-bit word address */
@@ -1509,8 +1517,9 @@ void makecmd (opcode, type, emitfunc)
             /* Insert NOP in delay slot. */
             fputword (0, sfile[segm]);
             fputrel (RABS, rfile[segm]);
+            count[segm] += WORDSZ;
         }
-        count[segm] += WORDSZ + WORDSZ;
+        count[segm] += WORDSZ;
     } else {
         emitword (opcode, relinfo, clobber_reg);
     }
@@ -1663,6 +1672,11 @@ void setoption ()
         mode_micromips = enable;
         return;
     }
+    if (! strcmp ("at", option)) {
+        /* at mode */
+        mode_at = enable;
+        return;
+    }
     uerror ("unknown option %s", option);
 }
 
@@ -1673,7 +1687,8 @@ void pass1 ()
     register unsigned addr;
 
     segm = STEXT;
-    while ((clex = getlex (&cval)) != LEOF) {
+    for (;;) {
+        clex = getlex (&cval);
         switch (clex) {
         case LEOF:
             reorder_flush();
@@ -1682,10 +1697,6 @@ void pass1 ()
             continue;
         case ':':
             continue;
-        case LCMD:
-            makecmd (optable[cval].opcode, optable[cval].type,
-                optable[cval].func);
-            break;
         case '.':
             if (getlex (&cval) != '=')
                 uerror ("bad instruction");
@@ -1704,15 +1715,19 @@ void pass1 ()
             }
             break;
         case LNAME:
-            cval = lookname();
+            cval = lookcmd();
             clex = getlex (&tval);
             if (clex == ':') {
+                /* Label. */
                 reorder_flush();
+                cval = lookname();
                 stab[cval].n_value = count[segm];
                 stab[cval].n_type &= ~N_TYPE;
                 stab[cval].n_type |= segmtype [segm];
                 continue;
             } else if (clex=='=' || clex==LEQU) {
+                /* Symbol definition. */
+                cval = lookname();
                 stab[cval].n_value = getexpr (&csegm);
                 if (csegm == SEXT)
                     uerror ("indirect equivalence");
@@ -1721,6 +1736,7 @@ void pass1 ()
                 break;
             } else if (clex==LCOMM) {
                 /* name .comm len */
+                cval = lookname();
                 if (stab[cval].n_type != N_UNDF &&
                     stab[cval].n_type != (N_EXT|N_COMM))
                     uerror ("name already defined");
@@ -1731,7 +1747,25 @@ void pass1 ()
                 stab[cval].n_value = intval;
                 break;
             }
-            uerror ("bad instruction");
+            /* Machine instruction. */
+            if (cval < 0)
+                uerror ("bad instruction");
+            ungetlex (clex, tval);
+            makecmd (optable[cval].opcode, optable[cval].type,
+                optable[cval].func);
+            break;
+        case LNUM:
+            /* Local label. */
+            if (nlabels >= MAXRLAB)
+                uerror ("too many digital labels");
+            reorder_flush();
+            labeltab[nlabels].num = intval;
+            labeltab[nlabels].value = count[segm];
+            ++nlabels;
+            clex = getlex (&tval);
+            if (clex != ':')
+                uerror ("bad digital label");
+            continue;
         case LTEXT:
             segm = STEXT;
             reorder_flush();
@@ -1995,6 +2029,31 @@ align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
     }
 }
 
+/*
+ * Find the relative label address,
+ * by the reference address and the label number.
+ * Backward references have negative label numbers.
+ */
+int findlabel (int addr, int sym)
+{
+    struct labeltab *p;
+
+    if (sym < 0) {
+        /* Backward reference. */
+        for (p=labeltab+nlabels-1; p>=labeltab; --p)
+            if (p->value <= addr && p->num == -sym)
+                return p->value;
+        uerror ("undefined label %db at address %d", -sym, addr);
+    } else {
+        /* Forward reference. */
+        for (p=labeltab; p<labeltab+nlabels; ++p)
+            if (p->value > addr && p->num == sym)
+                return p->value;
+        uerror ("undefined label %df at address %d", sym, addr);
+    }
+    return 0;
+}
+
 void middle ()
 {
     register int i, snum;
@@ -2018,6 +2077,7 @@ void middle ()
     }
     stalign = WORDSZ - stlength % WORDSZ;
     stlength += stalign;
+    line = 0;
 }
 
 void makeheader (rtsize, rdsize)
@@ -2068,6 +2128,8 @@ unsigned makeword (opcode, relinfo, offset)
     register unsigned opcode, *relinfo, offset;
 {
     register int i;
+    struct nlist *sym;
+    unsigned value;
 
     switch ((int) *relinfo & REXT) {
     case RABS:
@@ -2086,14 +2148,27 @@ unsigned makeword (opcode, relinfo, offset)
         break;
     case REXT:
         i = RINDEX (*relinfo);
-        if (stab[i].n_type == N_EXT+N_UNDF ||
-            stab[i].n_type == N_EXT+N_COMM)
-            break;
+        if (i >= RLAB_OFFSET - RLAB_MAXVAL) {
+            /* Relative label. */
+            sym = 0;
+            value = findlabel (offset, i - RLAB_OFFSET);
+
+            /* Change relocation to segment type. */
+            *relinfo = (*relinfo & RGPREL) | segmrel[segm];
+        } else {
+            /* Symbol name. */
+            sym = &stab[i];
+            if (sym->n_type == N_EXT+N_UNDF ||
+                sym->n_type == N_EXT+N_COMM)
+                break;
+            value = sym->n_value;
+        }
         if ((*relinfo & RFMASK) == RWORD16) {
             /* Relative word address */
-            if ((stab[i].n_type & N_TYPE) != segmtype[segm])
-                uerror ("%s: bad segment for relative relocation", stab[i].n_name);
-            offset = stab[i].n_value - offset - 4;
+            if (sym && (sym->n_type & N_TYPE) != segmtype[segm])
+                uerror ("%s: bad segment for relative relocation, offset %u",
+                    sym->n_name, offset);
+            offset = value - offset - 4;
             if (segm == SDATA)
                 offset -= dbase;
             else if (segm == SSTRNG)
@@ -2106,7 +2181,7 @@ unsigned makeword (opcode, relinfo, offset)
             *relinfo = RABS;
             break;
         }
-        opcode = relocate (opcode, stab[i].n_value, (int) *relinfo);
+        opcode = relocate (opcode, value, (int) *relinfo);
         break;
     }
     return opcode;

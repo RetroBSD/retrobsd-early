@@ -1,8 +1,8 @@
 TOPSRC          = $(shell cd ../..; pwd)
-SUBDIR		= startup
+SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
-CFLAGS		+= -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include
+CFLAGS		+= -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include -I.
 LDFLAGS         += -g
 
 AR_OBJS         = ar.o append.o archive.o contents.o delete.o extract.o \
@@ -14,7 +14,7 @@ all install depend: $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done
 
 clean:
-		rm -f *~ *.o $(PROG)
+		rm -f *~ *.o *.a $(PROG)
 		for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) clean; done
 
 ar:             $(AR_OBJS)
@@ -40,6 +40,3 @@ size:           size.o
 
 strip:          strip.o
 		$(CC) $(LDFLAGS) -o $@ $< $(LIBS)
-
-crt0.o:		crt0.c
-		$(CC) $(CFLAGS) -c $< -o $@

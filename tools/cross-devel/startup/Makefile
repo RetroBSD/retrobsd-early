@@ -8,7 +8,7 @@
 TOPSRC          = $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS          = -B/usr/local/lib/retrobsd/ -O $(DEFS)
+CFLAGS          = -B$(TOPSRC)/tools/cross-devel/ -O $(DEFS)
 
 OBJS		= ../crt0.o
 
@@ -18,4 +18,5 @@ all:		$(OBJS)
 		$(CC) $(DEFS) $(CFLAGS) -c $< -o $@
 
 clean:
-		rm -f *.o *~
+		rm -f $(OBJS) *~
+		

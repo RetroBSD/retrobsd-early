@@ -58,7 +58,9 @@ int
 tmp()
 {
 	extern char *envtmp;
+#ifndef CROSS
 	sigset_t set, oset;
+#endif
 	static int first;
 	static const char *artmp = _PATH_ARTMP;
 	int fd;
@@ -75,13 +77,17 @@ tmp()
 	} else {
 		strcpy(path, artmp);
         }
+#ifndef CROSS
 	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set,  &oset);
+#endif
 	fd = mkstemp(path);
 	if (fd == -1)
 		error(tname);
         (void)unlink(path);
+#ifndef CROSS
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
+#endif
 	return(fd);
 }
 

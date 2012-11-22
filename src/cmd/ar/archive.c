@@ -70,7 +70,8 @@ open_archive(mode)
 	created = 0;
 	if (mode & O_CREAT) {
 		mode |= O_EXCL;
-		if ((fd = open(archive, mode, 0666)) >= 0) {
+		fd = open(archive, mode, 0666);
+		if (fd >= 0) {
 			/* POSIX.2 puts create message on stderr. */
 			if (!(options & AR_C))
 				(void)fprintf(stderr,
@@ -82,7 +83,9 @@ open_archive(mode)
 			error(archive);
 		mode &= ~O_EXCL;
 	}
-	if ((fd = open(archive, mode, 0666)) < 0)
+
+	fd = open(archive, mode, 0666);
+	if (fd < 0)
 		error(archive);
 
 	/*

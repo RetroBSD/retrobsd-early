@@ -6,8 +6,8 @@ TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
 
-CFLAGS		+= -Werror -Wall -Os
-LDFLAGS         += -g
+CFLAGS		+= -Werror -Wall -O0
+LDFLAGS         +=
 
 AOUTOBJS        = aout.o mips-dis.o
 
