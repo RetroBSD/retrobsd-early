@@ -38,8 +38,8 @@ ffs:	.globl  ffs
 	move	$v0, $zero
 	beq	$a0, $zero, done
 1:
-	and	$v1, $a0, 1		# bit set?
-	addu	$v0, $v0, 1
+	andi	$v1, $a0, 1		# bit set?
+	addiu	$v0, $v0, 1
 	srl	$a0, $a0, 1
 	beq	$v1, $zero, 1b		# no, continue
 done:

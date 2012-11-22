@@ -1196,7 +1196,7 @@ void emit_li (opcode, relinfo)
     value = getexpr (&segment);
     if (segment != SABS)
         uerror ("absolute value required");
-    if (value >= 0 && value <= 0xffff) {
+    if (value <= 0xffff) {
         /* ori d, $zero, value */
         opcode |= 0x34000000 | value;
     } else if (value >= -0x8000) {

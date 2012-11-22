@@ -34,12 +34,12 @@
 index:	.globl  index
 1:
 	lbu	$a2, 0($a0)		# get a byte
-	addu	$a0, $a0, 1
+	addiu	$a0, $a0, 1
 	beq	$a2, $a1, fnd
-	bne	$a2, $zero, 1b
+	bnez	$a2, 1b
 notfnd:
 	move	$v0, $zero
 	j	$ra
 fnd:
-	subu	$v0, $a0, 1
+	addiu	$v0, $a0, -1
 	j	$ra

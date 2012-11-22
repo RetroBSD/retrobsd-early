@@ -95,7 +95,7 @@ OBJS            += creat.o ftime.o gethostid.o gtty.o memccpy.o memchr.o \
 all:            ../libc.a
 
 ../libc.a:      ../ar $(OBJS)
-		strace ../ar rc $@ $(OBJS) 2>&1 | tee log
+		../ar rc $@ $(OBJS)
 
 $(SYSOBJS):	$(LIBCDIR)/mips/sys/SYS.h
 		@echo creating $*.o

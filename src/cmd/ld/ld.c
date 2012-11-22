@@ -695,7 +695,8 @@ int getfile (cp)
             strncmp (magic, ARMAG, SARMAG) != 0 ||
             ! fgetarhdr (text, &archdr))
 		return (0);     /* regular file */
-	if (strncmp (archdr.ar_name, SYMDEF, sizeof (archdr.ar_name)) != 0)
+        c = sizeof (archdr.ar_name);
+	if (strncmp (archdr.ar_name, SYMDEF, c) != 0)
 		return (1);     /* regular archive */
 	fstat (fileno (text), &x);
 	if (x.st_mtime > archdr.ar_date + 2)

@@ -7,10 +7,13 @@
 /*
  * bcmp -- vax cmpc3 instruction
  */
-bcmp(b1, b2, length)
-	register char *b1, *b2;
-	register unsigned int length;
+int
+bcmp(v1, v2, length)
+	const void *v1, *v2;
+	unsigned long length;
 {
+        register const char *b1 = v1;
+        register const char *b2 = v2;
 	if (length)
 		do
 			if (*b1++ != *b2++)

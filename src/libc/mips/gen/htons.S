@@ -42,9 +42,9 @@ ntohs:		.globl 	ntohs
 		move    $v0, $a0
 #else
 		srl	$v0, $a0, 8
-		and	$v0, $v0, 0xff
+		andi	$v0, $v0, 0xff
 		sll	$v1, $a0, 8
-		and	$v1, $v1, 0xff00
+		andi	$v1, $v1, 0xff00
 		or	$v0, $v0, $v1
 #endif
 		j	$ra

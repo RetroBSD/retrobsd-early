@@ -37,28 +37,30 @@
 	.type	bzero, @function
 bzero:	.globl  bzero
 	.set	noreorder
+	.set	noat
 
-	blt	$a1, 3*SZREG, smallclr	# small amount to clear?
+        slti    $at, $a1, 3*SZREG	# small amount to clear?
+        bnez    $at, smallclr
 	subu	$a3, $zero, $a0		# compute # bytes to word align address
-	and	$a3, $a3, SZREG-1
-	beq	$a3, $zero, 1f		# skip if word aligned
+	andi	$a3, $a3, SZREG-1
+	beqz	$a3, 1f			# skip if word aligned
 	subu	$a1, $a1, $a3		# subtract from remaining count
 	SWHI	$zero, 0($a0)		# clear 1, 2, or 3 bytes to align
 	addu	$a0, $a0, $a3
 1:
-	and	$v0, $a1, SZREG-1	# compute number of words left
+	andi	$v0, $a1, SZREG-1	# compute number of words left
 	subu	$a3, $a1, $v0
 	move	$a1, $v0
 	addu	$a3, $a3, $a0		# compute ending address
 2:
-	addu	$a0, $a0, SZREG		# clear words
+	addiu	$a0, $a0, SZREG		# clear words
 	bne	$a0, $a3, 2b		# unrolling loop doesnt help
 	sw	$zero, -SZREG($a0)	# since we are limited by memory speed
 smallclr:
-	ble	$a1, $zero, 2f
+        blez    $a1, 2f
 	addu	$a3, $a1, $a0		# compute ending address
 1:
-	addu	$a0, $a0, 1		# clear bytes
+	addiu	$a0, $a0, 1		# clear bytes
 	bne	$a0, $a3, 1b
 	sb	$zero, -1($a0)
 2:
