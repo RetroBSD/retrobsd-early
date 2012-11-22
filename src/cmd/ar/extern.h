@@ -39,6 +39,3 @@ int	 tmp();
 char	*files();
 char	*rname();
 void	strmode();
-extern  long strtol();
-extern	off_t lseek();
-extern	char *getenv();

@@ -4,8 +4,8 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef _SYS_TYPES_
-#define	_SYS_TYPES_
+#ifndef _SYS_TYPES_H_
+#define	_SYS_TYPES_H_
 
 /*
  * Basic system types and major/minor device constructing/busting macros.

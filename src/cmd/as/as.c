@@ -2373,6 +2373,9 @@ int main (argc, argv)
                 case 'v':       /* verbose mode */
                     // TODO
                     break;
+                case 'g':       /* debug mode */
+                    // TODO
+                    break;
                 case 'I':       /* include dir */
                     // TODO
                     while (*++cp);

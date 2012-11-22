@@ -34,22 +34,30 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
+#   include </usr/include/sys/types.h>
+#   include </usr/include/sys/select.h>
+#   include </usr/include/sys/stat.h>
+#   include </usr/include/sys/time.h>
+#   include </usr/include/sys/fcntl.h>
 #   include </usr/include/stdio.h>
+#   include </usr/include/string.h>
+#   include </usr/include/stdlib.h>
+#   include </usr/include/unistd.h>
 #   include </usr/include/errno.h>
 #else
+#   include <sys/param.h>
+#   include <sys/stat.h>
+#   include <sys/dir.h>
+#   include <sys/file.h>
 #   include <stdio.h>
+#   include <string.h>
+#   include <strings.h>
+#   include <stdlib.h>
+#   include <unistd.h>
 #   include <errno.h>
+#   include <fcntl.h>
 #endif
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/dir.h>
-#include <sys/file.h>
 #include <ar.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include "archive.h"
 #include "extern.h"
 
@@ -229,7 +237,10 @@ copy_ar(cfp, size)
 
 	from = cfp->rfd;
 	to = cfp->wfd;
-	while (sz && (nr = read(from, buf, (size_t)(MIN(sz, sizeof(buf))))) > 0) {
+	while (sz) {
+	        nr = read(from, buf, sz < sizeof(buf) ? sz : sizeof(buf));
+		if (nr <= 0)
+		        break;
 		sz -= nr;
 		for (off = 0; off < nr; nr -= off, off += nw)
 			if ((nw = write(to, buf + off, (size_t)nr)) < 0)
@@ -329,6 +340,6 @@ skip_arobj(fd)
 	off_t len;
 
 	len = chdr.size + (chdr.lname & 1);
-	if (lseek(fd, len, L_INCR) == (off_t)-1)
+	if (lseek(fd, len, SEEK_CUR) == (off_t)-1)
 		error(archive);
 }

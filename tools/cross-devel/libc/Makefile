@@ -7,7 +7,7 @@ vpath %.c $(LIBCDIR)/mips/sys $(LIBCDIR)/gen $(LIBCDIR)/stdio \
           $(LIBCDIR)/stdlib $(LIBCDIR)/string $(LIBCDIR)/inet \
           $(LIBCDIR)/compat
 
-CSFLAGS		+= -B$(TOPSRC)/tools/cross-devel/ $(DEFS)
+CFLAGS		+= -B$(TOPSRC)/tools/cross-devel/ $(DEFS)
 ASFLAGS		+= -B$(TOPSRC)/tools/cross-devel/ $(DEFS) -I$(LIBCDIR)/mips/sys
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
@@ -102,4 +102,4 @@ $(SYSOBJS):	$(LIBCDIR)/mips/sys/SYS.h
 		@printf '#include "SYS.h"\nSYS($*)\n' | $(AS) $(ASFLAGS) - -c -o $*.o
 
 clean:
-		rm -f *~ *.o a.out sys.a
+		rm -f *~ *.o a.out *.a

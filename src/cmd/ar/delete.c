@@ -34,16 +34,20 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
+#   include </usr/include/sys/types.h>
+#   include </usr/include/sys/select.h>
+#   include </usr/include/sys/fcntl.h>
 #   include </usr/include/stdio.h>
+#   include </usr/include/unistd.h>
 #else
+#   include <sys/param.h>
+#   include <sys/stat.h>
+#   include <sys/dir.h>
+#   include <sys/file.h>
 #   include <stdio.h>
+#   include <unistd.h>
+#   include <fcntl.h>
 #endif
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/dir.h>
-#include <sys/file.h>
-#include <unistd.h>
 #include <ar.h>
 #include "archive.h"
 #include "extern.h"
@@ -80,9 +84,9 @@ delete(argv)
 		put_arobj(&cf, (struct stat *)NULL);
 	}
 
-	size = lseek(tfd, (off_t)0, L_INCR);
-	(void)lseek(tfd, (off_t)0, L_SET);
-	(void)lseek(afd, (off_t)SARMAG, L_SET);
+	size = lseek(tfd, (off_t)0, SEEK_CUR);
+	(void)lseek(tfd, (off_t)0, SEEK_SET);
+	(void)lseek(afd, (off_t)SARMAG, SEEK_SET);
 	SETCF(tfd, tname, afd, archive, NOPAD);
 	copy_ar(&cf, size);
 	(void)close(tfd);

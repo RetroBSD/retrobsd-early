@@ -2,21 +2,25 @@
  * nm - print name list. string table version
  */
 #ifdef CROSS
+#   include </usr/include/sys/types.h>
 #   include </usr/include/stdio.h>
+#   include </usr/include/string.h>
+#   include </usr/include/stdlib.h>
 #   include </usr/include/errno.h>
+#   include </usr/include/ctype.h>
 #else
+#   include <sys/types.h>
+#   include <sys/dir.h>
+#   include <sys/file.h>
 #   include <stdio.h>
+#   include <stdlib.h>
+#   include <string.h>
+#   include <strings.h>
 #   include <errno.h>
+#   include <ctype.h>
 #endif
-#include <sys/types.h>
-#include <sys/dir.h>
 #include <ar.h>
-#include <stdlib.h>
-#include <ctype.h>
 #include <a.out.h>
-#include <sys/file.h>
-#include <string.h>
-#include <strings.h>
 
 #include "archive.h"
 
@@ -120,7 +124,7 @@ int get_arobj(fp)
 int nextel(af)
         FILE *af;
 {
-	fseek(af, off, L_SET);
+	fseek(af, off, SEEK_SET);
 	if (get_arobj(af) < 0)
 		return(0);
 	off += sizeof (struct ar_hdr) + chdr.size +
@@ -290,7 +294,7 @@ void namelist()
 			continue;
 
 		o = N_SYMOFF(mag_un.mag_exp);
-		fseek(fi, curpos + o, L_SET);
+		fseek(fi, curpos + o, SEEK_SET);
 		n = mag_un.mag_exp.a_syms;
 		if (n == 0) {
 			error(0, "no name list");
@@ -313,7 +317,7 @@ void namelist()
 			i++;
 		}
 
-		fseek(fi, curpos + o, L_SET);
+		fseek(fi, curpos + o, SEEK_SET);
 		symp = (struct nlist *)malloc((i+1) * sizeof (struct nlist));
 		if (symp == 0)
 			error(1, "out of memory");

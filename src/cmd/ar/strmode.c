@@ -30,8 +30,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifdef CROSS
+#   include </usr/include/sys/types.h>
+#   include </usr/include/sys/stat.h>
+#else
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#endif
 
 void
 strmode(mode, p)

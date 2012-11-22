@@ -2,7 +2,7 @@ TOPSRC          = $(shell cd ../..; pwd)
 SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
-CFLAGS		+= -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include -I.
+CFLAGS		+= -g -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include -I.
 LDFLAGS         += -g
 
 AR_OBJS         = ar.o append.o archive.o contents.o delete.o extract.o \

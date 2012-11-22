@@ -33,6 +33,27 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#ifdef CROSS
+#   ifdef __linux__
+#       undef O_CREAT
+#       define O_CREAT      00000100
+#       undef O_EXCL
+#       define O_EXCL       00000200
+#       undef O_NOCTTY
+#       define O_NOCTTY     00000400
+#       undef O_TRUNC
+#       define O_TRUNC      00001000
+#   endif
+#   ifndef MAXNAMLEN
+#       define MAXNAMLEN    63
+#   endif
+#   ifndef MAXPATHLEN
+#       define MAXPATHLEN   256
+#   endif
+#   ifndef _PATH_ARTMP
+#       define _PATH_ARTMP  "/tmp/ar.XXXXXX"
+#   endif
+#endif
 
 /* Ar(1) options. */
 #define	AR_A	0x0001
@@ -105,16 +126,3 @@ int     append (register char **argv);
 int     replace (register char **argv);
 int     contents (register char **argv);
 int     extract (register char **argv);
-
-#ifdef CROSS
-#ifdef __linux__
-#undef O_CREAT
-#define O_CREAT         00000100
-#undef O_EXCL
-#define O_EXCL          00000200
-#undef O_NOCTTY
-#define O_NOCTTY        00000400
-#undef O_TRUNC
-#define O_TRUNC         00001000
-#endif
-#endif

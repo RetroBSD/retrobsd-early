@@ -171,8 +171,8 @@ void rexec(rfd, wfd)
 	off_t r_off, w_off;
 
 	/* Get current offsets for original and tmp files. */
-	r_off = lseek(rfd, (off_t)0, L_INCR);
-	w_off = lseek(wfd, (off_t)0, L_INCR);
+	r_off = lseek(rfd, (off_t)0, SEEK_CUR);
+	w_off = lseek(wfd, (off_t)0, SEEK_CUR);
 
 	/* Read in exec structure. */
 	nr = read(rfd, (char *)&ebuf, sizeof(struct exec));
@@ -184,7 +184,7 @@ void rexec(rfd, wfd)
 		goto bad1;
 
 	/* Seek to symbol table. */
-	if (fseek(fp, (off_t)N_SYMOFF(ebuf) + r_off, L_SET) == (off_t)-1)
+	if (fseek(fp, (off_t)N_SYMOFF(ebuf) + r_off, SEEK_SET) == (off_t)-1)
 		goto bad1;
 
 	/* For each symbol read the nlist entry and save it as necessary. */
@@ -229,7 +229,7 @@ void rexec(rfd, wfd)
 		pnext = &rp->next;
 		++symcnt;
 	}
-bad1:	(void)lseek(rfd, (off_t)r_off, L_SET);
+bad1:	(void)lseek(rfd, (off_t)r_off, SEEK_SET);
 }
 
 /*
@@ -247,7 +247,7 @@ void symobj()
 	uid_t getuid();
 
 	/* Rewind the archive, leaving the magic number. */
-	if (fseek(fp, (off_t)SARMAG, L_SET) == (off_t)-1)
+	if (fseek(fp, (off_t)SARMAG, SEEK_SET) == (off_t)-1)
 		error(archive);
 
 	/* Size of the ranlib archive file, pad if necessary. */
@@ -314,7 +314,7 @@ void settime(afd)
 	char buf[50];
 
 	size = SARMAG + sizeof(hdr->ar_name);
-	if (lseek(afd, size, L_SET) == (off_t)-1)
+	if (lseek(afd, size, SEEK_SET) == (off_t)-1)
 		error(archive);
 	(void)sprintf(buf, "%-12ld", time((time_t *)NULL) + RANLIBSKEW);
 	if (write(afd, buf, sizeof(hdr->ar_date)) != sizeof(hdr->ar_date))
@@ -369,11 +369,11 @@ int build()
 	symobj();
 
 	/* Copy the saved objects into the archive. */
-	size = lseek(tfd, (off_t)0, L_INCR);
-	(void)lseek(tfd, (off_t)0, L_SET);
+	size = lseek(tfd, (off_t)0, SEEK_CUR);
+	(void)lseek(tfd, (off_t)0, SEEK_SET);
 	SETCF(tfd, tname, afd, archive, RPAD|WPAD);
 	copy_ar(&cf, size);
-	(void)ftruncate(afd, lseek(afd, (off_t)0, L_INCR));
+	(void)ftruncate(afd, lseek(afd, (off_t)0, SEEK_CUR));
 	(void)close(tfd);
 
 	/* Set the time. */
