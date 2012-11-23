@@ -18,7 +18,7 @@ all install depend: $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done
 
 clean:
-		rm -f *~ *.o *.a $(PROG)
+		rm -f *~ *.o *.a $(PROG) retroImage
 		for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) clean; done
 
 ar:             $(AR_OBJS)

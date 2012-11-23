@@ -26,7 +26,7 @@ aout:           $(AOUTOBJS)
 		${ELF2AOUT} aout.elf $@ && rm aout.elf
 
 clean:
-		rm -f *.o *.0 *.elf as aout *.elf tags *~ *.dis
+		rm -f *.o *.0 *.elf as aout tags *~ *.dis tests/*.dis tests/*.gcc-dis tests/*.o
 
 test:
 		/usr/local/pic32-tools/bin/pic32-as -al example.s
