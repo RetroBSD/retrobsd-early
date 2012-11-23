@@ -995,7 +995,7 @@ archive:
 		break;
 	case 3:                 /* out of date archive */
 		error (0, "out of date (warning)");
-		nloc = W + archdr.ar_size + ARHDRSZ;
+		nloc = SARMAG + archdr.ar_size + ARHDRSZ;
 		goto archive;
 	}
 	fclose (text);

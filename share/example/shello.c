@@ -1,4 +1,4 @@
 main()
 {
-	printf ("Hello, SmallC World!\n");
+	write (1, "Hello, SmallC World!\n", 21);
 }
