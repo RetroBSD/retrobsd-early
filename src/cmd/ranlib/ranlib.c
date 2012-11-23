@@ -34,29 +34,39 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
+#   include </usr/include/sys/types.h>
+#   include </usr/include/sys/select.h>
+#   include </usr/include/sys/stat.h>
+#   include </usr/include/sys/time.h>
+#   include </usr/include/sys/fcntl.h>
+#   include </usr/include/sys/signal.h>
 #   include </usr/include/stdio.h>
+#   include </usr/include/string.h>
+#   include </usr/include/stdlib.h>
+#   include </usr/include/unistd.h>
 #   include </usr/include/errno.h>
+#   define _PATH_RANTMP "/tmp/ranlib.XXXXXX"
 #else
+#   include <sys/types.h>
+#   include <sys/dir.h>
+#   include <sys/file.h>
+#   include <sys/stat.h>
+#   include <sys/param.h>
 #   include <stdio.h>
 #   include <errno.h>
+#   include <stdlib.h>
+#   include <string.h>
+#   include <strings.h>
+#   include <fcntl.h>
+#   include <unistd.h>
+#   include <signal.h>
+#   include <time.h>
+#   include <paths.h>
 #endif
-#include <sys/types.h>
-#include <sys/dir.h>
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <sys/param.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <signal.h>
-#include <time.h>
-#include <paths.h>
 #include <ar.h>
 #include <ranlib.h>
 #include <a.out.h>
-#include <archive.h>
+#include "archive.h"
 
 u_int options;				/* UNUSED -- keep open_archive happy */
 
@@ -75,6 +85,7 @@ RLIB *rhead, **pnext;
 FILE *fp;
 long symcnt;				/* symbol count */
 long tsymlen;				/* total string length */
+int verbose;
 
 void error(name)
 	char *name;
@@ -126,7 +137,7 @@ unsigned int fgetword (f)
 
 /*
  * Read a symbol table entry.
- * Return a number of bytes read, or -1 on EOF.
+ * Return a number of bytes read, 0 on end of table or -1 on EOF.
  * Format of symbol record:
  *  1 byte: length of name in bytes
  *  1 byte: type of symbol (N_UNDF, N_ABS, N_TEXT, etc)
@@ -143,8 +154,12 @@ int fgetsym (fi, name, value, type)
         unsigned nbytes;
 
         len = getc (fi);
-        if (len <= 0)
+        if (len < 0) {
                 return -1;
+        }
+        if (len == 0) {
+                return 0;
+        }
         *type = getc (fi);
         *value = fgetword (fi);
         nbytes = len + 6;
@@ -189,13 +204,13 @@ void rexec(rfd, wfd)
 
 	/* For each symbol read the nlist entry and save it as necessary. */
 	nsyms = ebuf.a_syms;
-	while (nsyms > 0) {
+	while (nsyms > 4) {
                 unsigned value;
                 unsigned short type;
 	        char name [256];
 
                 int c = fgetsym(fp, name, &value, &type);
-                if (c <= 0) {
+                if (c < 0) {
 			if (feof(fp)) {
 				/* Bad file format. */
                                 errno = EINVAL;
@@ -220,8 +235,8 @@ void rexec(rfd, wfd)
 		rp->next = NULL;
 		rp->pos = w_off;
 		rp->symlen = symlen;
-		rp->sym = (char*) emalloc(symlen);
-		bcopy(name, rp->sym, symlen);
+		rp->sym = (char*) emalloc(symlen + 1);
+		bcopy(name, rp->sym, symlen + 1);
 		tsymlen += symlen;
 
 		/* Build in forward order for "ar -m" command. */
@@ -284,6 +299,9 @@ void symobj()
 		rn.ran_off = size + rp->pos;
 		if (!fwrite((char *)&rn, sizeof(struct ranlib), 1, fp))
 			error(archive);
+                if (verbose)
+                        fprintf (stderr, "%8u %s\n",
+                                (unsigned) rn.ran_off, rp->sym);
 	}
 
 	/* Second long is the size of the string table. */
@@ -323,20 +341,26 @@ void settime(afd)
 
 int tmp()
 {
+#ifndef CROSS
 	long set, oset;
+#endif
 	int fd;
 	char path[MAXPATHLEN];
 
 	bcopy(_PATH_RANTMP, path, sizeof(_PATH_RANTMP));
 
+#ifndef CROSS
 	set = sigmask(SIGHUP) | sigmask(SIGINT) |
              sigmask(SIGQUIT) | sigmask(SIGTERM);
 	oset = sigsetmask(set);
+#endif
 	fd = mkstemp(path);
 	if (fd < 0)
 		error(tname);
         (void)unlink(path);
+#ifndef CROSS
 	(void)sigsetmask(oset);
+#endif
 	return(fd);
 }
 
@@ -356,7 +380,7 @@ int build()
 	pnext = &rhead;
 	symcnt = tsymlen = 0;
 	while(get_arobj(afd)) {
-		if (!strcmp(chdr.name, RANLIBMAG)) {
+		if (strcmp(chdr.name, RANLIBMAG) == 0) {
 			skip_arobj(afd);
 			continue;
 		}
@@ -404,6 +428,7 @@ void usage()
         fprintf(stderr, "  ranlib [-t] file...\n");
         fprintf(stderr, "Options:\n");
         fprintf(stderr, "  -t      Update the timestamp of the symbol map\n");
+        fprintf(stderr, "  -v      Verbose: print the resulting symbol map\n");
 	exit(1);
 }
 
@@ -414,10 +439,13 @@ int main(argc, argv)
 	int ch, eval, tflag;
 
 	tflag = 0;
-	while ((ch = getopt(argc, argv, "t")) != EOF)
+	while ((ch = getopt(argc, argv, "tv")) != EOF)
 		switch(ch) {
 		case 't':
 			tflag = 1;
+			break;
+		case 'v':
+			verbose = 1;
 			break;
 		case 'h':
 		case '?':

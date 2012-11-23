@@ -26,7 +26,7 @@ struct icommon1 {
 	uid_t	ic_uid;			/* owner's user id */
 	gid_t	ic_gid;			/* owner's group id */
 	off_t	ic_size;		/* number of bytes in file */
-} i_ic1;
+};
 
 struct icommon2 {
 	time_t	ic_atime;		/* time last accessed */
