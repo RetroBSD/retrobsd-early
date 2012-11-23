@@ -203,8 +203,6 @@ symINI(ex)
         if (nbytes <= 0)
                 break;
         symnum -= nbytes;
-        if (type == N_REG)
-            continue;
         nused++;
     }
 
@@ -220,7 +218,7 @@ symINI(ex)
             if (nbytes <= 0)
                     break;
             symnum -= nbytes;
-            if (type == N_REG || ! (type & N_EXT))
+            if (! (type & N_EXT))
                 continue;
             nused++;
         }
@@ -242,8 +240,6 @@ symINI(ex)
         if (nbytes <= 0)
                 break;
         symnum -= nbytes;
-        if (type == N_REG)
-            continue;
         if (globals_only && ! (type & N_EXT))
             continue;
         sp->value = value;

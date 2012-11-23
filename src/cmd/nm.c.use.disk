@@ -4,7 +4,7 @@
  *
  * 11/25/90 - The ASCII version of archives has been implemented, but this
  * program was NOT updated.  the normal version of 'nm' not only handles
- * .a files correctly but can even process /unix. so this program is of even 
+ * .a files correctly but can even process /unix. so this program is of even
  * less value than before, this program is extremely slow even for cases
  * which the regular 'nm' works well.
  */
@@ -185,10 +185,6 @@ char **argv;
 					case N_FN:
 						c = 'f';
 						break;
-
-					case N_REG:
-						c = 'r';
-						break;
 				}
 				if (undef_flg && c!='u')
 					continue;
@@ -247,12 +243,12 @@ char **argv;
 				    c = symp[n].nn_type;
 				if (!undef_flg) {
 					if (c=='u' || c=='U')
-						printf("      ");
+						printf("        ");
 					else {
 					    if (file_flg)
-						printf(N_FORMAT, tt->n_value);
+						printf("%08x", tt->n_value);
 					    else
-						printf(N_FORMAT, symp[n].n_value);
+						printf("%08x", symp[n].n_value);
 					}
 					printf(" %c ", c);
 				}
@@ -381,7 +377,7 @@ struct nlist *sym;
 }
 
 /*
- * Retrieve a symbol from symfile 
+ * Retrieve a symbol from symfile
  */
 
 struct nnlist *

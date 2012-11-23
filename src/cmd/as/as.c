@@ -1,7 +1,8 @@
 /*
- * Assembler for MIPS.
+ * Assembler for MIPS32.
+ * The syntax is compatible with GCC output.
  *
- * Copyright (C) 2011 Serge Vakulenko, <serge@vak.ru>
+ * Copyright (C) 2011-2012 Serge Vakulenko, <serge@vak.ru>
  *
  * Permission to use, copy, modify, and distribute this software
  * and its documentation for any purpose and without fee is hereby
@@ -34,6 +35,9 @@
 
 #define WORDSZ          4               /* word size in bytes */
 
+/*
+ * Locals beginning with L or dot are stripped off by -X flag.
+ */
 #define IS_LOCAL(s)     ((s)->n_name[0] == 'L' || (s)->n_name[0] == '.')
 
 /*
@@ -52,7 +56,7 @@ enum {
     LCOMM,              /* .comm */
     LDATA,              /* .data */
     LGLOBL,             /* .globl */
-    LSHORT,             /* .short */
+    LHALF,              /* .half */
     LSTRNG,             /* .strng */
     LRDATA,             /* .rdata */
     LTEXT,              /* .text */
@@ -76,6 +80,7 @@ enum {
     LEND,               /* .end */
     LSIZE,              /* .size */
     LIDENT,             /* .ident */
+    LWEAK,              /* .weak */
 };
 
 /*
@@ -89,33 +94,6 @@ enum {
     SEXT,
     SABS,               /* special case for getexpr() */
 };
-
-/*
- * Flags of instruction formats.
- */
-#define FRD1    (1 << 0)        /* rd, ... */
-#define FRD2    (1 << 1)        /* .., rd, ... */
-#define FRT1    (1 << 2)        /* rt, ... */
-#define FRT2    (1 << 3)        /* .., rt, ... */
-#define FRT3    (1 << 4)        /* .., .., rt */
-#define FRS1    (1 << 5)        /* rs, ... */
-#define FRS2    (1 << 6)        /* .., rs, ... */
-#define FRS3    (1 << 7)        /* .., .., rs */
-#define FRSB    (1 << 8)        /* ... (rs) */
-#define FCODE   (1 << 9)        /* immediate shifted <<6 */
-#define FDSLOT  (1 << 10)       /* have delay slot */
-#define FOFF16  (1 << 11)       /* 16-bit relocatable offset */
-#define FHIGH16 (1 << 12)       /* high 16-bit relocatable offset */
-#define FOFF18  (1 << 13)       /* 18-bit PC-relative relocatable offset shifted >>2 */
-#define FAOFF18 (1 << 14)       /* 18-bit PC-relative relocatable offset shifted >>2 */
-#define FAOFF28 (1 << 15)       /* 28-bit absolute relocatable offset shifted >>2 */
-#define FSA     (1 << 16)       /* 5-bit shift amount */
-#define FSEL    (1 << 17)       /* optional 3-bit COP0 register select */
-#define FSIZE   (1 << 18)       /* bit field size */
-#define FMSB    (1 << 19)       /* bit field msb */
-#define FRTD    (1 << 20)       /* set rt to rd number */
-#define FCODE16 (1 << 21)       /* immediate shifted <<16 */
-#define FMOD    (1 << 22)       /* modifies the first register */
 
 /*
  * Sizes of tables.
@@ -169,13 +147,9 @@ const int typesegm [] = {
     SSTRNG,             /* N_STRNG */
 };
 
-struct optable {
-    unsigned opcode;
-    const char *name;
-    unsigned type;
-    void (*func) (unsigned, unsigned);
-};
-
+/*
+ * Table of local (numeric) labels.
+ */
 struct labeltab {
     int num;
     int value;
@@ -183,6 +157,43 @@ struct labeltab {
 
 #define RLAB_OFFSET     (1 << 23)       /* index offset of relative label */
 #define RLAB_MAXVAL     1000000         /* max value of relative label */
+
+/*
+ * Main opcode table.
+ */
+struct optable {
+    unsigned opcode;                    /* instruction code */
+    const char *name;                   /* instruction name */
+    unsigned type;                      /* flags */
+    void (*func) (unsigned, unsigned);  /* handler for pseudo-instructions */
+};
+
+/*
+ * Flags of instruction formats.
+ */
+#define FRD1    (1 << 0)        /* rd, ... */
+#define FRD2    (1 << 1)        /* .., rd, ... */
+#define FRT1    (1 << 2)        /* rt, ... */
+#define FRT2    (1 << 3)        /* .., rt, ... */
+#define FRT3    (1 << 4)        /* .., .., rt */
+#define FRS1    (1 << 5)        /* rs, ... */
+#define FRS2    (1 << 6)        /* .., rs, ... */
+#define FRS3    (1 << 7)        /* .., .., rs */
+#define FRSB    (1 << 8)        /* ... (rs) */
+#define FCODE   (1 << 9)        /* immediate shifted <<6 */
+#define FDSLOT  (1 << 10)       /* have delay slot */
+#define FOFF16  (1 << 11)       /* 16-bit relocatable offset */
+#define FHIGH16 (1 << 12)       /* high 16-bit relocatable offset */
+#define FOFF18  (1 << 13)       /* 18-bit PC-relative relocatable offset shifted >>2 */
+#define FAOFF18 (1 << 14)       /* 18-bit PC-relative relocatable offset shifted >>2 */
+#define FAOFF28 (1 << 15)       /* 28-bit absolute relocatable offset shifted >>2 */
+#define FSA     (1 << 16)       /* 5-bit shift amount */
+#define FSEL    (1 << 17)       /* optional 3-bit COP0 register select */
+#define FSIZE   (1 << 18)       /* bit field size */
+#define FMSB    (1 << 19)       /* bit field msb */
+#define FRTD    (1 << 20)       /* set rt to rd number */
+#define FCODE16 (1 << 21)       /* immediate shifted <<16 */
+#define FMOD    (1 << 22)       /* modifies the first register */
 
 /*
  * Implement pseudo-instructions.
@@ -295,17 +306,17 @@ const struct optable optable [] = {
     { 0xb8000000,   "swr",	FRT1 | FOFF16 | FRSB },
     { 0x0000000f,   "sync",	FCODE },
     { 0x0000000c,   "syscall",	FCODE },
-    { 0x00000034,   "teq",	FRS1 | FRT2 },
+    { 0x00000034,   "teq",	FRS1 | FRT2 | FCODE },
     { 0x040c0000,   "teqi",	FRS1 | FOFF16 },
-    { 0x00000030,   "tge",	FRS1 | FRT2 },
+    { 0x00000030,   "tge",	FRS1 | FRT2 | FCODE },
     { 0x04080000,   "tgei",	FRS1 | FOFF16 },
     { 0x04090000,   "tgeiu",	FRS1 | FOFF16 },
-    { 0x00000031,   "tgeu",	FRS1 | FRT2 },
-    { 0x00000032,   "tlt",	FRS1 | FRT2 },
+    { 0x00000031,   "tgeu",	FRS1 | FRT2 | FCODE },
+    { 0x00000032,   "tlt",	FRS1 | FRT2 | FCODE },
     { 0x040a0000,   "tlti",	FRS1 | FOFF16 },
     { 0x040b0000,   "tltiu",	FRS1 | FOFF16 },
-    { 0x00000033,   "tltu",	FRS1 | FRT2 },
-    { 0x00000036,   "tne",	FRS1 | FRT2 },
+    { 0x00000033,   "tltu",	FRS1 | FRT2 | FCODE },
+    { 0x00000036,   "tne",	FRS1 | FRT2 | FCODE },
     { 0x040e0000,   "tnei",	FRS1 | FOFF16 },
     { 0x42000020,   "wait",	FCODE },
     { 0x41c00000,   "wrpgpr",	FRD1 | FRT2 },
@@ -365,8 +376,12 @@ int reorder_full;                       /* instruction buffered for reorder */
 unsigned reorder_word, reorder_rel;     /* buffered instruction... */
 unsigned reorder_clobber;               /* ...modified this register */
 
+/* Forward declarations. */
 unsigned getexpr (int *s);
 
+/*
+ * Fatal error message.
+ */
 void uerror (char *fmt, ...)
 {
     va_list ap;
@@ -383,6 +398,10 @@ void uerror (char *fmt, ...)
     exit (1);
 }
 
+/*
+ * Read a 4-byte word from the file.
+ * Little-endian.
+ */
 unsigned fgetword (f)
     FILE *f;
 {
@@ -393,6 +412,10 @@ unsigned fgetword (f)
     return w;
 }
 
+/*
+ * Write a 4-byte word to the file.
+ * Little-endian.
+ */
 void fputword (w, f)
     unsigned int w;
     FILE *f;
@@ -435,6 +458,10 @@ unsigned int fputrel (r, f)
     return 4;
 }
 
+/*
+ * Write the a.out header to the file.
+ * Little-endian.
+ */
 void fputhdr (filhdr, coutb)
     register struct exec *filhdr;
     register FILE *coutb;
@@ -449,6 +476,9 @@ void fputhdr (filhdr, coutb)
     fputword (filhdr->a_entry, coutb);
 }
 
+/*
+ * Emit the nlist record for the symbol.
+ */
 void fputsym (s, file)
     register struct nlist *s;
     register FILE *file;
@@ -462,6 +492,9 @@ void fputsym (s, file)
         putc (s->n_name[i], file);
 }
 
+/*
+ * Create temporary files for STEXT, SDATA and SSTRNG segments.
+ */
 void startup ()
 {
     register int i;
@@ -660,6 +693,9 @@ int lookacmd ()
         if (! strcmp (".globl", name)) return (LGLOBL);
         if (! strcmp (".gnu_attribute", name)) return (LGNUATTR);
         break;
+    case 'h':
+        if (! strcmp (".half", name)) return (LHALF);
+        break;
     case 'i':
         if (! strcmp (".ident", name)) return (LIDENT);
         break;
@@ -675,7 +711,6 @@ int lookacmd ()
     case 's':
         if (! strcmp (".section", name)) return (LSECTION);
         if (! strcmp (".set", name)) return (LSET);
-        if (! strcmp (".short", name)) return (LSHORT);
         if (! strcmp (".size", name)) return (LSIZE);
         if (! strcmp (".space", name)) return (LSPACE);
         if (! strcmp (".strng", name)) return (LSTRNG);
@@ -686,6 +721,7 @@ int lookacmd ()
         break;
     case 'w':
         if (! strcmp (".word", name)) return (LWORD);
+        if (! strcmp (".weak", name)) return (LWEAK);
         break;
     }
     return (-1);
@@ -700,11 +736,13 @@ void setsection ()
         const char *name;
         int len;
         int segm;
-    } *p, map[] = {
+    } const *p, map[] = {
         { ".text",   5, STEXT  },
         { ".data",   5, SDATA  },
         { ".sdata",  6, SDATA  },
         { ".rodata", 7, SSTRNG },
+        { ".bss",    4, SBSS   },
+        { ".sbss",   5, SBSS   },
         { ".mdebug", 7, SSTRNG },
         { 0 },
     };
@@ -883,7 +921,7 @@ int lookname ()
  * LCOMM   - .comm assembler instruction.
  * LDATA   - .data assembler instruction.
  * LGLOBL  - .globl assembler instruction.
- * LSHORT  - .short assembler instruction.
+ * LHALF   - .half assembler instruction.
  * LSTRNG  - .strng assembler instruction.
  * LTEXT   - .text assembler instruction.
  * LEQU    - .equ assembler instruction.
@@ -1250,10 +1288,11 @@ void makecmd (opcode, type, emitfunc)
 {
     register int clex;
     register unsigned offset, relinfo;
-    int cval, segment, clobber_reg;
+    int cval, segment, clobber_reg, negate_literal;
 
     offset = 0;
     relinfo = RABS;
+    negate_literal = 0;
 
     /*
      * GCC can generate "j" instead of "jr".
@@ -1292,9 +1331,17 @@ void makecmd (opcode, type, emitfunc)
         opcode |= cval << 16;           /* rt, ... */
     }
     if (type & FRS1) {
-        clex = getlex (&cval);
+frs1:   clex = getlex (&cval);
         if (clex != LREG)
             uerror ("bad rs register");
+        if (cval == 0 && (opcode == 0x0000001a ||   /* div */
+                          opcode == 0x0000001b)) {  /* divu */
+            /* Div instruction with three args.
+             * Treat it as a 2-arg variant. */
+            if (getlex (&cval) != ',')
+                uerror ("comma expected");
+            goto frs1;
+        }
         opcode |= cval << 21;           /* rs, ... */
     }
     if (type & FRTD) {
@@ -1332,8 +1379,19 @@ void makecmd (opcode, type, emitfunc)
         opcode |= cval << 16;           /* .., rt, ... */
     }
     if (type & FRS2) {
-        if (getlex (&cval) != ',')
-            uerror ("comma expected");
+        clex = getlex (&cval);
+        if (clex != ',') {
+            if ((opcode & 0xfc00003f) != 0x00000009)
+                uerror ("comma expected");
+            /* Jalr with one argument.
+             * Treat as if the first argument is $31. */
+            ungetlex (clex, cval);
+            cval = (opcode >> 11) & 31; /* get 1-st register */
+            opcode |= cval << 21;       /* use 1-st reg as 2-nd */
+            opcode |= 31 << 11;         /* set 1-st reg to 31 */
+            clobber_reg = 31;
+            goto done3;
+        }
         clex = getlex (&cval);
         if (clex != LREG) {
             if ((type & FRT1) && (type & FOFF16)) {
@@ -1365,8 +1423,37 @@ void makecmd (opcode, type, emitfunc)
             goto done3;
         }
         clex = getlex (&cval);
-        if (clex != LREG)
+        if (clex != LREG) {
+            if ((type & FRD1) && (type & FRS2)) {
+                /* Three-operand instruction used with literal operand.
+                 * Convert it to immediate type. */
+                unsigned newop;
+                switch (opcode & 0xfc0007ff) {
+                case 0x00000020: newop = 0x20000000; break; // add -> addi
+                case 0x00000021: newop = 0x24000000; break; // addu -> addiu
+                case 0x00000024: newop = 0x30000000; break; // and -> andi
+                case 0x00000025: newop = 0x34000000; break; // or -> ori
+                case 0x0000002a: newop = 0x28000000; break; // slt -> slti
+                case 0x0000002b: newop = 0x2c000000; break; // sltu -> sltiu
+                case 0x00000022: newop = 0x20000000;        // sub -> addi, negate
+                                 negate_literal = 1; break;
+                case 0x00000023: newop = 0x24000000;        // subu -> addiu, negate
+                                 negate_literal = 1; break;
+                case 0x00000026: newop = 0x38000000; break; // xor -> xori
+                default:
+                    uerror ("bad rt register");
+                    return;
+                }
+                ungetlex (clex, cval);
+                cval = (opcode >> 11) & 31;         /* get 1-st register */
+                newop |= cval << 16;                /* set 1-st register */
+                newop |= opcode & (31 << 11);       /* set 2-nd register */
+                opcode = newop;
+                type = FRT1 | FRS2 | FOFF16 | FMOD;
+                goto foff16;
+            }
             uerror ("bad rt register");
+        }
         opcode |= cval << 16;           /* .., .., rt */
     }
     if (type & FRS3) {
@@ -1403,9 +1490,37 @@ done3:
             ungetlex (clex, cval);
 
     } else if (type & (FCODE | FCODE16 | FSA)) {
-    /* Non-relocatable offset */
-        if ((type & FSA) && getlex (&cval) != ',')
-            uerror ("comma expected");
+        /* Non-relocatable offset */
+        if (type & FSA) {
+            if (getlex (&cval) != ',')
+                uerror ("comma expected");
+            clex = getlex (&cval);
+            if (clex == LREG && type == (FRD1 | FRT2 | FSA | FMOD)) {
+                /* Literal-operand shift instruction used with register operand.
+                 * Convert it to 3-register type. */
+                unsigned newop;
+                switch (opcode & 0xffe0003f) {
+                case 0x00200002: newop = 0x00000046; break; // ror -> rorv
+                case 0x00000000: newop = 0x00000004; break; // sll -> sllv
+                case 0x00000003: newop = 0x00000007; break; // sra -> srav
+                case 0x00000002: newop = 0x00000006; break; // srl -> srlv
+                default:
+                    uerror ("bad shift amount");
+                    return;
+                }
+                newop |= opcode & (0x3ff << 11);    /* set 1-st and 2-nd regs */
+                newop |= cval << 21;                /* set 3-rd register */
+                opcode = newop;
+                type = FRD1 | FRT2 | FRS3 | FMOD;
+                goto done3;
+            }
+            ungetlex (clex, cval);
+        }
+        if ((type & FCODE) && (type & FRT2)) {
+            /* Optional code for trap instruction. */
+            if (getlex (&cval) != ',')
+                uerror ("comma expected");
+        }
 fsa:    offset = getexpr (&segment);
         if (segment != SABS)
             uerror ("absolute value required");
@@ -1427,6 +1542,12 @@ fsa:    offset = getexpr (&segment);
 foff16: expr_gprel = 0;
         offset = getexpr (&segment);
         relinfo = segmrel [segment];
+        if (negate_literal) {
+            // Negate literal arg for sub and subu
+            offset = -offset;
+            if (relinfo != RABS)
+                uerror ("cannot negate relocatable literal");
+        }
         if (relinfo == REXT)
             relinfo |= RSETINDEX (extref);
         if (expr_gprel)
@@ -1813,13 +1934,15 @@ void pass1 ()
             }
 align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
     	    count[segm] += nbytes + c;
-            nwords = (unsigned) (nbytes + c) / WORDSZ;
-            while (c--)
-                fputc (0, sfile[segm]);
-            while (nwords--)
-                fputrel (RABS, rfile[segm]);
+            if (segm < SBSS) {
+                nwords = (unsigned) (nbytes + c) / WORDSZ;
+                while (c--)
+                    fputc (0, sfile[segm]);
+                while (nwords--)
+                    fputrel (RABS, rfile[segm]);
+            }
             break;
-        case LSHORT:
+        case LHALF:
             reorder_flush();
 	    nbytes = 0;
             for (;;) {
@@ -1837,8 +1960,10 @@ align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
         case LSPACE:
             getexpr (&cval);
             reorder_flush();
-            for (nbytes=0; nbytes<intval; nbytes++) {
-		fputc (0, sfile[segm]);
+            nbytes = intval;
+            if (segm < SBSS) {
+                for (c=0; c<nbytes; c++)
+                    fputc (0, sfile[segm]);
             }
             goto align;
         case LASCII:
@@ -1852,6 +1977,21 @@ align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
                     uerror ("bad parameter of .globl");
                 cval = lookname();
                 stab[cval].n_type |= N_EXT;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+            break;
+        case LWEAK:
+            /* .weak name */
+            for (;;) {
+                clex = getlex (&cval);
+                if (clex != LNAME)
+                    uerror ("bad parameter of .weak");
+                cval = lookname();
+                stab[cval].n_type |= N_WEAK;
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
@@ -2333,6 +2473,18 @@ void makesymtab ()
         putchar (0);
 }
 
+void usage ()
+{
+    fprintf (stderr, "Usage:\n");
+    fprintf (stderr, "  as [-uxX] [-o outfile] [infile]\n");
+    fprintf (stderr, "Options:\n");
+    fprintf (stderr, "  -o filename     Set output file name, default stdout\n");
+    fprintf (stderr, "  -u              Treat undefined names as error\n");
+    fprintf (stderr, "  -x              Discard local symbols\n");
+    fprintf (stderr, "  -X              Discard locals starting with 'L' or '.'\n");
+    exit (1);
+}
+
 int main (argc, argv)
     register char *argv[];
 {
@@ -2349,7 +2501,7 @@ int main (argc, argv)
         case '-':
             for (cp=argv[i]+1; *cp; cp++) {
                 switch (*cp) {
-                case 'X':       /* strip L* locals */
+                case 'X':       /* strip L* and .* locals */
                     Xflag++;
                 case 'x':       /* strip local symbols */
                     xflags++;
@@ -2395,14 +2547,7 @@ int main (argc, argv)
                     --cp;
                     break;
                 default:
-usage:              fprintf (stderr, "Usage:\n");
-                    fprintf (stderr, "  as [-uxX] [-o outfile] [infile]\n");
-                    fprintf (stderr, "Options:\n");
-                    fprintf (stderr, "  -o filename     Set output file name, default stdout\n");
-                    fprintf (stderr, "  -u              Treat undefined names as error\n");
-                    fprintf (stderr, "  -x              Discard local symbols\n");
-                    fprintf (stderr, "  -X              Discard locals starting with 'L' or '.'\n");
-                    return (1);
+                    usage();
                 }
             }
             break;
@@ -2414,7 +2559,7 @@ usage:              fprintf (stderr, "Usage:\n");
         }
     }
     if (! infile && isatty(0))
-        goto usage;
+        usage();
 
     /*
      * Setup input-output.
@@ -2433,5 +2578,5 @@ usage:              fprintf (stderr, "Usage:\n");
     rdsize = makereloc (SDATA);
     makesymtab ();                      /* Emit symbol table */
     makeheader (rtsize, rdsize);        /* Write a.out header */
-    exit (0);
+    return 0;
 }

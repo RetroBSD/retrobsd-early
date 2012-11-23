@@ -219,9 +219,6 @@ void psyms(symp, nsyms)
 		case N_BSS:
 			c = 'b';
 			break;
-		case N_REG:
-			c = 'r';
-			break;
 		default:
 			c = '?';
 			break;
@@ -233,13 +230,15 @@ void psyms(symp, nsyms)
 				printf("%s:", *xargv);
 			printf("%s:", archive ? chdr.name : *xargv);
 		}
-		if (symp[n].n_type&N_EXT)
+		if (symp[n].n_type & N_WEAK)
+			c = 'w';
+		if (symp[n].n_type & N_EXT)
 			c = toupper(c);
 		if (! uflg) {
 			if (c=='u' || c=='U')
-				printf("      ");
+				printf("        ");
 			else
-				printf(N_FORMAT, symp[n].n_value);
+				printf("%08x", symp[n].n_value);
 			printf(" %c ", c);
 		}
 		printf("%s\n", symp[n].n_name);
