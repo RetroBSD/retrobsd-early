@@ -7,8 +7,8 @@ vpath %.c $(LIBCDIR)/mips/sys $(LIBCDIR)/gen $(LIBCDIR)/stdio \
           $(LIBCDIR)/stdlib $(LIBCDIR)/string $(LIBCDIR)/inet \
           $(LIBCDIR)/compat
 
-CFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS)
-ASFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS) -I$(LIBCDIR)/mips/sys
+CFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS) -Wa,-x
+ASFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS) -Wa,-x -I$(LIBCDIR)/mips/sys
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
 # rest of the system calls are generated with printf(1) and do not have

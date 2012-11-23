@@ -218,6 +218,15 @@ void psyms(symp, nsyms)
 		case N_BSS:
 			c = 'b';
 			break;
+		case N_STRNG:
+			c = 's';
+			break;
+		case N_COMM:
+			c = 'c';
+			break;
+		case N_FN:
+			c = 'f';
+			break;
 		default:
 			c = '?';
 			break;

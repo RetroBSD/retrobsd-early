@@ -231,7 +231,7 @@ char *libclibs_profile[] = LIBCLIBS_PROFILE;
 char *libclibs_profile[] = { "-lc_p", NULL };
 #endif
 #ifndef STARTLABEL
-#define STARTLABEL "__start"
+#define STARTLABEL "_start"
 #endif
 char *incdir = STDINC;
 char *libdir = LIBDIR;

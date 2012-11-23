@@ -22,18 +22,28 @@
  * this software.
  */
 #ifdef CROSS
+#   include </usr/include/sys/types.h>
+#   include </usr/include/sys/select.h>
+#   include </usr/include/sys/stat.h>
+#   include </usr/include/sys/time.h>
+#   include </usr/include/sys/fcntl.h>
+#   include </usr/include/sys/signal.h>
 #   include </usr/include/stdio.h>
+#   include </usr/include/string.h>
+#   include </usr/include/stdlib.h>
+#   include </usr/include/unistd.h>
+#   define MAXNAMLEN 63
 #else
+#   include <sys/types.h>
+#   include <sys/stat.h>
+#   include <sys/dir.h>
 #   include <stdio.h>
+#   include <stdlib.h>
+#   include <string.h>
+#   include <signal.h>
+#   include <unistd.h>
 #endif
-#include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
-#include <signal.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/dir.h>
 #include <a.out.h>
 #include <ar.h>
 #include <ranlib.h>
@@ -83,7 +93,7 @@ struct local local [NSYMPR];
 int symindex;                   /* next free entry of symbol table */
 unsigned basaddr = BADDR;       /* base address of loading */
 struct ranlib rantab [RANTABSZ];
-int tnum;                       /* number of elements in rantab */
+int rancount;                   /* number of elements in rantab */
 
 /*
  * library management
@@ -382,7 +392,7 @@ void freerantab ()
 {
 	register struct ranlib *p;
 
-	for (p=rantab; p<rantab+tnum; ++p)
+	for (p=rantab; p<rantab+rancount; ++p)
 		free (p->ran_name);
 }
 
@@ -422,7 +432,7 @@ void getrantab ()
 		if (n < 0)
 			error (2, "out of memory");
 		if (n == 0) {
-			tnum = p-rantab;
+			rancount = p - rantab;
 			return;
 		}
 	}
@@ -691,12 +701,13 @@ int getfile (cp)
 		error (2, "cannot open");
 
         /* Read file magic. */
-	if (fread(magic, 1, SARMAG, text) != SARMAG ||
-            strncmp (magic, ARMAG, SARMAG) != 0 ||
-            ! fgetarhdr (text, &archdr))
+	if (fread(magic, 1, SARMAG, text) != SARMAG)
 		return (0);     /* regular file */
-        c = sizeof (archdr.ar_name);
-	if (strncmp (archdr.ar_name, SYMDEF, c) != 0)
+        if (strncmp (magic, ARMAG, SARMAG) != 0)
+		return (0);     /* regular file */
+        if (! fgetarhdr (text, &archdr))
+		return (0);     /* regular file */
+	if (strncmp (archdr.ar_name, SYMDEF, sizeof (SYMDEF)) != 0)
 		return (1);     /* regular archive */
 	fstat (fileno (text), &x);
 	if (x.st_mtime > archdr.ar_date + 2)
@@ -748,31 +759,43 @@ void symreloc()
                 cursym.n_type = N_EXT+N_ABS;
 }
 
+/*
+ * Suboptimal 32-bit hash function.
+ * Copyright (C) 2006 Serge Vakulenko.
+ */
+unsigned hash_rot13 (s)
+    register const char *s;
+{
+    register unsigned hash, c;
+
+    hash = 0;
+    while ((c = (unsigned char) *s++) != 0) {
+        hash += c;
+        hash -= (hash << 13) | (hash >> 19);
+    }
+    return hash;
+}
+
 struct nlist **lookup()
 {
-	register int i;
 	int clash;
 	register char *cp, *cp1;
 	register struct nlist **hp;
 
-	i = 0;
-	for (cp = cursym.n_name; *cp; cp++);
-	        i = (i << 1) + *cp;
-
-        hp = &hshtab[(i & 077777) % NSYM + 2];
+        hp = &hshtab[hash_rot13 (cursym.n_name) % NSYM + 2];
 	while (*hp != 0) {
 		cp1 = (*hp)->n_name;
 		clash = 0;
-		for (cp = cursym.n_name; *cp;)
+		for (cp = cursym.n_name; *cp;) {
 			if (*cp++ != *cp1++) {
 				clash = 1;
 				break;
 			}
-		if (clash) {
-			if (++hp >= &hshtab[NSYM+2])
-				hp = hshtab;
-		} else
+                }
+		if (! clash)
 			break;
+		if (++hp >= &hshtab[NSYM+2])
+			hp = hshtab;
 	}
 	return (hp);
 }
@@ -934,7 +957,7 @@ int ldrand ()
 	struct nlist **pp;
 	unsigned *oldp = libp;
 
-	for (p=rantab; p<rantab+tnum; ++p) {
+	for (p=rantab; p<rantab+rancount; ++p) {
 		pp = slookup (p->ran_name);
 		if (! *pp)
 			continue;
@@ -1097,6 +1120,7 @@ void middle()
 	p_etext = *slookup ("_etext");
 	p_edata = *slookup ("_edata");
 	p_end = *slookup ("_end");
+        p_gp = *slookup ("_gp");
 
 	/*
 	 * If there are any undefined symbols, save the relocation bits.
@@ -1105,7 +1129,8 @@ void middle()
 	if (! output_relinfo) {
 		for (sp=symtab; sp<symp; sp++)
 			if (sp->n_type == N_EXT+N_UNDF &&
-				sp != p_end && sp != p_edata && sp != p_etext)
+				sp != p_end && sp != p_edata &&
+                                sp != p_etext && sp != p_gp)
 			{
 				output_relinfo++;
 				dflag = 0;
@@ -1125,7 +1150,6 @@ void middle()
 		ldrsym (p_end, bsize, N_EXT+N_BSS);
 
                 /* Set GP as offset from the start of data segment. */
-                p_gp = *slookup ("_gp");
 		ldrsym (p_gp, gpoffset, N_EXT+N_DATA);
 
 		for (sp=symtab; sp<symp; sp++) {
@@ -1151,6 +1175,9 @@ void middle()
 		case N_EXT+N_UNDF:
 			if (! rflag) {
                                 errlev |= 1;
+				if (sp == p_end || sp == p_edata ||
+                                    sp == p_etext || sp == p_gp)
+                                        break;
 				if (! nund)
 					printf ("Undefined:\n");
 				nund++;
@@ -1432,7 +1459,7 @@ int main (argc, argv)
                 printf ("  -X              Discard locals starting with 'L' or '.'\n");
                 printf ("  -r              Generate relocatable output\n");
                 printf ("  -d              Force common symbols to be defined\n");
-                printf ("  -t              Enable trace output\n");
+                printf ("  -t              Increase trace verbosity (up to 3)\n");
 		exit (4);
 	}
 	if (signal (SIGINT, SIG_IGN) != SIG_IGN)

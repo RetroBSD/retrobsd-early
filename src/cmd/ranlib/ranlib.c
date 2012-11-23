@@ -254,72 +254,53 @@ bad1:	(void)lseek(rfd, (off_t)r_off, SEEK_SET);
  */
 void symobj()
 {
-	register RLIB *rp, *next;
-	struct ranlib rn;
-	char hb[sizeof(struct ar_hdr) + 1], pad;
-	long ransize, size, stroff;
-	gid_t getgid();
-	uid_t getuid();
+	register RLIB *rp;
+	char hb[sizeof(struct ar_hdr) + 1];
+	long ransize, baseoff;
 
 	/* Rewind the archive, leaving the magic number. */
 	if (fseek(fp, (off_t)SARMAG, SEEK_SET) == (off_t)-1)
 		error(archive);
 
-	/* Size of the ranlib archive file, pad if necessary. */
-	ransize = sizeof(long) +
-	    symcnt * sizeof(struct ranlib) + sizeof(long) + tsymlen;
-	if (ransize & 01) {
-		++ransize;
-		pad = '\n';
-	} else
-		pad = '\0';
+        /* Compute the size of rantab. */
+        ransize = 0;
+	for (rp = rhead; rp; rp = rp->next) {
+	        ransize += rp->symlen + 5;
+        }
+        ransize += 4 - (ransize & 3);
 
 	/* Put out the ranlib archive file header. */
 	(void)sprintf(hb, HDR2, RANLIBMAG, 0L, getuid(), getgid(),
 	    0666 & ~umask(0), ransize, ARFMAG);
-	if (!fwrite(hb, sizeof(struct ar_hdr), 1, fp))
-		error(tname);
-
-	/* First long is the size of the ranlib structure section. */
-	size = symcnt * sizeof(struct ranlib);
-	if (!fwrite((char *)&size, sizeof(size), 1, fp))
+	if (! fwrite(hb, sizeof(struct ar_hdr), 1, fp))
 		error(tname);
 
 	/* Offset of the first archive file. */
-	size = SARMAG + sizeof(struct ar_hdr) + ransize;
+	baseoff = SARMAG + sizeof(struct ar_hdr) + ransize;
 
 	/*
-	 * Write out the ranlib structures.  The offset into the string
-	 * table is cumulative, the offset into the archive is the value
-	 * set in rexec() plus the offset to the first archive file.
+	 * Write out the ranlib structures.  The offset into the archive
+         * is the base value plus the offset to the first archive file.
 	 */
-	for (rp = rhead, stroff = 0; rp; rp = rp->next) {
-		rn.ran_name = (char*) stroff;
-		stroff += rp->symlen;
-		rn.ran_off = size + rp->pos;
-		if (!fwrite((char *)&rn, sizeof(struct ranlib), 1, fp))
+	for (rp = rhead; rp; rp = rp->next) {
+                /* Write struct ranlib to file.
+                 * 1 byte - length of name.
+                 * 4 bytes - seek in archive.
+                 * 'len' bytes - symbol name. */
+	        unsigned offset = baseoff + rp->pos;
+	        fputc (rp->symlen, fp);
+		if (! fwrite((char *)&offset, 4, 1, fp))
 			error(archive);
-                if (verbose)
-                        fprintf (stderr, "%8u %s\n",
-                                (unsigned) rn.ran_off, rp->sym);
-	}
-
-	/* Second long is the size of the string table. */
-	if (!fwrite((char *)&tsymlen, sizeof(tsymlen), 1, fp))
-		error(tname);
-
-	/* Write out the string table. */
-	for (rp = rhead; rp; ) {
-		if (!fwrite(rp->sym, rp->symlen, 1, fp))
+		if (! fwrite(rp->sym, rp->symlen, 1, fp))
 			error(tname);
-		(void)free(rp->sym);
-		next = rp->next;
-		free(rp);
-		rp = next;
+                if (verbose)
+                        fprintf (stderr, "%8u %s\n", offset, rp->sym);
+	        ransize -= rp->symlen + 5;
 	}
 
-	if (pad && !fwrite(&pad, sizeof(pad), 1, fp))
-		error(tname);
+        /* Align to word boundary. */
+	while (ransize-- > 0)
+                fputc (0, fp);
 
 	(void)fflush(fp);
 }

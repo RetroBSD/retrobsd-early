@@ -50,15 +50,18 @@ FSUTIL		= tools/fsutil/fsutil
 BIN_FILES	:= $(wildcard bin/*)
 SBIN_FILES	:= $(wildcard sbin/*)
 GAMES_FILES	:= $(shell find games -type f ! -path '*/.*')
-LIB_FILES	:= lib/crt0.o lib/retroImage lib/libc.a
 LIBEXEC_FILES	:= $(wildcard libexec/*)
+LIB_FILES	:= lib/crt0.o lib/retroImage lib/libc.a
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-INC_FILES	= include/stdio.h include/syscall.h include/sys/types.h \
-                  include/sys/select.h
+INC_FILES	= include/sys/ include/machine/  include/arpa/ \
+                  $(wildcard include/*.h) \
+                  $(wildcard include/sys/*.h) \
+                  $(wildcard include/machine/*.h) \
+                  $(wildcard include/arpa/*.h)
 SHARE_FILES	= share/re.help share/example/Makefile \
-                  share/example/ashello.S share/example/chello.c \
+                  share/example/ashello.S share/example/chello.c share/example/shello.c \
                   share/example/blkjack.bas share/example/hilow.bas \
                   share/example/stars.bas share/example/prime.scm \
                   share/example/fact.fth share/example/echo.S \

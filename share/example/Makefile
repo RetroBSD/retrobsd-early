@@ -7,6 +7,10 @@ ashello: ashello.o
 chello: chello.o
 	$(CC) chello.o -o $@
 
+shello: shello.c
+	smallc shello.c
+	$(CC) shello.s -o $@
+
 echo:   echo.o
 	$(LD) $@.o -o $@
 

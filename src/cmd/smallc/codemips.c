@@ -105,7 +105,7 @@ void gen_comment() {
  */
 prefix()
 {
-    output_byte ('_');
+    //output_byte ('_');
 }
 
 /*
@@ -189,7 +189,7 @@ void output_number(int num)
 /*
  * Fetch a static memory cell into the primary register.
  */
-void gen_get_memory(SYMBOL *sym) 
+void gen_get_memory(SYMBOL *sym)
 {
     output_string ("\tla\t$t0, ");
     prefix();
@@ -258,7 +258,7 @@ void gen_put_indirect(char typeobj)
  * Fetch the specified object type indirect through the primary
  * register into the primary register.
  */
-void gen_get_indirect(char typeobj, int reg) 
+void gen_get_indirect(char typeobj, int reg)
 {
     if (typeobj & CCHAR) {
 		if( typeobj & UNSIGNED ) {
@@ -360,7 +360,7 @@ callstk()
 {
     output_line ("lw\t$t1, 0($sp)");
     output_line ("addiu\t$sp, $sp, 4");
-	gen_call ("^callstk");
+    gen_call ("^callstk");
     stkp = stkp + INTSIZE;
 }
 
@@ -512,7 +512,7 @@ gen_div()
 
 gen_udiv()
 {
-	output_line ("#FIXME genudiv");
+    output_line ("#FIXME genudiv");
     output_line ("lw\t$t1, 0($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("divu\t$t1, $v0");
@@ -540,7 +540,7 @@ gen_mod()
 
 gen_umod()
 {
-	output_line ("#FIXME genumod");
+    output_line ("#FIXME genumod");
     output_line ("lw\t$t1, 0($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("divu\t$t1, $v0");
