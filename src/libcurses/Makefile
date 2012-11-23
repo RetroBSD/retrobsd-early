@@ -44,8 +44,8 @@ all:    ../libcurses.a
 	$(RANLIB) ../libcurses_p.a
 
 install: all
-	cp ../libcurses.a ${DESTDIR}/lib/libcurses.a
-	$(RANLIB) ${DESTDIR}/lib/libcurses.a
+#	cp ../libcurses.a ${DESTDIR}/lib/libcurses.a
+#	$(RANLIB) ${DESTDIR}/lib/libcurses.a
 #	cp ../libcurses_p.a ${DESTDIR}/lib/libcurses_p.a
 #	$(RANLIB) ${DESTDIR}/lib/libcurses_p.a
 

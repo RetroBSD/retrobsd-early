@@ -35,8 +35,8 @@ $(MAN):         $(MANSRC)
 
 install: 	all
 		cp $(MAN) $(DESTDIR)/share/man/cat3/
-		cp ../libvmf.a ${DESTDIR}/lib/libvmf.a
-		$(RANLIB) ${DESTDIR}/lib/libvmf.a
+#		cp ../libvmf.a ${DESTDIR}/lib/libvmf.a
+#		$(RANLIB) ${DESTDIR}/lib/libvmf.a
 #		cp ../libvmf_p.a ${DESTDIR}/lib/libvmf_p.a
 #		$(RANLIB) ${DESTDIR}/lib/libvmf_p.a
 

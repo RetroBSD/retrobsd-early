@@ -14,9 +14,9 @@ all:            ../libm.a
 		$(RANLIB) $@
 
 install:	all
-		${INSTALLDIR} ${DESTDIR}/lib
-		${INSTALL} ../libm.a ${DESTDIR}/lib/libm.a
-		$(RANLIB) ${DESTDIR}/lib/libm.a
+#		${INSTALLDIR} ${DESTDIR}/lib
+#		${INSTALL} ../libm.a ${DESTDIR}/lib/libm.a
+#		$(RANLIB) ${DESTDIR}/lib/libm.a
 
 clean:
 		rm -f ../libm.a *.o *~ tags
@@ -26,10 +26,6 @@ cleandir:       clean
 
 depend:
 		mkdep ${CFLAGS} ${SRCS}
-
-#install: all
-#		install -o bin -g bin -m 644 ../libm.a ${DESTDIR}/usr/lib
-#		ranlib -t ${DESTDIR}/usr/lib/libm.a
 
 tags:
 		ctags ${SRCS}

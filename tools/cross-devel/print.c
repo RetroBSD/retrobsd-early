@@ -1,1 +1,0 @@
-../../src/cmd/ar/print.c

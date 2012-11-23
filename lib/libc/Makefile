@@ -1,4 +1,4 @@
-TOPSRC		= $(shell cd ../../..; pwd)
+TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
 LIBCDIR          = $(TOPSRC)/src/libc
@@ -7,8 +7,8 @@ vpath %.c $(LIBCDIR)/mips/sys $(LIBCDIR)/gen $(LIBCDIR)/stdio \
           $(LIBCDIR)/stdlib $(LIBCDIR)/string $(LIBCDIR)/inet \
           $(LIBCDIR)/compat
 
-CFLAGS		+= -B$(TOPSRC)/tools/cross-devel/ $(DEFS)
-ASFLAGS		+= -B$(TOPSRC)/tools/cross-devel/ $(DEFS) -I$(LIBCDIR)/mips/sys
+CFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS)
+ASFLAGS		+= -B$(TOPSRC)/lib/ $(DEFS) -I$(LIBCDIR)/mips/sys
 
 # modules which can not use SYSCALL and must be assembled from sources.  The
 # rest of the system calls are generated with printf(1) and do not have
@@ -94,8 +94,9 @@ OBJS            += creat.o ftime.o gethostid.o gtty.o memccpy.o memchr.o \
 
 all:            ../libc.a
 
-../libc.a:      ../ar $(OBJS)
+../libc.a:      ../ar ../ranlib $(OBJS)
 		../ar rc $@ $(OBJS)
+		../ranlib $@
 
 $(SYSOBJS):	$(LIBCDIR)/mips/sys/SYS.h
 		@echo creating $*.o

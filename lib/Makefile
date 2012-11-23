@@ -1,14 +1,18 @@
-TOPSRC          = $(shell cd ../..; pwd)
+TOPSRC          = $(shell cd ..; pwd)
 SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
-CFLAGS		+= -g -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include -I.
+CFLAGS		+= -g -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include \
+                   -I$(TOPSRC)/src/cmd/ar -I$(TOPSRC)/src/cmd/as
 LDFLAGS         += -g
 
 AR_OBJS         = ar.o append.o archive.o contents.o delete.o extract.o \
                   misc.o move.o print.o replace.o strmode.o
 AOUT_OBJS       = aout.o mips-dis.o
 RANLIB_OBJS     = ranlib.o archive.o
+
+vpath %.c $(TOPSRC)/src/cmd/ar $(TOPSRC)/src/cmd/as $(TOPSRC)/src/cmd/ld \
+    $(TOPSRC)/src/cmd/nm $(TOPSRC)/src/cmd/ranlib $(TOPSRC)/src/cmd
 
 all install depend: $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done

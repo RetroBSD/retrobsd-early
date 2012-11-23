@@ -50,7 +50,7 @@ FSUTIL		= tools/fsutil/fsutil
 BIN_FILES	:= $(wildcard bin/*)
 SBIN_FILES	:= $(wildcard sbin/*)
 GAMES_FILES	:= $(shell find games -type f ! -path '*/.*')
-LIB_FILES	:= $(wildcard lib/*)
+LIB_FILES	:= lib/crt0.o lib/retroImage lib/libc.a
 LIBEXEC_FILES	:= $(wildcard libexec/*)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
@@ -70,7 +70,7 @@ ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES)
                   var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
                   share/misc/ share/smallc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
-                  games/ games/lib/ 
+                  games/ games/lib/
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
@@ -111,6 +111,7 @@ kernel:
 
 build:
 		$(MAKE) -C tools
+		$(MAKE) -C lib
 		$(MAKE) -C src install
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
@@ -132,10 +133,11 @@ $(FSUTIL):
 
 clean:
 		rm -f *~
-		for dir in tools src sys/pic32; do $(MAKE) -C $$dir -k clean; done
+		for dir in tools lib src sys/pic32; do $(MAKE) -C $$dir -k clean; done
 
 cleanall:       clean
-		rm -f sys/pic32/*/unix.hex bin/* sbin/* lib/* games/[a-k]* games/[m-z]* libexec/* share/man/cat*/*
+		$(MAKE) -C lib clean
+		rm -f sys/pic32/*/unix.hex bin/* sbin/* games/[a-k]* games/[m-z]* libexec/* share/man/cat*/*
 		rm -f games/lib/adventure.dat
 		rm -f games/lib/cfscores
 		rm -f share/re.help

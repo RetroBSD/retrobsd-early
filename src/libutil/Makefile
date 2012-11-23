@@ -38,8 +38,8 @@ depend:
 		mkdep ${CFLAGS} ${SRCS}
 
 install:        all
-		cp ../libutil.a ${DESTDIR}/lib/
-		$(RANLIB) -t ${DESTDIR}/lib/libutil.a
+#		cp ../libutil.a ${DESTDIR}/lib/
+#		$(RANLIB) -t ${DESTDIR}/lib/libutil.a
 #		cp libutil_p.a ${DESTDIR}/lib/
 #		$(RANLIB) -t ${DESTDIR}/lib/libutil_p.a
 

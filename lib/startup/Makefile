@@ -5,10 +5,11 @@
 #
 #	crt0	Normal C run time startoff
 #
-TOPSRC          = $(shell cd ../../..; pwd)
+TOPSRC          = $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
+vpath %.c $(TOPSRC)/src/startup-mips
 
-CFLAGS          = -B$(TOPSRC)/tools/cross-devel/ -O $(DEFS)
+CFLAGS          = -B$(TOPSRC)/lib/ -O $(DEFS)
 
 OBJS		= ../crt0.o
 
@@ -19,4 +20,3 @@ all:		$(OBJS)
 
 clean:
 		rm -f $(OBJS) *~
-		
