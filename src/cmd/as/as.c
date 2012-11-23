@@ -1518,8 +1518,11 @@ done3:
         }
         if ((type & FCODE) && (type & FRT2)) {
             /* Optional code for trap instruction. */
-            if (getlex (&cval) != ',')
-                uerror ("comma expected");
+            clex = getlex (&cval);
+            if (clex != ',') {
+                ungetlex (clex, cval);
+                goto done;
+            }
         }
 fsa:    offset = getexpr (&segment);
         if (segment != SABS)
@@ -1614,6 +1617,7 @@ foff16: expr_gprel = 0;
             offset = 32;
         opcode |= ((offset - 1) & 0x1f) << 11; /* msb */
     }
+done:
 
     /* Output resulting values. */
     if (emitfunc) {

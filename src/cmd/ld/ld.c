@@ -74,13 +74,13 @@ struct local {
 #define NLIBS           256
 #define RANTABSZ        500
 
-struct nlist cursym;            /* текущий символ */
-struct nlist symtab [NSYM];     /* собственно символы */
-struct nlist **symhash [NSYM];  /* указатели на хэш-таблицу */
-struct nlist *lastsym;          /* последний введенный символ */
-struct nlist *hshtab [NSYM+2];  /* хэш-таблица для символов */
+struct nlist cursym;            /* current symbol */
+struct nlist symtab [NSYM];     /* table of symbols */
+struct nlist **symhash [NSYM];  /* pointers to hash table */
+struct nlist *lastsym;          /* last entered symbol */
+struct nlist *hshtab [NSYM+2];  /* hash table for symbols */
 struct local local [NSYMPR];
-int symindex;                   /* следующий свободный вход таб. символов */
+int symindex;                   /* next free entry of symbol table */
 unsigned basaddr = BADDR;       /* base address of loading */
 struct ranlib rantab [RANTABSZ];
 int tnum;                       /* number of elements in rantab */

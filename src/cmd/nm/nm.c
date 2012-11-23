@@ -34,7 +34,6 @@ union {
         struct	exec mag_exp;
 } mag_un;
 
-off_t	off;
 int	narg, errs;
 
 void error(n, s)
@@ -121,15 +120,15 @@ int get_arobj(fp)
 	return(1);
 }
 
-int nextel(af)
+off_t nextel(af, off)
         FILE *af;
+        off_t off;
 {
 	fseek(af, off, SEEK_SET);
 	if (get_arobj(af) < 0)
-		return(0);
-	off += sizeof (struct ar_hdr) + chdr.size +
-		(chdr.size + (chdr.lname & 1));
-	return(1);
+		return 0;
+	off += sizeof (struct ar_hdr) + chdr.size + (chdr.lname & 1);
+	return off;
 }
 
 unsigned int fgetword (f)
@@ -247,6 +246,7 @@ void psyms(symp, nsyms)
 
 void namelist()
 {
+	off_t   off;
 	char	ibuf[BUFSIZ];
 	register FILE	*fi;
 
@@ -275,7 +275,7 @@ void namelist()
 	rewind(fi);
 
 	if (archive) {
-		nextel(fi);
+		off = nextel(fi, off);
 		if (narg > 1)
 			printf("\n%s:\n", *xargv);
 	}
@@ -354,7 +354,7 @@ void namelist()
 			free((char *)symp);
                         symp = NULL;
                 }
-	} while(archive && nextel(fi));
+	} while(archive && (off = nextel(fi, off)) != 0);
 out:
 	fclose(fi);
 }
