@@ -39,7 +39,7 @@ install: all
 #	@-rm -f ${DESTDIR}/lib/libtermlib.a
 #	ln ${DESTDIR}/lib/libtermcap.a ${DESTDIR}/lib/libtermlib.a
 #	$(RANLIB) ${DESTDIR}/lib/libtermcap.a
-#	cd termcap && make install
+	$(MAKE) -C termcap install
 #	cp ../libtermcap_p.a ${DESTDIR}/lib/libtermcap_p.a
 #	@-rm -f ${DESTDIR}/lib/libtermlib_p.a
 #	ln ${DESTDIR}/lib/libtermcap_p.a ${DESTDIR}/lib/libtermlib_p.a
