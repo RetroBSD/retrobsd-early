@@ -179,7 +179,7 @@ char	*ld = LINKER;
 char	*Bflag;
 
 /* common cpp predefines */
-char *cppadd[] = { "-D__unix__", "-D__BSD__", "-D__RETROBSD__", NULL };
+char *cppadd[] = { "-D__PCC__", "-D__unix__", "-D__BSD__", "-D__RETROBSD__", NULL };
 
 #ifdef __mips__
 #   define	CPPMDADD { "-D__mips__", NULL, }
@@ -238,6 +238,7 @@ char *libdir = LIBDIR;
 char *altincdir;
 char *pccincdir;
 char *pcclibdir;
+char *progname;
 
 /* handle gcc warning emulations */
 struct Wflags {
@@ -360,7 +361,7 @@ strlcat(char *dst, const char *src, size_t siz)
 void
 usage()
 {
-	printf("Usage: cc [options] file...\n");
+	printf("Usage: %s [options] file...\n", progname);
 	printf("Options:\n");
 	printf("  -h               Display this information\n");
 	printf("  --version        Display compiler version information\n");
@@ -441,6 +442,19 @@ main(int argc, char *argv[])
 	passp = win32pathsubst(passp);
 	pass0 = win32pathsubst(pass0);
 #endif
+        progname = strrchr (argv[0], '/');
+        progname = progname ? progname+1 : argv[0];
+        if (strcmp ("lcc", progname) == 0) {
+            /* LCC: retargetable C compiler. */
+            cppadd[0] = "-D__LCC__";
+            pass0 = LIBEXECDIR "/lccom";
+        } else if (strcmp ("scc", progname) == 0) {
+            /* SmallC. */
+            cppadd[0] = "-D__SMALLC__";
+            pass0 = LIBEXECDIR "/smallc";
+            incdir = STDINC "/smallc";
+        }
+
         if (argc == 1)
                 usage();
 	i = nc = nl = nas = ncpp = nxo = 0;

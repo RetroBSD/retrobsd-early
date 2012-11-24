@@ -108,46 +108,39 @@ struct while_rec {
 #define WHILE struct while_rec
 
 /* possible entries for "wstyp" */
-#define WSWHILE 0
-#define WSFOR   1
-#define WSDO    2
-#define WSSWITCH        3
+#define WSWHILE     0
+#define WSFOR       1
+#define WSDO        2
+#define WSSWITCH    3
 
 /* "switch" label stack */
-#define SWSTSZ  100
+#define SWSTSZ      100
 
 /* literal pool */
-#define LITABSZ 5000
-#define LITMAX  LITABSZ-1
+#define LITABSZ     5000
+#define LITMAX      LITABSZ-1
 
 /* input line */
-#define LINESIZE        150
-#define LINEMAX (LINESIZE-1)
-#define MPMAX   LINEMAX
-
-/* macro (define) pool */
-#define MACQSIZE        5000
-#define MACMAX  (MACQSIZE-1)
-
-/* "include" stack */
-#define INCLSIZ 3
+#define LINESIZE    150
+#define LINEMAX     (LINESIZE-1)
+#define MPMAX       LINEMAX
 
 /* statement types (tokens) */
-#define STIF    1
-#define STWHILE 2
-#define STRETURN        3
-#define STBREAK 4
-#define STCONT  5
-#define STASM   6
-#define STEXP   7
-#define STDO    8
-#define STFOR   9
-#define STSWITCH        10
+#define STIF        1
+#define STWHILE     2
+#define STRETURN    3
+#define STBREAK     4
+#define STCONT      5
+#define STASM       6
+#define STEXP       7
+#define STDO        8
+#define STFOR       9
+#define STSWITCH    10
 
-#define DEFLIB  inclib()
+#define DEFLIB      inclib()
 
-#define HL_REG 1
-#define DE_REG 2
+#define HL_REG      1
+#define DE_REG      2
 
 typedef struct lvalue {
 	SYMBOL *symbol;		// symbol table address, or 0 for constant
@@ -159,21 +152,21 @@ typedef struct lvalue {
 
 /**
  * path to include directories. set at compile time on host machine
- * @return 
+ * @return
  */
 char *inclib();
 
 /**
  * try to find symbol in local symbol table
  * @param sname symbol name
- * @return 
+ * @return
  */
 int findloc (char sname[]);
 
 /**
  * try to find symbol in global symbol table
  * @param sname
- * @return 
+ * @return
  */
 int findglb (char sname[]);
 
@@ -184,7 +177,7 @@ int findglb (char sname[]);
  * @param typ
  * @param value
  * @param stor
- * @return 
+ * @return
  */
 int add_global (char sname[], int id, int typ, int value, int stor, int count);
 
@@ -192,10 +185,10 @@ int add_global (char sname[], int id, int typ, int value, int stor, int count);
  * adds local symbol to the symbol table
  * @param sname symbol name
  * @param id identity - possible entries, VARIABLE, ARRAY, POINTER, FUNCTION
- * @param typ type - possible entries, CCHAR, CINT    
+ * @param typ type - possible entries, CCHAR, CINT
  * @param value offset field, it is stack frame offset for local objects
  * @param stclass storage - possible entries, PUBLIC, AUTO, EXTERN, STATIC, LSTATIC, DEFAUTO
- * @return 
+ * @return
  */
 int add_local (char sname[], int id, int typ, int value, int stclass, int count);
 

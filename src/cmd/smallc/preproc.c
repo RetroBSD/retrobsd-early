@@ -8,83 +8,6 @@
 #include "defs.h"
 #include "data.h"
 
-/**
- * remove "brackets" surrounding include file name
- * @see DEFLIB
- */
-FILE* fix_include_name () {
-        char    c1, c2, *p, *ibp;
-        char buf[20];
-        FILE *fp;
-        char buf2[100];
-
-        ibp = &buf[0];
-
-        if ((c1 = gch ()) != '"' && c1 != '<')
-                return (NULL);
-        for (p = line + lptr; *p ;)
-                *ibp++ = *p++;
-        c2 = *(--p);
-        if (c1 == '"' ? (c2 != '"') : (c2 != '>')) {
-                error ("incorrect delimiter");
-                return (NULL);
-        }
-        *(--ibp) = 0;
-        fp = NULL;
-        if (c1 == '<' || !(fp = fopen(buf, "r"))) {
-                strcpy(buf2, DEFLIB);
-                strcat(buf2, buf);
-                fp = fopen(buf2, "r");
-        }
-        return (fp);
-}
-
-/**
- * open an include file
- */
-doinclude ()
-{
-        char    *p;
-        FILE    *inp2;
-
-        blanks ();
-        if (inp2 = fix_include_name ())
-                if (inclsp < INCLSIZ) {
-                        inclstk[inclsp++] = input2;
-                        input2 = inp2;
-                } else {
-                        fclose (inp2);
-                        error ("too many nested includes");
-                }
-        else {
-                error ("Could not open include file");
-        }
-        kill ();
-
-}
-
-/**
- * "asm" pseudo-statement
- * enters mode where assembly language statements are passed
- * intact through parser
- */
-doasm ()
-{
-        cmode = 0;
-        FOREVER {
-                readline ();
-                if (match ("#endasm"))
-                        break;
-                if (feof (input))
-                        break;
-                output_string (line);
-                newline ();
-        }
-        kill ();
-        cmode = 1;
-
-}
-
 dodefine ()
 {
         addmac();
@@ -153,18 +76,16 @@ ifline()
                 }
                 if (!skiplevel) return(0);
         }
-
 }
 
 noiferr()
 {
         error("no matching #if...");
-
 }
 
 /**
  * preprocess - copies mline to line with special treatment of preprocess cmds
- * @return 
+ * @return
  */
 cpp ()
 {
@@ -313,7 +234,7 @@ addmac ()
 /**
  * removes one line comments from defines
  * @param c
- * @return 
+ * @return
  */
 remove_one_line_comment(c) char c; {
     if ((c == '/') && (ch() == '/')) {
@@ -368,4 +289,3 @@ int     onoff;
                 break;
         }
 }
-

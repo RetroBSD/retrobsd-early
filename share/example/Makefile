@@ -8,8 +8,7 @@ chello: chello.o
 	$(CC) chello.o -o $@
 
 shello: shello.c
-	smallc shello.c
-	$(CC) shello.s -o $@
+	scc shello.c -o $@
 
 echo:   echo.o
 	$(LD) $@.o -o $@

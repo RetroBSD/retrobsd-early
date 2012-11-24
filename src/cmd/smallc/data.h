@@ -12,11 +12,8 @@ extern  int     swstlab[];
 extern  int     swstp;
 extern  char    litq[];
 extern  int     litptr;
-extern  char    macq[];
-extern  int     macptr;
 extern  char    line[];
-extern  char    mline[];
-extern  int     lptr, mptr;
+extern  int     lptr;
 
 /* miscellaneous storage */
 
@@ -31,22 +28,15 @@ extern  int     nxtlab,
                 cmode,
                 lastst;
 
-extern  FILE    *input, *input2, *output;
-extern  FILE    *inclstk[];
+extern  FILE    *input, *output;
 extern  int     inclsp;
-extern  char    fname[];
 
 extern  char    quote[];
 extern  int     current_symbol_table_idx; //extern  char    *cptr;
 extern  int     *iptr;
 extern  int     fexitlab;
-extern  int     iflevel, skiplevel;
 extern  int     errfile;
-extern  int     sflag;
-extern  int     cflag;
 extern  int     errs;
-extern  int     aflag;
-extern  int     uflag;
 
 extern char initials_table[INITIALS_SIZE];      // 5kB space for initialisation data
 extern char *initials_table_ptr;

@@ -16,12 +16,12 @@ int verbose;                    /* verbose mode */
 #define MAXVECT 64              /* max size of vectors */
 #define MEMSZ   2500            /* memory size */
 
-long lexval;			/* значение лексемы-числа */
-double lexrealval;              /* значение лексемы-вещественного числа */
-char lexsym[MAXLEX];            /* имя лексемы-символа */
-int backlexflag = 0;		/* флаг возврата лексемы */
-int lexlex;			/* текущая лексема */
-int lexlen;                     /* длина лексемы-строки */
+long lexval;			/* value of numeric token */
+double lexrealval;              /* value of float point token */
+char lexsym[MAXLEX];            /* name of symbol token */
+int backlexflag = 0;		/* flag of unget token */
+int lexlex;			/* current token */
+int lexlen;                     /* length of string token */
 
 cell_t mem[MEMSZ];              /* list memory */
 char gclabel[MEMSZ];            /* tags for garbage collector */
@@ -41,7 +41,10 @@ void fatal (char *s)
 	exit (-1);
 }
 
-lisp_t alloc (int type)         /* выделение памяти под новую пару */
+/*
+ * Allocate memory for a new pair.
+ */
+lisp_t alloc (int type)
 {
 	lisp_t p = firstfree;
 	if (p == NIL)
@@ -294,7 +297,10 @@ done:
 	return sign ? -fraction : fraction;
 }
 
-void initmem ()                 /* инициализация списка свободных */
+/*
+ * Initialize a free list.
+ */
+void initmem ()
 {
 	register int i;
 
@@ -351,7 +357,10 @@ int gcollect ()
 	return (n);
 }
 
-void gc ()			/* сбор мусора */
+/*
+ * Garbage collection.
+ */
+void gc ()
 {
 	register int n;
 
@@ -575,9 +584,12 @@ void ungetlex ()
 	backlexflag = 1;
 }
 
-int getlex ()			/* ввод лексемы */
+/*
+ * Lexical parser: get next token.
+ * Side effect: saving values to lexval and lexsym.
+ */
+int getlex ()
 {
-	/* побочный эффект - заполнение lexval и lexsym */
 	register int c, i, radix = 10, neg = 0;
 
 	if (backlexflag) {
@@ -714,7 +726,10 @@ lexsym:         i = 0;
 	return (lexlex = c);
 }
 
-lisp_t getvector ()       /* чтение вектора ВЫР... */
+/*
+ * Read vector EXPR...
+ */
+lisp_t getvector ()
 {
 	int len = 0;
 	lisp_t vect[MAXVECT];
@@ -736,7 +751,10 @@ lisp_t getvector ()       /* чтение вектора ВЫР... */
 	}
 }
 
-lisp_t getlist ()		/* чтение списка ВЫР ('.' СПИС | ВЫР)... */
+/*
+ * Read list EXPR ('.' LIST | EXPR)...
+ */
+lisp_t getlist ()
 {
 	lisp_t p = cons (getexpr (), NIL);
 	switch (getlex ()) {
@@ -756,7 +774,10 @@ lisp_t getlist ()		/* чтение списка ВЫР ('.' СПИС | ВЫР)..
 	return (p);
 }
 
-lisp_t getexpr ()         /* чтение выражения АТОМ | ЧИСЛО | '(' СПИСОК ')' */
+/*
+ * Read expression ATOM | NUMBER | '(' LIST ')'
+ */
+lisp_t getexpr ()
 {
 	lisp_t p;
 
@@ -848,7 +869,10 @@ lisp_t copy (lisp_t a, lisp_t *t)
 	return (val);
 }
 
-int eqvvector (lisp_t a, lisp_t b)  /* сравнение векторов */
+/*
+ * Compare vectors.
+ */
+int eqvvector (lisp_t a, lisp_t b)
 {
 	lisp_t *s, *t;
 	int len;
@@ -866,7 +890,10 @@ int eqvvector (lisp_t a, lisp_t b)  /* сравнение векторов */
 	return (1);
 }
 
-int eqv (lisp_t a, lisp_t b)        /* сравнение объектов */
+/*
+ * Compare objects.
+ */
+int eqv (lisp_t a, lisp_t b)
 {
 	if (a == b)
 		return (1);
@@ -891,7 +918,10 @@ int eqv (lisp_t a, lisp_t b)        /* сравнение объектов */
 	return (0);
 }
 
-int equal (lisp_t a, lisp_t b)      /* рекурсивное сравнение */
+/*
+ * Recursive comparison.
+ */
+int equal (lisp_t a, lisp_t b)
 {
 	if (a == b)
 		return (1);
@@ -904,20 +934,22 @@ int equal (lisp_t a, lisp_t b)      /* рекурсивное сравнение
 	return (eqv (a, b));
 }
 
+/*
+ * Find an atom by context.
+ * Context is a list of pairs (name, value).
+ */
 lisp_t findatom (lisp_t atom, lisp_t ctx)
 {
-	/* Поиск атома по контексту */
-	/* Контекст - это список пар (имя, значение) */
 	if (! istype (atom, TSYMBOL))
 		return (NIL);
-	/* Сначала ищем в текущем контексте */
+	/* Current context first. */
 	for (; ctx!=NIL; ctx=cdr(ctx)) {
 		lisp_t pair = car (ctx);
 		lisp_t sym = car (pair);
 		if (atom == sym || !strcmp (symname (atom), symname (sym)))
 			return (pair);
 	}
-	/* Затем просматриваем контекст верхнего уровня */
+	/* Next is a context of upper level. */
 	for (ctx=ENV; ctx!=NIL; ctx=cdr(ctx)) {
 		lisp_t pair = car (ctx);
 		lisp_t sym = car (pair);
@@ -927,9 +959,11 @@ lisp_t findatom (lisp_t atom, lisp_t ctx)
 	return (NIL);
 }
 
+/*
+ * Assign a value to a variable.
+ */
 void setatom (lisp_t atom, lisp_t value, lisp_t ctx)
 {
-	/* Присваивание значения переменной */
 	lisp_t pair = findatom (atom, ctx);
 	if (pair == NIL) {
 		fprintf (stderr, "unbound symbol: `%s'\n", symname (atom));
@@ -939,7 +973,7 @@ void setatom (lisp_t atom, lisp_t value, lisp_t ctx)
 }
 
 /*
- * проверить соответствие типа
+ * Check the type.
  */
 int istype (lisp_t p, int type)
 {
@@ -961,9 +995,11 @@ lisp_t evallist (lisp_t expr, lisp_t ctx)
 	}
 }
 
+/*
+ * Evaluate a block in a given context.
+ */
 lisp_t evalblock (lisp_t expr, lisp_t ctx)
 {
-	/* Вычисление блока в отдельном контексте */
 	lisp_t value = NIL;
 	while (istype (expr, TPAIR)) {
 		value = eval (car (expr), &ctx);
@@ -977,15 +1013,16 @@ lisp_t evalclosure (lisp_t func, lisp_t expr)
 	lisp_t ctx = closurectx (func), body = closurebody (func);
 	lisp_t arg = car (body);
 
-	/* Расширяем контекст аргументами вызова */
+	/* Extend the context by arguments. */
 	while (istype (arg, TPAIR)) {
 		lisp_t val;
 		if (istype (expr, TPAIR)) {
 			val = car (expr);
 			expr = cdr (expr);
-		} else
-			/* Недостающие аргументы получают значение NIL */
+		} else {
+			/* Set missing arguments to NIL. */
 			val = NIL;
+                }
 		if (istype (car (arg), TSYMBOL))
 			ctx = cons (cons (car (arg), val), ctx);
 		arg = cdr (arg);
@@ -1064,15 +1101,15 @@ lisp_t quasiquote (lisp_t expr, lisp_t ctx, int level)
 
 lisp_t evalfunc (lisp_t func, lisp_t arg, lisp_t ctx)
 {
-	/* Встроенная функция */
+	/* Hard-wired function. */
 	if (istype (func, THARDW))
 		return ((*hardwval (func)) (arg, ctx));
 
-	/* Обычная функция, вычисляем ее значение */
+	/* Generic function: compute it's value. */
 	if (istype (func, TCLOSURE))
 		return (evalclosure (func, arg));
 
-	/* Ни то ни се, игнорируем */
+	/* Not a function, ignore. */
 	return (NIL);
 }
 
@@ -1084,9 +1121,9 @@ again:
 	if (expr == NIL)
 		return (NIL);
 
-	/* Если это символ, берем его значение */
+	/* If a symbol, get it's value. */
 	if (istype (expr, TSYMBOL)) {
-		/* Поиск значения по контексту */
+		/* Find a value in a context. */
 		lisp_t pair = findatom (expr, ctx);
 		if (pair == NIL) {
 			fprintf (stderr, "unbound symbol: `%s'\n", symname (expr));
@@ -1095,15 +1132,15 @@ again:
 		return (cdr (pair));
 	}
 
-	/* Все, что не атом и не список, не вычисляется */
+	/* All but atom and list: leave as is. */
 	if (! istype (expr, TPAIR))
 		return (expr);
 
-	/* Перебираем специальные формы.
+	/* Built-in special forms:
 	 * quote define set! begin lambda let let* letrec if
 	 * and or cond else => quasiquote unquote unquote-splicing
 	 */
-	/* Зарезервированные имена:
+	/* Reserved names:
 	 * delay do case
 	 */
 	func = car (expr);
@@ -1121,7 +1158,7 @@ again:
 				return (NIL);
 			lambda = istype (atom = car (expr), TPAIR);
 			if (lambda) {
-				/* define, совмещенный с lambda */
+				/* define, combined with lambda. */
 				arg = cdr (atom);
 				atom = car (atom);
 			}
@@ -1130,14 +1167,15 @@ again:
 				return (NIL);
 			pair = findatom (atom, ctx);
 			if (pair == NIL) {
-				/* Расширяем контекст */
+				/* Extend the context. */
 				pair = cons (atom, NIL);
-				if (ctxp)
-					/* локальный контекст */
+				if (ctxp) {
+					/* Local context. */
 					*ctxp = ctx = cons (pair, ctx);
-				else
-					/* контекст верхнего уровня */
+				} else {
+					/* Upper level context. */
 					ENV = cons (pair, ENV);
+                                }
 			}
 			if (lambda)
 				value = closure (cons (arg, expr), ctx);
@@ -1173,11 +1211,11 @@ again:
 				if (! istype (expr = cdr (expr), TPAIR))
 					expr = NIL;
 			}
-			/* Расширяем контекст новыми переменными */
+			/* Extend the context by new variables. */
 			while (istype (arg, TPAIR)) {
 				lisp_t var = car (arg);
 				arg = cdr (arg);
-				/* Значения вычисляем в старом контексте */
+				/* Compute values in old context. */
 				if (istype (var, TPAIR))
 					ctx = cons (cons (car (var),
 						evalblock (cdr (var), oldctx)),
@@ -1194,11 +1232,11 @@ again:
 				if (! istype (expr = cdr (expr), TPAIR))
 					expr = NIL;
 			}
-			/* Расширяем контекст новыми переменными */
+			/* Extend the context by new variables. */
 			while (istype (arg, TPAIR)) {
 				lisp_t var = car (arg);
 				arg = cdr (arg);
-				/* Значения вычисляем в текущем контексте */
+				/* Compute values in the current context. */
 				if (istype (var, TPAIR))
 					ctx = cons (cons (car (var),
 						evalblock (cdr (var), ctx)),
@@ -1215,7 +1253,7 @@ again:
 				if (! istype (expr = cdr (expr), TPAIR))
 					expr = NIL;
 			}
-			/* Расширяем контекст новыми переменными с пустыми значениями */
+			/* Extend the context by new variables with NIL values.. */
 			for (a=arg; istype (a, TPAIR); a=cdr(a)) {
 				lisp_t var = car (a);
 				if (istype (var, TPAIR))
@@ -1223,7 +1261,7 @@ again:
 				else if (istype (var, TSYMBOL))
 					ctx = cons (cons (var, NIL), ctx);
 			}
-			/* Вычисляем значения в новом контексте */
+			/* Compute values in the new context. */
 			for (a=arg; istype (a, TPAIR); a=cdr(a)) {
 				lisp_t var = car (a);
 				if (istype (var, TPAIR))
@@ -1298,7 +1336,7 @@ again:
 		}
 	}
 
-	/* Вычисляем все аргументы */
+	/* Compute all arguments. */
 	expr = evallist (expr, ctx);
 	return (evalfunc (car (expr), cdr (expr), ctxp ? *ctxp : TOPLEVEL));
 }

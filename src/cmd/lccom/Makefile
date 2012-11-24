@@ -4,8 +4,9 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
+#CFLAGS		= -O -DCROSS
 
-CFLAGS		+= -Os -Wall -Werror
+CFLAGS		+= -Os -Wall -Werror -DNDEBUG
 LDFLAGS		+=
 
 OBJS            = $Balloc.o $Bbind.o $Bdag.o $Bdagcheck.o $Bdecl.o $Benode.o \

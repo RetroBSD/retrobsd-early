@@ -4,6 +4,7 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
+#CFLAGS		= -O -DCROSS
 
 ARCHDIR         = arch-mips
 MIPDIR          = mip
@@ -30,7 +31,7 @@ ccom.0:         ccom.1
 		${MANROFF} $< > $@
 
 clean:
-		rm -f *.o *.0 *.elf ${MAN} ccom *.elf *.dis a.out *~ scan.c cgram.[ch] mkext external.[ch]
+		rm -f *.o *.0 *.elf ${MAN} ccom *.elf *.dis a.out *~ scan.c cgram.[ch] mkext
 
 install:        all
 		install ccom $(DESTDIR)/libexec/

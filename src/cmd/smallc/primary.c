@@ -28,7 +28,7 @@ primary (lvalue_t *lval) {
                                 symbol = &symbol_table[symbol_table_idx];
                                 if (symbol->storage == LSTATIC)
                                         error("sizeof local static");
-                                offset = symbol->count; 
+                                offset = symbol->count;
                                 if ((symbol->type & CINT) ||
                                         (symbol->identity == POINTER))
                                         offset *= INTSIZE;
@@ -112,7 +112,7 @@ primary (lvalue_t *lval) {
  * true if val1 -> int pointer or int array and val2 not pointer or array
  * @param val1
  * @param val2
- * @return 
+ * @return
  */
 dbltest (lvalue_t *val1, lvalue_t *val2) {
         if (val1 == NULL)
@@ -128,7 +128,7 @@ dbltest (lvalue_t *val1, lvalue_t *val2) {
  * determine type of binary operation
  * @param lval
  * @param lval2
- * @return 
+ * @return
  */
 result (lvalue_t *lval, lvalue_t *lval2) {
         if (lval->ptr_type && lval2->ptr_type)
@@ -299,8 +299,10 @@ char    *ptr;
                         break;
         }
         needbrack (")");
-        if (aflag)
-                gnargs(nargs / INTSIZE);
+        // Generate an argument count to function calls.
+        // This feature is arch-specific, disable it for now.
+        // if (aflag)
+        //        gnargs(nargs / INTSIZE);
         if (ptr)
                 gen_call (ptr);
         else
@@ -312,4 +314,3 @@ needlval ()
 {
         error ("must be lvalue");
 }
-

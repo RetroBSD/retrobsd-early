@@ -8,7 +8,7 @@ LIBS		= -lc
 ARCH            = mips
 
 OBJS            = data.o error.o expr.o function.o gen.o initialise.o io.o lex.o main.o \
-                  preproc.o primary.o stmt.o sym.o while.o code$(ARCH).o
+                  primary.o stmt.o sym.o while.o code$(ARCH).o #preproc.o
 
 all:		smallc
 
@@ -19,7 +19,7 @@ smallc: 	$(OBJS)
 		${ELF2AOUT} $@.elf $@
 
 install:
-		cp smallc $(TOPSRC)/bin/
+		cp smallc $(TOPSRC)/libexec/
 
 
 clean:
@@ -44,4 +44,3 @@ primary.o: primary.c defs.h data.h
 stmt.o: stmt.c defs.h data.h
 sym.o: sym.c defs.h data.h
 while.o: while.c defs.h data.h
-

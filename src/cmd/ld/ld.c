@@ -134,7 +134,7 @@ unsigned ctrel, cdrel, cbrel;
 unsigned torigin, dorigin, borigin;
 
 /* gp control, MIPS specific */
-unsigned gpoffset = 0x7ff0;     /* offset from data start */
+unsigned gpoffset = 0x8000;     /* offset from data start */
 unsigned gp;                    /* allocated address */
 
 int	ofilfnd;
@@ -1142,8 +1142,10 @@ void middle()
 
 	/*
 	 * Assign common locations.
+	 * Align text size to 16 bytes.
 	 */
 	cmsize = 0;
+	tsize  = (tsize + 15) & ~15;
 	if (dflag || ! output_relinfo) {
 		ldrsym (p_etext, tsize, N_EXT+N_TEXT);
 		ldrsym (p_edata, dsize, N_EXT+N_DATA);
@@ -1162,7 +1164,7 @@ void middle()
 	}
 
 	/*
-	 * Now set symbols to their final value
+	 * Now set symbols to their final value.
 	 */
 	torigin = basaddr;
 	dorigin = torigin + tsize;
@@ -1397,8 +1399,13 @@ void finishout ()
 {
 	register struct nlist *p;
         unsigned rtsize = 0, rdsize = 0;
+        register unsigned n;
 
-	copy_and_close (toutb);
+	n = copy_and_close (toutb);
+        while (n++ < tsize) {
+                /* Align text size. */
+                putc (0, outb);
+        }
 	copy_and_close (doutb);
 	if (output_relinfo) {
 		rtsize = copy_and_close (troutb);

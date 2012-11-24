@@ -25,3 +25,4 @@ clean:
 
 install:        all
 		install cc $(DESTDIR)/bin/
+		install cc $(DESTDIR)/bin/scc

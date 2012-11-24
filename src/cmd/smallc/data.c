@@ -10,11 +10,8 @@
 SYMBOL symbol_table[NUMBER_OF_GLOBALS + NUMBER_OF_LOCALS];
 int global_table_index, rglobal_table_index;
 int local_table_index;
-//char    symtab[SYMTBSZ];
-//char    *glbptr, *rglbptr, *locptr;
 
-WHILE ws[WSTABSZ]; //int     ws[WSTABSZ];
-//while_table_t *wsptr; //int     *wsptr;
+WHILE ws[WSTABSZ];
 int     while_table_index;
 
 int     swstcase[SWSTSZ];
@@ -22,11 +19,8 @@ int     swstlab[SWSTSZ];
 int     swstp;
 char    litq[LITABSZ];
 int     litptr;
-char    macq[MACQSIZE];
-int     macptr;
 char    line[LINESIZE];
-char    mline[LINESIZE];
-int     lptr, mptr;
+int     lptr;
 
 /* miscellaneous storage */
 
@@ -41,22 +35,14 @@ int     nxtlab,
         cmode,
         lastst;
 
-FILE    *input, *input2, *output;
-FILE    *inclstk[INCLSIZ];
+FILE    *input, *output;
 int     inclsp;
-char    fname[20];
 
-//char    quote[2];
-int     current_symbol_table_idx; //char    *cptr;
+int     current_symbol_table_idx;
 int     *iptr;
 int     fexitlab;
-int     iflevel, skiplevel;
 int     errfile;
-int     sflag;
-int     cflag;
 int     errs;
-int     aflag;
-int     uflag;
 
 char initials_table[INITIALS_SIZE];      // 5kB space for initialisation data
 char *initials_table_ptr = 0;
