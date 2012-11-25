@@ -344,6 +344,7 @@ void add_file (fs_t *fs, char *name)
 	fs_file_t file;
 	FILE *fd;
 	unsigned char data [BSDFS_BSIZE];
+	struct stat st;
 	char *p;
 	int len;
 
@@ -367,7 +368,8 @@ void add_file (fs_t *fs, char *name)
 		perror (name);
 		return;
 	}
-	if (! fs_file_create (fs, &file, name, 0777)) {
+	stat (name, &st);
+	if (! fs_file_create (fs, &file, name, st.st_mode)) {
 		fprintf (stderr, "%s: cannot create\n", name);
 		return;
 	}
@@ -383,6 +385,7 @@ void add_file (fs_t *fs, char *name)
 			break;
 		}
 	}
+        file.inode.mtime = st.st_mtime;
 	fs_file_close (&file);
 	fclose (fd);
 }

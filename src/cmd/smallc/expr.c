@@ -25,7 +25,7 @@
  */
 nosign(lvalue_t *is) {
     SYMBOL *ptr;
-    
+
     if((is->ptr_type) ||
       ((ptr = is->symbol) && (ptr->type & UNSIGNED))) {
         return 1;
@@ -38,7 +38,7 @@ nosign(lvalue_t *is) {
  * lval[1] - type indirect object to fetch, else 0 for static object
  * lval[2] - type pointer or array, else 0
  * @param comma
- * @return 
+ * @return
  */
 expression(int comma) {
         lvalue_t lval;
@@ -55,7 +55,7 @@ expression(int comma) {
 /**
  * assignment operators
  * @param lval
- * @return 
+ * @return
  */
 hier1 (lvalue_t *lval) {
         int     k;
@@ -74,7 +74,7 @@ hier1 (lvalue_t *lval) {
                         k = rvalue(lval2, k);
                 store (lval);
                 return (0);
-        } else {      
+        } else {
                 fc = ch();
                 if  (match ("-=") ||
                     match ("+=") ||
@@ -493,7 +493,7 @@ hier8 (lvalue_t *lval) {
                                 gen_multiply_by_two ();
                         gen_sub ();
                         /* if both pointers, scale result */
-                        
+
                         /* the second major condition was added to fix &a[n]-&a[n] where a is an int array
                          * this was done be inspection and may cause other conditions to fail
                          * more testing is needed.
@@ -629,7 +629,6 @@ hier10 (lvalue_t *lval) {
                         return (0);
                 /* global and non-array */
                 gen_immediate_a ();
-                prefix();
                 output_string ((ptr = lval->symbol)->name);
                 newline ();
                 lval->indirect = ptr->type;
@@ -718,11 +717,9 @@ hier11 (lvalue_t *lval) {
                 return (k);
         if (ptr->identity == FUNCTION) {
                 gen_immediate_a ();
-                prefix();
                 output_string (ptr);
                 newline ();
                 return (0);
         }
         return (k);
 }
-

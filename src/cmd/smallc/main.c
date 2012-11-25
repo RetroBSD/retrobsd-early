@@ -234,7 +234,6 @@ dumpglbs()
         if (symbol->identity != FUNCTION) {
             ppubext(symbol);
             if (symbol->storage != EXTERN) {
-				prefix();
                 output_string(symbol->name);
                 output_label_terminator();
                 dim = symbol->offset;

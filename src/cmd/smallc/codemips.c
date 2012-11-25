@@ -41,7 +41,6 @@ header()
     //output_line ("global\tTmod");
 }
 
-
 newline()
 {
     output_byte ('\n');
@@ -99,13 +98,6 @@ void output_label_terminator()
  */
 void gen_comment() {
     output_byte ('#');
-}
-/*
- * Output a prefix in front of user labels.
- */
-prefix()
-{
-    //output_byte ('_');
 }
 
 /*
@@ -165,7 +157,6 @@ void ppubext (SYMBOL *scptr)
     if( scptr->storage == STATIC )
         return;
     output_string (".globl\t");
-    prefix();
     output_string (scptr);
     newline();
 }
@@ -192,7 +183,6 @@ void output_number(int num)
 void gen_get_memory(SYMBOL *sym)
 {
     output_string ("\tla\t$t0, ");
-    prefix();
     output_string (sym->name);
     newline();
     if ((sym->identity != POINTER) & (sym->type & CCHAR)) {
@@ -229,7 +219,6 @@ int gen_get_location(SYMBOL *sym)
 void gen_put_memory(SYMBOL *sym)
 {
     output_string ("\tla\t$t0, ");
-    prefix();
     output_string (sym->name);
     newline();
     if ((sym->identity != POINTER) & (sym->type & CCHAR)) {
@@ -328,18 +317,14 @@ gen_swap_stack()
  */
 gen_call (char * sname)
 {
+    output_string ("\tjal\t");
     if (*sname == '^') {
-        output_string ("\tjal\tT");
-        output_string (++sname);
-	newline();
-	output_line ("nop" ); /* fill delay slot */
-    } else {
-        output_string ("\tjal\t");
-        prefix();
-        output_string (sname);
-	newline();
-	output_line ("nop"); /* fill delay slot */
+        output_string ("T");
+        sname++;
     }
+    output_string (sname);
+    newline();
+    output_line ("nop");        /* fill delay slot */
 }
 
 /*
@@ -813,11 +798,17 @@ gen_unsigned_greater_or_equal()
 }
 
 /*
- * Squirrel away argument count in a register that modstk/getloc/stloc
- * doesn't touch.
+ * Put first 4 arguments to registers a0-a3.
  */
-gnargs (d)
-    int d;
+gnargs (nargs)
+    int nargs;
 {
-    /* Empty for now. */
+    int i;
+
+    if (nargs > 4) {
+        error("Too many arguments in a function call (max 4 args supported)");
+        nargs = 4;
+    }
+    for (i=0; i<nargs; i++)
+        fprintf(output, "\tlw\t$a%d, %d($sp)\n", i, (nargs-1 - i) * 4);
 }

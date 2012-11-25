@@ -54,20 +54,17 @@ It operates on archives created with the utility
 The
 .I Ranlib
 function
-prepends a new file to the archive which has three separate parts.
+prepends a new file to the archive which has two separate parts.
 The first part is a standard archive header, which has a special name
 field,  "__.SYMDEF".
 .PP
-The second part is a ``long'' followed by a list of ranlib structures.
-The long is the size, in bytes, of the list of ranlib structures.
-Each of the ranlib structures consists of a zero based offset into the
-next section (a string table of symbols) and an offset from the beginning
-of the archive to the start of the archive file which defines the symbol.
-The actual number of ranlib structures is this number divided by the size
-of an individual ranlib structure.
+The second part is a list of ranlib structures of variable size.
+Each of the ranlib structures consists of a sequence of records, terminated
+by 1, 2, 3 or 4 zero bytes (to align to word boundary).
 .PP
-The third part is a ``long'' followed by a string table.
-The long is the size, in bytes of the string table.
+Every record consists of a byte with name length, a word specifying an offset
+from the beginning of the archive to the start of the archive file which defines the symbol,
+and a symbol name of given length.
 .SH SEE ALSO
 .IR ar (1) ,
 .IR ranlib (1)

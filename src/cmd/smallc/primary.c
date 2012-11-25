@@ -75,7 +75,6 @@ primary (lvalue_t *lval) {
                                         return 1;
                                 }
                                 gen_immediate_a ();
-                                prefix();
                                 output_string (symbol->name);
                                 newline ();
                                 lval->indirect = lval->ptr_type = symbol_table[symbol_table_idx].type;
@@ -302,7 +301,7 @@ char    *ptr;
         // Generate an argument count to function calls.
         // This feature is arch-specific, disable it for now.
         // if (aflag)
-        //        gnargs(nargs / INTSIZE);
+        gnargs(nargs / INTSIZE);
         if (ptr)
                 gen_call (ptr);
         else

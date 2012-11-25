@@ -268,10 +268,8 @@ int fgetsym (text, sym)
 		return 0;
 	sym->n_len = c;
 	sym->n_name = malloc (sym->n_len + 1);
-	if (! sym->n_name) {
+	if (! sym->n_name)
 		error (2, "out of memory");
-		return 0;
-        }
 	sym->n_type = getc (text);
 	sym->n_value = fgetword (text);
 	for (c=0; c<sym->n_len; c++)
@@ -407,14 +405,14 @@ int fgetran (text, sym)
 	/* 4 bytes - seek in archive */
 	/* 'len' bytes - symbol name */
 	/* if len == 0 then eof */
-	/* return 1 if ok, 0 if eof, -1 if out of memory */
+	/* return 1 if ok, 0 on eof */
 
 	sym->ran_len = getc (text);
 	if (sym->ran_len <= 0)
 		return (0);
 	sym->ran_name = malloc (sym->ran_len + 1);
 	if (! sym->ran_name)
-		return (-1);
+		error (2, "out of memory");
 	sym->ran_off = fgetword (text);
 	for (c=0; c<sym->ran_len; c++)
 		sym->ran_name [c] = getc (text);
@@ -425,13 +423,9 @@ int fgetran (text, sym)
 void getrantab ()
 {
 	register struct ranlib *p;
-	register int n;
 
 	for (p=rantab; p<rantab+RANTABSZ; ++p) {
-		n = fgetran (text, p);
-		if (n < 0)
-			error (2, "out of memory");
-		if (n == 0) {
+		if (! fgetran (text, p)) {
 			rancount = p - rantab;
 			return;
 		}
@@ -678,7 +672,7 @@ int getfile (cp)
 {
 	int c;
 	struct stat x;
-        static char libname [] = "/lib/libxxxxxxxxxxxxxxx";
+        static char libname [] = "/lib/libxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
         char magic [SARMAG];
 
 	text = 0;
@@ -707,8 +701,11 @@ int getfile (cp)
 		return (0);     /* regular file */
         if (! fgetarhdr (text, &archdr))
 		return (0);     /* regular file */
-	if (strncmp (archdr.ar_name, SYMDEF, sizeof (SYMDEF)) != 0)
+	if (strncmp (archdr.ar_name, SYMDEF, sizeof (SYMDEF)) != 0) {
+	        free (archdr.ar_name);
 		return (1);     /* regular archive */
+        }
+        free (archdr.ar_name);
 	fstat (fileno (text), &x);
 	if (x.st_mtime > archdr.ar_date + 2)
 		return (3);     /* out of date archive */
@@ -924,8 +921,10 @@ int load1 (loc, libflg, nloc)
 	return (0);
 }
 
-void checklibp ()
+void addlibp (nloc)
+        register unsigned nloc;
 {
+        *libp++ = nloc;
 	if (libp >= &liblist[NLIBS])
 		error (2, "library table overflow");
 }
@@ -933,21 +932,16 @@ void checklibp ()
 int step (nloc)
         register unsigned nloc;
 {
-	register char *cp;
-
 	fseek (text, nloc, 0);
 	if (! fgetarhdr (text, &archdr)) {
-		*libp++ = -1;
-		checklibp ();
 		return (0);
 	}
-	cp = malloc (15);
-	strncpy (cp, archdr.ar_name, 14);
-	cp [14] = '\0';
-	if (load1 (nloc + ARHDRSZ, 1, mkfsym (cp, 0)))
-		*libp++ = nloc;
-	free (cp);
-	checklibp ();
+	if (load1 (nloc + ARHDRSZ, 1, mkfsym (archdr.ar_name, 0))) {
+		addlibp (nloc);
+                if (trace)
+                        printf ("load '%s' offset %08x\n", archdr.ar_name, nloc);
+        }
+        free (archdr.ar_name);
 	return (1);
 }
 
@@ -968,35 +962,48 @@ int ldrand ()
 }
 
 /*
+ * scan a library to find defined symbols
+ */
+void load1lib (off0)
+        unsigned off0;
+{
+        register unsigned offset;
+        register unsigned *oldp;
+
+        /* repeat while any symbols found */
+        do {
+                oldp = libp;
+                offset = off0;
+                while (step (offset))
+                        offset += archdr.ar_size + ARHDRSZ;
+        } while (libp != oldp);
+        addlibp (-1);
+}
+
+/*
  * scan file to find defined symbols
  */
 void load1arg (cp)
         register char *cp;
 {
-	register unsigned nloc;
-
 	switch (getfile (cp)) {
 	case 0:                 /* regular file */
 		load1 (0L, 0, mkfsym (cp, 0));
 		break;
 	case 1:                 /* regular archive */
-		nloc = SARMAG;
-archive:
-		while (step (nloc))
-			nloc += archdr.ar_size + ARHDRSZ;
+                load1lib (SARMAG);
 		break;
-	case 2:                 /* table of contents */
+	case 2:                 /* archive with table of contents */
 		getrantab ();
 		while (ldrand ())
                         continue;
 		freerantab ();
-		*libp++ = -1;
-		checklibp ();
+		addlibp (-1);
 		break;
-	case 3:                 /* out of date archive */
+	case 3:                 /* out of date table of contents */
 		error (0, "out of date (warning)");
-		nloc = SARMAG + archdr.ar_size + ARHDRSZ;
-		goto archive;
+                load1lib (SARMAG + archdr.ar_size + ARHDRSZ);
+		break;
 	}
 	fclose (text);
 	fclose (reloc);
@@ -1325,30 +1332,25 @@ void load2 (loc)
 	borigin += filhdr.a_bss;
 }
 
-void load2arg (acp)
-        register char *acp;
+void load2arg (arname)
+        register char *arname;
 {
 	register unsigned *lp;
 
-	if (getfile (acp) == 0) {
+	if (getfile (arname) == 0) {
 		if (trace || verbose)
-			printf ("%s:\n", acp);
-		mkfsym (acp, 1);
+			printf ("%s:\n", arname);
+		mkfsym (arname, 1);
 		load2 (0L);
 	} else {
 		/* scan archive members referenced */
-		char *arname = acp;
-
 		for (lp = libp; *lp != -1; lp++) {
 			fseek (text, *lp, 0);
 			fgetarhdr (text, &archdr);
-			acp = malloc (15);
-			strncpy (acp, archdr.ar_name, 14);
-			acp [14] = '\0';
 			if (trace || verbose)
-				printf ("%s(%s):\n", arname, acp);
-			mkfsym (acp, 1);
-			free (acp);
+				printf ("%s(%s):\n", arname, archdr.ar_name);
+			mkfsym (archdr.ar_name, 1);
+                        free (archdr.ar_name);
 			load2 (*lp + ARHDRSZ);
 		}
 		libp = ++lp;

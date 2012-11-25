@@ -35,7 +35,6 @@ newfunc() {
         add_global(n, FUNCTION, CINT, FUNCTION, PUBLIC, 1);
     if (!match("("))
         error("missing open paren");
-prefix();
     output_string(n);
     output_label_terminator();
     newline();
@@ -93,21 +92,46 @@ fentry();
  * symbol table for each named argument
  * completely rewritten version.  p.l. woods
  * @param t argument type (char, int)
- * @return 
+ * @return
  */
 getarg(int t) {
     int j, legalname, address, argptr;
     char n[NAMESIZE];
 
-	FOREVER { if (argstk == 0) return; if (match("*")) j = POINTER; 
-	else j = VARIABLE; if (!(legalname = symname(n))) illname(); if 
-	(match("[")) { while (inbyte() != ']') if (endst()) break; j = 
-	POINTER; } if (legalname) { if (argptr = findloc(n)) { 
-	symbol_table[argptr].identity = j; symbol_table[argptr].type = t
-	; address = argtop - symbol_table[argptr].offset; symbol_table[
-	argptr].offset = address; } else error("expecting argument name"
-	); } argstk = argstk - INTSIZE; if (endst()) return; if (!match(
-	",")) error("expected comma"); } }
+    FOREVER {
+        if (argstk == 0)
+            return;
+
+        if (match("*"))
+            j = POINTER;
+        else
+            j = VARIABLE;
+
+        if (! (legalname = symname(n)))
+            illname();
+
+        if (match("[")) {
+            while (inbyte() != ']')
+                if (endst())
+                    break;
+                j = POINTER;
+        }
+        if (legalname) {
+            if (argptr = findloc(n)) {
+                symbol_table[argptr].identity = j;
+                symbol_table[argptr].type = t;
+                address = argtop - symbol_table[argptr].offset;
+                symbol_table[argptr].offset = address;
+            } else
+                error("expecting argument name");
+        }
+        argstk = argstk - INTSIZE;
+        if (endst())
+            return;
+        if (! match(","))
+            error("expected comma");
+    }
+}
 
 doAnsiArguments() {
     int type;
@@ -171,4 +195,3 @@ doLocalAnsiArgument(int type) {
         symbol_table[argptr].identity = identity;
     }
 }
-

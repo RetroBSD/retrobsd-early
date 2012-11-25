@@ -14,7 +14,7 @@ extern	struct	_iobuf {
 	char	*_base;		/* ditto */
 	int	_bufsiz;
 	short	_flag;
-	char	_file;		/* should be short */
+	short	_file;
 } _iob[];
 
 #define	_IOREAD	01
