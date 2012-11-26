@@ -4,7 +4,7 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		+= -Werror -DV7 -DMD=2 -DTXBSIZE=8192 -DNFGVMIN
+CFLAGS		+= -Werror -DV7 -DMD=2 -DTXBSIZE=8192 -DNFGVMIN -DSEGMENTS=32
 
 SRCS		= rz.c sz.c
 OBJS		= rz.o sz.o

@@ -34,8 +34,8 @@ int setjmp (jmp_buf env);
 void longjmp (jmp_buf env, int val);
 
 /*
- * Save and restore registers and optionally a signal state.
- * Signal mask is saved when savesigs is nonzero.
+ * Save and restore CPU state and optionally a signal mask.
+ * Signal mask is saved only when savesigs is nonzero.
  */
 int sigsetjmp (sigjmp_buf env, int savesigs);
 void siglongjmp (sigjmp_buf env, int val);
