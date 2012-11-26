@@ -285,8 +285,10 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		return (sysctl_rdint(oldp, oldlenp, newp, ENDIAN));
 	case HW_PHYSMEM:
 		return (sysctl_rdlong(oldp, oldlenp, newp, physmem));
+#ifdef UCB_METER
 	case HW_USERMEM:
 		return (sysctl_rdlong(oldp, oldlenp, newp, freemem));
+#endif
 	case HW_PAGESIZE:
 		return (sysctl_rdint(oldp, oldlenp, newp, DEV_BSIZE));
 	default:

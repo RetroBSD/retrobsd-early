@@ -1316,13 +1316,13 @@ void load2 (loc)
 	count = loc + filhdr.a_text + filhdr.a_data;
 
 	if (trace > 1)
-		printf ("** TEXT **\n");
+		printf ("-- text --\n");
 	fseek (text, loc, 0);
 	fseek (reloc, count, 0);
 	relocate (lp, toutb, troutb, filhdr.a_text, torigin);
 
 	if (trace > 1)
-		printf ("** DATA **\n");
+		printf ("-- data --\n");
 	fseek (text, loc + filhdr.a_text, 0);
 	fseek (reloc, count + filhdr.a_reltext, 0);
 	relocate (lp, doutb, droutb, filhdr.a_data, dorigin);

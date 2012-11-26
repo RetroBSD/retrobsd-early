@@ -144,7 +144,9 @@ static const struct {
         { "_dk_xfer",       (int) &dk_xfer      },  /* iostat  vmstat */
         { "_file",          (int) &file         },  /* pstat */
         { "_forkstat",      (int) &forkstat     },  /* vmstat */
+#ifdef UCB_METER
         { "_freemem",       (int) &freemem      },  /* vmstat */
+#endif
         { "_hz",            (int) &hz           },  /* ps */
         { "_inode",         (int) &inode        },  /* pstat */
         { "_ipc",           (int) &ipc          },  /* ps */

@@ -1711,7 +1711,9 @@ void makeascii ()
         }
         break;
     }
-    c = WORDSZ - (unsigned) nbytes % WORDSZ;
+    c = (unsigned) nbytes % WORDSZ;
+    if (c != 0)
+        c = WORDSZ - c;
     count[segm] += nbytes + c;
     nwords = (unsigned) (nbytes + c) / WORDSZ;
     while (c--)
@@ -2580,6 +2582,7 @@ int main (argc, argv)
     pass2 ();                           /* Second pass */
     rtsize = makereloc (STEXT);         /* Emit relocation info */
     rdsize = makereloc (SDATA);
+    rdsize += makereloc (SSTRNG);
     makesymtab ();                      /* Emit symbol table */
     makeheader (rtsize, rdsize);        /* Write a.out header */
     return 0;
