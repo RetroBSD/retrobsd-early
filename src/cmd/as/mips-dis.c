@@ -13,7 +13,7 @@
 //#define NEED_MIPS16
 
 #ifdef CROSS
-#   include </usr/include/stdio.h>
+#   include <stdio.h>
 #else
 #   include <stdio.h>
 #endif

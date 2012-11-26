@@ -2,7 +2,9 @@ TOPSRC          = $(shell cd ..; pwd)
 SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
-CFLAGS		+= -g -Werror -Wall -DCROSS -I/usr/include -I$(TOPSRC)/include \
+SYSINC = `cpp -v </dev/null 2>&1 | grep '^ ' | grep include | awk '{print "-I" $$1 " "}'`
+
+CFLAGS		+= -nostdinc -g -Werror -Wall -DCROSS -I.  $(SYSINC) -I$(TOPSRC)/include \
                    -I$(TOPSRC)/src/cmd/ar -I$(TOPSRC)/src/cmd/as
 LDFLAGS         += -g
 
@@ -14,7 +16,7 @@ RANLIB_OBJS     = ranlib.o archive.o
 vpath %.c $(TOPSRC)/src/cmd/ar $(TOPSRC)/src/cmd/as $(TOPSRC)/src/cmd/ld \
     $(TOPSRC)/src/cmd/nm $(TOPSRC)/src/cmd/ranlib $(TOPSRC)/src/cmd
 
-all install depend: $(SUBDIR) $(PROG)
+all install depend: headers $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done
 
 clean:
@@ -44,3 +46,11 @@ size:           size.o
 
 strip:          strip.o
 		$(CC) $(LDFLAGS) -o $@ $< $(LIBS)
+
+.PHONY: headers
+
+headers:
+	-ln -s ../include/a.out.h .
+	-ln -s ../include/ar.h .
+	-ln -s ../include/nlist.h .
+

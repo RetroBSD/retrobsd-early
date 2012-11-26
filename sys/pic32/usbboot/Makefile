@@ -42,10 +42,10 @@ I               = ..
 #CFLAGS         += -DDIP -DFLASH_JUMP=0x9d000000
 
 # Microchip USB/Ethernet Starter Kit
-CFLAGS         += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
+#CFLAGS         += -DSTARTERKIT -DFLASH_JUMP=0x9d000000
 
 # Fubarino
-#CFLAGS          += -DFUBARINO -DFLASH_JUMP=0x9d000000
+CFLAGS          += -DFUBARINO -DFLASH_JUMP=0x9d000000
 
 all:            usbboot.hex usbboot.elf
 		$(SIZE) usbboot.elf

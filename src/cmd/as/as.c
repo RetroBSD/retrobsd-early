@@ -23,7 +23,8 @@
  * this software.
  */
 #ifdef CROSS
-#   include </usr/include/stdio.h>
+#   include <stdio.h>
+#   include <nlist.h>
 #else
 #   include <stdio.h>
 #endif

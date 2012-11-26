@@ -2,12 +2,13 @@
  * nm - print name list. string table version
  */
 #ifdef CROSS
-#   include </usr/include/sys/types.h>
-#   include </usr/include/stdio.h>
-#   include </usr/include/string.h>
-#   include </usr/include/stdlib.h>
-#   include </usr/include/errno.h>
-#   include </usr/include/ctype.h>
+#   include <stdint.h>
+#   include <sys/types.h>
+#   include <stdio.h>
+#   include <string.h>
+#   include <stdlib.h>
+#   include <errno.h>
+#   include <ctype.h>
 #else
 #   include <sys/types.h>
 #   include <sys/dir.h>

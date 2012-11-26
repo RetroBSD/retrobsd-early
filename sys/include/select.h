@@ -61,7 +61,9 @@ typedef	struct fd_set {
 #define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
 #ifndef KERNEL
+#ifndef CROSS
 void     bzero(void *, unsigned long);
+#endif
 //int	select();
 //int	pselect();
 #endif /* !KERNEL */

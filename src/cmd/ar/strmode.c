@@ -31,8 +31,8 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
-#   include </usr/include/sys/types.h>
-#   include </usr/include/sys/stat.h>
+#   include <sys/types.h>
+#   include <sys/stat.h>
 #else
 #   include <sys/types.h>
 #   include <sys/stat.h>

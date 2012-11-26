@@ -22,16 +22,16 @@
  * this software.
  */
 #ifdef CROSS
-#   include </usr/include/sys/types.h>
-#   include </usr/include/sys/select.h>
-#   include </usr/include/sys/stat.h>
-#   include </usr/include/sys/time.h>
-#   include </usr/include/sys/fcntl.h>
-#   include </usr/include/sys/signal.h>
-#   include </usr/include/stdio.h>
-#   include </usr/include/string.h>
-#   include </usr/include/stdlib.h>
-#   include </usr/include/unistd.h>
+#   include <sys/types.h>
+#   include <sys/select.h>
+#   include <sys/stat.h>
+#   include <sys/time.h>
+#   include <sys/fcntl.h>
+#   include <sys/signal.h>
+#   include <stdio.h>
+#   include <string.h>
+#   include <stdlib.h>
+#   include <unistd.h>
 #   define MAXNAMLEN 63
 #else
 #   include <sys/types.h>

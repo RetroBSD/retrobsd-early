@@ -34,14 +34,15 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
-#   include </usr/include/sys/types.h>
-#   include </usr/include/sys/select.h>
-#   include </usr/include/sys/time.h>
-#   include </usr/include/stdio.h>
-#   include </usr/include/string.h>
-#   include </usr/include/stdlib.h>
-#   include </usr/include/unistd.h>
-#   include </usr/include/errno.h>
+#   include <sys/types.h>
+#   include <sys/select.h>
+#   include <sys/time.h>
+#   include <stdio.h>
+#   include <string.h>
+#   include <stdlib.h>
+#   include <stdint.h>
+#   include <unistd.h>
+#   include <errno.h>
 #else
 #   include <sys/param.h>
 #   include <sys/dir.h>
