@@ -372,10 +372,14 @@ int mode_macro;                         /* .set macro option */
 int mode_mips16;                        /* .set mips16 option */
 int mode_micromips;                     /* .set micromips option */
 int mode_at;                            /* .set at option */
-int expr_gprel;                         /* gp relative relocation */
 int reorder_full;                       /* instruction buffered for reorder */
 unsigned reorder_word, reorder_rel;     /* buffered instruction... */
 unsigned reorder_clobber;               /* ...modified this register */
+
+int expr_flags;                         /* flags set by getexpr */
+#define EXPR_GPREL  1                   /* gp relative relocation */
+#define EXPR_HI     2                   /* %hi function */
+#define EXPR_LO     4                   /* %lo function */
 
 /* Forward declarations. */
 unsigned getexpr (int *s);
@@ -1062,11 +1066,11 @@ int getterm ()
             uerror ("bad %function name");
         if (strcmp (name, "gp_rel") == 0) {
             /* GP relative reverence. */
-            expr_gprel = 1;
+            expr_flags |= EXPR_GPREL;
         } else if (strcmp (name, "hi") == 0) {
-            // TODO
+            expr_flags |= EXPR_HI;
         } else if (strcmp (name, "lo") == 0) {
-            // TODO
+            expr_flags |= EXPR_LO;
         } else
             uerror ("unknown function %s", name);
         if (getlex (&cval) != '(')
@@ -1262,14 +1266,14 @@ void emit_la (opcode, relinfo)
 
     if (getlex (&cval) != ',')
         uerror ("comma expected");
-    expr_gprel = 0;
+    expr_flags = 0;
     value = getexpr (&segment);
     if (segment == SABS)
         uerror ("relocatable value required");
     relinfo = segmrel [segment];
     if (relinfo == REXT)
         relinfo |= RSETINDEX (extref);
-    if (expr_gprel)
+    if (expr_flags & EXPR_GPREL)
         relinfo |= RGPREL;
 
     /* lui d, %hi(value)
@@ -1543,7 +1547,7 @@ fsa:    offset = getexpr (&segment);
         /* Relocatable offset */
         if ((type & (FOFF16 | FOFF18 | FHIGH16)) && getlex (&cval) != ',')
             uerror ("comma expected");
-foff16: expr_gprel = 0;
+foff16: expr_flags = 0;
         offset = getexpr (&segment);
         relinfo = segmrel [segment];
         if (negate_literal) {
@@ -1554,20 +1558,24 @@ foff16: expr_gprel = 0;
         }
         if (relinfo == REXT)
             relinfo |= RSETINDEX (extref);
-        if (expr_gprel)
+        if (expr_flags & EXPR_GPREL)
             relinfo |= RGPREL;
         switch (type & (FOFF16 | FOFF18 | FAOFF18 | FAOFF28 | FHIGH16)) {
         case FOFF16:                    /* low 16-bit byte address */
             opcode |= offset & 0xffff;
             break;
         case FHIGH16:                   /* high 16-bit byte address */
-            if (relinfo == RABS)
-                opcode |= offset & 0xffff;
-            else {
-                opcode |= (offset >> 16) & 0xffff;
+            if (relinfo == RABS) {
+                opcode |= offset >> 16;
+            } else if (expr_flags & EXPR_HI {
+                /* %hi function - assume signed offset */
+                relinfo |= RHIGH16S;
+            } else {
+                /* Unsigned offset by default */
                 relinfo |= RHIGH16;
             }
-            /* TODO: keep full offset in relinfo value */
+            opcode |= offset & 0xffff;
+            /* TODO: keep 32-bit offset in relinfo value */
             break;
         case FOFF18:                    /* 18-bit PC-relative word address */
         case FAOFF18:
@@ -1961,12 +1969,12 @@ void pass1 ()
             reorder_flush();
             align (2);
             for (;;) {
-                expr_gprel = 0;
+                expr_flags = 0;
                 getexpr (&cval);
                 addr = segmrel [cval];
                 if (cval == SEXT)
                     addr |= RSETINDEX (extref);
-                if (expr_gprel)
+                if (expr_flags & EXPR_GPREL)
                     addr |= RGPREL;
                 emitword (intval, addr, 0);
                 clex = getlex (&cval);
@@ -2297,6 +2305,12 @@ unsigned relocate (opcode, offset, relinfo)
         opcode |= offset & 0xffff;
         break;
     case RHIGH16:                       /* high 16 bits of byte address */
+        /* TODO: keep full 32-offset in relinfo */
+        offset += opcode & 0xffff;
+        opcode &= ~0xffff;
+        opcode |= (offset >> 16) & 0xffff;
+        break;
+    case RHIGH16S:                      /* high 16 bits of byte address */
         /* TODO: keep full 32-offset in relinfo */
         offset += (opcode & 0xffff) << 16;
         opcode &= ~0xffff;

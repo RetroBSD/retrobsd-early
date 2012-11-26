@@ -132,7 +132,8 @@ void prrel (r)
     default:        putchar ('?');  break;
     case RWORD26:   putchar ('j');  break;
     case RWORD16:   putchar ('w');  break;
-    case RHIGH16:   putchar ('h');  break;
+    case RHIGH16:   putchar ('u');  break;
+    case RHIGH16S:  putchar ('h');  break;
     case 0:         break;
     }
     if (r & RGPREL)

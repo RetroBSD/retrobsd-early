@@ -62,19 +62,20 @@
 
 /* Relocations */
 #define RSMASK  0x70            /* bitmask for segments */
-#define RABS    0
-#define RTEXT   0x20
-#define RDATA   0x30
-#define RBSS    0x40
-#define RSTRNG  0x60            /* for assembler */
-#define REXT    0x70            /* externals and bitmask */
+#define RABS        0
+#define RTEXT       0x20
+#define RDATA       0x30
+#define RBSS        0x40
+#define RSTRNG      0x60        /* for assembler */
+#define REXT        0x70        /* externals and bitmask */
 
 #define RGPREL  0x08            /* gp relative */
 
 #define RFMASK  0x07            /* bitmask for format */
-#define RHIGH16 0x02            /* upper part of byte address: bits 31:16 */
-#define RWORD16 0x03            /* word address: bits 17:2 */
-#define RWORD26 0x04            /* word address: bits 27:2 */
+#define RHIGH16     0x01        /* upper part of byte address: bits 31:16 */
+#define RHIGH16S    0x02        /* upper part of address with signed offset */
+#define RWORD16     0x03        /* word address: bits 17:2 */
+#define RWORD26     0x04        /* word address: bits 27:2 */
 
 #define RINDEX(h)       ((h) >> 8)
 #define RSETINDEX(h)    ((h) << 8)
