@@ -20,9 +20,10 @@
  */
 header()
 {
-    output_string ("#\tSmall C MIPS32\n#\tCoder 1.0, 2012/06/18\n#");
-    //FEvers();
-    newline();
+    output_string ("#\tSmall C MIPS32\n");
+    output_string ("#\tCoder 1.0, 2012/06/18\n");
+    output_string ("#\n");
+    output_string ("\t.set\tnoreorder\n");
     //output_line ("global\tTlneg");
     //output_line ("global\tTcase");
     //output_line ("global\tTeq");
@@ -82,7 +83,7 @@ byteoff()
  */
 void output_label_prefix()
 {
-    output_string ("._");
+    output_string (".L");
 }
 
 /*
@@ -118,7 +119,7 @@ prologue()
 fentry()
 {
     output_line("addiu\t$sp, $sp, -4");
-    output_line("sw\t$ra, 0($sp)");
+    output_line("sw\t$ra, 16($sp)");
 }
 
 /*
@@ -156,7 +157,7 @@ void ppubext (SYMBOL *scptr)
 {
     if( scptr->storage == STATIC )
         return;
-    output_string (".globl\t");
+    output_string ("\t.globl\t");
     output_string (scptr);
     newline();
 }
@@ -234,7 +235,7 @@ void gen_put_memory(SYMBOL *sym)
  */
 void gen_put_indirect(char typeobj)
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     if (typeobj & CCHAR)
         output_line ("sb\t$v0, 0($t1)");
@@ -288,7 +289,7 @@ gen_immediate_c()
 gen_push()
 {
     output_line ("addiu\t$sp, $sp, -4");
-    output_line ("sw\t$v0, 0($sp)");
+    output_line ("sw\t$v0, 16($sp)");
     stkp = stkp - INTSIZE;
 }
 
@@ -297,7 +298,7 @@ gen_push()
  */
 gen_pop()
 {
-    output_line ("lw\t$v1, 0($sp)");
+    output_line ("lw\t$v1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     stkp = stkp + INTSIZE;
 }
@@ -308,8 +309,8 @@ gen_pop()
 gen_swap_stack()
 {
     output_line ("move\t$t1, $v0");
-    output_line ("lw\t$v0, 0($sp)");
-    output_line ("sw\t$t1, 0($sp)");
+    output_line ("lw\t$v0, 16($sp)");
+    output_line ("sw\t$t1, 16($sp)");
 }
 
 /*
@@ -332,10 +333,9 @@ gen_call (char * sname)
  */
 gen_ret()
 {
-    output_line("lw\t$ra, 0($sp)");
-    output_line("addiu\t$sp, $sp, 4");
+    output_line("lw\t$ra, 16($sp)");
     output_line("jr\t$ra");
-    output_line ("nop");
+    output_line("addiu\t$sp, $sp, 4");
 }
 
 /*
@@ -343,7 +343,7 @@ gen_ret()
  */
 callstk()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     gen_call ("^callstk");
     stkp = stkp + INTSIZE;
@@ -379,7 +379,7 @@ gen_test_jump (int label, int ft)
  */
 gen_def_byte()
 {
-    output_string (".byte\t");
+    output_string ("\t.byte\t");
 }
 
 /*
@@ -387,7 +387,7 @@ gen_def_byte()
  */
 gen_def_storage()
 {
-    output_string (".space\t");
+    output_string ("\t.space\t");
 }
 
 /*
@@ -395,7 +395,7 @@ gen_def_storage()
  */
 gen_def_word()
 {
-    output_string (".word\t");
+    output_string ("\t.word\t");
 }
 
 /*
@@ -446,7 +446,7 @@ gen_jump_case()
  */
 gen_add (int *lval, int *lval2)
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     if (dbltest (lval2, lval)) {
         output_line("sll\t$t1, $t1, 2");
@@ -460,7 +460,7 @@ gen_add (int *lval, int *lval2)
  */
 gen_sub()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("sub\t$v0, $t1, $v0");
     stkp = stkp + INTSIZE;
@@ -472,7 +472,7 @@ gen_sub()
  */
 gen_mult()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("mult\t$v0, $t1");
     output_line ("mflo\t$v0");
@@ -486,7 +486,7 @@ gen_mult()
  */
 gen_div()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("div\t$t1, $v0");
     output_line ("mflo\t$v0");
@@ -498,7 +498,7 @@ gen_div()
 gen_udiv()
 {
     output_line ("#FIXME genudiv");
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("divu\t$t1, $v0");
     output_line ("mflo\t$v0");
@@ -514,7 +514,7 @@ gen_udiv()
  */
 gen_mod()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("div\t$t1, $v0");
     output_line ("mflo\t$t1");
@@ -526,7 +526,7 @@ gen_mod()
 gen_umod()
 {
     output_line ("#FIXME genumod");
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("divu\t$t1, $v0");
     output_line ("mflo\t$t1");
@@ -540,7 +540,7 @@ gen_umod()
  */
 gen_or()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("or\t$v0, $v0, $t1");
     //output_line ("or.l\t(%sp)+,%d0");
@@ -552,7 +552,7 @@ gen_or()
  */
 gen_xor()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("xor\t$v0, $v0, $t1");
     //output_line ("mov.l\t(%sp)+,%d1");
@@ -566,7 +566,7 @@ gen_xor()
 gen_and()
 {
     //output_line ("and.l\t(%sp)+,%d0");
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("and\t$v0, $v0, $t1");
     stkp = stkp + INTSIZE;
@@ -579,7 +579,7 @@ gen_and()
  */
 gen_arithm_shift_right()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("srav\t$v0, $t1, $v0");
     stkp = stkp + INTSIZE;
@@ -592,7 +592,7 @@ gen_arithm_shift_right()
  */
 gen_arithm_shift_left()
 {
-    output_line ("lw\t$t1, 0($sp)");
+    output_line ("lw\t$t1, 16($sp)");
     output_line ("addiu\t$sp, $sp, 4");
     output_line ("sllv\t$v0, $t1, $v0");
     stkp = stkp + INTSIZE;
@@ -672,7 +672,7 @@ gen_decrement_primary_reg (lvalue_t *lval)
  */
 gen_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("sltu\t$t2, $v0, $t1");
     output_line("sltu\t$v0, $t1, $v0");
     output_line("or\t$v0, $v0, $t2");
@@ -687,7 +687,7 @@ gen_equal()
  */
 gen_not_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("sltu\t$t2, $v0, $t1");
     output_line("sltu\t$v0, $t1, $v0");
     output_line("or\t$v0, $v0, $t2");
@@ -701,7 +701,7 @@ gen_not_equal()
  */
 gen_less_than()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("slt\t$v0, $t1, $v0");
     //gcall ("^lt");
@@ -713,7 +713,7 @@ gen_less_than()
  */
 gen_less_or_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("slt\t$v0, $v0, $t1"); // primary < tos
     output_line("xori\t$v0, $v0, 1");  // primary >= tos
@@ -726,7 +726,7 @@ gen_less_or_equal()
  */
 gen_greater_than()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("slt\t$v0, $v0, $t1");   //pimary < TOS
     //output_line("xori\t$v0, $v0, 1");
@@ -739,7 +739,7 @@ gen_greater_than()
  */
 gen_greater_or_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("slt\t$v0, $t1, $v0");   //tos < primary
     output_line("xori\t$v0, $v0, 1");    //tos >= primary
@@ -752,7 +752,7 @@ gen_greater_or_equal()
  */
 gen_unsigned_less_than()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("sltu\t$v0, $t1, $v0");
     //gcall ("^ult");
@@ -764,7 +764,7 @@ gen_unsigned_less_than()
  */
 gen_unsigned_less_or_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("sltu\t$v0, $v0, $t1"); // primary < tos
     output_line("xori\t$v0, $v0, 1");  // primary >= tos
@@ -777,7 +777,7 @@ gen_unsigned_less_or_equal()
  */
 gen_usigned_greater_than()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("sltu\t$v0, $v0, $t1");   //pimary < TOS
     //gcall ("^ugt");
@@ -789,7 +789,7 @@ gen_usigned_greater_than()
  */
 gen_unsigned_greater_or_equal()
 {
-    output_line("lw\t$t1, 0($sp)");
+    output_line("lw\t$t1, 16($sp)");
     output_line("addiu\t$sp, $sp, 4");
     output_line("sltu\t$v0, $t1, $v0");   //tos < primary
     output_line("xori\t$v0, $v0, 1");    //tos >= primary
@@ -810,5 +810,5 @@ gnargs (nargs)
         nargs = 4;
     }
     for (i=0; i<nargs; i++)
-        fprintf(output, "\tlw\t$a%d, %d($sp)\n", i, (nargs-1 - i) * 4);
+        fprintf(output, "\tlw\t$a%d, %d($sp)\n", i, (nargs-1 - i) * 4 + 16);
 }

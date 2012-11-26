@@ -287,18 +287,20 @@ errorsummary()
 {
     if (ncmp)
         error("missing closing bracket");
+    gen_comment();
     newline();
     gen_comment();
+    output_with_tab("");
     output_decimal(errcnt);
     if (errcnt) errfile = YES;
     output_string(" error(s) in compilation");
     newline();
     gen_comment();
-    output_with_tab("literal pool:");
+    output_with_tab("literal pool: ");
     output_decimal(litptr);
     newline();
     gen_comment();
-    output_with_tab("global pool:");
+    output_with_tab("global pool: ");
     output_decimal(global_table_index - rglobal_table_index);
     newline();
     if (errcnt > 0)

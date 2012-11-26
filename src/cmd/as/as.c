@@ -1239,7 +1239,7 @@ void emit_li (opcode, relinfo)
         opcode |= 0x34000000 | value;
     } else if (value >= -0x8000) {
         /* addiu d, $zero, value */
-        opcode |= 0x24000000 | value;
+        opcode |= 0x24000000 | (value & 0xffff);
     } else {
         /* lui d, %hi(value)
          * ori d, d, %lo(value) */
@@ -1650,9 +1650,33 @@ done:
     }
 }
 
+/*
+ * Increment the current segment by nbytes.
+ * Emit a needed amount of zeroes to sfile and rfile.
+ * Part of data have already been sent to rfile;
+ * length specified by 'done' argument.
+ */
+void add_space (nbytes, fill_data)
+    unsigned nbytes, fill_data;
+{
+    unsigned c;
+
+    if (segm < SBSS) {
+        /* Emit data and relocation. */
+        for (c=0; c<nbytes; c++) {
+            count[segm]++;
+            if (fill_data)
+                fputc (0, sfile[segm]);
+            if (! (count[segm] & 3))
+                fputrel (RABS, rfile[segm]);
+        }
+    } else
+        count[segm] += nbytes;
+}
+
 void makeascii ()
 {
-    register int c, nbytes, nwords;
+    register int c, nbytes;
     int cval;
 
     c = getlex (&cval);
@@ -1711,15 +1735,7 @@ void makeascii ()
         }
         break;
     }
-    c = (unsigned) nbytes % WORDSZ;
-    if (c != 0)
-        c = WORDSZ - c;
-    count[segm] += nbytes + c;
-    nwords = (unsigned) (nbytes + c) / WORDSZ;
-    while (c--)
-        fputc (0, sfile[segm]);
-    while (nwords--)
-        fputrel (RABS, rfile[segm]);
+    add_space (nbytes, 0);
 }
 
 /*
@@ -1807,10 +1823,34 @@ void setoption ()
     uerror ("unknown option %s", option);
 }
 
+/*
+ * Align the current segment.
+ */
+void align (align_bits)
+{
+    unsigned nbytes, align_mask, c;
+
+    align_mask = (1 << align_bits) - 1;
+    nbytes = count[segm] & align_mask;
+    if (nbytes == 0)
+        return;
+    nbytes = align_mask + 1 - nbytes;
+    if (segm < SBSS) {
+        /* Emit data and relocation. */
+        for (c=0; c<nbytes; c++) {
+            count[segm]++;
+            fputc (0, sfile[segm]);
+            if (! (count[segm] & 3))
+                fputrel (RABS, rfile[segm]);
+        }
+    } else
+        count[segm] += nbytes;
+}
+
 void pass1 ()
 {
     register int clex;
-    int cval, tval, csegm, nbytes, c, nwords;
+    int cval, tval, csegm, nbytes;
     register unsigned addr;
 
     segm = STEXT;
@@ -1819,6 +1859,14 @@ void pass1 ()
         switch (clex) {
         case LEOF:
             reorder_flush();
+            segm = STEXT;
+            align (2);
+            segm = SDATA;
+            align (2);
+            segm = SSTRNG;
+            align (2);
+            segm = SBSS;
+            align (2);
             return;
         case LEOL:
             continue;
@@ -1878,6 +1926,7 @@ void pass1 ()
             if (cval < 0)
                 uerror ("bad instruction");
             ungetlex (clex, tval);
+            align (2);
             makecmd (optable[cval].opcode, optable[cval].type,
                 optable[cval].func);
             break;
@@ -1908,6 +1957,8 @@ void pass1 ()
             segm = SBSS;
             break;
         case LWORD:
+            reorder_flush();
+            align (2);
             for (;;) {
                 expr_gprel = 0;
                 getexpr (&cval);
@@ -1923,7 +1974,6 @@ void pass1 ()
                     break;
                 }
             }
-            reorder_flush();
             break;
         case LBYTE:
             reorder_flush();
@@ -1938,18 +1988,11 @@ void pass1 ()
                     break;
                 }
             }
-align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
-    	    count[segm] += nbytes + c;
-            if (segm < SBSS) {
-                nwords = (unsigned) (nbytes + c) / WORDSZ;
-                while (c--)
-                    fputc (0, sfile[segm]);
-                while (nwords--)
-                    fputrel (RABS, rfile[segm]);
-            }
+            add_space (nbytes, 0);
             break;
         case LHALF:
             reorder_flush();
+            align (1);
 	    nbytes = 0;
             for (;;) {
                 getexpr (&cval);
@@ -1962,16 +2005,21 @@ align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
                     break;
                 }
             }
-            goto align;
+            add_space (nbytes, 0);
+            break;
         case LSPACE:
+            /* .space num */
             getexpr (&cval);
             reorder_flush();
-            nbytes = intval;
-            if (segm < SBSS) {
-                for (c=0; c<nbytes; c++)
-                    fputc (0, sfile[segm]);
-            }
-            goto align;
+            add_space (intval, 1);
+            break;
+        case LALIGN:
+            /* .align num */
+            if (getlex (&cval) != LNUM)
+                uerror ("bad parameter of .align");
+            reorder_flush();
+            align (intval);
+            break;
         case LASCII:
             reorder_flush();
             makeascii ();
@@ -2079,11 +2127,6 @@ align:      c = (WORDSZ - (unsigned) nbytes % WORDSZ) % WORDSZ;
             clex = getlex (&cval);
             if (clex != ',' || getlex (&cval) != LNUM)
                 uerror ("bad parameter of .gnu_attribute");
-            break;
-        case LALIGN:
-            /* .align num */
-            if (getlex (&cval) != LNUM)
-                uerror ("bad parameter of .align");
             break;
         case LSET:
             /* .set option */

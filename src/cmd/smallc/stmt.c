@@ -51,7 +51,7 @@ statement_declare() {
 /**
  * local declarations
  * @param stclass
- * @return 
+ * @return
  */
 do_local_declares(int stclass) {
         int type = 0;
@@ -107,7 +107,7 @@ do_statement () {
         } else if (amatch ("default", 7)) {
                 dodefault ();
                 lastst = statement (NO);
-        } else if (match ("#asm")) {
+        } else if (match ("__asm__")) {
                 doasm ();
                 lastst = STASM;
         } else if (match ("{"))
@@ -403,4 +403,3 @@ dumpsw(WHILE *ws) {
         newline ();
         code_segment_gtext ();
 }
-

@@ -141,6 +141,7 @@ char	*mlist[100];
 char	*flist[100];
 char	*wlist[100];
 char	*idirafter;
+char    *progname;
 int	nm;
 int	nf;
 int	nw;
@@ -178,8 +179,14 @@ char	*as = ASSEMBLER;
 char	*ld = LINKER;
 char	*Bflag;
 
+enum {
+    MODE_LCC,
+    MODE_PCC,
+    MODE_SMALLC,
+} mode;
+
 /* common cpp predefines */
-char *cppadd[] = { "-D__PCC__", "-D__unix__", "-D__BSD__", "-D__RETROBSD__", NULL };
+char *cppadd[] = { "-D__LCC__", "-D__unix__", "-D__BSD__", "-D__RETROBSD__", NULL };
 
 #ifdef __mips__
 #   define	CPPMDADD { "-D__mips__", NULL, }
@@ -238,7 +245,6 @@ char *libdir = LIBDIR;
 char *altincdir;
 char *pccincdir;
 char *pcclibdir;
-char *progname;
 
 /* handle gcc warning emulations */
 struct Wflags {
@@ -372,24 +378,29 @@ usage()
 	printf("  -o <file>        Place the output into <file>\n");
 	printf("  -O, -O0          Enable, disable optimization\n");
 	printf("  -g               Create debug output\n");
-	printf("  -k               Generate position-independent code\n");
 	printf("  -v               Display the programs invoked by the compiler\n");
+    if (mode != MODE_SMALLC) {
+	printf("  -k               Generate position-independent code\n");
 	printf("  -Wall            Enable gcc-compatible warnings\n");
 	printf("  -WW              Enable all warnings\n");
 	printf("  -p, -pg          Generate profiled code\n");
 	printf("  -r               Generate relocatable code\n");
+    }
 	printf("  -t               Use traditional preprocessor syntax\n");
 	printf("  -C <option>      Pass preprocessor option\n");
 	printf("  -Dname=val       Define preprocessor symbol\n");
 	printf("  -Uname           Undefine preprocessor symbol\n");
 	printf("  -Ipath           Add a directory to preprocessor path\n");
 	printf("  -x <language>    Specify the language of the following input files\n");
+	printf("                   Permissible languages include: c assembler-with-cpp\n");
+    if (mode != MODE_SMALLC) {
 	printf("  -B <directory>   Add <directory> to the compiler's search paths\n");
 	printf("  -m<option>       Target-dependent options\n");
 	printf("  -f<option>       GCC-compatible flags: -fPI -fpicC -fsigned-char\n");
 	printf("                   -fno-signed-char -funsigned-char -fno-unsigned-char\n");
 	printf("                   -fstack-protector -fstack-protector-all\n");
 	printf("                   -fno-stack-protector -fno-stack-protector-all\n");
+    }
 	printf("  -isystem dir     Add a system include directory\n");
 	printf("  -include dir     Add an include directory\n");
 	printf("  -idirafter dir   Set a last include directory\n");
@@ -402,7 +413,6 @@ usage()
 	printf("  -Wc,<options>    Pass comma-separated <options> on to the compiler\n");
 	printf("  -M               Output a list of dependencies\n");
 	printf("  -X               Leave temporary files\n");
-	printf("                   Permissible languages include: c assembler-with-cpp\n");
 	//printf("  -d               Debug mode ???\n");
         exit(0);
 }
@@ -444,15 +454,27 @@ main(int argc, char *argv[])
 #endif
         progname = strrchr (argv[0], '/');
         progname = progname ? progname+1 : argv[0];
-        if (strcmp ("lcc", progname) == 0) {
-            /* LCC: retargetable C compiler. */
-            cppadd[0] = "-D__LCC__";
-            pass0 = LIBEXECDIR "/lccom";
+
+        /*
+         * Select a compiler mode.
+         */
+        if (strcmp ("pcc", progname) == 0) {
+            /* PCC: portable C compiler. */
+            mode = MODE_PCC;
+            cppadd[0] = "-D__PCC__";
+            pass0 = LIBEXECDIR "/ccom";
+
         } else if (strcmp ("scc", progname) == 0) {
             /* SmallC. */
+            mode = MODE_SMALLC;
             cppadd[0] = "-D__SMALLC__";
             pass0 = LIBEXECDIR "/smallc";
             incdir = STDINC "/smallc";
+        } else {
+            /* LCC: retargetable C compiler. */
+            mode = MODE_LCC;
+            cppadd[0] = "-D__LCC__";
+            pass0 = LIBEXECDIR "/lccom";
         }
 
         if (argc == 1)
