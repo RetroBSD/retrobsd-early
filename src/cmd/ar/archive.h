@@ -34,8 +34,6 @@
  * SUCH DAMAGE.
  */
 #ifdef CROSS
-typedef uint32_t u_int;
-typedef uint16_t u_short;
 #   ifdef __linux__
 #       undef O_CREAT
 #       define O_CREAT      00000100
