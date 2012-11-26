@@ -29,12 +29,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-//#include <machine/asm.h>
-//#include <machine/regnum.h>
-
-#ifdef __ABICALLS__
-	.abicalls
-#endif
 
 /*
  * C library -- setjmp, longjmp
@@ -45,108 +39,79 @@
  *	setjmp(a)
  * by restoring registers from the stack,
  * and a struct sigcontext, see <signal.h>
+ *
+ * From: Chris Dearman <cjwdearman@gmail.com>
  */
+		.set	noreorder
 
-#define SETJMP_FRAME_SIZE	(CALLFRAME_SIZ + (SZREG * 2))
+		.type	setjmp, @function
+setjmp:		.globl 	setjmp
 
-NESTED(setjmp, SETJMP_FRAME_SIZE, ra)
-	.mask	0x80000000, (CALLFRAME_RA - CALLFRAME_SIZ)
-	SETUP_GP
-	PTR_SUBU sp, sp, SETJMP_FRAME_SIZE	# allocate stack frame
-	SAVE_GP(CALLFRAME_GP)
-	SETUP_GP64(CALLFRAME_GP, setjmp)
+		subu	$sp, 24
+		sw	$ra, 20($sp)
+		sw	$a0, 24($sp)
 
-	REG_S	ra, CALLFRAME_RA(sp)		# save RA
-	REG_S	a0, CALLFRAME_SIZ(sp)		# store env
+		/* Get the signal mask. */
+		addu	$a2, $a0, 13*4		# &omask
+		li	$a0, 1			# SIG_BLOCK
+		jal	sigprocmask		# get current signal mask
+		move	$a1, $0			# BDS: NULL
 
-	/* Get the signal mask. */
-	PTR_ADDU a2, a0, _JB_SIGMASK * SZREG	# &oenv
-	li	a0, 1				# SIG_SETBLOCK
-	move	a1, zero			# &env == 0
-	PTR_LA	t9, _C_LABEL(sigprocmask)	# get current signal mask
-	jalr	t9
+		lw	$a0, 24($sp)
+		lw	$ra, 20($sp)
+		addu	$sp, 24
 
-	RESTORE_GP64
-	REG_L	a0, CALLFRAME_SIZ(sp)		# restore env pointer
-	REG_L	ra, CALLFRAME_RA(sp)		# restore RA
-	PTR_ADDU sp, sp, SETJMP_FRAME_SIZE	# pop stack frame
+		li	$t0, 1
+		sw	$t0, (12 * 4)($a0)
 
-	REG_LI	v0, _JB_MAGIC_SETJMP
-	REG_S	v0, (_JB_MAGIC  * SZREG)(a0)
-	REG_S	ra, (_JB_REG_RA * SZREG)(a0)
-	REG_S	s0, (_JB_REG_S0 * SZREG)(a0)
-	REG_S	s1, (_JB_REG_S1 * SZREG)(a0)
-	REG_S	s2, (_JB_REG_S2 * SZREG)(a0)
-	REG_S	s3, (_JB_REG_S3 * SZREG)(a0)
-	REG_S	s4, (_JB_REG_S4 * SZREG)(a0)
-	REG_S	s5, (_JB_REG_S5 * SZREG)(a0)
-	REG_S	s6, (_JB_REG_S6 * SZREG)(a0)
-	REG_S	s7, (_JB_REG_S7 * SZREG)(a0)
-	REG_S	sp, (_JB_REG_SP * SZREG)(a0)
-	REG_S	s8, (_JB_REG_S8 * SZREG)(a0)
-#if defined(__mips_n32) || defined(__mips_n64)
-	REG_S	gp, (_JB_REG_GP * SZREG)(a0)
-#endif
+		sw	$s0, (0 * 4) ($a0)	# save register variables s0-s8
+		sw	$s1, (1 * 4) ($a0)
+		sw	$s2, (2 * 4) ($a0)
+		sw	$s3, (3 * 4) ($a0)
+		sw	$s4, (4 * 4) ($a0)
+		sw	$s5, (5 * 4) ($a0)
+		sw	$s6, (6 * 4) ($a0)
+		sw	$s7, (7 * 4) ($a0)
+		sw	$s8, (8 * 4) ($a0)	# frame pointer
+		sw	$ra, (9 * 4) ($a0)	# return address
+		sw	$gp, (10 * 4) ($a0)	# global data pointer
+		sw	$sp, (11 * 4) ($a0)	# stack pointer
 
-	move	v0, zero
-	jr	ra
-END(setjmp)
+		j	$ra
+		move	$v0, $zero		# BDS: return a zero for the setjmp call
 
-#define LONGJMP_FRAME_SIZE	(CALLFRAME_SIZ + (SZREG * 2))
 
-NESTED(longjmp, LONGJMP_FRAME_SIZE, ra)
-	.mask	0x80000000, (CALLFRAME_RA - CALLFRAME_SIZ)
-	PIC_PROLOGUE(longjmp)
-	PTR_SUBU sp, sp, LONGJMP_FRAME_SIZE	# allocate stack frame
-	SAVE_GP(CALLFRAME_GP)
+		.type	longjmp, @function
+longjmp:	.globl	longjmp
 
-	REG_S	ra, CALLFRAME_RA(sp)		# save RA
-	REG_L	v0, (_JB_MAGIC  * SZREG)(a0)
-	REG_LI	t0, _JB_MAGIC_SETJMP
-	bne	v0, t0, botch		# jump if error
-	nop
+		subu	$sp, 24
+		sw	$ra, 20($sp)
+		sw	$a0, 24($sp)
+		sw	$a1, 28($sp)
 
-	REG_S	a0, CALLFRAME_SIZ(sp)		# save env
-	REG_S	a1, (CALLFRAME_SIZ + SZREG)(sp)	# save return value
+		/* Restore signal mask. */
+		addu	$a1, $a0, 13*4		# &omask
+		move	$a2, $0			# NULL
+		jal	sigprocmask		# set current signal mask
+		li	$a0, 3			# BDS: SIG_SETMASK
 
-	# set sigmask
-	PTR_ADDU a1, a0, _JB_SIGMASK * SZREG	# &set
-	move	a2, zero			# &oset == NULL
-	li	a0, 3				# SIG_SETMASK
-	PTR_LA	t9,_C_LABEL(sigprocmask)	# set current signal mask
-	jal	t9
-	nop
+		lw	$a1, 28($sp)
+		lw	$a0, 24($sp)
+		lw	$ra, 20($sp)
+		addu	$sp, 24
 
-	REG_L	a0, CALLFRAME_SIZ(sp)		# restore env
-	REG_L	a1, (CALLFRAME_SIZ + SZREG)(sp)	# restore return value
+		lw	$s0, (0 * 4) ($a0)	# restore register variables s0-s8
+		lw	$s1, (1 * 4) ($a0)
+		lw	$s2, (2 * 4) ($a0)
+		lw	$s3, (3 * 4) ($a0)
+		lw	$s4, (4 * 4) ($a0)
+		lw	$s5, (5 * 4) ($a0)
+		lw	$s6, (6 * 4) ($a0)
+		lw	$s7, (7 * 4) ($a0)
+		lw	$s8, (8 * 4) ($a0)	# frame pointer
+		lw	$ra, (9 * 4) ($a0)	# return address
+		lw	$gp, (10 * 4) ($a0)	# global data pointer
+		lw	$sp, (11 * 4) ($a0)	# stack pointer
 
-	REG_L	ra, (_JB_REG_RA * SZREG)(a0)
-	REG_L	s0, (_JB_REG_S0 * SZREG)(a0)
-	REG_L	s1, (_JB_REG_S1 * SZREG)(a0)
-	REG_L	s2, (_JB_REG_S2 * SZREG)(a0)
-	REG_L	s3, (_JB_REG_S3 * SZREG)(a0)
-	REG_L	s4, (_JB_REG_S4 * SZREG)(a0)
-	REG_L	s5, (_JB_REG_S5 * SZREG)(a0)
-	REG_L	s6, (_JB_REG_S6 * SZREG)(a0)
-	REG_L	s7, (_JB_REG_S7 * SZREG)(a0)
-	REG_L	sp, (_JB_REG_SP * SZREG)(a0)
-	REG_L	s8, (_JB_REG_S8 * SZREG)(a0)
-#if defined(__mips_n32) || defined(__mips_n64)
-	REG_L	gp, (_JB_REG_GP * SZREG)(a0)
-#endif
-
-	move	v0, a1
-	j	ra
-	nop
-
-botch:
-	/*
-	 * We know we aren't returning so we don't care about restoring
-	 * our caller's GP.
-	 */
-	PTR_LA	t9, _C_LABEL(longjmperror)
-	jalr	t9
-	nop
-
-	PIC_TAILCALL(abort)
-END(longjmp)
+		j	$ra
+		move	$v0, $a1		# BDS: return value from longjmp

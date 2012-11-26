@@ -2,10 +2,12 @@ TOPSRC          = $(shell cd ..; pwd)
 SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
-SYSINC = `cpp -v </dev/null 2>&1 | grep '^ ' | grep include | awk '{print "-I" $$1 " "}'`
+# Build a list of the host include directories.
+HOSTINC         = $(addprefix -I,$(shell echo | cpp -v 2>&1 | grep '^ /.*include'))
 
-CFLAGS		+= -nostdinc -g -Werror -Wall -DCROSS -I.  $(SYSINC) -I$(TOPSRC)/include \
-                   -I$(TOPSRC)/src/cmd/ar -I$(TOPSRC)/src/cmd/as
+CFLAGS		+= -nostdinc -g -Werror -Wall -DCROSS -I. $(HOSTINC) \
+                   -I$(TOPSRC)/include -I$(TOPSRC)/src/cmd/ar \
+                   -I$(TOPSRC)/src/cmd/as
 LDFLAGS         += -g
 
 AR_OBJS         = ar.o append.o archive.o contents.o delete.o extract.o \
@@ -53,4 +55,3 @@ headers:
 	-ln -s ../include/a.out.h .
 	-ln -s ../include/ar.h .
 	-ln -s ../include/nlist.h .
-

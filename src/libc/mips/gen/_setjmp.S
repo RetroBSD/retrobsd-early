@@ -44,8 +44,6 @@
 
 		.type	_setjmp, @function
 _setjmp:	.globl 	_setjmp
-		.type	setjmp, @function
-setjmp:		.globl 	setjmp			# temporarily
 
 		sw	$s0, (0 * 4) ($a0)	# save register variables s0-s8
 		sw	$s1, (1 * 4) ($a0)
@@ -65,8 +63,6 @@ setjmp:		.globl 	setjmp			# temporarily
 
 		.type	_longjmp, @function
 _longjmp:	.globl	_longjmp
-		.type	longjmp, @function
-longjmp:	.globl	longjmp				# temporarily
 
 		lw	$s0, (0 * 4) ($a0)	# restore register variables s0-s8
 		lw	$s1, (1 * 4) ($a0)

@@ -29,13 +29,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-//#include <machine/asm.h>
-//#include <machine/regnum.h>
-//#include "SYS.h"
-
-#ifdef __ABICALLS__
-	.abicalls
-#endif
 
 /*
  * C library -- sigsetjmp, siglongjmp
@@ -47,22 +40,28 @@
  * by restoring registers from the stack,
  * and dependent on savemask restores the
  * signal mask.
+ *
+ * From: Chris Dearman <cjwdearman@gmail.com>
  */
+		.set	noreorder
 
-LEAF(sigsetjmp)
-	PIC_PROLOGUE(sigsetjmp)
+		.type	sigsetjmp, @function
+sigsetjmp:	.globl 	sigsetjmp
 
-	bne	a1, 0x0, 1f			# do saving of signal mask?
-	PIC_TAILCALL(_setjmp)
+		bne	$a1, 0x0, 1f		# do saving of signal mask?
+		nop
+		j	_setjmp
+		nop
+1:		j	setjmp
+		nop
 
-1:	PIC_TAILCALL(setjmp)
-END(sigsetjmp)
+		.type	siglongjmp, @function
+siglongjmp:	.globl 	siglongjmp
 
-LEAF(siglongjmp)
-	PIC_PROLOGUE(siglongjmp)
-	REG_L	t0, (_JB_MAGIC  * SZREG)(a0)
-	REG_LI	t1, _JB_MAGIC__SETJMP
-	bne	t0, t1, 1f			# setjmp or _setjmp magic?
-	PIC_TAILCALL(_longjmp)
-1:	PIC_TAILCALL(longjmp)
-END(siglongjmp)
+		lw	$t0, (12 * 4)($a0)
+		bnez	$t0, 1f
+		nop
+		j	_longjmp
+		nop
+1:		j	longjmp
+		nop
