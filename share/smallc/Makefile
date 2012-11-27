@@ -1,27 +1,21 @@
+CC      = scc
 
-.SUFFIXES: .c .s .o
+all:	hello primelist primesum test1 test2
 
-.c.o:
-	smallc $<
-	as -o $@ $*.s
+hello:	hello.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) hello.c
 
-.s.o:
-	as -o $@ $<
+primelist: primelist.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) primelist.c
 
-all:	primelist primesum test1 test2
+primesum: primesum.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) primesum.c
 
-primelist:	primelist.o lib.o sys.o
-	ld -o primelist -e _main primelist.o lib.o sys.o
+test1:	test1.c sys.s
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test1.c sys.s
 
-primesum:	primesum.o lib.o sys.o
-	ld -o primesum -e _main primesum.o lib.o sys.o
-
-test1:	test1.o lib.o sys.o
-	ld -o $@ -e _main test1.o lib.o sys.o
-
-test2:	test2.o lib.o sys.o
-	ld -o $@ -e _main test2.o lib.o sys.o
+test2:	test2.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test2.c
 
 clean:
 	rm *.o primelist primesum test1 test2 primelist.s primesum.s test1.s test2.s
-	
