@@ -1470,7 +1470,7 @@ frs1:   clex = getlex (&cval);
                 ungetlex (clex, cval);
                 cval = (opcode >> 11) & 31;         /* get 1-st register */
                 newop |= cval << 16;                /* set 1-st register */
-                newop |= opcode & (31 << 11);       /* set 2-nd register */
+                newop |= opcode & (31 << 21);       /* set 2-nd register */
                 opcode = newop;
                 type = FRT1 | FRS2 | FOFF16 | FMOD;
                 goto foff16;
