@@ -3,7 +3,8 @@ SUBDIR		= startup libc
 PROG		= ar as aout ld nm ranlib size strip
 
 # Build a list of the host include directories.
-HOSTINC         = $(addprefix -I,$(shell echo | cpp -v 2>&1 | grep '^ /.*include'))
+CPP             = $(shell gcc -print-prog-name=cc1)
+HOSTINC         = $(addprefix -I,$(shell echo | $(CPP) -v 2>&1 | grep '^ /.*include'))
 
 CFLAGS		+= -nostdinc -g -Werror -Wall -DCROSS -I. $(HOSTINC) \
                    -I$(TOPSRC)/include -I$(TOPSRC)/src/cmd/ar \
@@ -22,7 +23,7 @@ all install depend: headers $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done
 
 clean:
-		rm -f *~ *.o *.a $(PROG) retroImage
+		rm -f *~ *.o *.a *.h $(PROG) retroImage
 		for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) clean; done
 
 ar:             $(AR_OBJS)
@@ -52,6 +53,7 @@ strip:          strip.o
 .PHONY: headers
 
 headers:
-	-ln -s ../include/a.out.h .
-	-ln -s ../include/ar.h .
-	-ln -s ../include/nlist.h .
+	-ln -s -f ../include/a.out.h .
+	-ln -s -f ../include/ar.h .
+	-ln -s -f ../include/nlist.h .
+	-ln -s -f ../include/ranlib.h .

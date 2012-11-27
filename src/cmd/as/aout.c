@@ -67,20 +67,24 @@ int fgethdr (text, h)
 }
 
 /*
- * Read a relocation record: 1 or 4 bytes.
+ * Read a relocation record: 1 to 6 bytes.
  */
-unsigned int fgetrel (f)
+void fgetrel (f, r)
     register FILE *f;
+    register struct reloc *r;
 {
-    register unsigned int r;
-
-    r = getc (f);
-    if ((r & RSMASK) == REXT) {
-        r |= getc (f) << 8;
-        r |= getc (f) << 16;
-        r |= getc (f) << 24;
+    r->flags = getc (f);
+    if ((r->flags & RSMASK) == REXT) {
+        r->index = getc (f);
+        r->index |= getc (f) << 8;
+        r->index |= getc (f) << 16;
     }
-    return r;
+    if ((r->flags & RFMASK) == RHIGH16 ||
+        (r->flags & RFMASK) == RHIGH16S)
+    {
+        r->offset = getc (f);
+        r->offset |= getc (f) << 8;
+    }
 }
 
 /*
@@ -114,29 +118,26 @@ int fgetsym (text, name, value, type)
 }
 
 void prrel (r)
-    register unsigned r;
+    register struct reloc *r;
 {
-    int indx;
-
     printf ("<");
-    indx = RINDEX (r);
-    switch (r & RSMASK) {
+    switch (r->flags & RSMASK) {
     default:        putchar ('?');  break;
     case RTEXT:     putchar ('t');  break;
     case RDATA:     putchar ('d');  break;
     case RBSS:      putchar ('b');  break;
-    case REXT:      printf ("%d", indx);
+    case REXT:      printf ("%d", r->index); break;
     case RABS:      break;
     }
-    switch (r & RFMASK) {
+    switch (r->flags & RFMASK) {
     default:        putchar ('?');  break;
     case RWORD26:   putchar ('j');  break;
     case RWORD16:   putchar ('w');  break;
-    case RHIGH16:   putchar ('u');  break;
-    case RHIGH16S:  putchar ('h');  break;
+    case RHIGH16:   printf ("u%x", r->offset); break;
+    case RHIGH16S:  printf ("h%x", r->offset); break;
     case 0:         break;
     }
-    if (r & RGPREL)
+    if (r->flags & RGPREL)
         putchar ('g');
     printf (">");
 }
@@ -145,6 +146,7 @@ void prtext (n)
     register int n;
 {
     unsigned opcode;
+    struct reloc relinfo;
 
     while (n--) {
         printf ("    %8x:", addr);
@@ -152,7 +154,8 @@ void prtext (n)
         printf ("\t%08x", opcode);
         if (rflag) {
             putchar (' ');
-            prrel (fgetrel (rel));
+            fgetrel (rel, &relinfo);
+            prrel (&relinfo);
         }
         if (! dflag) {
             putchar ('\t');
@@ -168,11 +171,14 @@ void prtext (n)
 void prdata (n)
     register int n;
 {
+    struct reloc relinfo;
+
     while (n--) {
         printf ("    %8x:\t%08x", addr, fgetword (text));
         if (rflag) {
             putchar (' ');
-            prrel (fgetrel (rel));
+            fgetrel (rel, &relinfo);
+            prrel (&relinfo);
         }
         putchar ('\n');
 

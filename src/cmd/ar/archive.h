@@ -71,7 +71,7 @@
 #define	AR_V	0x1000
 #define	AR_X	0x2000
 
-extern u_int options;
+extern unsigned options;
 
 /* Set up file copy. */
 #define	SETCF(from, fromname, to, toname, pad) { \
@@ -91,7 +91,7 @@ typedef struct {
 #define	NOPAD	0x00			/* don't pad */
 #define	RPAD	0x01			/* pad on reads */
 #define	WPAD	0x02			/* pad on writes */
-	u_int flags;			/* pad flags */
+	unsigned flags;			/* pad flags */
 } CF;
 
 /* Header structure internal format. */
@@ -101,7 +101,7 @@ typedef struct {
 	int lname;			/* size of the long name in bytes */
 	int gid;			/* group */
 	int uid;			/* owner */
-	u_short mode;			/* permissions */
+	unsigned short mode;			/* permissions */
 	char name[MAXNAMLEN + 1];	/* name */
 } CHDR;
 

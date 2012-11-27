@@ -56,7 +56,7 @@
 extern int errno;
 
 CHDR chdr;
-u_int options;
+unsigned options;
 char *archive, *envtmp, *posarg, *posname;
 
 static void
@@ -124,7 +124,7 @@ main(argc, argv)
 	 * Fix it, if necessary.
 	*/
 	if (*argv[1] != '-') {
-		if (!(p = malloc((u_int)(strlen(argv[1]) + 2)))) {
+		if (!(p = malloc((unsigned)(strlen(argv[1]) + 2)))) {
 			(void)fprintf(stderr, "ar: %s.\n", strerror(errno));
 			exit(1);
 		}

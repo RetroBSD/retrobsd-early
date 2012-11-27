@@ -198,38 +198,49 @@ void fputhdr (hdr, coutb)
 }
 
 /*
- * Read a relocation record: 1 or 4 bytes.
+ * Read a relocation record: 1 to 6 bytes.
  */
-unsigned int fgetrel (f)
+void fgetrel (f, r)
         register FILE *f;
+        register struct reloc *r;
 {
-        register unsigned int r;
-
-        r = getc (f);
-        if ((r & RSMASK) == REXT) {
-                r |= getc (f) << 8;
-                r |= getc (f) << 16;
-                r |= getc (f) << 24;
+        r->flags = getc (f);
+        if ((r->flags & RSMASK) == REXT) {
+                r->index = getc (f);
+                r->index |= getc (f) << 8;
+                r->index |= getc (f) << 16;
         }
-        return r;
+        if ((r->flags & RFMASK) == RHIGH16 ||
+            (r->flags & RFMASK) == RHIGH16S) {
+                r->offset = getc (f);
+                r->offset |= getc (f) << 8;
+        }
 }
 
 /*
- * Emit a relocation record: 1 or 4 bytes.
+ * Emit a relocation record: 1 to 6 bytes.
  * Return a written length.
  */
-unsigned int fputrel (r, f)
-        register unsigned int r;
+unsigned fputrel (r, f)
+        register struct reloc *r;
         register FILE *f;
 {
-        putc (r, f);
-        if ((r & RSMASK) != REXT) {
-                return 1;
+        register unsigned nbytes = 1;
+
+        putc (r->flags, f);
+        if ((r->flags & RSMASK) == REXT) {
+                putc (r->index, f);
+                putc (r->index >> 8, f);
+                putc (r->index >> 16, f);
+                nbytes += 3;
         }
-        putc (r >> 8, f);
-        putc (r >> 16, f);
-        putc (r >> 24, f);
-        return 4;
+        if ((r->flags & RFMASK) == RHIGH16 ||
+            (r->flags & RFMASK) == RHIGH16S) {
+                putc (r->offset, f);
+                putc (r->offset >> 8, f);
+                nbytes += 2;
+        }
+        return nbytes;
 }
 
 void delexit (int sig)
@@ -496,25 +507,43 @@ struct nlist *lookloc (lp, sn)
 	return 0;
 }
 
+void printrel (word, rel)
+        register unsigned word;
+        register struct reloc *rel;
+{
+	printf ("%08x %02x ", word, rel->flags);
+
+        if ((rel->flags & RSMASK) == REXT)
+                printf ("%-3d ", rel->index);
+        else
+                printf ("    ");
+
+        if ((rel->flags & RFMASK) == RHIGH16 ||
+            (rel->flags & RFMASK) == RHIGH16S)
+                printf ("%08x", rel->offset);
+        else
+                printf ("        ");
+}
+
 /*
  * Relocate the word by a given offset.
- * Return updated values as *pword, *prel.
+ * Return the new value of word and update rel.
  */
-void relword (lp, word, rel, pword, prel, offset)
+unsigned relword (lp, word, rel, offset)
         struct local *lp;
-        register unsigned word, rel;
-        unsigned *pword, *prel, offset;
+        register unsigned word;
+        register struct reloc *rel;
+        unsigned offset;
 {
 	register unsigned addr, delta;
 	register struct nlist *sp = 0;
 
 	if (trace > 2)
-		printf ("%08x %08x", word, rel);
-
+                printrel (word, rel);
 	/*
          * Extract an address field from the instruction.
          */
-	switch (rel & RFMASK) {
+	switch (rel->flags & RFMASK) {
 	case 0:
 		addr = word & 0xffff;
 		break;
@@ -527,6 +556,7 @@ void relword (lp, word, rel, pword, prel, offset)
 		addr <<= 2;
 		break;
 	case RHIGH16:
+	case RHIGH16S:
 		addr = word & 0xffff;
                 addr <<= 16;
 		break;
@@ -539,7 +569,7 @@ void relword (lp, word, rel, pword, prel, offset)
          * Compute a delta for address.
          * Update the relocation info, if needed.
          */
-	switch (rel & RSMASK) {
+	switch (rel->flags & RSMASK) {
 	case RTEXT:
 		delta = ctrel;
 		break;
@@ -550,15 +580,15 @@ void relword (lp, word, rel, pword, prel, offset)
 		delta = cbrel;
 		break;
 	case REXT:
-		sp = lookloc (lp, (int) RINDEX (rel));
-		rel &= RFMASK | RGPREL;
+		sp = lookloc (lp, rel->index);
 		if (sp->n_type == N_EXT+N_UNDF ||
 		    sp->n_type == N_EXT+N_COMM) {
-			rel |= REXT | RSETINDEX (nsym+(sp-symtab));
+                        rel->index = nsym + (sp - symtab);
 			sp = 0;
                         delta = 0;
                 } else {
-                        rel |= reltype (sp->n_type);
+                        rel->flags &= RFMASK | RGPREL;
+                        rel->flags |= reltype (sp->n_type);
                         delta = sp->n_value;
 		}
 		break;
@@ -567,46 +597,54 @@ void relword (lp, word, rel, pword, prel, offset)
 		break;
 	}
 
-	if ((rel & RGPREL) && ! output_relinfo) {
+	if ((rel->flags & RGPREL) && ! output_relinfo) {
             /*
              * GP relative address.
              */
             delta -= gp;
-            rel &= ~RGPREL;
+            rel->flags &= ~RGPREL;
 	}
 
 	/*
          * Update the address field of the instruction.
          * Update the relocation info, if needed.
          */
-	switch (rel & RFMASK) {
+	switch (rel->flags & RFMASK) {
 	case 0:
+	        addr += delta;
 		word &= ~0xffff;
-		word |= (addr + delta) & 0xffff;
+		word |= addr & 0xffff;
 		break;
 	case RWORD16:
 	        if (! sp)
                     break;
-                delta -= offset + 4;
+	        addr += delta - offset - 4;
                 word &= ~0xffff;
-                word |= ((addr + delta) >> 2) & 0xffff;
-                rel = RABS;
+                word |= (addr >> 2) & 0xffff;
+                rel->flags = RABS;
 		break;
 	case RWORD26:
+	        addr += delta;
 		word &= ~0x3ffffff;
-		word |= ((addr + delta) >> 2) & 0x3ffffff;
+		word |= (addr >> 2) & 0x3ffffff;
 		break;
 	case RHIGH16:
+	        addr += delta + rel->offset;
 		word &= ~0xffff;
-		word |= ((addr + delta) >> 16) & 0xffff;
+		word |= (addr >> 16) & 0xffff;
+		break;
+	case RHIGH16S:
+	        addr += delta + rel->offset + 0x8000;
+		word &= ~0xffff;
+		word |= (addr >> 16) & 0xffff;
 		break;
 	}
-
-	if (trace > 2)
-		printf (" -> %08x %08x\n", word, rel);
-
-	*pword = word;
-	*prel = rel;
+	if (trace > 2) {
+		printf (" -> ");
+                printrel (word, rel);
+		printf ("\n");
+        }
+	return word;
 }
 
 void relocate (lp, b1, b2, len, origin)
@@ -614,15 +652,16 @@ void relocate (lp, b1, b2, len, origin)
         FILE *b1, *b2;
         unsigned len, origin;
 {
-	unsigned word, rel, offset;
+	unsigned word, offset;
+	struct reloc rel;
 
 	for (offset=0; offset<len; offset+=W) {
 		word = fgetword (text);
-		rel = fgetrel (reloc);
-		relword (lp, word, rel, &word, &rel, offset + origin);
+		fgetrel (reloc, &rel);
+		word = relword (lp, word, &rel, offset + origin);
 		fputword (word, b1);
 		if (output_relinfo)
-                        fputrel (rel, b2);
+                        fputrel (&rel, b2);
 	}
 }
 

@@ -58,6 +58,10 @@ _setjmp:	.globl 	_setjmp
 		sw	$gp, (10 * 4) ($a0)	# global data pointer
 		sw	$sp, (11 * 4) ($a0)	# stack pointer
 
+		# For compatibility with longjmp and siglongjmp
+		sw	$zero, (12 * 4) ($a0)   # signal mask saved
+		sw	$zero, (13 * 4) ($a0)   # signal mask
+
 		j	$ra
 		move	$v0, $zero		# return a zero for the setjmp call
 

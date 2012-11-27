@@ -61,6 +61,8 @@
 #include <nlist.h>
 
 /* Relocations */
+struct reloc {
+    unsigned flags;
 #define RSMASK  0x70            /* bitmask for segments */
 #define RABS        0
 #define RTEXT       0x20
@@ -77,7 +79,10 @@
 #define RWORD16     0x03        /* word address: bits 17:2 */
 #define RWORD26     0x04        /* word address: bits 27:2 */
 
-#define RINDEX(h)       ((h) >> 8)
-#define RSETINDEX(h)    ((h) << 8)
+    unsigned index;             /* 24-bit index in symbol table,
+                                 * for REXT */
+    unsigned offset;            /* 16-bit offset,
+                                 * for RIGH16 and RIGH16S */
+};
 
 #endif	/* !_AOUT_H_ */
