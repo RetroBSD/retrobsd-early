@@ -133,8 +133,8 @@ void prrel (r)
     default:        putchar ('?');  break;
     case RWORD26:   putchar ('j');  break;
     case RWORD16:   putchar ('w');  break;
-    case RHIGH16:   printf ("u%x", r->offset); break;
-    case RHIGH16S:  printf ("h%x", r->offset); break;
+    case RHIGH16:   printf ("u.%x", r->offset); break;
+    case RHIGH16S:  printf ("h.%x", r->offset); break;
     case 0:         break;
     }
     if (r->flags & RGPREL)

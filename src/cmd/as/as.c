@@ -1294,6 +1294,7 @@ void emit_la (opcode, relinfo)
     /* lui d, %hi(value)
      * ori d, d, %lo(value) */
     relinfo->flags |= RHIGH16;
+    relinfo->offset = value & 0xffff;
     emitword (opcode | 0x3c000000 | (value >> 16), relinfo, value >> 16);
 
     relinfo->flags &= ~RHIGH16;
