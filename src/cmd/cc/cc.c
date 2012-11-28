@@ -108,8 +108,8 @@
 #define MAXLIB 1000
 #define MAXAV  1000
 #define MAXOPT 100
-char	*tmp3;
-char	*tmp4;
+char	*tmp_as;
+char	*tmp_cpp;
 char	*outfile, *ermfile;
 char *Bprefix(char *);
 char *copy(char *, int);
@@ -829,8 +829,8 @@ main(int argc, char *argv[])
 		goto nocom;
 	if (pflag==0) {
 		if (!sflag)
-			tmp3 = gettmp();
-		tmp4 = gettmp();
+			tmp_as = gettmp();
+		tmp_cpp = gettmp();
 	}
 	if (Bflag) {
                 if (altincdir)
@@ -856,7 +856,7 @@ main(int argc, char *argv[])
 		if (nc>1 && !Eflag)
 			printf("%s:\n", clist[i]);
 		onlyas = 0;
-		assource = tmp3;
+		assource = tmp_as;
 		if (getsuf(clist[i])=='S')
 			ascpp = 1;
 		if (getsuf(clist[i])=='i') {
@@ -870,7 +870,7 @@ main(int argc, char *argv[])
 			goto assemble;
 		}
 		if (pflag)
-			tmp4 = setsuf(clist[i], 'i');
+			tmp_cpp = setsuf(clist[i], 'i');
 		na = 0;
 		av[na++] = "cpp";
 		if (vflag)
@@ -945,9 +945,9 @@ main(int argc, char *argv[])
 		}
 		av[na++] = clist[i];
 		if (!Eflag && !Mflag)
-			av[na++] = tmp4;
+                        av[na++] = tmp_cpp;
 		if ((Eflag || Mflag) && outfile)
-			 ermfile = av[na++] = outfile;
+			ermfile = av[na++] = outfile;
 		av[na++]=0;
 		if (callsys(passp, av)) {
 			exfail++;
@@ -956,7 +956,7 @@ main(int argc, char *argv[])
 		if (Eflag || Mflag)
 			continue;
 		if (onlyas) {
-			assource = tmp4;
+			assource = tmp_cpp;
 			goto assemble;
 		}
 
@@ -1019,18 +1019,18 @@ main(int argc, char *argv[])
 		if (getsuf(clist[i])=='i')
 			av[na++] = clist[i];
 		else
-			av[na++] = tmp4; /* created by cpp */
+			av[na++] = tmp_cpp; /* created by cpp */
 		if (pflag || exfail) {
 			cflag++;
 			continue;
 		}
 		if (sflag) {
 			if (outfile)
-				tmp3 = outfile;
+				tmp_as = outfile;
 			else
-				tmp3 = setsuf(clist[i], 's');
+				tmp_as = setsuf(clist[i], 's');
 		}
-		ermfile = av[na++] = tmp3;
+		ermfile = av[na++] = tmp_as;
 #if 0
 		if (proflag) {
 			av[3] = "-XP";
@@ -1086,10 +1086,12 @@ main(int argc, char *argv[])
 		if (callsys(as, av)) {
 			cflag++;
 			eflag++;
-			cunlink(tmp4);
+                        if (ascpp)
+                                cunlink(tmp_cpp);
 			continue;
 		}
-		cunlink(tmp4);
+                if (ascpp)
+                        cunlink(tmp_cpp);
 	}
 
 	if (Eflag || Mflag)
@@ -1291,8 +1293,8 @@ dexit(int eval)
 {
 	if (!pflag && !Xflag) {
 		if (sflag==0)
-			cunlink(tmp3);
-		cunlink(tmp4);
+			cunlink(tmp_as);
+		cunlink(tmp_cpp);
 	}
 	if (exfail || eflag)
 		cunlink(ermfile);
