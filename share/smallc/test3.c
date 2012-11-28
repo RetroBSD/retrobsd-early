@@ -2,12 +2,6 @@ main()
 {
     int t;
 
-    __asm__
-        syscall 97
-        nop
-        nop
-    __endasm__
-
     t = 0;
     if(t) printt(t,"failure"); else printt(t,"success");
     t = 1;
