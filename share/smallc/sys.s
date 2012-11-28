@@ -13,7 +13,7 @@
 #
         .globl Tcase
 Tcase:
-	lw	$t1, 0($sp)	# t1=pointer to list of value/ptr pairs
+	lw	$t1, 16($sp)	# t1=pointer to list of value/ptr pairs
 	addiu	$sp, $sp, 4	# pop stack that held pointer
 .Tcl:
         lw      $t2, 0($t1)     # get value from pair
