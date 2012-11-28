@@ -22,8 +22,11 @@ main(int argc, char *argv[])
             break;
         while (*++param) {
             switch (*param) {
-                case 't': case 'T': // output c source as asm comments
+                case 't':       // output c source as asm comments
                     ctext = 1;
+                    break;
+                case 'v':       // verbose mode
+                    verbose = 1;
                     break;
                 default:
                     usage();
@@ -124,6 +127,7 @@ usage()
     fputs("  smallc [-t] [infile [outfile]]\n", stderr);
     fputs("Options:\n", stderr);
     fputs("  -t      Output C source as asm comments\n", stderr);
+    fputs("  -v      Verbose messages\n", stderr);
     exit(1);
 }
 

@@ -36,11 +36,9 @@ char **argv;
 	if (argc == 0) {
 		*argv = "a.out";
 		argc++;
-		--argv;
 	}
-	nfiles = argc;
-	while(argc--) {
-		++argv;
+
+	for (nfiles=argc; argc--; argv++) {
 		if ((f = fopen(*argv, "r"))==NULL) {
 			printf("size: %s not found\n", *argv);
 			err++;

@@ -111,6 +111,8 @@ copen (mode, cmode, fname)
 	register struct	nameidata *ndp = &nd;
 	int indx, type, flags, error;
 
+        if (! fname)
+                fname = "";
 //printf ("copen (mode=%#o, cmode=%#o, fname=%#x '%s')\n", mode, cmode, fname, fname);
 	fp = falloc();
 	if (fp == NULL) {

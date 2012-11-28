@@ -113,7 +113,7 @@ trailer()
  */
 prologue()
 {
-    /* todo */
+    /* todo: save args from registers to stack */
 }
 
 fentry()
@@ -344,8 +344,8 @@ gen_ret()
 callstk()
 {
     output_line ("lw\t$t1, 16($sp)");
+    output_line("jr\t$t1");
     output_line ("addiu\t$sp, $sp, 4");
-    gen_call ("^callstk");
     stkp = stkp + INTSIZE;
 }
 

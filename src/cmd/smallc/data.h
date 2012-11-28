@@ -26,6 +26,7 @@ extern  int     nxtlab,
                 ncmp,
                 errcnt,
                 glbflag,
+                verbose,
                 ctext,
                 cmode,
                 lastst;
