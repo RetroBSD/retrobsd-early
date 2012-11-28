@@ -6,11 +6,13 @@
 #include "defs.h"
 #include "data.h"
 
+#define LOCALOFFSET 16      /* for MIPS32 */
+
 /**
  * declare a static variable
  * @param type
  * @param storage
- * @return 
+ * @return
  */
 declare_global(int type, int storage) {
         int     k, j, count;
@@ -92,7 +94,7 @@ int     typ, stclass;
                         if (stclass != LSTATIC) {
                                 k = galign(k);
                                 stkp = gen_modify_stack (stkp - k);
-                                add_local (sname, j, typ, stkp, AUTO, count);
+                                add_local (sname, j, typ, stkp + LOCALOFFSET, AUTO, count);
                         } else
                                 add_local( sname, j, typ, k, LSTATIC, count);
                         break;
@@ -241,7 +243,7 @@ int findloc (char *sname) {
 int add_global (char *sname, int identity, int type, int offset, int storage, int count) {
         SYMBOL *symbol;
         char *buffer_ptr;
-//printf("global - symbol: %s offset: %d count: %d\n", sname, offset, count); 
+//printf("global - symbol: %s offset: %d count: %d\n", sname, offset, count);
         if (current_symbol_table_idx = findglb (sname)) {
                 return (current_symbol_table_idx);
         }
@@ -257,7 +259,7 @@ int add_global (char *sname, int identity, int type, int offset, int storage, in
         symbol->type = type;
         symbol->storage = storage;
         symbol->count = count;
-        symbol->offset = offset;        
+        symbol->offset = offset;
         global_table_index++;
         return (current_symbol_table_idx);
 }
@@ -269,14 +271,14 @@ int add_global (char *sname, int identity, int type, int offset, int storage, in
  * @param type
  * @param value
  * @param storage_class
- * @return 
+ * @return
  */
 int add_local (char *sname, int identity, int type, int offset, int storage_class, int count) {
         int k;
         SYMBOL *symbol;
         char *buffer_ptr;
-//printf("local - symbol: %s offset: %d count: %d\n", sname, offset, count); 
-        
+//printf("local - symbol: %s offset: %d count: %d\n", sname, offset, count);
+
         if (current_symbol_table_idx = findloc (sname)) {
                 return (current_symbol_table_idx);
         }
@@ -331,7 +333,7 @@ illname() {
 /**
  * print error message
  * @param symbol_name
- * @return 
+ * @return
  */
 multidef (char *symbol_name) {
     error ("already defined");
@@ -339,5 +341,3 @@ multidef (char *symbol_name) {
     output_string (symbol_name);
     newline ();
 }
-
-

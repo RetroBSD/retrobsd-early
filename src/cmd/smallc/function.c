@@ -8,6 +8,8 @@
 
 int argtop;
 
+#define ARGOFFSET 20        /* for MIPS32 */
+
 /**
  * begin a function
  * called from "parse", this routine tries to make a function out
@@ -38,7 +40,6 @@ newfunc() {
     output_string(n);
     output_label_terminator();
     newline();
-fentry();
     local_table_index = NUMBER_OF_GLOBALS; //locptr = STARTLOC;
     argstk = 0;
     // ANSI style argument declaration
@@ -49,7 +50,7 @@ fentry();
                 if (findloc(n))
                     multidef(n);
                 else {
-                    add_local(n, 0, 0, argstk, AUTO, 1);
+                    add_local(n, 0, 0, ARGOFFSET + argstk, AUTO, 1);
                     argstk = argstk + INTSIZE;
                 }
             } else {
@@ -76,6 +77,7 @@ fentry();
             }
         }
     }
+    fentry(argtop);
     statement(YES);
     print_label(fexitlab);
     output_label_terminator();
@@ -95,7 +97,7 @@ fentry();
  * @return
  */
 getarg(int t) {
-    int j, legalname, address, argptr;
+    int j, legalname, argptr;
     char n[NAMESIZE];
 
     FOREVER {
@@ -120,8 +122,6 @@ getarg(int t) {
             if (argptr = findloc(n)) {
                 symbol_table[argptr].identity = j;
                 symbol_table[argptr].type = t;
-                address = argtop - symbol_table[argptr].offset;
-                symbol_table[argptr].offset = address;
             } else
                 error("expecting argument name");
         }
@@ -139,7 +139,6 @@ doAnsiArguments() {
     if (type == 0) {
         return 0; // no type detected, revert back to K&R style
     }
-    argtop = argstk;
     argstk = 0;
     FOREVER
     {
@@ -157,11 +156,12 @@ doAnsiArguments() {
             break;
         }
     }
+    argtop = argstk;
 }
 
 doLocalAnsiArgument(int type) {
     char symbol_name[NAMESIZE];
-    int identity, address, argptr, ptr;
+    int identity, argptr, ptr;
 
     if (match("*")) {
         identity = POINTER;
@@ -172,14 +172,8 @@ doLocalAnsiArgument(int type) {
         if (findloc(symbol_name)) {
             multidef(symbol_name);
         } else {
-            argptr = add_local (symbol_name, identity, type, 0, AUTO, 1);
-            argstk = argstk + INTSIZE;
-            ptr = local_table_index;
-            while (ptr != NUMBER_OF_GLOBALS) { // modify stack offset as we push more params
-                ptr = ptr - 1;
-                address = symbol_table[ptr].offset;
-                symbol_table[ptr].offset = address + INTSIZE;
-            }
+            argptr = add_local (symbol_name, identity, type, ARGOFFSET + argstk, AUTO, 1);
+            argstk += INTSIZE;
         }
     } else {
         error("illegal argument name");

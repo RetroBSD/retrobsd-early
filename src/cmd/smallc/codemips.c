@@ -12,7 +12,6 @@
  * This compiler assumes that an integer is the SAME length as
  * a pointer - in fact, the compiler uses INTSIZE for both.
  */
-//#define INTSIZE 4
 #define BYTEOFF 0
 
 /*
@@ -20,8 +19,8 @@
  */
 header()
 {
-    output_string ("#\tSmall C MIPS32\n");
-    output_string ("#\tCoder 1.0, 2012/06/18\n");
+    output_string ("#\tSmall C for MIPS32\n");
+    output_string ("#\tRetroBSD Project\n");
     output_string ("#\n");
     output_string ("\t.set\tnoreorder\n");
     //output_line ("global\tTlneg");
@@ -111,14 +110,17 @@ trailer()
 /*
  * Function prologue.
  */
-prologue()
+fentry(int argtop)
 {
-    /* todo: save args from registers to stack */
-}
+    int i;
 
-fentry()
-{
-    output_line("addiu\t$sp, $sp, -4");
+    /* Save register arguments to stack. */
+    for (i=0; i<argtop; i+=4)
+        fprintf(output, "\tsw\t$a%d, %d($sp)\n", i>>2, i);
+
+    /* Allocate an empty call frame for 4 args.
+     * Plus additional 4 bytes to save RA. */
+    output_line("addiu\t$sp, $sp, -20");
     output_line("sw\t$ra, 16($sp)");
 }
 
@@ -209,7 +211,7 @@ int gen_get_location(SYMBOL *sym)
         newline();
     } else {
 	output_string("\taddiu\t$v0, $sp, ");
-    output_number (sym->offset - stkp);
+        output_number (sym->offset - stkp);
 	newline();
     }
 }
@@ -335,7 +337,7 @@ gen_ret()
 {
     output_line("lw\t$ra, 16($sp)");
     output_line("jr\t$ra");
-    output_line("addiu\t$sp, $sp, 4");
+    output_line("addiu\t$sp, $sp, 20");
 }
 
 /*

@@ -44,7 +44,7 @@ char    *lab;
 /**
  * gnlabel - generate numeric label
  * @param nlab label number
- * @return 
+ * @return
  */
 generate_label (nlab)
 int     nlab;
@@ -57,7 +57,7 @@ int     nlab;
 /**
  * outputs one byte
  * @param c
- * @return 
+ * @return
  */
 output_byte (c)
 char    c;
@@ -71,7 +71,7 @@ char    c;
 /**
  * outputs a string
  * @param ptr the string
- * @return 
+ * @return
  */
 output_string (ptr)
 char    ptr[];
@@ -83,7 +83,7 @@ char    ptr[];
 
 /**
  * outputs a tab
- * @return 
+ * @return
  */
 print_tab ()
 {
@@ -93,7 +93,7 @@ print_tab ()
 /**
  * output line
  * @param ptr
- * @return 
+ * @return
  */
 output_line (ptr)
 char    ptr[];
@@ -105,7 +105,7 @@ char    ptr[];
 /**
  * tabbed output
  * @param ptr
- * @return 
+ * @return
  */
 output_with_tab (ptr)
 char    ptr[];
@@ -117,25 +117,28 @@ char    ptr[];
 /**
  * output decimal number
  * @param number
- * @return 
+ * @return
  */
-output_decimal (int number) {
+output_decimal (int number)
+{
     fprintf(output, "%d", number);
 }
 
 /**
  * stores values into memory
  * @param lval TODO
- * @return 
+ * @return
  */
-store (lvalue_t *lval) {
+store (lvalue_t *lval)
+{
     if (lval->indirect == 0)
         gen_put_memory (lval->symbol);
     else
         gen_put_indirect (lval->indirect);
 }
 
-rvalue (lvalue_t *lval, int reg) {
+rvalue (lvalue_t *lval, int reg)
+{
     if ((lval->symbol != 0) & (lval->indirect == 0))
         gen_get_memory (lval->symbol);
     else
@@ -147,7 +150,7 @@ rvalue (lvalue_t *lval, int reg) {
  * parses test part "(expression)" input and generates assembly for jump
  * @param label
  * @param ft
- * @return 
+ * @return
  */
 test (label, ft)
 int     label,
@@ -158,4 +161,3 @@ int     label,
         needbrack (")");
         gen_test_jump (label, ft);
 }
-

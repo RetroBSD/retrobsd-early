@@ -68,7 +68,7 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/fact.fth share/example/echo.S \
                   share/smallc/Makefile share/smallc/primelist.c \
                   share/smallc/primesum.c share/smallc/sys.s share/smallc/test1.c \
-                  share/smallc/test2.c share/smallc/hello.c
+                  share/smallc/test2.c share/smallc/test3.c share/smallc/hello.c
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile

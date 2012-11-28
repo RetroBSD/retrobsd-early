@@ -1,3 +1,6 @@
+/*
+ * Compute the sum of prime numbers up to 10000.
+ */
 main()
 {
     int sum, n;

@@ -32,7 +32,3 @@ Tcase:
 	and	$t2, $t2, $ra
         or      $t3, $t3, $t2
 	jr	$t3
-
-        .globl Tcallstk
-Tcallstk:
-	jr	$t1

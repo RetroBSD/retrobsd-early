@@ -1,3 +1,6 @@
+/*
+ * Print the list of prime numbers up to 100.
+ */
 main()
 {
     int n;

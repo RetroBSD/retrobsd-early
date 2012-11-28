@@ -341,7 +341,7 @@ static void print_exception (cpu_mips_t * cpu, u_int exc_code)
         /* bottom 8 bits are index */
 		code = (code >> 6) & 0377;
 if (code == 97) cpu->vm->debug_level = 2;
-if (code == 1) cpu->vm->debug_level = 0;
+if (code == 1) cpu->vm->debug_level = 1;
         cpu->trace_syscall = code;
 		if (code >= sizeof (bsd_syscalls) / sizeof (bsd_syscalls[0])) {
             printf ("--- syscall: #%d at %08x\n", (int)code, cpu->pc);

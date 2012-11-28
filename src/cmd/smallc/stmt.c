@@ -110,6 +110,8 @@ do_statement () {
         } else if (match ("__asm__")) {
                 doasm ();
                 lastst = STASM;
+        } else if (match("#")) {
+                kill();
         } else if (match ("{"))
                 do_compound (NO);
         else {
