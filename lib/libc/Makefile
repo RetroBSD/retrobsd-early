@@ -2,7 +2,8 @@ TOPSRC		= $(shell cd ../..; pwd)
 include $(TOPSRC)/target.mk
 
 LIBCDIR          = $(TOPSRC)/src/libc
-vpath %.S $(LIBCDIR)/mips/sys $(LIBCDIR)/mips/string $(LIBCDIR)/mips/gen
+vpath %.S $(LIBCDIR)/mips/sys $(LIBCDIR)/mips/string $(LIBCDIR)/mips/gen \
+          $(LIBCDIR)/runtime
 vpath %.c $(LIBCDIR)/mips/sys $(LIBCDIR)/gen $(LIBCDIR)/stdio \
           $(LIBCDIR)/stdlib $(LIBCDIR)/string $(LIBCDIR)/inet \
           $(LIBCDIR)/compat $(LIBCDIR)/runtime
@@ -94,7 +95,7 @@ OBJS            += creat.o ftime.o gethostid.o gtty.o memccpy.o memchr.o \
 
 # libc/runtime
 OBJS            += addsf3.o comparesf2.o divsf3.o fixsfsi.o floatsisf.o \
-                   mulsf3.o negsf2.o subsf3.o
+                   mulsf3.o negsf2.o subsf3.o sc_case.o
 
 all:            ../libc.a
 

@@ -25,7 +25,7 @@ all install depend: $(HEADERS) $(SUBDIR) $(PROG)
 		-for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) DESTDIR=$(DESTDIR) $@; done
 
 clean:
-		rm -f *~ *.o *.a *.h $(PROG) retroImage
+		rm -f *~ *.o *.a *.h $(PROG) retroImage gccdump.s
 		for i in $(SUBDIR); do $(MAKE) -C $$i $(MFLAGS) clean; done
 
 ar:             $(AR_OBJS)

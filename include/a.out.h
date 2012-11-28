@@ -74,10 +74,12 @@ struct reloc {
 #define RGPREL  0x08            /* gp relative */
 
 #define RFMASK  0x07            /* bitmask for format */
-#define RHIGH16     0x01        /* upper part of byte address: bits 31:16 */
-#define RHIGH16S    0x02        /* upper part of address with signed offset */
-#define RWORD16     0x03        /* word address: bits 17:2 */
-#define RWORD26     0x04        /* word address: bits 27:2 */
+#define RBYTE16     0x00        /* low part of byte address: bits 15:0 */
+#define RBYTE32     0x01        /* 32-bit byte address */
+#define RHIGH16     0x02        /* upper part of byte address: bits 31:16 */
+#define RHIGH16S    0x03        /* upper part of address with signed offset */
+#define RWORD16     0x04        /* word address: bits 17:2 */
+#define RWORD26     0x05        /* word address: bits 27:2 */
 
     unsigned index;             /* 24-bit index in symbol table,
                                  * for REXT */

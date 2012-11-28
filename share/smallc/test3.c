@@ -8,7 +8,6 @@ main()
         nop
     __endasm__
 
-    // Buggy
     t = 0;
     if(t) printt(t,"failure"); else printt(t,"success");
     t = 1;
@@ -19,6 +18,7 @@ main()
     if(t) printt(t,"success"); else printt(t,"failure");
     printf("\n");
 
+    t = 4;
     printf("switch test: ");
     switch (t) {
     case 3:

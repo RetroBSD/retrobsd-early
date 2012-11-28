@@ -544,8 +544,11 @@ unsigned relword (lp, word, rel, offset)
          * Extract an address field from the instruction.
          */
 	switch (rel->flags & RFMASK) {
-	case 0:
+	case RBYTE16:
 		addr = word & 0xffff;
+		break;
+	case RBYTE32:
+		addr = word;
 		break;
 	case RWORD16:
 		addr = word & 0xffff;
@@ -610,10 +613,13 @@ unsigned relword (lp, word, rel, offset)
          * Update the relocation info, if needed.
          */
 	switch (rel->flags & RFMASK) {
-	case 0:
+	case RBYTE16:
 	        addr += delta;
 		word &= ~0xffff;
 		word |= addr & 0xffff;
+		break;
+	case RBYTE32:
+		word = addr + delta;
 		break;
 	case RWORD16:
 	        if (! sp)

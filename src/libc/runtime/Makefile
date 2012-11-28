@@ -20,7 +20,7 @@ include $(TOPSRC)/target.mk
 CFLAGS          += ${DEFS}
 
 OBJS            = addsf3.o comparesf2.o divsf3.o fixsfsi.o floatsisf.o \
-                  mulsf3.o negsf2.o subsf3.o
+                  mulsf3.o negsf2.o subsf3.o sc_case.o
 
 all:		${OBJS}
 

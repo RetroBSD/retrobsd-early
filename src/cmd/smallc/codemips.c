@@ -322,7 +322,7 @@ gen_call (char * sname)
 {
     output_string ("\tjal\t");
     if (*sname == '^') {
-        output_string ("T");
+        output_string ("__sc_");
         sname++;
     }
     output_string (sname);

@@ -31,7 +31,7 @@
  */
 
 /* bit = ffs(value) */
-
+        .set    reorder
 	.type	ffs, @function
 ffs:	.globl  ffs
 

@@ -33,6 +33,7 @@
 #
 # NOTE: this version assumes unsigned chars in order to be "8 bit clean".
 #
+        .set    reorder
 	.type	strcmp, @function
 strcmp:	.globl  strcmp
 1:

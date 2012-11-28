@@ -367,7 +367,7 @@ int blexflag, backlex, blextype;
 short hashtab [HASHSZ], hashctab [HCMDSZ];
 struct labeltab labeltab [MAXRLAB];     /* relative labels */
 int nlabels;
-int mode_reorder;                       /* .set reorder option */
+int mode_reorder = 1;                   /* .set reorder option (default) */
 int mode_macro;                         /* .set macro option */
 int mode_mips16;                        /* .set mips16 option */
 int mode_micromips;                     /* .set micromips option */
@@ -1328,11 +1328,11 @@ void makecmd (opcode, type, emitfunc)
         if (clex == LREG) {
             if (opcode == 0x08000000) { /* j - replace by jr */
                 opcode = 0x00000008;
-                type = FRS1;
+                type = FRS1 | FDSLOT;
             }
             if (opcode == 0x0c000000) { /* jal - replace by jalr */
                 opcode = 0x00000009;
-                type = FRD1 | FRS2;
+                type = FRD1 | FRS2 | FDSLOT;
             }
         }
     }
@@ -1986,7 +1986,7 @@ void pass1 ()
                 struct reloc relinfo;
                 expr_flags = 0;
                 getexpr (&cval);
-                relinfo.flags = segmrel [cval];
+                relinfo.flags = RBYTE32 | segmrel [cval];
                 if (cval == SEXT)
                     relinfo.index = extref;
                 if (expr_flags & EXPR_GPREL)
@@ -2253,15 +2253,19 @@ int findlabel (int addr, int sym)
 
     if (sym < 0) {
         /* Backward reference. */
-        for (p=labeltab+nlabels-1; p>=labeltab; --p)
-            if (p->value <= addr && p->num == -sym)
+        for (p=labeltab+nlabels-1; p>=labeltab; --p) {
+            if (p->value <= addr && p->num == -sym) {
                 return p->value;
+            }
+        }
         uerror ("undefined label %db at address %d", -sym, addr);
     } else {
         /* Forward reference. */
-        for (p=labeltab; p<labeltab+nlabels; ++p)
-            if (p->value > addr && p->num == sym)
+        for (p=labeltab; p<labeltab+nlabels; ++p) {
+            if (p->value > addr && p->num == sym) {
                 return p->value;
+            }
+        }
         uerror ("undefined label %df at address %d", sym, addr);
     }
     return 0;
@@ -2314,7 +2318,10 @@ unsigned relocate (opcode, offset, relinfo)
     register struct reloc *relinfo;
 {
     switch (relinfo->flags & RFMASK) {
-    case 0:                             /* low 16 bits of byte address */
+    case RBYTE32:                       /* 32 bits of byte address */
+        opcode += offset;
+        break;
+    case RBYTE16:                       /* low 16 bits of byte address */
         offset += opcode & 0xffff;
         opcode &= ~0xffff;
         opcode |= offset & 0xffff;
@@ -2371,7 +2378,7 @@ unsigned makeword (opcode, relinfo, offset)
              * Change relocation to segment type. */
             sym = 0;
             value = findlabel (offset, relinfo->index - RLAB_OFFSET);
-            relinfo->flags &= RGPREL;
+            relinfo->flags &= RGPREL | RFMASK;
             relinfo->flags |= segmrel[segm];
         } else {
             /* Symbol name. */
