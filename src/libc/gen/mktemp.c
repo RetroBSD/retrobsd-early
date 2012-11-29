@@ -9,11 +9,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #define	YES	1
 #define	NO	0
 
-static
+static int
 _gettemp(as, doopen)
 	char	*as;
 	register int	*doopen;
@@ -75,6 +77,7 @@ _gettemp(as, doopen)
 	/*NOTREACHED*/
 }
 
+int
 mkstemp(as)
 	char	*as;
 {

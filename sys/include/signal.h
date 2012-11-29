@@ -171,13 +171,16 @@ void sendsig (sig_t p, int sig, long mask);
 #else /* KERNEL */
 
 sig_t   signal (int, sig_t);
+int     sigaction (int signum, const struct sigaction *act,
+                   struct sigaction *oldact);
 int     sigvec (int sig, struct sigvec *vec, struct sigvec *ovec);
 int     kill (pid_t pid, int sig);
 int     sigpause (int mask);
 int     sigblock (int mask);
 int     sigsetmask (int mask);
-int     sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
-int     siginterrupt(int sig, int flag);
+int     sigprocmask (int how, const sigset_t *set, sigset_t *oldset);
+int     siginterrupt (int sig, int flag);
+int     sigsuspend (const sigset_t *mask);
 
 #define	BADSIG	SIG_ERR
 

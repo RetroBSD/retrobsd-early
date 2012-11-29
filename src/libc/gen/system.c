@@ -36,6 +36,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+int
 system(command)
 	char *command;
 {

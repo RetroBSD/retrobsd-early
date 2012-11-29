@@ -10,16 +10,87 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include <ndbm.h>
 
 #define BYTESIZ 8
 #undef setbit
 
-static  datum makdatum();
-static  long hashinc();
-static  long dcalchash();
-extern  int errno;
+static  int hitab[16]
+/* ken's
+{
+	055,043,036,054,063,014,004,005,
+	010,064,077,000,035,027,025,071,
+};
+*/
+ = {    61, 57, 53, 49, 45, 41, 37, 33,
+	29, 25, 21, 17, 13,  9,  5,  1,
+};
+static  long hltab[64]
+ = {
+	06100151277L,06106161736L,06452611562L,05001724107L,
+	02614772546L,04120731531L,04665262210L,07347467531L,
+	06735253126L,06042345173L,03072226605L,01464164730L,
+	03247435524L,07652510057L,01546775256L,05714532133L,
+	06173260402L,07517101630L,02431460343L,01743245566L,
+	00261675137L,02433103631L,03421772437L,04447707466L,
+	04435620103L,03757017115L,03641531772L,06767633246L,
+	02673230344L,00260612216L,04133454451L,00615531516L,
+	06137717526L,02574116560L,02304023373L,07061702261L,
+	05153031405L,05322056705L,07401116734L,06552375715L,
+	06165233473L,05311063631L,01212221723L,01052267235L,
+	06000615237L,01075222665L,06330216006L,04402355630L,
+	01451177262L,02000133436L,06025467062L,07121076461L,
+	03123433522L,01010635225L,01716177066L,05161746527L,
+	01736635071L,06243505026L,03637211610L,01756474365L,
+	04723077174L,03642763134L,05750130273L,03655541561L,
+};
+
+static long
+dcalchash(item)
+	datum item;
+{
+	register int s, c, j;
+	register char *cp;
+	register long hashl;
+	register int hashi;
+
+	hashl = 0;
+	hashi = 0;
+	for (cp = item.dptr, s=item.dsize; --s >= 0; ) {
+		c = *cp++;
+		for (j=0; j<BYTESIZ; j+=4) {
+			hashi += hitab[c&017];
+			hashl += hltab[hashi&63];
+			c >>= 4;
+		}
+	}
+	return (hashl);
+}
+
+static datum
+makdatum(buf, n)
+	char buf[PBLKSIZ];
+{
+	register short *sp;
+	register int t;
+	datum item;
+
+	sp = (short *)buf;
+	if ((unsigned)n >= sp[0]) {
+		item.dptr = NULL;
+		item.dsize = 0;
+		return (item);
+	}
+	t = PBLKSIZ;
+	if (n > 0)
+		t = sp[n];
+	item.dptr = buf+sp[n+1];
+	item.dsize = t - sp[n+1];
+	return (item);
+}
 
 DBM *
 dbm_open(file, flags, mode)
@@ -67,13 +138,12 @@ dbm_close(db)
 	free((char *)db);
 }
 
-static
+static int
 getbit(db)
 	register DBM *db;
 {
 	long bn, b;
-	register i, n;
-
+	register int i, n;
 
 	if (db->dbm_bitno > db->dbm_maxbno)
 		return (0);
@@ -107,7 +177,7 @@ dbm_forder(db, key)
 	return (db->dbm_blkno);
 }
 
-static
+static void
 dbm_access(db, hash)
 	register DBM *db;
 	long hash;
@@ -131,7 +201,7 @@ dbm_access(db, hash)
 	}
 }
 
-static
+static int
 finddatum(buf, item)
 	char buf[PBLKSIZ];
 	datum item;
@@ -156,7 +226,7 @@ dbm_fetch(db, key)
 	register DBM *db;
 	datum key;
 {
-	register i;
+	register int i;
 	datum item;
 
 	if (dbm_error(db))
@@ -176,12 +246,12 @@ err:
 /*
  * Delete pairs of items (n & n+1).
  */
-static
+static int
 delitem(buf, n)
 	char buf[PBLKSIZ];
 {
 	register short *sp, *sp1;
-	register i1, i2;
+	register int i1, i2;
 
 	sp = (short *)buf;
 	i2 = sp[0];
@@ -205,12 +275,12 @@ delitem(buf, n)
 	return (1);
 }
 
+int
 dbm_delete(db, key)
 	register DBM *db;
 	datum key;
 {
-	register i;
-	datum item;
+	register int i;
 
 	if (dbm_error(db))
 		return (-1);
@@ -233,12 +303,12 @@ dbm_delete(db, key)
 	return (0);
 }
 
-static
+static void
 setbit(db)
 	register DBM *db;
 {
 	long bn, b;
-	register i, n;
+	register int i, n;
 
 	if (db->dbm_bitno > db->dbm_maxbno)
 		db->dbm_maxbno = db->dbm_bitno;
@@ -262,13 +332,13 @@ setbit(db)
 /*
  * Add pairs of items (item & item1).
  */
-static
+static int
 additem(buf, item, item1)
 	char buf[PBLKSIZ];
 	datum item, item1;
 {
 	register short *sp;
-	register i1, i2;
+	register int i1, i2;
 
 	sp = (short *)buf;
 	i1 = PBLKSIZ;
@@ -286,12 +356,13 @@ additem(buf, item, item1)
 	return (1);
 }
 
+int
 dbm_store(db, key, dat, replace)
 	register DBM *db;
 	datum key, dat;
 	int replace;
 {
-	register i;
+	register int i;
 	datum item, item1;
 	char ovfbuf[PBLKSIZ];
 
@@ -409,99 +480,6 @@ err:
 	item.dptr = NULL;
 	item.dsize = 0;
 	return (item);
-}
-
-static datum
-makdatum(buf, n)
-	char buf[PBLKSIZ];
-{
-	register short *sp;
-	register t;
-	datum item;
-
-	sp = (short *)buf;
-	if ((unsigned)n >= sp[0]) {
-		item.dptr = NULL;
-		item.dsize = 0;
-		return (item);
-	}
-	t = PBLKSIZ;
-	if (n > 0)
-		t = sp[n];
-	item.dptr = buf+sp[n+1];
-	item.dsize = t - sp[n+1];
-	return (item);
-}
-
-static  int hitab[16]
-/* ken's
-{
-	055,043,036,054,063,014,004,005,
-	010,064,077,000,035,027,025,071,
-};
-*/
- = {    61, 57, 53, 49, 45, 41, 37, 33,
-	29, 25, 21, 17, 13,  9,  5,  1,
-};
-static  long hltab[64]
- = {
-	06100151277L,06106161736L,06452611562L,05001724107L,
-	02614772546L,04120731531L,04665262210L,07347467531L,
-	06735253126L,06042345173L,03072226605L,01464164730L,
-	03247435524L,07652510057L,01546775256L,05714532133L,
-	06173260402L,07517101630L,02431460343L,01743245566L,
-	00261675137L,02433103631L,03421772437L,04447707466L,
-	04435620103L,03757017115L,03641531772L,06767633246L,
-	02673230344L,00260612216L,04133454451L,00615531516L,
-	06137717526L,02574116560L,02304023373L,07061702261L,
-	05153031405L,05322056705L,07401116734L,06552375715L,
-	06165233473L,05311063631L,01212221723L,01052267235L,
-	06000615237L,01075222665L,06330216006L,04402355630L,
-	01451177262L,02000133436L,06025467062L,07121076461L,
-	03123433522L,01010635225L,01716177066L,05161746527L,
-	01736635071L,06243505026L,03637211610L,01756474365L,
-	04723077174L,03642763134L,05750130273L,03655541561L,
-};
-
-static long
-hashinc(db, hash)
-	register DBM *db;
-	long hash;
-{
-	long bit;
-
-	hash &= db->dbm_hmask;
-	bit = db->dbm_hmask+1;
-	for (;;) {
-		bit >>= 1;
-		if (bit == 0)
-			return (0L);
-		if ((hash & bit) == 0)
-			return (hash | bit);
-		hash &= ~bit;
-	}
-}
-
-static long
-dcalchash(item)
-	datum item;
-{
-	register int s, c, j;
-	register char *cp;
-	register long hashl;
-	register int hashi;
-
-	hashl = 0;
-	hashi = 0;
-	for (cp = item.dptr, s=item.dsize; --s >= 0; ) {
-		c = *cp++;
-		for (j=0; j<BYTESIZ; j+=4) {
-			hashi += hitab[c&017];
-			hashl += hltab[hashi&63];
-			c >>= 4;
-		}
-	}
-	return (hashl);
 }
 
 #ifdef DEBUG

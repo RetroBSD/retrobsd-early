@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 
 extern int errno;
@@ -24,6 +25,28 @@ char	*_smallbuf = sbuf;
 static	FILE	**iobglue;
 static	FILE	**endglue;
 
+static int
+_f_morefiles()
+{
+	register FILE **iov;
+	register FILE *fp;
+	int nfiles;
+
+	nfiles = getdtablesize();
+
+	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
+	if (iobglue == NULL)
+		return (0);
+
+	endglue = iobglue + nfiles;
+
+	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
+		*iov++ = fp++;
+
+	_smallbuf = calloc(nfiles, sizeof(*_smallbuf));
+	return (1);
+}
+
 /*
  * Find a free FILE for fopen et al.
  * We have a fixed static array of entries, and in addition
@@ -37,7 +60,6 @@ FILE *
 _findiop()
 {
 	register FILE **iov, *iop;
-	register FILE *fp;
 
 	if (iobglue == 0) {
 		for (iop = _iob; iop < _iob + NSTATIC; iop++)
@@ -63,32 +85,10 @@ _findiop()
 	return (*iov);
 }
 
-_f_morefiles()
-{
-	register FILE **iov;
-	register FILE *fp;
-	register char *cp;
-	int nfiles;
-
-	nfiles = getdtablesize();
-
-	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
-	if (iobglue == NULL)
-		return (0);
-
-	endglue = iobglue + nfiles;
-
-	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
-		*iov++ = fp++;
-
-	_smallbuf = calloc(nfiles, sizeof(*_smallbuf));
-	return (1);
-}
-
+void
 f_prealloc()
 {
 	register FILE **iov;
-	register FILE *fp;
 
 	if (iobglue == NULL && _f_morefiles() == 0)
 		return;
@@ -98,6 +98,7 @@ f_prealloc()
 			*iov = (FILE *)calloc(1, sizeof **iov);
 }
 
+void
 _fwalk(function)
 	register int (*function)();
 {

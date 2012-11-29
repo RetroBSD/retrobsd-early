@@ -17,10 +17,12 @@
 #include <sys/types.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <strings.h>
+#include <fcntl.h>
 
 static FILE *_pw_fp;
 static struct passwd _pw_entry;
@@ -30,21 +32,20 @@ static char *_pw_file = _PATH_PASSWD;
 #define	MAXLINELENGTH	256
 static char line[MAXLINELENGTH];
 
-static
+static int
 start_pw()
 {
-	register char *p;
-
 	if (_pw_fp) {
 		rewind(_pw_fp);
 		return(1);
 	}
-	if (_pw_fp = fopen(_pw_file, "r"))
+	_pw_fp = fopen(_pw_file, "r");
+	if (_pw_fp)
 		return(1);
 	return(0);
 }
 
-static
+static int
 scanpw()
 {
 	register char *cp;
@@ -83,7 +84,7 @@ scanpw()
 	/* NOTREACHED */
 }
 
-static
+static void
 getpw()
 {
 	static char pwbuf[50];
@@ -174,11 +175,13 @@ getpwuid(uid)
 	return &_pw_entry;
 }
 
+int
 setpwent()
 {
 	return(setpassent(0));
 }
 
+int
 setpassent(stayopen)
 	int stayopen;
 {

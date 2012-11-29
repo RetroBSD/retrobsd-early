@@ -98,6 +98,10 @@ void rucvt (struct rusage *rup, struct k_rusage *krup);
  */
 void ruadd (struct k_rusage *ru, struct k_rusage *ru2);
 
+#else
+
+int getrusage (int who, struct rusage *usage);
+
 #endif
 
 #endif	/* !_SYS_RESOURCE_H_ */

@@ -383,7 +383,11 @@ int sysctl_rdstruct (void *oldp, size_t *oldlenp,
 
 #else	/* !KERNEL */
 
-int	sysctl();
+int sysctl (int *name, u_int namelen, void *oldp, size_t *oldlenp,
+            void *newp, size_t newlen);
+
+int __sysctl (int *name, u_int namelen, void *oldp, size_t *oldlenp,
+            void *newp, size_t newlen);
 
 #endif	/* KERNEL */
 #endif	/* !_SYS_SYSCTL_H_ */

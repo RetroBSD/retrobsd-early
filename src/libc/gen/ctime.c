@@ -7,6 +7,8 @@
 #include "sys/time.h"
 #include "stdio.h"
 #include "string.h"
+#include "unistd.h"
+#include "fcntl.h"
 #include "tzfile.h"
 #include "paths.h"
 
@@ -99,7 +101,7 @@ char *	codep;
 	return result;
 }
 
-static
+static int
 tzload(name)
 register char *	name;
 {
@@ -216,12 +218,11 @@ register char *	name;
 	return 0;
 }
 
-static
+static int
 tzsetkernel()
 {
 	struct timeval	tv;
 	struct timezone	tz;
-	char	*tztab();
 
 	if (gettimeofday(&tv, &tz))
 		return -1;
@@ -237,7 +238,7 @@ tzsetkernel()
 	return 0;
 }
 
-static
+static void
 tzsetgmt()
 {
 	s.timecnt = 0;
@@ -320,8 +321,8 @@ time_t *	clock;
 }
 
 static int	mon_lengths[2][MONS_PER_YEAR] = {
-	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
-	31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+	{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
 };
 
 static int	year_lengths[2] = {

@@ -15,6 +15,7 @@ scale60(tvp)
 	return (tvp->tv_sec * 60 + tvp->tv_usec / 16667);
 }
 
+int
 times(tmsp)
 	register struct tms *tmsp;
 {

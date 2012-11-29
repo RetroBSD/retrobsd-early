@@ -35,8 +35,7 @@ static  int		mthresh;		/* MTHRESHold in chars */
  * All data swaps are done in-line, which is space-losing but time-saving.
  * (And there are only three places where this is done).
  */
-
-static
+static void
 qst(base, max)
 	char *base, *max;
 {
@@ -141,7 +140,7 @@ qst(base, max)
  * with qst(), and then a cleanup insertion sort ourselves.  Sound simple?
  * It's not...
  */
-
+void
 qsort(base, n, size, compar)
 	char	*base;
 	int	n;

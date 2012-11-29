@@ -3,12 +3,13 @@
  * Coordinates with buffering.
  */
 #include <stdio.h>
+#include <unistd.h>
 
 long ftell(iop)
-register FILE *iop;
+        register FILE *iop;
 {
 	register long tres;
-	register adjust;
+	register int adjust;
 
 	if (iop->_cnt < 0)
 		iop->_cnt = 0;

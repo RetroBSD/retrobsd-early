@@ -36,6 +36,7 @@
  * Set signal state to prevent restart of system calls
  * after an instance of the indicated signal.
  */
+int
 siginterrupt(sig, flag)
 	int sig, flag;
 {

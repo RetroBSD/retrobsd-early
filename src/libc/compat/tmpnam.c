@@ -54,18 +54,22 @@ tempnam(dir, pfx)
 	if (!(name = malloc((u_int)MAXPATHLEN)))
 		return(NULL);
 
-	if (f = getenv("TMPDIR")) {
+        f = getenv("TMPDIR");
+	if (f) {
 		(void)sprintf(name, "%s/%sXXXXXX", f, pfx ? "" : pfx);
-		if (f = mktemp(name))
+		f = mktemp(name);
+		if (f)
 			return(f);
 	}
 	if (dir) {
 		(void)sprintf(name, "%s/%sXXXXXX", dir, pfx ? "" : pfx);
-		if (f = mktemp(name))
+		f = mktemp(name);
+		if (f)
 			return(f);
 	}
 	(void)sprintf(name, _PATH_USRTMP "%sXXXXXX", pfx ? "" : pfx);
-	if (f = mktemp(name))
+	f = mktemp(name);
+	if (f)
 		return(f);
 	(void)sprintf(name, "/tmp/%sXXXXXX", pfx ? "" : pfx);
 	return(mktemp(name));

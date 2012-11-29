@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /*
  * close a directory.

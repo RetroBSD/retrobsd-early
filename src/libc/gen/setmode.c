@@ -169,7 +169,7 @@ setmode(p)
 	sigset_t sigset, sigoset;
 #endif
 	mode_t mask;
-	int equalopdone, permXbits, setlen;
+	int equalopdone = 0, permXbits, setlen;
 
 	if (!*p)
 		return ((void *)NULL);
@@ -415,7 +415,7 @@ compress_mode(set)
 		while ((op = nset->cmd) != '+' && op != '-' && op != 'X') {
 			*set++ = *nset++;
 			if (!op)
-				return;
+				return 0;
 		}
 
 		for (setbits = clrbits = Xbits = 0;; nset++) {

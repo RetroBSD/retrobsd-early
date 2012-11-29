@@ -30,6 +30,7 @@
  * floating-point number.
  */
 #include <stdlib.h>
+#include <ctype.h>
 
 double strtod (const char *string, char **endPtr)
 {
@@ -70,6 +71,7 @@ double strtod (const char *string, char **endPtr)
 	static double powersOf10[] = {
 		1e1, 1e2, 1e4, 1e8, 1e16, 1e32, //1e64, 1e128, 1e256,
 	};
+#if 0
 	static double powersOf2[] = {
 		2, 4, 16, 256, 65536, 4.294967296e9, 1.8446744073709551616e19,
                 //3.4028236692093846346e38, 1.1579208923731619542e77, 1.3407807929942597099e154,
@@ -82,7 +84,7 @@ double strtod (const char *string, char **endPtr)
 		16, 256, 65536, 1.8446744073709551616e19,
                 //3.4028236692093846346e38, 1.1579208923731619542e77, 1.3407807929942597099e154,
 	};
-
+#endif
 	/*
 	 * Strip off leading blanks and check for a sign.
 	 */

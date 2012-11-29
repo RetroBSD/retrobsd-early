@@ -3,14 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <term.h>
 
 #define	BUFSIZ		1024
 #define MAXHOP		32	/* max number of tc= indirections */
 #define	E_TERMCAP	"/etc/termcap"
 
-#include <ctype.h>
 /*
  * termcap - routines for dealing with the terminal capability data base
  *
@@ -27,17 +30,93 @@
 
 static	char *tbuf;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
-static char * tskip(register char *);
-char	*tskip();
-char	*tgetstr();
-static char * tdecode(register char *, char **);
-char	*getenv();
+
+/*
+ * Tnamatch deals with name matching.  The first field of the termcap
+ * entry is a sequence of names separated by |'s, so we compare
+ * against each such name.  The normal : terminator after the last
+ * name (before the first field) stops us.
+ */
+static int
+tnamatch(np)
+	char *np;
+{
+	register char *Np, *Bp;
+
+	Bp = tbuf;
+	if (*Bp == '#')
+		return(0);
+	for (;;) {
+		for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
+			continue;
+		if (*Np == 0 && (*Bp == '|' || *Bp == ':' || *Bp == 0))
+			return (1);
+		while (*Bp && *Bp != ':' && *Bp != '|')
+			Bp++;
+		if (*Bp == 0 || *Bp == ':')
+			return (0);
+		Bp++;
+	}
+}
+
+/*
+ * tnchktc: check the last entry, see if it's tc=xxx. If so,
+ * recursively find xxx and append that entry (minus the names)
+ * to take the place of the tc=xxx entry. This allows termcap
+ * entries to say "like an HP2621 but doesn't turn on the labels".
+ * Note that this works because of the left to right scan.
+ */
+static int
+tnchktc()
+{
+	register char *p, *q;
+	char tcname[16];	/* name of similar terminal */
+	char tcbuf[BUFSIZ];
+	char *holdtbuf = tbuf;
+	int l;
+
+	p = tbuf + strlen(tbuf) - 2;	/* before the last colon */
+	while (*--p != ':')
+		if (p<tbuf) {
+			write(2, "Bad termcap entry\n", 18);
+			return (0);
+		}
+	p++;
+	/* p now points to beginning of last field */
+	if (p[0] != 't' || p[1] != 'c')
+		return(1);
+	strcpy(tcname,p+3);
+	q = tcname;
+	while (*q && *q != ':')
+		q++;
+	*q = 0;
+	if (++hopcount > MAXHOP) {
+		write(2, "Infinite tc= loop\n", 18);
+		return (0);
+	}
+	if (tgetent(tcbuf, tcname) != 1) {
+		hopcount = 0;		/* unwind recursion */
+		return(0);
+	}
+	for (q=tcbuf; *q != ':'; q++)
+		;
+	l = p - holdtbuf + strlen(q);
+	if (l > BUFSIZ) {
+		write(2, "Termcap entry too long\n", 23);
+		q[BUFSIZ - (p-tbuf)] = 0;
+	}
+	strcpy(p, q+1);
+	tbuf = holdtbuf;
+	hopcount = 0;			/* unwind recursion */
+	return(1);
+}
 
 /*
  * Get an entry for terminal name in buffer bp,
  * from the termcap file.  Parse is very rudimentary;
  * we just notice escaped newlines.
  */
+int
 tgetent(bp, name)
 	char *bp, *name;
 {
@@ -116,84 +195,6 @@ tgetent(bp, name)
 }
 
 /*
- * tnchktc: check the last entry, see if it's tc=xxx. If so,
- * recursively find xxx and append that entry (minus the names)
- * to take the place of the tc=xxx entry. This allows termcap
- * entries to say "like an HP2621 but doesn't turn on the labels".
- * Note that this works because of the left to right scan.
- */
-tnchktc()
-{
-	register char *p, *q;
-	char tcname[16];	/* name of similar terminal */
-	char tcbuf[BUFSIZ];
-	char *holdtbuf = tbuf;
-	int l;
-
-	p = tbuf + strlen(tbuf) - 2;	/* before the last colon */
-	while (*--p != ':')
-		if (p<tbuf) {
-			write(2, "Bad termcap entry\n", 18);
-			return (0);
-		}
-	p++;
-	/* p now points to beginning of last field */
-	if (p[0] != 't' || p[1] != 'c')
-		return(1);
-	strcpy(tcname,p+3);
-	q = tcname;
-	while (*q && *q != ':')
-		q++;
-	*q = 0;
-	if (++hopcount > MAXHOP) {
-		write(2, "Infinite tc= loop\n", 18);
-		return (0);
-	}
-	if (tgetent(tcbuf, tcname) != 1) {
-		hopcount = 0;		/* unwind recursion */
-		return(0);
-	}
-	for (q=tcbuf; *q != ':'; q++)
-		;
-	l = p - holdtbuf + strlen(q);
-	if (l > BUFSIZ) {
-		write(2, "Termcap entry too long\n", 23);
-		q[BUFSIZ - (p-tbuf)] = 0;
-	}
-	strcpy(p, q+1);
-	tbuf = holdtbuf;
-	hopcount = 0;			/* unwind recursion */
-	return(1);
-}
-
-/*
- * Tnamatch deals with name matching.  The first field of the termcap
- * entry is a sequence of names separated by |'s, so we compare
- * against each such name.  The normal : terminator after the last
- * name (before the first field) stops us.
- */
-tnamatch(np)
-	char *np;
-{
-	register char *Np, *Bp;
-
-	Bp = tbuf;
-	if (*Bp == '#')
-		return(0);
-	for (;;) {
-		for (Np = np; *Np && *Bp == *Np; Bp++, Np++)
-			continue;
-		if (*Np == 0 && (*Bp == '|' || *Bp == ':' || *Bp == 0))
-			return (1);
-		while (*Bp && *Bp != ':' && *Bp != '|')
-			Bp++;
-		if (*Bp == 0 || *Bp == ':')
-			return (0);
-		Bp++;
-	}
-}
-
-/*
  * Skip to the next field.  Notice that this is very dumb, not
  * knowing about \: escapes or any such.  If necessary, :'s can be put
  * into the termcap file in octal.
@@ -218,6 +219,7 @@ tskip(bp)
  * a # character.  If the option is not found we return -1.
  * Note that we handle octal numbers beginning with 0.
  */
+int
 tgetnum(id)
 	char *id;
 {
@@ -251,6 +253,7 @@ tgetnum(id)
  * of the buffer.  Return 1 if we find the option, or 0 if it is
  * not given.
  */
+int
 tgetflag(id)
 	char *id;
 {
@@ -266,35 +269,6 @@ tgetflag(id)
 			else if (*bp == '@')
 				return(0);
 		}
-	}
-}
-
-/*
- * Get a string valued option.
- * These are given as
- *	cl=^Z
- * Much decoding is done on the strings, and the strings are
- * placed in area, which is a ref parameter which is updated.
- * No checking on area overflow.
- */
-char *
-tgetstr(id, area)
-	char *id, **area;
-{
-	register char *bp = tbuf;
-
-	for (;;) {
-		bp = tskip(bp);
-		if (!*bp)
-			return (0);
-		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
-			continue;
-		if (*bp == '@')
-			return(0);
-		if (*bp != '=')
-			continue;
-		bp++;
-		return (tdecode(bp, area));
 	}
 }
 
@@ -345,4 +319,33 @@ nextc:
 	str = *area;
 	*area = cp;
 	return (str);
+}
+
+/*
+ * Get a string valued option.
+ * These are given as
+ *	cl=^Z
+ * Much decoding is done on the strings, and the strings are
+ * placed in area, which is a ref parameter which is updated.
+ * No checking on area overflow.
+ */
+char *
+tgetstr(id, area)
+	char *id, **area;
+{
+	register char *bp = tbuf;
+
+	for (;;) {
+		bp = tskip(bp);
+		if (!*bp)
+			return (0);
+		if (*bp++ != id[0] || *bp == 0 || *bp++ != id[1])
+			continue;
+		if (*bp == '@')
+			return(0);
+		if (*bp != '=')
+			continue;
+		bp++;
+		return (tdecode(bp, area));
+	}
 }

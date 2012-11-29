@@ -37,6 +37,7 @@
 #include <paths.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 char *
 devname(dev, type)

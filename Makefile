@@ -51,7 +51,7 @@ BIN_FILES	:= $(wildcard bin/*)
 SBIN_FILES	:= $(wildcard sbin/*)
 GAMES_FILES	:= $(shell find games -type f ! -path '*/.*')
 LIBEXEC_FILES	:= $(wildcard libexec/*)
-LIB_FILES	:= lib/crt0.o lib/retroImage lib/libc.a
+LIB_FILES	:= lib/crt0.o lib/retroImage $(wildcard lib/*.a)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap

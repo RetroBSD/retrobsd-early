@@ -94,7 +94,7 @@ malloc(nbytes)
 	size_t nbytes;
 {
 	register union store *p, *q;
-	register nw;
+	register int nw;
 	static int temp;	/* coroutines assume no auto */
 
 	if (nbytes == 0)

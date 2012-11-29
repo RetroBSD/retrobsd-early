@@ -10,8 +10,7 @@ fputs(s, iop)
 	register const char *s;
 	register FILE *iop;
 {
-	register r = 0;
-	register c;
+	register int r = 0, c;
 	int unbuffered;
 	char localbuf[BUFSIZ];
 
@@ -22,7 +21,7 @@ fputs(s, iop)
 		iop->_bufsiz = BUFSIZ;
 	}
 
-	while (c = *s++)
+	while ((c = *s++))
 		r = putc(c, iop);
 
 	if (unbuffered) {

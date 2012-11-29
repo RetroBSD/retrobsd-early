@@ -18,6 +18,7 @@ struct timeb {
 	short	dstflag;
 };
 
+int
 ftime(tp)
 	register struct timeb *tp;
 {
@@ -30,4 +31,5 @@ ftime(tp)
 	tp->millitm = t.tv_usec / 1000;
 	tp->timezone = tz.tz_minuteswest;
 	tp->dstflag = tz.tz_dsttime;
+	return 0;
 }

@@ -10,35 +10,34 @@
  * Definition is the line number in the /etc/ttys file.
  */
 #include <ttyent.h>
+#include <string.h>
+#include <unistd.h>
 
-char	*ttyname();
-char	*rindex();
-
-#define	NULL	0
-
+int
 ttyslot()
 {
 	register struct ttyent *ty;
 	register char *tp, *p;
-	register s;
+	register int s;
 
-	if ((tp = ttyname(0)) == NULL &&
-	    (tp = ttyname(1)) == NULL &&
-	    (tp = ttyname(2)) == NULL)
-		return(0);
-	if ((p = rindex(tp, '/')) == NULL)
+	if (! (tp = ttyname(0)) &&
+	    ! (tp = ttyname(1)) &&
+	    ! (tp = ttyname(2)))
+		return 0;
+        p = strrchr(tp, '/');
+	if (! p)
 		p = tp;
 	else
 		p++;
 	setttyent();
 	s = 0;
-	while ((ty = getttyent()) != NULL) {
+	while ((ty = getttyent())) {
 		s++;
 		if (strcmp(ty->ty_name, p) == 0) {
 			endttyent();
-			return (s);
+			return s;
 		}
 	}
 	endttyent();
-	return (0);
+	return 0;
 }

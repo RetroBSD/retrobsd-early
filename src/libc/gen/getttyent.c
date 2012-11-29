@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <ttyent.h>
 
@@ -14,6 +15,7 @@ static FILE *tf = NULL;
 static char line[LINE];
 static struct ttyent tty;
 
+void
 setttyent()
 {
 	if (tf == NULL)
@@ -22,6 +24,7 @@ setttyent()
 		rewind(tf);
 }
 
+void
 endttyent()
 {
 	if (tf != NULL) {
@@ -126,7 +129,8 @@ getttyent()
 	tty.ty_comment = p;
 	if (*p == 0)
 		tty.ty_comment = 0;
-	if (p = index(p, '\n'))
+        p = index(p, '\n');
+	if (p)
 		*p = '\0';
 	return(&tty);
 }

@@ -1,9 +1,10 @@
 #include <stdio.h>
 
+int
 getw(iop)
-register FILE *iop;
+        register FILE *iop;
 {
-	register i;
+	register int i;
 	register char *p;
 	int w;
 
@@ -20,7 +21,7 @@ long
 getlw(iop)
 register FILE *iop;
 {
-	register i;
+	register int i;
 	register char *p;
 	long w;
 

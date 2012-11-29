@@ -5,6 +5,7 @@
  */
 #include <sys/param.h>
 #include <sys/dir.h>
+#include <unistd.h>
 
 /*
  * get next entry in a directory.

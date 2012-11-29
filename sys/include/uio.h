@@ -68,5 +68,11 @@ int uiomove (caddr_t cp, u_int n, struct uio *uio);
  */
 int ureadc (int c, struct uio *uio);
 
+#else /* !KERNEL */
+
+ssize_t readv (int fd, const struct iovec *iov, int iovcnt);
+
+ssize_t writev (int fd, const struct iovec *iov, int iovcnt);
+
 #endif /* KERNEL */
 #endif /* !_SYS_UIO_H_ */

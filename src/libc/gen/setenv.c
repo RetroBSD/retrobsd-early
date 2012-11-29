@@ -33,7 +33,7 @@ setenv(name, value, rewrite)
 		if (!rewrite)
 			return(0);
 		if (strlen(C) >= l_value) {	/* old larger; copy over */
-			while (*C++ = *value++);
+			while ((*C++ = *value++));
 			return(0);
 		}
 	}
@@ -65,7 +65,7 @@ setenv(name, value, rewrite)
 	    malloc((u_int)((int)(E - name) + l_value + 2))))
 		return(-1);
 	for (C = environ[offset]; (*C = *name++) && *C != '='; ++C);
-	for (*C++ = '='; *C++ = *value++; );
+	for (*C++ = '='; (*C++ = *value++); );
 	return(0);
 }
 

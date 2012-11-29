@@ -8,10 +8,12 @@
 /*
  * Backwards compatible pause.
  */
+int
 pause()
 {
 	sigset_t set;
 
 	sigemptyset(&set);
 	sigsuspend(&set);
+	return 0;
 }

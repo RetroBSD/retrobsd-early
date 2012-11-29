@@ -1,14 +1,15 @@
+#include <sys/types.h>
 #include <grp.h>
+#include <string.h>
 
 struct group *
 getgrnam(name)
-register char *name;
+        register const char *name;
 {
 	register struct group *p;
-	struct group *getgrent();
 
 	setgrent();
-	while( (p = getgrent()) && strcmp(p->gr_name,name) );
+	while ((p = getgrent()) && strcmp(p->gr_name, name));
 	endgrent();
 	return(p);
 }

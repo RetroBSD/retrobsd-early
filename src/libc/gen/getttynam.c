@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #include <ttyent.h>
+#include <string.h>
 
 struct ttyent *
 getttynam(tty)
@@ -12,7 +13,7 @@ getttynam(tty)
 	register struct ttyent *t;
 
 	setttyent();
-	while (t = getttyent()) {
+	while ((t = getttyent())) {
 		if (strcmp(tty, t->ty_name) == 0)
 			break;
 	}

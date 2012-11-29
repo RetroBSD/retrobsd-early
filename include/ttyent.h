@@ -18,5 +18,5 @@ struct	ttyent { /* see getttyent(3) */
 
 struct ttyent *getttyent (void);
 struct ttyent *getttynam (const char *name);
-int setttyent (void);
-int endttyent (void);
+void setttyent (void);
+void endttyent (void);

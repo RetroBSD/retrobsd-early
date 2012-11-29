@@ -9,6 +9,7 @@
 /*
  * Backwards compatible utime.
  */
+int
 utime(name, otv)
 	char *name;
 	time_t otv[];
@@ -17,5 +18,5 @@ utime(name, otv)
 
 	tv[0].tv_sec = otv[0]; tv[0].tv_usec = 0;
 	tv[1].tv_sec = otv[1]; tv[1].tv_usec = 0;
-	return (utimes(name, tv));
+	return utimes(name, tv);
 }

@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -13,7 +14,7 @@ int _flsbuf(c, iop)
     register FILE *iop;
 {
 	register char *base;
-	register n, rn;
+	register int n, rn;
 	char c1;
 	int size;
 	struct stat stbuf;
@@ -74,11 +75,12 @@ tryagain:
 	return(c);
 }
 
+int
 fflush(iop)
 register FILE *iop;
 {
 	register char *base;
-	register n;
+	register int n;
 
 	if ((iop->_flag&(_IONBF|_IOWRT))==_IOWRT
 	 && (base=iop->_base)!=NULL && (n=iop->_ptr-base)>0) {
@@ -92,6 +94,7 @@ register FILE *iop;
 	return(0);
 }
 
+int
 fclose(iop)
 	register FILE *iop;
 {

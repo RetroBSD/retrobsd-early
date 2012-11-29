@@ -48,6 +48,7 @@
  * Set one of the three kinds of buffering, optionally including
  * a buffer.
  */
+int
 setvbuf(fp, buf, mode, size)
 	register FILE *fp;
 	char *buf;

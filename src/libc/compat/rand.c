@@ -5,12 +5,14 @@
  */
 static	long	randx = 1;
 
+void
 srand(x)
-unsigned x;
+        unsigned x;
 {
 	randx = x;
 }
 
+int
 rand()
 {
 #ifdef pdp11

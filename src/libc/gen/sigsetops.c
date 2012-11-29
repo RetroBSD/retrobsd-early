@@ -38,6 +38,7 @@
 #undef sigdelset
 #undef sigismember
 
+int
 sigemptyset(set)
 	sigset_t *set;
 {
@@ -45,6 +46,7 @@ sigemptyset(set)
 	return (0);
 }
 
+int
 sigfillset(set)
 	sigset_t *set;
 {
@@ -52,6 +54,7 @@ sigfillset(set)
 	return (0);
 }
 
+int
 sigaddset(set, signo)
 	sigset_t *set;
 	int signo;
@@ -60,6 +63,7 @@ sigaddset(set, signo)
 	return (0);
 }
 
+int
 sigdelset(set, signo)
 	sigset_t *set;
 	int signo;
@@ -68,6 +72,7 @@ sigdelset(set, signo)
 	return (0);
 }
 
+int
 sigismember(set, signo)
 	sigset_t *set;
 	int signo;

@@ -9,9 +9,9 @@
  */
 #include <sgtty.h>
 
+int
 gtty(fd, ap)
 	struct sgtty *ap;
 {
-
-	return(ioctl(fd, TIOCGETP, ap));
+	return ioctl(fd, TIOCGETP, ap);
 }

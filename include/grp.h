@@ -7,4 +7,9 @@ struct	group { /* see getgrent(3) */
 	char	**gr_mem;
 };
 
-struct group *getgrent(), *getgrgid(), *getgrnam();
+struct group *getgrent(void);
+struct group *getgrnam(const char *name);
+struct group *getgrgid(gid_t gid);
+void setgrent(void);
+void endgrent(void);
+int setgroups(size_t size, const gid_t *list);

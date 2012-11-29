@@ -12,7 +12,6 @@ all:    	../libwiznet.a
 		$(RANLIB) $@
 
 install: 	all
-#		cp ../libwiznet.a ${DESTDIR}/lib/libwiznet.a
-#		$(RANLIB) ${DESTDIR}/lib/libwiznet.a
+
 clean:
 		rm -f *.o a.out core test errs ../libwiznet*.a

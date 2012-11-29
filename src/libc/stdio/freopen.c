@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 FILE *
 freopen(file, mode, iop)
@@ -13,7 +15,7 @@ freopen(file, mode, iop)
 	register const char *mode;
 	register FILE *iop;
 {
-	register f, rw, oflags;
+	register int f, rw, oflags;
 
 	rw = (mode[1] == '+');
 

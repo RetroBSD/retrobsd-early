@@ -9,7 +9,6 @@
 #include <paths.h>
 
 static	char shell[] =	"/bin/sh";
-extern	errno;
 
 int
 execlp(name, argv)
@@ -47,7 +46,7 @@ execvp(name, argv)
 	char *newargs[256];
 	int i;
 	register unsigned etxtbsy = 1;
-	register eacces = 0;
+	register int eacces = 0;
 
 	pathstr = getenv("PATH");
 	if (! pathstr)
@@ -62,7 +61,7 @@ execvp(name, argv)
 		case ENOEXEC:
 			newargs[0] = "sh";
 			newargs[1] = fname;
-			for (i=1; newargs[i+1]=argv[i]; i++) {
+			for (i=1; (newargs[i+1] = argv[i]); i++) {
 				if (i>=254) {
 					errno = E2BIG;
 					return(-1);

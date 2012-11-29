@@ -11,7 +11,7 @@ char *buf;
 {
 	int sign, decpt;
 	register char *p1, *p2;
-	register i;
+	register int i;
 
 	p1 = ecvt(number, ndigit, &decpt, &sign);
 	p2 = buf;
@@ -19,8 +19,8 @@ char *buf;
 		*p2++ = '-';
 	for (i=ndigit-1; i>0 && p1[i]=='0'; i--)
 		ndigit--;
-	if (decpt >= 0 && decpt-ndigit > 4
-	 || decpt < 0 && decpt < -3) { /* use E-style */
+	if ((decpt >= 0 && decpt-ndigit > 4) ||
+	    (decpt < 0 && decpt < -3)) { /* use E-style */
 		decpt--;
 		*p2++ = *p1++;
 		*p2++ = '.';

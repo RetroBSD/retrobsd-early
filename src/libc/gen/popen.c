@@ -52,7 +52,9 @@ popen(program, type)
 	register FILE *iop;
 	int pdes[2], fds, pid;
 
-	if (*type != 'r' && *type != 'w' || type[1])
+	if (*type != 'r' && *type != 'w')
+		return (NULL);
+	if (type[1])
 		return (NULL);
 
 	if (pids == NULL) {
@@ -84,7 +86,7 @@ popen(program, type)
 			}
 			(void) close(pdes[1]);
 		}
-		execl("/bin/sh", "sh", "-c", program, NULL);
+		execl("/bin/sh", "sh", "-c", program, (char*)0);
 		_exit(127);
 		/* NOTREACHED */
 	}

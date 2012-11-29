@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #include <string.h>
+#include <unistd.h>
 #include <signal.h>
 
 /*
@@ -13,12 +14,13 @@
 
 extern	char *sys_siglist[];
 
+void
 psignal(sig, s)
 	unsigned sig;
 	char *s;
 {
 	register char *c;
-	register n;
+	register int n;
 
 	c = "Unknown signal";
 	if (sig < NSIG)

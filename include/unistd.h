@@ -107,11 +107,18 @@ int     chown (const char *path, uid_t owner, gid_t group);
 int     nice (int inc);
 int     setuid (uid_t uid);
 int     setgid (gid_t gid);
+int     seteuid (uid_t euid);
+int     setegid (gid_t egid);
+int     setreuid (uid_t ruid, uid_t euid);
+int     setregid (gid_t rgid, gid_t egid);
 int     isatty (int fd);
 int     chdir (const char *path);
 int     fchdir (int fd);
 int     chflags (const char *path, u_long flags);
 int     fchflags (int fd, u_long flags);
+int     getgroups (int size, gid_t list[]);
+int     getdtablesize (void);
+int     rmdir (const char *pathname);
 
 struct stat;
 int     stat (const char *path, struct stat *buf);

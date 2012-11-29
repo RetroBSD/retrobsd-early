@@ -14,7 +14,10 @@
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
+int
 scandir(dirname, namelist, select, dcomp)
 	char *dirname;
 	struct direct *(*namelist[]);
@@ -54,7 +57,8 @@ scandir(dirname, namelist, select, dcomp)
 		p->d_ino = d->d_ino;
 		p->d_reclen = d->d_reclen;
 		p->d_namlen = d->d_namlen;
-		for (cp1 = p->d_name, cp2 = d->d_name; *cp1++ = *cp2++; );
+		for (cp1 = p->d_name, cp2 = d->d_name; (*cp1++ = *cp2++); );
+
 		/*
 		 * Check to make sure the array has space left and
 		 * realloc the maximum size.
@@ -80,6 +84,7 @@ scandir(dirname, namelist, select, dcomp)
 /*
  * Alphabetic order comparison routine for those who want it.
  */
+int
 alphasort(d1, d2)
 	struct direct **d1, **d2;
 {

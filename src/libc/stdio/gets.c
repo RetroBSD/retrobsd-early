@@ -4,7 +4,7 @@ char *
 gets(s)
 char *s;
 {
-	register c;
+	register int c;
 	register char *cs;
 
 	cs = s;

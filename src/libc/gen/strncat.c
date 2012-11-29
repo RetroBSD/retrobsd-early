@@ -17,7 +17,7 @@ strncat(s1, s2, n)
 	while (*s1++)
 		;
 	--s1;
-	while (*s1++ = *s2++)
+	while ((*s1++ = *s2++))
 		if (--n < 0) {
 			*--s1 = '\0';
 			break;

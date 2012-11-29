@@ -30,7 +30,7 @@ _instr (ptr, type, len, iop, eofptr)
 	register FILE *iop;
 	int *eofptr;
 {
-	register ch;
+	register int ch;
 	register char *optr;
 	int ignstp;
 
@@ -76,7 +76,7 @@ _innum (ptr, type, len, size, iop, eofptr)
 {
 	register char *np;
 	char numbuf[64];
-	register c, base;
+	register int c, base;
 	int expseen, scale, negflg, c1, ndigit;
 	long lcval;
 
@@ -106,8 +106,8 @@ _innum (ptr, type, len, size, iop, eofptr)
 		c = getc(iop);
 	}
 	for ( ; --len>=0; *np++ = c, c = getc(iop)) {
-		if (isdigit(c)
-		 || base==16 && ('a'<=c && c<='f' || 'A'<=c && c<='F')) {
+		if (isdigit(c) ||
+		    (base==16 && (('a'<=c && c<='f') || ('A'<=c && c<='F')))) {
 			ndigit++;
 			if (base==8)
 				lcval <<=3;
@@ -253,7 +253,7 @@ static char *
 _getccl(s)
 register unsigned char *s;
 {
-	register c, t;
+	register int c, t;
 
 	t = 0;
 	if (*s == '^') {

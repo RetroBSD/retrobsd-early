@@ -33,6 +33,7 @@
 #include <sys/param.h>
 #include <sys/sysctl.h>
 
+int
 gethostname(name, namelen)
 	char *name;
 	int namelen;

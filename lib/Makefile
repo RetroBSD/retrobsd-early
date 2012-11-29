@@ -1,5 +1,5 @@
 TOPSRC          = $(shell cd ..; pwd)
-SUBDIR		= startup libc
+SUBDIR		= startup libc libcurses libtermlib libwiznet
 PROG		= ar as aout ld nm ranlib size strip
 
 # Build a list of the host include directories.
