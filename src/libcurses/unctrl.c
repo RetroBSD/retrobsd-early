@@ -3,18 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)unctrl.c	5.1 (Berkeley) 6/7/85";
-#endif
-
 /*
  * define unctrl codes for each character
  *
  */
 
 /* LINTLIBRARY */
-char	*_unctrl[]	= {	/* unctrl codes for ttys		*/
+char *_unctrl[] = {	/* unctrl codes for ttys		*/
 	"^@", "^A", "^B", "^C", "^D", "^E", "^F", "^G", "^H", "^I", "^J", "^K",
 	"^L", "^M", "^N", "^O", "^P", "^Q", "^R", "^S", "^T", "^U", "^V", "^W",
 	"^X", "^Y", "^Z", "^[", "^\\", "^]", "^~", "^_",

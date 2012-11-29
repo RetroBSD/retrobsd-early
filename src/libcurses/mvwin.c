@@ -3,22 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)mvwin.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  * relocate the starting position of a window
- *
  */
-
+int
 mvwin(win, by, bx)
-reg WINDOW	*win;
-reg int		by, bx; {
-
+        reg WINDOW	*win;
+        reg int		by, bx;
+{
 	register WINDOW	*orig;
 	register int	dy, dx;
 

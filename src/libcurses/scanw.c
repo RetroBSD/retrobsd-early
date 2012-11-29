@@ -4,36 +4,35 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)scanw.c	5.1 (Berkeley) 6/7/85";
-#endif
-
 /*
  * scanw and friends
  *
  */
 #include <string.h>
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  *	This routine implements a scanf on the standard screen.
  */
+int
 scanw(fmt, args)
-char	*fmt;
-int	args; {
-
+        char	*fmt;
+        int	args;
+{
 	return _sscans(stdscr, fmt, &args);
 }
 /*
  *	This routine implements a scanf on the given window.
  */
+int
 wscanw(win, fmt, args)
-WINDOW	*win;
-char	*fmt;
-int	args; {
-
+        WINDOW	*win;
+        char	*fmt;
+        int	args;
+{
 	return _sscans(win, fmt, &args);
 }
+
 /*
  *	This routine actually executes the scanf from the window.
  *
@@ -43,11 +42,12 @@ int	args; {
  * will have to modify this routine to use the interface that your
  * "sscanf" uses.
  */
+int
 _sscans(win, fmt, args)
-WINDOW	*win;
-char	*fmt;
-int	*args; {
-
+        WINDOW	*win;
+        char	*fmt;
+        int	*args;
+{
 	char	buf[100];
 	FILE	junk;
 

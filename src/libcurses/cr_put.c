@@ -3,18 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include "curses.ext"
+#include <string.h>
 
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)cr_put.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-# include       <string.h>
-
-# define	HARDTABS	8
-
-extern char	*tgoto();
-int		plodput();
+#define HARDTABS	8
 
 /*
  * Terminal driving and line formatting routines.
@@ -34,105 +26,6 @@ static int	outcol, outline, destcol, destline;
 
 WINDOW		*_win;
 
-mvcur(ly, lx, y, x)
-int	ly, lx, y, x; {
-
-#ifdef DEBUG
-	fprintf(outf, "MVCUR: moving cursor from (%d,%d) to (%d,%d)\n", ly, lx, y, x);
-#endif
-	destcol = x;
-	destline = y;
-	outcol = lx;
-	outline = ly;
-	fgoto();
-}
-
-fgoto()
-{
-	reg char	*cgp;
-	reg int		l, c;
-
-	if (destcol >= COLS) {
-		destline += destcol / COLS;
-		destcol %= COLS;
-	}
-	if (outcol >= COLS) {
-		l = (outcol + 1) / COLS;
-		outline += l;
-		outcol %= COLS;
-		if (AM == 0) {
-			while (l > 0) {
-				if (_pfast)
-					if (CR)
-						_puts(CR);
-					else
-						_putchar('\r');
-				if (NL)
-					_puts(NL);
-				else
-					_putchar('\n');
-				l--;
-			}
-			outcol = 0;
-		}
-		if (outline > LINES - 1) {
-			destline -= outline - (LINES - 1);
-			outline = LINES - 1;
-		}
-	}
-	if (destline >= LINES) {
-		l = destline;
-		destline = LINES - 1;
-		if (outline < LINES - 1) {
-			c = destcol;
-			if (_pfast == 0 && !CA)
-				destcol = 0;
-			fgoto();
-			destcol = c;
-		}
-		while (l >= LINES) {
-			/*
-			 * The following linefeed (or simulation thereof)
-			 * is supposed to scroll up the screen, since we
-			 * are on the bottom line.  We make the assumption
-			 * that linefeed will scroll.  If ns is in the
-			 * capability list this won't work.  We should
-			 * probably have an sc capability but sf will
-			 * generally take the place if it works.
-			 *
-			 * Superbee glitch:  in the middle of the screen we
-			 * have to use esc B (down) because linefeed screws up
-			 * in "Efficient Paging" (what a joke) mode (which is
-			 * essential in some SB's because CRLF mode puts garbage
-			 * in at end of memory), but you must use linefeed to
-			 * scroll since down arrow won't go past memory end.
-			 * I turned this off after recieving Paul Eggert's
-			 * Superbee description which wins better.
-			 */
-			if (NL /* && !XB */ && _pfast)
-				_puts(NL);
-			else
-				_putchar('\n');
-			l--;
-			if (_pfast == 0)
-				outcol = 0;
-		}
-	}
-	if (destline < outline && !(CA || UP))
-		destline = outline;
-	if (CA) {
-		cgp = tgoto(CM, destcol, destline);
-		if (plod(strlen(cgp)) > 0)
-			plod(0);
-		else
-			tputs(cgp, 0, _putchar);
-	}
-	else
-		plod(0);
-	outline = destline;
-	outcol = destcol;
-}
-
 /*
  * Move (slowly) to destination.
  * Hard thing here is using home cursor on really deficient terminals.
@@ -142,14 +35,37 @@ fgoto()
 
 static int plodcnt, plodflg;
 
+static int
 plodput(c)
 {
-	if (plodflg)
+	if (plodflg) {
 		plodcnt--;
-	else
-		_putchar(c);
+		return 0;
+        }
+	return _putchar(c);
 }
 
+/*
+ * Return the column number that results from being in column col and
+ * hitting a tab, where tabs are set every ts columns.  Work right for
+ * the case where col > COLS, even if ts does not divide COLS.
+ */
+static int
+tabcol(col, ts)
+        int col, ts;
+{
+	int offset;
+
+	if (col >= COLS) {
+		offset = COLS * (col / COLS);
+		col -= offset;
+	}
+	else
+		offset = 0;
+	return col + ts - (col % ts) + offset;
+}
+
+static int
 plod(cnt)
 {
 	register int i, j, k;
@@ -256,7 +172,7 @@ plod(cnt)
 	 * If it will be cheaper, or if we can't back up, then send
 	 * a return preliminarily.
 	 */
-	if (j > i + 1 || outcol > destcol && !BS && !BC) {
+	if (j > i + 1 || (outcol > destcol && !BS && !BC)) {
 		/*
 		 * BUG: this doesn't take the (possibly long) length
 		 * of CR into account.
@@ -371,21 +287,104 @@ out:
 	return(plodcnt);
 }
 
-/*
- * Return the column number that results from being in column col and
- * hitting a tab, where tabs are set every ts columns.  Work right for
- * the case where col > COLS, even if ts does not divide COLS.
- */
-tabcol(col, ts)
-int col, ts;
+void
+fgoto()
 {
-	int offset, result;
+	reg char	*cgp;
+	reg int		l, c;
 
-	if (col >= COLS) {
-		offset = COLS * (col / COLS);
-		col -= offset;
+	if (destcol >= COLS) {
+		destline += destcol / COLS;
+		destcol %= COLS;
+	}
+	if (outcol >= COLS) {
+		l = (outcol + 1) / COLS;
+		outline += l;
+		outcol %= COLS;
+		if (AM == 0) {
+			while (l > 0) {
+				if (_pfast) {
+					if (CR)
+						_puts(CR);
+					else
+						_putchar('\r');
+                                }
+				if (NL)
+					_puts(NL);
+				else
+					_putchar('\n');
+				l--;
+			}
+			outcol = 0;
+		}
+		if (outline > LINES - 1) {
+			destline -= outline - (LINES - 1);
+			outline = LINES - 1;
+		}
+	}
+	if (destline >= LINES) {
+		l = destline;
+		destline = LINES - 1;
+		if (outline < LINES - 1) {
+			c = destcol;
+			if (_pfast == 0 && !CA)
+				destcol = 0;
+			fgoto();
+			destcol = c;
+		}
+		while (l >= LINES) {
+			/*
+			 * The following linefeed (or simulation thereof)
+			 * is supposed to scroll up the screen, since we
+			 * are on the bottom line.  We make the assumption
+			 * that linefeed will scroll.  If ns is in the
+			 * capability list this won't work.  We should
+			 * probably have an sc capability but sf will
+			 * generally take the place if it works.
+			 *
+			 * Superbee glitch:  in the middle of the screen we
+			 * have to use esc B (down) because linefeed screws up
+			 * in "Efficient Paging" (what a joke) mode (which is
+			 * essential in some SB's because CRLF mode puts garbage
+			 * in at end of memory), but you must use linefeed to
+			 * scroll since down arrow won't go past memory end.
+			 * I turned this off after recieving Paul Eggert's
+			 * Superbee description which wins better.
+			 */
+			if (NL /* && !XB */ && _pfast)
+				_puts(NL);
+			else
+				_putchar('\n');
+			l--;
+			if (_pfast == 0)
+				outcol = 0;
+		}
+	}
+	if (destline < outline && !(CA || UP))
+		destline = outline;
+	if (CA) {
+		cgp = tgoto(CM, destcol, destline);
+		if (plod(strlen(cgp)) > 0)
+			plod(0);
+		else
+			tputs(cgp, 0, _putchar);
 	}
 	else
-		offset = 0;
-	return col + ts - (col % ts) + offset;
+		plod(0);
+	outline = destline;
+	outcol = destcol;
+}
+
+void
+mvcur(ly, lx, y, x)
+        int	ly, lx, y, x;
+{
+#ifdef DEBUG
+	fprintf(outf, "MVCUR: moving cursor from (%d,%d) to (%d,%d)\n", ly, lx, y, x);
+#endif
+	destcol = x;
+	destline = y;
+	outcol = lx;
+	outline = ly;
+	fgoto();
 }

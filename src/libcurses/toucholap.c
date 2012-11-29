@@ -3,24 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include "curses.ext"
 
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)toucholap.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-
-# define	min(a,b)	(a < b ? a : b)
-# define	max(a,b)	(a > b ? a : b)
+#define min(a,b)	(a < b ? a : b)
+#define max(a,b)	(a > b ? a : b)
 
 /*
- *	Touch, on win2, the part that overlaps with win1.
- *
+ * Touch, on win2, the part that overlaps with win1.
  */
+void
 touchoverlap(win1, win2)
-reg WINDOW	*win1, *win2; {
-
-	reg int		x, y, endy, endx, starty, startx;
+        reg WINDOW	*win1, *win2;
+{
+	reg int		y, endy, endx, starty, startx;
 
 # ifdef DEBUG
 	fprintf(outf, "TOUCHOVERLAP(%0.2o, %0.2o);\n", win1, win2);

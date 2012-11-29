@@ -3,20 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)addstr.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
- *	This routine adds a string starting at (_cury,_curx)
- *
+ * This routine adds a string starting at (_cury,_curx)
  */
-waddstr(win,str)
-reg WINDOW	*win; 
-reg char	*str;
+int
+waddstr(win, str)
+        reg WINDOW	*win;
+        reg char	*str;
 {
 # ifdef DEBUG
 	fprintf(outf, "WADDSTR(\"%s\")\n", str);

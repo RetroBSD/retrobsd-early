@@ -3,24 +3,19 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)id_subwins.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  * _id_subwins:
  *	Re-sync the pointers to _y for all the subwindows.
- *
  */
+void
 _id_subwins(orig)
-register WINDOW	*orig;
+        register WINDOW	*orig;
 {
 	register WINDOW	*win;
 	register int	realy;
-	register int	y, oy, x;
+	register int	y, oy;
 
 	realy = orig->_begy + orig->_cury;
 	for (win = orig->_nextp; win != orig; win = win->_nextp) {

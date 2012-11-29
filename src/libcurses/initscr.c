@@ -3,25 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)initscr.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-# include	<signal.h>
-
-extern char	*getenv();
+#include "curses.ext"
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 
 /*
- *	This routine initializes the current and standard screen.
- *
+ * This routine initializes the current and standard screen.
  */
 WINDOW *
-initscr() {
-
+initscr()
+{
 	reg char	*sp;
-	int		tstp();
 	int 		nfd;
 
 # ifdef DEBUG
@@ -30,11 +23,13 @@ initscr() {
 	if (My_term)
 		setterm(Def_term);
 	else {
+	        nfd = getdtablesize();
 		for (_tty_ch = 0; _tty_ch < nfd; _tty_ch++)
 			if (isatty(_tty_ch))
 				break;
 		gettmode();
-		if ((sp = getenv("TERM")) == NULL)
+		sp = getenv("TERM");
+		if (! sp)
 			sp = Def_term;
 		setterm(sp);
 # ifdef DEBUG

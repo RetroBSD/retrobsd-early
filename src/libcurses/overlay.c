@@ -3,24 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
+#include "curses.ext"
+#include <ctype.h>
+#include <strings.h>
 
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)overlay.c	5.2 (Berkeley) 2/12/86";
-#endif
-
-# include	"curses.ext"
-# include	<ctype.h>
-# include       <strings.h>
-
-# define	min(a,b)	(a < b ? a : b)
-# define	max(a,b)	(a > b ? a : b)
+#define min(a,b)	(a < b ? a : b)
+#define max(a,b)	(a > b ? a : b)
 
 /*
- *	This routine writes win1 on win2 non-destructively.
- *
+ * This routine writes win1 on win2 non-destructively.
  */
+void
 overlay(win1, win2)
-reg WINDOW	*win1, *win2; {
+        reg WINDOW	*win1, *win2;
+{
 
 	reg char	*sp, *end;
 	reg int		x, y, endy, endx, starty, startx;

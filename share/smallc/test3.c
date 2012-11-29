@@ -3,13 +3,13 @@ main()
     int t;
 
     t = 0;
-    if(t) printt(t,"failure"); else printt(t,"success");
+    if (t) printt(t, "failure"); else printt(t, "success");
     t = 1;
-    if(t) printt(t,"success"); else printt(t,"failure");
+    if (t) printt(t, "success"); else printt(t, "failure");
     t = 8;
-    if(t) printt(t,"success"); else printt(t,"failure");
+    if (t) printt(t, "success"); else printt(t, "failure");
     t = -2;
-    if(t) printt(t,"success"); else printt(t,"failure");
+    if (t) printt(t, "success"); else printt(t, "failure");
     printf("\n");
 
     t = 4;

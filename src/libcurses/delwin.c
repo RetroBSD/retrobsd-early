@@ -3,21 +3,16 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)delwin.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-# include       <stdlib.h>
+#include "curses.ext"
+#include <stdlib.h>
 
 /*
- *	This routine deletes a window and releases it back to the system.
- *
+ * This routine deletes a window and releases it back to the system.
  */
+int
 delwin(win)
-reg WINDOW	*win; {
-
+        reg WINDOW	*win;
+{
 	reg int		i;
 	reg WINDOW	*wp, *np;
 
@@ -36,8 +31,7 @@ reg WINDOW	*win; {
 			delwin(wp);
 			wp = np;
 		}
-	}
-	else {
+	} else {
 		/*
 		 * If we are a subwindow, take ourselves out of the
 		 * list.  NOTE: if we are a subwindow, the minimum list
@@ -50,4 +44,5 @@ reg WINDOW	*win; {
 	}
 	free(win->_y);
 	free(win);
+	return 0;
 }

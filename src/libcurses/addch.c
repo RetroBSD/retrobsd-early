@@ -5,7 +5,34 @@
  */
 #include "curses.ext"
 
-static set_ch(reg WINDOW *win, int y, int x, int ch);
+/*
+ * set_ch:
+ *	Set the first and last change flags for this window.
+ */
+static void
+set_ch(win, y, x, ch)
+        reg WINDOW	*win;
+        int		y, x;
+{
+# ifdef	FULLDEBUG
+	fprintf(outf, "SET_CH(%0.2o, %d, %d)\n", win, y, x);
+# endif
+	if (win->_y[y][x] != ch) {
+		x += win->_ch_off;
+		if (win->_firstch[y] == _NOCHANGE)
+			win->_firstch[y] = win->_lastch[y] = x;
+		else if (x < win->_firstch[y])
+			win->_firstch[y] = x;
+		else if (x > win->_lastch[y])
+			win->_lastch[y] = x;
+# ifdef FULLDEBUG
+		fprintf(outf, "SET_CH: change gives f/l: %d/%d [%d/%d]\n",
+			win->_firstch[y], win->_lastch[y],
+			win->_firstch[y] - win->_ch_off,
+			win->_lastch[y] - win->_ch_off);
+# endif
+	}
+}
 
 /*
  * This routine adds the character to the current position
@@ -15,7 +42,6 @@ int waddch(win, c)
         char		c;
 {
 	reg int		x, y;
-	reg WINDOW	*wp;
 	reg int		newx;
 
 	x = win->_curx;
@@ -41,13 +67,12 @@ int waddch(win, c)
 		if (x >= win->_maxx) {
 			x = 0;
 newline:
-			if (++y >= win->_maxy)
-				if (win->_scroll) {
-					scroll(win);
-					--y;
-				}
-				else
+			if (++y >= win->_maxy) {
+				if (! win->_scroll)
 					return ERR;
+				scroll(win);
+				--y;
+                        }
 		}
 # ifdef FULLDEBUG
 		fprintf(outf, "ADDCH: 2: y = %d, x = %d, firstch = %d, lastch = %d\n", y, x, win->_firstch[y], win->_lastch[y]);
@@ -69,33 +94,4 @@ newline:
 	win->_curx = x;
 	win->_cury = y;
 	return OK;
-}
-
-/*
- * set_ch:
- *	Set the first and last change flags for this window.
- */
-static
-set_ch(win, y, x, ch)
-reg WINDOW	*win;
-int		y, x;
-{
-# ifdef	FULLDEBUG
-	fprintf(outf, "SET_CH(%0.2o, %d, %d)\n", win, y, x);
-# endif
-	if (win->_y[y][x] != ch) {
-		x += win->_ch_off;
-		if (win->_firstch[y] == _NOCHANGE)
-			win->_firstch[y] = win->_lastch[y] = x;
-		else if (x < win->_firstch[y])
-			win->_firstch[y] = x;
-		else if (x > win->_lastch[y])
-			win->_lastch[y] = x;
-# ifdef FULLDEBUG
-		fprintf(outf, "SET_CH: change gives f/l: %d/%d [%d/%d]\n",
-			win->_firstch[y], win->_lastch[y],
-			win->_firstch[y] - win->_ch_off,
-			win->_lastch[y] - win->_ch_off);
-# endif
-	}
 }

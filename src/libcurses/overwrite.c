@@ -3,26 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)overwrite.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-# include	<ctype.h>
+#include "curses.ext"
+#include <ctype.h>
 #include <strings.h>
 
-# define	min(a,b)	(a < b ? a : b)
-# define	max(a,b)	(a > b ? a : b)
+#define min(a,b)	(a < b ? a : b)
+#define max(a,b)	(a > b ? a : b)
 
 /*
- *	This routine writes win1 on win2 destructively.
- *
+ * This routine writes win1 on win2 destructively.
  */
+void
 overwrite(win1, win2)
-reg WINDOW	*win1, *win2; {
-
-	reg char	*sp, *end;
+        reg WINDOW	*win1, *win2;
+{
 	reg int		x, y, endy, endx, starty, startx;
 
 # ifdef DEBUG

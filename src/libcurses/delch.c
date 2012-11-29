@@ -3,24 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)delch.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  *	This routine performs an insert-char on the line, leaving
  * (_cury,_curx) unchanged.
- *
  */
+int
 wdelch(win)
-reg WINDOW	*win; {
-
+        reg WINDOW	*win;
+{
 	reg char	*temp1, *temp2;
 	reg char	*end;
-	reg int		lch;
 
 	end = &win->_y[win->_cury][win->_maxx - 1];
 	temp1 = &win->_y[win->_cury][win->_curx];

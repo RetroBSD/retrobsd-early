@@ -28,7 +28,7 @@ POBJS=	../addch.o ../addstr.o ../box.o ../clear.o ../clrtobot.o ../clrtoeol.o ..
 
 CTAGS=	ctags
 DEFS=	-DNOSCCS
-CFLAGS=	-O $(DEFS)
+CFLAGS=	-O -Wall -Werror $(DEFS)
 TAGSFILE=tags
 
 all:    ../libcurses.a

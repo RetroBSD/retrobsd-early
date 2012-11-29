@@ -12,7 +12,8 @@
 
 /* LINTLIBRARY */
 
-# include	"curses.h"
+#include "curses.h"
+#include <stdarg.h>
 
 extern bool	_echoit, _rawmode, My_term, _endwin;
 
@@ -22,10 +23,18 @@ extern int	_tty_ch, LINES, COLS;
 
 extern SGTTY	_tty;
 
-char		_putchar();
+int	_putchar (int);
+void    _id_subwins (WINDOW *);
+void    gettmode (void);
+void    tstp (int);
+int     _sprintw (WINDOW *, char *, va_list);
+int     _sscans (WINDOW *, char *, int *);
+void    _swflags_ (WINDOW *);
+void    _set_subwin_ (WINDOW *, WINDOW *);
+void    mvcur (int, int, int, int);
 
 #ifdef DEBUG
-# define	outf	_outf
+#   define	outf	_outf
 
 FILE		*outf;
 #endif

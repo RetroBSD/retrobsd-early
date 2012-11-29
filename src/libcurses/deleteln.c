@@ -3,26 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)deleteln.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
-# include       <strings.h>
+#include "curses.ext"
+#include <strings.h>
 
 /*
  *	This routine deletes a line from the screen.  It leaves
  * (_cury,_curx) unchanged.
- *
  */
+int
 wdeleteln(win)
-reg WINDOW	*win;
+        reg WINDOW	*win;
 {
 	reg char	*temp;
 	reg int		y;
 	reg char	*end;
-	reg int		x;
 
 # ifdef DEBUG
 	fprintf(outf, "DELETELN(%0.2o)\n", win);

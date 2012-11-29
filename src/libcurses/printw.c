@@ -5,7 +5,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-#include <stdarg.h>
 #include "curses.ext"
 
 /*

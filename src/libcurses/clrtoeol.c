@@ -3,20 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)clrtoeol.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
- *	This routine clears up to the end of line
- *
+ * This routine clears up to the end of line
  */
+void
 wclrtoeol(win)
-reg WINDOW	*win; {
-
+        reg WINDOW	*win;
+{
 	reg char	*sp, *end;
 	reg int		y, x;
 	reg char	*maxx;

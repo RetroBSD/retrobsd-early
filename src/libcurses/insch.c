@@ -3,22 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)insch.c	5.1 (Berkeley) 6/7/85";
-#endif
-
-# include	"curses.ext"
+#include "curses.ext"
 
 /*
  *	This routine performs an insert-char on the line, leaving
  * (_cury,_curx) unchanged.
- *
  */
+int
 winsch(win, c)
-reg WINDOW	*win;
-char		c; {
-
+        reg WINDOW	*win;
+        char		c;
+{
 	reg char	*temp1, *temp2;
 	reg char	*end;
 
@@ -29,13 +24,12 @@ char		c; {
 		*temp1-- = *temp2--;
 	*temp1 = c;
 	touchline(win, win->_cury, win->_curx, win->_maxx - 1);
-	if (win->_cury == LINES - 1 && win->_y[LINES-1][COLS-1] != ' ')
-		if (win->_scroll) {
-			wrefresh(win);
-			scroll(win);
-			win->_cury--;
-		}
-		else
+	if (win->_cury == LINES - 1 && win->_y[LINES-1][COLS-1] != ' ') {
+		if (! win->_scroll)
 			return ERR;
+		wrefresh(win);
+		scroll(win);
+		win->_cury--;
+        }
 	return OK;
 }

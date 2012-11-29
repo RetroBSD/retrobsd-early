@@ -4,15 +4,11 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if !defined(lint) && !defined(NOSCCS)
-static char sccsid[] = "@(#)curses.c	5.2.1 (2.11BSD GTE) 12/9/94";
-#endif
-
 /*
  * Define global variables
  *
  */
-# include	"curses.h"
+#include "curses.h"
 
 bool	_echoit		= TRUE,	/* set if stty indicates ECHO		*/
 	_rawmode	= FALSE,/* set if stty indicates RAW mode	*/
