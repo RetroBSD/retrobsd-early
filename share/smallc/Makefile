@@ -1,6 +1,7 @@
 CC      = scc
+PROG    = hello primelist primesum test1 test2 test3 webserver gpio adc
 
-all:	hello primelist primesum test1 test2 test3 webserver
+all:    $(PROG)
 
 hello:	hello.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) hello.c
@@ -14,6 +15,12 @@ primesum: primesum.c
 webserver: webserver.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) webserver.c -lwiznet
 
+gpio:   gpio.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) gpio.c
+
+adc:    adc.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) adc.c
+
 test1:	test1.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test1.c
 
@@ -24,4 +31,4 @@ test3:	test3.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test3.c
 
 clean:
-	rm *.o primelist primesum test1 test2 test3 webserver
+	rm *.o $(PROG)

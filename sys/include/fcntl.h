@@ -40,7 +40,7 @@
  * Copied from 4.4-Lite and modified for 2.11BSD.  The modifications consisted
  * of removing: function prototypes (I don't like them, the compiler does not
  * support them, and it would mean dragging in cdefs.h to leave them in here),
- * #ifndef _POSIX_SOURCE lines (silly) and record locking related definitions 
+ * #ifndef _POSIX_SOURCE lines (silly) and record locking related definitions
  * If anyone adds any of the above it will be easy enough to modify this file.
  * In the meantime why bog down (or blow up) cpp any further?
  */
@@ -145,4 +145,5 @@
 #define	LOCK_EX		0x02		/* exclusive file lock */
 #define	LOCK_NB		0x04		/* don't block when locking */
 #define	LOCK_UN		0x08		/* unlock file */
+
 #endif /* !_FCNTL_H_ */

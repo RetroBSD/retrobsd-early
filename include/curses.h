@@ -9,7 +9,7 @@
 #include <sgtty.h>
 #include <term.h>
 
-#define	bool	char
+#define	bool	int
 #define	reg	register
 
 #define	TRUE	(1)
