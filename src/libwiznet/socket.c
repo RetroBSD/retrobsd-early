@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <wiznet/socket.h>
 
-uint16_t _socket_port [MAX_SOCK_NUM] = { 0 };
+unsigned _socket_port [MAX_SOCK_NUM] = { 0 };
 
 static unsigned local_port;
 

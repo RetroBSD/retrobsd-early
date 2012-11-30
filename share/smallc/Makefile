@@ -1,6 +1,6 @@
 CC      = scc
 
-all:	hello primelist primesum test1 test2 test3
+all:	hello primelist primesum test1 test2 test3 webserver
 
 hello:	hello.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) hello.c
@@ -10,6 +10,9 @@ primelist: primelist.c
 
 primesum: primesum.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) primesum.c
+
+webserver: webserver.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) webserver.c -lwiznet
 
 test1:	test1.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test1.c
@@ -21,4 +24,4 @@ test3:	test3.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test3.c
 
 clean:
-	rm *.o primelist primesum test1 test2 primelist.s primesum.s test1.s test2.s
+	rm *.o primelist primesum test1 test2 test3 webserver

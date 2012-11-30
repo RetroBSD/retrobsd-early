@@ -3,7 +3,7 @@
 
 #include "w5100.h"
 
-extern uint16_t _socket_port [MAX_SOCK_NUM];
+extern unsigned _socket_port [MAX_SOCK_NUM];
 
 /*
  * Opens a socket(TCP or UDP or IP_RAW mode)

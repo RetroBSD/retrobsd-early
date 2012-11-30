@@ -55,11 +55,13 @@ LIB_FILES	:= lib/crt0.o lib/retroImage $(wildcard lib/*.a)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-INC_FILES	= include/sys/ include/machine/ include/arpa/ include/smallc/ \
+INC_FILES	= include/sys/ include/machine/ include/arpa/ \
+                  include/smallc/ include/smallc/sys/ \
                   $(wildcard include/*.h) \
                   $(wildcard include/sys/*.h) \
                   $(wildcard include/machine/*.h) \
                   $(wildcard include/smallc/*.h) \
+                  $(wildcard include/smallc/sys/*.h) \
                   $(wildcard include/arpa/*.h)
 SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/ashello.S share/example/chello.c \
@@ -68,7 +70,8 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/fact.fth share/example/echo.S \
                   share/smallc/Makefile share/smallc/primelist.c \
                   share/smallc/primesum.c share/smallc/test1.c \
-                  share/smallc/test2.c share/smallc/test3.c share/smallc/hello.c
+                  share/smallc/test2.c share/smallc/test3.c \
+                  share/smallc/hello.c share/smallc/webserver.c
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile

@@ -81,7 +81,7 @@ void udp_stop (udp_t *u)
  * Use this function to transmit binary data that might contain 0x00 bytes.
  * This function returns sent data size for success else -1.
  */
-uint16_t udp_send_packet (udp_t *u, const uint8_t *buf, unsigned len,
+unsigned udp_send_packet (udp_t *u, const uint8_t *buf, unsigned len,
                           uint8_t *ip, unsigned port)
 {
     return socket_sendto (u->sock, buf, len, ip, port);
@@ -91,7 +91,7 @@ uint16_t udp_send_packet (udp_t *u, const uint8_t *buf, unsigned len,
  * Send zero-terminated string str as packet to peer at specified ip, and port.
  * This function returns sent data size for success else -1.
  */
-uint16_t udp_send_string (udp_t *u, const char *str,
+unsigned udp_send_string (udp_t *u, const char *str,
                           uint8_t *ip, unsigned port)
 {
     unsigned len = strlen (str);
