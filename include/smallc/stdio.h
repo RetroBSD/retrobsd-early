@@ -1,4 +1,6 @@
-
+/*
+ * SmallC: interface to stdio library.
+ */
 #define	BUFSIZ	1024
 
 #ifndef	NULL
@@ -18,12 +20,5 @@ extern int _iob[];
 #define	SEEK_CUR 1	/* set file offset to current plus offset */
 #define	SEEK_END 2	/* set file offset to EOF plus offset */
 
-// TODO: add functions to libc
-// getc(p)
-// putc(x, p)
-// getchar()
-// putchar(x)
-// feof(p)
-// ferror(p)
-// fileno(p)
-// clearerr(p)
+#define getc fgetc
+#define putc fputc

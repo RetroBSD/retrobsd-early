@@ -1,84 +1,70 @@
-/*      File while.c: 2.1 (83/03/20,16:02:22) */
-/*% cc -O -c %
- *
+/*
+ * File while.c: 2.1 (83/03/20,16:02:22)
  */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
-addwhile (WHILE *ptr) {
-//int     ptr[];
-    //int     k;
-
-    //if (wsptr == WSMAX) {
-    if (while_table_index == WSTABSZ) {
-        error ("too many active whiles");
+addloop (loop_t *ptr)
+{
+    if (loop_table_index == WSTABSZ) {
+        error ("too many active loops");
         return;
     }
-    //k = 0;
-    //while (k < WSSIZ)
-    //        *wsptr++ = ptr[k++];
-    ws[while_table_index++] = *ptr;
+    loopstack[loop_table_index++] = *ptr;
 }
 
-delwhile () {
-    if (readwhile ()) {
-        //wsptr = wsptr - WSSIZ;
-        while_table_index--;
+delloop ()
+{
+    if (readloop ()) {
+        loop_table_index--;
     }
 }
 
-WHILE *readwhile () {
-    if (while_table_index == 0) {
-    //if (wsptr == ws) {
+loop_t *readloop ()
+{
+    if (loop_table_index == 0) {
         error ("no active do/for/while/switch");
-        return (0);
-    } else {
-        //return (wsptr-WSSIZ);
-        return &ws[while_table_index - 1];
+        return 0;
     }
+    return &loopstack[loop_table_index - 1];
 }
 
-WHILE *findwhile () {
-    //int     *ptr;
+loop_t *findloop ()
+{
+    int i;
 
-    //for (ptr = wsptr; ptr != ws;) {
-    for (; while_table_index != 0;) {
-        //ptr = ptr - WSSIZ;
-        while_table_index--;
-        //if (ptr[WSTYP] != WSSWITCH)
-        //        return (ptr);
-        if (ws[while_table_index].type != WSSWITCH)
-            return &ws[while_table_index];
+    for (i=loop_table_index; --i>= 0;) {
+        if (loopstack[i].type != WSSWITCH)
+            return &loopstack[i];
     }
     error ("no active do/for/while");
-    return (0);
+    return 0;
 }
 
-WHILE *readswitch () {
-    WHILE *ptr; //int     *ptr;
+loop_t *readswitch ()
+{
+    loop_t *ptr;
 
-    if (ptr = readwhile ()) {
-        //if (ptr[WSTYP] == WSSWITCH)
+    if (ptr = readloop ()) {
         if (ptr->type == WSSWITCH) {
-            return (ptr);
+            return ptr;
         }
     }
-    return (0);
+    return 0;
 }
 
-addcase (int val) {
+addcase (int val)
+{
     int     lab;
 
-    if (swstp == SWSTSZ)
+    if (swstp == SWSTSZ) {
         error ("too many case labels");
-    else {
-        swstcase[swstp] = val;
-        swstlab[swstp++] = lab = getlabel ();
-        print_label (lab);
-        output_label_terminator ();
-        newline ();
+        return;
     }
+    swstcase[swstp] = val;
+    swstlab[swstp++] = lab = getlabel ();
+    print_label (lab);
+    output_label_terminator ();
+    newline ();
 }
-

@@ -26,13 +26,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <sys/wait.h>
-#include <sys/stat.h>
+#ifdef CROSS
+#   include </usr/include/string.h>
+#   include <sys/stat.h>
+#   include <time.h>
+#else
+#   include <sys/wait.h>
+#   include <sys/stat.h>
+#   include <string.h>
+#endif
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <string.h>
 
 #include "cpp.h"
 #include "y.tab.h"

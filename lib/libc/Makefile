@@ -73,7 +73,7 @@ OBJS            += fgetc.o fgets.o fputc.o fputs.o gets.o puts.o \
                    ftell.o fwrite.o getchar.o getw.o printf.o putchar.o putw.o \
                    rew.o scanf.o setbuf.o setbuffer.o setvbuf.o snprintf.o sprintf.o \
                    strout.o ungetc.o vfprintf.o vprintf.o vsprintf.o doprnt.o \
-                   remove.o
+                   remove.o feof.o ferror.o fileno.o
 
 # libc/stdlib
 OBJS            += getopt.o getsubopt.o strtol.o strtoul.o strtod.o

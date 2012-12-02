@@ -1,8 +1,6 @@
-/*      File data.c: 2.2 (84/11/27,16:26:13) */
-/*% cc -O -c %
- *
+/*
+ * File data.c: 2.2 (84/11/27,16:26:13)
  */
-
 #include <stdio.h>
 #include "defs.h"
 
@@ -11,8 +9,8 @@ SYMBOL symbol_table[NUMBER_OF_GLOBALS + NUMBER_OF_LOCALS];
 int global_table_index, rglobal_table_index;
 int local_table_index;
 
-WHILE ws[WSTABSZ];
-int     while_table_index;
+loop_t  loopstack[WSTABSZ];
+int     loop_table_index;
 
 int     swstcase[SWSTSZ];
 int     swstlab[SWSTSZ];

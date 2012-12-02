@@ -37,8 +37,12 @@
  *	- inch() is like inpch but \\n and trigraphs are expanded.
  *	- unch() pushes back a character to the input stream.
  */
+#ifdef CROSS
+#   include </usr/include/string.h>
+#else
+#   include <string.h>
+#endif
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>

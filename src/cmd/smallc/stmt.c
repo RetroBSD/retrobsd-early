@@ -179,112 +179,112 @@ doif() {
  * "while" statement
  */
 dowhile() {
-        WHILE ws; //int     ws[7];
+        loop_t loop;
 
-        ws.symbol_idx = local_table_index;
-        ws.stack_pointer = stkp;
-        ws.type = WSWHILE;
-        ws.case_test = getlabel ();
-        ws.while_exit = getlabel ();
-        addwhile (&ws);
-        generate_label (ws.case_test);
-        test (ws.while_exit, FALSE);
+        loop.symbol_idx = local_table_index;
+        loop.stack_pointer = stkp;
+        loop.type = WSWHILE;
+        loop.test_label = getlabel ();
+        loop.exit_label = getlabel ();
+        addloop (&loop);
+        generate_label (loop.test_label);
+        test (loop.exit_label, FALSE);
         statement (NO);
-        gen_jump (ws.case_test);
-        generate_label (ws.while_exit);
-        local_table_index = ws.symbol_idx;
-        stkp = gen_modify_stack (ws.stack_pointer);
-        delwhile ();
+        gen_jump (loop.test_label);
+        generate_label (loop.exit_label);
+        local_table_index = loop.symbol_idx;
+        stkp = gen_modify_stack (loop.stack_pointer);
+        delloop ();
 }
 
 /**
  * "do" statement
  */
 dodo() {
-        WHILE ws; //int     ws[7];
+        loop_t loop;
 
-        ws.symbol_idx = local_table_index;
-        ws.stack_pointer = stkp;
-        ws.type = WSDO;
-        ws.body_tab = getlabel ();
-        ws.case_test = getlabel ();
-        ws.while_exit = getlabel ();
-        addwhile (&ws);
-        generate_label (ws.body_tab);
+        loop.symbol_idx = local_table_index;
+        loop.stack_pointer = stkp;
+        loop.type = WSDO;
+        loop.body_label = getlabel ();
+        loop.test_label = getlabel ();
+        loop.exit_label = getlabel ();
+        addloop (&loop);
+        generate_label (loop.body_label);
         statement (NO);
         if (!match ("while")) {
                 error ("missing while");
                 return;
         }
-        generate_label (ws.case_test);
-        test (ws.body_tab, TRUE);
-        generate_label (ws.while_exit);
-        local_table_index = ws.symbol_idx;
-        stkp = gen_modify_stack (ws.stack_pointer);
-        delwhile ();
+        generate_label (loop.test_label);
+        test (loop.body_label, TRUE);
+        generate_label (loop.exit_label);
+        local_table_index = loop.symbol_idx;
+        stkp = gen_modify_stack (loop.stack_pointer);
+        delloop ();
 }
 
 /**
  * "for" statement
  */
 dofor() {
-        WHILE ws; //int     ws[7],
-        WHILE *pws;
+        loop_t loop;
+        loop_t *p;
 
-        ws.symbol_idx = local_table_index;
-        ws.stack_pointer = stkp;
-        ws.type = WSFOR;
-        ws.case_test = getlabel ();
-        ws.incr_def = getlabel ();
-        ws.body_tab = getlabel ();
-        ws.while_exit = getlabel ();
-        addwhile (&ws);
-        pws = readwhile ();
+        loop.symbol_idx = local_table_index;
+        loop.stack_pointer = stkp;
+        loop.type = WSFOR;
+        loop.test_label = getlabel ();
+        loop.cont_label = getlabel ();
+        loop.body_label = getlabel ();
+        loop.exit_label = getlabel ();
+        addloop (&loop);
+        p = readloop ();
         needbrack ("(");
         if (!match (";")) {
                 expression (YES);
                 need_semicolon ();
         }
-        generate_label (pws->case_test);
+        generate_label (p->test_label);
         if (!match (";")) {
                 expression (YES);
-                gen_test_jump (pws->body_tab, TRUE);
-                gen_jump (pws->while_exit);
+                gen_test_jump (p->body_label, TRUE);
+                gen_jump (p->exit_label);
                 need_semicolon ();
         } else
-                pws->case_test = pws->body_tab;
-        generate_label (pws->incr_def);
+                p->test_label = p->body_label;
+        generate_label (p->cont_label);
         if (!match (")")) {
                 expression (YES);
                 needbrack (")");
-                gen_jump (pws->case_test);
+                gen_jump (p->test_label);
         } else
-                pws->incr_def = pws->case_test;
-        generate_label (pws->body_tab);
+                p->cont_label = p->test_label;
+        generate_label (p->body_label);
         statement (NO);
-        gen_jump (pws->incr_def);
-        generate_label (pws->while_exit);
-        local_table_index = pws->symbol_idx;
-        stkp = gen_modify_stack (pws->stack_pointer);
-        delwhile ();
+        gen_jump (p->cont_label);
+        generate_label (p->exit_label);
+        local_table_index = p->symbol_idx;
+        stkp = gen_modify_stack (p->stack_pointer);
+        delloop ();
 }
 
 /**
  * "switch" statement
  */
 doswitch() {
-        WHILE ws; //int     ws[7];
-        WHILE *ptr; //int     *ptr;
+        loop_t loop;
+        loop_t *ptr;
 
-        ws.symbol_idx = local_table_index;
-        ws.stack_pointer = stkp;
-        ws.type = WSSWITCH;
-        ws.case_test = swstp;
-        ws.body_tab = getlabel ();
-        ws.incr_def = ws.while_exit = getlabel ();
-        addwhile (&ws);
+        loop.symbol_idx = local_table_index;
+        loop.stack_pointer = stkp;
+        loop.type = WSSWITCH;
+        loop.test_label = swstp;
+        loop.body_label = getlabel ();
+        loop.cont_label = loop.exit_label = getlabel ();
+        addloop (&loop);
         gen_immediate_a ();
-        print_label (ws.body_tab);
+        print_label (loop.body_label);
         newline ();
         gen_push ();
         needbrack ("(");
@@ -294,13 +294,13 @@ doswitch() {
         gen_jump_case ();
         statement (NO);
         ptr = readswitch ();
-        gen_jump (ptr->while_exit);
+        gen_jump (ptr->exit_label);
         dumpsw (ptr);
-        generate_label (ptr->while_exit);
+        generate_label (ptr->exit_label);
         local_table_index = ptr->symbol_idx;
         stkp = gen_modify_stack (ptr->stack_pointer);
-        swstp = ptr->case_test;
-        delwhile ();
+        swstp = ptr->test_label;
+        delloop ();
 }
 
 /**
@@ -325,11 +325,11 @@ docase() {
  * "default" label
  */
 dodefault() {
-        WHILE *ptr; //int     *ptr,
+        loop_t *ptr;
         int        lab;
 
         if (ptr = readswitch ()) {
-                ptr->incr_def = lab = getlabel ();
+                ptr->cont_label = lab = getlabel ();
                 generate_label (lab);
                 if (!match (":"))
                         error ("missing colon");
@@ -350,40 +350,39 @@ doreturn() {
  * "break" statement
  */
 dobreak() {
-        WHILE *ptr; //int     *ptr;
+        loop_t *ptr;
 
-        if ((ptr = readwhile ()) == 0)
+        if ((ptr = readloop ()) == 0)
                 return;
         gen_modify_stack (ptr->stack_pointer);
-        gen_jump (ptr->while_exit);
+        gen_jump (ptr->exit_label);
 }
 
 /**
  * "continue" statement
  */
 docont() {
-        WHILE *ptr; //int     *ptr;
+        loop_t *ptr;
 
-        if ((ptr = findwhile ()) == 0)
+        if ((ptr = findloop ()) == 0)
                 return;
         gen_modify_stack (ptr->stack_pointer);
         if (ptr->type == WSFOR)
-                gen_jump (ptr->incr_def);
+                gen_jump (ptr->cont_label);
         else
-                gen_jump (ptr->case_test);
+                gen_jump (ptr->test_label);
 }
 
 /**
  * dump switch table
  */
-dumpsw(WHILE *ws) {
-//int     ws[];
+dumpsw(loop_t *loop) {
         int     i,j;
 
         data_segment_gdata ();
-        generate_label (ws->body_tab);
-        if (ws->case_test != swstp) {
-                j = ws->case_test;
+        generate_label (loop->body_label);
+        if (loop->test_label != swstp) {
+                j = loop->test_label;
                 while (j < swstp) {
                         gen_def_word ();
                         i = 4;
@@ -400,7 +399,7 @@ dumpsw(WHILE *ws) {
                 }
         }
         gen_def_word ();
-        print_label (ws->incr_def);
+        print_label (loop->cont_label);
         output_string (",0");
         newline ();
         code_segment_gtext ();

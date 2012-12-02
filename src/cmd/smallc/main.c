@@ -56,7 +56,7 @@ compile(char *infile, char *outfile)
 {
     global_table_index = 1;
     local_table_index = NUMBER_OF_GLOBALS;
-    while_table_index = 0;
+    loop_table_index = 0;
     inclsp = 0;
     swstp = 0;
     litptr = 0;

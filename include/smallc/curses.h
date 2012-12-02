@@ -1,3 +1,6 @@
+/*
+ * SmallC: interface to curses library.
+ */
 #define WINDOW int
 
 extern WINDOW *stdscr, *curscr;

@@ -81,8 +81,6 @@ struct symbol {
 
 /* "do"/"for"/"while"/"switch" statement stack */
 #define WSTABSZ 100
-//#define WSSIZ   7
-//#define WSMAX   ws+WSTABSZ-WSSIZ
 
 /* entry offsets in "do"/"for"/"while"/"switch" stack */
 #define WSSYM   0
@@ -96,16 +94,15 @@ struct symbol {
 #define WSTAB   5
 #define WSEXIT  6
 
-struct while_rec {
+typedef struct {
 	int symbol_idx;		// symbol table address
 	int stack_pointer;	// stack pointer
 	int type;               // type
-	int case_test;		// case or test
-	int incr_def;		// continue label ?
-	int body_tab;		// body of loop, switch ?
-	int while_exit;         // exit label
-};
-#define WHILE struct while_rec
+	int test_label;		// case or test
+	int cont_label;		// continue or default label
+	int body_label;		// body of loop, switch ?
+	int exit_label;         // exit label
+} loop_t;
 
 /* possible entries for "wstyp" */
 #define WSWHILE     0
@@ -147,8 +144,6 @@ typedef struct lvalue {
 	int indirect;		// type of indirect object, 0 for static object
 	int ptr_type;		// type of pointer or array, 0 for other idents
 } lvalue_t;
-
-
 
 /**
  * path to include directories. set at compile time on host machine
@@ -192,9 +187,9 @@ int add_global (char sname[], int id, int typ, int value, int stor, int count);
  */
 int add_local (char sname[], int id, int typ, int value, int stclass, int count);
 
-WHILE *readwhile();
-WHILE *findwhile();
-WHILE *readswitch();
+loop_t *readloop();
+loop_t *findloop();
+loop_t *readswitch();
 
 /**
  * Output the variable symbol at scptr as an extrn or a public

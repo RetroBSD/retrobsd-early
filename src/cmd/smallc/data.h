@@ -6,8 +6,8 @@ extern SYMBOL symbol_table[];
 extern int global_table_index, rglobal_table_index;
 extern int local_table_index;
 
-extern  WHILE ws[];
-extern  int     while_table_index;
+extern  loop_t  loopstack[];
+extern  int     loop_table_index;
 
 extern  int     swstcase[];
 extern  int     swstlab[];

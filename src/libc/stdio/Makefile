@@ -8,8 +8,10 @@ include $(TOPSRC)/target.mk
 
 CFLAGS		+= ${DEFS}
 
-SRCS		= ${STDSRC} fgetc.c fgets.c fputc.c fputs.c gets.c puts.c
-OBJS		= ${STDOBJ} fgetc.o fgets.o fputc.o fputs.o gets.o puts.o
+SRCS		= ${STDSRC} fgetc.c fgets.c fputc.c fputs.c gets.c puts.c \
+                  feof.c ferror.c fileno.c
+OBJS		= ${STDOBJ} fgetc.o fgets.o fputc.o fputs.o gets.o puts.o \
+                  feof.o ferror.o fileno.o
 
 STDSRC		= clrerr.c doscan.c exit.c fdopen.c filbuf.c findiop.c \
 		  flsbuf.c fopen.c fprintf.c fread.c freopen.c fseek.c \

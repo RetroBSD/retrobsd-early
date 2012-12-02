@@ -1,5 +1,5 @@
 CC      = scc
-PROG    = hello primelist primesum test1 test2 test3 webserver gpio adc
+PROG    = hello primelist primesum test1 test2 test3 webserver gpio adc rain
 
 all:    $(PROG)
 
@@ -20,6 +20,9 @@ gpio:   gpio.c
 
 adc:    adc.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) adc.c
+
+rain:   rain.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) rain.c
 
 test1:	test1.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test1.c
