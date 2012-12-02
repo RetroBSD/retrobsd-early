@@ -177,7 +177,7 @@ void fpubext (symbol_t *scptr)
  */
 void output_number(int num)
 {
-    output_decimal (num);
+    fprintf(output, "%d", num);
 }
 
 /*

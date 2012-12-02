@@ -65,10 +65,11 @@ inchar ()
  */
 gch ()
 {
-        if (ch () == 0)
-                return (0);
-        else
-                return (line[lptr++] & 127);
+        int c = line[lptr];
+        if (c == 0)
+                return 0;
+        lptr++;
+        return c;
 }
 
 /**
@@ -77,10 +78,10 @@ gch ()
  */
 nch ()
 {
-        if (ch () == 0)
-                return (0);
-        else
-                return (line[lptr + 1] & 127);
+        int c = line[lptr];
+        if (c == 0)
+                return 0;
+        return line[lptr+1];
 }
 
 /**
@@ -89,5 +90,5 @@ nch ()
  */
 ch ()
 {
-        return (line[lptr] & 127);
+        return line[lptr];
 }

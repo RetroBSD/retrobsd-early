@@ -13,7 +13,8 @@
  * @return
  */
 alpha(char c) {
-    c = c & 127;
+    if (c > 127)
+            return 0;
     return (((c >= 'a') && (c <= 'z')) ||
             ((c >= 'A') && (c <= 'Z')) ||
             (c == '_'));
@@ -25,7 +26,8 @@ alpha(char c) {
  * @return
  */
 numeric(char c) {
-    c = c & 127;
+    if (c > 127)
+            return 0;
     return ((c >= '0') && (c <= '9'));
 }
 

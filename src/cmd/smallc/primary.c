@@ -217,7 +217,7 @@ quoted_char (int *value)
                 return (0);
         while ((c = gch ()) != '\'') {
                 c = (c == '\\') ? spechar(): c;
-                k = (k & 255) * 256 + (c & 255);
+                k = (k & 255) << 8 | (c & 255);
         }
         *value = k;
         return (1);
@@ -262,16 +262,29 @@ spechar()
         char c;
         c = ch();
 
-        if      (c == 'n') c = LF;
+        if      (c == EOS) return 0;
+        else if (c == 'n') c = LF;
         else if (c == 't') c = TAB;
         else if (c == 'r') c = CR;
         else if (c == 'f') c = FFEED;
         else if (c == 'b') c = BKSP;
-        else if (c == '0') c = EOS;
-        else if (c == EOS) return 0;
-
+        else if (c >= '0' && c <= '7') {
+                int n = c - '0';
+                gch();
+                c = ch();
+                if (c < '0' || c > '7')
+                        return n;
+                n = (n << 3) + c - '0';
+                gch();
+                c = ch();
+                if (c < '0' || c > '7')
+                        return n;
+                n = (n << 3) + c - '0';
+                gch();
+                return n;
+        }
         gch();
-        return (c);
+        return c;
 }
 
 /**

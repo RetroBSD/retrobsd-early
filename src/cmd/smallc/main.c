@@ -213,7 +213,7 @@ dumplits()
         gen_def_byte();
         j = 8;
         while (j--) {
-            output_number(litq[k++] & 127);
+            output_number(litq[k++]);
             if ((j == 0) | (k >= litptr)) {
                 newline();
                 break;
