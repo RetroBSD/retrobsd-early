@@ -7,7 +7,7 @@
 #include "data.h"
 
 //struct lvalue {
-//	SYMBOL *symbol ;		// symbol table address, or 0 for constant
+//	symbol_t *symbol ;		// symbol table address, or 0 for constant
 //	int indirect ;			// type of indirect object, 0 for static object
 //	int ptr_type ;			// type of pointer or array, 0 for other idents
 //	int is_const ;			// true if constant expression
@@ -24,7 +24,7 @@
  * unsigned operand ?
  */
 nosign(lvalue_t *is) {
-    SYMBOL *ptr;
+    symbol_t *ptr;
 
     if((is->ptr_type) ||
       ((ptr = is->symbol) && (ptr->type & UNSIGNED))) {
@@ -154,7 +154,7 @@ hier1a (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER
+        for (;;)
                 if (match ("?")) {
                         gen_test_jump (lab1 = getlabel (), FALSE);
                         if (k = hier1b (lval2))
@@ -192,7 +192,7 @@ hier1b (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER
+        for (;;)
                 if (match ("||")) {
                         gen_test_jump (lab = getlabel (), TRUE);
                         if (k = hier1c (lval2))
@@ -220,7 +220,7 @@ hier1c (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER
+        for (;;)
                 if (match ("&&")) {
                         gen_test_jump (lab = getlabel (), FALSE);
                         if (k = hier2 (lval2))
@@ -248,7 +248,7 @@ hier2 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '|') & (nch() != '|') & (nch() != '=')) {
                         inbyte ();
                         gen_push(k);
@@ -276,7 +276,7 @@ hier3 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '^') & (nch() != '=')){
                         inbyte ();
                         gen_push(k);
@@ -304,7 +304,7 @@ hier4 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if ((ch() == '&') & (nch() != '&') & (nch() != '=')) {
                         inbyte ();
                         gen_push(k);
@@ -334,7 +334,7 @@ hier5 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if (match ("==")) {
                         gen_push(k);
                         if (k = hier6 (lval2))
@@ -371,7 +371,7 @@ hier6 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if (match ("<=")) {
                         gen_push(k);
                         if (k = hier7 (lval2))
@@ -435,7 +435,7 @@ hier7 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if (sstreq(">>") && ! sstreq(">>=")) {
                         inbyte(); inbyte();
                         gen_push(k);
@@ -470,7 +470,7 @@ hier8 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if (match ("+")) {
                         gen_push(k);
                         if (k = hier9 (lval2))
@@ -526,7 +526,7 @@ hier9 (lvalue_t *lval) {
                 return (k);
         if (k)
                 k = rvalue(lval, k);
-        FOREVER {
+        for (;;) {
                 if (match ("*")) {
                         gen_push(k);
                         if (k = hier10 (lval2))
@@ -563,7 +563,7 @@ hier9 (lvalue_t *lval) {
  */
 hier10 (lvalue_t *lval) {
         int     k;
-        SYMBOL *ptr;
+        symbol_t *ptr;
 
         if (match ("++")) {
                 if ((k = hier10 (lval)) == 0) {
@@ -672,13 +672,13 @@ hier10 (lvalue_t *lval) {
  */
 hier11 (lvalue_t *lval) {
         int     k;
-        SYMBOL *ptr;
+        symbol_t *ptr;
 
         k = primary (lval);
         ptr = lval->symbol;
         blanks ();
         if ((ch () == '[') | (ch () == '('))
-                FOREVER {
+                for (;;) {
                         if (match ("[")) {
                                 if (ptr == 0) {
                                         error ("can't subscript");

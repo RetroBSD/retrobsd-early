@@ -52,7 +52,7 @@ int ifdef;
 
 ifline()
 {
-        FOREVER {
+        for (;;) {
                 readline();
                 if (feof(input)) return(1);
                 if (match("#ifdef")) {

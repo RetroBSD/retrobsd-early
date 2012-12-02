@@ -18,8 +18,8 @@ declare_global(int type, int storage) {
         int     k, j, count;
         char    sname[NAMESIZE];
 
-        FOREVER {
-                FOREVER {
+        for (;;) {
+                for (;;) {
                         if (endst ())
                                 return;
                         k = 1;
@@ -62,8 +62,8 @@ int     typ, stclass;
         int     k, j, count;
         char    sname[NAMESIZE];
 
-        FOREVER {
-                FOREVER {
+        for (;;) {
+                for (;;) {
                         if (endst ())
                                 return;
                         if (match ("*"))
@@ -240,11 +240,13 @@ int findloc (char *sname) {
  * @param storage
  * @return new index
  */
-int add_global (char *sname, int identity, int type, int offset, int storage, int count) {
-        SYMBOL *symbol;
+int add_global (char *sname, int identity, int type, int offset, int storage, int count)
+{
+        symbol_t *symbol;
         char *buffer_ptr;
-//printf("global - symbol: %s offset: %d count: %d\n", sname, offset, count);
-        if (current_symbol_table_idx = findglb (sname)) {
+
+        current_symbol_table_idx = findglb (sname);
+        if (current_symbol_table_idx != 0) {
                 return (current_symbol_table_idx);
         }
         if (global_table_index >= NUMBER_OF_GLOBALS) {
@@ -275,7 +277,7 @@ int add_global (char *sname, int identity, int type, int offset, int storage, in
  */
 int add_local (char *sname, int identity, int type, int offset, int storage_class, int count) {
         int k;
-        SYMBOL *symbol;
+        symbol_t *symbol;
         char *buffer_ptr;
 //printf("local - symbol: %s offset: %d count: %d\n", sname, offset, count);
 

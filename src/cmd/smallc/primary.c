@@ -1,15 +1,15 @@
 /*
  * File primary.c: 2.4 (84/11/27,16:26:07)
  */
-
 #include <stdio.h>
 #include "defs.h"
 #include "data.h"
 
-primary (lvalue_t *lval) {
+primary (lvalue_t *lval)
+{
         char    sname[NAMESIZE];
         int     num[1], k, symbol_table_idx, offset, reg;
-        SYMBOL *symbol;
+        symbol_t *symbol;
 
         lval->ptr_type = 0;  /* clear pointer/array type */
         if (match ("(")) {
@@ -65,21 +65,23 @@ primary (lvalue_t *lval) {
                 }
                 if (symbol_table_idx = findglb (sname)) {
                         symbol = &symbol_table[symbol_table_idx];
-                        if (symbol->identity != FUNCTION) {
-                                lval->symbol = symbol;
-                                lval->indirect = 0;
-                                if (symbol->identity != ARRAY) {
-                                        if (symbol->identity == POINTER) {
-                                                lval->ptr_type = symbol->type;
-                                        }
-                                        return 1;
-                                }
+                        lval->symbol = symbol;
+                        switch (symbol->identity) {
+                        case ARRAY:
                                 gen_immediate_a ();
                                 output_string (symbol->name);
                                 newline ();
+                                /* Fall through */
+                        case FUNCTION:
                                 lval->indirect = lval->ptr_type = symbol_table[symbol_table_idx].type;
                                 lval->ptr_type = 0;
                                 return 0;
+                        default:
+                                lval->indirect = 0;
+                                if (symbol->identity == POINTER) {
+                                        lval->ptr_type = symbol->type;
+                                }
+                                return 1;
                         }
                 }
                 blanks ();
@@ -92,19 +94,16 @@ primary (lvalue_t *lval) {
                 return 0;
         }
         if (constant (num)) {
-            lval->symbol = 0;
-            lval->indirect = 0;
-            return 0;
-        }
-        else {
-                error ("invalid expression");
-                gen_immediate_c ();
-                output_number(0);
-                newline ();
-                junk ();
+                lval->symbol = 0;
+                lval->indirect = 0;
                 return 0;
         }
-
+        error ("invalid expression");
+        gen_immediate_c ();
+        output_number(0);
+        newline ();
+        junk ();
+        return 0;
 }
 
 /**
@@ -113,7 +112,8 @@ primary (lvalue_t *lval) {
  * @param val2
  * @return
  */
-dbltest (lvalue_t *val1, lvalue_t *val2) {
+dbltest (lvalue_t *val1, lvalue_t *val2)
+{
         if (val1 == NULL)
                 return (FALSE);
         if (!(val1->ptr_type & CINT))
@@ -129,7 +129,8 @@ dbltest (lvalue_t *val1, lvalue_t *val2) {
  * @param lval2
  * @return
  */
-result (lvalue_t *lval, lvalue_t *lval2) {
+result (lvalue_t *lval, lvalue_t *lval2)
+{
         if (lval->ptr_type && lval2->ptr_type)
                 lval->ptr_type = 0;
         else if (lval2->ptr_type) {
@@ -140,7 +141,7 @@ result (lvalue_t *lval, lvalue_t *lval2) {
 }
 
 constant (val)
-int     val[];
+        int     val[];
 {
         if (number (val))
                 gen_immediate_c ();
@@ -159,7 +160,7 @@ int     val[];
 }
 
 number (val)
-int     val[];
+        int     val[];
 {
         int     k, minus, base;
         char    c;
@@ -206,7 +207,8 @@ int     val[];
  * @param value returns the char found
  * @return 1 if we have, 0 otherwise
  */
-quoted_char (int *value) {
+quoted_char (int *value)
+{
         int     k;
         char    c;
 
@@ -227,7 +229,8 @@ quoted_char (int *value) {
  * @param position returns beginning of the string
  * @return 1 if such string found, 0 otherwise
  */
-quoted_string (int *position) {
+quoted_string (int *position)
+{
         char    c;
 
         if (!match ("\""))
@@ -254,7 +257,8 @@ quoted_string (int *position) {
 /**
  * decode special characters (preceeded by back slashes)
  */
-spechar() {
+spechar()
+{
         char c;
         c = ch();
 
@@ -278,7 +282,7 @@ spechar() {
  * @param ptr name of the function
  */
 void callfunction (ptr)
-char    *ptr;
+        char    *ptr;
 {
         int     nargs;
 

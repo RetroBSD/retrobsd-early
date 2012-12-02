@@ -2,7 +2,7 @@
 
 /* storage words */
 
-extern SYMBOL symbol_table[];
+extern symbol_t symbol_table[];
 extern int global_table_index, rglobal_table_index;
 extern int local_table_index;
 

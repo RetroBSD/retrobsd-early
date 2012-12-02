@@ -2,11 +2,10 @@
  * File defs.h: 2.1 (83/03/21,02:07:20)
  */
 
-/* Intel 8080 architecture defs */
+/* MIPS architecture defs */
 #define INTSIZE 4
 
 /* miscellaneous */
-#define FOREVER for(;;)
 #define FALSE   0
 #define TRUE    1
 #define NO      0
@@ -19,36 +18,19 @@
 #define FFEED   12
 #define TAB     9
 
-/* symbol table parameters */
-/*#define SYMSIZ  38
-#define SYMTBSZ 20000
-#define NUMGLBS 450
-#define STARTGLB        symtab
-#define ENDGLB  (STARTGLB+NUMGLBS*SYMSIZ)
-#define STARTLOC        (ENDGLB+SYMSIZ)
-#define ENDLOC  (symtab+SYMTBSZ-SYMSIZ)*/
-
-/* symbol table entry format */
-/*#define NAME    0
-#define IDENT   33
-#define TYPE    34
-#define STORAGE 35
-#define OFFSET  36*/
-
 /* system-wide name size (for symbols) */
 
 #define NAMESIZE        33
 #define NAMEMAX         32
 
-struct symbol {
+typedef struct {
 	char name[NAMESIZE];	// symbol name
 	int identity;           // variable, array, pointer, function
 	int type;               // char, int
 	int storage;		// public, auto, extern, static, lstatic, defauto
 	int offset;		// offset
 	int count;		// count of elements (for arrays)
-};
-#define SYMBOL struct symbol
+} symbol_t;
 
 #define NUMBER_OF_GLOBALS 150
 #define NUMBER_OF_LOCALS 50
@@ -118,7 +100,7 @@ typedef struct {
 #define LITMAX      LITABSZ-1
 
 /* input line */
-#define LINESIZE    150
+#define LINESIZE    512
 #define LINEMAX     (LINESIZE-1)
 #define MPMAX       LINEMAX
 
@@ -140,7 +122,7 @@ typedef struct {
 #define DE_REG      2
 
 typedef struct lvalue {
-	SYMBOL *symbol;		// symbol table address, or 0 for constant
+	symbol_t *symbol;	// symbol table address, or 0 for constant
 	int indirect;		// type of indirect object, 0 for static object
 	int ptr_type;		// type of pointer or array, 0 for other idents
 } lvalue_t;
@@ -195,19 +177,19 @@ loop_t *readswitch();
  * Output the variable symbol at scptr as an extrn or a public
  * @param scptr
  */
-void ppubext(SYMBOL *scptr);
+void ppubext(symbol_t *scptr);
 
 /**
  * Output the function symbol at scptr as an extrn or a public
  * @param scptr
  */
-void fpubext(SYMBOL *scptr);
+void fpubext(symbol_t *scptr);
 
 /**
  * fetch a static memory cell into the primary register
  * @param sym
  */
-void gen_get_memory (SYMBOL *sym);
+void gen_get_memory (symbol_t *sym);
 
 /**
  * fetch the specified object type indirect through the primary
@@ -220,13 +202,13 @@ void gen_get_indirect(char typeobj, int reg);
  * asm - fetch the address of the specified symbol into the primary register
  * @param sym the symbol name
  */
-int gen_get_location (SYMBOL *sym);
+int gen_get_location (symbol_t *sym);
 
 /**
  * asm - store the primary register into the specified static memory cell
  * @param sym
  */
-void gen_put_memory (SYMBOL *sym);
+void gen_put_memory (symbol_t *sym);
 
 // intialisation of global variables
 #define INIT_TYPE    NAMESIZE

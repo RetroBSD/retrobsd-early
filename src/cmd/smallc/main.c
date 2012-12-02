@@ -139,7 +139,7 @@ usage()
 doasm ()
 {
         cmode = 0;
-        FOREVER {
+        for (;;) {
                 readline ();
                 if (match ("__endasm__"))
                         break;
@@ -234,10 +234,12 @@ dumpglbs()
         return;
     current_symbol_table_idx = rglobal_table_index;
     while (current_symbol_table_idx < global_table_index) {
-        SYMBOL *symbol = &symbol_table[current_symbol_table_idx];
+        symbol_t *symbol = &symbol_table[current_symbol_table_idx];
         if (symbol->identity != FUNCTION) {
             ppubext(symbol);
             if (symbol->storage != EXTERN) {
+                if ((symbol->type & CINT) || (symbol->identity == POINTER))
+                    gen_align_word();
                 output_string(symbol->name);
                 output_label_terminator();
                 dim = symbol->offset;

@@ -37,7 +37,7 @@ void header () {
 
 /**
  * prints new line
- * @return 
+ * @return
  */
 newline () {
 #if __CYGWIN__ == 1
@@ -99,7 +99,7 @@ void data_segment_gdata() {
  * Output the variable symbol at scptr as an extrn or a public
  * @param scptr
  */
-void ppubext(SYMBOL *scptr)  {
+void ppubext(symbol_t *scptr)  {
         if (symbol_table[current_symbol_table_idx].storage == STATIC) return;
         output_with_tab (scptr->storage == EXTERN ? ";extrn\t" : ".globl\t");
         output_string (scptr->name);
@@ -110,7 +110,7 @@ void ppubext(SYMBOL *scptr)  {
  * Output the function symbol at scptr as an extrn or a public
  * @param scptr
  */
-void fpubext(SYMBOL *scptr) {
+void fpubext(symbol_t *scptr) {
         if (scptr->storage == STATIC) return;
         output_with_tab (scptr->offset == FUNCTION ? ".globl\t" : ";extrn\t");
         output_string (scptr->name);
@@ -130,7 +130,7 @@ void output_number(num) int num; {
  * fetch a static memory cell into the primary register
  * @param sym
  */
-void gen_get_memory(SYMBOL *sym) {
+void gen_get_memory(symbol_t *sym) {
     if ((sym->identity != POINTER) && (sym->type == CCHAR)) {
         output_with_tab ("lda\t");
         output_string (sym->name);
@@ -154,7 +154,7 @@ void gen_get_memory(SYMBOL *sym) {
  * @param sym the symbol name
  * @return which register pair contains result
  */
-int gen_get_location(SYMBOL *sym) {
+int gen_get_location(symbol_t *sym) {
         /*gen_immediate ();
         if (sym->storage == LSTATIC) {
             print_label(sym->offset);
@@ -190,7 +190,7 @@ int gen_get_location(SYMBOL *sym) {
  * asm - store the primary register into the specified static memory cell
  * @param sym
  */
-void gen_put_memory(SYMBOL *sym) {
+void gen_put_memory(symbol_t *sym) {
     if ((sym->identity != POINTER) && (sym->type & CCHAR)) {
         output_line ("mov \ta,l");
         output_with_tab ("sta \t");
@@ -750,4 +750,3 @@ int link() {
         return(0);
 #endif
 }
-

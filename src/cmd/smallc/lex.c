@@ -178,7 +178,7 @@ amatch(char *lit, int len) {
 }
 
 blanks() {
-    FOREVER {
+    for (;;) {
         while (ch () == 0) {
             readline ();
             if (feof (input))

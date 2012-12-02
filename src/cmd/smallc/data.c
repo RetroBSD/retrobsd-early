@@ -5,7 +5,7 @@
 #include "defs.h"
 
 /* storage words */
-SYMBOL symbol_table[NUMBER_OF_GLOBALS + NUMBER_OF_LOCALS];
+symbol_t symbol_table[NUMBER_OF_GLOBALS + NUMBER_OF_LOCALS];
 int global_table_index, rglobal_table_index;
 int local_table_index;
 

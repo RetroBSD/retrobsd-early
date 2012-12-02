@@ -18,7 +18,7 @@ readline ()
 {
         int     k;
 
-        FOREVER {
+        for (;;) {
                 if (feof (input))
                         return;
                 kill ();

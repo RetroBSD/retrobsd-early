@@ -35,17 +35,20 @@ newfunc() {
             symbol_table[idx].offset = FUNCTION;
     } else
         add_global(n, FUNCTION, CINT, FUNCTION, PUBLIC, 1);
+
     if (!match("("))
         error("missing open paren");
+
     output_string(n);
     output_label_terminator();
     newline();
     local_table_index = NUMBER_OF_GLOBALS; //locptr = STARTLOC;
     argstk = 0;
+
     // ANSI style argument declaration
     if (doAnsiArguments() == 0) {
         // K&R style argument declaration
-        while (!match(")")) {
+        while (! match(")")) {
             if (symname(n)) {
                 if (findloc(n))
                     multidef(n);
@@ -100,7 +103,7 @@ getarg(int t) {
     int j, legalname, argptr;
     char n[NAMESIZE];
 
-    FOREVER {
+    for (;;) {
         if (argstk == 0)
             return;
 
@@ -140,7 +143,7 @@ doAnsiArguments() {
         return 0; // no type detected, revert back to K&R style
     }
     argstk = 0;
-    FOREVER
+    for (;;)
     {
         if (type) {
             doLocalAnsiArgument(type);
