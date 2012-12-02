@@ -87,11 +87,11 @@ void print_inode (fs_inode_t *inode,
 		break;
 	case INODE_MODE_FCHR:
 		fprintf (out, " - char %d %d",
-			inode->addr[0] >> 8, inode->addr[0] & 0xff);
+			inode->addr[1] >> 8, inode->addr[1] & 0xff);
 		break;
 	case INODE_MODE_FBLK:
 		fprintf (out, " - block %d %d",
-			inode->addr[0] >> 8, inode->addr[0] & 0xff);
+			inode->addr[1] >> 8, inode->addr[1] & 0xff);
 		break;
 	default:
 		fprintf (out, " - %lu bytes", inode->size);
@@ -287,10 +287,14 @@ void add_directory (fs_t *fs, char *name)
 	}
 
 	/* Create directory. */
-	if (! fs_inode_by_name (fs, &dir, name, 1,
-	    INODE_MODE_FDIR | 0777)) {
+	int done = fs_inode_by_name (fs, &dir, name, 1, INODE_MODE_FDIR | 0777);
+	if (! done) {
 		fprintf (stderr, "%s: directory inode create failed\n", name);
 		return;
+	}
+	if (done == 1) {
+                /* The directory already existed. */
+                return;
 	}
 	fs_inode_save (&dir, 0);
 

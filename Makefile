@@ -55,9 +55,7 @@ LIB_FILES	:= lib/crt0.o lib/retroImage $(wildcard lib/*.a)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
                   etc/termcap
-INC_FILES	= include/sys/ include/machine/ include/arpa/ \
-                  include/smallc/ include/smallc/sys/ \
-                  $(wildcard include/*.h) \
+INC_FILES	= $(wildcard include/*.h) \
                   $(wildcard include/sys/*.h) \
                   $(wildcard include/machine/*.h) \
                   $(wildcard include/smallc/*.h) \
@@ -77,8 +75,9 @@ ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES)
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
-                  share/misc/ share/smallc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
-                  games/ games/lib/
+                  share/misc/ share/smallc/ var/ var/run/ var/log/ u/ \
+                  games/ games/lib/ include/ include/sys/ include/machine/ \
+                  include/arpa/ include/smallc/ include/smallc/sys/
 BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
 CDEVS           = dev/console!c0:0 \
                   dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \

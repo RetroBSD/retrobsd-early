@@ -520,6 +520,10 @@ void fs_dirent_unpack (fs_dirent_t *dirent, unsigned char *data)
  *	1 if name is to be created, mode is given
  *	2 if name is to be deleted
  *	3 if name is to be linked, mode contains inode number
+ *
+ * Return 0 on any error.
+ * Return 1 when the inode was found.
+ * Return 2 when the inode was created/deleted/linked.
  */
 #define	LOOKUP		0	/* perform name lookup only */
 #define	CREATE		1	/* setup for file creation */
@@ -708,7 +712,7 @@ create_file:
 		fprintf (stderr, "%s: cannot save directory inode\n", name);
 		return 0;
 	}
-	return 1;
+	return 2;
 
 	/*
 	 * Delete file. Return inode of deleted file.
@@ -747,7 +751,7 @@ delete_file:
 		fprintf (stderr, "%s: cannot save directory inode\n", name);
 		return 0;
 	}
-	return 1;
+	return 2;
 
 	/*
 	 * Make a link. Return a directory inode.
@@ -787,7 +791,7 @@ create_link:
 		return 0;
 	}
 	*inode = dir;
-	return 1;
+	return 2;
 }
 
 /*
