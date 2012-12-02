@@ -1,5 +1,6 @@
 CC      = scc
-PROG    = hello primelist primesum test1 test2 test3 gpio adc rain webserver
+PROG    = hello primelist primesum test1 test2 test3 gpio adc rain \
+          webserver q8
 
 all:    $(PROG)
 
@@ -24,6 +25,9 @@ adc:    adc.c
 rain:   rain.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) rain.c
 
+q8:     q8.c
+	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) q8.c
+
 test1:	test1.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test1.c
 
@@ -34,4 +38,4 @@ test3:	test3.c
 	$(CC) $(CFLAGS) -o $@ $(LDFLAGS) test3.c
 
 clean:
-	rm *.o $(PROG)
+	rm -f *.o $(PROG)
