@@ -5,7 +5,7 @@
 #define CLIENT_SIZE             3   /* Size of client structure in words */
 #define UDP_SIZE                2   /* Size of UDP structure in words */
 
-extern unsigned _socket_port [MAX_SOCK_NUM];
+extern unsigned _socket_port[];
 
 extern unsigned _client_srcport;
 

@@ -949,6 +949,11 @@ int load1 (loc, libflg, nloc)
 		bsize += filhdr.a_bss;
 		ssize += nloc;
 		nsym += nsymbol;
+
+		/* Alignment. */
+                tsize = (tsize + 3) & ~3;
+                dsize = (dsize + 3) & ~3;
+                bsize = (bsize + 3) & ~3;
 		return (1);
 	}
 
@@ -1211,6 +1216,7 @@ void middle()
 				t = sp->n_value;
 				sp->n_value = cmsize;
 				cmsize += t;
+                                cmsize = (cmsize + 3) & ~3;
 			}
                 }
 	}
@@ -1375,6 +1381,11 @@ void load2 (loc)
 	torigin += filhdr.a_text;
 	dorigin += filhdr.a_data;
 	borigin += filhdr.a_bss;
+
+        /* Alignment. */
+        torigin = (torigin + 3) & ~3;
+        dorigin = (dorigin + 3) & ~3;
+        borigin = (borigin + 3) & ~3;
 }
 
 void load2arg (arname)

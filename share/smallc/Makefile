@@ -1,5 +1,5 @@
 CC      = scc
-PROG    = hello primelist primesum test1 test2 test3 webserver gpio adc rain
+PROG    = hello primelist primesum test1 test2 test3 gpio adc rain webserver
 
 all:    $(PROG)
 
