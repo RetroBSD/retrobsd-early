@@ -44,6 +44,8 @@ int main(int argc, char *argv[])
         if (argc == 1 && isatty(0))
                 usage();
 
+        /* Default target is mips-el. */
+	IR = bindings[0].ir;
 	for (i = argc - 1; i > 0; i--)
 		if (strncmp(argv[i], "-target=", 8) == 0)
 			break;

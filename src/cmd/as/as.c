@@ -1283,13 +1283,13 @@ void emit_la (opcode, relinfo)
         uerror ("comma expected");
     expr_flags = 0;
     value = getexpr (&segment);
-    if (segment == SABS)
-        uerror ("relocatable value required");
+    if (segment == SABS) 
+	uerror ("relocatable value required");    
     relinfo->flags = segmrel [segment];
     if (relinfo->flags == REXT)
-        relinfo->index = extref;
+	relinfo->index = extref;
     if (expr_flags & EXPR_GPREL)
-        relinfo->flags |= RGPREL;
+	relinfo->flags |= RGPREL;
 
     /* lui d, %hi(value)
      * ori d, d, %lo(value) */

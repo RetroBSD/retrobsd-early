@@ -362,7 +362,11 @@ unsigned emitasm(Node p, int nt) {
 					;
 		}
 		for ((*IR->x._kids)(p, rulenum, kids); *fmt; fmt++)
-			if (*fmt != '%')
+			if (*fmt == ' ')
+				(void)putchar('\t');
+			else if (*fmt == ';')
+				(void)putchar('\n');
+			else if (*fmt != '%')
 				(void)putchar(*fmt);
 			else if (*++fmt == 'F')
 				print("%d", framesize);

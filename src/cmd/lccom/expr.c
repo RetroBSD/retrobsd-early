@@ -343,7 +343,7 @@ static Tree primary(void) {
 	case ICON:
 	case FCON: p = tree(mkop(CNST,tsym->type), tsym->type, NULL, NULL);
 		   p->u.v = tsym->u.c.v;
- break;
+                   break;
 	case SCON: if (ischar(tsym->type->type))
 		   	tsym->u.c.v.p = stringn(tsym->u.c.v.p, tsym->type->size);
 		   else

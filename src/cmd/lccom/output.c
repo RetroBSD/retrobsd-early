@@ -97,7 +97,7 @@ void vfprint(FILE *f, char *bp, const char *fmt, va_list ap) {
 				    if (s)
 				    	for ( ; n-- > 0; s++)
 				    		if (f) (void)putc(*s, f); else *bp++ = *s;
- } break;
+				  } break;
 			case 'k': { int t = va_arg(ap, int);
 				    static char *tokens[] = {
 #define xx(a,b,c,d,e,f,g) g,
@@ -106,22 +106,22 @@ void vfprint(FILE *f, char *bp, const char *fmt, va_list ap) {
 				    };
 				    assert(tokens[t&0177]);
 				    bp = outs(tokens[t&0177], f, bp);
- } break;
+				  } break;
 			case 't': { Type ty = va_arg(ap, Type);
 				    assert(f);
 				    outtype(ty ? ty : voidtype, f);
- } break;
+				  } break;
 			case 'w': { Coordinate *p = va_arg(ap, Coordinate *);
 				    if (p->file && *p->file) {
 				    	bp = outs(p->file, f, bp);
 				    	bp = outs(":", f, bp);
 				    }
 				    bp = outd(p->y, f, bp);
- } break;
+				  } break;
 			case 'I': { int n = va_arg(ap, int);
 				    while (--n >= 0)
 				    	if (f) (void)putc(' ', f); else *bp++ = ' ';
- } break;
+				  } break;
 			default:  if (f) (void)putc(*fmt, f); else *bp++ = *fmt; break;
 			}
 		else if (f)

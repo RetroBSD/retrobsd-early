@@ -374,12 +374,13 @@ acon: con     "%0"
 acon: ADDRGP4  "%a"
 addr: ADDI4(reg,acon)  "%1($%0)"
 addr: ADDU4(reg,acon)  "%1($%0)"
-addr: ADDP4(reg,acon)  "%1($%0)"
+addr: ADDP4(reg,acon)  "%1($%0)" 
 addr: acon  "%0"
 addr: reg   "($%0)"
 addr: ADDRFP4  "%a+%F($sp)"
 addr: ADDRLP4  "%a+%F($sp)"
-reg: addr  "la $%c,%0\n"  1
+reg: addr  " la $%c,%0\n"  1
+reg: con   " li $%c,%0\n"  1
 reg: CNSTI1  "# reg\n"  range(a, 0, 0)
 reg: CNSTI2  "# reg\n"  range(a, 0, 0)
 reg: CNSTI4  "# reg\n"  range(a, 0, 0)
@@ -387,126 +388,126 @@ reg: CNSTU1  "# reg\n"  range(a, 0, 0)
 reg: CNSTU2  "# reg\n"  range(a, 0, 0)
 reg: CNSTU4  "# reg\n"  range(a, 0, 0)
 reg: CNSTP4  "# reg\n"  range(a, 0, 0)
-stmt: ASGNI1(addr,reg)  "sb $%1,%0\n"  1
-stmt: ASGNU1(addr,reg)  "sb $%1,%0\n"  1
-stmt: ASGNI2(addr,reg)  "sh $%1,%0\n"  1
-stmt: ASGNU2(addr,reg)  "sh $%1,%0\n"  1
-stmt: ASGNI4(addr,reg)  "sw $%1,%0\n"  1
-stmt: ASGNU4(addr,reg)  "sw $%1,%0\n"  1
-stmt: ASGNP4(addr,reg)  "sw $%1,%0\n"  1
-reg:  INDIRI1(addr)     "lb $%c,%0\n"  1
-reg:  INDIRU1(addr)     "lbu $%c,%0\n"  1
-reg:  INDIRI2(addr)     "lh $%c,%0\n"  1
-reg:  INDIRU2(addr)     "lhu $%c,%0\n"  1
-reg:  INDIRI4(addr)     "lw $%c,%0\n"  1
-reg:  INDIRU4(addr)     "lw $%c,%0\n"  1
-reg:  INDIRP4(addr)     "lw $%c,%0\n"  1
+stmt: ASGNI1(addr,reg)  " sb $%1,%0\n"  1
+stmt: ASGNU1(addr,reg)  " sb $%1,%0\n"  1
+stmt: ASGNI2(addr,reg)  " sh $%1,%0\n"  1
+stmt: ASGNU2(addr,reg)  " sh $%1,%0\n"  1
+stmt: ASGNI4(addr,reg)  " sw $%1,%0\n"  1
+stmt: ASGNU4(addr,reg)  " sw $%1,%0\n"  1
+stmt: ASGNP4(addr,reg)  " sw $%1,%0\n"  1
+reg:  INDIRI1(addr)     " lb $%c,%0\n"  1
+reg:  INDIRU1(addr)     " lbu $%c,%0\n"  1
+reg:  INDIRI2(addr)     " lh $%c,%0\n"  1
+reg:  INDIRU2(addr)     " lhu $%c,%0\n"  1
+reg:  INDIRI4(addr)     " lw $%c,%0\n"  1
+reg:  INDIRU4(addr)     " lw $%c,%0\n"  1
+reg:  INDIRP4(addr)     " lw $%c,%0\n"  1
 
-reg:  CVII4(INDIRI1(addr))     "lb $%c,%0\n"  1
-reg:  CVII4(INDIRI2(addr))     "lh $%c,%0\n"  1
-reg:  CVUU4(INDIRU1(addr))     "lbu $%c,%0\n"  1
-reg:  CVUU4(INDIRU2(addr))     "lhu $%c,%0\n"  1
-reg:  CVUI4(INDIRU1(addr))     "lbu $%c,%0\n"  1
-reg:  CVUI4(INDIRU2(addr))     "lhu $%c,%0\n"  1
-reg:  INDIRF4(addr)     "l.s $f%c,%0\n"  1
-reg:  INDIRF8(addr)     "l.d $f%c,%0\n"  1
-stmt: ASGNF4(addr,reg)  "s.s $f%1,%0\n"  1
-stmt: ASGNF8(addr,reg)  "s.d $f%1,%0\n"  1
-reg: DIVI4(reg,reg)  "div $%c,$%0,$%1\n"   1
-reg: DIVU4(reg,reg)  "divu $%c,$%0,$%1\n"  1
-reg: MODI4(reg,reg)  "rem $%c,$%0,$%1\n"   1
-reg: MODU4(reg,reg)  "remu $%c,$%0,$%1\n"  1
-reg: MULI4(reg,reg)  "mul $%c,$%0,$%1\n"   1
-reg: MULU4(reg,reg)  "mul $%c,$%0,$%1\n"   1
+reg:  CVII4(INDIRI1(addr))     " lb $%c,%0\n"  1
+reg:  CVII4(INDIRI2(addr))     " lh $%c,%0\n"  1
+reg:  CVUU4(INDIRU1(addr))     " lbu $%c,%0\n"  1
+reg:  CVUU4(INDIRU2(addr))     " lhu $%c,%0\n"  1
+reg:  CVUI4(INDIRU1(addr))     " lbu $%c,%0\n"  1
+reg:  CVUI4(INDIRU2(addr))     " lhu $%c,%0\n"  1
+reg:  INDIRF4(addr)     " l.s $f%c,%0\n"  1
+reg:  INDIRF8(addr)     " l.d $f%c,%0\n"  1
+stmt: ASGNF4(addr,reg)  " s.s $f%1,%0\n"  1
+stmt: ASGNF8(addr,reg)  " s.d $f%1,%0\n"  1
+reg: DIVI4(reg,reg)  " div $%c,$%0,$%1\n"   1
+reg: DIVU4(reg,reg)  " divu $%c,$%0,$%1\n"  1
+reg: MODI4(reg,reg)  " rem $%c,$%0,$%1\n"   1
+reg: MODU4(reg,reg)  " remu $%c,$%0,$%1\n"  1
+reg: MULI4(reg,reg)  " mul $%c,$%0,$%1\n"   1
+reg: MULU4(reg,reg)  " mul $%c,$%0,$%1\n"   1
 rc:  con            "%0"
 rc:  reg            "$%0"
 
-reg: ADDI4(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: ADDP4(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: ADDU4(reg,rc)   "addu $%c,$%0,%1\n"  1
-reg: BANDI4(reg,rc)  "and $%c,$%0,%1\n"   1
-reg: BORI4(reg,rc)   "or $%c,$%0,%1\n"    1
-reg: BXORI4(reg,rc)  "xor $%c,$%0,%1\n"   1
-reg: BANDU4(reg,rc)  "and $%c,$%0,%1\n"   1
-reg: BORU4(reg,rc)   "or $%c,$%0,%1\n"    1
-reg: BXORU4(reg,rc)  "xor $%c,$%0,%1\n"   1
-reg: SUBI4(reg,rc)   "subu $%c,$%0,%1\n"  1
-reg: SUBP4(reg,rc)   "subu $%c,$%0,%1\n"  1
-reg: SUBU4(reg,rc)   "subu $%c,$%0,%1\n"  1
+reg: ADDI4(reg,rc)   " addu $%c,$%0,%1\n"  1
+reg: ADDP4(reg,rc)   " addu $%c,$%0,%1\n"  1
+reg: ADDU4(reg,rc)   " addu $%c,$%0,%1\n"  1
+reg: BANDI4(reg,rc)  " and $%c,$%0,%1\n"   1
+reg: BORI4(reg,rc)   " or $%c,$%0,%1\n"    1
+reg: BXORI4(reg,rc)  " xor $%c,$%0,%1\n"   1
+reg: BANDU4(reg,rc)  " and $%c,$%0,%1\n"   1
+reg: BORU4(reg,rc)   " or $%c,$%0,%1\n"    1
+reg: BXORU4(reg,rc)  " xor $%c,$%0,%1\n"   1
+reg: SUBI4(reg,rc)   " subu $%c,$%0,%1\n"  1
+reg: SUBP4(reg,rc)   " subu $%c,$%0,%1\n"  1
+reg: SUBU4(reg,rc)   " subu $%c,$%0,%1\n"  1
 rc5: CNSTI4         "%a"                range(a,0,31)
 rc5: reg            "$%0"
 
-reg: LSHI4(reg,rc5)  "sll $%c,$%0,%1\n"  1
-reg: LSHU4(reg,rc5)  "sll $%c,$%0,%1\n"  1
-reg: RSHI4(reg,rc5)  "sra $%c,$%0,%1\n"  1
-reg: RSHU4(reg,rc5)  "srl $%c,$%0,%1\n"  1
-reg: BCOMI4(reg)  "not $%c,$%0\n"   1
-reg: BCOMU4(reg)  "not $%c,$%0\n"   1
-reg: NEGI4(reg)   "negu $%c,$%0\n"  1
-reg: LOADI1(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADU1(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADI2(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADU2(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADI4(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADP4(reg)  "move $%c,$%0\n"  move(a)
-reg: LOADU4(reg)  "move $%c,$%0\n"  move(a)
-reg: ADDF4(reg,reg)  "add.s $f%c,$f%0,$f%1\n"  1
-reg: ADDF8(reg,reg)  "add.d $f%c,$f%0,$f%1\n"  1
-reg: DIVF4(reg,reg)  "div.s $f%c,$f%0,$f%1\n"  1
-reg: DIVF8(reg,reg)  "div.d $f%c,$f%0,$f%1\n"  1
-reg: MULF4(reg,reg)  "mul.s $f%c,$f%0,$f%1\n"  1
-reg: MULF8(reg,reg)  "mul.d $f%c,$f%0,$f%1\n"  1
-reg: SUBF4(reg,reg)  "sub.s $f%c,$f%0,$f%1\n"  1
-reg: SUBF8(reg,reg)  "sub.d $f%c,$f%0,$f%1\n"  1
-reg: LOADF4(reg)     "mov.s $f%c,$f%0\n"       move(a)
-reg: LOADF8(reg)     "mov.d $f%c,$f%0\n"       move(a)
-reg: NEGF4(reg)      "neg.s $f%c,$f%0\n"       1
-reg: NEGF8(reg)      "neg.d $f%c,$f%0\n"       1
-reg: CVII4(reg)  "sll $%c,$%0,8*(4-%a); sra $%c,$%c,8*(4-%a)\n"  2
-reg: CVUI4(reg)  "and $%c,$%0,(1<<(8*%a))-1\n"  1
-reg: CVUU4(reg)  "and $%c,$%0,(1<<(8*%a))-1\n"  1
-reg: CVFF4(reg)  "cvt.s.d $f%c,$f%0\n"  1
-reg: CVFF8(reg)  "cvt.d.s $f%c,$f%0\n"  1
-reg: CVIF4(reg)  "mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"  2
-reg: CVIF8(reg)  "mtc1 $%0,$f%c; cvt.d.w $f%c,$f%c\n"  2
-reg: CVFI4(reg)  "trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i==4?2:LBURG_MAX)
-reg: CVFI4(reg)  "trunc.w.d $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i==8?2:LBURG_MAX)
+reg: LSHI4(reg,rc5)  " sll $%c,$%0,%1\n"  1
+reg: LSHU4(reg,rc5)  " sll $%c,$%0,%1\n"  1
+reg: RSHI4(reg,rc5)  " sra $%c,$%0,%1\n"  1
+reg: RSHU4(reg,rc5)  " srl $%c,$%0,%1\n"  1
+reg: BCOMI4(reg)  " not $%c,$%0\n"   1
+reg: BCOMU4(reg)  " not $%c,$%0\n"   1
+reg: NEGI4(reg)   " negu $%c,$%0\n"  1
+reg: LOADI1(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADU1(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADI2(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADU2(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADI4(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADP4(reg)  " move $%c,$%0\n"  move(a)
+reg: LOADU4(reg)  " move $%c,$%0\n"  move(a)
+reg: ADDF4(reg,reg)  " add.s $f%c,$f%0,$f%1\n"  1
+reg: ADDF8(reg,reg)  " add.d $f%c,$f%0,$f%1\n"  1
+reg: DIVF4(reg,reg)  " div.s $f%c,$f%0,$f%1\n"  1
+reg: DIVF8(reg,reg)  " div.d $f%c,$f%0,$f%1\n"  1
+reg: MULF4(reg,reg)  " mul.s $f%c,$f%0,$f%1\n"  1
+reg: MULF8(reg,reg)  " mul.d $f%c,$f%0,$f%1\n"  1
+reg: SUBF4(reg,reg)  " sub.s $f%c,$f%0,$f%1\n"  1
+reg: SUBF8(reg,reg)  " sub.d $f%c,$f%0,$f%1\n"  1
+reg: LOADF4(reg)     " mov.s $f%c,$f%0\n"       move(a)
+reg: LOADF8(reg)     " mov.d $f%c,$f%0\n"       move(a)
+reg: NEGF4(reg)      " neg.s $f%c,$f%0\n"       1
+reg: NEGF8(reg)      " neg.d $f%c,$f%0\n"       1
+reg: CVII4(reg)  " sll $%c,$%0,8*(4-%a); sra $%c,$%c,8*(4-%a)\n"  2
+reg: CVUI4(reg)  " and $%c,$%0,(1<<(8*%a))-1\n"  1
+reg: CVUU4(reg)  " and $%c,$%0,(1<<(8*%a))-1\n"  1
+reg: CVFF4(reg)  " cvt.s.d $f%c,$f%0\n"  1
+reg: CVFF8(reg)  " cvt.d.s $f%c,$f%0\n"  1
+reg: CVIF4(reg)  " mtc1 $%0,$f%c; cvt.s.w $f%c,$f%c\n"  2
+reg: CVIF8(reg)  " mtc1 $%0,$f%c; cvt.d.w $f%c,$f%c\n"  2
+reg: CVFI4(reg)  " trunc.w.s $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i==4?2:LBURG_MAX)
+reg: CVFI4(reg)  " trunc.w.d $f2,$f%0,$%c; mfc1 $%c,$f2\n"  (a->syms[0]->u.c.v.i==8?2:LBURG_MAX)
 stmt: LABELV  "%a:\n"
-stmt: JUMPV(acon)  "b %0\n"   1
-stmt: JUMPV(reg)   ".cpadd $%0\nj $%0\n"  !pic
-stmt: JUMPV(reg)   "j $%0\n"  pic
-stmt: EQI4(reg,reg)  "beq $%0,$%1,%a\n"   1
-stmt: EQU4(reg,reg)  "beq $%0,$%1,%a\n"   1
-stmt: GEI4(reg,reg)  "bge $%0,$%1,%a\n"   1
-stmt: GEU4(reg,reg)  "bgeu $%0,$%1,%a\n"  1
-stmt: GTI4(reg,reg)  "bgt $%0,$%1,%a\n"   1
-stmt: GTU4(reg,reg)  "bgtu $%0,$%1,%a\n"  1
-stmt: LEI4(reg,reg)  "ble $%0,$%1,%a\n"   1
-stmt: LEU4(reg,reg)  "bleu $%0,$%1,%a\n"  1
-stmt: LTI4(reg,reg)  "blt $%0,$%1,%a\n"   1
-stmt: LTU4(reg,reg)  "bltu $%0,$%1,%a\n"  1
-stmt: NEI4(reg,reg)  "bne $%0,$%1,%a\n"   1
-stmt: NEU4(reg,reg)  "bne $%0,$%1,%a\n"   1
-stmt: EQF4(reg,reg)  "c.eq.s $f%0,$f%1; bc1t %a\n"  2
-stmt: EQF8(reg,reg)  "c.eq.d $f%0,$f%1; bc1t %a\n"  2
-stmt: LEF4(reg,reg)  "c.ule.s $f%0,$f%1; bc1t %a\n"  2
-stmt: LEF8(reg,reg)  "c.ule.d $f%0,$f%1; bc1t %a\n"  2
-stmt: LTF4(reg,reg)  "c.ult.s $f%0,$f%1; bc1t %a\n"  2
-stmt: LTF8(reg,reg)  "c.ult.d $f%0,$f%1; bc1t %a\n"  2
-stmt: GEF4(reg,reg)  "c.lt.s $f%0,$f%1; bc1f %a\n"  2
-stmt: GEF8(reg,reg)  "c.lt.d $f%0,$f%1; bc1f %a\n"  2
-stmt: GTF4(reg,reg)  "c.le.s $f%0,$f%1; bc1f %a\n"  2
-stmt: GTF8(reg,reg)  "c.le.d $f%0,$f%1; bc1f %a\n"  2
-stmt: NEF4(reg,reg)  "c.eq.s $f%0,$f%1; bc1f %a\n"  2
-stmt: NEF8(reg,reg)  "c.eq.d $f%0,$f%1; bc1f %a\n"  2
+stmt: JUMPV(acon)  " b %0\n"   1
+stmt: JUMPV(reg)   " .cpadd $%0\nj $%0\n"  !pic
+stmt: JUMPV(reg)   " j $%0\n"  pic
+stmt: EQI4(reg,reg)  " beq $%0,$%1,%a\n"   1
+stmt: EQU4(reg,reg)  " beq $%0,$%1,%a\n"   1
+stmt: NEI4(reg,reg)  " bne $%0,$%1,%a\n"   1
+stmt: NEU4(reg,reg)  " bne $%0,$%1,%a\n"   1
+stmt: LTI4(reg,reg)  " slt $at,$%0,$%1; bnez $at,%a\n"   1
+stmt: LTU4(reg,reg)  " sltu $at,$%0,$%1; bnez $at,%a\n"  1
+stmt: GTI4(reg,reg)  " slt $at,$%1,$%0; bnez $at,%a\n"   1
+stmt: GTU4(reg,reg)  " sltu $at,$%1,$%0; bnez $at,%a\n"  1
+stmt: GEI4(reg,reg)  " slt $at,$%0,$%1; beqz $at,%a\n"   1
+stmt: GEU4(reg,reg)  " sltu $at,$%0,$%1; beqz $at,%a\n"  1
+stmt: LEI4(reg,reg)  " slt $at,$%1,$%0; beqz $at,%a\n"   1
+stmt: LEU4(reg,reg)  " sltu $at,$%1,$%0; beqz $at,%a\n"  1
+stmt: EQF4(reg,reg)  " c.eq.s $f%0,$f%1; bc1t %a\n"  2
+stmt: EQF8(reg,reg)  " c.eq.d $f%0,$f%1; bc1t %a\n"  2
+stmt: LEF4(reg,reg)  " c.ule.s $f%0,$f%1; bc1t %a\n"  2
+stmt: LEF8(reg,reg)  " c.ule.d $f%0,$f%1; bc1t %a\n"  2
+stmt: LTF4(reg,reg)  " c.ult.s $f%0,$f%1; bc1t %a\n"  2
+stmt: LTF8(reg,reg)  " c.ult.d $f%0,$f%1; bc1t %a\n"  2
+stmt: GEF4(reg,reg)  " c.lt.s $f%0,$f%1; bc1f %a\n"  2
+stmt: GEF8(reg,reg)  " c.lt.d $f%0,$f%1; bc1f %a\n"  2
+stmt: GTF4(reg,reg)  " c.le.s $f%0,$f%1; bc1f %a\n"  2
+stmt: GTF8(reg,reg)  " c.le.d $f%0,$f%1; bc1f %a\n"  2
+stmt: NEF4(reg,reg)  " c.eq.s $f%0,$f%1; bc1f %a\n"  2
+stmt: NEF8(reg,reg)  " c.eq.d $f%0,$f%1; bc1f %a\n"  2
 ar:   ADDRGP4     "%a"
 
-reg:  CALLF4(ar)  "jal %0\n"  1
-reg:  CALLF8(ar)  "jal %0\n"  1
-reg:  CALLI4(ar)  "jal %0\n"  1
-reg:  CALLP4(ar)  "jal %0\n"  1
-reg:  CALLU4(ar)  "jal %0\n"  1
-stmt: CALLV(ar)  "jal %0\n"  1
+reg:  CALLF4(ar)  " jal %0\n"  1
+reg:  CALLF8(ar)  " jal %0\n"  1
+reg:  CALLI4(ar)  " jal %0\n"  1
+reg:  CALLP4(ar)  " jal %0\n"  1
+reg:  CALLU4(ar)  " jal %0\n"  1
+stmt: CALLV(ar)   " jal %0\n"  1
 ar: reg    "$%0"
 ar: CNSTP4  "%a"   range(a, 0, 0x0fffffff)
 stmt: RETF4(reg)  "# ret\n"  1
@@ -525,7 +526,8 @@ stmt: ARGB(INDIRB(reg))       "# argb %0\n"      1
 stmt: ASGNB(reg,INDIRB(reg))  "# asgnb %0 %1\n"  1
 %%
 static void progend(void){}
-static void progbeg(int argc, char *argv[]) {
+static void progbeg(int argc, char *argv[]) 
+{
         int i;
 
         {
@@ -537,7 +539,7 @@ static void progbeg(int argc, char *argv[]) {
                 u.c = 1;
                 swap = ((int)(u.i == 1)) != IR->little_endian;
         }
-        print(".set reorder\n");
+        print("\t.set\treorder\n");
         pic = !IR->little_endian;
         parseflags(argc, argv);
         for (i = 0; i < argc; i++)
@@ -558,7 +560,8 @@ static void progbeg(int argc, char *argv[]) {
         vmask[IREG] = INTVAR; vmask[FREG] = FLTVAR;
         blkreg = mkreg("8", 8, 7, IREG);
 }
-static Symbol rmap(int opk) {
+static Symbol rmap(int opk) 
+{
         switch (optype(opk)) {
         case I: case U: case P: case B:
                 return iregw;
@@ -568,7 +571,8 @@ static Symbol rmap(int opk) {
                 return 0;
         }
 }
-static void target(Node p) {
+static void target(Node p) 
+{
         assert(p);
         switch (specific(p->op)) {
         case CNST+I: case CNST+U: case CNST+P:
@@ -611,7 +615,8 @@ static void target(Node p) {
         case ARG+B:  rtarget(p->kids[0], 0, blkreg); break;
         }
 }
-static void clobber(Node p) {
+static void clobber(Node p) 
+{
         assert(p);
         switch (specific(p->op)) {
         case CALL+F:
@@ -628,7 +633,8 @@ static void clobber(Node p) {
                 break;
         }
 }
-static void emit2(Node p) {
+static void emit2(Node p) 
+{
         int dst, n, src, sz, ty;
         static int ty0;
         Symbol q;
@@ -642,15 +648,15 @@ static void emit2(Node p) {
                 q = argreg(p->x.argno, p->syms[2]->u.c.v.i, ty, sz, ty0);
                 src = getregnum(p->x.kids[0]);
                 if (q == NULL && ty == F && sz == 4)
-                        print("s.s $f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
+                        print("\ts.s\t$f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
                 else if (q == NULL && ty == F)
-                        print("s.d $f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
+                        print("\ts.d\t$f%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
                 else if (q == NULL)
-                        print("sw $%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
+                        print("\tsw\t$%d,%d($sp)\n", src, p->syms[2]->u.c.v.i);
                 else if (ty == F && sz == 4 && q->x.regnode->set == IREG)
-                        print("mfc1 $%d,$f%d\n", q->x.regnode->number, src);
+                        print("\tmfc1\t$%d,$f%d\n", q->x.regnode->number, src);
                 else if (ty == F && q->x.regnode->set == IREG)
-                        print("mfc1.d $%d,$f%d\n", q->x.regnode->number, src);
+                        print("\tmfc1.d\t$%d,$f%d\n", q->x.regnode->number, src);
                 break;
         case ASGN+B:
                 dalign = salign = p->syms[1]->u.c.v.i;
@@ -667,11 +673,12 @@ static void emit2(Node p) {
                 n   = p->syms[2]->u.c.v.i + p->syms[0]->u.c.v.i;
                 dst = p->syms[2]->u.c.v.i;
                 for ( ; dst <= 12 && dst < n; dst += 4)
-                        print("lw $%d,%d($sp)\n", (dst/4)+4, dst);
+                        print("\tlw\t$%d,%d($sp)\n", (dst/4)+4, dst);
                 break;
         }
 }
-static Symbol argreg(int argno, int offset, int ty, int sz, int ty0) {
+static Symbol argreg(int argno, int offset, int ty, int sz, int ty0) 
+{
         assert((offset&3) == 0);
         if (offset > 12)
                 return NULL;
@@ -684,7 +691,8 @@ static Symbol argreg(int argno, int offset, int ty, int sz, int ty0) {
         else
                 return ireg[(offset/4) + 4];
 }
-static void doarg(Node p) {
+static void doarg(Node p) 
+{
         static int argno;
         int align;
 
@@ -695,7 +703,8 @@ static void doarg(Node p) {
         p->syms[2] = intconst(mkactual(align,
                 p->syms[0]->u.c.v.i));
 }
-static void local(Symbol p) {
+static void local(Symbol p) 
+{
         if (askregvar(p, rmap(ttob(p->type))) == 0)
                 mkauto(p);
 }
@@ -727,8 +736,8 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
                         p->sclass = AUTO;
                 else if (r && ncalls == 0 &&
                          !isstruct(q->type) && !p->addressed &&
-                         !(isfloat(q->type) && r->x.regnode->set == IREG)
-) {
+                         !(isfloat(q->type) && r->x.regnode->set == IREG)) 
+		{
                         p->sclass = q->sclass = REGISTER;
                         askregvar(p, r);
                         assert(p->x.regnode && p->x.regnode->vbl == p);
@@ -760,33 +769,33 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
         framesize = roundup(maxargoffset + sizefsave
                 + sizeisave + maxoffset, 16);
         segment(CODE);
-        print(".align 2\n");
-        print(".ent %s\n", f->x.name);
+        print("\t.align\t2\n");
+        print("\t.ent\t%s\n", f->x.name);
         print("%s:\n", f->x.name);
         i = maxargoffset + sizefsave - framesize;
-        print(".frame $sp,%d,$31\n", framesize);
+        print("\t.frame\t$sp,%d,$31\n", framesize);
         if (pic)
-                print(".set noreorder\n.cpload $25\n.set reorder\n");
+                print("\t.set\tnoreorder\n\t.cpload\t$25\n\t.set\treorder\n");
         if (framesize > 0)
-                print("addu $sp,$sp,%d\n", -framesize);
+                print("\taddu\t$sp,$sp,%d\n", -framesize);
         if (usedmask[FREG])
-                print(".fmask 0x%x,%d\n", usedmask[FREG], i - 8);
+                print("\t.fmask\t0x%x,%d\n", usedmask[FREG], i - 8);
         if (usedmask[IREG])
-                print(".mask 0x%x,%d\n",  usedmask[IREG],
+                print("\t.mask\t0x%x,%d\n",  usedmask[IREG],
                         i + sizeisave - 4);
         saved = maxargoffset;
         for (i = 20; i <= 30; i += 2)
                 if (usedmask[FREG]&(3<<i)) {
-                        print("s.d $f%d,%d($sp)\n", i, saved);
+                        print("\ts.d\t$f%d,%d($sp)\n", i, saved);
                         saved += 8;
                 }
 
         for (i = 16; i <= 31; i++)
                 if (usedmask[IREG]&(1<<i)) {
                         if (i == 25)
-                                print(".cprestore %d\n", saved);
+                                print("\t.cprestore\t%d\n", saved);
                         else
-                                print("sw $%d,%d($sp)\n", i, saved);
+                                print("\tsw\t$%d,%d($sp)\n", i, saved);
                         saved += 4;
                 }
         for (i = 0; i < 4 && callee[i]; i++) {
@@ -804,25 +813,25 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
                         && (isint(out->type) || out->type == in->type)) {
                                 int outn = out->x.regnode->number;
                                 if (rs == FREG && tyin == F+sizeop(8))
-                                        print("mov.d $f%d,$f%d\n", outn, rn);
+                                        print("\tmov.d\t$f%d,$f%d\n", outn, rn);
                                 else if (rs == FREG && tyin == F+sizeop(4))
-                                        print("mov.s $f%d,$f%d\n", outn, rn);
+                                        print("\tmov.s\t$f%d,$f%d\n", outn, rn);
                                 else if (rs == IREG && tyin == F+sizeop(8))
-                                        print("mtc1.d $%d,$f%d\n", rn,   outn);
+                                        print("\tmtc1.d\t$%d,$f%d\n", rn,   outn);
                                 else if (rs == IREG && tyin == F+sizeop(4))
-                                        print("mtc1 $%d,$f%d\n",   rn,   outn);
+                                        print("\tmtc1\t$%d,$f%d\n",   rn,   outn);
                                 else
-                                        print("move $%d,$%d\n",    outn, rn);
+                                        print("\tmove\t$%d,$%d\n",    outn, rn);
                         } else {
                                 int off = in->x.offset + framesize;
                                 if (rs == FREG && tyin == F+sizeop(8))
-                                        print("s.d $f%d,%d($sp)\n", rn, off);
+                                        print("\ts.d\t$f%d,%d($sp)\n", rn, off);
                                 else if (rs == FREG && tyin == F+sizeop(4))
-                                        print("s.s $f%d,%d($sp)\n", rn, off);
+                                        print("\ts.s\t$f%d,%d($sp)\n", rn, off);
                                 else {
                                         int i, n = (in->type->size + 3)/4;
                                         for (i = rn; i < rn+n && i <= 7; i++)
-                                                print("sw $%d,%d($sp)\n", i, off + (i-rn)*4);
+                                                print("\tsw\t$%d,%d($sp)\n", i, off + (i-rn)*4);
                                 }
                         }
                 }
@@ -830,24 +839,24 @@ static void function(Symbol f, Symbol caller[], Symbol callee[], int ncalls)
         if (varargs && callee[i-1]) {
                 i = callee[i-1]->x.offset + callee[i-1]->type->size;
                 for (i = roundup(i, 4)/4; i <= 3; i++)
-                        print("sw $%d,%d($sp)\n", i + 4, framesize + 4*i);
+                        print("\tsw\t$%d,%d($sp)\n", i + 4, framesize + 4*i);
                 }
         emitcode();
         saved = maxargoffset;
         for (i = 20; i <= 30; i += 2)
                 if (usedmask[FREG]&(3<<i)) {
-                        print("l.d $f%d,%d($sp)\n", i, saved);
+                        print("\tl.d\t$f%d,%d($sp)\n", i, saved);
                         saved += 8;
                 }
         for (i = 16; i <= 31; i++)
                 if (usedmask[IREG]&(1<<i)) {
-                        print("lw $%d,%d($sp)\n", i, saved);
+                        print("\tlw\t$%d,%d($sp)\n", i, saved);
                         saved += 4;
                 }
         if (framesize > 0)
-                print("addu $sp,$sp,%d\n", framesize);
-        print("j $31\n");
-        print(".end %s\n", f->x.name);
+                print("\taddu\t$sp,$sp,%d\n", framesize);
+        print("\tj\t$31\n");
+        print("\t.end\t%s\n", f->x.name);
 }
 
 static void defconst(int suffix, int size, Value v)
@@ -858,7 +867,7 @@ static void defconst(int suffix, int size, Value v)
                         unsigned u32;
                 } u;
                 u.f32 = v.d;
-                print(".word 0x%x\n", u.u32);
+                print("\t.word\t0x%x\n", u.u32);
         }
         else if (suffix == F && size == 8) {
                 union {
@@ -866,39 +875,43 @@ static void defconst(int suffix, int size, Value v)
                         unsigned u32[2];
                 } u;
                 u.d64 = v.d;
-                print(".word 0x%x\n.word 0x%x\n", u.u32[swap], u.u32[!swap]);
+                print("\t.word\t0x%x\n\t.word\t0x%x\n", u.u32[swap], u.u32[!swap]);
         }
         else if (suffix == P)
-                print(".word 0x%x\n", (unsigned)(size_t)v.p);
+                print("\t.word\t0x%x\n", (unsigned)(size_t)v.p);
         else if (size == 1)
-                print(".byte 0x%x\n", (unsigned)((unsigned char)(suffix == I ? v.i : v.u)));
+                print("\t.byte\t0x%x\n", (unsigned)((unsigned char)(suffix == I ? v.i : v.u)));
         else if (size == 2)
-                print(".half 0x%x\n", (unsigned)((unsigned short)(suffix == I ? v.i : v.u)));
+                print("\t.half\t0x%x\n", (unsigned)((unsigned short)(suffix == I ? v.i : v.u)));
         else if (size == 4)
-                print(".word 0x%x\n", (unsigned)(suffix == I ? v.i : v.u));
+                print("\t.word\t0x%x\n", (unsigned)(suffix == I ? v.i : v.u));
 }
 
 static void defaddress(Symbol p)
 {
         if (pic && p->scope == LABELS)
-                print(".gpword %s\n", p->x.name);
+                print("\t.gpword\t%s\n", p->x.name);
         else
-                print(".word %s\n", p->x.name);
+                print("\t.word\t%s\n", p->x.name);
 }
-static void defstring(int n, char *str) {
+static void defstring(int n, char *str) 
+{
         char *s;
 
         for (s = str; s < str + n; s++)
-                print(".byte %d\n", (*s)&0377);
+                print("\t.byte\t%d\n", (*s)&0377);
 }
-static void export(Symbol p) {
-        print(".globl %s\n", p->x.name);
+static void export(Symbol p) 
+{
+        print("\t.globl\t%s\n", p->x.name);
 }
-static void import(Symbol p) {
+static void import(Symbol p) 
+{
         if (!isfunc(p->type))
-                print(".extern %s %d\n", p->name, p->type->size);
+                print("\t.extern\t%s %d\n", p->name, p->type->size);
 }
-static void defsymbol(Symbol p) {
+static void defsymbol(Symbol p) 
+{
         if (p->scope >= LOCAL && p->sclass == STATIC)
                 p->x.name = stringf("L.%d", genlabel(1));
         else if (p->generated)
@@ -908,7 +921,8 @@ static void defsymbol(Symbol p) {
                 p->x.name = p->name;
         }
 }
-static void address(Symbol q, Symbol p, long n) {
+static void address(Symbol q, Symbol p, long n) 
+{
         if (p->scope == GLOBAL
         || p->sclass == STATIC || p->sclass == EXTERN)
                 q->x.name = stringf("%s%s%D", p->x.name,
@@ -919,69 +933,75 @@ static void address(Symbol q, Symbol p, long n) {
                 q->x.name = stringd(q->x.offset);
         }
 }
-static void global(Symbol p) {
+static void global(Symbol p) 
+{
         if (p->u.seg == BSS) {
                 if (p->sclass == STATIC || Aflag >= 2)
-                        print(".lcomm %s,%d\n", p->x.name, p->type->size);
+                        print("\t.lcomm\t%s,%d\n", p->x.name, p->type->size);
                 else
-                        print( ".comm %s,%d\n", p->x.name, p->type->size);
+                        print( "\t.comm\t%s,%d\n", p->x.name, p->type->size);
         } else {
                 if (p->u.seg == DATA
                 && (p->type->size == 0 || p->type->size > gnum))
-                        print(".data\n");
+                        print("\t.data\n");
                 else if (p->u.seg == DATA)
-                        print(".sdata\n");
-                print(".align %c\n", ".01.2...3"[p->type->align]);
+                        print("\t.sdata\n");
+                print("\t.align\t%c\n", ".01.2...3"[p->type->align]);
                 print("%s:\n", p->x.name);
         }
 }
-static void segment(int n) {
+static void segment(int n) 
+{
         cseg = n;
         switch (n) {
-        case CODE: print(".text\n");  break;
-        case LIT:  print(".rdata\n"); break;
+        case CODE: print("\t.text\n");  break;
+        case LIT:  print("\t.rdata\n"); break;
         }
 }
-static void space(int n) {
+static void space(int n) 
+{
         if (cseg != BSS)
-                print(".space %d\n", n);
+                print("\t.space\t%d\n", n);
 }
-static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) {
+static void blkloop(int dreg, int doff, int sreg, int soff, int size, int tmps[]) 
+{
         int lab = genlabel(1);
 
-        print("addu $%d,$%d,%d\n", sreg, sreg, size&~7);
-        print("addu $%d,$%d,%d\n", tmps[2], dreg, size&~7);
+        print("\taddu\t$%d,$%d,%d\n", sreg, sreg, size&~7);
+        print("\taddu\t$%d,$%d,%d\n", tmps[2], dreg, size&~7);
         blkcopy(tmps[2], doff, sreg, soff, size&7, tmps);
         print("L.%d:\n", lab);
-        print("addu $%d,$%d,%d\n", sreg, sreg, -8);
-        print("addu $%d,$%d,%d\n", tmps[2], tmps[2], -8);
+        print("\taddu\t$%d,$%d,%d\n", sreg, sreg, -8);
+        print("\taddu\t$%d,$%d,%d\n", tmps[2], tmps[2], -8);
         blkcopy(tmps[2], doff, sreg, soff, 8, tmps);
-        print("bltu $%d,$%d,L.%d\n", dreg, tmps[2], lab);
+        print("\tsltu\t$at,$%d,$%d;\tbnez\t$at,L.%d\n", dreg, tmps[2], lab);
 }
-static void blkfetch(int size, int off, int reg, int tmp) {
+static void blkfetch(int size, int off, int reg, int tmp) 
+{
         assert(size == 1 || size == 2 || size == 4);
         if (size == 1)
-                print("lbu $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tlbu\t$%d,%d($%d)\n",  tmp, off, reg);
         else if (salign >= size && size == 2)
-                print("lhu $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tlhu\t$%d,%d($%d)\n",  tmp, off, reg);
         else if (salign >= size)
-                print("lw $%d,%d($%d)\n",   tmp, off, reg);
+                print("\tlw\t$%d,%d($%d)\n",   tmp, off, reg);
         else if (size == 2)
-                print("ulhu $%d,%d($%d)\n", tmp, off, reg);
+                print("\tulhu\t$%d,%d($%d)\n", tmp, off, reg);
         else
-                print("ulw $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tulw\t$%d,%d($%d)\n",  tmp, off, reg);
 }
-static void blkstore(int size, int off, int reg, int tmp) {
+static void blkstore(int size, int off, int reg, int tmp) 
+{
         if (size == 1)
-                print("sb $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tsb\t$%d,%d($%d)\n",  tmp, off, reg);
         else if (dalign >= size && size == 2)
-                print("sh $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tsh\t$%d,%d($%d)\n",  tmp, off, reg);
         else if (dalign >= size)
-                print("sw $%d,%d($%d)\n",  tmp, off, reg);
+                print("\tsw\t$%d,%d($%d)\n",  tmp, off, reg);
         else if (size == 2)
-                print("ush $%d,%d($%d)\n", tmp, off, reg);
+                print("\tush\t$%d,%d($%d)\n", tmp, off, reg);
         else
-                print("usw $%d,%d($%d)\n", tmp, off, reg);
+                print("\tusw\t$%d,%d($%d)\n", tmp, off, reg);
 }
 static void stabinit(char *, int, char *[]);
 static void stabline(Coordinate *);
@@ -989,7 +1009,8 @@ static void stabsym(Symbol);
 
 static char *currentfile;
 
-static int bitcount(unsigned mask) {
+static int bitcount(unsigned mask) 
+{
         unsigned i, n = 0;
 
         for (i = 1; i; i <<= 1)
@@ -999,24 +1020,27 @@ static int bitcount(unsigned mask) {
 }
 
 /* stabinit - initialize stab output */
-static void stabinit(char *file, int argc, char *argv[]) {
+static void stabinit(char *file, int argc, char *argv[]) 
+{
         if (file) {
-                print(".file 2,\"%s\"\n", file);
+                print("\t.file\t2,\"%s\"\n", file);
                 currentfile = file;
         }
 }
 
 /* stabline - emit stab entry for source coordinate *cp */
-static void stabline(Coordinate *cp) {
+static void stabline(Coordinate *cp) 
+{
         if (cp->file && cp->file != currentfile) {
-                print(".file 2,\"%s\"\n", cp->file);
+                print("\t.file\t2,\"%s\"\n", cp->file);
                 currentfile = cp->file;
         }
-        print(".loc 2,%d\n", cp->y);
+        print("\t.loc\t2,%d\n", cp->y);
 }
 
 /* stabsym - output a stab entry for symbol p */
-static void stabsym(Symbol p) {
+static void stabsym(Symbol p) 
+{
         if (p == cfunc && IR->stabline)
                 (*IR->stabline)(&p->src);
 }
