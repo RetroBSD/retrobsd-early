@@ -33,7 +33,7 @@ SECTIONS
     *(.exception)
     . = 0x1000;
     /* Execution starts here. */
-    *(.startup) 
+    *(.startup)
     *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)
@@ -64,7 +64,7 @@ SECTIONS
   {
    __bss_start = .;
    *(.dynbss)
-   *(.sbss)
+   *(.sbss .sbss.*)
    *(.scommon)
    *(.bss .bss.* .gnu.linkonce.b.*)
    *(COMMON)
