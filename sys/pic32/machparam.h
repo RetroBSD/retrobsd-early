@@ -30,14 +30,14 @@
 /*
  * Clock ticks per second.
  */
-#define	HZ		20
+#define	HZ		200
 
 /*
  * System parameter formulae.
  */
 #define	NBUF		10			/* number of i/o buffers */
 #define	MAXUSERS	1			/* number of user logins */
-#define	NPROC		10			/* number of processes */
+#define	NPROC		20			/* number of processes */
 #define NINODE		24
 #define NFILE		24
 #define NNAMECACHE	(NINODE * 11/10)
@@ -63,7 +63,14 @@
 #define DATA_SIZE               (128*1024)
 
 #define KERNEL_FLASH_SIZE	(192*1024)
+
+#ifdef KERNEL_EXECUTABLE_RAM
+extern void _keram_start(), _keram_end();
+#define KERAM_SIZE ((unsigned)((char*)&_keram_end-(char*)&_keram_start))
+#define KERNEL_DATA_SIZE	(32*1024-KERAM_SIZE)
+#else
 #define KERNEL_DATA_SIZE	(32*1024)
+#endif
 
 #define KERNEL_FLASH_START	0x9d000000
 #define USER_FLASH_START	(KERNEL_FLASH_START + KERNEL_FLASH_SIZE)
@@ -71,7 +78,13 @@
 
 #define KERNEL_DATA_START	0x80000000
 #define KERNEL_DATA_END		(KERNEL_DATA_START + KERNEL_DATA_SIZE)
+
+#ifdef KERNEL_EXECUTABLE_RAM
+#define USER_DATA_START		(0x7f000000 + KERNEL_DATA_SIZE+KERAM_SIZE)
+#else
 #define USER_DATA_START		(0x7f000000 + KERNEL_DATA_SIZE)
+#endif
+
 #define USER_DATA_END		(0x7f000000 + DATA_SIZE)
 
 #define stacktop(siz)		(USER_DATA_END)

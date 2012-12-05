@@ -1,0 +1,21 @@
+# Special device for global options
+
+option nproc
+    define NPROC %1
+end option
+
+option nbuf
+    define NBUF %1
+end option
+
+option hz
+    define HZ %1
+end option
+
+option haltreboot
+    define HALTREBOOT YES
+end option
+
+option blreboot
+    set BLREBOOT -p
+end option

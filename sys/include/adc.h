@@ -20,7 +20,6 @@ int adc_close (dev_t dev, int flag, int mode);
 int adc_read (dev_t dev, struct uio *uio, int flag);
 int adc_write (dev_t dev, struct uio *uio, int flag);
 int adc_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
-void adc_intr ();
 #endif
 
 #endif

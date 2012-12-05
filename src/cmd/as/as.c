@@ -733,6 +733,7 @@ int lookacmd ()
         if (! strcmp (".set", name)) return (LSET);
         if (! strcmp (".size", name)) return (LSIZE);
         if (! strcmp (".space", name)) return (LSPACE);
+        if (! strcmp (".space", name)) return (LSPACE);
         if (! strcmp (".strng", name)) return (LSTRNG);
         break;
     case 't':

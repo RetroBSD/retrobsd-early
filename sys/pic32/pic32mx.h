@@ -112,8 +112,11 @@
 /*--------------------------------------
  * Peripheral registers.
  */
+#ifdef __ASSEMBLER__
+#define PIC32_R(a)		(0xBF800000 + (a))
+#else
 #define PIC32_R(a)		*(volatile unsigned*)(0xBF800000 + (a))
-
+#endif
 /*--------------------------------------
  * UART registers.
  */
@@ -925,6 +928,27 @@
 #define PIC32_NVMCON_WRERR      0x00002000
 #define PIC32_NVMCON_WREN       0x00004000
 #define PIC32_NVMCON_WR         0x00008000
+
+
+/*
+ * Timer2 registers
+ */
+#define T2CON 		PIC32_R (0x0800)
+#define T2CONSET 	PIC32_R (0x0808)
+#define TMR2  		PIC32_R (0x0810)
+#define PR2   		PIC32_R (0x0820)
+
+/*
+ * Output compare registers
+ */
+#define OC1CON		PIC32_R (0x3000)
+#define OC1R		PIC32_R (0x3010)
+#define OC1RS		PIC32_R (0x3020)
+#define OC4CON   	PIC32_R (0x3600)
+#define OC4R		PIC32_R (0x3610)
+#define OC4RS		PIC32_R (0x3620)
+
+#define BLRKEY      *(volatile unsigned*)(0x80000000)
 
 /*--------------------------------------
  * Configuration registers.

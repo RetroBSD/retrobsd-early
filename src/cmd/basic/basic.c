@@ -110,7 +110,7 @@
 /* Fixed parameters */
 #define BUFFER_SIZE	100	/* input buffer size */
 #define NUM_VAR 	260	/* number of variables */
-#define SA_SIZE 	100	/* string accumulator size */
+#define SA_SIZE 	200	/* string accumulator size */
 
 /* Control stack constant identifiers */
 #define _FOR		1000	/* indicate FOR statement */
@@ -176,6 +176,7 @@
 #define	RND		53
 #define	KEY		54
 #define	INP		55
+#define DATE    56
 
 #define	RUN1		99
 
@@ -189,6 +190,7 @@ static char *reserved_words[] = {
 	"+", "-", "*", "/", "%", "&", "|", "^",
 	"=", "<>", "<=", "<", ">=", ">",
 	"CHR$(", "STR$(", "ASC(", "ABS(", "NUM(", "RND(", "KEY(", "INP(",
+    "DATE$(",
 	0
 };
 
@@ -796,6 +798,162 @@ void skip_stmt()
 	}
 }
 
+const char *wday_s[] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat",0};
+const char *wday_l[] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",0};
+const char *month_l[] = {"January","February","March","April","May","June","July","August","September","October","November","December",0};
+const char *month_s[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",0};
+
+void date_string(char *format, char *ptr)
+{
+    char *f;
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char *fmt = strdup(format);
+
+    for(f=fmt; *f; f++)
+    {
+        if(*f == '%')
+        {
+            f++;
+            switch(*f)
+            {
+                case 'd':   // Day of the month, 2 digits, leading 0 - 01-31
+                    sprintf(ptr,"%02d",tm->tm_mday);
+                    break;
+                case 'D':
+                    sprintf(ptr,"%s",wday_s[tm->tm_wday]);
+                    break;
+                case 'j':
+                    sprintf(ptr,"%d",tm->tm_mday);
+                    break;
+                case 'l':
+                    sprintf(ptr,"%s",wday_l[tm->tm_wday]);
+                    break;
+                case 'N':
+                    sprintf(ptr,"%d",tm->tm_wday == 0 ? 7 : tm->tm_wday);
+                    break;
+                case 'S':
+                    switch(tm->tm_mday)
+                    {
+                        case 1:
+                        case 21:
+                        case 31:
+                            sprintf(ptr,"st");
+                            break;
+                        case 2:
+                        case 22:
+                        sprintf(ptr,"nd");
+                        break;
+                        case 3:
+                        case 23:
+                            sprintf(ptr,"rd");
+                            break;
+                        default:
+                            sprintf(ptr,"th");
+                            break;
+                    }
+                    break;
+                case 'w':
+                    sprintf(ptr,"%d",tm->tm_wday);
+                    break;
+                case 'z':
+                    sprintf(ptr,"%d",tm->tm_yday);
+                    break;
+                case 'F':
+                    sprintf(ptr,"%s",month_l[tm->tm_mon]);
+                    break;
+                case 'm':
+                    sprintf(ptr,"%02d",tm->tm_mon+1);
+                    break;
+                case 'M':
+                    sprintf(ptr,"%s",month_s[tm->tm_mon]);
+                    break;
+                case 'n':
+                    sprintf(ptr,"%d",tm->tm_mon+1);
+                    break;
+                case 't':
+                    switch(tm->tm_mon)
+                    {
+                        case 0:     sprintf(ptr,"%d",31); break; // Jan
+                        case 1:     sprintf(ptr,"%d",((tm->tm_year+1900) % 4 == 0) ? 29 : 28); break;    // Feb
+                        case 2:     sprintf(ptr,"%d",31); break; // Mar
+                        case 3:     sprintf(ptr,"%d",30); break; // Apr
+                        case 4:     sprintf(ptr,"%d",31); break; // May
+                        case 5:     sprintf(ptr,"%d",30); break; // Jun
+                        case 6:     sprintf(ptr,"%d",31); break; // Jul
+                        case 7:     sprintf(ptr,"%d",31); break; // Aug
+                        case 8:     sprintf(ptr,"%d",30); break; // Sep
+                        case 9:     sprintf(ptr,"%d",31); break; // Oct
+                        case 10:    sprintf(ptr,"%d",30); break; // Nov
+                        case 11:    sprintf(ptr,"%d",31); break; // Dec
+                    }
+                    break;
+                case 'L':
+                    sprintf(ptr,"%d",((tm->tm_year+1900) % 4 == 0) ? 1 : 0);
+                    break;
+                case 'o':
+                case 'Y':
+                    sprintf(ptr,"%04d",tm->tm_year+1900);
+                    break;
+                case 'y':
+                    sprintf(ptr,"%02d",(tm->tm_year+1900) % 100);
+                    break;
+                case 'a':
+                    sprintf(ptr,"%s",(tm->tm_hour<12) ? "am" : "pm");
+                    break;
+                case 'A':
+                    sprintf(ptr,"%s",(tm->tm_hour<12) ? "AM" : "PM");
+                    break;
+                case 'g':
+                    sprintf(ptr,"%d",tm->tm_hour % 12);
+                    break;
+                case 'G':
+                    sprintf(ptr,"%d",tm->tm_hour);
+                    break;
+                case 'h':
+                    sprintf(ptr,"%02d",tm->tm_hour % 12);
+                    break;
+                case 'H':
+                    sprintf(ptr,"%02d",tm->tm_hour);
+                    break;
+                case 'i':
+                    sprintf(ptr,"%02d",tm->tm_min);
+                    break;
+                case 's':
+                    sprintf(ptr,"%02d",tm->tm_sec);
+                    break;
+                case 'u':
+                    sprintf(ptr,"000000");
+                    break;
+                case 'e':
+                    sprintf(ptr,"%s",tm->tm_zone);
+                    break;
+                case 'I':
+                    sprintf(ptr,"%d",tm->tm_isdst);
+                    break;
+                case 'O':
+                    sprintf(ptr,"%02d%02d",(int)tm->tm_gmtoff/60,(int)tm->tm_gmtoff%60);
+                    break;
+                case 'P':
+                    sprintf(ptr,"%02d:%02d",(int)tm->tm_gmtoff/60,(int)tm->tm_gmtoff%60);
+                    break;
+                case 'T':
+                    sprintf(ptr,"%s",tm->tm_zone);
+                    break;
+                default:
+                    *ptr++ = *f;
+                    *ptr = 0;
+            }
+        } else {
+            *ptr++ = *f;
+            *ptr = 0;
+        }
+        while(*ptr)
+            ptr++;
+    }
+    free(fmt);
+}
+
 /*
  * Convert a number to a string, and place in memory
  */
@@ -1263,6 +1421,11 @@ void get_char_value(char *ptr)
 		num_string(eval_sub(), ptr);
 		if(expr_type)
 			error(4);
+    } else if(c == -128+DATE) { /* Format a date */
+        eval_sub();
+		if(!expr_type)
+			error(4);
+        date_string(sa1,ptr);
 	} else
 		error(0);
 	expr_type = 1;

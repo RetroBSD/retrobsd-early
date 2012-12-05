@@ -63,6 +63,7 @@ char *
 blockcheck(name)
 	char *name;
 {
+	return name;
 	struct stat stslash, stblock, stchar;
 	char *raw;
 	int looped = 0;

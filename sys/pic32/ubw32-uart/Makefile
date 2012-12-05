@@ -17,41 +17,45 @@ vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
 
 # Kernel options.
-DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
+DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7 
 
 # CPU frequency 80 MHz.
 DEFS		+= -DCPU_KHZ=80000
 DEFS		+= -DBUS_KHZ=80000
 
+DEFS            += -DSRAMC_ENABLED
+
 #
 # UBW32 board
 # ===========
 #
-# Console on UART1
-DEFS            += -DCONSOLE_UART1
+# Console on UART2
+DEFS            += -DCONSOLE_UART2 -DCONSOLE_BAUD=115200
 
-# SD/MMC card driver on SPI1
-# /CS0 at pin A9 (and optional /CS1 at pin A10)
-DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=8
-DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
-DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
+# SD/MMC card driver on SPI2
+# /CS0 at pin C13
+DEFS            += -DSD0_PORT=2 -DSD0_MHZ=13
+DEFS            += -DSD0_CS_PORT=TRISC -DSD0_CS_PIN=13
+# DEFS            += -DSD1_PORT=2 -DSD0_MHZ=13
+# DEFS            += -DSD1_CS_PORT=TRISA -DSD1_CS_PIN=10
 
-# LEDs at pins E0, E1, E2, E3
-DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0    -DLED_AUX_INVERT
-DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=1   -DLED_DISK_INVERT
-DEFS            += -DLED_KERNEL_PORT=TRISE -DLED_KERNEL_PIN=2 -DLED_KERNEL_INVERT
-DEFS            += -DLED_TTY_PORT=TRISE    -DLED_TTY_PIN=3    -DLED_TTY_INVERT
+# LEDs at pins D0, D1, D2, D3
+DEFS            += -DLED_AUX_PORT=TRISD    -DLED_AUX_PIN=0    -DLED_AUX_INVERT
+DEFS            += -DLED_DISK_PORT=TRISD   -DLED_DISK_PIN=1   -DLED_DISK_INVERT
+DEFS            += -DLED_KERNEL_PORT=TRISD -DLED_KERNEL_PIN=2 -DLED_KERNEL_INVERT
+DEFS            += -DLED_TTY_PORT=TRISD    -DLED_TTY_PIN=3    -DLED_TTY_INVERT
 
 # Swap on external device, 2 Mbytes
 #   data at E0-E7
-#     rd at E8
-#     wr at E9
-# ldaddr at C1
+#     rd at F0
+#     wr at F1
+# ldaddr at G9
 DEFS            += -DSWAPDEV=0x0100 -DSWAPSZ=2048
 DEFS            += -DSW_DATA_PORT=TRISE -DSW_DATA_PIN=0
-DEFS            += -DSW_RD_PORT=TRISE   -DSW_RD_PIN=8
-DEFS            += -DSW_WR_PORT=TRISE   -DSW_WR_PIN=9
-DEFS            += -DSW_LDA_PORT=TRISC  -DSW_LDA_PIN=1
+DEFS            += -DSW_RD_PORT=TRISF   -DSW_RD_PIN=0
+DEFS            += -DSW_WR_PORT=TRISF   -DSW_WR_PIN=1
+DEFS            += -DSW_LDA_PORT=TRISG  -DSW_LDA_PIN=9
+
 
 # Include or exclude drivers
 
@@ -89,7 +93,7 @@ OBJCOPY		= $(GCCPREFIX)objcopy
 # startup.o MUST be loaded first.
 KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
 		  signal.o machdep.o mem.o exception.o
-KERNOBJ		+= cons.o swap.o
+KERNOBJ		+= cons.o rd_sramc.o
 
 # Kernel.
 KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
@@ -104,13 +108,16 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+KERNOBJ		+= rdisk.o rd_sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 # This makefile does the work including the right files and options for the drivers
 include ../drivers.mk

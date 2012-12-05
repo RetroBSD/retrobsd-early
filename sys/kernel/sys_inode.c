@@ -98,6 +98,18 @@ ino_ioctl(fp, com, data)
 			return(u.u_error);
 		}
 		return((*cdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
+	case IFBLK:
+		dev = ip->i_rdev;
+		u.u_rval = 0;
+		if (setjmp(&u.u_qsave)) {
+			/*
+			 * The ONLY way we can get here is via the longjump in sleep.  Signals have
+			 * been checked for and u_error set accordingly.  All that remains to do
+			 * is 'return'.
+			 */
+			return(u.u_error);
+		}
+		return((*bdevsw[major(dev)].d_ioctl)(dev,com,data,fp->f_flag));
 	}
 }
 

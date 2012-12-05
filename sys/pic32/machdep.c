@@ -19,6 +19,7 @@
 #include "namei.h"
 #include "mount.h"
 #include "systm.h"
+#include "debug.h"
 #ifdef CONSOLE_USB
 #   include <machine/usb_device.h>
 #   include <machine/usb_function_cdc.h>
@@ -105,9 +106,7 @@ nodump (dev)
 
 int (*dump) (dev_t) = nodump;
 
-dev_t	rootdev = makedev(0,0),
-	swapdev = makedev(0,1),
-	pipedev = makedev(0,0);
+dev_t	rootdev, swapdev, pipedev;
 
 dev_t	dumpdev = NODEV;
 daddr_t	dumplo = (daddr_t) 1024;
@@ -135,8 +134,22 @@ startup()
 
 	/* Setup memory. */
         BMXPUPBA = 512 << 10;                   /* Kernel Flash memory size */
+#ifdef KERNEL_EXECUTABLE_RAM
+	/* 
+         * Set boundry for kernel executable ram on smallest
+         * 2k boundry required to allow the keram segement to fit.
+         * This means that there is possibly some u0area ramspace that
+         * is executable, but as it is isolated from userspace this
+         * should be ok, given the apparent goals of this project.
+	 */
+	extern void _keram_start(), _keram_end();
+	unsigned keram_size = (((char*)&_keram_end-(char*)&_keram_start+(2<<10))/(2<<10)*(2<<10));
+        BMXDKPBA = ((32<<10)-keram_size);     /* Kernel RAM size */
+        BMXDUDBA = BMXDKPBA+(keram_size);     /* Executable RAM in kernel */
+#else
         BMXDKPBA = 32 << 10;                    /* Kernel RAM size */
-        BMXDUDBA = BMXDKPBA;                    /* No executable RAM in kernel */
+        BMXDUDBA = BMXDKPBA;            	/* Zero executable RAM in kernel */
+#endif
         BMXDUPBA = BMXDUDBA;                    /* All user RAM is executable */
 
 	/*
@@ -199,6 +212,8 @@ startup()
         power_init();
 #endif
 
+    //SETVAL(0);
+
 	/* Initialize .data + .bss segments by zeroes. */
         bzero (&__data_start, KERNEL_DATA_SIZE - 96);
 
@@ -237,6 +252,25 @@ startup()
 		/*printf ("copy %08x from (%08x) to (%08x)\n", *src, src, dest);*/
 		*dest++ = *src++;
 	}
+
+#ifdef KERNEL_EXECUTABLE_RAM
+	/* Copy code that must run out of ram (due to timing restrictions)
+         * from flash to the executable section of kernel ram.
+         * This was added to support swap on sdram */
+
+	extern void _ramfunc_image_begin();
+	extern void _ramfunc_begin();
+	extern void _ramfunc_end();
+
+	unsigned *src1 = (unsigned*) &_ramfunc_image_begin;
+	unsigned *dest1 = (unsigned*)&_ramfunc_begin;
+	unsigned *limit1 = (unsigned*)&_ramfunc_end;
+	/*printf ("copy from (%08x) to (%08x)\n", src1, dest1);*/
+	while (dest1 < limit1) {
+		*dest1++ = *src1++;
+	}
+#endif
+
 #endif
 	/*
 	 * Setup UART registers.
@@ -388,6 +422,35 @@ boot (dev, howto)
                 (void) RSWRST;
         }
 	printf ("halted\n");
+
+    if(howto & RB_BOOTLOADER)
+    {
+        printf("entering bootloader\n");
+        BLRKEY=0x12345678;
+        /* Unlock access to reset register */
+        SYSKEY = 0;
+        SYSKEY = 0xaa996655;
+        SYSKEY = 0x556699aa;
+
+        /* Reset microcontroller */
+        RSWRSTSET = 1;
+        (void) RSWRST;
+    }
+
+#ifdef HALTREBOOT
+	printf("press any key to reboot...");
+	cngetc();
+                /* Unlock access to reset register */
+                SYSKEY = 0;
+                SYSKEY = 0xaa996655;
+                SYSKEY = 0x556699aa;
+
+                /* Reset microcontroller */
+                RSWRSTSET = 1;
+                (void) RSWRST;
+
+#endif	
+
 	for (;;) {
 #ifdef CONSOLE_USB
                 usb_device_tasks();

@@ -122,6 +122,7 @@ main(argc,argv)
 		nflag,			/* only set time locally */
 		wf;			/* wtmp file descriptor */
 	char	*username;
+	char	do_update = 0;
 
 	nflag = uflag = 0;
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
@@ -129,12 +130,14 @@ main(argc,argv)
 		switch((char)ch) {
 		case 'd':
 			tz.tz_dsttime = atoi(optarg) ? 1 : 0;
+			do_update = 1;
 			break;
 		case 'n':
 			nflag = 1;
 			break;
 		case 't':
 			tz.tz_minuteswest = atoi(optarg);
+			do_update = 1;
 			break;
 		case 'u':
 			uflag = 1;
@@ -151,7 +154,7 @@ main(argc,argv)
 		exit(1);
 	}
 
-	if ((tz.tz_minuteswest || tz.tz_dsttime) &&
+	if ((do_update==1) &&
 	    settimeofday((struct timeval *)NULL,&tz)) {
 		perror("settimeofday");
 		retval = 1;

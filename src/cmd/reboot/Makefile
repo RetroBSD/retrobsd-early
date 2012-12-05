@@ -35,6 +35,7 @@ install:        all
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/halt
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/fastboot
 		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/poweroff
+		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/bootloader
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}

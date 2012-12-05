@@ -99,7 +99,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
 # SD/MMC card controlled by SSD1926 chip
@@ -107,6 +107,9 @@ KERNOBJ		+= ssd1926-sdcard.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 # This makefile does the work including the right files and options for the drivers
 include ../drivers.mk

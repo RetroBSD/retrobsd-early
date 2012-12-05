@@ -9,6 +9,7 @@
 #include "user.h"
 #include "proc.h"
 #include "vm.h"
+#include "debug.h"
 
 //#define TRACE_EXCEPTIONS
 
@@ -16,14 +17,12 @@
 extern void power_switch_check();
 #endif
 
-#ifdef ADC_ENABLED
-#include "adc.h"
-#endif
-
 /*
  * Copy of COP0 Debug register, saved by exception handler (in startup.S).
  */
 int c0_debug;
+
+volatile unsigned int ct_ticks = 0;
 
 #ifdef TRACE_EXCEPTIONS
 static void
@@ -151,6 +150,24 @@ dumpregs (frame)
 	unsigned int cause;
 	const char *code = 0;
 
+	 unsigned * stacktop = (unsigned *)0x80007ffc;
+   	 unsigned * p = (unsigned*)frame;
+	printf( "************************************\n");
+	printf( "*******STACK DUMP START*************\n");
+    	printf( "frame = %8x\n", frame );
+    	printf( "stack data\n" );
+    	while( p <= stacktop ) 
+    	{
+        printf( " %8x", *p++ );
+        if( p <= stacktop ) printf( " %8x", *p++ );
+        if( p <= stacktop ) printf( " %8x", *p++ );
+        if( p <= stacktop ) printf( " %8x", *p++ );
+        printf("\n");
+    	}
+	printf( "*******STACK DUMP END***************\n");
+	printf( "************************************\n");
+
+
 	printf ("\n*** 0x%08x: exception ", frame [FRAME_PC]);
 
 	cause = mips_read_c0_register (C0_CAUSE, 0);
@@ -202,6 +219,9 @@ dumpregs (frame)
 	printf ("a3 = %8x   t7 = %8x   s7 = %8x   ra = %8x\n",
 		frame [FRAME_R7], frame [FRAME_R15],
 		frame [FRAME_R23], frame [FRAME_RA]);
+
+
+
 }
 
 /*
@@ -245,6 +265,7 @@ exception (frame)
 		cause |= USER;
 
 	syst = u.u_ru.ru_stime;
+
 	switch (cause) {
 
 	/*
@@ -307,18 +328,21 @@ exception (frame)
                 }
 		irq = PIC32_INTSTAT_VEC (c);
 
+    //SETVAL(irq);
+
                 /* Handle the interrupt. */
                 switch (irq) {
-                case PIC32_VECT_CT:     /* Core Timer */
+                    case PIC32_VECT_CT:     /* Core Timer */
+                        ct_ticks++;
                         /* Increment COMPARE register. */
                         c = mips_read_c0_register (C0_COMPARE, 0);
                         do {
-                                c += (CPU_KHZ * 1000 / HZ + 1) / 2;
-                                mips_write_c0_register (C0_COMPARE, 0, c);
-                        } while ((int) (c - mips_read_c0_register (C0_COUNT, 0)) < 0);
-
-                        IFSCLR(0) = 1 << PIC32_IRQ_CT;
+                            c += (CPU_KHZ * 1000 / HZ + 1) / 2;
+                            IFSCLR(0) = 1 << PIC32_IRQ_CT;
+                            mips_write_c0_register (C0_COMPARE, 0, c);
+                        } while ((int) (c - (unsigned)mips_read_c0_register (C0_COUNT, 0)) < 0);
                         hardclock ((caddr_t) frame [FRAME_PC], status);
+                       
 #ifdef POWER_ENABLED
                         power_switch_check();
 #endif
@@ -358,12 +382,6 @@ exception (frame)
                         cnintr (0);
                         break;
 #endif
-#ifdef ADC_ENABLED
-                case PIC32_VECT_AD1:    /* ADC */
-                        IFSCLR(1) = 1 << (PIC32_IRQ_AD1 - 32);
-                        adc_intr();
-                        break;
-#endif
                 default:
                         /* Disable the irq, to avoid loops */
                         printf ("*** irq %u\n", irq);
@@ -379,6 +397,28 @@ exception (frame)
 		if ((cause & USER) && runrun) {
 		        /* Need to switch processes: in user mode only.
                          * Enable interrupts first. */
+// MADSCIFI start new code
+                        //u.u_error = 0;
+                        u.u_frame = frame;
+                        u.u_code = frame [FRAME_PC];            /* For signal handler */
+
+                        /* Check stack. */
+                        sp = frame [FRAME_SP];
+                        if (sp < u.u_procp->p_daddr + u.u_dsize) {
+                                /* Process has trashed its stack; give it an illegal
+                                 * instruction violation to halt it in its tracks. */
+                        panic ("unexpected exception 2");
+                                psig = SIGSEGV;
+                                break;
+                        }
+                        if (u.u_procp->p_ssize < USER_DATA_END - sp) {
+                                /* Expand stack. */
+                                u.u_procp->p_ssize = USER_DATA_END - sp;
+                                u.u_procp->p_saddr = sp;
+                                u.u_ssize = u.u_procp->p_ssize;
+                        }
+// MADSCIFI end new code
+
                         mips_intr_enable();
                         goto out;
                 }
@@ -516,4 +556,9 @@ nosys()
 	if (u.u_signal[SIGSYS] == SIG_IGN || u.u_signal[SIGSYS] == SIG_HOLD)
 		u.u_error = EINVAL;
 	psignal (u.u_procp, SIGSYS);
+}
+
+void sc_msec()
+{
+	u.u_rval = (ct_ticks * 1000) / HZ;
 }

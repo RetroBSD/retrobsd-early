@@ -14,6 +14,7 @@
 MAX32           = pic32/max32
 UBW32           = pic32/ubw32
 UBW32UART       = pic32/ubw32-uart
+UBW32UARTSDRAM  = pic32/ubw32-uart-sdram
 MAXIMITE        = pic32/maximite
 EXPLORER16      = pic32/explorer16
 STARTERKIT      = pic32/starter-kit
@@ -22,13 +23,23 @@ PINGUINO        = pic32/pinguino-micro
 DIP             = pic32/dip
 BAREMETAL       = pic32/baremetal
 RETROONE	= pic32/retroone
+FUBARINO	= pic32/fubarino
+FUBARINOUART	= pic32/fubarino-uart
 
 # Select target board
 TARGET          ?= $(MAX32)
 
 # Filesystem and swap sizes.
-FS_KBYTES       = 16384
-SWAP_KBYTES     = 2048
+FS_KBYTES       = 163840
+SWAP_KBYTES     = 20480
+
+# The ROOTSWAP is a bit of a pain.  It's required for fsck to
+# operate, and needs to be a third of the whole filesystem size.
+# That's such a waste.  Never mind, it will go once the swap
+# system is rewritten so that /dev/tmp can be used instead.
+
+#ROOTSWAP	= `expr $(FS_KBYTES) / 3`
+ROOTSWAP	= `expr $(FS_KBYTES) / 5000 + 520`
 
 # Set this to the device name for your SD card.  With this
 # enabled you can use "make installfs" to copy the filesys.img
@@ -44,6 +55,8 @@ DEFS		=
 
 FSUTIL		= tools/fsutil/fsutil
 
+-include Makefile.user
+
 #
 # Filesystem contents.
 #
@@ -54,7 +67,7 @@ LIBEXEC_FILES	:= $(wildcard libexec/*)
 LIB_FILES	:= lib/crt0.o lib/retroImage $(wildcard lib/*.a)
 ETC_FILES	= etc/rc etc/rc.local etc/ttys etc/gettytab etc/group \
                   etc/passwd etc/shadow etc/fstab etc/motd etc/shells \
-                  etc/termcap
+                  etc/termcap etc/MAKEDEV
 INC_FILES	= $(wildcard include/*.h) \
                   $(wildcard include/sys/*.h) \
                   $(wildcard include/machine/*.h) \
@@ -67,27 +80,45 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   share/example/stars.bas share/example/prime.scm \
                   share/example/fact.fth share/example/echo.S \
                   $(wildcard share/smallc/*)
+MANFILES	= share/man/ share/man/cat1/ share/man/cat2/ share/man/cat3/ \
+		  share/man/cat4/ share/man/cat5/ share/man/cat6/ share/man/cat7/ \
+		  share/man/cat8/ $(wildcard share/man/cat?/*) 
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile
 ALLDIRS         = sbin/ bin/ dev/ etc/ tmp/ lib/ libexec/ share/ share/example/ \
                   share/misc/ share/smallc/ var/ var/run/ var/log/ u/ \
                   games/ games/lib/ include/ include/sys/ include/machine/ \
-                  include/arpa/ include/smallc/ include/smallc/sys/
-BDEVS           = dev/sd0!b0:0 dev/sd1!b0:1 dev/sw0!b1:0
-CDEVS           = dev/console!c0:0 \
-                  dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 \
-                  dev/tty!c2:0 \
-                  dev/rsd0!c3:0 dev/rsd1!c3:1 dev/swap!c3:0 \
-                  dev/klog!c4:0 \
-                  dev/stdin!c5:0 dev/stdout!c5:1 dev/stderr!c5:2 \
-                  dev/rsw0!c6:0 \
-                  dev/porta!c7:0 dev/portb!c7:1 dev/portc!c7:2 \
-                  dev/portd!c7:3 dev/porte!c7:4 dev/portf!c7:5 dev/portg!c7:6 \
-                  dev/confa!c7:64 dev/confb!c7:65 dev/confc!c7:66 \
-                  dev/confd!c7:67 dev/confe!c7:68 dev/conff!c7:69 dev/confg!c7:70 \
-                  dev/spi1!c9:0 dev/spi2!c9:1 dev/spi3!c9:2 dev/spi4!c9:3 \
-		  dev/glcd0!c10:0
+                  include/arpa/ include/smallc/ include/smallc/sys/ \
+                  share/misc/ share/smallc/ var/ var/run/ var/log/ u/ include/ include/sys/ \
+                  games/ games/lib/
+BDEVS           = dev/rd0!b0:0 dev/rd0a!b0:1 dev/rd0b!b0:2 dev/rd0c!b0:3 dev/rd0d!b0:4
+BDEVS           += dev/rd1!b1:0 dev/rd1a!b1:1 dev/rd1b!b1:2 dev/rd1c!b1:3 dev/rd1d!b1:4
+BDEVS           += dev/rd2!b2:0 dev/rd2a!b2:1 dev/rd2b!b2:2 dev/rd2c!b2:3 dev/rd2d!b2:4
+BDEVS           += dev/rd3!b3:0 dev/rd3a!b3:1 dev/rd3b!b3:2 dev/rd3c!b3:3 dev/rd3d!b3:4
+BDEVS		+= dev/swap!b4:0
+
+D_CONSOLE       += dev/console!c0:0 
+D_MEM		+= dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 
+D_TTY		+= dev/tty!c2:0 
+D_LOG		+= dev/klog!c3:0 
+D_FD		+= dev/stdin!c4:0 dev/stdout!c4:1 dev/stderr!c4:2 
+D_GPIO		+= dev/porta!c5:0  dev/portb!c5:1  dev/portc!c5:2 \
+                   dev/portd!c5:3  dev/porte!c5:4  dev/portf!c5:5 \
+		   dev/portg!c5:6  dev/confa!c5:64 dev/confb!c5:65 \
+		   dev/confc!c5:66 dev/confd!c5:67 dev/confe!c5:68 \
+		   dev/conff!c5:69 dev/confg!c5:70 
+D_ADC            = dev/adc0!c6:0 dev/adc1!c6:1 dev/adc2!c6:2 dev/adc3!c6:3 \
+                   dev/adc4!c6:4 dev/adc5!c6:5 dev/adc6!c6:6 dev/adc7!c6:7 \
+                   dev/adc8!c6:8 dev/adc9!c6:9 dev/adc10!c6:10 dev/adc11!c6:11 \
+                   dev/adc12!c6:12 dev/adc13!c6:13 dev/adc14!c6:14 dev/adc15!c6:15
+D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3 
+D_GLCD		+= dev/glcd0!c8:0
+D_PWM		 = dev/oc1!c9:0 dev/oc2!c9:1 dev/oc3!c9:2 dev/oc4!c9:3 dev/oc5!c9:4
+
+CDEVS		= $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_LOG) $(D_FD) $(D_GPIO) \
+		  $(D_ADC) $(D_SPI) $(D_GLCD) $(G_PWM)
+
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
                   dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \
@@ -98,16 +129,11 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
-ADCDEVS         = dev/adc0!c8:0 dev/adc1!c8:1 dev/adc2!c8:2 dev/adc3!c8:3 \
-                  dev/adc4!c8:4 dev/adc5!c8:5 dev/adc6!c8:6 dev/adc7!c8:7 \
-                  dev/adc8!c8:8 dev/adc9!c8:9 dev/adc10!c8:10 dev/adc11!c8:11 \
-                  dev/adc12!c8:12 dev/adc13!c8:13 dev/adc14!c8:14 dev/adc15!c8:15
-OCDEVS		= dev/oc0!c11:0 dev/oc1!c11:1 dev/oc2!c11:2 dev/oc3!c11:3 dev/oc4!c11:4
 
 all:            build kernel
 		$(MAKE) fs
 
-fs:             filesys.img user.img
+fs:             sdcard.rd
 
 kernel:
 		$(MAKE) -C sys/$(TARGET)
@@ -119,17 +145,24 @@ build:
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
-		$(FSUTIL) -n$(FS_KBYTES) -s$(SWAP_KBYTES) $@
+		$(FSUTIL) -n$(FS_KBYTES) -s$(ROOTSWAP) $@
 		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
+		$(FSUTIL) -a $@ $(MANFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
-		$(FSUTIL) -a $@ $(ADCDEVS)
-		$(FSUTIL) -a $@ $(OCDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)
+
+swap.img:
+		dd if=/dev/zero of=$@ bs=1K count=$(SWAP_KBYTES)
 
 user.img:	$(FSUTIL)
 		rm -f $@
 		$(FSUTIL) -n$(FS_KBYTES) $@
+		-cd u && ../$(FSUTIL) -a ../$@ `find * -type d -printf '%p/\n'`
+		-cd u && ../$(FSUTIL) -a ../$@ `find * -type f -printf '%p\n'`
+
+sdcard.rd:	filesys.img swap.img user.img
+		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img -fs user.img
 
 $(FSUTIL):
 		cd tools/fsutil; $(MAKE)
@@ -146,7 +179,7 @@ cleanall:       clean
 		rm -f share/re.help
 		rm -f share/misc/more.help
 		rm -f etc/termcap
-
+		rm -rf share/unixbench
 
 # TODO
 buildlib:
@@ -181,7 +214,7 @@ buildlib:
 
 installfs: filesys.img
 ifdef SDCARD
-	sudo dd bs=16k if=filesys.img of=$(SDCARD)
+	sudo dd bs=10M if=sdcard.rd of=$(SDCARD)
 else
 	@echo "Error: No SDCARD defined."
 endif

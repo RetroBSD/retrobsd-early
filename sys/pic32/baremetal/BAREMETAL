@@ -1,0 +1,12 @@
+core pic32mx7 
+mapping generic
+linker bare
+
+device kernel led=D3 cpu_khz=80000 bus_khz=80000
+device rdisk led=D2
+device uartconsole uart=1 led=D12
+
+device sd0 port=2 mhz=16 cs=D1
+
+device adc
+

@@ -20,11 +20,11 @@
 #define SPICTL_IO32(n)      _ION('p', 5, n)     /* transfer n*32 bits */
 
 #ifdef KERNEL
-int spi_open (dev_t dev, int flag, int mode);
-int spi_close (dev_t dev, int flag, int mode);
-int spi_read (dev_t dev, struct uio *uio, int flag);
-int spi_write (dev_t dev, struct uio *uio, int flag);
-int spi_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
+int spidev_open (dev_t dev, int flag, int mode);
+int spidev_close (dev_t dev, int flag, int mode);
+int spidev_read (dev_t dev, struct uio *uio, int flag);
+int spidev_write (dev_t dev, struct uio *uio, int flag);
+int spidev_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
 #endif
 
 #endif

@@ -1,0 +1,12 @@
+always
+    file    usb_device.o
+    file    usb_function_cdc.o
+    file    usb_console.o
+    define  CONSOLE_USB
+    define  USB_NUM_STRING_DESCRIPTORS 3 
+    define  USB_MAX_EP_NUMBER 3
+end always
+
+option autoboot
+    define USB_AUTOBOOT YES
+end option

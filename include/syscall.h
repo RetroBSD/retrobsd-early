@@ -81,7 +81,7 @@
 #define	SYS_rdglob	70
 #define SYS_wrglob	71
 				/* 71 is unused 4.3: mmap */
-				/* 72 is unused 4.3: vadvise */
+#define SYS_msec 	72	/* 72 is unused 4.3: vadvise */
 				/* 73 is unused 4.3: munmap */
 				/* 74 is unused 4.3: mprotect */
 				/* 75 is unused 4.3: madvise */

@@ -23,9 +23,9 @@ DEFS		+= -DBUS_KHZ=80000
 # Console on UART1 with hardware handshaking
 DEFS            += -DCONSOLE_UART1 #-DCONSOLE_RTSCTS
 # SD/MMC card driver on SPI1
-DEFS            += -DSD_PORT=SPI1CON -DSD_MHZ=20
+DEFS            += -DSD0_PORT=1 -DSD0_MHZ=20
 # /CS0 at pin B1
-DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=9
+DEFS            += -DSD0_CS_PORT=TRISD -DSD0_CS_PIN=9
 # LEDs at pins A0, A1, A2, A3
 DEFS            += -DLED_DISK_PORT=TRISA   -DLED_DISK_PIN=14
 DEFS            += -DLED_KERNEL_PORT=TRISB -DLED_KERNEL_PIN=8
@@ -86,13 +86,16 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
 KERNOBJ		+= sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 # This makefile does the work including the right files and options for the drivers
 include ../drivers.mk

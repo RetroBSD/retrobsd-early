@@ -35,3 +35,9 @@ ifeq ($(DRIVER_OC),yes)
 	KERNOBJ += oc.o
 	DEFS 	+= -DOC_ENABLED
 endif
+
+ifeq ($(DRIVER_SDRAMP),yes)
+        NEEDS_FEATURE_KERNEL_EXECUTABLE_RAM = yes
+        KERNOBJ += sdram.o rd_sdramp.o
+	DEFS	+= -DSDRAMP_ENABLED
+endif

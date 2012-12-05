@@ -756,6 +756,8 @@ main (argc, argv)
         uid = getuid();
         euid = geteuid();
         mytty = ttyname(0);
+        /* handle case where ps is in background and ttyname returns 0 */
+        if (!mytty) mytty = ""; 
         if (!strncmp(mytty,"/dev/",5)) mytty += 5;
         if (!strncmp(mytty,"tty",3)) mytty += 3;
         printhdr();

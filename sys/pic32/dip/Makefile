@@ -26,8 +26,8 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
 # SD/MMC card driver on SPI3
 # /CS0 at pin D4
-DEFS            += -DSD_PORT=SPI3CON
-DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=4
+DEFS            += -DSD0_PORT=3
+DEFS            += -DSD0_CS_PORT=TRISD -DSD0_CS_PIN=4
 
 # LEDs at pins E4, E5, E6, E7
 DEFS            += -DLED_DISK_PORT=TRISE   -DLED_DISK_PIN=4
@@ -84,14 +84,17 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+KERNOBJ		+= rdisk.o rd_sd.o
 KERNOBJ		+= usb_console.o usb_device.o usb_function_cdc.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o devcfg.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 include ../drivers.mk
 

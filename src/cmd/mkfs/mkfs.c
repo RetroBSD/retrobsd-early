@@ -19,11 +19,14 @@
 #include <sys/fs.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
 #include <sys/inode.h>
+#include <sys/rdisk.h>
+#include <sys/ioctl.h>
 
 #define UMASK	0755
 #define MAXFN	750
@@ -75,6 +78,27 @@ struct direct lost_found_dir[] = {
 	{ ROOTINO,      sizeof(struct direct), 2, ".." },
 	{ 0,            DIRBLKSIZ,             0, "" },
 };
+
+int get_disk_size(char *fn)
+{
+        int size;
+        int fd;
+        struct stat sb;
+
+	printf("Getting disk size for %s\n",fn);
+
+        // Is it a /dev entry?
+        if(strncmp(fn,"/dev/",5)==0)
+        {
+                fd = open(fn,O_RDONLY);
+                ioctl(fd,RDGETMEDIASIZE,&size);
+                close(fd);
+        } else {
+                lstat(fn,&sb);
+                size = sb.st_size/1024;
+        }
+        return size;
+}
 
 /*
  * construct a set of directory entries in "buf".
@@ -398,10 +422,13 @@ main (argc,argv)
 	}
 	argc -= optind;
 	argv += optind;
-	if (argc != 2 || f_i == 0)
+	if ((argc < 1 || argc > 2) || f_i == 0)
 		usage();
 	special = argv[0];
-	kbytes = strtoul(argv[1], 0, 0);
+	if(argc==2)
+		kbytes = strtoul(argv[1], 0, 0);
+	else
+		kbytes = get_disk_size(argv[0]);
 
 	/*
 	 * NOTE: this will fail if the device is currently mounted and the system

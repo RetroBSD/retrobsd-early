@@ -109,4 +109,6 @@ struct clockinfo {
 	int	stathz;		/* statistics clock frequency */
 	int	profhz;		/* profiling clock frequency */
 };
+
+extern unsigned int msec();
 #endif	/* !_SYS_TIME_H_ */

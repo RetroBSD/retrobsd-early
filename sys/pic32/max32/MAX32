@@ -1,0 +1,16 @@
+core pic32mx7 cpu_khz=80000 bus_khz=80000
+linker bootloader
+kernel led=12
+mapping max32
+
+device sd0 port=4 cs=9
+device sd1 port=4 cs=10
+
+device uartconsole uart=1 led=LED
+
+device rdisk led=44
+
+
+device gpio
+device adc
+

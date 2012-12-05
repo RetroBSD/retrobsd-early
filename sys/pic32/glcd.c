@@ -634,9 +634,6 @@ int glcd_write (dev_t dev, struct uio *uio, int flag)
 
 int glcd_ioctl (dev_t dev, register u_int cmd, caddr_t addr, int flag)
 {
-        int *val;
-        val = (int *)addr;
-
 	if(cmd == GLCD_RESET) {
             glcd_reset();
         }

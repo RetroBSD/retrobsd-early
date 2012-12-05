@@ -166,14 +166,17 @@ gpio_filter (mask, portnum)
 #ifdef LED_TTY_PORT
         mask = filter_out (mask, portnum, &LED_TTY_PORT, LED_TTY_PIN);
 #endif
-#ifdef SD_CS0_PORT
-        mask = filter_out (mask, portnum, &SD_CS0_PORT, SD_CS0_PIN);
+#ifdef SD0_CS_PORT
+        mask = filter_out (mask, portnum, &SD0_CS_PORT, SD0_CS_PIN);
 #endif
-#ifdef SD_CS1_PORT
-        mask = filter_out (mask, portnum, &SD_CS1_PORT, SD_CS1_PIN);
+#ifdef SD1_CS_PORT
+        mask = filter_out (mask, portnum, &SD1_CS_PORT, SD1_CS_PIN);
 #endif
-#ifdef SD_ENA_PORT
-        mask = filter_out (mask, portnum, &SD_ENA_PORT, SD_ENA_PIN);
+#ifdef SD0_ENA_PORT
+        mask = filter_out (mask, portnum, &SD0_ENA_PORT, SD0_ENA_PIN);
+#endif
+#ifdef SD1_ENA_PORT
+        mask = filter_out (mask, portnum, &SD1_ENA_PORT, SD1_ENA_PIN);
 #endif
 #ifdef SW_DATA_PORT
         mask = filter_out (mask, portnum, &SW_DATA_PORT, SW_DATA_PIN);

@@ -23,6 +23,7 @@ struct bdevsw
 	void	(*d_strategy) (struct buf*);
 	void	(*d_root) (caddr_t);		/* root attach routine */
 	daddr_t	(*d_psize) (dev_t);		/* query partition size */
+	int	(*d_ioctl) (dev_t, u_int, caddr_t, int);
 	int	d_flags;			/* tape flag */
 };
 
@@ -61,6 +62,11 @@ struct linesw
 extern const struct	bdevsw bdevsw[];
 extern const struct	cdevsw cdevsw[];
 extern const struct	linesw linesw[];
+
+extern int nulldev();
+extern int norw(dev_t dev, struct uio *uio, int flag);
+extern int noioctl(dev_t dev, u_int cmd, caddr_t data, int flag);
+extern void noroot(caddr_t csr);
 
 int rawrw (dev_t dev, struct uio *uio, int flag);
 #endif

@@ -64,6 +64,7 @@ rm -f /etc/nologin
 
 echo -n "Starting daemons:"
 update && echo -n "update"
+cron && echo -n "cron"
 echo
 
 #/etc/rc.local

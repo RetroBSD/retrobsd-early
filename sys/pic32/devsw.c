@@ -14,6 +14,8 @@
 #include "clist.h"
 #include "tty.h"
 #include "systm.h"
+#include "rdisk.h"
+#include "errno.h"
 
 #ifdef GPIO_ENABLED
 #include "gpio.h"
@@ -35,23 +37,35 @@
 #include "oc.h"
 #endif
 
-#ifndef SWAPDEV
-#define swopen      nulldev
-#define swstrategy  nostrategy
+#ifdef PICGA_ENABLED
+#include "picga.h"
 #endif
+
+extern int rdopen (dev_t dev, int flag, int mode);
+extern int rdclose(dev_t dev, int flag, int mode);
+extern daddr_t rdsize (dev_t dev);
+extern void rdstrategy(register struct buf *bp);
+
+extern int swopen(dev_t dev, int mode, int flag);
+extern int swclose(dev_t dev, int mode, int flag);
+extern void swstrategy(register struct buf *bp);
+extern daddr_t swsize(dev_t dev);
+extern int swcread(dev_t dev, register struct uio *uio, int flag);
+extern int swcwrite(dev_t dev, register struct uio *uio, int flag);
+extern int swcioctl (dev_t dev, register u_int cmd, caddr_t addr, int flag);
+extern int swcopen(dev_t dev, int mode, int flag);
+extern int swcclose(dev_t dev, int mode, int flag);
 
 /*
  * Null routine; placed in insignificant entries
  * in the bdevsw and cdevsw tables.
  */
-static int
-nulldev ()
+int nulldev ()
 {
 	return (0);
 }
 
-static int
-norw (dev, uio, flag)
+int norw (dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 	int flag;
@@ -59,35 +73,48 @@ norw (dev, uio, flag)
 	return (0);
 }
 
-static int
-noioctl (dev, cmd, data, flag)
+int noioctl (dev, cmd, data, flag)
 	dev_t dev;
 	u_int cmd;
 	caddr_t data;
 	int flag;
 {
-	return -1;
+	return EIO; 
+;
 }
 
 /*
  * root attach routine
  */
-static void
-noroot (csr)
+void noroot (csr)
 	caddr_t csr;
 {
 	/* Empty. */
 }
 
 const struct bdevsw	bdevsw[] = {
-{ /* sd = 0 */
-	sdopen,		nulldev,	sdstrategy,
-	noroot,		sdsize,		0 },
-{ /* sw = 1 */
-	swopen,		nulldev,	swstrategy,
-	noroot,		0,		0 },
+{ 
+	rdopen,		rdclose,	rdstrategy,
+	noroot,		rdsize,		rdioctl,	0 },
+{ 
+	rdopen,		rdclose,	rdstrategy,
+	noroot,		rdsize,		rdioctl,	0 },
+{ 
+	rdopen,		rdclose,	rdstrategy,
+	noroot,		rdsize,		rdioctl,	0 },
+{ 
+	rdopen,		rdclose,	rdstrategy,
+	noroot,		rdsize,		rdioctl,	0,},
+{ 
+	swopen,		swclose,	swstrategy,
+	noroot,		swsize,		noioctl,	0 },
 };
+
 const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
+
+// The RetroDisks require the same master number as the disk entry in the
+// rdisk.c file.  A bit of a bind, but it means that the RetroDisk
+// devices must be numbered from master 0 upwards.
 
 const struct cdevsw	cdevsw[] = {
 { /* cn = 0 */
@@ -102,81 +129,90 @@ const struct cdevsw	cdevsw[] = {
 	syopen,		nulldev,	syread,		sywrite,
 	syioctl,	nulldev,	0,		syselect,
 	nostrategy,	},
-{ /* sd = 3 */
-	sdopen,		nulldev,	rawrw,		rawrw,
-	noioctl,	nulldev,	0,		seltrue,
-	sdstrategy,	},
-{ /* log = 4 */
+{ /* log = 3 */
 	logopen,	logclose,	logread,	norw,
 	logioctl,	nulldev,	0,		logselect,
 	nostrategy,	},
-{ /* fd = 5 */
+{ /* fd = 4 */
 	fdopen,		nulldev,	norw,		norw,
 	noioctl,	nulldev,	0,		seltrue,
 	nostrategy,	},
-{ /* sw = 6 */
-	swopen,		nulldev,	rawrw,		rawrw,
-	noioctl,	nulldev,	0,		seltrue,
-	swstrategy,	},
 
 #ifdef GPIO_ENABLED
-{ /* gpio = 7 */
+{ /* gpio = 5 */
 	gpioopen,	gpioclose,	gpioread,	gpiowrite,
 	gpioioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
 #else
 {
-        nulldev,        nulldev,        norw,           norw,
-        noioctl,        nulldev,        0,              seltrue,
-        nostrategy,     },
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
 #endif
 
 #ifdef ADC_ENABLED
-{ /* adc = 8 */
+{ /* adc = 6 */
 	adc_open,	adc_close,	adc_read,	adc_write,
 	adc_ioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
 #else
 {
-        nulldev,        nulldev,        norw,           norw,
-        noioctl,        nulldev,        0,              seltrue,
-        nostrategy,     },
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
 #endif
 
 #ifdef SPI_ENABLED
-{ /* spi = 9 */
-	spi_open,	spi_close,	spi_read,	spi_write,
-	spi_ioctl,	nulldev,	0,              seltrue,
+{ /* spi = 7 */
+	spidev_open,	spidev_close,	spidev_read,	spidev_write,
+	spidev_ioctl,	nulldev,	0,              seltrue,
 	nostrategy,	},
 #else
 {
-        nulldev,        nulldev,        norw,           norw,
-        noioctl,        nulldev,        0,              seltrue,
-        nostrategy,     },
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
 #endif
-// GLCD = 10
+// GLCD = 8 
 #ifdef GLCD_ENABLED
 {
-        glcd_open,      glcd_close,     glcd_read,      glcd_write,
-        glcd_ioctl,     nulldev,        0,              seltrue,
-        nostrategy,     },
+    glcd_open,      glcd_close,     glcd_read,      glcd_write,
+    glcd_ioctl,     nulldev,        0,              seltrue,
+    nostrategy,     },
 #else
 {
-        nulldev,        nulldev,        norw,           norw,
-        noioctl,        nulldev,        0,              seltrue,
-        nostrategy,     },
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
 #endif
-// OC = 11
+// OC = 9
 #ifdef OC_ENABLED
 {
-        oc_open,        oc_close,       oc_read,        oc_write,
-        oc_ioctl,       nulldev,        0,              seltrue,
-        nostrategy,     },
+    oc_open,        oc_close,       oc_read,        oc_write,
+    oc_ioctl,       nulldev,        0,              seltrue,
+    nostrategy,     },
 #else
 {
-        nulldev,        nulldev,        norw,           norw,
-        noioctl,        nulldev,        0,              seltrue,
-        nostrategy,     },
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
+#endif
+{ // SWAP = 10
+	swcopen,	swcclose,	swcread,	swcwrite,
+	swcioctl,	nulldev,	0,		seltrue,
+	nostrategy,	},
+
+// Ignore this for now - it's WIP.
+#ifdef PICGA_ENABLED
+{ // PICGA = 11
+    picga_open,     picga_close,    picga_read,     picga_write,
+    picga_ioctl,    nulldev,        0,              seltrue,
+    nostrategy,     },
+#else
+{
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
 #endif
 
 };
@@ -209,14 +245,12 @@ isdisk(dev, type)
 	switch (major(dev)) {
 	case 0:			/* sd */
 	case 1:			/* sw */
+	case 2:
+	case 3:
+	case 4:
 		if (type == IFBLK)
 			return (1);
 		return (0);
-	case 3:			/* rsd */
-	case 6:			/* rsw */
-		if (type == IFCHR)
-			return (1);
-		/* fall through */
 	default:
 		return (0);
 	}

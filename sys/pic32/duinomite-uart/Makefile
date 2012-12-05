@@ -32,12 +32,12 @@ DEFS            += -DCONSOLE_UART5
 
 # SD/MMC card driver on SPI3
 # /CS0 at pin D5
-DEFS            += -DSD_PORT=SPI3CON
-DEFS            += -DSD_CS0_PORT=TRISD -DSD_CS0_PIN=5
+DEFS            += -DSD0_PORT=3
+DEFS            += -DSD0_CS_PORT=TRISD -DSD0_CS_PIN=5
 
 # Duinomite-Mega has a FET controlled by pin B13,
 # which enables a power for SD card, RS-232 and CAN
-DEFS            += -DSD_ENA_PORT=TRISB -DSD_ENA_PIN=13
+DEFS            += -DSD0_ENA_PORT=TRISB -DSD0_ENA_PIN=13
 
 # LEDs at pin B15 (green), B12 (yellow)
 DEFS            += -DLED_KERNEL_PORT=TRISB -DLED_KERNEL_PIN=15
@@ -95,13 +95,16 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+KERNOBJ		+= rdisk.o rd_sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 include ../drivers.mk
 

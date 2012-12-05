@@ -230,16 +230,6 @@ void	vfork (void);		/* awaiting fork w/ copy on write */
 struct buf;
 struct uio;
 
-int sdopen (dev_t dev, int flag, int mode);
-void sdstrategy (struct buf *bp);
-daddr_t sdsize (dev_t dev);
-
-#ifdef SWAPDEV                  /* external swap device */
-int swopen (dev_t dev, int flag, int mode);
-void swstrategy (struct buf *bp);
-daddr_t swsize (dev_t dev);
-#endif
-
 int cnopen (dev_t dev, int flag, int mode);
 int cnclose (dev_t dev, int flag, int mode);
 int cnread (dev_t dev, struct uio *uio, int flag);

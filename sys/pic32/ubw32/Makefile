@@ -34,9 +34,10 @@ DEFS  		+= -DUSB_NUM_STRING_DESCRIPTORS=3 -DUSB_MAX_EP_NUMBER=3
 
 # SD/MMC card driver on SPI1
 # /CS0 at pin A9 (and optional /CS1 at pin A10)
-DEFS            += -DSD_PORT=SPI1CON
-DEFS            += -DSD_CS0_PORT=TRISA -DSD_CS0_PIN=9
-DEFS            += -DSD_CS1_PORT=TRISA -DSD_CS1_PIN=10
+DEFS            += -DSD0_PORT=1
+DEFS            += -DSD0_CS_PORT=TRISA -DSD0_CS_PIN=9
+DEFS            += -DSD1_PORT=1
+DEFS            += -DSD1_CS_PORT=TRISA -DSD1_CS_PIN=10
 
 # LEDs at pins E0, E1, E2, E3
 DEFS            += -DLED_AUX_PORT=TRISE    -DLED_AUX_PIN=0    -DLED_AUX_INVERT
@@ -96,13 +97,16 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
 		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o
+		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
 
 # Drivers.
-KERNOBJ		+= sd.o
+KERNOBJ		+= rdisk.o rd_sd.o
 
 # Configuration-dependent files.
 KERNOBJ		+= vers.o
+
+# Include any local specific configuration overrides
+-include Makefile.local
 
 # This makefile does the work including the right files and options for the drivers
 include ../drivers.mk

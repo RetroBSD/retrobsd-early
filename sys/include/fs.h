@@ -47,10 +47,10 @@ struct	fs
 	daddr_t	fs_free [NICFREE];	/* free block list */
 	int	fs_ninode;		/* number of inodes in fs_inode */
 	ino_t	fs_inode [NICINOD];	/* free inode list */
-	int	fs_flock;		/* lock during free list manipulation */
-	int	fs_fmod;		/* super block modified flag */
-	int	fs_ilock;		/* lock during i-list manipulation */
-	int	fs_ronly;		/* mounted read-only flag */
+	int 	fs_flock;		/* lock during free list manipulation */
+	int 	fs_fmod;		/* super block modified flag */
+	int  	fs_ilock;		/* lock during i-list manipulation */
+	int  	fs_ronly;		/* mounted read-only flag */
 	time_t	fs_time;		/* last super block update */
 	u_int	fs_tfree;		/* total free blocks */
 	ino_t	fs_tinode;		/* total free inodes */

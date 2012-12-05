@@ -113,14 +113,14 @@ setup(dev)
 		smapsz = roundup(smapsz,DEV_BSIZE);
 		lncntsz = roundup(lncntsz,DEV_BSIZE);
 		nscrblk = (bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
-		if (scrfile[0] == 0) {
+//		if (scrfile[0] == 0) {
 		        /* Use tail of swap file for temporary data. */
                         strcpy(scrfile, "/swap");
                         if (stat(scrfile, &statb) < 0 ||
-                            statb.st_size < bmapsz+smapsz+lncntsz + 512*1024)
+                            statb.st_size < ((bmapsz+smapsz+lncntsz)>>DEV_BSHIFT) + 512*1024)
                         {
-                                pfatal("TMP FILE (%s) TOO SMALL (need %u kbytes)\n",
-                                        scrfile, bmapsz+smapsz+lncntsz);
+                                pfatal("TMP FILE (%s) TOO SMALL (need %u kbytes, got %u)\n",
+                                        scrfile, bmapsz+smapsz+lncntsz, statb.st_size);
                                 ckfini();
                                 return(0);
                         }
@@ -137,25 +137,25 @@ setup(dev)
                         sfile.offset = statb.st_size - (nscrblk << DEV_BSHIFT);
                         /*printf("Using scratch file %s, offset %u\n",
                                 scrfile, (unsigned) sfile.offset);*/
-		} else {
-		        /* User-define scratch file prefix. */
-                        char junk[80 + sizeof (".XXXXX") + 1];
-
-                        strcpy(junk, scrfile);
-                        strcat(junk, ".XXXXX");
-                        sfile.wfdes = mkstemp(junk);
-                        if (sfile.wfdes < 0 ||
-                            (sfile.rfdes = open(junk, 0)) < 0) {
-                                printf("Can't create %s\n", junk);
-                                ckfini();
-                                return(0);
-                        }
-                        unlink(junk);	/* make it invisible incase we exit */
-                        if (hotroot && (fstat(sfile.wfdes,&statb)==0)
-                            && ((statb.st_mode & S_IFMT) == S_IFREG)
-                            && (statb.st_dev==rootdev))
-                             pfatal("TMP FILE (%s) ON ROOT WHEN CHECKING ROOT\n", junk);
-                }
+//		} else {
+//		        /* User-define scratch file prefix. */
+//                        char junk[80 + sizeof (".XXXXX") + 1];
+//
+//                        strcpy(junk, scrfile);
+//                        strcat(junk, ".XXXXX");
+//                        sfile.wfdes = mkstemp(junk);
+//                        if (sfile.wfdes < 0 ||
+//                            (sfile.rfdes = open(junk, 0)) < 0) {
+//                                printf("Can't create %s\n", junk);
+//                                ckfini();
+//                                return(0);
+//                        }
+//                        unlink(junk);	/* make it invisible incase we exit */
+//                        if (hotroot && (fstat(sfile.wfdes,&statb)==0)
+//                            && ((statb.st_mode & S_IFMT) == S_IFREG)
+//                            && (statb.st_dev==rootdev))
+//                             pfatal("TMP FILE (%s) ON ROOT WHEN CHECKING ROOT\n", junk);
+//                }
 		bp = &((BUFAREA *)mbase)[(msize/sizeof(BUFAREA))];
 		poolhead = NULL;
 		while(--bp >= (BUFAREA *)mbase) {

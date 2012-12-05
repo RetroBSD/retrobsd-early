@@ -10,7 +10,14 @@ MEMORY
   ram                  (rw!x): ORIGIN = 0x80000000, LENGTH = 26K
   u0area               (rw!x): ORIGIN = 0x80006800, LENGTH = 3K
   uarea                (rw!x): ORIGIN = 0x80007400, LENGTH = 3K
-  devcfg               (r)   : ORIGIN = 0x9fc02ff0, LENGTH = 16
+  devcfg               (r)   : ORIGIN = 0x9fc02ff0, LENGTH = 16 
+
+/*  flash                (rx)  : ORIGIN = 0x9d005000, LENGTH = 492K
+  ram                  (rw!x): ORIGIN = 0x80000000, LENGTH = 24K
+  u0area               (rw!x): ORIGIN = 0x80006000, LENGTH = 3K
+  uarea                (rw!x): ORIGIN = 0x80006C00, LENGTH = 3K
+  keram                (rwx) : ORIGIN = 0x80007800, LENGTH = 2K*/
+
 
   /* Required by Microchip C32 linker */
   kseg0_program_mem    (rx)  : ORIGIN = 0x9D000000, LENGTH = 512K
@@ -125,6 +132,23 @@ SECTIONS
   } > ram
   __bss_end = . ;
   _end = .;
+
+/*
+   * RAM functions go at the end of our stack and heap allocation.
+   * Alignment of 2K required by the boundary register (BMXDKPBA).
+   */
+/*
+  .ramfunc : AT (LOADADDR (.data) + SIZEOF (.data))
+  {
+    _ramfunc_begin = . ;
+    *(.ramfunc  .ramfunc.*)
+    . = ALIGN(4) ;
+    _ramfunc_end = . ;
+  } >keram
+  _ramfunc_image_begin = LOADADDR(.ramfunc) ;
+  _ramfunc_length = SIZEOF(.ramfunc) ;
+*/
+
 
   /* Stabs debugging sections.  */
   .stab          0 : { *(.stab) }

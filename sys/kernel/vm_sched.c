@@ -9,6 +9,7 @@
 #include "vm.h"
 #include "kernel.h"
 #include "systm.h"
+#include "debug.h"
 
 #define	MINFINITY	-32767		/* minus infinity */
 
@@ -70,9 +71,12 @@ sched()
 		/* If there is no one there, wait. */
 		if (! swapped_out) {
 			++runout;
+            //SETVAL(0);
 			sleep ((caddr_t) &runout, PSWP);
 			continue;
 		}
+
+        //SETVAL(swapped_out->p_pid);
 
 		/*
 		 * Look around for somebody to swap out.

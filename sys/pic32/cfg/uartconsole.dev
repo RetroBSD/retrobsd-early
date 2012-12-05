@@ -1,0 +1,12 @@
+always
+    file cons.o
+end always
+
+option uart
+    define CONSOLE_UART%1 YES
+end option
+
+option led
+    define TTY_LED_PORT $TRIS(%1)
+    define TTY_LED_PIN  $PIN(%1)
+end option
