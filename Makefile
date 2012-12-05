@@ -31,6 +31,7 @@ TARGET          ?= $(MAX32)
 
 # Filesystem and swap sizes.
 FS_KBYTES       = 163840
+U_KBYTES        = 163840
 SWAP_KBYTES     = 20480
 
 # The ROOTSWAP is a bit of a pain.  It's required for fsck to
@@ -159,13 +160,19 @@ swap.img:
 		dd if=/dev/zero of=$@ bs=1K count=$(SWAP_KBYTES)
 
 user.img:	$(FSUTIL)
+ifneq ($(U_KBYTES), 0)
 		rm -f $@
-		$(FSUTIL) -n$(FS_KBYTES) $@
+		$(FSUTIL) -n$(U_KBYTES) $@
 		-cd u && ../$(FSUTIL) -a ../$@ `find * -type d -printf '%p/\n'`
 		-cd u && ../$(FSUTIL) -a ../$@ `find * -type f -printf '%p\n'`
+endif
 
 sdcard.rd:	filesys.img swap.img user.img
+ifneq ($(U_KBYTES), 0)
 		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img -fs user.img
+else
+		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img 
+endif
 
 $(FSUTIL):
 		cd tools/fsutil; $(MAKE)
