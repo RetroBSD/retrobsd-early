@@ -38,8 +38,11 @@ SWAP_KBYTES     = 20480
 # That's such a waste.  Never mind, it will go once the swap
 # system is rewritten so that /dev/tmp can be used instead.
 
-#ROOTSWAP	= `expr $(FS_KBYTES) / 3`
-ROOTSWAP	= `expr $(FS_KBYTES) / 5000 + 520`
+# Yes, I know this is big, but it's (unfortunately) needed.
+# Attempts to reduce it have met with failure so far.  Especially
+# when working with larger filesystems.
+ROOTSWAP	= `expr $(FS_KBYTES) / 3`
+#ROOTSWAP	= `expr $(FS_KBYTES) / 5000 + 520`
 
 # Set this to the device name for your SD card.  With this
 # enabled you can use "make installfs" to copy the filesys.img

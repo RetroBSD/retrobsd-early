@@ -114,10 +114,11 @@ setup(dev)
 		lncntsz = roundup(lncntsz,DEV_BSIZE);
 		nscrblk = (bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
 //		if (scrfile[0] == 0) {
+                            //statb.st_size < ((bmapsz+smapsz+lncntsz)>>DEV_BSHIFT) + 512*1024)
 		        /* Use tail of swap file for temporary data. */
                         strcpy(scrfile, "/swap");
                         if (stat(scrfile, &statb) < 0 ||
-                            statb.st_size < ((bmapsz+smapsz+lncntsz)>>DEV_BSHIFT) + 512*1024)
+                            statb.st_size < ((bmapsz+smapsz+lncntsz)) + 512*1024)
                         {
                                 pfatal("TMP FILE (%s) TOO SMALL (need %u kbytes, got %u)\n",
                                         scrfile, bmapsz+smapsz+lncntsz, statb.st_size);
