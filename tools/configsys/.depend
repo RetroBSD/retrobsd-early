@@ -23,8 +23,10 @@ main.o: main.cpp /usr/include/dirent.h /usr/include/features.h \
  /usr/include/i386-linux-gnu/bits/sigset.h \
  /usr/include/i386-linux-gnu/bits/time.h \
  /usr/include/i386-linux-gnu/sys/sysmacros.h \
- /usr/include/i386-linux-gnu/bits/pthreadtypes.h \
- /usr/include/c++/4.6/iostream \
+ /usr/include/i386-linux-gnu/bits/pthreadtypes.h /usr/include/stdlib.h \
+ /usr/include/i386-linux-gnu/bits/waitflags.h \
+ /usr/include/i386-linux-gnu/bits/waitstatus.h /usr/include/xlocale.h \
+ /usr/include/alloca.h /usr/include/c++/4.6/iostream \
  /usr/include/c++/4.6/i686-linux-gnu/./bits/c++config.h \
  /usr/include/c++/4.6/i686-linux-gnu/./bits/os_defines.h \
  /usr/include/c++/4.6/i686-linux-gnu/./bits/cpu_defines.h \
@@ -33,8 +35,8 @@ main.o: main.cpp /usr/include/dirent.h /usr/include/features.h \
  /usr/include/c++/4.6/bits/postypes.h /usr/include/c++/4.6/cwchar \
  /usr/include/wchar.h /usr/include/stdio.h \
  /usr/lib/gcc/i686-linux-gnu/4.6.1/include/stdarg.h \
- /usr/include/i386-linux-gnu/bits/wchar.h /usr/include/xlocale.h \
- /usr/include/c++/4.6/exception /usr/include/c++/4.6/bits/char_traits.h \
+ /usr/include/i386-linux-gnu/bits/wchar.h /usr/include/c++/4.6/exception \
+ /usr/include/c++/4.6/bits/char_traits.h \
  /usr/include/c++/4.6/bits/stl_algobase.h \
  /usr/include/c++/4.6/bits/functexcept.h \
  /usr/include/c++/4.6/bits/exception_defines.h \

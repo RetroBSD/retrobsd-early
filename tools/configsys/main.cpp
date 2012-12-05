@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <fstream>
@@ -507,6 +508,8 @@ int main(int argc, char *argv[])
 
     out << "include " << machine << "/kernel-post.mk" << endl;
     out.close();
+
+    system("make clean");
 
     return 0;
 }

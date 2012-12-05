@@ -51,13 +51,9 @@ int adc_open(dev_t dev, int flag, int mode)
         // Enable and configure the ADC here
         AD1CSSL = 0xFFFF;
         AD1CON2 = 0b0000010000111100;
-//        AD1CON3 = 0b0001111100001111;
-          AD1CON3 = 0b0000111100001111;
-//        AD1CON3 = 0b0000011100000111;
+        AD1CON3 = 0b0000111100001111;
         AD1CON1 = 0b1000000011100110;
-//        IECSET(1) = 1<<(PIC32_IRQ_AD1-32);
-//	IPC(6) = 0x04040404;
-	IPC(6) = 0x04040404;
+        // IPC(6) = 0x04040404;
     }
 
     adcactive |= (1<<channel);
@@ -128,7 +124,6 @@ int adc_read(dev_t dev, struct uio *uio, int flag)
     return 0;
 }
 
-// Trigger an ADC conversion
 int adc_write(dev_t dev, struct uio *uio, int flag)
 {
     return EINVAL;
