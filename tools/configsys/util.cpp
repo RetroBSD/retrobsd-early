@@ -9,7 +9,7 @@ using namespace std;
 
 void replace_all(string &haystack, string from, string to)
 {
-    int pos;
+    unsigned int pos;
     pos = haystack.find(from);
     while(pos != haystack.npos)
     {

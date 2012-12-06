@@ -25,7 +25,7 @@ map <string,mapping> mappings;
 
 void substitute(string &out, string source, string param, int devnum, string pinmap)
 {
-    int pos;
+    unsigned int pos;
     stringstream dnum;
     dnum << devnum;
 
@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
     map <string,string>::iterator dit;
     map <string,string>::iterator sit;
     map <string,cluster>::iterator cit;
+    int q __attribute__((unused));
 
     if(argc!=2)
     {
@@ -281,7 +282,7 @@ int main(int argc, char *argv[])
     // bubble sort is what we will do.  We could have done this while
     // adding the files to the vector, but this is simpler to manage.
 
-    int outer,inner;
+    unsigned int outer,inner;
 
     for(outer = 0; outer < files.size(); outer++)
     {
@@ -509,7 +510,7 @@ int main(int argc, char *argv[])
     out << "include " << machine << "/kernel-post.mk" << endl;
     out.close();
 
-    system("make clean");
+    q = system("make clean");
 
     return 0;
 }
