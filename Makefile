@@ -38,7 +38,11 @@ SWAP_KBYTES     = 20480
 # That's such a waste.  Never mind, it will go once the swap
 # system is rewritten so that /dev/tmp can be used instead.
 #
-ROOTSWAP	= `expr $(FS_KBYTES) / 4000 + 520`
+#ROOTSWAP	= `expr $(FS_KBYTES) / 4000 + 520`
+
+# This calculation should create a root swap at the exact size that fsck thinks it requires to check the root filesystem.
+ROOTSWAP    = $(shell echo "((((((((((${FS_KBYTES}+7) / 8)+1)/2)*2))+1023)/1024)*1024)+(((((((${FS_KBYTES}/16+15)+1)/2))+1023)/1024)*1024)+((((((${FS_KBYTES}/16+15)+1)*2)+1203)/1024)*1024)+(512*1024)) / 1024" | bc)
+
 
 # Set this to the device name for your SD card.  With this
 # enabled you can use "make installfs" to copy the filesys.img
@@ -128,6 +132,9 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
+UARTDEVS        = dev/tty0!c12:0 dev/tty1!c12:1 dev/tty2!c12:2 \
+                  dev/tty3!c12:3 dev/tty4!c12:4 dev/tty5!c12:5
+USBDEVS         = dev/ttyUSB0!c13:0
 U_DIRS          = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES         = $(shell find u -type f ! -path '*/.svn/*')
 U_ALL           = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
@@ -152,6 +159,8 @@ filesys.img:	$(FSUTIL) $(ALLFILES)
 		$(FSUTIL) -a $@ $(MANFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
+		$(FSUTIL) -a $@ $(UARTDEVS)
+		$(FSUTIL) -a $@ $(USBDEVS)
 #		$(FSUTIL) -a $@ $(FDDEVS)
 
 swap.img:
@@ -187,6 +196,38 @@ cleanall:       clean
 		rm -f share/misc/more.help
 		rm -f etc/termcap
 		rm -rf share/unixbench
+		rm -f games/lib/adventure.dat games/lib/cfscores share/re.help share/misc/more.help etc/termcap
+
+# TODO
+buildlib:
+		@echo installing /usr/include
+		# cd include; $(MAKE) DESTDIR=$(DESTDIR) install
+		@echo
+		@echo compiling libc.a
+		cd lib/libc; $(MAKE) $(LIBCDEFS)
+		@echo installing /lib/libc.a
+		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
+		@echo
+		@echo compiling C compiler
+		cd lib; $(MAKE) ccom cpp c2
+		@echo installing C compiler
+		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
+		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
+		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
+		cd lib; $(MAKE) clean
+		@echo
+		@echo re-compiling libc.a
+		cd lib/libc; $(MAKE) $(LIBCDEFS)
+		@echo re-installing /lib/libc.a
+		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
+		@echo
+		@echo re-compiling C compiler
+		cd lib; $(MAKE) ccom cpp c2
+		@echo re-installing C compiler
+		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
+		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
+		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
+		@echo
 
 installfs: filesys.img
 ifdef SDCARD
