@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 	char buf[BUFSZ];
 	unsigned int tl;
 	unsigned char ok = 0;
+    int q __attribute__((unused));
 
 	char *output = NULL;
 	char *files[4] = {NULL,NULL,NULL,NULL};
@@ -149,7 +150,7 @@ int main(int argc, char *argv[])
 		exit(10);
 	}
 
-	write(fd,&mbr,BUFSZ);
+	q = write(fd,&mbr,BUFSZ);
 
 	for(i=0; i<4; i++)
 	{
@@ -161,7 +162,7 @@ int main(int argc, char *argv[])
 			bzero(buf,BUFSZ);
 			while((r=read(fin,buf,BUFSZ))>0)
 			{
-				write(fd,buf,BUFSZ);
+				q = write(fd,buf,BUFSZ);
 				bzero(buf,BUFSZ);
 			}
 			close(fin);
