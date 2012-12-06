@@ -25,8 +25,6 @@ bool mapping::load(const char *filename)
     {
         stringstream temp(line);
         string silk;
-        char port;
-        char pin;
 
         temp << line;
         temp >> silk;
@@ -40,4 +38,3 @@ bool mapping::load(const char *filename)
     f.close();
     return true;
 }
-

@@ -1,7 +1,7 @@
 /*******************************************************************************
  *  The BYTE UNIX Benchmarks - Release 3
  *          Module: execl.c   SID: 3.3 5/15/91 19:30:19
- *          
+ *
  *******************************************************************************
  * Bug reports, patches, comments, suggestions should be sent to:
  *
@@ -28,7 +28,7 @@ char SCCSid[] = "@(#) @(#)execl.c:3.3 -- 5/15/91 19:30:19";
 char	bss[8*1024];	/* something worthwhile */
 
 #define main dummy
-			
+
 #include "big.c"        /* some real code */
 
 #undef main
@@ -42,7 +42,7 @@ int	argc;
 char	*argv[];
 {
 	unsigned long iter = 0;
-	char *ptr; 
+	char *ptr;
 	char *fullpath;
 	int 	duration;
 	char	count_str[6], start_str[12], path_str[81], *dur_str;
@@ -54,7 +54,7 @@ char	*argv[];
 		printf("%s ",argv[count]);
 		printf("\n");
 #endif
-	if (argc < 2) 
+	if (argc < 2)
 		{
 		printf("Usage: %s duration\n", argv[0]);
 		exit(1);
@@ -62,9 +62,9 @@ char	*argv[];
 
 
 	duration = atoi(argv[1]);
-	if (duration > 0) 
+	if (duration > 0)
 		/* the first invocation */
-		{  
+		{
 		dur_str = argv[1];
 		if((ptr = getenv("BINDIR")) != NULL)
 			sprintf(path_str,"%s/execl",ptr);
@@ -79,7 +79,7 @@ char	*argv[];
 		iter = (unsigned long)atoi(argv[3]); /* where are we now ? */
 		sscanf(argv[4], "%lu", &start_time);
 		fullpath = argv[0];
-		} 
+		}
 
 	sprintf(count_str, "%lu", ++iter); /* increment the execl counter */
 	sprintf(start_str, "%lu", start_time);
@@ -88,7 +88,7 @@ char	*argv[];
 		fprintf(stderr, "%lu loops\n", iter);
 		exit(0);
 		}
-	execl(fullpath, fullpath, "0", dur_str, count_str, start_str, 0);
+	execl(fullpath, fullpath, "0", dur_str, count_str, start_str, (char*)0);
 	printf("Exec failed at iteration %lu\n", iter);
 	perror("Reason");
 	exit(1);

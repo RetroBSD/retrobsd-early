@@ -128,8 +128,9 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
-U_DIRS          = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*' -printf ' %P'))
-U_FILES         = $(shell find u -type f ! -path '*/.svn/*' -printf ' %P')
+U_DIRS          = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
+U_FILES         = $(shell find u -type f ! -path '*/.svn/*')
+U_ALL           = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
 
 all:            build kernel
 		$(MAKE) fs
@@ -154,13 +155,13 @@ filesys.img:	$(FSUTIL) $(ALLFILES)
 #		$(FSUTIL) -a $@ $(FDDEVS)
 
 swap.img:
-		dd if=/dev/zero of=$@ bs=1K count=$(SWAP_KBYTES)
+		dd if=/dev/zero of=$@ bs=1k count=$(SWAP_KBYTES)
 
 user.img:	$(FSUTIL)
 ifneq ($(U_KBYTES), 0)
 		rm -f $@
 		$(FSUTIL) -n$(U_KBYTES) $@
-		(cd u; ../$(FSUTIL) -a ../$@ $(U_DIRS) $(U_FILES))
+		(cd u; ../$(FSUTIL) -a ../$@ $(U_ALL))
 endif
 
 sdcard.rd:	filesys.img swap.img user.img

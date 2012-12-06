@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
@@ -18,7 +19,7 @@ void usage()
 	exit(10);
 }
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	struct mbr mbr;
 	int i;
@@ -30,7 +31,7 @@ void main(int argc, char *argv[])
 	char buf[BUFSZ];
 	unsigned int tl;
 	unsigned char ok = 0;
-	
+
 	char *output = NULL;
 	char *files[4] = {NULL,NULL,NULL,NULL};
 	char types[4] = {0,0,0,0};
@@ -137,7 +138,7 @@ void main(int argc, char *argv[])
 				mbr.partitions[i].lbastart,
 				mbr.partitions[i].lbalength
 			);
-			
+
 			start += tl;
 		}
 	}
@@ -166,6 +167,7 @@ void main(int argc, char *argv[])
 			close(fin);
 		}
 	}
-	
+
 	close(fd);
+	return 0;
 }

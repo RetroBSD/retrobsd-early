@@ -94,6 +94,7 @@ void	setusershell();
 void	sync();
 unsigned int	ualarm();
 void	usleep();
+int     pause (void);
 pid_t	vfork();
 
 int     pipe (int pipefd[2]);

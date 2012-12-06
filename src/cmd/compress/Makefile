@@ -6,12 +6,9 @@ include $(TOPSRC)/target.mk
 
 OBJS 		= compress.o
 
+#COMFLAGS       = -DBSD4_2 -O -DSACREDMEM=256000
 
-COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
-SEPFLAG= -i
-BIN=${DESTDIR}/usr/ucb
-
-CFLAGS	+= -DUSERMEM=1024
+CFLAGS          += -DUSERMEM=1024 -Wall -Werror
 
 compress: $(OBJS)
 	${CC} ${LDFLAGS} -o $@.elf ${OBJS} ${LIBS}
