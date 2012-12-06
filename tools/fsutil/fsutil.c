@@ -440,7 +440,7 @@ int main (int argc, char **argv)
 		}
 	}
 	i = optind;
-	if ((! add && i != argc-1) || (add && i >= argc-1) ||
+	if ((! add && i != argc-1) || (add && i >= argc) ||
 	    (extract + newfs + check + add > 1) ||
 	    (newfs && kbytes < BSDFS_BSIZE * 10 / 1024)) {
 		print_help (argv[0]);

@@ -34,16 +34,11 @@ FS_KBYTES       = 163840
 U_KBYTES        = 163840
 SWAP_KBYTES     = 20480
 
-# The ROOTSWAP is a bit of a pain.  It's required for fsck to
-# operate, and needs to be a third of the whole filesystem size.
+# The ROOTSWAP is a bit of a pain.  It's required for fsck to operate.
 # That's such a waste.  Never mind, it will go once the swap
 # system is rewritten so that /dev/tmp can be used instead.
-
-# Yes, I know this is big, but it's (unfortunately) needed.
-# Attempts to reduce it have met with failure so far.  Especially
-# when working with larger filesystems.
-ROOTSWAP	= `expr $(FS_KBYTES) / 3`
-#ROOTSWAP	= `expr $(FS_KBYTES) / 5000 + 520`
+#
+ROOTSWAP	= `expr $(FS_KBYTES) / 4000 + 520`
 
 # Set this to the device name for your SD card.  With this
 # enabled you can use "make installfs" to copy the filesys.img
@@ -86,7 +81,7 @@ SHARE_FILES	= share/re.help share/example/Makefile \
                   $(wildcard share/smallc/*)
 MANFILES	= share/man/ share/man/cat1/ share/man/cat2/ share/man/cat3/ \
 		  share/man/cat4/ share/man/cat5/ share/man/cat6/ share/man/cat7/ \
-		  share/man/cat8/ $(wildcard share/man/cat?/*) 
+		  share/man/cat8/ $(wildcard share/man/cat?/*)
 ALLFILES	= $(SBIN_FILES) $(ETC_FILES) $(BIN_FILES) $(LIB_FILES) $(LIBEXEC_FILES) \
                   $(INC_FILES) $(SHARE_FILES) $(GAMES_FILES) \
                   var/log/messages var/log/wtmp .profile
@@ -102,21 +97,21 @@ BDEVS           += dev/rd2!b2:0 dev/rd2a!b2:1 dev/rd2b!b2:2 dev/rd2c!b2:3 dev/rd
 BDEVS           += dev/rd3!b3:0 dev/rd3a!b3:1 dev/rd3b!b3:2 dev/rd3c!b3:3 dev/rd3d!b3:4
 BDEVS		+= dev/swap!b4:0
 
-D_CONSOLE       += dev/console!c0:0 
-D_MEM		+= dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3 
-D_TTY		+= dev/tty!c2:0 
-D_LOG		+= dev/klog!c3:0 
-D_FD		+= dev/stdin!c4:0 dev/stdout!c4:1 dev/stderr!c4:2 
+D_CONSOLE       += dev/console!c0:0
+D_MEM		+= dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3
+D_TTY		+= dev/tty!c2:0
+D_LOG		+= dev/klog!c3:0
+D_FD		+= dev/stdin!c4:0 dev/stdout!c4:1 dev/stderr!c4:2
 D_GPIO		+= dev/porta!c5:0  dev/portb!c5:1  dev/portc!c5:2 \
                    dev/portd!c5:3  dev/porte!c5:4  dev/portf!c5:5 \
 		   dev/portg!c5:6  dev/confa!c5:64 dev/confb!c5:65 \
 		   dev/confc!c5:66 dev/confd!c5:67 dev/confe!c5:68 \
-		   dev/conff!c5:69 dev/confg!c5:70 
+		   dev/conff!c5:69 dev/confg!c5:70
 D_ADC            = dev/adc0!c6:0 dev/adc1!c6:1 dev/adc2!c6:2 dev/adc3!c6:3 \
                    dev/adc4!c6:4 dev/adc5!c6:5 dev/adc6!c6:6 dev/adc7!c6:7 \
                    dev/adc8!c6:8 dev/adc9!c6:9 dev/adc10!c6:10 dev/adc11!c6:11 \
                    dev/adc12!c6:12 dev/adc13!c6:13 dev/adc14!c6:14 dev/adc15!c6:15
-D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3 
+D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3
 D_GLCD		+= dev/glcd0!c8:0
 D_PWM		 = dev/oc1!c9:0 dev/oc2!c9:1 dev/oc3!c9:2 dev/oc4!c9:3 dev/oc5!c9:4
 
@@ -133,6 +128,8 @@ FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
                   dev/fd/29!c5:29
+U_DIRS          = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*' -printf ' %P'))
+U_FILES         = $(shell find u -type f ! -path '*/.svn/*' -printf ' %P')
 
 all:            build kernel
 		$(MAKE) fs
@@ -163,15 +160,14 @@ user.img:	$(FSUTIL)
 ifneq ($(U_KBYTES), 0)
 		rm -f $@
 		$(FSUTIL) -n$(U_KBYTES) $@
-		-cd u && ../$(FSUTIL) -a ../$@ `find * -type d -printf '%p/\n'`
-		-cd u && ../$(FSUTIL) -a ../$@ `find * -type f -printf '%p\n'`
+		(cd u; ../$(FSUTIL) -a ../$@ $(U_DIRS) $(U_FILES))
 endif
 
 sdcard.rd:	filesys.img swap.img user.img
 ifneq ($(U_KBYTES), 0)
 		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img -fs user.img
 else
-		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img 
+		tools/mkrd/mkrd -out $@ -boot filesys.img -swap swap.img
 endif
 
 $(FSUTIL):
@@ -190,37 +186,6 @@ cleanall:       clean
 		rm -f share/misc/more.help
 		rm -f etc/termcap
 		rm -rf share/unixbench
-
-# TODO
-buildlib:
-		@echo installing /usr/include
-		# cd include; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo compiling libc.a
-		cd lib/libc; $(MAKE) $(LIBCDEFS)
-		@echo installing /lib/libc.a
-		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo compiling C compiler
-		cd lib; $(MAKE) ccom cpp c2
-		@echo installing C compiler
-		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib; $(MAKE) clean
-		@echo
-		@echo re-compiling libc.a
-		cd lib/libc; $(MAKE) $(LIBCDEFS)
-		@echo re-installing /lib/libc.a
-		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo re-compiling C compiler
-		cd lib; $(MAKE) ccom cpp c2
-		@echo re-installing C compiler
-		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
 
 installfs: filesys.img
 ifdef SDCARD
