@@ -1,6 +1,7 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 #include $(TOPSRC)/cross.mk
+#CFLAGS		= -DCROSS -I$(TOPSRC)/include -I/usr/include -D__mips__
 
 OBJS            = message.o access.o command.o expr.o findfn.o format.o input.o \
                   main.o opset.o output.o pcs.o print.o \

@@ -1,5 +1,6 @@
 #include "defs.h"
 #include <fcntl.h>
+#include <strings.h>
 
 u_int   *uframe = UFRAME;
 char    *symfil  = "a.out";
@@ -77,9 +78,9 @@ setcor()
     datmap.ufd = fcor;
     if (read(fcor, corhdr, sizeof corhdr) == sizeof corhdr) {
         if (! kernel) {
-            txtsiz = ((U*)corhdr)->u_tsize;
-            datsiz = ((U*)corhdr)->u_dsize;
-            stksiz = ((U*)corhdr)->u_ssize;
+            txtsiz = ((struct user*)corhdr)->u_tsize;
+            datsiz = ((struct user*)corhdr)->u_dsize;
+            stksiz = ((struct user*)corhdr)->u_ssize;
             datmap.f1 = USIZE;
             datmap.b2 = USER_DATA_END - stksiz;
             datmap.e2 = USER_DATA_END;
@@ -113,7 +114,7 @@ setcor()
         datbas = datmap.b1;
         if (! kernel && magic) {
             register u_int *frame;
-            frame = (u_int*) ((U*)corhdr)->u_frame;
+            frame = (u_int*) ((struct user*)corhdr)->u_frame;
             if (frame > (u_int*) (KERNEL_DATA_END - USIZE) &&
                 frame < (u_int*) KERNEL_DATA_END &&
                 ! ((unsigned)frame & 3))

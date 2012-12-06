@@ -8,16 +8,34 @@
  * This has changed over time - see a.out.h, sys/exec.h and nlist.h
  * for the current a.out definition and format.
  */
-#include <sys/param.h>
-#include <sys/user.h>
-#include <machine/io.h>
-#include <sgtty.h>
-#include <setjmp.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <a.out.h>
-#include <sys/ptrace.h>
+#ifdef CROSS
+#   include <sys/param.h>
+#   include <sys/user.h>
+#   include <sys/signal.h>
+#   include </usr/include/errno.h>
+#   include <setjmp.h>
+#   include <string.h>
+#   include <stdlib.h>
+#   include <unistd.h>
+#   include <a.out.h>
+#   include <sgtty.h>
+#   include <time.h>
+#   include <sys/ptrace.h>
+#   include <machine/io.h>
+//#   define MAXNAMLEN 63
+typedef void (*sig_t)(int);
+#else
+#   include <sys/param.h>
+#   include <sys/user.h>
+#   include <machine/io.h>
+#   include <sgtty.h>
+#   include <setjmp.h>
+#   include <stdlib.h>
+#   include <string.h>
+#   include <unistd.h>
+#   include <a.out.h>
+#   include <sys/ptrace.h>
+#endif
 
 #define MAXSYMLEN       32
 #define MAXCOM          64
@@ -49,7 +67,6 @@ typedef struct map      MAP;
 typedef MAP             *MAPPTR;
 typedef struct bkpt     BKPT;
 typedef BKPT            *BKPTR;
-typedef struct user     U;
 
 /* file address maps */
 struct map {

@@ -1,6 +1,10 @@
 #include "defs.h"
-#include <ctype.h>
 #include <sys/wait.h>
+#ifdef CROSS
+#   include </usr/include/ctype.h>
+#else
+#   include <ctype.h>
+#endif
 
 void
 scanform(icount, ifp, itype, ptype)

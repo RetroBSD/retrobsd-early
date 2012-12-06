@@ -1,5 +1,9 @@
 #include "defs.h"
-#include <ctype.h>
+#ifdef CROSS
+#   include </usr/include/ctype.h>
+#else
+#   include <ctype.h>
+#endif
 
 static int savlastf;
 static long savframe;

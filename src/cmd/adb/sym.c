@@ -1,9 +1,13 @@
 /*
  * Symbol table and file handling service routines
  */
-#include <stdio.h>
 #include "defs.h"
 #include <fcntl.h>
+#ifdef CROSS
+#   include </usr/include/stdio.h>
+#else
+#   include <stdio.h>
+#endif
 
 struct  SYMcache {
     char    *name;
