@@ -15,16 +15,15 @@ getfile(filnam, cnt)
 {
     register int f;
 
-    if (strcmp("-", filnam)) {
-        f = open(filnam, wtflag);
-        if (f < 0 && argcount > cnt) {
-            if (wtflag)
-                f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
-            if (f < 0)
-                print("cannot open `%s'\n", filnam);
-        }
-    } else {
-        f = -1;
+    if (strcmp("-", filnam) == 0)
+        return -1;
+
+    f = open(filnam, wtflag);
+    if (f < 0 && argcount > cnt) {
+        if (wtflag)
+            f = open(filnam, O_CREAT | O_TRUNC | wtflag, 644);
+        if (f < 0)
+            print("cannot open `%s'\n", filnam);
     }
     return f;
 }

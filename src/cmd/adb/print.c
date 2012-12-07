@@ -285,7 +285,7 @@ printtrace(modif)
         }
         break;
 
-    case 'e': case 'E':                 /* print externals*/
+    case 'e': case 'E':                 /* print externals */
         symset();
         while ((symp = symget())) {
             chkerr();

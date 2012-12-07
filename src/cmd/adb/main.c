@@ -1,4 +1,5 @@
 #include "defs.h"
+#include <fcntl.h>
 
 char *Ipath = "/share/adb";
 
@@ -62,19 +63,19 @@ main(argc, argv)
     ioctl(0, TIOCGETP, &adbtty);
     ioctl(0, TIOCGETP, &usrtty);
     while (argc > 1) {
-        if (! strcmp("-w", argv[1])) {
-            wtflag = 2;
+        if (strcmp("-w", argv[1]) == 0) {
+            wtflag = O_RDWR;
             argc--;
             argv++;
             continue;
         }
-        if (! strcmp("-k", argv[1])) {
+        if (strcmp("-k", argv[1]) == 0) {
             kernel++;
             argc--;
             argv++;
             continue;
         }
-        if (! strcmp("-I", argv[1])) {
+        if (strcmp("-I", argv[1]) == 0) {
             Ipath = argv[2];
             argc -= 2;
             argv += 2;

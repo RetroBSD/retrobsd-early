@@ -61,6 +61,13 @@ typedef	u_int	gid_t;
 typedef	int	pid_t;
 typedef	u_int	mode_t;
 typedef int	bool_t;		/* boolean */
+#define _PID_T
+#define _UID_T
+#define _GID_T
+#define _INO_T
+#define _DEV_T
+#define _TIME_T
+#define _MODE_T
 
 #define	NBBY	8		/* number of bits in a byte */
 

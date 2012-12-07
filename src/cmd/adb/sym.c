@@ -254,7 +254,10 @@ symINI(ex)
     }
     symnum = nused;
 #if 1
-    print("%d symbols loaded\n", nused);
+    printf("file '%s'\n", symfil);
+    printf("text=%u data=%u bss=%u symoff=%u syms=%u\n",
+        ex->a_text, ex->a_data, ex->a_bss, (unsigned) symoff, ex->a_syms);
+    printf("%d symbols loaded\n", nused);
 #endif
     if (globals_only)
         print("%s: could only do global symbols\n", myname);
