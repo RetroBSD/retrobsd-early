@@ -60,6 +60,7 @@ struct	nlist {
 #define	N_TYPE	0x1f		/* mask for all the type bits */
 #define	N_EXT	0x20		/* external (global) bit, OR'ed in */
 #define	N_WEAK	0x40		/* weak reference bit, OR'ed in */
+#define	N_LOC	0x80		/* local, for assembler */
 
 /*
  * Get symbols from a file.

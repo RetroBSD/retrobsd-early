@@ -156,12 +156,11 @@ void
 srandom (x)
 	unsigned x;
 {
-    	register  int	i, j;
+    	register  int	i;
 
 	if (rand_type  ==  TYPE_0) {
 	    state[0] = x;
 	} else {
-	    j = 1;
 	    state[0] = x;
 	    for(i = 1; i < rand_deg; i++) {
 		state[i] = 1103515245*state[i - 1] + 12345;

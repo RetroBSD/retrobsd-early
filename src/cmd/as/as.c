@@ -82,6 +82,7 @@ enum {
     LSIZE,              /* .size */
     LIDENT,             /* .ident */
     LWEAK,              /* .weak */
+    LLOCAL,             /* .local */
 };
 
 /*
@@ -506,7 +507,7 @@ void fputsym (s, file)
     register int i;
 
     putc (s->n_len, file);
-    putc (s->n_type, file);
+    putc (s->n_type & ~N_LOC, file);
     fputword (s->n_value, file);
     for (i=0; i<s->n_len; i++)
         putc (s->n_name[i], file);
@@ -719,6 +720,9 @@ int lookacmd ()
     case 'i':
         if (! strcmp (".ident", name)) return (LIDENT);
         break;
+    case 'l':
+        if (! strcmp (".local", name)) return (LLOCAL);
+        break;
     case 'm':
         if (! strcmp (".mask", name)) return (LMASK);
         break;
@@ -796,7 +800,6 @@ int lookreg ()
         if (*cp != 0)
             break;
         return val;
-        break;
     case 'a':
         if (name[3] == 0) {
             switch (name[2]) {
@@ -873,8 +876,7 @@ int lookreg ()
             return 0;                   /* $zero */
         break;
     }
-    uerror ("bad register name '%s'", name);
-    return 0;
+    return -1;
 }
 
 int lookcmd ()
@@ -922,7 +924,7 @@ int lookname ()
     stab[i].n_name = alloc (1 + stab[i].n_len);
     strcpy (stab[i].n_name, name);
     stab[i].n_value = 0;
-    stab[i].n_type = 0;
+    stab[i].n_type = N_UNDF;
     hashtab[h] = i;
     return (i);
 }
@@ -1284,8 +1286,8 @@ void emit_la (opcode, relinfo)
         uerror ("comma expected");
     expr_flags = 0;
     value = getexpr (&segment);
-    if (segment == SABS) 
-	uerror ("relocatable value required");    
+    if (segment == SABS)
+	uerror ("relocatable value required");
     relinfo->flags = segmrel [segment];
     if (relinfo->flags == REXT)
 	relinfo->index = extref;
@@ -1937,9 +1939,13 @@ void pass1 ()
                 /* name .comm len */
                 cval = lookname();
                 if (stab[cval].n_type != N_UNDF &&
-                    stab[cval].n_type != (N_EXT|N_COMM))
+                    stab[cval].n_type != N_LOC &&
+                    (stab[cval].n_type & N_TYPE) != N_COMM)
                     uerror ("name already defined");
-                stab[cval].n_type = N_EXT | N_COMM;
+                if (stab[cval].n_type & N_LOC)
+                    stab[cval].n_type = N_COMM;
+                else
+                    stab[cval].n_type = N_EXT | N_COMM;
                 getexpr (&tval);
                 if (tval != SABS)
                     uerror ("bad .comm length");
@@ -2050,12 +2056,32 @@ void pass1 ()
             makeascii ();
             break;
         case LGLOBL:
+            /* .globl name, ... */
             for (;;) {
                 clex = getlex (&cval);
                 if (clex != LNAME)
                     uerror ("bad parameter of .globl");
                 cval = lookname();
+                if (stab[cval].n_type & N_LOC)
+                    uerror ("local name redefined as global");
                 stab[cval].n_type |= N_EXT;
+                clex = getlex (&cval);
+                if (clex != ',') {
+                    ungetlex (clex, cval);
+                    break;
+                }
+            }
+            break;
+        case LLOCAL:
+            /* .local name, ... */
+            for (;;) {
+                clex = getlex (&cval);
+                if (clex != LNAME)
+                    uerror ("bad parameter of .local");
+                cval = lookname();
+                if (stab[cval].n_type & N_EXT)
+                    uerror ("global name redefined as local");
+                stab[cval].n_type |= N_LOC;
                 clex = getlex (&cval);
                 if (clex != ',') {
                     ungetlex (clex, cval);
@@ -2084,9 +2110,13 @@ void pass1 ()
                 uerror ("bad parameter of .comm");
             cval = lookname();
             if (stab[cval].n_type != N_UNDF &&
-                stab[cval].n_type != (N_EXT|N_COMM))
+                stab[cval].n_type != N_LOC &&
+                (stab[cval].n_type & N_TYPE) != N_COMM)
                 uerror ("name already defined");
-            stab[cval].n_type = N_EXT | N_COMM;
+            if (stab[cval].n_type & N_LOC)
+                stab[cval].n_type = N_COMM;
+            else
+                stab[cval].n_type = N_EXT | N_COMM;
             clex = getlex (&tval);
             if (clex == ',') {
                 getexpr (&tval);
@@ -2118,7 +2148,8 @@ void pass1 ()
             break;
         case LSECTION:
             /* .section name[,"flags"[,type[,entsize]]] */
-            if (getlex (&cval) != LNAME)
+            clex = getlex (&cval);
+            if (clex != LNAME && clex != LBSS)
                 uerror ("bad name of .section");
             setsection();
             clex = getlex (&cval);
@@ -2634,7 +2665,18 @@ int main (argc, argv)
                     while (*++cp);
                     --cp;
                     break;
+                case 'm':       /* -mips32r2, -mabi=32 - ignore */
+                    while (*++cp);
+                    --cp;
+                    break;
+                case 'E':       /* -EL, -EB - endianness */
+                    if (cp[1] != 'L')
+                        uerror ("only little endian is supported");
+                    while (*++cp);
+                    --cp;
+                    break;
                 default:
+                    fprintf (stderr, "Unknown option: %s\n", cp);
                     usage();
                 }
             }
