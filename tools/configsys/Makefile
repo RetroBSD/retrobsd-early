@@ -4,16 +4,15 @@ SRCS    = main.cpp config.cpp mapping.cpp device.cpp cluster.cpp util.cpp core.c
 OBJS    = main.o config.o mapping.o device.o cluster.o util.o core.o gstore.o
 CXXFLAGS = -Wall -O
 
-all:    $(BIN)
+all:    .depend $(BIN)
 
-$(BIN): makedep $(OBJS)
+$(BIN): $(OBJS)
 	g++ -o $@ $(OBJS) $(CXXFLAGS)
 
 clean:
 	-rm -f $(OBJS) $(BIN)
 
-.PHONY: makedep
-makedep:
-	mkdep $(SRCS)
+.depend: $(SRCS) Makefile
+	g++ -MM $(CXXFLAGS) $(SRCS) > $@
 
 -include .depend

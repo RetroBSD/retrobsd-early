@@ -1,7 +1,7 @@
 /*******************************************************************************
  *  The BYTE UNIX Benchmarks - Release 3
  *          Module: big.c   SID: 3.3 5/15/91 19:30:18
- *          
+ *
  *******************************************************************************
  * Bug reports, patches, comments, suggestions should be sent to:
  *
@@ -77,7 +77,7 @@ struct {
 	int	blen;	/* std input buffer length */
 	int	fd;	/* stdin to command */
 	int	pid;	/* child PID */
-	char	*line;	/* start of input line */ 
+	char	*line;	/* start of input line */
 	int	firstjob;	/* inital piece of work */
 	int	thisjob;	/* current piece of work */
 } child[MAXCHILD], *cp;
@@ -146,7 +146,7 @@ char	*argv[];
 	    p++;
 	}
     }
-    
+
     if (argc < 2) {
 	fprintf(stderr, "%s: missing nusers\n", prog);
 	exit(4);
@@ -445,7 +445,6 @@ void getwork(void)
     char		*q = (void *)0;
     struct st_work	*w = (void *)0;
     char		line[MAXLINE];
-    char		c;
 
     while (fgets(line, MAXLINE, stdin) != NULL) {
 	if (nwork >= MAXWORK) {
@@ -488,7 +487,6 @@ void getwork(void)
 		/* standard input for this job */
 		q = ++lp;
 		while (*lp && *lp != ' ') lp++;
-		c = *lp;
 		*lp = '\0';
 		if ((f = open(q, 0)) == -1) {
 		    fprintf(stderr, "cannot open input file (%s) for job %d\n",

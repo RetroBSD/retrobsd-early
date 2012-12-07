@@ -2,7 +2,7 @@
 #	UnixBench v4.0
 #  Based on The BYTE UNIX Benchmarks - Release 3
 #          Module: Makefile   SID: 3.9 5/15/91 19:30:15
-#          
+#
 ##############################################################################
 # Bug reports, patches, comments, suggestions should be sent to:
 #	David C Niemi <niemi@tux.org>
@@ -77,7 +77,7 @@ SOURCES = arith.c big.c context1.c \
 	fstime.c getopt.c hanoi.c \
 	pipe.c spawn.c limit.c \
 	syscall.c looper.c timeit.c \
-	dhry_1.c dhry_2.c dhry.h 
+	dhry_1.c dhry_2.c dhry.h
 TESTS = sort.src cctest.c dc.dat
 RESULTS = reports.shar
 BINS = $(PROGDIR)/arithoh $(PROGDIR)/register $(PROGDIR)/short \
@@ -107,7 +107,7 @@ check: $(REQD)
 	make all
 # ##############################################################
 # distribute the files out to subdirectories if they are in this one
-distr: 
+distr:
 	@echo "Checking distribution of files"
 # scripts
 	@if  test ! -d  $(PROGDIR) \
@@ -197,7 +197,7 @@ $(PROGDIR)/double: $(SRCDIR)/arith.c
 
 
 $(PROGDIR)/whetstone-double: $(SRCDIR)/whets.c
-	${CC} ${LDFLAGS} -o $@.elf $< ${LIBS} ${OPTON} -DDP -DUNIX -DUNIXBENCH -lm
+	${CC} ${LDFLAGS} -o $@.elf $< ${LIBS} ${OPTON} -DDP -DUNIX -DUNIXBENCH -lm -lc
 	${OBJDUMP} -S $@.elf > $@.dis
 	${SIZE} $@.elf
 	${ELF2AOUT} $@.elf $@
@@ -278,32 +278,32 @@ $(PROGDIR)/execl: $(SRCDIR)/execl.c $(SRCDIR)/big.c
 	${ELF2AOUT} $@.elf $@
 
 $(PROGDIR)/dhry2: $(SRCDIR)/dhry_1.c $(SRCDIR)/dhry_2.c $(SRCDIR)/dhry.h
-	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_1.c  
-	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_2.c  
+	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_1.c
+	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_2.c
 	${CC} ${LDFLAGS} -o $@.elf $(SRCDIR)/dhry_1.o $(SRCDIR)/dhry_2.o ${LIBS} ${OPTON}
 	${OBJDUMP} -S $@.elf > $@.dis
 	${SIZE} $@.elf
 	${ELF2AOUT} $@.elf $@
-	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o 
+	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o
 
-$(PROGDIR)/dhry2reg: $(SRCDIR)/dhry_1.c $(SRCDIR)/dhry_2.c $(SRCDIR)/dhry.h 
+$(PROGDIR)/dhry2reg: $(SRCDIR)/dhry_1.c $(SRCDIR)/dhry_2.c $(SRCDIR)/dhry.h
 	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_1.c -DREG=register
 	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} dhry_2.c -DREG=register
 	${CC} ${LDFLAGS} -o $@.elf $(SRCDIR)/dhry_1.o $(SRCDIR)/dhry_2.o ${LIBS} ${OPTON}
 	${OBJDUMP} -S $@.elf > $@.dis
 	${SIZE} $@.elf
 	${ELF2AOUT} $@.elf $@
-	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o 
+	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o
 
 
-dhry2reg: $(SRCDIR)/dhry_1.c $(SRCDIR)/dhry_2.c $(SRCDIR)/dhry.h 
+dhry2reg: $(SRCDIR)/dhry_1.c $(SRCDIR)/dhry_2.c $(SRCDIR)/dhry.h
 	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} $(OPT3) dhry_1.c -DREG=register
 	cd $(SRCDIR); $(CC) -c ${CFLAGS} -DHZ=${HZ} ${OPTON} $(OPT3) dhry_2.c -DREG=register
 	${CC} ${LDFLAGS} -o $@.elf $(SRCDIR)/dhry_1.o $(SRCDIR)/dhry_2.o ${LIBS} ${OPTON}
 	${OBJDUMP} -S $@.elf > $@.dis
 	${SIZE} $@.elf
 	${ELF2AOUT} $@.elf $@
-	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o 
+	cd $(SRCDIR); rm -f dhry_1.o dhry_2.o
 
 $(PROGDIR)/looper: $(SRCDIR)/looper.c
 	${CC} ${LDFLAGS} -o $@.elf $< ${LIBS} ${OPTON}
