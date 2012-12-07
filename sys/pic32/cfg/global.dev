@@ -8,6 +8,14 @@ option nbuf
     define NBUF %1
 end option
 
+option nfile
+    define NFILE %1
+end option
+
+option ninode
+    define NINODE %1
+end option
+
 option hz
     define HZ %1
 end option
@@ -19,3 +27,8 @@ end option
 option blreboot
     set BLREBOOT -p
 end option
+
+option partition
+    define PARTITION "%1"
+end option
+

@@ -155,6 +155,7 @@ main(argc, argv)
 	tname = "default";
 	if (argc > 1)
 		tname = argv[1];
+    ioctl(0, TIOCGETP, &tmode);
 	for (;;) {
 		int ldisp = NTTYDISC;
 

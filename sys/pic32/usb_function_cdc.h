@@ -152,7 +152,7 @@
  * Parameters:
  *     unsigned int baudRate - The desired baudrate
  */
-#define cdc_set_baud_rate(baudRate) { cdc_line_coding.dwDTERate.Val = baudRate; }
+#define cdc_set_baud_rate(baudRate) { cdc_line_coding.dwDTERate = baudRate; }
 
 /*
  * Function:

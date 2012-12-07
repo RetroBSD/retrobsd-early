@@ -36,15 +36,16 @@ sched()
 	register struct proc *rp;
 	struct proc *swapped_out = 0, *in_core = 0;
 	register int out_time, rptime;
+    int s __attribute__((unused));
 
 	for (;;) {
 	        /* Perform swap-out/swap-in action. */
-		spl0();
+		s=spl0();
 		if (in_core)
                         swapout (in_core, X_FREECORE, X_OLDSIZE, X_OLDSIZE);
 		if (swapped_out)
                         swapin (swapped_out);
-		splhigh();
+		s=splhigh();
 		in_core = 0;
 		swapped_out = 0;
 

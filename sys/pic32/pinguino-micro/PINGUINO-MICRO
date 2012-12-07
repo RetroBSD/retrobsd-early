@@ -1,0 +1,20 @@
+#
+# Pinguino-micro board
+# ====================
+#
+# Console on USB
+# For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
+
+core pic32mx7
+linker bootloader
+mapping generic
+
+device kernel cpu_khz=80000 bus_khz=80000 invled=D1
+
+device console port=USB
+device uartusb
+
+device sd0 port=2 cs=B13
+device gpio
+device adc
+

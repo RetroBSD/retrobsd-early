@@ -1,97 +1,43 @@
-H		= ../../include
-M		= ..
-S		= ../../kernel
+BUILDPATH = ../../../tools/configsys/../../sys/pic32
+H         = ../../../tools/configsys/../../sys/include
+M         = ../../../tools/configsys/../../sys/pic32
+S         = ../../../tools/configsys/../../sys/kernel
 
 vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
 
-DEFS        += -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
+KERNOBJ += _startup.o adc.o clock.o cons.o devsw.o exception.o glcd.o gpio.o init_main.o init_sysent.o kern_clock.o kern_descrip.o kern_exec.o kern_exit.o kern_fork.o kern_glob.o kern_mman.o kern_proc.o kern_prot.o kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o kern_subr.o kern_synch.o kern_sysctl.o kern_time.o machdep.o mem.o oc.o rd_sd.o rd_sramc.o rdisk.o signal.o spi_bus.o subr_log.o subr_prf.o subr_rmap.o swap.o sys_generic.o sys_inode.o sys_pipe.o sys_process.o syscalls.o sysctl.o tty.o tty_conf.o tty_subr.o tty_tty.o uart.o ufs_alloc.o ufs_bio.o ufs_bmap.o ufs_dsort.o ufs_fio.o ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o ufs_syscalls.o ufs_syscalls2.o vers.o vfs_vnops.o vm_sched.o vm_swap.o vm_swp.o 
 
-# Include any local specific configuration overrides
--include Makefile.local
+DEFS += -DADC_ENABLED=YES
+DEFS += -DBUS_KHZ=80000
+DEFS += -DCONSOLE_UART2=YES
+DEFS += -DCPU_KHZ=80000
+DEFS += -DGLCD_ENABLED=YES
+DEFS += -DGPIO_ENABLED=YES
+DEFS += -DKERNEL
+DEFS += -DLED_KERNEL_INVERT=YES
+DEFS += -DLED_KERNEL_PIN=14
+DEFS += -DLED_KERNEL_PORT=TRISC
+DEFS += -DOC_ENABLED=YES
+DEFS += -DPARTITION="sramc0:sa@1500,fs@2572"
+DEFS += -DPIC32MX7
+DEFS += -DSD0_CS_PIN=9
+DEFS += -DSD0_CS_PORT=TRISG
+DEFS += -DSD0_PORT=2
+DEFS += -DSRAMC_ENABLED=YES
+DEFS += -DSW_DATA_PIN=0
+DEFS += -DSW_DATA_PORT=TRISE
+DEFS += -DSW_LDA_PIN=13
+DEFS += -DSW_LDA_PORT=TRISC
+DEFS += -DSW_RD_PIN=1
+DEFS += -DSW_RD_PORT=TRISF
+DEFS += -DSW_WR_PIN=0
+DEFS += -DSW_WR_PORT=TRISF
+DEFS += -DUART2_BAUD=115200
+DEFS += -DUART2_ENABLED=YES
+DEFS += -DUCB_METER
 
 
-DEPFLAGS	= -MT $@ -MD -MP -MF .deps/$*.dep
-CFLAGS		= -O $(DEFS) $(DEPFLAGS)
-ASFLAGS		= $(DEFS) $(DEPFLAGS)
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bootloader.ld
 
-include ../gcc-config.mk
-
-CC		= $(GCCPREFIX)gcc -EL -g -mips32r2
-CC		+= -nostdinc -fno-builtin -Werror -Wall -fno-dwarf2-cfi-asm
-LDFLAGS         += -nostdlib -T using-bootloader.ld -Wl,-Map=unix.map
-SIZE		= $(GCCPREFIX)size
-OBJDUMP		= $(GCCPREFIX)objdump
-OBJCOPY		= $(GCCPREFIX)objcopy
-PROGTOOL        = $(AVRDUDE) -c stk500v2 -p pic32 -b 115200
-
-# Machine-dependent files:
-# startup.o MUST be loaded first.
-KERNOBJ		= startup.o clock.o devsw.o sysctl.o \
-		  signal.o machdep.o mem.o exception.o \
-                
-KERNOBJ		+= cons.o rd_sramc.o
-
-# Kernel.
-KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
-		   kern_descrip.o kern_exec.o kern_exit.o kern_fork.o \
-		   kern_mman.o kern_proc.o kern_prot.o \
-		   kern_prot2.o kern_resource.o kern_sig.o kern_sig2.o \
-		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
-		   subr_log.o subr_prf.o subr_rmap.o \
-		   sys_generic.o sys_inode.o syscalls.o \
-		   sys_pipe.o sys_process.o tty.o tty_conf.o \
-		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \
-		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
-		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
-		   ufs_syscalls.o ufs_syscalls2.o vfs_vnops.o \
-		   vm_sched.o vm_swap.o vm_swp.o kern_glob.o swap.o spi_bus.o
-
-# Drivers.
-KERNOBJ		+= rdisk.o rd_sd.o
-
-# Configuration-dependent files.
-KERNOBJ		+= vers.o
-
-# This makefile does the work including the right files and options for the drivers
-include ../drivers.mk
-
-all:		.deps sys machine unix.elf
-		$(SIZE) unix.elf
-
-clean:
-		rm -rf .deps *.o *.elf *.bin *.dis *.map *.srec core \
-		mklog assym.h vers.c genassym sys machine
-
-.deps:
-		mkdir .deps
-
-sys:
-		ln -s ../../include $@
-
-machine:
-		ln -s .. $@
-
-unix.elf:	$(KERNOBJ) using-bootloader.ld
-		$(CC) $(LDFLAGS) $(KERNOBJ) -o $@
-		chmod -x $@
-		$(OBJDUMP) -d -S $@ > unix.dis
-		$(OBJCOPY) -O binary $@ unix.bin
-		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
-		chmod -x $@ unix.bin
-
-load:           unix.hex
-		pic32prog unix.hex
-
-vers.o:		../newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
-		sh ../newvers.sh > vers.c
-		$(CC) -c vers.c
-
-.SUFFIXES:	.i .srec .hex .dis .cpp .cxx .bin .elf
-
-.o.dis:
-		$(OBJDUMP) -d -z -S $< > $@
-
-ifeq (.deps, $(wildcard .deps))
--include .deps/*.dep
-endif
+include ../../../tools/configsys/../../sys/pic32/kernel-post.mk

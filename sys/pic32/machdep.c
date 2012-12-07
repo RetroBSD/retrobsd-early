@@ -20,7 +20,9 @@
 #include "mount.h"
 #include "systm.h"
 #include "debug.h"
-#ifdef CONSOLE_USB
+#include "uart.h"
+#include "usb_uart.h"
+#ifdef UARTUSB_ENABLED
 #   include <machine/usb_device.h>
 #   include <machine/usb_function_cdc.h>
 #endif
@@ -157,7 +159,13 @@ startup()
 	 */
 	INTCON = 0;				/* Interrupt Control */
 	IPTMR = 0;				/* Temporal Proximity Timer */
-	IFS(0) = IFS(1) = IFS(2) = 0;		/* Interrupt Flag Status */
+	IFS(0) = 
+		PIC32_IPC_IP0(2) | PIC32_IPC_IP1(1) |
+		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1) |
+		PIC32_IPC_IS0(0) | PIC32_IPC_IS1(0) |
+		PIC32_IPC_IS2(0) | PIC32_IPC_IS3(0) ;
+
+    IFS(1) = IFS(2) = 0;		/* Interrupt Flag Status */
 	IEC(0) = IEC(1) = IEC(2) = 0;		/* Interrupt Enable Control */
 	IPC(0) = IPC(1) = IPC(2) = IPC(3) = 	/* Interrupt Priority Control */
 	IPC(4) = IPC(5) = IPC(6) = IPC(7) =
@@ -276,7 +284,13 @@ startup()
 	 * Setup UART registers.
 	 * Compute the divisor for 115.2 kbaud.
 	 */
-        cninit();
+#if defined(UART1_ENABLED) || defined(UART2_ENABLED) || defined UART3_ENABLED || defined(UART4_ENABLED) || defined(UART5_ENABLED) || defined(UART6_ENABLED)
+    uartinit();
+#endif
+#ifdef UARTUSB_ENABLED
+    usbinit();
+#endif
+
 
         /* Get total RAM size. */
 	physmem = BMXDRMSZ;
@@ -452,7 +466,7 @@ boot (dev, howto)
 #endif	
 
 	for (;;) {
-#ifdef CONSOLE_USB
+#ifdef UARTUSB_ENABLED
                 usb_device_tasks();
                 cdc_consume (0);
                 cdc_tx_service();

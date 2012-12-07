@@ -255,7 +255,16 @@ daddr_t rdsize(dev_t dev)
 void rdstrategy(register struct buf *bp)
 {
 	int root = major(bp->b_dev);
+    static int mutex = 0;
 	if(root>MAXDEV) return;
+
+    mutex++;
+    if(mutex>1)
+    {
+        led_control(LED_AUX,1);
+    } else {
+        led_control(LED_AUX,0);
+    }
 
 	int part = minor(bp->b_dev);
 	int unit = disks[root].unit;
@@ -269,7 +278,7 @@ void rdstrategy(register struct buf *bp)
 	offset += (bp->b_blkno);
 
 	led_control(LED_DISK,1);
-        s = splbio();
+    s = splbio();
 
 #ifdef UCB_METER
         if (rddk >= 0) {
@@ -290,6 +299,7 @@ void rdstrategy(register struct buf *bp)
 	biodone(bp);
 	led_control(LED_DISK,0);
 	splx(s);
+    mutex--;
 }
 
 void update_mbr(int unit)

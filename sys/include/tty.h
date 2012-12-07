@@ -1,14 +1,20 @@
+#ifndef _TTY_H
+#define _TTY_H
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 #ifdef KERNEL
+#include "types.h"
 #include "ttychars.h"
 #include "ttydev.h"
+#include "ioctl.h"
 #else
+#include <sys/types.h>
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>
+#include <sys/ioctl.h>
 #endif
 
 /*
@@ -94,6 +100,7 @@ struct tty {
 #ifdef KERNEL
 
 extern const int tthiwat[NSPEEDS], ttlowat[NSPEEDS];
+extern int q_to_b(register struct clist *q, char *cp, int cc);
 
 #define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
 #define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
@@ -238,3 +245,4 @@ void ttyflush (struct tty *tp, int rw);
 #define	TAB		4
 #define	VTAB		5
 #define	RETURN		6
+#endif

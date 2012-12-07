@@ -105,6 +105,7 @@ main()
 	register struct fs *fs = NULL;
 	char inbuf[4];
 	char inch;
+    int s __attribute__((unused));
 
 	startup();
 	printf ("\n%s", version);
@@ -144,7 +145,7 @@ main()
 	binit();
 	nchinit();
 	clkstart();
-        spl0();
+        s = spl0();
 	rdisk_init();
 
 	pipedev = rootdev = get_boot_device();
@@ -322,7 +323,7 @@ retry:
                 sched();
         }
         /* Child process with pid 1: init. */
-        splhigh();
+        s = splhigh();
 	p = u.u_procp;
         p->p_dsize = icodeend - icode;
         p->p_daddr = USER_DATA_START;

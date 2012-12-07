@@ -28,18 +28,28 @@
 #define	MAXSLP 		20
 
 /*
- * Clock ticks per second.
+ * Clock ticks per second. The HZ value must be an integer factor of 1000.
  */
+#ifndef HZ
 #define	HZ		200
+#endif
 
 /*
  * System parameter formulae.
  */
+#ifndef NBUF
 #define	NBUF		10			/* number of i/o buffers */
+#endif
 #define	MAXUSERS	1			/* number of user logins */
-#define	NPROC		20			/* number of processes */
+#ifndef NPROC
+#define	NPROC		10			/* number of processes */
+#endif
+#ifndef NINODE
 #define NINODE		24
+#endif
+#ifndef NFILE
 #define NFILE		24
+#endif
 #define NNAMECACHE	(NINODE * 11/10)
 #define NCALL		(16 + 2 * MAXUSERS)
 #define NCLIST		32                      /* number or CBSIZE blocks */

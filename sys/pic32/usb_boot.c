@@ -174,9 +174,6 @@ static inline void button_init()
 
 #elif defined (STARTERKIT)
     TRISDSET = 1 << 6;
-
-#elif defined (FUBARINO)
-    TRISESET = 1 << 7;
 #else
 #error "Unknown board"
 #endif
@@ -195,9 +192,6 @@ static inline int button_pressed()
 
 #elif defined (STARTERKIT)
     return ! (PORTD & (1 << 6));
-
-#elif defined (FUBARINO)
-    return ! (PORTE & (1 << 7));
 #else
 #error "Unknown board"
 #endif
@@ -225,10 +219,6 @@ static inline void led_init()
     TRISDCLR = 7 << 0;
     LATDCLR = 1 << 0;
     LATDSET = 6 << 0;
-
-#elif defined (FUBARINO)
-    TRISECLR = 1 << 5;
-    LATECLR = 1 << 5;
 #else
 #error "Unknown board"
 #endif
@@ -247,9 +237,6 @@ static inline void led_toggle()
 
 #elif defined (STARTERKIT)
     LATDINV = 7 << 0;
-
-#elif defined (FUBARINO)
-    LATEINV = 1 << 5;
 #else
 #error "Unknown board"
 #endif
@@ -563,7 +550,7 @@ int main()
     CHECONSET = 0x30;
 
     /* Disable JTAG port, to use it for i/o. */
-    /*DDPCON = 0;*/
+    DDPCON = 0;
 
     /* Config register: enable kseg0 caching. */
     mips_write_c0_register (C0_CONFIG, 0,

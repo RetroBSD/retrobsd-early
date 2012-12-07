@@ -80,6 +80,8 @@ v|std.3500000|3500000-baud:\
         :sp#3500000:
 w|std.4000000|4000000-baud:\
         :sp#4000000:
+x|std.default|default-baud:\
+    :sp#0:
 
 
 #

@@ -16,6 +16,11 @@
 #include "systm.h"
 #include "rdisk.h"
 #include "errno.h"
+#include "uart.h"
+
+#ifdef UARTUSB_ENABLED
+#include "usb_uart.h"
+#endif
 
 #ifdef GPIO_ENABLED
 #include "gpio.h"
@@ -207,6 +212,30 @@ const struct cdevsw	cdevsw[] = {
 { // PICGA = 11
     picga_open,     picga_close,    picga_read,     picga_write,
     picga_ioctl,    nulldev,        0,              seltrue,
+    nostrategy,     },
+#else
+{
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
+#endif
+
+#if defined(UART1_ENABLED) || defined(UART2_ENABLED) || defined(UART3_ENABLED) || defined(UART4_ENABLED) || defined(UART5_ENABLED) || defined(UART6_ENABLED)
+{ // UARTS = 12
+    uartopen,      uartclose,     uartread,      uartwrite,
+    uartioctl,     nulldev,        uartttys,       uartselect,
+    nostrategy,     },
+#else
+{
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
+#endif
+
+#ifdef UARTUSB_ENABLED
+{   // USB - 13
+    usbopen,        usbclose,       usbread,        usbwrite,
+    usbioctl,       nulldev,        usbttys,        usbselect,
     nostrategy,     },
 #else
 {

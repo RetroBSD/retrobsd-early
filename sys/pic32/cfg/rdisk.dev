@@ -6,3 +6,20 @@ option led
     define LED_DISK_PORT    $TRIS(%1)
     define LED_DISK_PIN     $PIN(%1)
 end option
+
+option invled
+    define LED_DISK_PORT    $TRIS(%1)
+    define LED_DISK_PIN     $PIN(%1)
+    define LED_DISK_INVERT  YES
+end option
+
+option aux
+    define LED_AUX_PORT    $TRIS(%1)
+    define LED_AUX_PIN     $PIN(%1)
+end option
+
+option invaux
+    define LED_AUX_PORT    $TRIS(%1)
+    define LED_AUX_PIN     $PIN(%1)
+    define LED_AUX_INVERT  YES
+end option

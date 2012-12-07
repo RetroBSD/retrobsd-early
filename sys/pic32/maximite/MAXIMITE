@@ -1,0 +1,22 @@
+#
+# Maximite board
+# ==============
+#
+# Console on USB
+# For Windows, use the driver:
+# http://geoffg.net/Downloads/BoatComputer/Silicon_Chip_USB_Serial_Port_Driver.zip
+
+core pic32mx7
+mapping generic
+linker bootloader
+
+device kernel cpu_khz=80000 bus_khz=80000 invled=F0
+
+device console port=USB
+device uartusb
+
+device rdisk led=E1
+device sd0 port=4 cs=E0
+
+device gpio
+

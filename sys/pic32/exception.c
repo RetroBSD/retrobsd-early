@@ -9,6 +9,8 @@
 #include "user.h"
 #include "proc.h"
 #include "vm.h"
+#include "uart.h"
+#include "usb_uart.h"
 #include "debug.h"
 
 //#define TRACE_EXCEPTIONS
@@ -328,17 +330,16 @@ exception (frame)
                 }
 		irq = PIC32_INTSTAT_VEC (c);
 
-    //SETVAL(irq);
 
                 /* Handle the interrupt. */
                 switch (irq) {
                     case PIC32_VECT_CT:     /* Core Timer */
                         ct_ticks++;
                         /* Increment COMPARE register. */
+                            IFSCLR(0) = 1 << PIC32_IRQ_CT;
                         c = mips_read_c0_register (C0_COMPARE, 0);
                         do {
                             c += (CPU_KHZ * 1000 / HZ + 1) / 2;
-                            IFSCLR(0) = 1 << PIC32_IRQ_CT;
                             mips_write_c0_register (C0_COMPARE, 0, c);
                         } while ((int) (c - (unsigned)mips_read_c0_register (C0_COUNT, 0)) < 0);
                         hardclock ((caddr_t) frame [FRAME_PC], status);
@@ -347,41 +348,51 @@ exception (frame)
                         power_switch_check();
 #endif
 
-#ifdef CONSOLE_USB
+#ifdef UARTUSB_ENABLED
                         /* Poll USB on every timer tick. */
-                        cnintr (0);
+            usbintr(0);
 #endif
                         break;
-#if defined(CONSOLE_UART1) || defined(CONSOLE_UART2) || \
-    defined(CONSOLE_UART3) || defined(CONSOLE_UART4) || \
-    defined(CONSOLE_UART5) || defined(CONSOLE_UART6)
-#if CONSOLE_UART1
+#ifdef UART1_ENABLED
                 case PIC32_VECT_U1:     /* UART1 */
-#endif
-#if CONSOLE_UART2
-                case PIC32_VECT_U2:     /* UART2 */
-#endif
-#if CONSOLE_UART3
-                case PIC32_VECT_U3:     /* UART3 */
-#endif
-#if CONSOLE_UART4
-                case PIC32_VECT_U4:     /* UART4 */
-#endif
-#if CONSOLE_UART5
-                case PIC32_VECT_U5:     /* UART5 */
-#endif
-#if CONSOLE_UART6
-                case PIC32_VECT_U6:     /* UART6 */
-#endif
-                        cnintr (0);
+                        uartintr(makedev(UART_MAJOR,0));
                         break;
 #endif
-#ifdef CONSOLE_USB
+#ifdef UART2_ENABLED
+                case PIC32_VECT_U2:     /* UART2 */
+                        uartintr(makedev(UART_MAJOR,1));
+                        break;
+#endif
+#ifdef UART3_ENABLED
+                case PIC32_VECT_U3:     /* UART3 */
+                        uartintr(makedev(UART_MAJOR,2));
+                        break;
+#endif
+#ifdef UART4_ENABLED
+                case PIC32_VECT_U4:     /* UART4 */
+                        uartintr(makedev(UART_MAJOR,3));
+                        break;
+#endif
+#ifdef UART5_ENABELD
+                case PIC32_VECT_U5:     /* UART5 */
+                        uartintr(makedev(UART_MAJOR,4));
+                        break;
+#endif
+#ifdef UART6_ENABLED
+                case PIC32_VECT_U6:     /* UART6 */
+                        if(!(SD0_PORT == 2))
+                        {
+                            uartintr(makedev(UART_MAJOR,5));
+                        }
+                        break;
+#endif
+#ifdef UARTUSB_ENABLED
                 case PIC32_VECT_USB:    /* USB */
                         IFSCLR(1) = 1 << (PIC32_IRQ_USB - 32);
-                        cnintr (0);
+            usbintr(0);
                         break;
 #endif
+
                 default:
                         /* Disable the irq, to avoid loops */
                         printf ("*** irq %u\n", irq);
@@ -560,5 +571,5 @@ nosys()
 
 void sc_msec()
 {
-	u.u_rval = (ct_ticks * 1000) / HZ;
+    u.u_rval = ct_ticks * (1000 / HZ);
 }
