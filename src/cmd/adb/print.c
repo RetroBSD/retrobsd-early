@@ -398,8 +398,10 @@ printpc()
 void
 sigprint()
 {
+#ifndef CROSS
     if (signo >= 0 && signo < NSIG)
         print("%s", sys_siglist[signo]);
     else
+#endif
         print("unknown signal %d", signo);
 }

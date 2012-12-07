@@ -113,13 +113,14 @@ setcor()
         }
         datbas = datmap.b1;
         if (! kernel && magic) {
-            register u_int *frame;
-            frame = (u_int*) ((struct user*)corhdr)->u_frame;
-            if (frame > (u_int*) (KERNEL_DATA_END - USIZE) &&
-                frame < (u_int*) KERNEL_DATA_END &&
-                ! ((unsigned)frame & 3))
-                uframe = (u_int*) &corhdr[frame -
-                                          (u_int*) (KERNEL_DATA_END - USIZE)];
+            /* User's frame pointer in user's address space. */
+            register u_int frame;
+            frame = (long) ((struct user*)corhdr)->u_frame;
+            frame -= KERNEL_DATA_END - USIZE;
+            if (frame > 0 && frame < USIZE && ! (frame & 3)) {
+                /* User's frame pointer in adb address space. */
+                uframe = (u_int*) &corhdr[frame >> 2];
+            }
         }
     } else {
         datmap.e1 = maxfile;

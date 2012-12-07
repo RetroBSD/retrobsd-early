@@ -121,7 +121,7 @@ main(argc, argv)
         flushbuf();
         if (errflg) {
             print("%s\n", errflg);
-            exitflg = (int) errflg;
+            exitflg = (errflg != 0);
             errflg = 0;
         }
         if (mkfault) {

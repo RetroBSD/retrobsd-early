@@ -59,7 +59,7 @@ acces(mode, adr, space, value)
     long    adr;
 {
     int     w, w1, pmode, rd, file;
-    BKPTR   bkptr, scanbkpt();
+    BKPTR   bkptr;
 
     if (space == NSP)
         return 0;

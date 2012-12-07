@@ -270,7 +270,7 @@ print(char *fmat, ...)
                 printc(x);
                 break;
             case 's':
-                s = (char*) x;
+                s = (char*) lx;
                 break;
             case 'f':
             case 'F':

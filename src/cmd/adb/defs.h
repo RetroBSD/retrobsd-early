@@ -8,34 +8,17 @@
  * This has changed over time - see a.out.h, sys/exec.h and nlist.h
  * for the current a.out definition and format.
  */
-#ifdef CROSS
-#   include <sys/param.h>
-#   include <sys/user.h>
-#   include <sys/signal.h>
-#   include </usr/include/errno.h>
-#   include <setjmp.h>
-#   include <string.h>
-#   include <stdlib.h>
-#   include <unistd.h>
-#   include <a.out.h>
-#   include <sgtty.h>
-#   include <time.h>
-#   include <sys/ptrace.h>
-#   include <machine/io.h>
-//#   define MAXNAMLEN 63
-typedef void (*sig_t)(int);
-#else
-#   include <sys/param.h>
-#   include <sys/user.h>
-#   include <machine/io.h>
-#   include <sgtty.h>
-#   include <setjmp.h>
-#   include <stdlib.h>
-#   include <string.h>
-#   include <unistd.h>
-#   include <a.out.h>
-#   include <sys/ptrace.h>
-#endif
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/user.h>
+#include <machine/io.h>
+#include <sgtty.h>
+#include <setjmp.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <a.out.h>
+#include <sys/ptrace.h>
 
 #define MAXSYMLEN       32
 #define MAXCOM          64
@@ -146,7 +129,9 @@ typedef struct reglist REGLIST;
 #define MAXPOS  80
 #define MAXLIN  128
 
-#define TRUE    (-1)
+#ifndef TRUE
+    #define TRUE    (-1)
+#endif
 #define FALSE   0
 #define LOBYTE  0377
 #define HIBYTE  0177400
@@ -160,7 +145,7 @@ typedef struct reglist REGLIST;
 
 /* long to ints and back (puns) */
 #define leng(a)         ((long)((unsigned)(a)))
-#define shorten(a)      ((int)a)
+#define shorten(a)      ((long)a)
 
 struct sgttyb adbtty, usrtty;
 jmp_buf erradb;

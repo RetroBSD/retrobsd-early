@@ -190,7 +190,8 @@ trypr:
             regptr = getreg(savc);
             if (regptr != NOREG) {
                 uframe[regptr] = shorten(dot);
-                ptrace(PT_WRITE_U, pid, &uframe[regptr] - (int)&corhdr,
+                ptrace(PT_WRITE_U, pid, (char*) (KERNEL_DATA_END - USIZE) +
+                    ((char*)&uframe[regptr] - (char*)&corhdr),
                     uframe[regptr]);
             } else if ((modifier = varchk(savc)) != -1) {
                 var[modifier] = dot;

@@ -63,7 +63,7 @@ readregs()
 
     for (i=0; i<NREG; i++) {
         uframe[reglist[i].roffs] = ptrace(PT_READ_U, pid,
-            (int *)((int)&uframe[reglist[i].roffs] - (int)&corhdr),
+            (char*)((long)&uframe[reglist[i].roffs] - (long)&corhdr),
             0);
     }
 }
