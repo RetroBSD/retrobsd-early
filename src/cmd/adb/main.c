@@ -60,8 +60,13 @@ main(argc, argv)
         myname = "adb";
     mynamelen = strlen(myname);
 
+#ifdef TIOCGETP
     ioctl(0, TIOCGETP, &adbtty);
     ioctl(0, TIOCGETP, &usrtty);
+#else
+    tcgetattr(0, &adbtty);
+    tcgetattr(0, &usrtty);
+#endif
     while (argc > 1) {
         if (strcmp("-w", argv[1]) == 0) {
             wtflag = O_RDWR;

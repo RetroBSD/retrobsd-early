@@ -39,7 +39,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/stddef.h>
 #include <stdlib.h>
 
 #ifdef SETMODE_DEBUG

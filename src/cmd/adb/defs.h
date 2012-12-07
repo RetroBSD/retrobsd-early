@@ -12,13 +12,18 @@
 #include <sys/param.h>
 #include <sys/user.h>
 #include <machine/io.h>
-#include <sgtty.h>
 #include <setjmp.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <a.out.h>
 #include <sys/ptrace.h>
+#ifdef CROSS
+#   include <termios.h>
+#   define sgttyb termios
+#else
+#   include <sgtty.h>
+#endif
 
 #define MAXSYMLEN       32
 #define MAXCOM          64
