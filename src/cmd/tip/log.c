@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)log.c	5.2 (Berkeley) 5/2/87";
-#endif not lint
-
 #include "tip.h"
+#include <time.h>
 
 #ifdef ACULOG
 static	FILE *flog = NULL;
@@ -16,8 +12,7 @@ static	FILE *flog = NULL;
 /*
  * Log file maintenance routines
  */
-
-logent(group, num, acu, message)
+void logent(group, num, acu, message)
 	char *group, *num, *acu, *message;
 {
 	char *user, *timestamp;

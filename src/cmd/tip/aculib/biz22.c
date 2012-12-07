@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)biz22.c	5.1 (Berkeley) 6/6/85";
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #include "tip.h"
@@ -15,11 +10,19 @@ static char sccsid[] = "@(#)biz22.c	5.1 (Berkeley) 6/6/85";
 
 #define DISCONNECT_CMD	"\20\04"	/* disconnection string */
 
-static	void sigALRM(int);
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 static int detect(register char *s);
 static int cmd(register char *s);
+
+void biz22_disconnect()
+{
+	int rw = 2;
+
+	write(FD, DISCONNECT_CMD, 4);
+	sleep(2);
+	ioctl(FD, TIOCFLUSH, &rw);
+}
 
 /*
  * Dial up on a BIZCOMP Model 1022 with either
@@ -79,32 +82,20 @@ biz_dialer(num, mod)
 	return (connected);
 }
 
-biz22w_dialer(num, acu)
+int biz22w_dialer(num, acu)
 	char *num, *acu;
 {
-
 	return (biz_dialer(num, "W"));
 }
 
-biz22f_dialer(num, acu)
+int biz22f_dialer(num, acu)
 	char *num, *acu;
 {
-
 	return (biz_dialer(num, "V"));
 }
 
-biz22_disconnect()
+void biz22_abort()
 {
-	int rw = 2;
-
-	write(FD, DISCONNECT_CMD, 4);
-	sleep(2);
-	ioctl(FD, TIOCFLUSH, &rw);
-}
-
-biz22_abort()
-{
-
 	write(FD, "\02", 1);
 }
 

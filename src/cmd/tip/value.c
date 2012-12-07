@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)value.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 #include "tip.h"
 
 #define MIDDLE	35
@@ -47,7 +42,8 @@ vinit()
 		while (fgets(file, sizeof(file)-1, f) != NULL) {
 			if (vflag)
 				printf("set %s", file);
-			if (tp = rindex(file, '\n'))
+                        tp = strrchr(file, '\n');
+			if (tp)
 				*tp = '\0';
 			vlex(file);
 		}
@@ -104,6 +100,59 @@ vassign(p, v)
 	p->v_access |= CHANGED;
 }
 
+static char *
+vinterp(s, stop)
+	register char *s;
+	char stop;
+{
+	register char *p = s, c;
+	int num;
+
+	while ((c = *s++) && c != stop)
+		switch (c) {
+
+		case '^':
+			if (*s)
+				*p++ = *s++ - 0100;
+			else
+				*p++ = c;
+			break;
+
+		case '\\':
+			num = 0;
+			c = *s++;
+			if (c >= '0' && c <= '7')
+				num = (num<<3)+(c-'0');
+			else {
+				register char *q = "n\nr\rt\tb\bf\f";
+
+				for (; *q; q++)
+					if (c == *q++) {
+						*p++ = *q;
+						goto cont;
+					}
+				*p++ = c;
+			cont:
+				break;
+			}
+			if ((c = *s++) >= '0' && c <= '7') {
+				num = (num<<3)+(c-'0');
+				if ((c = *s++) >= '0' && c <= '7')
+					num = (num<<3)+(c-'0');
+				else
+					s--;
+			} else
+				s--;
+			*p++ = num;
+			break;
+
+		default:
+			*p++ = c;
+		}
+	*p = '\0';
+	return (c == stop ? s-1 : NULL);
+}
+
 vlex(s)
 	register char *s;
 {
@@ -137,7 +186,7 @@ vtoken(s)
 	register char *cp;
 	char *expand();
 
-	if (cp = index(s, '=')) {
+	if (cp = strchr(s, '=')) {
 		*cp = '\0';
 		if (p = vlookup(s)) {
 			cp++;
@@ -150,7 +199,7 @@ vtoken(s)
 			}
 			return;
 		}
-	} else if (cp = index(s, '?')) {
+	} else if (cp = strchr(s, '?')) {
 		*cp = '\0';
 		if ((p = vlookup(s)) && vaccess(p->v_access, READ)) {
 			vprint(p);
@@ -246,59 +295,6 @@ vlookup(s)
 	return (NULL);
 }
 
-char *
-vinterp(s, stop)
-	register char *s;
-	char stop;
-{
-	register char *p = s, c;
-	int num;
-
-	while ((c = *s++) && c != stop)
-		switch (c) {
-
-		case '^':
-			if (*s)
-				*p++ = *s++ - 0100;
-			else
-				*p++ = c;
-			break;
-
-		case '\\':
-			num = 0;
-			c = *s++;
-			if (c >= '0' && c <= '7')
-				num = (num<<3)+(c-'0');
-			else {
-				register char *q = "n\nr\rt\tb\bf\f";
-
-				for (; *q; q++)
-					if (c == *q++) {
-						*p++ = *q;
-						goto cont;
-					}
-				*p++ = c;
-			cont:
-				break;
-			}
-			if ((c = *s++) >= '0' && c <= '7') {
-				num = (num<<3)+(c-'0');
-				if ((c = *s++) >= '0' && c <= '7')
-					num = (num<<3)+(c-'0');
-				else
-					s--;
-			} else
-				s--;
-			*p++ = num;
-			break;
-
-		default:
-			*p++ = c;
-		}
-	*p = '\0';
-	return (c == stop ? s-1 : NULL);
-}
-
 /*
  * assign variable s with value v (for NUMBER or STRING or CHAR types)
  */
@@ -310,7 +306,7 @@ vstring(s,v)
 	register value_t *p;
 	char *expand();
 
-	p = vlookup(s); 
+	p = vlookup(s);
 	if (p == 0)
 		return (1);
 	if (p->v_type&NUMBER)

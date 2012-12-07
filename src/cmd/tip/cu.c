@@ -3,14 +3,9 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)cu.c	5.5 (Berkeley) 10/22/87";
-#endif not lint
-
 #include "tip.h"
 
-int	cleanup();
+void	cleanup(int);
 int	timeout();
 
 /*

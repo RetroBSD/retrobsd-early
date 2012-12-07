@@ -16,6 +16,9 @@
 #include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <pwd.h>
 #include <ctype.h>
 #include <setjmp.h>
@@ -152,11 +155,6 @@ typedef
 extern int	vflag;		/* verbose during reading of .tiprc file */
 extern value_t	vtable[];	/* variable table */
 
-#ifndef ACULOG
-#define logent(a, b, c, d)
-#define loginit()
-#endif
-
 /*
  * Definition of indices into variable table so
  *  value(DEFINE) turns into a static address.
@@ -236,14 +234,16 @@ char	*uucplock;		/* name of lock file for uucp's */
 int	odisc;				/* initial tty line discipline */
 extern	int disc;			/* current tty discpline */
 
-extern	char *ctrl();
-extern	char *ctime();
-extern	long time();
-extern	struct passwd *getpwuid();
-extern	char *getlogin();
-extern	char *vinterp();
-extern	char *getenv();
-extern	char *rindex();
-extern	char *index();
-//extern	char *malloc();
-extern	char *connect();
+char *ctrl (int c);
+char *connect (void);
+void delock (char *s);
+void pwrite (int fd, char *buf, int n);
+int size (char *s);
+void disconnect (char *reason);
+void logent (char *group, char *num, char *acu, char *message);
+int any (int c, char *p);
+
+#ifndef ACULOG
+#define logent(a, b, c, d)
+#define loginit()
+#endif

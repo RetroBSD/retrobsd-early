@@ -3,12 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)remote.c	5.3 (Berkeley) 4/30/86";
-#endif not lint
-
-# include "tip.h"
+#include "tip.h"
 
 /*
  * Attributes to be gleened from remote host description
@@ -155,7 +150,7 @@ getremote(host)
 	 */
 	if (next == NOSTR)
 		return (NOSTR);
-	if ((cp = index(next, ',')) == NULL) {
+	if ((cp = strchr(next, ',')) == NULL) {
 		DV = next;
 		next = NOSTR;
 	} else {

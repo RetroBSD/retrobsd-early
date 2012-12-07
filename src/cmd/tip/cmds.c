@@ -3,14 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.6 (Berkeley) 12/22/87";
-#endif not lint
-
 #include <stdlib.h>
 #include <unistd.h>
 #include "tip.h"
+
 /*
  * tip
  *
@@ -22,11 +18,40 @@ int	quant[] = { 60, 60, 24 };
 char	null = '\0';
 char	*sep[] = { "second", "minute", "hour" };
 static char *argv[10];		/* argument vector for take and put */
+static	jmp_buf intbuf;
 
-int	timeout();		/* timeout function called on alarm */
-int	stopsnd();		/* SIGINT handler during file transfers */
 int	intprompt();		/* used in handling SIG_INT during prompt */
-int	intcopy();		/* interrupt routine for file transfers */
+
+/*
+ * interrupt routine for file transfers
+ */
+void
+intcopy(int sig)
+{
+	raw();
+	quit = 1;
+	longjmp(intbuf, 1);
+}
+
+/*
+ * Interrupt service routine for FTP
+ */
+void
+stopsnd(int sig)
+{
+	stop = 1;
+	signal(SIGINT, SIG_IGN);
+}
+
+/*
+ * timeout function called on alarm
+ */
+void
+timeout(int sig)
+{
+	signal(SIGALRM, timeout);
+	timedout = 1;
+}
 
 /*
  * FTP - remote ==> local
@@ -36,7 +61,7 @@ getfl(c)
 	char c;
 {
 	char buf[256], *cp, *expand();
-	
+
 	putchar(c);
 	/*
 	 * get the UNIX receiving file's name
@@ -48,7 +73,7 @@ getfl(c)
 		printf("\r\n%s: cannot creat\r\n", copyname);
 		return;
 	}
-	
+
 	/*
 	 * collect parameters
 	 */
@@ -85,7 +110,6 @@ cu_take(cc)
 	transfer(line, fd, "\01");
 }
 
-static	jmp_buf intbuf;
 /*
  * Bulk transfer routine --
  *  used by getfl(), cu_take(), and pipefile()
@@ -98,22 +122,22 @@ transfer(buf, fd, eofchars)
 	register char *p = buffer;
 	register int cnt, eof;
 	time_t start;
-	int (*f)();
+	sig_t f;
 
 	pwrite(FD, buf, size(buf));
 	quit = 0;
 	kill(pid, SIGIOT);
 	read(repdes[0], (char *)&ccc, 1);  /* Wait until read process stops */
-	
+
 	/*
 	 * finish command
 	 */
 	pwrite(FD, "\r", 1);
 	do
-		read(FD, &c, 1); 
+		read(FD, &c, 1);
 	while ((c&0177) != '\n');
 	ioctl(0, TIOCSETC, &defchars);
-	
+
 	(void) setjmp(intbuf);
 	f = signal(SIGINT, intcopy);
 	start = time(0);
@@ -200,16 +224,6 @@ pipefile()
 }
 
 /*
- * Interrupt service routine for FTP
- */
-stopsnd()
-{
-
-	stop = 1;
-	signal(SIGINT, SIG_IGN);
-}
-
-/*
  * FTP - local ==> remote
  *  send local file to remote host
  *  terminate transmission with pseudo EOF sequence
@@ -256,7 +270,7 @@ transmit(fd, eofchars, command)
 	char *pc, lastc;
 	int c, ccount, lcount;
 	time_t start_t, stop_t;
-	int (*f)();
+	sig_t f;
 
 	kill(pid, SIGIOT);	/* put TIPOUT into a wait state */
 	stop = 0;
@@ -413,12 +427,6 @@ tryagain:
 	}
 }
 
-timeout()
-{
-	signal(SIGALRM, timeout);
-	timedout = 1;
-}
-
 /*
  * Stolen from consh() -- puts a remote file on the output of a local command.
  *	Identical to consh() except for where stdout goes.
@@ -545,7 +553,7 @@ shell()
 	} else {
 		signal(SIGQUIT, SIG_DFL);
 		signal(SIGINT, SIG_DFL);
-		if ((cp = rindex(value(SHELL), '/')) == NULL)
+		if ((cp = strrchr(value(SHELL), '/')) == NULL)
 			cp = value(SHELL);
 		else
 			cp++;
@@ -623,20 +631,12 @@ finish()
 	tipabort(NOSTR);
 }
 
-intcopy()
-{
-
-	raw();
-	quit = 1;
-	longjmp(intbuf, 1);
-}
-
 execute(s)
 	char *s;
 {
 	register char *cp;
 
-	if ((cp = rindex(value(SHELL), '/')) == NULL)
+	if ((cp = strrchr(value(SHELL), '/')) == NULL)
 		cp = value(SHELL);
 	else
 		cp++;

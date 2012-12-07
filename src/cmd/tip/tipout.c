@@ -3,12 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)tipout.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 #include "tip.h"
+
 /*
  * tip
  *
@@ -22,9 +18,8 @@ static	jmp_buf sigbuf;
  * TIPOUT wait state routine --
  *   sent by TIPIN when it wants to posses the remote host
  */
-intIOT()
+void intIOT(int sig)
 {
-
 	write(repdes[1],&ccc,1);
 	read(fildes[0], &ccc,1);
 	longjmp(sigbuf, 1);
@@ -34,7 +29,7 @@ intIOT()
  * Scripting command interpreter --
  *  accepts script file name over the pipe and acts accordingly
  */
-intEMT()
+void intEMT(int sig)
 {
 	char c, line[256];
 	register char *pline = line;
@@ -63,17 +58,15 @@ intEMT()
 	longjmp(sigbuf, 1);
 }
 
-intTERM()
+void intTERM(int sig)
 {
-
 	if (boolean(value(SCRIPT)) && fscript != NULL)
 		fclose(fscript);
 	exit(0);
 }
 
-intSYS()
+void intSYS(int sig)
 {
-
 	boolean(value(BEAUTIFY)) = !boolean(value(BEAUTIFY));
 	longjmp(sigbuf, 1);
 }
@@ -103,7 +96,7 @@ tipout()
 			/* lost carrier */
 			if (cnt < 0 && errno == EIO) {
 				sigblock(sigmask(SIGTERM));
-				intTERM();
+				intTERM(0);
 				/*NOTREACHED*/
 			}
 			continue;

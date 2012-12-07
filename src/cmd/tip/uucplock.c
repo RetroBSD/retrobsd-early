@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)uucplock.c	5.2 (Berkeley) 11/29/85";
-#endif 
-
 /*
  * defs that come from uucp.h
  */
@@ -146,7 +142,7 @@ rmlock(name)
 }
 
 /*
- * this stuff from pjw 
+ * this stuff from pjw
  *  /usr/pjw/bin/recover - check pids to remove unnecessary locks
  *
  *	isalock(name) returns 0 if the name is a lock
@@ -196,7 +192,7 @@ onelock(pid, tempfile, name)
  *
  *	return codes:  0  |  FAIL
  */
-
+void
 delock(s)
 	char *s;
 {

@@ -3,23 +3,72 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)biz31.c	5.1 (Berkeley) 6/6/85";
-#endif not lint
-
 #include "tip.h"
 
 #define MAXRETRY	3		/* sync up retry count */
 #define DISCONNECT_CMD	"\21\25\11\24"	/* disconnection string */
 
-static	void sigALRM(int);
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 static int bizsync(int fd);
-static int flush(register char *s);
 static int detect(register char *s);
-static int echo(register char *s);
+
+void biz31_disconnect()
+{
+	write(FD, DISCONNECT_CMD, 4);
+	sleep(2);
+	ioctl(FD, TIOCFLUSH);
+}
+
+static void
+echo(s)
+	register char *s;
+{
+	char c;
+
+	while ((c = *s++)) switch (c) {
+
+	case '$':
+		read(FD, &c, 1);
+		s++;
+		break;
+
+	case '#':
+		c = *s++;
+		write(FD, &c, 1);
+		break;
+
+	default:
+		write(FD, &c, 1);
+		read(FD, &c, 1);
+	}
+}
+
+static void
+sigALRM(int i)
+{
+	timeout = 1;
+	longjmp(timeoutbuf, 1);
+}
+
+static void
+flush(s)
+	register char *s;
+{
+	char c;
+	sig_t f;
+
+	f = signal(SIGALRM, sigALRM);
+	while (*s++) {
+		if (setjmp(timeoutbuf))
+			break;
+		alarm(10);
+		read(FD, &c, 1);
+		alarm(0);
+	}
+	signal(SIGALRM, f);
+	timeout = 0;			/* guard against disconnection */
+}
 
 /*
  * Dial up on a BIZCOMP Model 1031 with either
@@ -76,64 +125,21 @@ biz_dialer(num, mod)
 	return (connected);
 }
 
-biz31w_dialer(num, acu)
+int biz31w_dialer(num, acu)
 	char *num, *acu;
 {
-
 	return (biz_dialer(num, "w"));
 }
 
-biz31f_dialer(num, acu)
+int biz31f_dialer(num, acu)
 	char *num, *acu;
 {
-
 	return (biz_dialer(num, "f"));
 }
 
-biz31_disconnect()
+void biz31_abort()
 {
-
-	write(FD, DISCONNECT_CMD, 4);
-	sleep(2);
-	ioctl(FD, TIOCFLUSH);
-}
-
-biz31_abort()
-{
-
 	write(FD, "\33", 1);
-}
-
-static int
-echo(s)
-	register char *s;
-{
-	char c;
-
-	while (c = *s++) switch (c) {
-
-	case '$':
-		read(FD, &c, 1);
-		s++;
-		break;
-
-	case '#':
-		c = *s++;
-		write(FD, &c, 1);
-		break;
-
-	default:
-		write(FD, &c, 1);
-		read(FD, &c, 1);
-	}
-}
-
-static void
-sigALRM(int i)
-{
-
-	timeout = 1;
-	longjmp(timeoutbuf, 1);
 }
 
 static int
@@ -159,25 +165,6 @@ detect(s)
 	}
 	signal(SIGALRM, f);
 	return (timeout == 0);
-}
-
-static int
-flush(s)
-	register char *s;
-{
-	char c;
-	sig_t f;
-
-	f = signal(SIGALRM, sigALRM);
-	while (*s++) {
-		if (setjmp(timeoutbuf))
-			break;
-		alarm(10);
-		read(FD, &c, 1);
-		alarm(0);
-	}
-	signal(SIGALRM, f);
-	timeout = 0;			/* guard against disconnection */
 }
 
 /*

@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.4 (Berkeley) 12/22/87";
-#endif not lint
-
 #include "tip.h"
 
 extern	int shell(), getfl(), sendfile(), chdirectory();

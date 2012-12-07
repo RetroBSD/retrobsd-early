@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)v3451.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 /*
  * Routines for calling up on a Vadic 3451 Modem
  */
@@ -17,11 +13,18 @@ static char sccsid[] = "@(#)v3451.c	5.1 (Berkeley) 4/30/85";
 static	jmp_buf Sjbuf;
 static int prefix(register char *s1, register char *s2);
 static int notin(char *sh, char *lg);
-static int alarmtr();
 static int expect(register char *cp);
-static int vawrite(register char *cp, int delay);
 
-v3451_dialer(num, acu)
+static void
+vawrite(cp, delay)
+	register char *cp;
+	int delay;
+{
+	for (; *cp; sleep(delay), cp++)
+		write(FD, cp, 1);
+}
+
+int v3451_dialer(num, acu)
 	register char *num;
 	char *acu;
 {
@@ -97,35 +100,28 @@ v3451_dialer(num, acu)
 	return (1);
 }
 
-v3451_disconnect()
+void v3451_disconnect()
 {
-
 	close(FD);
 }
 
-v3451_abort()
+void v3451_abort()
 {
-
 	close(FD);
 }
 
-static
-vawrite(cp, delay)
-	register char *cp;
-	int delay;
+static void
+alarmtr()
 {
-
-	for (; *cp; sleep(delay), cp++)
-		write(FD, cp, 1);
+	longjmp(Sjbuf, 1);
 }
 
-static
+static int
 expect(cp)
 	register char *cp;
 {
 	char buf[300];
 	register char *rp = buf;
-	sig_t alarmtr;
 	int timeout = 30, online = 0;
 
 	if (strcmp(cp, "\"\"") == 0)
@@ -159,14 +155,7 @@ expect(cp)
 	return (1);
 }
 
-static
-alarmtr()
-{
-
-	longjmp(Sjbuf, 1);
-}
-
-static
+static int
 notin(sh, lg)
 	char *sh, *lg;
 {
@@ -177,7 +166,7 @@ notin(sh, lg)
 	return (1);
 }
 
-static
+static int
 prefix(s1, s2)
 	register char *s1, *s2;
 {

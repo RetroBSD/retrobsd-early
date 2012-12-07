@@ -39,17 +39,16 @@ include $(TOPSRC)/target.mk
 #				writes on local side
 #	BUFSIZ			buffer sizing from stdio, must be fed
 #				explicitly to remcap.c if not 1024
-ADM=	var/log
-OWNER=	uucp
-GROUP=	daemon
-CONFIG=	-DHAYES
-LIBS += -lacu -L./aculib
-CFLAGS=	-O -DDEFBR=1200 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE
-#SEPFLAG=-i
-SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
-	remote.c tip.c tipout.c uucplock.c value.c vars.c
-OBJS=	acu.o acutab.o cmds.o cmdtab.o cu.o hunt.o log.o partab.o remcap.o \
-	remote.o tip.o tipout.o uucplock.o value.o vars.o
+ADM     = var/log
+OWNER   = uucp
+GROUP   = daemon
+CONFIG  = -DHAYES
+LIBS    += -lacu -L./aculib
+CFLAGS  += -DDEFBR=1200 -DDEFFS=BUFSIZ -DACULOG -DPRISTINE -Werror
+SRCS    = acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
+	  remote.c tip.c tipout.c uucplock.c value.c vars.c
+OBJS    = acu.o acutab.o cmds.o cmdtab.o cu.o hunt.o log.o partab.o remcap.o \
+	  remote.o tip.o tipout.o uucplock.o value.o vars.o
 
 all: aculib tip
 
@@ -72,7 +71,7 @@ aculib: FRC
 	cd aculib; make ${MFLAGS}
 
 clean: FRC
-	rm -f ${OBJS} core tip tip.elf
+	rm -f ${OBJS} core tip tip.elf tip.dis
 	cd aculib; make ${MFLAGS} clean
 
 depend: FRC

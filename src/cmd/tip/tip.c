@@ -4,16 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif
-
-#ifndef lint
-static char sccsid[] = "@(#)tip.c	5.6 (Berkeley) 10/22/87";
-#endif
-
 /*
  * tip - UNIX link to other systems
  *  tip [-v] [-speed] system-name
@@ -202,7 +192,6 @@ cucommon:
 
 void cleanup(int i)
 {
-
 	daemon_uid();
 	delock(uucplock);
 	if (odisc)
@@ -395,8 +384,9 @@ speed(n)
 	return (NULL);
 }
 
-any(c, p)
-	register char c, *p;
+int any(c, p)
+	register int c;
+	register char *p;
 {
 	while (p && *p)
 		if (*p++ == c)
@@ -404,7 +394,7 @@ any(c, p)
 	return (0);
 }
 
-size(s)
+int size(s)
 	register char	*s;
 {
 	register int i = 0;
@@ -442,7 +432,7 @@ interp(s)
 
 char *
 ctrl(c)
-	char c;
+	int c;
 {
 	static char s[3];
 
@@ -515,7 +505,7 @@ static char partab[0200];
  * We are doing 8 bit wide output, so we just generate a character
  * with the right parity and output it.
  */
-pwrite(fd, buf, n)
+void pwrite(fd, buf, n)
 	int fd;
 	char *buf;
 	register int n;

@@ -3,18 +3,20 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)acu.c	5.5 (Berkeley) 12/4/87";
-#endif not lint
-
 #include "tip.h"
 
 static acu_t *acu = NOACU;
 static int conflag;
-static int acuabort();
 static acu_t *acutype();
 static jmp_buf jmpbuf;
+
+static void
+acuabort(int s)
+{
+	signal(s, SIG_IGN);
+	longjmp(jmpbuf, 1);
+}
+
 /*
  * Establish connection for tip
  *
@@ -73,8 +75,9 @@ connect()
 				;
 			if (*cp)
 				*cp++ = '\0';
-			
-			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
+
+                        conflag = (*acu->acu_dialer)(phnum, CU);
+			if (conflag) {
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
 				return (NOSTR);
@@ -108,8 +111,9 @@ connect()
 				;
 			if (*cp)
 				*cp++ = '\0';
-			
-			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
+
+                        conflag = (*acu->acu_dialer)(phnum, CU);
+			if (conflag) {
 				fclose(fd);
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
@@ -128,7 +132,7 @@ connect()
 	return (tried ? "call failed" : "missing phone number");
 }
 
-disconnect(reason)
+void disconnect(reason)
 	char *reason;
 {
 	if (!conflag) {
@@ -139,16 +143,9 @@ disconnect(reason)
 		logent(value(HOST), "", acu->acu_name, "call terminated");
 		if (boolean(value(VERBOSE)))
 			printf("\r\ndisconnecting...");
-	} else 
+	} else
 		logent(value(HOST), "", acu->acu_name, reason);
 	(*acu->acu_disconnect)();
-}
-
-static int
-acuabort(s)
-{
-	signal(s, SIG_IGN);
-	longjmp(jmpbuf, 1);
 }
 
 static acu_t *

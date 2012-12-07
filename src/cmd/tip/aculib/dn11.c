@@ -4,25 +4,26 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)dn11.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 /*
  * Routines for dialing up on DN-11
  */
 #include "tip.h"
+#include <fcntl.h>
+#include <sys/wait.h>
 
-int dn_abort(), alarmtr();
 static jmp_buf jmpbuf;
 static int child = -1, dn;
 
-dn_dialer(num, acu)
+void alarmtr(int sig)
+{
+	alarm(0);
+	longjmp(jmpbuf, 1);
+}
+
+int dn_dialer(num, acu)
 	char *num, *acu;
 {
-	extern errno;
-	char *p, *q, phone[40];
-	int lt, nw, connected = 1;
+	int lt, nw;
 	register int timelim;
 
 	if (boolean(value(VERBOSE)))
@@ -80,29 +81,20 @@ dn_dialer(num, acu)
 	return (1);
 }
 
-alarmtr()
-{
-
-	alarm(0);
-	longjmp(jmpbuf, 1);
-}
-
 /*
  * Insurance, for some reason we don't seem to be
  *  hanging up...
  */
-dn_disconnect()
+void dn_disconnect()
 {
-
 	sleep(2);
 	if (FD > 0)
 		ioctl(FD, TIOCCDTR, 0);
 	close(FD);
 }
 
-dn_abort()
+void dn_abort()
 {
-
 	sleep(2);
 	if (child > 0)
 		kill(child, SIGKILL);

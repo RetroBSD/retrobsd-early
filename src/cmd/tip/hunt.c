@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)hunt.c	5.2 (Berkeley) 4/23/87";
-#endif not lint
-
 #include "tip.h"
 
 extern char *getremote();
@@ -16,9 +11,9 @@ extern char *rindex();
 static	jmp_buf deadline;
 static	int deadfl;
 
-dead()
+void
+dead(int sig)
 {
-
 	deadfl = 1;
 	longjmp(deadline, 1);
 }
@@ -27,7 +22,7 @@ hunt(name)
 	char *name;
 {
 	register char *cp;
-	int (*f)();
+	sig_t f;
 
 	f = signal(SIGALRM, dead);
 	while (cp = getremote(name)) {

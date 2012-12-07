@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#if	!defined(lint) && defined(DOSCCS)
-static char sccsid[] = "@(#)remcap.c	5.1.1 (2.11BSD) 1997/5/2";
-#endif
-
 /*
  * remcap - routines for dealing with the remote host data base
  *
@@ -15,6 +11,7 @@ static char sccsid[] = "@(#)remcap.c	5.1.1 (2.11BSD) 1997/5/2";
  */
 #include <sys/file.h>
 #include <ctype.h>
+#include <string.h>
 
 #ifndef BUFSIZ
 #define	BUFSIZ		1024

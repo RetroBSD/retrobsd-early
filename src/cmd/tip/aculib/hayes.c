@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)hayes.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 /*
  * Routines for calling up on a Hayes Modem
  * (based on the old VenTel driver).
@@ -21,13 +17,13 @@ static char sccsid[] = "@(#)hayes.c	5.1 (Berkeley) 4/30/85";
  * before modem is hung up, removal of the DTR signal
  * has no effect (except that it prevents the modem from
  * recognizing commands).
- * (by Helge Skrivervik, Calma Company, Sunnyvale, CA. 1984) 
+ * (by Helge Skrivervik, Calma Company, Sunnyvale, CA. 1984)
  */
 /*
  * TODO:
  * It is probably not a good idea to switch the modem
  * state between 'verbose' and terse (status messages).
- * This should be kicked out and we should use verbose 
+ * This should be kicked out and we should use verbose
  * mode only. This would make it consistent with normal
  * interactive use thru the command 'tip dialer'.
  */
@@ -35,7 +31,6 @@ static char sccsid[] = "@(#)hayes.c	5.1 (Berkeley) 4/30/85";
 
 #define	min(a,b)	((a < b) ? a : b)
 
-static	int sigALRM();
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 static 	char gobble();
@@ -48,11 +43,143 @@ static char dumbuf[DUMBUFLEN];
 #define	FAILED		4
 static	int state = IDLE;
 
-hay_dialer(num, acu)
+static void sigALRM(int sig)
+{
+	printf("\07timeout waiting for reply\n\r");
+	timeout = 1;
+	longjmp(timeoutbuf, 1);
+}
+
+#define MAXRETRY	5
+
+int hay_sync()
+{
+	int len, retry = 0;
+	long llen;
+
+	while (retry++ <= MAXRETRY) {
+		write(FD, "AT\r", 3);
+		sleep(1);
+		ioctl(FD, FIONREAD, &llen);
+		len = llen;
+		if (len) {
+			len = read(FD, dumbuf, min(len, DUMBUFLEN));
+			if (strchr(dumbuf, '0') ||
+		   	(strchr(dumbuf, 'O') && strchr(dumbuf, 'K')))
+				return(1);
+#ifdef DEBUG
+			dumbuf[len] = '\0';
+			printf("hay_sync: (\"%s\") %d\n\r", dumbuf, retry);
+#endif
+		}
+		ioctl(FD, TIOCCDTR, 0);
+		ioctl(FD, TIOCSDTR, 0);
+	}
+	printf("Cannot synchronize with hayes...\n\r");
+	return(0);
+}
+
+void error_rep(c)
+	register char c;
+{
+	printf("\n\r");
+	switch (c) {
+
+	case '0':
+		printf("OK");
+		break;
+
+	case '1':
+		printf("CONNECT");
+		break;
+
+	case '2':
+		printf("RING");
+		break;
+
+	case '3':
+		printf("NO CARRIER");
+		break;
+
+	case '4':
+		printf("ERROR in input");
+		break;
+
+	case '5':
+		printf("CONNECT 1200");
+		break;
+
+	default:
+		printf("Unknown Modem error: %c (0x%x)", c, c);
+	}
+	printf("\n\r");
+}
+
+/*
+ * set modem back to normal verbose status codes.
+ */
+void goodbye()
+{
+	int len;
+	int zero = 0;
+	long llen;
+	char c;
+
+	ioctl(FD, TIOCFLUSH, &zero);	/* get rid of trash */
+	if (hay_sync()) {
+		sleep(1);
+#ifndef DEBUG
+		ioctl(FD, TIOCFLUSH, &zero);
+#endif
+		write(FD, "ATH0\r", 5);		/* insurance */
+#ifndef DEBUG
+		c = gobble("03");
+		if (c != '0' && c != '3') {
+			printf("cannot hang up modem\n\r");
+			printf("please use 'tip dialer' to make sure the line is hung up\n\r");
+		}
+#endif
+		sleep(1);
+		ioctl(FD, FIONREAD, &llen);
+		len = llen;
+#ifdef DEBUG
+		printf("goodbye1: len=%d -- ", len);
+		int rlen = read(FD, dumbuf, min(len, DUMBUFLEN));
+		dumbuf[rlen] = '\0';
+		printf("read (%d): %s\r\n", rlen, dumbuf);
+#endif
+		write(FD, "ATV1\r", 5);
+		sleep(1);
+#ifdef DEBUG
+		ioctl(FD, FIONREAD, &llen);
+		len = llen;
+		printf("goodbye2: len=%d -- ", len);
+		rlen = read(FD, dumbuf, min(len, DUMBUFLEN));
+		dumbuf[rlen] = '\0';
+		printf("read (%d): %s\r\n", rlen, dumbuf);
+#endif
+	}
+	ioctl(FD, TIOCFLUSH, &zero);	/* clear the input buffer */
+	ioctl(FD, TIOCCDTR, 0);		/* clear DTR (insurance) */
+	close(FD);
+}
+
+void hay_disconnect()
+{
+	/* first hang up the modem*/
+#ifdef DEBUG
+	printf("\rdisconnecting modem....\n\r");
+#endif
+	ioctl(FD, TIOCCDTR, 0);
+	sleep(1);
+	ioctl(FD, TIOCSDTR, 0);
+	goodbye();
+}
+
+int hay_dialer(num, acu)
 	register char *num;
 	char *acu;
 {
-	register char *cp;
 	register int connected = 0;
 	int zero = 0;
 	char dummy;
@@ -98,38 +225,10 @@ hay_dialer(num, acu)
 	return (connected);
 }
 
-
-hay_disconnect()
+void hay_abort()
 {
-	char c;
-	int len, rlen;
-
-	/* first hang up the modem*/
-#ifdef DEBUG
-	printf("\rdisconnecting modem....\n\r");
-#endif
-	ioctl(FD, TIOCCDTR, 0);
-	sleep(1);
-	ioctl(FD, TIOCSDTR, 0);
-	goodbye();
-}
-
-hay_abort()
-{
-
-	char c;
-
 	write(FD, "\r", 1);	/* send anything to abort the call */
 	hay_disconnect();
-}
-
-static int
-sigALRM()
-{
-
-	printf("\07timeout waiting for reply\n\r");
-	timeout = 1;
-	longjmp(timeoutbuf, 1);
 }
 
 static char
@@ -137,7 +236,7 @@ gobble(match)
 	register char *match;
 {
 	char c;
-	int (*f)();
+	sig_t f;
 	int i, status = 0;
 
 	f = signal(SIGALRM, sigALRM);
@@ -166,119 +265,4 @@ gobble(match)
 	printf("\n");
 #endif
 	return (status);
-}
-
-error_rep(c)
-	register char c;
-{
-	printf("\n\r");
-	switch (c) {
-
-	case '0':
-		printf("OK");
-		break;
-
-	case '1':
-		printf("CONNECT");
-		break;
-	
-	case '2':
-		printf("RING");
-		break;
-	
-	case '3':
-		printf("NO CARRIER");
-		break;
-	
-	case '4':
-		printf("ERROR in input");
-		break;
-	
-	case '5':
-		printf("CONNECT 1200");
-		break;
-	
-	default:
-		printf("Unknown Modem error: %c (0x%x)", c, c);
-	}
-	printf("\n\r");
-	return;
-}
-
-/*
- * set modem back to normal verbose status codes.
- */
-goodbye()
-{
-	int len, rlen;
-	int zero = 0;
-	long llen;
-	char c;
-
-	ioctl(FD, TIOCFLUSH, &zero);	/* get rid of trash */
-	if (hay_sync()) {
-		sleep(1);
-#ifndef DEBUG
-		ioctl(FD, TIOCFLUSH, &zero);
-#endif
-		write(FD, "ATH0\r", 5);		/* insurance */
-#ifndef DEBUG
-		c = gobble("03");
-		if (c != '0' && c != '3') {
-			printf("cannot hang up modem\n\r");
-			printf("please use 'tip dialer' to make sure the line is hung up\n\r");
-		}
-#endif
-		sleep(1);
-		ioctl(FD, FIONREAD, &llen);
-		len = llen;
-#ifdef DEBUG
-		printf("goodbye1: len=%d -- ", len);
-		rlen = read(FD, dumbuf, min(len, DUMBUFLEN));
-		dumbuf[rlen] = '\0';
-		printf("read (%d): %s\r\n", rlen, dumbuf);
-#endif
-		write(FD, "ATV1\r", 5);
-		sleep(1);
-#ifdef DEBUG
-		ioctl(FD, FIONREAD, &llen);
-		len = llen;
-		printf("goodbye2: len=%d -- ", len);
-		rlen = read(FD, dumbuf, min(len, DUMBUFLEN));
-		dumbuf[rlen] = '\0';
-		printf("read (%d): %s\r\n", rlen, dumbuf);
-#endif
-	}
-	ioctl(FD, TIOCFLUSH, &zero);	/* clear the input buffer */
-	ioctl(FD, TIOCCDTR, 0);		/* clear DTR (insurance) */
-	close(FD);
-}
-
-#define MAXRETRY	5
-
-hay_sync()
-{
-	int len, retry = 0;
-	long llen;
-
-	while (retry++ <= MAXRETRY) {
-		write(FD, "AT\r", 3);
-		sleep(1);
-		ioctl(FD, FIONREAD, &llen);
-		len = llen;
-		if (len) {
-			len = read(FD, dumbuf, min(len, DUMBUFLEN));
-			if (index(dumbuf, '0') || 
-		   	(index(dumbuf, 'O') && index(dumbuf, 'K')))
-				return(1);
-#ifdef DEBUG
-			dumbuf[len] = '\0';
-			printf("hay_sync: (\"%s\") %d\n\r", dumbuf, retry);
-#endif
-		}
-		ioctl(FD, TIOCCDTR, 0);
-		ioctl(FD, TIOCSDTR, 0);
-	}
-	printf("Cannot synchronize with hayes...\n\r");
-	return(0);
 }

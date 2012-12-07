@@ -3,32 +3,36 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#if	defined(DOSCCS) && !defined(lint)
-static char sccsid[] = "@(#)courier.c	5.2.1 (2.11BSD GTE) 1/1/94";
-#endif
-
 #define write cour_write
+
 /*
  * Routines for calling up on a Courier modem.
  * Derived from Hayes driver.
  */
 #include "tip.h"
-#include <stdio.h>
 
 #define	MAXRETRY	5
 
-static	void sigALRM(int);
 static	int timeout = 0;
 static	int connected = 0;
-static	jmp_buf timeoutbuf, intbuf;
-static	int (*osigint)();
+static	jmp_buf timeoutbuf;
 static void cour_napx();
+void cour_nap(void);
 static int coursync();
 static int cour_connect();
 static int cour_swallow(register char *match);
 
-cour_dialer(num, acu)
+void cour_disconnect()
+{
+	 /* first hang up the modem*/
+	ioctl(FD, TIOCCDTR, 0);
+	sleep(1);
+	ioctl(FD, TIOCSDTR, 0);
+	coursync();				/* reset */
+	close(FD);
+}
+
+int cour_dialer(num, acu)
 	register char *num;
 	char *acu;
 {
@@ -81,17 +85,7 @@ badsynch:
 	return (connected);
 }
 
-cour_disconnect()
-{
-	 /* first hang up the modem*/
-	ioctl(FD, TIOCCDTR, 0);
-	sleep(1);
-	ioctl(FD, TIOCSDTR, 0);
-	coursync();				/* reset */
-	close(FD);
-}
-
-cour_abort()
+void cour_abort()
 {
 	write(FD, "\r", 1);	/* send anything to abort the call */
 	cour_disconnect();
@@ -107,8 +101,8 @@ sigALRM(int i)
 
 static int
 cour_swallow(match)
-  register char *match;
-  {
+    register char *match;
+{
 	char c;
 	sig_t f;
 
@@ -140,14 +134,14 @@ cour_swallow(match)
 	return (0);
 }
 
-struct baud_msg {
+static struct baud_msg {
 	char *msg;
 	int baud;
 } baud_msg[] = {
-	"",		B300,
-	" 1200",	B1200,
-	" 2400",	B2400,
-	0,		0,
+	{ "",		B300    },
+	{ " 1200",	B1200   },
+	{ " 2400",	B2400   },
+	{ 0,		0       },
 };
 
 static int
@@ -218,7 +212,6 @@ again:
 			putchar(c);
 #endif
 	}
-error1:
 	printf("%s\r\n", dialer_buf);
 error:
 	signal(SIGALRM, f);
@@ -249,8 +242,8 @@ coursync()
 			buf[len] = '\0';
 			printf("coursync: (\"%s\")\n\r", buf);
 #endif
-			if (index(buf, '0') || 
-		   	   (index(buf, 'O') && index(buf, 'K')))
+			if (strchr(buf, '0') ||
+		   	   (strchr(buf, 'O') && strchr(buf, 'K')))
 				return(1);
 		}
 		/*
@@ -274,12 +267,15 @@ coursync()
 
 #undef write
 
-cour_write(fd, cp, n)
-int fd;
-char *cp;
-int n;
+extern ssize_t write(int fd, const void *cp, size_t n);
+
+ssize_t cour_write(fd, cp, n)
+        int fd;
+        const void *cp;
+        size_t n;
 {
 	struct sgttyb sb;
+	int n0 = n;
 #ifdef notdef
 	if (boolean(value(VERBOSE)))
 		write(1, cp, n);
@@ -293,6 +289,7 @@ int n;
 		ioctl(fd, TIOCSETP, &sb);
 		cour_nap();
 	}
+        return n0;
 }
 
 #ifdef DEBUG
@@ -320,13 +317,13 @@ verbose_read()
 #define setvec(vec, a) \
         vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
 
-static napms = 50; /* Give the courier 50 milliseconds between characters */
+static int napms = 50; /* Give the courier 50 milliseconds between characters */
 
 static int ringring;
 
-cour_nap()
+void cour_nap()
 {
-	
+
 	long omask;
         struct itimerval itv, oitv;
         register struct itimerval *itp = &itv;

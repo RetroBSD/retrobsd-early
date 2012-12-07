@@ -4,34 +4,29 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)df.c	5.1 (Berkeley) 6/6/85";
-#endif not lint
-
 /*
  * Dial the DF02-AC or DF03-AC
  */
-
 #include "tip.h"
 
 static jmp_buf Sjbuf;
-static timeout();
 
-df02_dialer(num, acu)
-	char *num, *acu;
+static void
+timeout(int sig)
 {
-
-	return (df_dialer(num, acu, 0));
+	longjmp(Sjbuf, 1);
 }
 
-df03_dialer(num, acu)
-	char *num, *acu;
+void df_disconnect()
 {
+	int rw = 2;
 
-	return (df_dialer(num, acu, 1));
+	write(FD, "\001", 1);
+	sleep(1);
+	ioctl(FD, TIOCFLUSH, &rw);
 }
 
-df_dialer(num, acu, df03)
+int df_dialer(num, acu, df03)
 	char *num, *acu;
 	int df03;
 {
@@ -80,26 +75,19 @@ df_dialer(num, acu, df03)
 	return (c == 'A');
 }
 
-df_disconnect()
+int df02_dialer(num, acu)
+	char *num, *acu;
 {
-	int rw = 2;
-
-	write(FD, "\001", 1);
-	sleep(1);
-	ioctl(FD, TIOCFLUSH, &rw);
+	return (df_dialer(num, acu, 0));
 }
 
-
-df_abort()
+int df03_dialer(num, acu)
+	char *num, *acu;
 {
+	return (df_dialer(num, acu, 1));
+}
 
+void df_abort()
+{
 	df_disconnect();
-}
-
-
-static
-timeout()
-{
-
-	longjmp(Sjbuf, 1);
 }

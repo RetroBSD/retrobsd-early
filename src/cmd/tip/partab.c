@@ -4,10 +4,6 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)partab.c	5.1 (Berkeley) 4/30/85";
-#endif not lint
-
 /*
  * Even parity table for 0-0177
  */

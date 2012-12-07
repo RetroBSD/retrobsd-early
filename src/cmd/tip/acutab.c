@@ -3,11 +3,6 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
-
-#ifndef lint
-static char sccsid[] = "@(#)acutab.c	5.2 (Berkeley) 4/3/86";
-#endif not lint
-
 #include "tip.h"
 
 extern int df02_dialer(), df03_dialer(), df_disconnect(), df_abort(),
@@ -67,4 +62,3 @@ acu_t acutable[] = {
 #endif
 	0,	0,		0,			0
 };
-
