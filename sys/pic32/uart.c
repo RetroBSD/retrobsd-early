@@ -525,6 +525,14 @@ uartintr (dev)
             return;
 #endif
         /* Receive */
+	while (reg->sta & PIC32_USTA_URXDA) {
+                c = reg->rxreg;
+                if (linesw[tp->t_line].l_rint)
+                        (*linesw[tp->t_line].l_rint) (c, tp);
+        }
+	if (reg->sta & PIC32_USTA_OERR)
+		reg->staclr = PIC32_USTA_OERR;
+
 	if(uirq[unit].rx < 32)
 	{
 		IFSCLR(0) = (1 << uirq[unit].rx) | (1 << uirq[unit].er);
@@ -534,13 +542,6 @@ uartintr (dev)
 	} else {
 		IFSCLR(2) = (1 << (uirq[unit].rx-64)) | (1 << (uirq[unit].er-64));
 	}
-	if (reg->sta & PIC32_USTA_URXDA) {
-                c = reg->rxreg;
-                if (linesw[tp->t_line].l_rint)
-                        (*linesw[tp->t_line].l_rint) (c, tp);
-        }
-	if (reg->sta & PIC32_USTA_OERR)
-		reg->staclr = PIC32_USTA_OERR;
 
         /* Transmit */
         if (reg->sta & PIC32_USTA_TRMT) {
