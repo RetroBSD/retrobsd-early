@@ -2,6 +2,6 @@ always
     file sdram.o
     file rd_sdramp.o
     require rdisk
-    define NEEDS_FEATURE_KERNEL_EXECUTABLE_RAM yes
+    define KERNEL_EXECUTABLE_RAM
     define SDRAMP_ENABLED YES
 end always
