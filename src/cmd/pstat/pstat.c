@@ -53,7 +53,7 @@ int	swpf;
 int	totflg;
 int	allflg;
 int	kflg;
-u_short	getw();
+u_int	getw();
 
 main(argc, argv)
 char **argv;
@@ -126,6 +126,7 @@ char **argv;
 		exit(1);
 	}
 	knlist(nl);
+
 	if (nl[0].n_value == 0) {
 		printf("no namelist, n_type: %d n_value: %x n_name: %s\n", nl[0].n_type, nl[0].n_value, nl[0].n_name);
 		exit(1);
@@ -213,14 +214,15 @@ doinode()
 	free(xinode);
 }
 
-u_short
+u_int
 getw(loc)
 	off_t loc;
 {
-	u_short word;
+	u_int word;
 
 	lseek(fc, loc, 0);
 	read(fc, &word, sizeof (word));
+
 	return (word);
 }
 
@@ -568,6 +570,7 @@ doswap()
 	struct	mapent	*swp;
 
 	nswap = getw((off_t)nl[SNSWAP].n_value);
+
 	lseek(fc, (off_t)nl[SWAPMAP].n_value, 0);
 	read(fc, &smap, sizeof (smap));
 	num = (smap.m_limit - smap.m_map);
