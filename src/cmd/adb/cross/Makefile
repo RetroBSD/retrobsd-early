@@ -47,3 +47,9 @@ $(HEADERS):
 		ln -s -f ../../../../../include/sys/signal.h sys/
 		ln -s -f ../../../../../include/machine/io.h machine/
 		ln -s -f ../../../../../include/machine/machparam.h machine/
+
+test:
+		echo '$$q' | ./adb fsck fsck.core
+		@echo -e '\n----------------------------'
+		echo '$$m' | ./adb fsck fsck.core
+		@echo -e '\n----------------------------'

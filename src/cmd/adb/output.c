@@ -1,4 +1,5 @@
 #include "defs.h"
+#include <stdarg.h>
 
 int     outfile = 1;
 char    *printptr = printbuf;
@@ -187,153 +188,151 @@ printdate(tvec)
 void
 print(char *fmat, ...)
 {
+    va_list args, prev_args;
     char    *fptr, *s;
-    int     *vptr;
-    long    *dptr;
-    double  *rptr;
+//    int     *vptr;
+//    long    *dptr;
+//    double  *rptr;
     int     width, prec;
     char    c, adj;
-    int     x, decpt, n;
-    long    lx;
+    int     decpt, n;
+    //long    lx;
     char    digits[64];
+    union {
+        int int32;
+        float float32;
+    } word;
 
+    va_start(args, fmat);
     fptr = fmat;
-    vptr = 1 + (int*) &fmat;
-
     while ((c = *fptr++)) {
         if (c != '%') {
             printc(c);
+            continue;
+        }
+
+        if (*fptr == '-') {
+            adj = 'l';
+            fptr++;
         } else {
-            if (*fptr == '-') {
-                adj = 'l';
-                fptr++;
-            } else {
-                adj = 'r';
-            }
-            width = convert(&fptr);
+            adj = 'r';
+        }
+        width = convert(&fptr);
+        if (*fptr == '*') {
+            width = va_arg(args, int);
+            fptr++;
+        }
+        if (*fptr == '.') {
+            fptr++;
+            prec = convert(&fptr);
             if (*fptr == '*') {
-                width = *vptr++;
+                prec = va_arg(args, int);
                 fptr++;
             }
-            if (*fptr == '.') {
-                fptr++;
-                prec = convert(&fptr);
-                if (*fptr == '*') {
-                    prec = *vptr++;
-                    fptr++;
-                }
-            } else
-                prec = -1;
+        } else
+            prec = -1;
 
-            digitptr = digits;
-            rptr = (double*) vptr;
-            dptr = (long*) vptr;
-            lx = *dptr;
-            x = *vptr++;
+        digitptr = digits;
+        //rptr = (double*) vptr;
+        //dptr = (long*) vptr;
+        //lx = *dptr;
+        //x = *vptr++;
+        prev_args = args;
+        word.int32 = va_arg(args, int);
+        s = 0;
+        switch (c = *fptr++) {
+        case 'd':
+        case 'u':
+            printnum(word.int32, c, 10);
+            break;
+        case 'o':
+            printoct(word.int32, 0);
+            break;
+        case 'q':
+        case 'x':
+            printlong(word.int32, 'x', 16);
+            break;
+        case 'Y':
+            printdate(word.int32);
+            break;
+        case 'D':
+        case 'U':
+            printlong(word.int32, c, 10);
+            break;
+        case 'O':
+            printoct(word.int32, 0);
+            break;
+        case 'Q':
+        case 'X':
+            printlong(word.int32, 'x', 16);
+            break;
+        case 'c':
+            printc(word.int32);
+            break;
+        case 's':
+            s = (char*) word.int32;
+            break;
+        case 'f':
+        case 'F':
+            s = ecvt(word.float32, prec, &decpt, &n);
+            *digitptr++ = n ? '-' : '+';
+            *digitptr++ = (decpt <= 0) ? '0' : *s++;
+            if (decpt > 0) {
+                decpt--;
+            }
+            *digitptr++ = '.';
+            while (*s && prec-- ) {
+                *digitptr++ = *s++;
+            }
+            while (*--digitptr=='0');
+            digitptr += (digitptr - digits >= 3) ? 1 : 2;
+            if (decpt) {
+                *digitptr++ = 'e';
+                printnum(decpt, 'd', 10);
+            }
             s = 0;
-            switch (c = *fptr++) {
-            case 'd':
-            case 'u':
-                printnum(x, c, 10);
-                break;
-            case 'o':
-                printoct((long) (unsigned) x, 0);
-                break;
-            case 'q':
-                printlong((long) (unsigned) x, 'x', 16);
-                break;
-            case 'x':
-                printlong((long) (unsigned) x, c, 16);
-                break;
-            case 'Y':
-                printdate(lx);
-                //vptr++;
-                break;
-            case 'D':
-            case 'U':
-                printlong(lx, c, 10);
-                //vptr++;
-                break;
-            case 'O':
-                printoct(lx, 0);
-                //vptr++;
-                break;
-            case 'Q':
-                printlong(lx, 'x', 16);
-                //vptr++;
-                break;
-            case 'X':
-                printlong(lx, 'x', 16);
-                //vptr++;
-                break;
-            case 'c':
-                printc(x);
-                break;
-            case 's':
-                s = (char*) lx;
-                break;
-            case 'f':
-            case 'F':
-                //vptr += 7;
-                s = ecvt(*rptr, prec, &decpt, &n);
-                *digitptr++ = (n?'-':'+');
-                *digitptr++ = (decpt <= 0) ? '0' : *s++;
-                if (decpt > 0) {
-                    decpt--;
-                }
-                *digitptr++ = '.';
-                while (*s && prec-- ) {
-                    *digitptr++ = *s++;
-                }
-                while (*--digitptr=='0');
-                digitptr += (digitptr - digits >= 3) ? 1 : 2;
-                if (decpt) {
-                    *digitptr++ = 'e';
-                    printnum(decpt, 'd', 10);
-                }
-                s = 0;
-                prec = -1;
-                break;
-            case 'm':
-                vptr--;
-                break;
-            case 'M':
-                width = x;
-                break;
-            case 'T':
-            case 't':
-                if (c == 'T') {
-                    width = x;
-                } else {
-                    vptr--;
-                }
-                if (width) {
-                    width -= (printptr - printbuf) % width;
-                }
-                break;
-            default:
-                printc(c);
-                vptr--;
+            prec = -1;
+            break;
+        case 'm':
+            args = prev_args;
+            break;
+        case 'M':
+            width = word.int32;
+            break;
+        case 'T':
+        case 't':
+            if (c == 'T') {
+                width = word.int32;
+            } else {
+                args = prev_args;
             }
+            if (width) {
+                width -= (printptr - printbuf) % width;
+            }
+            break;
+        default:
+            printc(c);
+            args = prev_args;
+        }
 
-            if (s == 0) {
-                *digitptr = 0;
-                s = digits;
-            }
-            n = strlen(s);
-            n = (prec < n && prec >= 0) ? prec : n;
-            width -= n;
-            if (adj == 'r') {
-                while (width-- > 0)
-                    printc(SP);
-            }
-            while (n--)
-                printc(*s++);
+        if (s == 0) {
+            *digitptr = 0;
+            s = digits;
+        }
+        n = strlen(s);
+        n = (prec < n && prec >= 0) ? prec : n;
+        width -= n;
+        if (adj == 'r') {
             while (width-- > 0)
                 printc(SP);
-            digitptr = digits;
         }
+        while (n--)
+            printc(*s++);
+        while (width-- > 0)
+            printc(SP);
+        digitptr = digits;
     }
+    va_end(args);
 }
 
 #define MAXIFD  5
