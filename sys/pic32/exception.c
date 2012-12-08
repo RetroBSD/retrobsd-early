@@ -373,7 +373,7 @@ exception (frame)
                         uartintr(makedev(UART_MAJOR,3));
                         break;
 #endif
-#ifdef UART5_ENABELD
+#ifdef UART5_ENABLED
                 case PIC32_VECT_U5:     /* UART5 */
                         uartintr(makedev(UART_MAJOR,4));
                         break;
