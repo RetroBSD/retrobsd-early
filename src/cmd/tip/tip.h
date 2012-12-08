@@ -66,15 +66,13 @@ char	HD;			/* this host is half duplex - do local echo */
 /*
  * String value table
  */
-typedef
-	struct {
-		char	*v_name;	/* whose name is it */
-		char	v_type;		/* for interpreting set's */
-		char	v_access;	/* protection of touchy ones */
-		char	*v_abrev;	/* possible abreviation */
-		char	*v_value;	/* casted to a union later */
-	}
-	value_t;
+typedef struct {
+        char	*v_name;	/* whose name is it */
+        char	v_type;		/* for interpreting set's */
+        char	v_access;	/* protection of touchy ones */
+        char	*v_abrev;	/* possible abreviation */
+        char	*v_value;	/* casted to a union later */
+} value_t;
 
 #define STRING	01		/* string valued */
 #define BOOL	02		/* true-false value */
@@ -100,14 +98,12 @@ typedef
 /*
  * Definition of ACU line description
  */
-typedef
-	struct {
-		char	*acu_name;
-		int	(*acu_dialer)();
-		int	(*acu_disconnect)();
-		int	(*acu_abort)();
-	}
-	acu_t;
+typedef struct {
+        char	*acu_name;
+        int	(*acu_dialer)();
+        int	(*acu_disconnect)();
+        int	(*acu_abort)();
+} acu_t;
 
 #define	equal(a, b)	(strcmp(a,b)==0)/* A nice function to string compare */
 
@@ -117,14 +113,12 @@ typedef
  *   initialize it in vars.c, so we cast it as needed to keep lint
  *   happy.
  */
-typedef
-	union {
-		int	zz_number;
-		short	zz_boolean;
-		char	zz_character;
-		int	*zz_address;
-	}
-	zzhack;
+typedef union {
+        int	zz_number;
+        short	zz_boolean;
+        char	zz_character;
+        int	*zz_address;
+} zzhack;
 
 #define value(v)	vtable[v].v_value
 
@@ -139,14 +133,12 @@ typedef
  *   at the begining of a line (as defined by the eolmarks variable).
 */
 
-typedef
-	struct {
-		char	e_char;		/* char to match on */
-		char	e_flags;	/* experimental, priviledged */
-		char	*e_help;	/* help string */
-		int 	(*e_func)();	/* command */
-	}
-	esctable_t;
+typedef struct {
+        char	e_char;		/* char to match on */
+        char	e_flags;	/* experimental, priviledged */
+        char	*e_help;	/* help string */
+        int 	(*e_func)();	/* command */
+} esctable_t;
 
 #define NORM	00		/* normal protection, execute anyone */
 #define EXP	01		/* experimental, mark it with a `*' on help */
