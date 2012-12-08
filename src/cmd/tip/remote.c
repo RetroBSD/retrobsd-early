@@ -19,9 +19,7 @@ static char *capstrings[] = {
 	"di", "es", "ex", "fo", "rc", "re", "pa", 0
 };
 
-char *rgetstr();
-
-static
+static void
 getremcap(host)
 	register char *host;
 {
@@ -33,7 +31,7 @@ getremcap(host)
 
 	if ((stat = rgetent(tbuf, host)) <= 0) {
 		if (DV ||
-		    host[0] == '/' && access(DV = host, R_OK | W_OK) == 0) {
+		    (host[0] == '/' && access(DV = host, R_OK | W_OK) == 0)) {
 			CU = DV;
 			HO = host;
 			HW = 1;

@@ -14,7 +14,7 @@
 #define ASSERT(e, f, v) if (!(e)) {\
 	fprintf(stderr, "AERROR - (%s) ", "e");\
 	fprintf(stderr, f, v);\
-	finish(FAIL);\
+	finish();\
 }
 
 #define LOCKPRE "/usr/spool/uucp/LCK."
@@ -26,15 +26,76 @@
  */
 
 	/*  ulockf 3.2  10/26/79  11:40:29  */
-/* #include "uucp.h" */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <time.h>
 
-static int onelock(int pid, char *tempfile, char *name);
-static stlock(char *name);
+#define MAXLOCKS 10	/* maximum number of lock files */
+char *Lockfile[MAXLOCKS];
+int Nlocks = 0;
+
+void finish (void);
+
+/***
+ *	stlock(name)	put name in list of lock files
+ *	char *name;
+ *
+ *	return codes:  none
+ */
+static void
+stlock(name)
+	char *name;
+{
+	char *p;
+	int i;
+
+	for (i = 0; i < Nlocks; i++) {
+		if (Lockfile[i] == NULL)
+			break;
+	}
+	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS %d", i);
+	if (i >= Nlocks)
+		i = Nlocks++;
+	p = calloc(strlen(name) + 1, sizeof (char));
+	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR %s", name);
+	strcpy(p, name);
+	Lockfile[i] = p;
+}
+
+/*
+ * this stuff from pjw
+ *  /usr/pjw/bin/recover - check pids to remove unnecessary locks
+ *
+ *	onelock(pid,tempfile,name) makes lock a name
+ *	on behalf of pid.  Tempfile must be in the same
+ *	file system as name.
+ *
+ *	lock(pid,tempfile,names) either locks all the
+ *	names or none of them
+ */
+static int
+onelock(pid, tempfile, name)
+	char *tempfile, *name;
+{
+	int fd;
+
+	fd = creat(tempfile, 0444);
+	if (fd < 0)
+		return (-1);
+	write(fd,(char *)&pid, sizeof(int));
+	close(fd);
+	if (link(tempfile, name) < 0) {
+		unlink(tempfile);
+		return (-1);
+	}
+	unlink(tempfile);
+	return (0);
+}
 
 /*******
  *	ulockf(file, atime)
@@ -49,8 +110,7 @@ static stlock(char *name);
  *
  *	return codes:  0  |  FAIL
  */
-
-static
+static int
 ulockf(file, atime)
 	char *file;
 	time_t atime;
@@ -85,46 +145,13 @@ ulockf(file, atime)
 	return (0);
 }
 
-#define MAXLOCKS 10	/* maximum number of lock files */
-char *Lockfile[MAXLOCKS];
-int Nlocks = 0;
-
-/***
- *	stlock(name)	put name in list of lock files
- *	char *name;
- *
- *	return codes:  none
- */
-
-static
-stlock(name)
-	char *name;
-{
-	char *p;
-	int i;
-
-	for (i = 0; i < Nlocks; i++) {
-		if (Lockfile[i] == NULL)
-			break;
-	}
-	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS %d", i);
-	if (i >= Nlocks)
-		i = Nlocks++;
-	p = calloc(strlen(name) + 1, sizeof (char));
-	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR %s", name);
-	strcpy(p, name);
-	Lockfile[i] = p;
-	return;
-}
-
 /***
  *	rmlock(name)	remove all lock files in list
  *	char *name;	or name
  *
  *	return codes: none
  */
-
-static
+static void
 rmlock(name)
 	char *name;
 {
@@ -139,51 +166,6 @@ rmlock(name)
 			Lockfile[i] = NULL;
 		}
 	}
-}
-
-/*
- * this stuff from pjw
- *  /usr/pjw/bin/recover - check pids to remove unnecessary locks
- *
- *	isalock(name) returns 0 if the name is a lock
- *
- *	onelock(pid,tempfile,name) makes lock a name
- *	on behalf of pid.  Tempfile must be in the same
- *	file system as name.
- *
- *	lock(pid,tempfile,names) either locks all the
- *	names or none of them
- */
-static
-isalock(name)
-	char *name;
-{
-	struct stat xstat;
-
-	if (stat(name, &xstat) < 0)
-		return (0);
-	if (xstat.st_size != sizeof(int))
-		return (0);
-	return (1);
-}
-
-static
-onelock(pid, tempfile, name)
-	char *tempfile, *name;
-{
-	int fd;
-
-	fd = creat(tempfile, 0444);
-	if (fd < 0)
-		return (-1);
-	write(fd,(char *)&pid, sizeof(int));
-	close(fd);
-	if (link(tempfile, name) < 0) {
-		unlink(tempfile);
-		return (-1);
-	}
-	unlink(tempfile);
-	return (0);
 }
 
 /***
@@ -208,8 +190,7 @@ delock(s)
  *
  *	return codes:  0  |  FAIL
  */
-
-mlock(sys)
+int mlock(sys)
 	char *sys;
 {
 	char lname[30];

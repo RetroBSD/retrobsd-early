@@ -25,11 +25,13 @@ void logent(group, num, acu, message)
 		perror("tip: flock");
 		return;
 	}
-	if ((user = getlogin()) == NOSTR)
+	user = getlogin();
+	if (user == NOSTR) {
 		if ((pwd = getpwuid(getuid())) == NOPWD)
 			user = "???";
 		else
 			user = pwd->pw_name;
+        }
 	t = time(0);
 	timestamp = ctime(&t);
 	timestamp[24] = '\0';
@@ -45,7 +47,7 @@ void logent(group, num, acu, message)
 	(void) flock(fileno(flog), LOCK_UN);
 }
 
-loginit()
+void loginit()
 {
 	flog = fopen(value(LOG), "a");
 	if (flog == NULL)

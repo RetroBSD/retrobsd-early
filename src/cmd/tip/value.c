@@ -7,16 +7,12 @@
 
 #define MIDDLE	35
 
-static value_t *vlookup();
 static int col = 0;
-static int vaccess(register unsigned int mode, register unsigned int rw);
-static int vprint(register value_t *p);
-static int vtoken(register char *s);
 
 /*
  * Variable manipulation
  */
-vinit()
+void vinit()
 {
 	register value_t *p;
 	register char *cp;
@@ -24,9 +20,11 @@ vinit()
 	char file[256];
 
 	for (p = vtable; p->v_name != NULL; p++) {
-		if (p->v_type&ENVIRON)
-			if (cp = getenv(p->v_name))
+		if (p->v_type&ENVIRON) {
+		        cp = getenv(p->v_name);
+			if (cp)
 				p->v_value = cp;
+                }
 		if (p->v_type&IREMOTE)
 			number(p->v_value) = *address(p->v_value);
 	}
@@ -55,13 +53,23 @@ vinit()
 	vtable[EXCEPTIONS].v_access &= ~(WRITE<<PUBLIC);
 }
 
+static int
+vaccess(mode, rw)
+	register unsigned mode, rw;
+{
+	if (mode & (rw<<PUBLIC))
+		return (1);
+	if (mode & (rw<<PRIVATE))
+		return (1);
+	return ((mode & (rw<<ROOT)) && getuid() == 0);
+}
+
 /*VARARGS1*/
-vassign(p, v)
+void vassign(p, v)
 	register value_t *p;
 	char *v;
 {
-
-	if (!vaccess(p->v_access, WRITE)) {
+	if (! vaccess(p->v_access, WRITE)) {
 		printf("access denied\r\n");
 		return;
 	}
@@ -153,72 +161,7 @@ vinterp(s, stop)
 	return (c == stop ? s-1 : NULL);
 }
 
-vlex(s)
-	register char *s;
-{
-	register value_t *p;
-
-	if (equal(s, "all")) {
-		for (p = vtable; p->v_name; p++)
-			if (vaccess(p->v_access, READ))
-				vprint(p);
-	} else {
-		register char *cp;
-
-		do {
-			if (cp = vinterp(s, ' '))
-				cp++;
-			vtoken(s);
-			s = cp;
-		} while (s);
-	}
-	if (col > 0) {
-		printf("\r\n");
-		col = 0;
-	}
-}
-
-static int
-vtoken(s)
-	register char *s;
-{
-	register value_t *p;
-	register char *cp;
-	char *expand();
-
-	if (cp = strchr(s, '=')) {
-		*cp = '\0';
-		if (p = vlookup(s)) {
-			cp++;
-			if (p->v_type&NUMBER)
-				vassign(p, atoi(cp));
-			else {
-				if (strcmp(s, "record") == 0)
-					cp = expand(cp);
-				vassign(p, cp);
-			}
-			return;
-		}
-	} else if (cp = strchr(s, '?')) {
-		*cp = '\0';
-		if ((p = vlookup(s)) && vaccess(p->v_access, READ)) {
-			vprint(p);
-			return;
-		}
-	} else {
-		if (*s != '!')
-			p = vlookup(s);
-		else
-			p = vlookup(s+1);
-		if (p != NOVAL) {
-			vassign(p, s);
-			return;
-		}
-	}
-	printf("%s: unknown variable\r\n", s);
-}
-
-static int
+static void
 vprint(p)
 	register value_t *p;
 {
@@ -267,20 +210,7 @@ vprint(p)
 	if (col >= MIDDLE) {
 		col = 0;
 		printf("\r\n");
-		return;
 	}
-}
-
-
-static int
-vaccess(mode, rw)
-	register unsigned mode, rw;
-{
-	if (mode & (rw<<PUBLIC))
-		return (1);
-	if (mode & (rw<<PRIVATE))
-		return (1);
-	return ((mode & (rw<<ROOT)) && getuid() == 0);
 }
 
 static value_t *
@@ -295,11 +225,79 @@ vlookup(s)
 	return (NULL);
 }
 
+static void
+vtoken(s)
+	register char *s;
+{
+	register value_t *p;
+	register char *cp;
+	char *expand();
+
+	cp = strchr(s, '=');
+	if (cp) {
+		*cp = '\0';
+		p = vlookup(s);
+		if (p) {
+			cp++;
+			if (p->v_type&NUMBER)
+				vassign(p, atoi(cp));
+			else {
+				if (strcmp(s, "record") == 0)
+					cp = expand(cp);
+				vassign(p, cp);
+			}
+			return;
+		}
+	} else if ((cp = strchr(s, '?'))) {
+		*cp = '\0';
+		p = vlookup(s);
+		if (p && vaccess(p->v_access, READ)) {
+			vprint(p);
+			return;
+		}
+	} else {
+		if (*s != '!')
+			p = vlookup(s);
+		else
+			p = vlookup(s+1);
+		if (p != NOVAL) {
+			vassign(p, s);
+			return;
+		}
+	}
+	printf("%s: unknown variable\r\n", s);
+}
+
+void vlex(s)
+	register char *s;
+{
+	register value_t *p;
+
+	if (equal(s, "all")) {
+		for (p = vtable; p->v_name; p++)
+			if (vaccess(p->v_access, READ))
+				vprint(p);
+	} else {
+		register char *cp;
+
+		do {
+		        cp = vinterp(s, ' ');
+			if (cp)
+				cp++;
+			vtoken(s);
+			s = cp;
+		} while (s);
+	}
+	if (col > 0) {
+		printf("\r\n");
+		col = 0;
+	}
+}
+
 /*
  * assign variable s with value v (for NUMBER or STRING or CHAR types)
  */
-
-vstring(s,v)
+int vstring(s, v)
 	register char *s;
 	register char *v;
 {

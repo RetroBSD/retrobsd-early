@@ -231,8 +231,8 @@ char	ccc;			/* synchronization character */
 char	ch;			/* for tipout */
 char	*uucplock;		/* name of lock file for uucp's */
 
-int	odisc;				/* initial tty line discipline */
-extern	int disc;			/* current tty discpline */
+int	odisc;			/* initial tty line discipline */
+extern	int disc;		/* current tty discpline */
 
 char *ctrl (int c);
 char *connect (void);
@@ -240,8 +240,33 @@ void delock (char *s);
 void pwrite (int fd, char *buf, int n);
 int size (char *s);
 void disconnect (char *reason);
+void loginit (void);
 void logent (char *group, char *num, char *acu, char *message);
 int any (int c, char *p);
+void raw (void);
+void unraw (void);
+int prompt (char *s, char *p);
+void user_uid (void);
+void shell_uid (void);
+void daemon_uid (void);
+void vinit (void);
+void vlex (char *s);
+int vstring (char *s, char *v);
+void setparity (char *defparity);
+int speed (int n);
+int hunt (char *name);
+void ttysetup (int speed);
+int mlock (char *sys);
+int rgetent (char *bp, char *name);
+char *rgetstr (char *id, char **area);
+int rgetnum (char *id);
+int rgetflag (char *id);
+void cumain (int argc, char *argv[]);
+void tipout (void);
+void setscript (void);
+int escape (void);
+void tipabort (char *msg);
+void finish (void);
 
 #ifndef ACULOG
 #define logent(a, b, c, d)

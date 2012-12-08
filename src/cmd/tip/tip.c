@@ -29,7 +29,51 @@ void	cleanup(int i);
 char	*sname();
 char	PNbuf[256];			/* This limits the size of a number */
 
-main(argc, argv)
+/*
+ * ****TIPIN   TIPIN****
+ */
+static void tipin()
+{
+	char gch, bol = 1;
+
+	/*
+	 * Kinda klugey here...
+	 *   check for scripting being turned on from the .tiprc file,
+	 *   but be careful about just using setscript(), as we may
+	 *   send a SIGEMT before tipout has a chance to set up catching
+	 *   it; so wait a second, then setscript()
+	 */
+	if (boolean(value(SCRIPT))) {
+		sleep(1);
+		setscript();
+	}
+
+	while (1) {
+		gch = getchar()&0177;
+		if ((gch == character(value(ESCAPE))) && bol) {
+			if (!(gch = escape()))
+				continue;
+		} else if (!cumode && gch == character(value(RAISECHAR))) {
+			boolean(value(RAISE)) = !boolean(value(RAISE));
+			continue;
+		} else if (gch == '\r') {
+			bol = 1;
+			pwrite(FD, &gch, 1);
+			if (boolean(value(HALFDUPLEX)))
+				printf("\r\n");
+			continue;
+		} else if (!cumode && gch == character(value(FORCE)))
+			gch = getchar()&0177;
+		bol = any(gch, value(EOL));
+		if (boolean(value(RAISE)) && islower(gch))
+			gch = toupper(gch);
+		pwrite(FD, &gch, 1);
+		if (boolean(value(HALFDUPLEX)))
+			printf("%c", gch);
+	}
+}
+
+int main(argc, argv)
 	char *argv[];
 {
 	char *system = NOSTR;
@@ -86,8 +130,8 @@ main(argc, argv)
 	 *	is private, we don't want 'ps' or 'w' to find it).
 	 */
 	if (strlen(system) > sizeof PNbuf - 1) {
-		fprintf(stderr, "tip: phone number too long (max = %d bytes)\n",
-			sizeof PNbuf - 1);
+		fprintf(stderr, "tip: phone number too long (max = %ld bytes)\n",
+			(long) sizeof PNbuf - 1);
 		exit(1);
 	}
 	strncpy( PNbuf, system, sizeof PNbuf - 1 );
@@ -145,7 +189,8 @@ notnumber:
 	 */
 	if (HW)
 		ttysetup(i);
-	if (p = connect()) {
+        p = connect();
+	if (p) {
 		printf("\07%s\n[EOT]\n", p);
 		daemon_uid();
 		delock(uucplock);
@@ -183,11 +228,13 @@ cucommon:
 	 * so, fork one process for local side and one for remote.
 	 */
 	printf(cumode ? "Connected\r\n" : "\07connected\r\n");
-	if (pid = fork())
+	pid = fork();
+	if (pid)
 		tipin();
 	else
 		tipout();
 	/*NOTREACHED*/
+	return 0;
 }
 
 void cleanup(int i)
@@ -209,7 +256,7 @@ void cleanup(int i)
  */
 static int uidswapped;
 
-user_uid()
+void user_uid()
 {
 	if (uidswapped == 0) {
 		setregid(egid, gid);
@@ -218,7 +265,7 @@ user_uid()
 	}
 }
 
-daemon_uid()
+void daemon_uid()
 {
 
 	if (uidswapped) {
@@ -228,9 +275,8 @@ daemon_uid()
 	}
 }
 
-shell_uid()
+void shell_uid()
 {
-
 	setreuid(uid, uid);
 	setregid(gid, gid);
 }
@@ -238,9 +284,8 @@ shell_uid()
 /*
  * put the controlling keyboard into raw mode
  */
-raw()
+void raw()
 {
-
 	ioctl(0, TIOCSETP, &arg);
 	ioctl(0, TIOCSETC, &tchars);
 	ioctl(0, TIOCSLTC, &ltchars);
@@ -251,9 +296,8 @@ raw()
 /*
  * return keyboard to normal mode
  */
-unraw()
+void unraw()
 {
-
 	ioctl(0, TIOCSETD, (char *)&odisc);
 	ioctl(0, TIOCSETP, (char *)&defarg);
 	ioctl(0, TIOCSETC, (char *)&defchars);
@@ -267,13 +311,12 @@ static	jmp_buf promptbuf;
  *  in from the terminal.  Handles signals & allows use of
  *  normal erase and kill characters.
  */
-prompt(s, p)
+int prompt(s, p)
 	char *s;
 	register char *p;
 {
 	register char *b = p;
 	sig_t oint;
-	sig_t oquit;
 
 	stoprompt = 0;
 	oint = signal(SIGINT, intprompt);
@@ -304,56 +347,12 @@ void intprompt(int i)
 }
 
 /*
- * ****TIPIN   TIPIN****
- */
-tipin()
-{
-	char gch, bol = 1;
-
-	/*
-	 * Kinda klugey here...
-	 *   check for scripting being turned on from the .tiprc file,
-	 *   but be careful about just using setscript(), as we may
-	 *   send a SIGEMT before tipout has a chance to set up catching
-	 *   it; so wait a second, then setscript()
-	 */
-	if (boolean(value(SCRIPT))) {
-		sleep(1);
-		setscript();
-	}
-
-	while (1) {
-		gch = getchar()&0177;
-		if ((gch == character(value(ESCAPE))) && bol) {
-			if (!(gch = escape()))
-				continue;
-		} else if (!cumode && gch == character(value(RAISECHAR))) {
-			boolean(value(RAISE)) = !boolean(value(RAISE));
-			continue;
-		} else if (gch == '\r') {
-			bol = 1;
-			pwrite(FD, &gch, 1);
-			if (boolean(value(HALFDUPLEX)))
-				printf("\r\n");
-			continue;
-		} else if (!cumode && gch == character(value(FORCE)))
-			gch = getchar()&0177;
-		bol = any(gch, value(EOL));
-		if (boolean(value(RAISE)) && islower(gch))
-			gch = toupper(gch);
-		pwrite(FD, &gch, 1);
-		if (boolean(value(HALFDUPLEX)))
-			printf("%c", gch);
-	}
-}
-
-/*
  * Escape handler --
  *  called on recognition of ``escapec'' at the beginning of a line
  */
-escape()
+int escape()
 {
-	register char gch;
+	register int gch;
 	register esctable_t *p;
 	char c = character(value(ESCAPE));
 	extern esctable_t etable[];
@@ -373,7 +372,7 @@ escape()
 	return (gch);
 }
 
-speed(n)
+int speed(n)
 	int n;
 {
 	register int *p;
@@ -411,7 +410,7 @@ interp(s)
 	static char buf[256];
 	register char *p = buf, c, *q;
 
-	while (c = *s++) {
+	while ((c = *s++)) {
 		for (q = "\nn\rr\tt\ff\033E\bb"; *q; q++)
 			if (*q++ == c) {
 				*p++ = '\\'; *p++ = *q;
@@ -450,7 +449,7 @@ ctrl(c)
 /*
  * Help command
  */
-help(c)
+void help(c)
 	char c;
 {
 	register esctable_t *p;
@@ -469,7 +468,7 @@ help(c)
 /*
  * Set up the "remote" tty's state
  */
-ttysetup(speed)
+void ttysetup(speed)
 	int speed;
 {
 	unsigned bits = LDECCTQ;
@@ -530,14 +529,14 @@ void pwrite(fd, buf, n)
 /*
  * Build a parity table with appropriate high-order bit.
  */
-setparity(defparity)
+void setparity(defparity)
 	char *defparity;
 {
 	register int i;
 	char *parity;
 	extern char evenpartab[];
 
-	if (value(PARITY) == NOSTR)
+	if (defparity != NOSTR && value(PARITY) == NOSTR)
 		value(PARITY) = defparity;
 	parity = value(PARITY);
 	for (i = 0; i < 0200; i++)

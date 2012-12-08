@@ -74,7 +74,7 @@ void intSYS(int sig)
 /*
  * ****TIPOUT   TIPOUT****
  */
-tipout()
+void tipout()
 {
 	char buf[BUFSIZ];
 	register char *cp;

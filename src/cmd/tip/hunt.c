@@ -4,6 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 #include "tip.h"
+#include <fcntl.h>
 
 extern char *getremote();
 extern char *rindex();
@@ -18,14 +19,14 @@ dead(int sig)
 	longjmp(deadline, 1);
 }
 
-hunt(name)
+int hunt(name)
 	char *name;
 {
 	register char *cp;
 	sig_t f;
 
 	f = signal(SIGALRM, dead);
-	while (cp = getremote(name)) {
+	while ((cp = getremote(name))) {
 		printf("hunt: cp = %s\n",cp);
 		deadfl = 0;
 		uucplock = rindex(cp, '/')+1;
