@@ -226,7 +226,12 @@ static int
 coursync()
 {
 	int already = 0;
+
+#ifdef DEBUG
 	int len;
+#else
+    int len __attribute__((unused));
+#endif
 	long nread;
 	char buf[40];
 
