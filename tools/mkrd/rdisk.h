@@ -18,8 +18,8 @@ struct partition {
 	struct chs start;
 	unsigned char type;
 	struct chs end;
-	unsigned long lbastart;
-	unsigned long lbalength;
+	unsigned lbastart;
+	unsigned lbalength;
 };
 
 struct mbr {

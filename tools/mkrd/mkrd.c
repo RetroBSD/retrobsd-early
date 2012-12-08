@@ -121,20 +121,20 @@ int main(int argc, char *argv[])
 			switch(types[i])
 			{
 				case BOOT:
-					mbr.partitions[i].type=RDISK_FS;
+					mbr.partitions[i].type = RDISK_FS;
 					mbr.partitions[i].status = 0x80;
 					break;
 				case SWAP:
-					mbr.partitions[i].type=RDISK_SWAP;
+					mbr.partitions[i].type = RDISK_SWAP;
 					mbr.partitions[i].status = 0x00;
 					break;
 				case FS:
-					mbr.partitions[i].type=RDISK_FS;
+					mbr.partitions[i].type = RDISK_FS;
 					mbr.partitions[i].status = 0x00;
 					break;
 			}
 
-			printf("Partition %d, start %lu, length %lu\n",
+			printf("Partition %d, start %u, length %u\n",
 				i,
 				mbr.partitions[i].lbastart,
 				mbr.partitions[i].lbalength
