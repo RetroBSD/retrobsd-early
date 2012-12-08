@@ -7,7 +7,7 @@
 
 core pic32mx7
 mapping generic
-linker bootloader
+linker bootloader-maximite
 
 device kernel cpu_khz=80000 bus_khz=80000 led=B15
 
@@ -18,4 +18,3 @@ device rdisk led=B12
 device sd0 port=3 cs=D5 power=B13
 
 device gpio
-

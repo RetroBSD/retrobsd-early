@@ -1,9 +1,9 @@
 # MAX32 board
 
 core pic32mx7
-linker bootloader
+linker bootloader-max32
 mapping max32
-device kernel led=12 cpu_khz=80000 bus_khz=80000 
+device kernel led=12 cpu_khz=80000 bus_khz=80000
 
 device console port=UART1 led=LED
 device uart1 baud=115200
@@ -17,4 +17,3 @@ device sd1 port=4 cs=10
 
 device gpio
 device adc
-

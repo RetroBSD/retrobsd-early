@@ -1,5 +1,7 @@
 /*
  * Linker script for PIC32 firmware using HID bootloader.
+ * Flash area for user starts at 9d005000.
+ * Start address for user program is 9d006000.
  */
 OUTPUT_FORMAT("elf32-littlemips", "elf32-bigmips",
 	      "elf32-littlemips")
@@ -7,7 +9,7 @@ OUTPUT_ARCH(mips)
 ENTRY(_reset_vector_)
 MEMORY
 {
-  flash                (rx)  : ORIGIN = 0x9d005000, LENGTH = 492K
+  flash                (rx)  : ORIGIN = 0x9d005000, LENGTH = 512K-20K
   ram                  (rw!x): ORIGIN = 0x80000000, LENGTH = 0x62C0
   u0area               (rw!x): ORIGIN = 0x800062C0, LENGTH = 3K
   uarea                (rw!x): ORIGIN = 0x80006EC0, LENGTH = 3K
@@ -15,9 +17,9 @@ MEMORY
 
   /* Required by Microchip C32 linker */
   kseg0_program_mem    (rx)  : ORIGIN = 0x9D000000, LENGTH = 0x80000
-  kseg0_boot_mem             : ORIGIN = 0x9FC00490, LENGTH = 0x970
-  exception_mem              : ORIGIN = 0x9FC01000, LENGTH = 0x1000
-  kseg1_boot_mem             : ORIGIN = 0xBFC00000, LENGTH = 0x490
+  kseg0_boot_mem             : ORIGIN = 0x9FC00000, LENGTH = 0x1000
+  exception_mem              : ORIGIN = 0x9FC06000, LENGTH = 0x1000
+  kseg1_boot_mem             : ORIGIN = 0xBFC00000, LENGTH = 0
   kseg1_data_mem       (w!x) : ORIGIN = 0xA0000000, LENGTH = 0x20000
 }
 
@@ -37,7 +39,7 @@ SECTIONS
     *(.exception)
     . = 0x1000;
     /* Execution starts here. */
-    *(.startup) 
+    *(.startup)
     *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)
@@ -90,7 +92,7 @@ SECTIONS
     *(.ramfunc  .ramfunc.*)
     . = ALIGN(4) ;
     _ramfunc_end = . ;
-  } >keram 
+  } >keram
   _ramfunc_image_begin = LOADADDR(.ramfunc) ;
   _ramfunc_length = SIZEOF(.ramfunc) ;
 

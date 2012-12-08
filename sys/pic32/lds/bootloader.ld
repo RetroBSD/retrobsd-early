@@ -1,5 +1,7 @@
 /*
- * Linker script for PIC32 firmware using RetroBSD bootloader.
+ * Linker script for PIC32 firmware using HID bootloader.
+ * Flash area for user starts at 9d000000.
+ * Start address for user program is 9d000000.
  */
 OUTPUT_FORMAT("elf32-littlemips", "elf32-bigmips",
 	      "elf32-littlemips")
@@ -63,7 +65,7 @@ SECTIONS
   {
    __bss_start = .;
    *(.dynbss)
-   *(.sbss)
+   *(.sbss .sbss.*)
    *(.scommon)
    *(.bss .bss.* .gnu.linkonce.b.*)
    *(COMMON)

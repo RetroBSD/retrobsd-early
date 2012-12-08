@@ -5,7 +5,7 @@
 # Console on UART2
 
 core pic32mx7
-linker bootloader
+linker bootloader-ubw32
 mapping generic
 
 device kernel cpu_khz=80000 bus_khz=80000 invled=E2

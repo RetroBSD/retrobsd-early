@@ -50,6 +50,6 @@ $(HEADERS):
 
 test:
 		echo '$$q' | ./adb fsck fsck.core
-		@echo -e '\n----------------------------'
+		@printf '\n----------------------------\n'
 		echo '$$m' | ./adb fsck fsck.core
-		@echo -e '\n----------------------------'
+		@printf '\n----------------------------\n'

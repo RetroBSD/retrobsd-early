@@ -7,7 +7,7 @@
 
 core pic32mx7
 mapping max32
-linker bootloader
+linker bootloader-max32
 
 device kernel led=LED cpu_khz=80000 bus_khz=80000
 
@@ -21,4 +21,3 @@ device sd0 port=2 cs=4
 device gpio
 device spi
 device adc
-

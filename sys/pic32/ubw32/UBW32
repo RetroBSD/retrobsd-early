@@ -6,7 +6,7 @@
 # For Windows, use the driver: http://www.schmalzhaus.com/UBW32/FW/UBW32inf.zip
 
 core pic32mx7
-linker bootloader
+linker bootloader-ubw32
 mapping generic
 
 device kernel cpu_khz=80000 bus_khz=80000 invled=E2
