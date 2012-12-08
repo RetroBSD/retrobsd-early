@@ -140,14 +140,18 @@ maybetty(cp)
 	register struct ttys *dp;
 	struct stat stb;
 
-        /* Allow only terminal devices. */
+    /* Allow only terminal devices. */
 	switch (cp[0]) {
 	case 'c':
 		if (strcmp(cp, "console") == 0)
 			break;
-                return;
-        default:
-                return;
+        return;
+    case 't':
+        if (strncmp(cp, "tty", 3) == 0)
+            break;
+        return;
+    default:
+        return;
 	}
 	if (nttys >= MAXTTYS) {
 		fprintf(stderr, "ps: tty table overflow\n");
