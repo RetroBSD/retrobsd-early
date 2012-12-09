@@ -113,9 +113,6 @@ setup(dev)
 
     totsz = fsmax / 3640 + 4;
 
-    printf("fsck: attempting with totsz %lu\n", totsz);
-    printf("fsck: msize = %lu\n",(off_t)msize);
-
 	if ((off_t)msize < (totsz<<10)) {
 		bmapsz = roundup(bmapsz,DEV_BSIZE);
 		smapsz = roundup(smapsz,DEV_BSIZE);
@@ -158,7 +155,6 @@ setup(dev)
 		lncntblk = smapblk + smapsz / DEV_BSIZE;
 		fmapblk = smapblk;
 	} else {
-        printf("Proceeding with RAM only\n");
 		poolhead = NULL;
 		blockmap = mbase;
 		statemap = &mbase[bmapsz];

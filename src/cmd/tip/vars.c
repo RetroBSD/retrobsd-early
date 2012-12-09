@@ -32,7 +32,7 @@ value_t vtable[] = {
 	{ "host",	STRING|IREMOTE|INIT,	READ<<PUBLIC,
 	  "ho",		(char *)&HO },
 	{ "log",	STRING|INIT,		(READ|WRITE)<<ROOT,
-	  NOSTR,	"/usr/adm/aculog" },
+	  NOSTR,	"/var/log/aculog" },
 	{ "phones",	STRING|INIT|IREMOTE,	READ<<PUBLIC,
 	  NOSTR,	(char *)&PH },
 	{ "prompt",	CHAR,			(READ|WRITE)<<PUBLIC,

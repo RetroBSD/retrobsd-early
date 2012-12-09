@@ -80,10 +80,11 @@ depend: FRC
 
 install: aculib tip
 	cd aculib; make ${MFLAGS} install
-	install -s -m 755 tip ${DESTDIR}/bin/tip
+	cp tip ${DESTDIR}/bin/tip
 	rm -f ${DESTDIR}/bin/cu
 	touch ${DESTDIR}/${ADM}/aculog
 	chmod 600 ${DESTDIR}/${ADM}/aculog
+	-mkdir -p ${DESTDIR}/var/lock
 	@echo "create /etc/remote and /etc/phones"
 	cp remote-file ${DESTDIR}/etc/remote
 	cp phones-file ${DESTDIR}/etc/phones

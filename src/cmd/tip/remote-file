@@ -1,13 +1,10 @@
-This file contains two sample remote files,
-each using a different style.  Pick one you
-like but don't use both!
-
-
-First example:
-
 #
 # General dialer definitions used below
 #
+local|Local PTY connection:\
+    :dv=/dev/ptyp0,/dev/ptyp1,/dev/ptyp2,/dev/ptyp3:\
+    :br#115200:
+
 dial1200|1200 Baud Able Quadracall attributes:\
 	:dv=/dev/cul1:br#1200:cu=/dev/cua1:at=dn11:du:
 dial300|300 Bizcomp 1022 attributes:\

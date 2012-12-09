@@ -53,7 +53,9 @@
 #define NNAMECACHE	(NINODE * 11/10)
 #define NCALL		(16 + 2 * MAXUSERS)
 #define NCLIST		32                      /* number or CBSIZE blocks */
+#ifndef SMAPSIZ
 #define SMAPSIZ		NPROC                   /* size of swap allocation map */
+#endif
 
 /*
  * Disk blocks.

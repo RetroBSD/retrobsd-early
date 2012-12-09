@@ -16,6 +16,10 @@ option ninode
     define NINODE %1
 end option
 
+option smapsiz
+    define SMAPSIZ %1
+end option
+
 option hz
     define HZ %1
 end option

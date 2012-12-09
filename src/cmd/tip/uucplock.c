@@ -17,7 +17,7 @@
 	finish();\
 }
 
-#define LOCKPRE "/usr/spool/uucp/LCK."
+#define LOCKPRE "/var/lock/LCK."
 
 /*
  * This code is taken almost directly from uucp and follows the same
@@ -123,7 +123,7 @@ ulockf(file, atime)
 
 	if (pid < 0) {
 		pid = getpid();
-		sprintf(tempfile, "/usr/spool/uucp/LTMP.%d", pid);
+		sprintf(tempfile, "/var/lock/LTMP.%d", pid);
 	}
 	if (onelock(pid, tempfile, file) == -1) {
 		/* lock file exists */

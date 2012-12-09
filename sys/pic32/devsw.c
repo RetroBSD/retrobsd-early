@@ -46,6 +46,10 @@
 #include "picga.h"
 #endif
 
+#ifdef PTY_ENABLED
+#include "pty.h"
+#endif
+
 extern int rdopen (dev_t dev, int flag, int mode);
 extern int rdclose(dev_t dev, int flag, int mode);
 extern daddr_t rdsize (dev_t dev);
@@ -243,6 +247,27 @@ const struct cdevsw	cdevsw[] = {
     noioctl,        nulldev,        0,              seltrue,
     nostrategy,     },
 #endif
+
+#ifdef PTY_ENABLED
+{   // PTS - 14
+    ptsopen,        ptsclose,       ptsread,        ptswrite,
+    ptyioctl,       nulldev,        pt_tty,        ptcselect,
+    nostrategy,     },
+{   // PTC - 15
+    ptcopen,        ptcclose,       ptcread,        ptcwrite,
+    ptyioctl,       nulldev,        pt_tty,        ptcselect,
+    nostrategy,     },
+#else
+{
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
+{
+    nulldev,        nulldev,        norw,           norw,
+    noioctl,        nulldev,        0,              seltrue,
+    nostrategy,     },
+#endif
+
 
 };
 const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
