@@ -60,6 +60,7 @@ FSUTIL		= tools/fsutil/fsutil
 TARGETDIR    = $(shell dirname $(TARGET))
 TARGETNAME   = $(shell basename $(TARGET))
 TOPSRC       = $(shell pwd)
+CONFIG       = $(TOPSRC)/tools/configsys/config
 #
 # Filesystem contents.
 #
@@ -140,18 +141,24 @@ U_DIRS          = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES         = $(shell find u -type f ! -path '*/.svn/*')
 U_ALL           = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
 
-all:            build kernel
+all:            tools build kernel
 		$(MAKE) fs
 
 fs:             sdcard.rd
 
-kernel: 
-		cd $(TARGETDIR) && $(TOPSRC)/tools/configsys/config $(TARGETNAME)
+.PHONY: tools
+tools:
+		$(MAKE) -C tools
+
+kernel:  $(CONFIG)
+		cd $(TARGETDIR) && $(CONFIG) $(TARGETNAME)
 		$(MAKE) -C $(TARGETDIR)
 
-build:
-		$(MAKE) -C tools
+.PHONY: lib
+lib:
 		$(MAKE) -C lib
+
+build: tools lib
 		$(MAKE) -C src install
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
@@ -184,6 +191,9 @@ endif
 
 $(FSUTIL):
 		cd tools/fsutil; $(MAKE)
+
+$(CONFIG):
+		make -C tools/configsys
 
 clean:
 		rm -f *~
