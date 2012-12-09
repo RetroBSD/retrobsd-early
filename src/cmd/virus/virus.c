@@ -824,6 +824,15 @@ static void do_cmd(Byte c)
 		//  hitting "Insert" twice means "R" replace mode
 		if (c == VI_K_INSERT) goto dc5;
 		// insert the char c at "dot"
+                if (c == 8) {
+                        dir = -1;
+                        if (dot[dir] != '\n') {
+                                dot--;  // delete prev char
+                                dot = yank_delete(dot, dot, 0, YANKDEL);        // delete char
+                                goto dc1;
+                        }
+                }
+
 		if (1 <= c && c <= 127) {
 			dot = char_insert(dot, c);	// only ASCII chars
 		}
@@ -1963,7 +1972,7 @@ static void colon(Byte * buf)
 	  vc2:
 #endif							/* BB_FEATURE_VI_SET */
 		Hit_Return();
-	} else if ((strncasecmp((char *) cmd, "quit", i) == 0) ||	// Quit
+	} else if ((strncasecmp((char *) cmd, "quit", i) == 0) || (strncasecmp((char *) cmd, "q", i) == 0) || 	// Quit
 			   (strncasecmp((char *) cmd, "next", i) == 0)) {	// edit next file
 		if (useforce == TRUE) {
 			// force end of argv list
