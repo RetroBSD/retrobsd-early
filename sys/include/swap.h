@@ -7,6 +7,6 @@
 #include <sys/ioctl.h>
 #endif
 
-#define TFALLOC _IOW('s',1,int)
+#define TFALLOC _IOWR('s',1,off_t)
 
 #endif

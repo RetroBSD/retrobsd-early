@@ -32,3 +32,6 @@ option partition
     define PARTITION "%1"
 end option
 
+option nmount
+    define NMOUNT %1
+end option

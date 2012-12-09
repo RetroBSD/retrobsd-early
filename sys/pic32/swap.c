@@ -13,12 +13,16 @@
 #include "fcntl.h"
 #include "map.h"
 #include "swap.h"
+#include "rdisk.h"
+
+#ifndef NTMP
+#define NTMP 3
+#endif
 
 extern struct buf *getnewbuf();
 
-static unsigned int tdpos;
-static unsigned int tdsize;	// Number of blocks allocated
-static unsigned int tdstart = 0;
+static unsigned int tdsize[NTMP];	// Number of blocks allocated
+static unsigned int tdstart[NTMP];  // Starting location in map
 
 extern dev_t swapdev;
 extern int physio(void (*strat) (struct buf*),
@@ -29,57 +33,61 @@ extern int physio(void (*strat) (struct buf*),
 
 extern void swap(size_t blkno, size_t coreaddr, register int count, int rdflg);
 
-void swstrategy(register struct buf *bp)
-{
-	dev_t od = bp->b_dev;
-	bp->b_dev = swapdev;
-	bdevsw[major(od)].d_strategy(bp);
-}
-
 int swopen(dev_t dev, int mode, int flag)
 {
-	return bdevsw[major(swapdev)].d_open(swapdev,mode,flag);
+    int unit = minor(dev);
+
+    if (unit == 64)
+        return bdevsw[major(swapdev)].d_open(swapdev, mode, flag);
+
+    if (unit >= NTMP)
+        return ENODEV;
+    return 0;
 }
 
 int swclose(dev_t dev, int mode, int flag)
 {
-	return bdevsw[major(swapdev)].d_close(swapdev,mode,flag);
+    int unit = minor(dev);
+
+    if (unit == 64)
+        return bdevsw[major(swapdev)].d_close(swapdev, mode, flag);
+
+    if (unit >= NTMP)
+        return ENODEV;
+    return 0;
 }
 
 daddr_t swsize(dev_t dev)
 {
-	return bdevsw[major(dev)].d_psize(dev);
+    int unit = minor(dev);
+
+    if (unit == 64)
+        return bdevsw[major(dev)].d_psize(dev);
+
+    if (unit >= NTMP)
+        return ENODEV;
+
+    return tdsize[unit];
 }
 
 int swcopen(dev_t dev, int mode, int flag)
 {
-	printf("temp open with modes ");
-	if(mode & FREAD) printf("FREAD ");
-	if(mode & FWRITE) printf("FWRITE ");
-	if(mode & O_NONBLOCK) printf("O_NONBLOCK ");
-	if(mode & O_APPEND) printf("O_APPEND ");
-	if(mode & O_SHLOCK) printf("O_SHLOCK ");
-	if(mode & O_EXLOCK) printf("O_EXLOCK ");
-	if(mode & O_ASYNC) printf("O_ASYNC ");
-	if(mode & O_FSYNC) printf("O_FSYNC ");
-	if(mode & O_CREAT) printf("O_CREAT ");
-	if(mode & O_TRUNC) printf("O_TRUNC ");
-	if(mode & O_EXCL) printf("O_EXCL ");
-	if(mode & FMARK) printf("FMARK ");
-	if(mode & FDEFER) printf("FDEFER ");
-	printf("and flag %04X\n",flag);
+    int unit = minor(dev);
 
-	if(mode & O_TRUNC)
-	{
-		tdpos = 0;
-	}
-
+    if (unit >= NTMP) {
+        printf("temp%d: Device number out of range\n", minor(dev));
+        return ENODEV;
+    }
 	return 0;
 }
 
 int swcclose(dev_t dev, int mode, int flag)
 {
-	printf("temp close with mode %d and flag %d\n");
+    int unit = minor(dev);
+
+    if (unit >= NTMP)
+        return ENODEV;
+
 	return 0;
 }
 
@@ -90,81 +98,159 @@ int swcread(dev_t dev, register struct uio *uio, int flag)
 	struct buf *bp;
 	unsigned int rsize;
 	unsigned int rlen;
+    int unit = minor(dev);
 
-	if(tdstart == 0)
+    if (unit >= NTMP) {
+        printf("temp%d: Device number out of range\n", minor(dev));
+        return ENODEV;
+    }
+
+	if (tdstart[unit] == 0)
 		return EIO;
 
-	if(tdpos+uio->uio_offset >= tdsize<<10)
+	if (uio->uio_offset >= tdsize[unit] << 10)
 		return EIO;
-
-	tdpos += uio->uio_offset;
 
 	bp = getnewbuf();
 
-	block = tdpos >> 10;
-	boff = tdpos - (block << 10);
+	block = uio->uio_offset >> 10;
+	boff = uio->uio_offset - (block << 10);
 
-	rsize = 1024 - boff;
+	rsize = DEV_BSIZE - boff;
 	rlen = uio->uio_iov->iov_len;
 
-	while(rlen>0 && (block < tdsize))
-	{
-		swap(tdstart + block,(size_t)bp->b_addr,1024,B_READ);
-		uiomove(bp->b_addr+boff,rsize,uio);
+	while((rlen > 0) && (block < tdsize[unit])) {
+		swap(tdstart[unit] + block, (size_t)bp->b_addr, DEV_BSIZE, B_READ);
+		uiomove(bp->b_addr+boff, rsize, uio);
 		boff = 0;
 		block++;
-		tdpos += rsize;
 		rlen -= rsize;
-		rsize = rlen >= 1024 ? 1024 : rlen;
+		rsize = rlen >= DEV_BSIZE ? DEV_BSIZE : rlen;
 	}
 	
-	printf("temp read %u\n",uio->uio_offset);
 	brelse(bp);
 	return 0;
 }
 
 int swcwrite(dev_t dev, register struct uio *uio, int flag)
 {
-	//unsigned int block;
-	//unsigned int boff;
+	unsigned int block;
+	unsigned int boff;
+	struct buf *bp;
+	unsigned int rsize;
+	unsigned int rlen;
+    int unit = minor(dev);
 
-	if(tdstart == 0)
+    if (unit >= NTMP) {
+        printf("temp%d: Device number out of range\n", minor(dev));
+        return ENODEV;
+    }
+
+	if (tdstart[unit] == 0) {
+        printf("temp%d: attempt to write with no allocation\n", unit);
 		return EIO;
+    }
 
-	if(tdpos+uio->uio_offset > tdsize<<10)
+	if (uio->uio_offset >= tdsize[unit] << 10) {
+        printf("temp%d: attempt to write past end of allocation\n", unit);
 		return EIO;
-	tdpos += uio->uio_offset;
+    }
 
-	//block = tdpos >> 10;
-	//boff = tdpos - (block << 10);
+	bp = getnewbuf();
 
-	printf("temp write %u\n",uio->uio_offset);
+	block = uio->uio_offset >> 10;
+	boff = uio->uio_offset - (block << 10);
+
+	rsize = DEV_BSIZE - boff;
+	rlen = uio->uio_iov->iov_len;
+
+	while((rlen > 0) && (block < tdsize[unit])) {
+		uiomove(bp->b_addr+boff, rsize, uio);
+		swap(tdstart[unit] + block, (size_t)bp->b_addr, DEV_BSIZE, B_WRITE);
+		boff = 0;
+		block++;
+		rlen -= rsize;
+		rsize = rlen >= DEV_BSIZE ? DEV_BSIZE : rlen;
+	}
+	
+	brelse(bp);
 	return 0;
 }
 
 int swcioctl (dev_t dev, register u_int cmd, caddr_t addr, int flag)
 {
-	printf("temp ioctl %c %d with address %p\n",
-	(cmd>>8) & 0xFF,
-	cmd & 0xFF,
-	addr);
-
 	unsigned int *uival;
+    off_t *offtval;
+    int unit = minor(dev);
+
+    if (unit >= NTMP) {
+        printf("temp%d: Device number out of range\n", minor(dev));
+        return ENODEV;
+    }
 
 	uival = (unsigned int *)addr;
+    offtval = (off_t *)addr;
 
 	switch(cmd)
 	{
 		case TFALLOC:
-			if(tdstart>0)
-				mfree(swapmap,tdsize,tdstart);
-			tdstart = malloc(swapmap,*uival);
-			if(tdstart>0)
-			{
-				tdsize = *uival;
-				printf("%u blocks allocated from block %d\n",
-					uival,tdstart);
-			}
-	}
-	return 0;
+			if (tdstart[unit] > 0)
+				mfree(swapmap, tdsize[unit], tdstart[unit]);
+
+            if (*offtval > 0) {
+                tdstart[unit] = malloc(swapmap, *offtval);
+                if (tdstart[unit] > 0) {
+                    tdsize[unit] = *offtval;
+                    printf("temp%d: allocated %lu blocks\n", unit, tdsize[unit]);
+                    return 0;
+                }
+                *offtval = 0;
+                printf("temp%d: failed to allocate %lu blocks\n", tdsize[unit]);
+                return 0;
+            } else {
+                printf("temp%d: released allocation\n", unit);
+            }
+            break;
+
+        case RDGETMEDIASIZE:
+            *uival = swsize(dev);
+            break;
+    }
+	return EINVAL;
 }
+
+void swstrategy(register struct buf *bp)
+{
+    int unit = minor(bp->b_dev);
+
+    if (unit == 64) {
+
+        dev_t od = bp->b_dev;
+        bp->b_dev = swapdev;
+        bdevsw[major(swapdev)].d_strategy(bp);
+        bp->b_dev = od;
+
+    } else {
+
+        if (unit >= NTMP)
+            return;
+
+        if (tdstart[unit] == 0) {
+            printf("swap%d: attempt to access unallocated device\n", unit);
+            return;
+        }
+
+        if (bp->b_blkno > tdsize[unit]) {
+            printf("swap%d: attempt to access past end of allocation\n", unit);
+            return;
+        }
+
+        if (bp->b_flags & B_READ) {
+            swap(tdstart[unit] + bp->b_blkno, (size_t)bp->b_addr, bp->b_bcount , B_READ);
+        } else {
+            swap(tdstart[unit] + bp->b_blkno, (size_t)bp->b_addr, bp->b_bcount , B_WRITE);
+        }
+        biodone(bp);
+    }
+}
+

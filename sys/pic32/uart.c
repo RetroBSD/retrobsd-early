@@ -670,8 +670,6 @@ again:
         }
         led_control (LED_TTY, 1);
         reg->txreg = c;
-        if (c == '\n')
-                cnputc('\r');
 
         timo = 30000;
         while ((reg->sta & PIC32_USTA_TRMT) == 0)

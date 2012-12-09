@@ -1,7 +1,7 @@
-BUILDPATH = ../../../tools/configsys/../../sys/pic32
-H         = ../../../tools/configsys/../../sys/include
-M         = ../../../tools/configsys/../../sys/pic32
-S         = ../../../tools/configsys/../../sys/kernel
+BUILDPATH = /home/matt/retrobsd/current/tools/configsys/../../sys/pic32
+H         = /home/matt/retrobsd/current/tools/configsys/../../sys/include
+M         = /home/matt/retrobsd/current/tools/configsys/../../sys/pic32
+S         = /home/matt/retrobsd/current/tools/configsys/../../sys/kernel
 
 vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
@@ -15,21 +15,22 @@ DEFS += -DCPU_KHZ=80000
 DEFS += -DGLCD_ENABLED=YES
 DEFS += -DGPIO_ENABLED=YES
 DEFS += -DKERNEL
-DEFS += -DLED_AUX_PIN=11
-DEFS += -DLED_AUX_PORT=TRISB
 DEFS += -DLED_DISK_PIN=9
 DEFS += -DLED_DISK_PORT=TRISB
 DEFS += -DLED_KERNEL_PIN=8
 DEFS += -DLED_KERNEL_PORT=TRISB
+DEFS += -DLED_SWAP_PIN=11
+DEFS += -DLED_SWAP_PORT=TRISB
 DEFS += -DLED_TTY_PIN=10
 DEFS += -DLED_TTY_PORT=TRISB
 DEFS += -DNBUF=8
+DEFS += -DNMOUNT=3
 DEFS += -DOC_ENABLED=YES
 DEFS += -DPIC32MX7
 DEFS += -DSD0_CS_PIN=9
 DEFS += -DSD0_CS_PORT=TRISG
 DEFS += -DSD0_PORT=2
-DEFS += -DUART2_BAUD=2400
+DEFS += -DUART2_BAUD=1000000
 DEFS += -DUART2_ENABLED=YES
 DEFS += -DUARTUSB_BAUD=1000000
 DEFS += -DUARTUSB_ENABLED=YES
@@ -39,6 +40,6 @@ DEFS += -DUSB_NUM_STRING_DESCRIPTORS=3
 
 BLREBOOT = -p
 
-LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bootloader.ld
+LDSCRIPT = /home/matt/retrobsd/current/tools/configsys/../../sys/pic32/lds/bootloader.ld
 
-include ../../../tools/configsys/../../sys/pic32/kernel-post.mk
+include /home/matt/retrobsd/current/tools/configsys/../../sys/pic32/kernel-post.mk

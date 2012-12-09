@@ -14,7 +14,7 @@ device kernel cpu_khz=80000 bus_khz=80000 invled=E2
 device console invled=E3 port=USB
 device uartusb
 
-device rdisk invled=E1 invaux=E0
+device rdisk invled=E1 invswap=E0
 device sd0 port=1 cs=A9
 device sd1 port=1 cs=A10
 

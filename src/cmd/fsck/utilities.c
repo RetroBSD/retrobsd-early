@@ -19,6 +19,8 @@
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/dir.h>
+#include <sys/ioctl.h>
+#include <sys/swap.h>
 #include "fsck.h"
 
 int	returntosingle;
@@ -175,8 +177,11 @@ ckfini()
 	flush(&dfile, &inoblk);
 	if (dfile.rfdes)
 		(void)close(dfile.rfdes);
-	if (dfile.wfdes)
+	if (dfile.wfdes) {
+        int allocd = 0;
+        ioctl(sfile.wfdes, TFALLOC, &allocd);
 		(void)close(dfile.wfdes);
+    }
 	if (sfile.rfdes)
 		(void)close(sfile.rfdes);
 	if (sfile.wfdes)
@@ -201,6 +206,7 @@ bread(fcp, buf, blk, size)
 		/*printf(".%u ", (unsigned) blk); fflush (stdout);*/
 		return (0);
 	}
+    printf("fd: %d (sfile = %d, dfile = %d)\n",fcp->rfdes,sfile.rfdes,dfile.rfdes);
 	rwerr("READ", blk);
 	if (lseek(fcp->rfdes, offset, 0) != offset)
 		rwerr("SEEK", blk);

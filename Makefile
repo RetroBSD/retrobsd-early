@@ -11,20 +11,20 @@
 #
 # Supported boards
 #
-MAX32           = pic32/max32
-UBW32           = pic32/ubw32
-UBW32UART       = pic32/ubw32-uart
-UBW32UARTSDRAM  = pic32/ubw32-uart-sdram
-MAXIMITE        = pic32/maximite
-EXPLORER16      = pic32/explorer16
-STARTERKIT      = pic32/starter-kit
-DUINOMITE       = pic32/duinomite
-PINGUINO        = pic32/pinguino-micro
-DIP             = pic32/dip
-BAREMETAL       = pic32/baremetal
-RETROONE	= pic32/retroone
-FUBARINO	= pic32/fubarino
-FUBARINOUART	= pic32/fubarino-uart
+MAX32           = sys/pic32/max32/MAX32
+UBW32           = sys/pic32/ubw32/UBW32
+UBW32UART       = sys/pic32/ubw32-uart/UBW32-UART
+UBW32UARTSDRAM  = sys/pic32/ubw32-uart-sdram/UBW32-UART-SDRAM
+MAXIMITE        = sys/pic32/maximite/MAXIMITE
+EXPLORER16      = sys/pic32/explorer16/EXPLORER16
+STARTERKIT      = sys/pic32/starter-kit/STARTER-KIT
+DUINOMITE       = sys/pic32/duinomite/DUINOMITE
+PINGUINO        = sys/pic32/pinguino-micro/PINGUINO-MICRO
+DIP             = sys/pic32/dip/DIP
+BAREMETAL       = sys/pic32/baremetal/BAREMETAL
+RETROONE	    = sys/pic32/retroone/RETROONE
+FUBARINO	    = sys/pic32/fubarino/FUBARINO
+FUBARINOUART	= sys/pic32/fubarino-uart/FUBARINO-UART
 
 # Select target board
 TARGET          ?= $(MAX32)
@@ -32,7 +32,7 @@ TARGET          ?= $(MAX32)
 # Filesystem and swap sizes.
 FS_KBYTES       = 163840
 U_KBYTES        = 163840
-SWAP_KBYTES     = 20480
+SWAP_KBYTES     = 81920
 
 # The ROOTSWAP is a bit of a pain.  It's required for fsck to operate.
 # That's such a waste.  Never mind, it will go once the swap
@@ -57,6 +57,9 @@ FSUTIL		= tools/fsutil/fsutil
 
 -include Makefile.user
 
+TARGETDIR    = $(shell dirname $(TARGET))
+TARGETNAME   = $(shell basename $(TARGET))
+TOPSRC       = $(shell pwd)
 #
 # Filesystem contents.
 #
@@ -96,7 +99,7 @@ BDEVS           = dev/rd0!b0:0 dev/rd0a!b0:1 dev/rd0b!b0:2 dev/rd0c!b0:3 dev/rd0
 BDEVS           += dev/rd1!b1:0 dev/rd1a!b1:1 dev/rd1b!b1:2 dev/rd1c!b1:3 dev/rd1d!b1:4
 BDEVS           += dev/rd2!b2:0 dev/rd2a!b2:1 dev/rd2b!b2:2 dev/rd2c!b2:3 dev/rd2d!b2:4
 BDEVS           += dev/rd3!b3:0 dev/rd3a!b3:1 dev/rd3b!b3:2 dev/rd3c!b3:3 dev/rd3d!b3:4
-BDEVS		+= dev/swap!b4:0
+BDEVS		+= dev/swap!b4:64 dev/swap0!b4:0 dev/swap1!b4:1 dev/swap2!b4:2
 
 D_CONSOLE       += dev/console!c0:0
 D_MEM		+= dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3
@@ -115,9 +118,10 @@ D_ADC            = dev/adc0!c6:0 dev/adc1!c6:1 dev/adc2!c6:2 dev/adc3!c6:3 \
 D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3
 D_GLCD		+= dev/glcd0!c8:0
 D_PWM		 = dev/oc1!c9:0 dev/oc2!c9:1 dev/oc3!c9:2 dev/oc4!c9:3 dev/oc5!c9:4
+D_TEMP      = dev/temp0!c10:0 dev/temp1!c10:1 dev/temp2!c10:2 
 
 CDEVS		= $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_LOG) $(D_FD) $(D_GPIO) \
-		  $(D_ADC) $(D_SPI) $(D_GLCD) $(G_PWM)
+		  $(D_ADC) $(D_SPI) $(D_GLCD) $(D_PWM) $(D_TEMP)
 
 FDDEVS          = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
@@ -141,8 +145,9 @@ all:            build kernel
 
 fs:             sdcard.rd
 
-kernel:
-		$(MAKE) -C sys/$(TARGET)
+kernel: 
+		cd $(TARGETDIR) && $(TOPSRC)/tools/configsys/config $(TARGETNAME)
+		$(MAKE) -C $(TARGETDIR)
 
 build:
 		$(MAKE) -C tools
@@ -151,7 +156,7 @@ build:
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
-		$(FSUTIL) -n$(FS_KBYTES) -s$(ROOTSWAP) $@
+		$(FSUTIL) -n$(FS_KBYTES) $@
 		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
 		$(FSUTIL) -a $@ $(MANFILES)
 		$(FSUTIL) -a $@ $(CDEVS)
@@ -191,9 +196,11 @@ cleanall:       clean
 		rm -f games/lib/cfscores
 		rm -f share/re.help
 		rm -f share/misc/more.help
-		rm -f etc/termcap
+		rm -f etc/termcap etc/remote etc/phones
 		rm -rf share/unixbench
 		rm -f games/lib/adventure.dat games/lib/cfscores share/re.help share/misc/more.help etc/termcap
+		rm -f tools/configsys/.depend
+		rm -f var/log/aculog
 
 # TODO
 buildlib:

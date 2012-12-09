@@ -198,17 +198,12 @@ void usbputc (c)
         cdc_tx_service();
     }
     led_control (LED_TTY, 1);
-again:
     cdc_putc (c);
     cdc_tx_service();
 
     while (! cdc_is_tx_ready()) {
         cdc_tx_service();
         usb_device_tasks();
-    }
-    if (c == '\n') {
-        c = '\r';
-        goto again;
     }
 
     led_control (LED_TTY, 0);

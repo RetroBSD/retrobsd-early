@@ -154,8 +154,8 @@ gpio_filter (mask, portnum)
 {
         mask &= gpio_pins_mx7 [portnum];
 
-#ifdef LED_AUX_PORT
-        mask = filter_out (mask, portnum, &LED_AUX_PORT, LED_AUX_PIN);
+#ifdef LED_SWAP_PORT
+        mask = filter_out (mask, portnum, &LED_SWAP_PORT, LED_SWAP_PIN);
 #endif
 #ifdef LED_DISK_PORT
         mask = filter_out (mask, portnum, &LED_DISK_PORT, LED_DISK_PIN);

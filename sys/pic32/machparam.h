@@ -151,11 +151,15 @@ void clkstart (void);
 
 /*
  * Control LEDs, installed on the board.
- */
-#define LED_TTY         8
-#define LED_AUX         4
-#define LED_DISK        2
-#define LED_KERNEL      1
+ */ 
+#define LED_MISC4       0x80
+#define LED_MISC3       0x40
+#define LED_MISC2       0x20
+#define LED_MISC1       0x10
+#define LED_TTY         0x08
+#define LED_SWAP        0x04
+#define LED_DISK        0x02
+#define LED_KERNEL      0x01
 
 void led_control (int mask, int on);
 

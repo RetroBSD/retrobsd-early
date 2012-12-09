@@ -112,7 +112,7 @@ const struct bdevsw	bdevsw[] = {
 	noroot,		rdsize,		rdioctl,	0,},
 { 
 	swopen,		swclose,	swstrategy,
-	noroot,		swsize,		noioctl,	0 },
+	noroot,		swsize,		swcioctl,	0 },
 };
 
 const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);

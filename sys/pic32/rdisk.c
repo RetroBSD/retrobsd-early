@@ -261,9 +261,9 @@ void rdstrategy(register struct buf *bp)
     mutex++;
     if(mutex>1)
     {
-        led_control(LED_AUX,1);
+        led_control(LED_SWAP,1);
     } else {
-        led_control(LED_AUX,0);
+        led_control(LED_DISK,0);
     }
 
 	int part = minor(bp->b_dev);
@@ -277,7 +277,12 @@ void rdstrategy(register struct buf *bp)
 
 	offset += (bp->b_blkno);
 
-	led_control(LED_DISK,1);
+    if (bp->b_dev == swapdev) {
+        led_control(LED_SWAP,1);
+    } else {
+        led_control(LED_DISK,1);
+    }
+
     s = splbio();
 
 #ifdef UCB_METER
@@ -297,7 +302,11 @@ void rdstrategy(register struct buf *bp)
 	}
 
 	biodone(bp);
-	led_control(LED_DISK,0);
+    if (bp->b_dev == swapdev) {
+        led_control(LED_SWAP,0);
+    } else {
+        led_control(LED_DISK,0);
+    }
 	splx(s);
     mutex--;
 }

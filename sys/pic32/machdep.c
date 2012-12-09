@@ -39,6 +39,7 @@ extern void power_off();
 #define LED_TTY_ON()        LAT_SET(LED_TTY_PORT) = 1 << LED_TTY_PIN
 #define LED_TTY_OFF()       LAT_CLR(LED_TTY_PORT) = 1 << LED_TTY_PIN
 #endif
+
 #ifdef LED_DISK_INVERT
 #define LED_DISK_ON()       LAT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN
 #define LED_DISK_OFF()      LAT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN
@@ -46,6 +47,7 @@ extern void power_off();
 #define LED_DISK_ON()       LAT_SET(LED_DISK_PORT) = 1 << LED_DISK_PIN
 #define LED_DISK_OFF()      LAT_CLR(LED_DISK_PORT) = 1 << LED_DISK_PIN
 #endif
+
 #ifdef LED_KERNEL_INVERT
 #define LED_KERNEL_ON()     LAT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
 #define LED_KERNEL_OFF()    LAT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
@@ -53,12 +55,45 @@ extern void power_off();
 #define LED_KERNEL_ON()     LAT_SET(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
 #define LED_KERNEL_OFF()    LAT_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN
 #endif
-#ifdef LED_AUX_INVERT
-#define LED_AUX_ON()        LAT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN
-#define LED_AUX_OFF()       LAT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN
+
+#ifdef LED_SWAP_INVERT
+#define LED_SWAP_ON()        LAT_CLR(LED_SWAP_PORT) = 1 << LED_SWAP_PIN
+#define LED_SWAP_OFF()       LAT_SET(LED_SWAP_PORT) = 1 << LED_SWAP_PIN
 #else
-#define LED_AUX_ON()        LAT_SET(LED_AUX_PORT) = 1 << LED_AUX_PIN
-#define LED_AUX_OFF()       LAT_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN
+#define LED_SWAP_ON()        LAT_SET(LED_SWAP_PORT) = 1 << LED_SWAP_PIN
+#define LED_SWAP_OFF()       LAT_CLR(LED_SWAP_PORT) = 1 << LED_SWAP_PIN
+#endif
+
+#ifdef LED_MISC1_INVERT
+#define LED_MISC1_ON()        LAT_CLR(LED_MISC1_PORT) = 1 << LED_MISC1_PIN
+#define LED_MISC1_OFF()       LAT_SET(LED_MISC1_PORT) = 1 << LED_MISC1_PIN
+#else
+#define LED_MISC1_ON()        LAT_SET(LED_MISC1_PORT) = 1 << LED_MISC1_PIN
+#define LED_MISC1_OFF()       LAT_CLR(LED_MISC1_PORT) = 1 << LED_MISC1_PIN
+#endif
+
+#ifdef LED_MISC2_INVERT
+#define LED_MISC2_ON()        LAT_CLR(LED_MISC2_PORT) = 1 << LED_MISC2_PIN
+#define LED_MISC2_OFF()       LAT_SET(LED_MISC2_PORT) = 1 << LED_MISC2_PIN
+#else
+#define LED_MISC2_ON()        LAT_SET(LED_MISC2_PORT) = 1 << LED_MISC2_PIN
+#define LED_MISC2_OFF()       LAT_CLR(LED_MISC2_PORT) = 1 << LED_MISC2_PIN
+#endif
+
+#ifdef LED_MISC3_INVERT
+#define LED_MISC3_ON()        LAT_CLR(LED_MISC3_PORT) = 1 << LED_MISC3_PIN
+#define LED_MISC3_OFF()       LAT_SET(LED_MISC3_PORT) = 1 << LED_MISC3_PIN
+#else
+#define LED_MISC3_ON()        LAT_SET(LED_MISC3_PORT) = 1 << LED_MISC3_PIN
+#define LED_MISC3_OFF()       LAT_CLR(LED_MISC3_PORT) = 1 << LED_MISC3_PIN
+#endif
+
+#ifdef LED_MISC4_INVERT
+#define LED_MISC4_ON()        LAT_CLR(LED_MISC4_PORT) = 1 << LED_MISC4_PIN
+#define LED_MISC4_OFF()       LAT_SET(LED_MISC4_PORT) = 1 << LED_MISC4_PIN
+#else
+#define LED_MISC4_ON()        LAT_SET(LED_MISC4_PORT) = 1 << LED_MISC4_PIN
+#define LED_MISC4_OFF()       LAT_CLR(LED_MISC4_PORT) = 1 << LED_MISC4_PIN
 #endif
 
 int	hz = HZ;
@@ -212,9 +247,9 @@ startup()
         LED_KERNEL_OFF();
 	TRIS_CLR(LED_KERNEL_PORT) = 1 << LED_KERNEL_PIN;
 #endif
-#ifdef LED_AUX_PORT                             /* Auxiliary */
-        LED_AUX_OFF();
-	TRIS_CLR(LED_AUX_PORT) = 1 << LED_AUX_PIN;
+#ifdef LED_SWAP_PORT                             /* Auxiliary */
+        LED_SWAP_OFF();
+	TRIS_CLR(LED_SWAP_PORT) = 1 << LED_SWAP_PIN;
 #endif
 #ifdef POWER_ENABLED
         power_init();
@@ -505,10 +540,10 @@ udelay (usec)
  */
 void led_control (int mask, int on)
 {
-#ifdef LED_AUX_PORT
-        if (mask & LED_AUX) {           /* Auxiliary */
-                if (on) LED_AUX_ON();
-                else    LED_AUX_OFF();
+#ifdef LED_SWAP_PORT
+        if (mask & LED_SWAP) {           /* Auxiliary */
+                if (on) LED_SWAP_ON();
+                else    LED_SWAP_OFF();
         }
 #endif
 #ifdef LED_DISK_PORT

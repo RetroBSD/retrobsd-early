@@ -272,6 +272,8 @@ cnputc (c)
 #ifdef CONSOLE_USB
 	usbputc(c);
 #endif 
+    if(c=='\n')
+        cnputc('\r');
 }
 
 /*

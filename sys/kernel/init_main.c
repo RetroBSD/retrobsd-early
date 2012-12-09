@@ -286,6 +286,7 @@ retry:
 		}
 	}
 	nswap = rdsize(swapdev);
+
 	if(minor(swapdev)==0)
 	{
 		printf ("swap dev  = rd%d (%d,%d)\n", 

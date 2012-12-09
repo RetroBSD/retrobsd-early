@@ -18,6 +18,8 @@
 #include <sys/inode.h>
 #include <sys/fs.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/swap.h>
 #include "fsck.h"
 
 int
@@ -31,6 +33,7 @@ setup(dev)
 	u_int msize;
 	char *mbase;
 	BUFAREA *bp;
+    off_t allocd;
 
 	if (stat("/", &statb) < 0)
 		errexit("Can't stat root\n");
@@ -108,55 +111,33 @@ setup(dev)
 	muldup = enddup = duplist;
 	zlnp = zlnlist;
 
-	if ((off_t)msize < totsz) {
+    totsz = fsmax / 3640 + 4;
+
+    printf("fsck: attempting with totsz %lu\n", totsz);
+    printf("fsck: msize = %lu\n",(off_t)msize);
+
+	if ((off_t)msize < (totsz<<10)) {
 		bmapsz = roundup(bmapsz,DEV_BSIZE);
 		smapsz = roundup(smapsz,DEV_BSIZE);
 		lncntsz = roundup(lncntsz,DEV_BSIZE);
-		nscrblk = (bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
-//		if (scrfile[0] == 0) {
-                            //statb.st_size < ((bmapsz+smapsz+lncntsz)>>DEV_BSHIFT) + 512*1024)
-		        /* Use tail of swap file for temporary data. */
-                        strcpy(scrfile, "/swap");
-                        if (stat(scrfile, &statb) < 0 ||
-                            statb.st_size < (bmapsz+smapsz+lncntsz) + 512*1024)
-                        {
-                                pfatal("TMP FILE (%s) TOO SMALL (need %u bytes, got %u)\n",
-                                        scrfile, bmapsz+smapsz+lncntsz+512*1024, statb.st_size);
-                                ckfini();
-                                return(0);
-                        }
-                        /* Temporarily clear immutable flag.  */
-                        chflags(scrfile, statb.st_flags & ~(UF_IMMUTABLE | SF_IMMUTABLE));
-                        sfile.wfdes = open(scrfile, 1);
-                        chflags(scrfile, statb.st_flags);
-                        if (sfile.wfdes < 0 ||
-                            (sfile.rfdes = open(scrfile, 0)) < 0) {
-                                printf("Can't open %s\n", scrfile);
-                                ckfini();
-                                return(0);
-                        }
-                        sfile.offset = statb.st_size - (nscrblk << DEV_BSHIFT);
-                        /*printf("Using scratch file %s, offset %u\n",
-                                scrfile, (unsigned) sfile.offset);*/
-//		} else {
-//		        /* User-define scratch file prefix. */
-//                        char junk[80 + sizeof (".XXXXX") + 1];
-//
-//                        strcpy(junk, scrfile);
-//                        strcat(junk, ".XXXXX");
-//                        sfile.wfdes = mkstemp(junk);
-//                        if (sfile.wfdes < 0 ||
-//                            (sfile.rfdes = open(junk, 0)) < 0) {
-//                                printf("Can't create %s\n", junk);
-//                                ckfini();
-//                                return(0);
-//                        }
-//                        unlink(junk);	/* make it invisible incase we exit */
-//                        if (hotroot && (fstat(sfile.wfdes,&statb)==0)
-//                            && ((statb.st_mode & S_IFMT) == S_IFREG)
-//                            && (statb.st_dev==rootdev))
-//                             pfatal("TMP FILE (%s) ON ROOT WHEN CHECKING ROOT\n", junk);
-//                }
+		nscrblk = totsz; //(bmapsz+smapsz+lncntsz)>>DEV_BSHIFT;
+
+        strcpy(scrfile,"/dev/temp0");
+        sfile.wfdes = open(scrfile,1);
+        if (!sfile.wfdes) {
+            errexit("Unable to open temp device\n");
+        }
+        allocd = totsz;
+        ioctl(sfile.wfdes, TFALLOC, &allocd);
+        if (allocd != totsz) {
+            printf("Unable to allocate temp space (wanted %lu, got %lu\n",
+                totsz,allocd);
+            errexit("alloc fail\n");
+        }
+        sfile.rfdes = open(scrfile,0);
+            
+        sfile.offset = 0;
+
 		bp = &((BUFAREA *)mbase)[(msize/sizeof(BUFAREA))];
 		poolhead = NULL;
 		while(--bp >= (BUFAREA *)mbase) {
@@ -177,6 +158,7 @@ setup(dev)
 		lncntblk = smapblk + smapsz / DEV_BSIZE;
 		fmapblk = smapblk;
 	} else {
+        printf("Proceeding with RAM only\n");
 		poolhead = NULL;
 		blockmap = mbase;
 		statemap = &mbase[bmapsz];
