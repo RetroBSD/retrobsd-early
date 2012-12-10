@@ -25,14 +25,14 @@ map <string,mapping> mappings;
 
 void substitute(string &out, string source, string param, int devnum, string pinmap)
 {
-    unsigned int pos;
+    size_t pos;
     stringstream dnum;
     dnum << devnum;
 
     out = source;
 
-    replace_all(out,"%0",dnum.str());
-    replace_all(out,"%1",param);
+    replace_all(out, "%0", dnum.str());
+    replace_all(out, "%1", param);
 
     pos = out.find("$TRIS(");
     while(pos != out.npos)
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     {
         string filepath(corep + "/" + dent->d_name);
         string filename(dent->d_name);
-    
+
         if(filepath.substr(filepath.size()-4,4) == ".cor")
         {
             string devname = filename.substr(0,filename.size()-4);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
     // First we will iterate the device instances and collate any requred sub-devices.
     // From that we will add new device instances, and repeat until there are no more changes.
-    
+
     bool repeat = true;
     map <string,instance>::iterator it;
     vector <string>::iterator rit;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-        
+
 
     // Next let's do the defines.  We need to do this for the "always"
     // and also for every instance.  We also need to do string replacements
@@ -475,7 +475,7 @@ int main(int argc, char *argv[])
     out << "KERNOBJ += ";
 
     vector <string>::iterator vit;
-    
+
     for(vit = files.begin(); vit != files.end(); vit++)
     {
         out << (*vit) << " ";

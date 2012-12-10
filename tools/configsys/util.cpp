@@ -9,11 +9,11 @@ using namespace std;
 
 void replace_all(string &haystack, string from, string to)
 {
-    unsigned int pos;
+    size_t pos;
     pos = haystack.find(from);
     while(pos != haystack.npos)
     {
-        haystack.replace(pos,from.size(),to);
+        haystack.replace(pos, from.size(), to);
         pos = haystack.find(from);
     }
 }

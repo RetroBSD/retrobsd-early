@@ -112,7 +112,7 @@ D_ADC            = dev/adc0!c6:0 dev/adc1!c6:1 dev/adc2!c6:2 dev/adc3!c6:3 \
 D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3
 D_GLCD		    += dev/glcd0!c8:0
 D_PWM		     = dev/oc1!c9:0 dev/oc2!c9:1 dev/oc3!c9:2 dev/oc4!c9:3 dev/oc5!c9:4
-D_TEMP           = dev/temp0!c10:0 dev/temp1!c10:1 dev/temp2!c10:2 
+D_TEMP           = dev/temp0!c10:0 dev/temp1!c10:1 dev/temp2!c10:2
 
 FDDEVS           = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
                    dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
@@ -129,7 +129,7 @@ D_UART           = dev/tty0!c12:0 dev/tty1!c12:1 dev/tty2!c12:2 \
 D_USB            = dev/ttyUSB0!c13:0
 D_PTS            = dev/ttyp0!c14:0 dev/ttyp1!c14:1 dev/ttyp2!c14:2 dev/ttyp3!c14:3
 D_PTC            = dev/ptyp0!c15:0 dev/ptyp1!c15:1 dev/ptyp2!c15:2 dev/ptyp3!c15:3
- 
+
 U_DIRS           = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES          = $(shell find u -type f ! -path '*/.svn/*')
 U_ALL            = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
@@ -143,19 +143,21 @@ all:            tools build kernel
 
 fs:             sdcard.rd
 
-.PHONY: tools
+.PHONY: 	tools
 tools:
 		$(MAKE) -C tools
 
-kernel:  $(CONFIG)
-		cd $(TARGETDIR) && $(CONFIG) $(TARGETNAME)
+kernel: 	$(TARGETDIR)/Makefile
 		$(MAKE) -C $(TARGETDIR)
 
-.PHONY: lib
+$(TARGETDIR)/Makefile: $(CONFIG) $(TARGETDIR)/$(TARGETNAME)
+		cd $(TARGETDIR) && $(CONFIG) $(TARGETNAME)
+
+.PHONY: 	lib
 lib:
 		$(MAKE) -C lib
 
-build: tools lib
+build: 		tools lib
 		$(MAKE) -C src install
 
 filesys.img:	$(FSUTIL) $(ALLFILES)
@@ -206,37 +208,6 @@ cleanall:       clean
 		rm -f tools/configsys/.depend
 		rm -f var/log/aculog
 		rm -rf var/lock
-
-# TODO
-buildlib:
-		@echo installing /usr/include
-		# cd include; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo compiling libc.a
-		cd lib/libc; $(MAKE) $(LIBCDEFS)
-		@echo installing /lib/libc.a
-		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo compiling C compiler
-		cd lib; $(MAKE) ccom cpp c2
-		@echo installing C compiler
-		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib; $(MAKE) clean
-		@echo
-		@echo re-compiling libc.a
-		cd lib/libc; $(MAKE) $(LIBCDEFS)
-		@echo re-installing /lib/libc.a
-		cd lib/libc; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
-		@echo re-compiling C compiler
-		cd lib; $(MAKE) ccom cpp c2
-		@echo re-installing C compiler
-		cd lib/ccom; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/cpp; $(MAKE) DESTDIR=$(DESTDIR) install
-		cd lib/c2; $(MAKE) DESTDIR=$(DESTDIR) install
-		@echo
 
 installfs: filesys.img
 ifdef SDCARD
