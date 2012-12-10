@@ -13,39 +13,39 @@
 #include <unistd.h>
 
 int prefix(cp, dp)
-	char *cp, *dp;
+    char *cp, *dp;
 {
-	while (*cp && *dp && *cp == *dp)
-		cp++, dp++;
-	if (*cp == 0)
-		return (*dp == '=');
-	return 0;
+    while (*cp && *dp && *cp == *dp)
+        cp++, dp++;
+    if (*cp == 0)
+        return (*dp == '=');
+    return 0;
 }
 
 int main(argc, argv)
-	int argc;
-	char *argv[];
+    int argc;
+    char *argv[];
 {
-	register char **ep;
-	int found = 0;
+    register char **ep;
+    int found = 0;
 
-	if (! environ)
-	        return 1;
+    if (! environ)
+        return 1;
 
-	argc--, argv++;
-        for (ep = environ; *ep; ep++) {
-                if (argc == 0 || prefix(argv[0], *ep)) {
-                        register char *cp = *ep;
+    argc--, argv++;
+    for (ep = environ; *ep; ep++) {
+        if (argc == 0 || prefix(argv[0], *ep)) {
+            register char *cp = *ep;
 
-                        found++;
-                        if (argc) {
-                                while (*cp && *cp != '=')
-                                        cp++;
-                                if (*cp == '=')
-                                        cp++;
-                        }
-                        printf("%s\n", cp);
-                }
+            found++;
+            if (argc) {
+                while (*cp && *cp != '=')
+                    cp++;
+                if (*cp == '=')
+                    cp++;
+            }
+            printf("%s\n", cp);
         }
-	return !found;
+    }
+    return !found;
 }

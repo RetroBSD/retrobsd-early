@@ -6,11 +6,10 @@
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <string.h>
 #include <unistd.h>
 
 static	char	dev[]	= "/dev/";
-char	*strcpy();
-char	*strcat();
 
 char *
 ttyname(f)

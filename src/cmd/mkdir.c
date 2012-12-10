@@ -12,8 +12,8 @@
  *    documentation and/or other materials provided with the distribution.
  * 3. All advertising materials mentioning features or use of this software
  *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
+ *  This product includes software developed by the University of
+ *  California, Berkeley and its contributors.
  * 4. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
@@ -40,69 +40,69 @@
 extern int errno;
 
 main(argc, argv)
-	int argc;
-	char **argv;
+    int argc;
+    char **argv;
 {
-	extern int optind;
-	int ch, exitval, pflag;
+    extern int optind;
+    int ch, exitval, pflag;
 
-	pflag = 0;
-	while ((ch = getopt(argc, argv, "p")) != EOF)
-		switch(ch) {
-		case 'p':
-			pflag = 1;
-			break;
-		case '?':
-		default:
-			usage();
-		}
+    pflag = 0;
+    while ((ch = getopt(argc, argv, "p")) != EOF)
+        switch(ch) {
+        case 'p':
+            pflag = 1;
+            break;
+        case '?':
+        default:
+            usage();
+        }
 
-	if (!*(argv += optind))
-		usage();
+    if (!*(argv += optind))
+        usage();
 
-	for (exitval = 0; *argv; ++argv)
-		if (pflag)
-			exitval |= build(*argv);
-		else if (mkdir(*argv, 0777) < 0) {
-			(void)fprintf(stderr, "mkdir: %s: %s\n",
-			    *argv, strerror(errno));
-			exitval = 1;
-		}
-	exit(exitval);
+    for (exitval = 0; *argv; ++argv)
+        if (pflag)
+            exitval |= build(*argv);
+        else if (mkdir(*argv, 0777) < 0) {
+            (void)fprintf(stderr, "mkdir: %s: %s\n",
+                *argv, strerror(errno));
+            exitval = 1;
+        }
+    exit(exitval);
 }
 
 build(path)
-	char *path;
+    char *path;
 {
-	register char *p;
-	struct stat sb;
-	int create, ch;
+    register char *p;
+    struct stat sb;
+    int create, ch;
 
-	for (create = 0, p = path;; ++p)
-		if (!*p || *p  == '/') {
-			ch = *p;
-			*p = '\0';
-			if (stat(path, &sb)) {
-				if (errno != ENOENT || mkdir(path, 0777) < 0) {
-					(void)fprintf(stderr, "mkdir: %s: %s\n",
-					    path, strerror(errno));
-					return(1);
-				}
-				create = 1;
-			}
-			if (!(*p = ch))
-				break;
-		}
-	if (!create) {
-		(void)fprintf(stderr, "mkdir: %s: %s\n", path,
-		    strerror(EEXIST));
-		return(1);
-	}
-	return(0);
+    for (create = 0, p = path;; ++p)
+        if (!*p || *p  == '/') {
+            ch = *p;
+            *p = '\0';
+            if (stat(path, &sb)) {
+                if (errno != ENOENT || mkdir(path, 0777) < 0) {
+                    (void)fprintf(stderr, "mkdir: %s: %s\n",
+                        path, strerror(errno));
+                    return(1);
+                }
+                create = 1;
+            }
+            if (!(*p = ch))
+                break;
+        }
+    if (!create) {
+        (void)fprintf(stderr, "mkdir: %s: %s\n", path,
+            strerror(EEXIST));
+        return(1);
+    }
+    return(0);
 }
 
 usage()
 {
-	(void)fprintf(stderr, "usage: mkdir [-p] dirname ...\n");
-	exit(1);
+    (void)fprintf(stderr, "usage: mkdir [-p] dirname ...\n");
+    exit(1);
 }

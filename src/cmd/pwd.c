@@ -15,12 +15,12 @@ char *getwd();
 
 main()
 {
-	char pathname[MAXPATHLEN + 1];
+    char pathname[MAXPATHLEN + 1];
 
-	if (getwd(pathname) == NULL) {
-		fprintf(stderr, "pwd: %s\n", pathname);
-		exit(1);
-	}
-	printf("%s\n", pathname);
-	exit(0);
+    if (getwd(pathname) == NULL) {
+        fprintf(stderr, "pwd: %s\n", pathname);
+        exit(1);
+    }
+    printf("%s\n", pathname);
+    exit(0);
 }

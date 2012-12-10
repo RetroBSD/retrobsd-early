@@ -10,39 +10,39 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)mkdep.sh	5.11 (Berkeley) 5/5/88
+#   @(#)mkdep.sh    5.11 (Berkeley) 5/5/88
 #
 
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
 
-MAKE=Makefile			# default makefile name is "Makefile"
+MAKE=Makefile           # default makefile name is "Makefile"
 
 while :
-	do case "$1" in
-		# -f allows you to select a makefile name
-		-f)
-			MAKE=$2
-			shift; shift ;;
+    do case "$1" in
+        # -f allows you to select a makefile name
+        -f)
+            MAKE=$2
+            shift; shift ;;
 
-		# the -p flag produces "program: program.c" style dependencies
-		# so .o's don't get produced
-		-p)
-			SED='s;\.o;;'
-			shift ;;
-		*)
-			break ;;
-	esac
+        # the -p flag produces "program: program.c" style dependencies
+        # so .o's don't get produced
+        -p)
+            SED='s;\.o;;'
+            shift ;;
+        *)
+            break ;;
+    esac
 done
 
 if [ $# = 0 ] ; then
-	echo 'usage: mkdep [-p] [-f makefile] [flags] file ...'
-	exit 1
+    echo 'usage: mkdep [-p] [-f makefile] [flags] file ...'
+    exit 1
 fi
 
 if [ ! -w $MAKE ]; then
-	echo "mkdep: no writeable file \"$MAKE\""
-	exit 1
+    echo "mkdep: no writeable file \"$MAKE\""
+    exit 1
 fi
 
 TMP=/tmp/mkdep$$
@@ -64,31 +64,31 @@ _EOF_
 # hack can't deal with anything that requires a search path, and doesn't
 # even try for anything using bracket (<>) syntax.
 #
-# egrep '^#include[ 	]*".*"' /dev/null $* |
+# egrep '^#include[     ]*".*"' /dev/null $* |
 # sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' -e 's/\.c/.o/' |
 
 cc -M $* |
 sed "
-	s; \./; ;g
-	$SED" |
+    s; \./; ;g
+    $SED" |
 awk '{
-	if ($1 != prev) {
-		if (rec != "")
-			print rec;
-		rec = $0;
-		prev = $1;
-	}
-	else {
-		if (length(rec $2) > 78) {
-			print rec;
-			rec = $0;
-		}
-		else
-			rec = rec " " $2
-	}
+    if ($1 != prev) {
+        if (rec != "")
+            print rec;
+        rec = $0;
+        prev = $1;
+    }
+    else {
+        if (length(rec $2) > 78) {
+            print rec;
+            rec = $0;
+        }
+        else
+            rec = rec " " $2
+    }
 }
 END {
-	print rec
+    print rec
 }' >> $TMP
 
 cat << _EOF_ >> $TMP
