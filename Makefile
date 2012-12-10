@@ -32,14 +32,7 @@ TARGET          ?= $(MAX32)
 # Filesystem and swap sizes.
 FS_KBYTES       = 163840
 U_KBYTES        = 163840
-SWAP_KBYTES     = 81920
-
-# The ROOTSWAP is a bit of a pain.  It's required for fsck to operate.
-# That's such a waste.  Never mind, it will go once the swap
-# system is rewritten so that /dev/tmp can be used instead.
-
-# This calculation should create a root swap at the exact size that fsck thinks it requires to check the root filesystem.
-ROOTSWAP    = $(shell expr ${FS_KBYTES} / 3640 + 516)
+SWAP_KBYTES     = 2048
 
 # Set this to the device name for your SD card.  With this
 # enabled you can use "make installfs" to copy the filesys.img

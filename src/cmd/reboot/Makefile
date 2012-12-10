@@ -32,10 +32,10 @@ install:        all
 		ln ${DESTDIR}/share/man/cat8/reboot.0 ${DESTDIR}/share/man/cat8/halt.0
 		install reboot ${DESTDIR}/sbin/reboot
 		@-rm -f ${DESTDIR}/sbin/fastboot ${DESTDIR}/sbin/halt ${DESTDIR}/sbin/poweroff
-		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/halt
-		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/fastboot
-		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/poweroff
-		ln ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/bootloader
+		ln -f ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/halt
+		ln -f ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/fastboot
+		ln -f ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/poweroff
+		ln -f ${DESTDIR}/sbin/reboot ${DESTDIR}/sbin/bootloader
 
 lint:           ${SRCS}
 		lint -hax ${SRCS}
