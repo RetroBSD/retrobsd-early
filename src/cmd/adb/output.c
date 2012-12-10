@@ -190,13 +190,9 @@ print(char *fmat, ...)
 {
     va_list args, prev_args;
     char    *fptr, *s;
-//    int     *vptr;
-//    long    *dptr;
-//    double  *rptr;
     int     width, prec;
     char    c, adj;
     int     decpt, n;
-    //long    lx;
     char    digits[64];
     union {
         int int32;
@@ -233,10 +229,6 @@ print(char *fmat, ...)
             prec = -1;
 
         digitptr = digits;
-        //rptr = (double*) vptr;
-        //dptr = (long*) vptr;
-        //lx = *dptr;
-        //x = *vptr++;
         prev_args = args;
         word.int32 = va_arg(args, int);
         s = 0;

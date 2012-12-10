@@ -74,6 +74,7 @@ printregs()
     int v;
 
     if (kernel) {
+        // TODO
         for (p=kregs; p<&kregs[7]; p++) {
             v = corhdr[p->roffs];
             print("%s%8t%x%8t", p->rname, v);
@@ -81,12 +82,30 @@ printregs()
             printc(EOR);
         }
     } else {
-        for (p=reglist; p < &reglist[NREG]; p++) {
-            v = uframe[p->roffs];
-            print("%s%8t%x%8t", p->rname, v);
-            valpr(v, (p->roffs == FRAME_PC) ? ISYM : DSYM);
-            printc(EOR);
-        }
+	print ("                t0 = %9x  s0 = %9x  t8 = %9x   lo = %9x\n",
+		uframe [FRAME_R8], uframe [FRAME_R16],
+		uframe [FRAME_R24], uframe [FRAME_LO]);
+	print ("at = %9x  t1 = %9x  s1 = %9x  t9 = %9x   hi = %9x\n",
+		uframe [FRAME_R1], uframe [FRAME_R9], uframe [FRAME_R17],
+		uframe [FRAME_R25], uframe [FRAME_HI]);
+	print ("v0 = %9x  t2 = %9x  s2 = %9x               status = %9x\n",
+		uframe [FRAME_R2], uframe [FRAME_R10],
+		uframe [FRAME_R18], uframe [FRAME_STATUS]);
+	print ("v1 = %9x  t3 = %9x  s3 = %9x                   pc = %9x\n",
+		uframe [FRAME_R3], uframe [FRAME_R11],
+		uframe [FRAME_R19], uframe [FRAME_PC]);
+	print ("a0 = %9x  t4 = %9x  s4 = %9x  gp = %9x\n",
+		uframe [FRAME_R4], uframe [FRAME_R12],
+		uframe [FRAME_R20], uframe [FRAME_GP]);
+	print ("a1 = %9x  t5 = %9x  s5 = %9x  sp = %9x\n",
+		uframe [FRAME_R5], uframe [FRAME_R13],
+		uframe [FRAME_R21], uframe [FRAME_SP]);
+	print ("a2 = %9x  t6 = %9x  s6 = %9x  fp = %9x\n",
+		uframe [FRAME_R6], uframe [FRAME_R14],
+		uframe [FRAME_R22], uframe [FRAME_FP]);
+	print ("a3 = %9x  t7 = %9x  s7 = %9x  ra = %9x\n",
+		uframe [FRAME_R7], uframe [FRAME_R15],
+		uframe [FRAME_R23], uframe [FRAME_RA]);
         printpc();
     }
 }
