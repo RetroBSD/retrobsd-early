@@ -104,8 +104,11 @@ void spi_close(int dno)
     if(spi_devices[dno].bus==NULL)
         return;
    
-    // Revert the CS pin to input.
-    TRIS_CLR(*spi_devices[dno].cs_tris) = 1<<spi_devices[dno].cs_pin;
+    if (spi_devices[dno].cs_tris != NULL) {
+        // Revert the CS pin to input.
+        TRIS_CLR(*spi_devices[dno].cs_tris) = 1<<spi_devices[dno].cs_pin;
+    }
+    spi_devices[dno].cs_tris = NULL;
 
     // Disable the device (remove the bus pointer)
     spi_devices[dno].bus = NULL;
@@ -122,6 +125,9 @@ void spi_select(int dno)
     if(spi_devices[dno].bus==NULL)
         return;
 
+    if (spi_devices[dno].cs_tris == NULL) 
+        return;
+
     spi_devices[dno].bus->brg = spi_devices[dno].baud;
     spi_devices[dno].bus->con = spi_devices[dno].mode;
 
@@ -135,6 +141,9 @@ void spi_deselect(int dno)
         return;
   
     if(spi_devices[dno].bus==NULL)
+        return;
+
+    if (spi_devices[dno].cs_tris == NULL) 
         return;
 
     LAT_SET(*spi_devices[dno].cs_tris) = 1<<spi_devices[dno].cs_pin;
@@ -184,22 +193,27 @@ unsigned int spi_status(int dno)
 // mode of the transfer.
 // This is blocking, and waits for the transfer to complete
 // before returning.  Times out after a certain period.
-unsigned int spi_transfer(int dno, unsigned int data)
+unsigned char spi_transfer(int dno, unsigned char data)
 {
-    register unsigned int count;
+    unsigned int to = 100000;
 
     if(dno >= MAXSPIDEV)
-        return 0xFFFFFFFFUL;
+        return 0xF0;
   
     if(spi_devices[dno].bus==NULL)
-        return 0xFFFFFFFFUL;
+        return 0xF1;
+
+    spi_devices[dno].bus->con = spi_devices[dno].mode;
+    spi_devices[dno].bus->brg = spi_devices[dno].baud;
 
     spi_devices[dno].bus->buf = data;
-    for (count=0; count<1000; count++)
-        if (spi_devices[dno].bus->stat & PIC32_SPISTAT_SPIRBF)
-                        return spi_devices[dno].bus->buf;
+    while ((--to > 0) && (!(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPIRBF)))
+        asm volatile ("nop");
 
-    return 0xFFFFFFFFUL;
+    if(to  == 0)
+        return 0xF2;
+
+    return spi_devices[dno].bus->buf;
 }
 
 // Write a huge chunk of data as fast and as efficiently as
@@ -308,36 +322,24 @@ void spi_bulk_write_16(int dno, unsigned int len, char *data)
     spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
-void spi_bulk_write(int dno, unsigned int len, char *data)
+void spi_bulk_write(int dno, unsigned int len, unsigned char *data)
 {
-    unsigned int nread;
-    unsigned int nwritten;
+    unsigned char *data8 = data;
+    unsigned int i;
+    unsigned char in,out;
 
     if(dno >= MAXSPIDEV)
         return;
   
     if(spi_devices[dno].bus==NULL)
         return;
-    
-    nread = 0;
-    nwritten = len;
 
-    spi_devices[dno].bus->conset = PIC32_SPICON_ENHBUF;
-    while(nread < len)
+    for(i=0; i<len; i++)
     {
-        if(nwritten > 0 && !(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPITBF))
-        {
-            spi_devices[dno].bus->buf = *data++;
-            nwritten--;
-        }
-
-        if(!(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPIRBE)) 
-        {
-            (void) spi_devices[dno].bus->buf;
-            nread++;
-        }
+        out = *data8;
+        in = spi_transfer(dno, out);
+        data8++;
     }
-    spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
 // Read a huge chunk of data as fast and as efficiently as
@@ -446,10 +448,11 @@ void spi_bulk_read_16(int dno, unsigned int len, char *data)
     spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
-void spi_bulk_read(int dno, unsigned int len, char *data)
+void spi_bulk_read(int dno, unsigned int len, unsigned char *data)
 {
-    unsigned int nread;
-    unsigned int nwritten;
+    unsigned char *data8 = data;
+    unsigned int i;
+    unsigned char in,out;
 
     if(dno >= MAXSPIDEV)
         return;
@@ -457,25 +460,13 @@ void spi_bulk_read(int dno, unsigned int len, char *data)
     if(spi_devices[dno].bus==NULL)
         return;
 
-    nread = 0;
-    nwritten = len;
-
-    spi_devices[dno].bus->conset = PIC32_SPICON_ENHBUF;
-    while(nread < len)
+    for(i=0; i<len; i++)
     {
-        if(nwritten > 0 && !(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPITBF))
-        {
-            spi_devices[dno].bus->buf = ~0;
-            nwritten--;
-        }
-
-        if(!(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPIRBE)) 
-        {
-            *data++ = spi_devices[dno].bus->buf;
-            nread++;
-        }
+        out = 0xFF;
+        in = spi_transfer(dno, out);
+        *data8 = in;
+        data8++;
     }
-    spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
 void spi_bulk_rw_32_be(int dno, unsigned int len, char *data)
@@ -583,12 +574,11 @@ void spi_bulk_rw_16(int dno, unsigned int len, char *data)
     spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
-void spi_bulk_rw(int dno, unsigned int len, char *data)
+void spi_bulk_rw(int dno, unsigned int len, unsigned char *data)
 {
-    char *read8 = data;
-    char *write8 = data;
-    unsigned int nread;
-    unsigned int nwritten;
+    unsigned char *data8 = data;
+    unsigned int i;
+    unsigned char in,out;
 
     if(dno >= MAXSPIDEV)
         return;
@@ -596,25 +586,13 @@ void spi_bulk_rw(int dno, unsigned int len, char *data)
     if(spi_devices[dno].bus==NULL)
         return;
 
-    nread = 0;
-    nwritten = len;
-
-    spi_devices[dno].bus->conset = PIC32_SPICON_ENHBUF;
-    while(nread < len)
+    for(i=0; i<len; i++)
     {
-        if(nwritten > 0 && !(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPITBF))
-        {
-            spi_devices[dno].bus->buf = *write8++;
-            nwritten--;
-        }
-
-        if(!(spi_devices[dno].bus->stat & PIC32_SPISTAT_SPIRBE)) 
-        {
-            *read8++ = spi_devices[dno].bus->buf;
-            nread++;
-        }
+        out = *data8;
+        in = spi_transfer(dno, out);
+        *data8 = in;
+        data8++;
     }
-    spi_devices[dno].bus->con = spi_devices[dno].mode;
 }
 
 // Set the SPI baud rate for a device (in KHz)

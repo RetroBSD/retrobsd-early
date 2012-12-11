@@ -30,6 +30,14 @@
 #include "spi.h"
 #include "spi_bus.h"
 
+const struct devspec spidevs[] = {
+    { 0, "spi1" },
+    { 1, "spi2" },
+    { 2, "spi3" },
+    { 3, "spi4" },
+    { 0, 0 }
+};
+
 #define NSPI    4       /* Ports SPI1...SPI4 */
 
 /*
@@ -59,6 +67,8 @@ int spidev_open (dev_t dev, int flag, int mode)
             return EPERM;
 
     spi_fd[channel] = spi_open(channel+1,NULL,NULL);
+    if(spi_fd[channel]==-1)
+        return ENODEV;
     return 0;
 }
 
@@ -98,6 +108,7 @@ int spidev_write (dev_t dev, struct uio *uio, int flag)
 int spidev_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
 {
     int channel = minor (dev);
+    unsigned char *cval = (unsigned char *)addr;
     int nelem;
     static unsigned volatile *const tris[8] = {
         0, &TRISA,&TRISB,&TRISC,&TRISD,&TRISE,&TRISF,&TRISG,
@@ -139,10 +150,12 @@ int spidev_ioctl (dev_t dev, u_int cmd, caddr_t addr, int flag)
         return 0;
 
     case SPICTL_IO8(0):         /* transfer n*8 bits */
+        spi_select(spi_fd[channel]);
         nelem = (cmd >> 16) & IOCPARM_MASK;
         if (baduaddr (addr) || baduaddr (addr + nelem - 1))
             return EFAULT;
-        spi_bulk_rw(spi_fd[channel], nelem, (char*)addr);
+        spi_bulk_rw(spi_fd[channel], nelem, cval);
+        spi_deselect(spi_fd[channel]);
         break;
 
     case SPICTL_IO16(0):        /* transfer n*16 bits */
