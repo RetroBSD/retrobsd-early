@@ -422,7 +422,7 @@ again:
         spi_bulk_read_32_be(sd_fd[unit],SECTSIZE,data);
         data += SECTSIZE;
     } else {
-        spi_bulk_read(sd_fd[unit],bcount,data);
+        spi_bulk_read(sd_fd[unit],bcount,(unsigned char *)data);
         data += bcount;
         for (i=bcount; i<SECTSIZE; i++)
             spi_transfer(sd_fd[unit],0xFF);
@@ -489,7 +489,7 @@ again:
         spi_bulk_write_32_be(sd_fd[unit],SECTSIZE,data);
         data += SECTSIZE;
     } else {
-        spi_bulk_write(sd_fd[unit],bcount,data);
+        spi_bulk_write(sd_fd[unit],bcount,(unsigned char *)data);
         data += bcount;
         for (i=bcount; i<SECTSIZE; i++)
             spi_transfer(sd_fd[unit],0xFF);
