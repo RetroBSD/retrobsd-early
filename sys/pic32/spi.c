@@ -30,13 +30,13 @@
 #include "spi.h"
 #include "spi_bus.h"
 
-const struct devspec spidevs[] = {
+/*const struct devspec spidevs[] = {
     { 0, "spi1" },
     { 1, "spi2" },
     { 2, "spi3" },
     { 3, "spi4" },
     { 0, 0 }
-};
+};*/
 
 #define NSPI    4       /* Ports SPI1...SPI4 */
 
