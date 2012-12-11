@@ -1,3 +1,5 @@
+#ifndef _CONF_H
+#define _CONF_H
 /*
  * Copyright (c) 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
@@ -6,6 +8,11 @@
 struct uio;
 struct buf;
 struct tty;
+
+struct devspec {
+    int unit;
+    char *devname;
+};
 
 /*
  * Declaration of block device
@@ -25,6 +32,7 @@ struct bdevsw
 	daddr_t	(*d_psize) (dev_t);		/* query partition size */
 	int	(*d_ioctl) (dev_t, u_int, caddr_t, int);
 	int	d_flags;			/* tape flag */
+    const struct devspec *devs;
 };
 
 /*
@@ -41,6 +49,9 @@ struct cdevsw
 	struct tty *d_ttys;
 	int	(*d_select) (dev_t, int);
 	void	(*d_strategy) (struct buf*);
+    char (*r_read) (dev_t);
+    void (*r_write) (dev_t, char);
+    const struct devspec *devs;
 };
 
 /*
@@ -69,4 +80,6 @@ extern int noioctl(dev_t dev, u_int cmd, caddr_t data, int flag);
 extern void noroot(caddr_t csr);
 
 int rawrw (dev_t dev, struct uio *uio, int flag);
+#endif
+
 #endif
