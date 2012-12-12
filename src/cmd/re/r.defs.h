@@ -24,7 +24,7 @@
 #endif
 
 #define MOVECMD(x)  ((x) >= CCMOVEUP && (x) <= CCBACKTAB)
-#define CTRLCHAR(x) ((((x) >= 0) && ((x) < ' ')) || ((lread1 >= 0177) && (lread1 <= 0240)))
+#define CTRLCHAR(x) (((x) >= 0 && (x) < ' ') || ((x) >= 0177 && (x) < 0240))
 #define MAXCOLS     128     /* max. width of screen */
 #define MAXLINES    48      /* max. height of screen */
 #define LBUFFER     256     /* lower limit for the current line buffer */
@@ -218,15 +218,16 @@ extern int tabstops[];
 char blanks[MAXCOLS];
 extern const char in0tab[]; /* input control codes */
 
-extern int lread1;          /* Текущий входной символ, -1 - дай еще! */
-char intrflag;              /* 1 - был сигнал INTERUP */
+extern int keysym;          /* Текущий входной символ, -1 - дай еще! */
+char intrflag;              /* 1 - был сигнал INTR */
+int highlight_position;     /* Highlight the current cursor position */
 
 /* Умолчания */
 extern int defplline,defplpage,defmiline,defmipage,deflport,defrport,
         definsert, defdelete, defpick;
 extern char deffile[];
 
-int errsw;                  /* 1 - в окне параметров сообщение об ошибке */
+int message_displayed;      /* Arg area contains an error message */
 
 /*
  * Глобальные параметры для param():
@@ -280,8 +281,8 @@ typedef struct {
 
 extern keycode_t keytab[];
 
-int read1 (void);               /* read command from terminal */
-int read2 (void);               /* read raw input character */
+int getkeysym (void);           /* read command from terminal */
+int rawinput (void);            /* read raw input character */
 void getlin (int);              /* get a line from current file */
 void putline (int);             /* put a line to current file */
 void movecursor (int);          /* cursor movement operation */
@@ -364,5 +365,5 @@ void ttcleanup (void);          /* restore terminal modes */
 int get1w (int);                /* read word */
 int get1c (int);                /* read byte */
 void put1w (int, int);          /* write word */
-void put1c (char, int);         /* write byte */
+void put1c (int, int);          /* write byte */
 void mainloop (void);           /* main editor loop */

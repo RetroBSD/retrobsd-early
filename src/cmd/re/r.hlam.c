@@ -214,9 +214,10 @@ void put1w(w, fd)
  * Write byte.
  */
 void put1c(c, fd)
-    int fd;
-    char c;
+    int c, fd;
 {
-    if (write(fd, &c, 1) != 1)
+    char sym = c;
+
+    if (write(fd, &sym, 1) != 1)
         /* ignore errors */;
 }

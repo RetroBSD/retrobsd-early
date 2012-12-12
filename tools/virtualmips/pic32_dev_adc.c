@@ -106,14 +106,14 @@ void *dev_pic32_adc_access (cpu_mips_t *cpu, struct vdevice *dev,
         }
         break;
 
-    case PIC32_ADC1BUF0: case PIC32_ADC1BUF1:
-    case PIC32_ADC1BUF2: case PIC32_ADC1BUF3:
-    case PIC32_ADC1BUF4: case PIC32_ADC1BUF5:
-    case PIC32_ADC1BUF6: case PIC32_ADC1BUF7:
-    case PIC32_ADC1BUF8: case PIC32_ADC1BUF9:
-    case PIC32_ADC1BUFA: case PIC32_ADC1BUFB:
-    case PIC32_ADC1BUFC: case PIC32_ADC1BUFD:
-    case PIC32_ADC1BUFE: case PIC32_ADC1BUFF:
+    case PIC32_ADC1BUF0 & 0xff0: case PIC32_ADC1BUF1 & 0xff0:
+    case PIC32_ADC1BUF2 & 0xff0: case PIC32_ADC1BUF3 & 0xff0:
+    case PIC32_ADC1BUF4 & 0xff0: case PIC32_ADC1BUF5 & 0xff0:
+    case PIC32_ADC1BUF6 & 0xff0: case PIC32_ADC1BUF7 & 0xff0:
+    case PIC32_ADC1BUF8 & 0xff0: case PIC32_ADC1BUF9 & 0xff0:
+    case PIC32_ADC1BUFA & 0xff0: case PIC32_ADC1BUFB & 0xff0:
+    case PIC32_ADC1BUFC & 0xff0: case PIC32_ADC1BUFD & 0xff0:
+    case PIC32_ADC1BUFE & 0xff0: case PIC32_ADC1BUFF & 0xff0:
         if (op_type == MTS_READ) {      /* Result words */
             *data = 0; // TODO
         }

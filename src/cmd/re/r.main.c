@@ -21,7 +21,7 @@ int tabstops[NTABS] = {
     0,  0,  0,  0,  0,   0,   0,   0,   0,   0,
 };
 
-int lread1 = -1;         /* -1 означает, что символ использован */
+int keysym = -1;         /* -1 означает, что символ использован */
 
 /* Параметры для движения по файлу */
 
@@ -63,13 +63,13 @@ void sig(n)
 /*
  * Установить игнорирование
  */
-void igsig(n)
+static void igsig(n)
     int n;
 {
     void testsig(int);
 
-    signal(3,igsig);
-    signal(2,testsig);
+    signal(3, igsig);
+    signal(2, testsig);
 }
 
 /*
@@ -81,7 +81,7 @@ void testsig(n)
     signal(2, igsig);
     if (intrflag)
         fatal("RE WAS INTERRUPTED\n");
-    igsig();
+    igsig(0);
     intrflag = 1;
 }
 
@@ -170,9 +170,9 @@ static void startup(restart)
      * Переопределяем сигналы
      */
     for (i=SIGTERM; i; i--)
-        signal(i,sig);
-    signal(SIGINT,testsig);
-    signal(SIGQUIT,igsig);
+        signal(i, sig);
+    signal(SIGINT, testsig);
+    signal(SIGQUIT, igsig);
     curport = &wholescreen;
     putcha(COSTART);
     putcha(COHO);

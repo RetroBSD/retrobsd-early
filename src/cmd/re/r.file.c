@@ -50,10 +50,10 @@ int savefile(filename, n)
         }
         if (f2 > f0) {
             telluser("Hit ^N to use '.'",0);
-            lread1 = -1;
+            keysym = -1;
             nowrbak = 0;
-            read1();
-            if (lread1 != CCSETFILE)
+            getkeysym();
+            if (keysym != CCSETFILE)
                 return(-1);
             i = open(".", 0);
             if (i < 0) {
@@ -234,9 +234,9 @@ int editfile(filename, line, col, mkflg, puflg)
                 return (-1);
             telluser("Hit ^N to create new file: ",0);
             telluser(filename, 28);
-            lread1 = -1;
-            read1();
-            if (lread1 != CCSETFILE && lread1 != 'Y' &&lread1 != 'y')
+            keysym = -1;
+            getkeysym();
+            if (keysym != CCSETFILE && keysym != 'Y' && keysym != 'y')
                 return(-1);
             /* Находим справочник */
             for (c=d=filename; *c; c++)

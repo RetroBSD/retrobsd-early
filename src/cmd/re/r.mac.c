@@ -16,31 +16,31 @@
 #define MBUF 2
 #define MMAC 3
 
-struct tag {
+typedef struct {
     int line, col, nfile;
-};
+} tag_t;
 
-#define LMAC ('z'-'a'+1)
+#define NMACRO ('z'-'a'+1)
 
-int csrsw; /* Для яркой отметки на экране */
-
-union macro {
+typedef union {
     clipboard_t mbuf;
-    struct tag mtag;
+    tag_t mtag;
     char *mstring;
-} *mtaba[LMAC];
+} macro_t;
 
-char mtabt[LMAC];
+macro_t *mtaba[NMACRO];
+
+char mtabt[NMACRO];
 
 /*
- * union macro *mname(name,typ,l)
+ * macro_t *mname(name,typ,l)
  * Функция поиска описателя по имени
  * если l=0, то ищет и проверяет тип,
  * иначе создает новый описатель
  */
-union macro *mname(name,typ,l)
-register char *name;
-int typ,l;
+macro_t *mname(name, typ, l)
+    register char *name;
+    int typ, l;
 {
     register int i;char cname;
     cname = (*name|040) &0177;
@@ -58,7 +58,7 @@ int typ,l;
             telluser("macro redefined",0);
         }
         mtabt[i]=typ;
-        mtaba[i]=(union macro *)salloc(l);
+        mtaba[i]=(macro_t *)salloc(l);
         goto retn;
     }
     if( mtabt[i] != typ) {
@@ -81,7 +81,7 @@ int msrbuf(sbuf, name, op)
     register char *name;
     int op;
 {
-    register union macro *m;
+    register macro_t *m;
 
     m = mname(name, MBUF, (op ? 0 : sizeof(clipboard_t)));
     if (m) {
@@ -102,11 +102,11 @@ int msrbuf(sbuf, name, op)
 int msvtag(name)
     register char *name;
 {
-    register union macro *m;
+    register macro_t *m;
     register workspace_t *cws;
 
     cws = curwksp;
-    m = mname(name, MTAG, sizeof(struct tag));
+    m = mname(name, MTAG, sizeof(tag_t));
     if (! m)
         return 0;
     m->mtag.line  = cursorline + cws->ulhclno;
@@ -124,7 +124,7 @@ int mgotag(name)
 {
     register int i;
     int fnew = 0;
-    register union macro *m;
+    register macro_t *m;
 
     m = mname(name, MTAG, 0);
     if (! m)
@@ -135,7 +135,7 @@ int mgotag(name)
         fnew = 1;
     }
     cgoto(m->mtag.line, m->mtag.col, -1, fnew);
-    csrsw = 1;
+    highlight_position = 1;
     return 1;
 }
 
@@ -149,7 +149,7 @@ int mgotag(name)
 int mdeftag(name)
     char *name;
 {
-    register union macro *m;
+    register macro_t *m;
     register workspace_t *cws;
     int cl, ln, f = 0;
 
@@ -202,7 +202,7 @@ int mdeftag(name)
 int defmac(name)
     char *name;
 {
-    register union macro *m;
+    register macro_t *m;
 
     m = mname(name, MMAC, sizeof(char*));
     if (! m)
@@ -225,7 +225,7 @@ char *rmacl(isy)
     int isy;
 {
         char nm[2];
-        register union macro *m;
+        register macro_t *m;
 
         nm[0] = isy - (CCMAC + 1) + 'a';
         nm[1] = 0;
@@ -254,8 +254,9 @@ int defkey()
     poscursor(22, 0);
     telluser(" enter <new key><del>:",0);
     lc = 0;
-    while((bufc[lc] = read2()) !='\177'  && lc++ < LKEY);
-    if (lc ==0 || lc == LKEY) {
+    while((bufc[lc] = rawinput()) != '\177' && lc++ < LKEY)
+        continue;
+    if (lc == 0 || lc == LKEY) {
 reterr: lc = 0;
         error("illegal");
         goto ret;
@@ -263,14 +264,14 @@ reterr: lc = 0;
     bufc[lc] = 0;
     telluser("enter <command> or <macro name>:",1);
     poscursor(33, 0);
-    lread1 = -1;
-    read1();
-    if (! CTRLCHAR(lread1)) {
-        if (lread1 == '$')
-            lread1 = CCMAC;
+    keysym = -1;
+    getkeysym();
+    if (! CTRLCHAR(keysym)) {
+        if (keysym == '$')
+            keysym = CCMAC;
 
-        else if(lread1 >= 'a' && lread1 <= 'z')
-            lread1 += CCMAC + 1 -'a';
+        else if(keysym >= 'a' && keysym <= 'z')
+            keysym += CCMAC + 1 -'a';
         else
             goto reterr;
     }
@@ -278,9 +279,9 @@ reterr: lc = 0;
     c = buf = salloc(lc + 1);
     c1 = bufc;
     while ((*c++ = *c1++) != 0);
-    lc = addkey(lread1, buf);
+    lc = addkey(keysym, buf);
 ret:
-    lread1 = -1;
+    keysym = -1;
     switchport(curp);
     poscursor(curc, curl);
     return lc;

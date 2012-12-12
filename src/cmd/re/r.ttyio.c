@@ -241,7 +241,7 @@ static int readfc()
 {
     char sy1 = CCQUIT;
     do {
-        lread1 = isy0f;
+        keysym = isy0f;
         if (intrflag || read(inputfile, &sy1, 1) !=1) {
             if (inputfile != ttyfile)
                 close(inputfile);
@@ -254,32 +254,31 @@ static int readfc()
             return 0;
         }
         isy0f = (unsigned char) sy1;
-    } while (lread1 < 0);
+    } while (keysym < 0);
     return 1;
 }
 
 /*
- * read1()
+ * getkeysym()
  * Чтание очередного символа с терминала.
  * Кроме того, здесь же разворачиваются макро и
- * происходит чтение из файла протокола.   Последние две
- * функции будут убраны повыше.
- * Ответ приходит в lread1.
+ * происходит чтение из файла протокола.
+ * Ответ приходит в keysym.
  */
-int read1()
+int getkeysym()
 {
     char sy1;
 
     dumpcbuf();
 
     /* Если остался неиспользованным символ */
-    if (lread1 != -1)
+    if (keysym != -1)
         goto retnl;
 
     /* Если еще не кончилось макро-расширение */
 rmac:
     if (symac) {
-        lread1 = (unsigned char) *symac++;
+        keysym = (unsigned char) *symac++;
         if (*symac == 0)
             symac = 0;
         goto retnl;
@@ -293,7 +292,7 @@ rmac:
      */
     /* Было преобразование и символы не кончились */
     if (sy0 != 0) {
-        lread1 = (unsigned char) *sy0++;
+        keysym = (unsigned char) *sy0++;
         if (*sy0 == 0)
             sy0 = 0;
         goto retn;
@@ -305,70 +304,70 @@ new:
         goto readquit;
 
     /* Если символ не управляющий */
-    lread1 = (unsigned char) sy1;
-    if (lread1 == 0177) {
-        lread1 = CCBACKSPACE;
+    keysym = (unsigned char) sy1;
+    if (keysym == 0177) {
+        keysym = CCBACKSPACE;
         goto readychr;
     }
-    if (lread1 > 037)
+    if (keysym > 037)
         goto readychr;
     if (knockdown) {
-        lread1 += 0100;
+        keysym += 0100;
         goto readychr;
     }
     /* Если символ - ^X? */
-    if (lread1 == ('X' & 037)) {
+    if (keysym == ('X' & 037)) {
         if (read(inputfile, &sy1, 1) != 1)
             goto readquit;
         switch (sy1) {
         case 'C' & 037:     /* ^X ^C */
-            lread1 = CCQUIT;
+            keysym = CCQUIT;
             goto readychr;
         case 'n':           /* ^X n */
         case 'N':           /* ^X N */
-            lread1 = CCPLLINE;
+            keysym = CCPLLINE;
             goto readychr;
         case 'p':           /* ^X p */
         case 'P':           /* ^X P */
-            lread1 = CCMILINE;
+            keysym = CCMILINE;
             goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */
-            lread1 = CCRPORT;
+            keysym = CCRPORT;
             goto readychr;
         case 'b':           /* ^X b */
         case 'B':           /* ^X B */
-            lread1 = CCLPORT;
+            keysym = CCLPORT;
             goto readychr;
         case 'h':           /* ^X h */
         case 'H':           /* ^X H */
-            lread1 = CCHOME;
+            keysym = CCHOME;
             goto readychr;
         case 't':           /* ^X t */
         case 'T':           /* ^X T */
-            lread1 = CCBACKTAB;
+            keysym = CCBACKTAB;
             goto readychr;
         case 'i':           /* ^X i */
         case 'I':           /* ^X I */
-            lread1 = CCINSMODE;
+            keysym = CCINSMODE;
             goto readychr;
         case 'x':           /* ^X x */
         case 'X':           /* ^X X */
-            lread1 = CCDOCMD;
+            keysym = CCDOCMD;
             goto readychr;
         case '$':           /* ^X $ */
 rmacname:
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
             if (sy1 >= 'a' && sy1 <='z') {
-                lread1 = (unsigned char) sy1 - 'a' + CCMAC+1;
+                keysym = (unsigned char) sy1 - 'a' + CCMAC+1;
                 goto readychr;
             }
             goto new;
         default:
             ;
         }
-        lread1 = sy1 & 037;
+        keysym = sy1 & 037;
         goto corrcntr;
     }
     /* Введен управляющий символ - ищем команду в таблице */
@@ -377,7 +376,7 @@ rmacname:
         int ts, k;
         i1 = i2 = 0;
         ts = 0;
-        sy1 = lread1;
+        sy1 = keysym;
         while ((k = findt(&i1, &i2, sy1, ts++)) == CONTF) {
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
@@ -387,24 +386,24 @@ rmacname:
                 goto corrcntr;
             goto new;
         }
-        lread1 = k;
-        if (lread1 == CCMAC)
+        keysym = k;
+        if (keysym == CCMAC)
             goto rmacname;
         goto readychr;
     }
     /* ========================================================= */
 corrcntr:
-    if (lread1 > 0 && lread1 <= 037)
-        lread1 = in0tab[lread1];
+    if (keysym > 0 && keysym <= 037)
+        keysym = in0tab[keysym];
 readychr:
-    if (lread1 == -1)
+    if (keysym == -1)
         goto new;
     knockdown = 0;
-    if (lread1 == CCCTRLQUOTE) {
+    if (keysym == CCCTRLQUOTE) {
         knockdown = 1;
     }
 retn:
-    sy1 = lread1;
+    sy1 = keysym;
     if (write (ttyfile, &sy1, 1) != 1)
         /* ignore errors */;
     /*
@@ -412,21 +411,20 @@ retn:
      * ================================================
      */
 retnm:
-    lread1 = (unsigned char) lread1;
-    if (lread1 > CCMAC && lread1 <= CCMAC+1+'z'-'a' && (symac = rmacl(lread1)))
+    keysym = (unsigned char) keysym;
+    if (keysym > CCMAC && keysym <= CCMAC+1+'z'-'a' && (symac = rmacl(keysym)))
         goto rmac;
 retnl:
-    return lread1;
+    return keysym;
 readquit:
     if (intrflag) {
-        lread1 = CCENTER;
+        keysym = CCENTER;
         intrflag = 0;
         goto readychr;
     }
-    lread1 = CCQUIT;
+    keysym = CCQUIT;
     goto readychr;
 }
-#undef lread1
 
 /*
  * We were interrupted?
@@ -452,19 +450,18 @@ int interrupt()
     return 0;
 }
 
-#define CCDEL 0177
-
 /*
  * Read raw input characters.
  */
-int read2()
+int rawinput()
 {
     char c;
 
     if (inputfile && readfc())
-        return lread1;
+        return keysym;
     if (read(0, &c, 1) != 1) {
-        c = CCDEL;
+        /* Translate EOF to ^? symbol. */
+        c = '\177';
         intrflag = 0;
     }
     c &= 0177;

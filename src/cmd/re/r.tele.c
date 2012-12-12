@@ -221,7 +221,7 @@ void movecursor(arg)
 void putch(j, flg)
     int j, flg;
 {
-    if (flg && lread1 != ' ') {
+    if (flg && keysym != ' ') {
         if (curport->firstcol[cursorline] > cursorcol)
             curport->firstcol[cursorline] = cursorcol;
         if (curport->lastcol[cursorline] <= cursorcol)
@@ -274,25 +274,25 @@ back:
     switchport(&paramport);
     poscursor(5,0);
     do {
-        lread1 = -1;
-        read1();
-    } while (lread1 == CCBACKSPACE);
+        keysym = -1;
+        getkeysym();
+    } while (keysym == CCBACKSPACE);
 
     if (macro)
         goto rmac;
-    if (MOVECMD(lread1)) {
+    if (MOVECMD(keysym)) {
         telluser("arg: *** cursor defined ***", 0);
         switchport(w);
         poscursor(paramc0, paramr0);
 t0:
-        while (MOVECMD(lread1)) {
-            movecursor(lread1);
+        while (MOVECMD(keysym)) {
+            movecursor(keysym);
             if (cursorline == paramr0 && cursorcol == paramc0)
                 goto back;
-            lread1 = -1;
-            read1();
+            keysym = -1;
+            getkeysym();
         }
-        if (CTRLCHAR(lread1) && lread1 != CCBACKSPACE) {
+        if (CTRLCHAR(keysym) && keysym != CCBACKSPACE) {
             if (cursorcol > paramc0)
                 paramc1 = cursorcol;
             else
@@ -306,11 +306,11 @@ t0:
             paramtype = -1;
         } else {
             error("Printing character illegal here");
-            lread1 = -1;
-            read1();
+            keysym = -1;
+            getkeysym();
             goto t0;
         }
-    } else if (CTRLCHAR(lread1)) {
+    } else if (CTRLCHAR(keysym)) {
         paraml = 0;
         paramv = NULL;
         paramtype = 0;
@@ -318,7 +318,7 @@ t0:
 rmac:
         paraml = pn = 0;
 loop:
-        c = read1();
+        c = getkeysym();
         if (pn >= paraml) {
             cp = paramv;
             paramv = salloc(paraml + LPARAM + 1); /* 1 for dechars */
@@ -331,11 +331,11 @@ loop:
             paraml += LPARAM;
         }
         /* Конец ввода параметра */
-        if ((! macro && lread1 < ' ') || c==CCBACKSPACE || c==CCQUIT) {
+        if ((! macro && keysym < ' ') || c==CCBACKSPACE || c==CCQUIT) {
             if (c == CCBACKSPACE && cursorcol != curport->ledit) {
                 /* backspace */
                 if (pn == 0) {
-                    lread1 = -1;
+                    keysym = -1;
                     goto loop;
                 }
                 movecursor(CCMOVELEFT);
@@ -348,7 +348,7 @@ loop:
                 paramv[pn] = 0;
                 putch(' ', 0);
                 movecursor(CCMOVELEFT);
-                lread1 = -1;
+                keysym = -1;
                 if (pn == 0)
                     goto back;
                 goto loop;
@@ -364,7 +364,7 @@ loop:
                 c = c | 0100;
             }
             putch(c, 0);
-            lread1 = -1;
+            keysym = -1;
             goto loop;
         }
         paramtype = 1;
@@ -424,7 +424,7 @@ void error(msg)
     putcha(COBELL);
     telluser("**** ", 0);
     telluser(msg, 5);
-    errsw = 1;
+    message_displayed = 1;
 }
 
 /*
