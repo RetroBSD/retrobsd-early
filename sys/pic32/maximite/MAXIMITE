@@ -10,7 +10,7 @@ core pic32mx7
 mapping generic
 linker bootloader-maximite
 
-device kernel cpu_khz=80000 bus_khz=80000 invled=F0
+device kernel invled=F0
 
 device console device=ttyUSB0
 device uartusb
@@ -19,3 +19,5 @@ device rdisk led=E1
 device sd0 port=4 cs=E0
 
 device gpio
+
+device bootloader button=C13 led=E2 user=0x1d003000

@@ -30,3 +30,7 @@ end option
 option jump
     define FLASH_JUMP %1
 end option
+
+option user
+    define FLASH_USER %1
+end option

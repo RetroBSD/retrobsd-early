@@ -8,7 +8,7 @@ core pic32mx7
 linker bootloader-ubw32
 mapping generic
 
-device kernel cpu_khz=80000 bus_khz=80000 invled=E2
+device kernel invled=E2
 
 device console invled=E3 device=tty1
 device uart2
@@ -18,3 +18,5 @@ device sd0 port=1 cs=A9
 device sd1 port=1 cs=A10
 
 device gpio
+device bootloader button=E7 led=E3 user=0x1d005000
+
