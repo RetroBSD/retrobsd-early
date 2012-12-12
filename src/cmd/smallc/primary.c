@@ -53,8 +53,8 @@ primary (lvalue_t *lval)
                         lval->symbol = symbol;
                         lval->indirect =  symbol->type;
                         if (symbol->identity == ARRAY) {
-                                lval->ptr_type = symbol->type;
-                                //lval->ptr_type = 0;
+                                //lval->ptr_type = symbol->type;
+                                lval->ptr_type = 0;
                                 return 0;
                         }
                         if (symbol->identity == POINTER) {
