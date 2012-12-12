@@ -43,8 +43,8 @@ unix.elf: $(EXTRA_TARGETS)	$(KERNOBJ) $(LDSCRIPT)
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 $@ unix.hex
 		chmod -x $@ unix.bin
 
-bootloader: bl_usb_boot.o bl_usb_device.o bl_usb_function_hid.o
-		$(BLCC) $(BLLDFLAGS) bl_usb_boot.o bl_usb_device.o bl_usb_function_hid.o -o bootloader.elf
+bootloader: bl_usb_boot.o bl_usb_device.o bl_usb_function_hid.o bl_devcfg.o
+		$(BLCC) $(BLLDFLAGS) bl_usb_boot.o bl_usb_device.o bl_usb_function_hid.o bl_devcfg.o -o bootloader.elf
 		chmod -x bootloader.elf
 		$(OBJDUMP) -d -S bootloader.elf > bootloader.dis
 		$(OBJCOPY) -O ihex --change-addresses=0x80000000 bootloader.elf bootloader.hex
@@ -57,6 +57,9 @@ bl_usb_device.o: $(BUILDPATH)/usb_device.c
 
 bl_usb_function_hid.o: $(BUILDPATH)/usb_function_hid.c
 		$(BLCC) $(BLCFLAGS) -o $@ -c $(BUILDPATH)/usb_function_hid.c
+
+bl_devcfg.o: $(BUILDPATH)/devcfg.c
+		$(BLCC) $(BLCFLAGS) -o $@ -c $(BUILDPATH)/devcfg.c
 
 
 

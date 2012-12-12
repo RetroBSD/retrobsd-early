@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
 
     if(!config.load(argv[1]))
     {
+        cout << "Config load failed" << endl;
         return 10;
     }
 
@@ -237,6 +238,8 @@ int main(int argc, char *argv[])
 
     vector <string>::iterator fit;
     vector <string>::iterator eit;
+    vector <string>::iterator vit;
+
     for(
         fit = cores[config.core.device].always.files.begin();
         fit != cores[config.core.device].always.files.end();
@@ -279,6 +282,53 @@ int main(int argc, char *argv[])
         }
     }
 
+    vector <string> nofiles;
+
+    // First the core:
+
+
+    for(
+        fit = cores[config.core.device].always.nofiles.begin();
+        fit != cores[config.core.device].always.nofiles.end();
+        fit++
+    )
+    {
+        bool exist = false;
+        for(eit = nofiles.begin(); eit != nofiles.end(); eit++)
+        {
+            if(*eit == *fit)
+                exist = true;
+        }
+        if(!exist)
+        {
+            nofiles.push_back(*fit);
+        }
+    }
+
+
+    // Then the instances:
+
+    for(it = config.instances.begin(); it != config.instances.end(); it++)
+    {
+        for(
+            fit = devices[(*it).second.device].always.nofiles.begin();
+            fit != devices[(*it).second.device].always.nofiles.end();
+            fit++
+        )
+        {
+            bool exist = false;
+            for(eit = nofiles.begin(); eit != nofiles.end(); eit++)
+            {
+                if(*eit == *fit)
+                    exist = true;
+            }
+            if(!exist)
+            {
+                nofiles.push_back(*fit);
+            }
+        }
+    }
+
     // We have the files, now to sort them alphabetically.  A good old
     // bubble sort is what we will do.  We could have done this while
     // adding the files to the vector, but this is simpler to manage.
@@ -297,6 +347,22 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    // Now we should filter out the files to remove any nofiles.  Again, this
+    // could have been integrated with the previous stages, but meh...
+
+    for (fit = files.begin(); fit != files.end(); fit++) {
+        bool exist = false;
+        for (eit = nofiles.begin(); eit != nofiles.end(); eit++) {
+            if(*eit == *fit)
+                exist = true;
+        }
+        if (exist) {
+            files.erase(fit);
+        }
+    }
+
+    // Now to collate the extra targets that should be built.
 
     vector <string> targets;
 
@@ -361,14 +427,21 @@ int main(int argc, char *argv[])
         sit++
     )
     {
-        if(cores[config.core.device].options.find((*sit).first) == cores[config.core.device].options.end())
+        string testopt = (*sit).first + "=" + (*sit).second;
+        uc(testopt);
+        if(cores[config.core.device].options.find(testopt) == cores[config.core.device].options.end())
         {
-            cout << "Unknown option: " << (*sit).first << endl;
-            return 10;
+            testopt = (*sit).first;
+            uc(testopt);
+            if(cores[config.core.device].options.find(testopt) == cores[config.core.device].options.end())
+            {
+                cout << "Unknown option: " << testopt << endl;
+                return 10;
+            }
         }
         for(
-            dit = cores[config.core.device].options[(*sit).first].defines.begin();
-            dit != cores[config.core.device].options[(*sit).first].defines.end();
+            dit = cores[config.core.device].options[testopt].defines.begin();
+            dit != cores[config.core.device].options[testopt].defines.end();
             dit++
         )
         {
@@ -400,14 +473,21 @@ int main(int argc, char *argv[])
             sit++
         )
         {
-            if(devices[(*it).second.device].options.find((*sit).first) == devices[(*it).second.device].options.end())
+            string testopt = (*sit).first + "=" + (*sit).second;
+            uc(testopt);
+            if(devices[(*it).second.device].options.find(testopt) == devices[(*it).second.device].options.end())
             {
-                cout << "Unknown option: " << (*sit).first << endl;
-                return 10;
+                testopt = (*sit).first;
+                uc(testopt);
+                if(devices[(*it).second.device].options.find(testopt) == devices[(*it).second.device].options.end())
+                {
+                    cout << "Unknown option: " << testopt << "=" << (*sit).second<< endl;
+                    return 10;
+                }
             }
             for(
-                dit = devices[(*it).second.device].options[(*sit).first].defines.begin();
-                dit != devices[(*it).second.device].options[(*sit).first].defines.end();
+                dit = devices[(*it).second.device].options[testopt].defines.begin();
+                dit != devices[(*it).second.device].options[testopt].defines.end();
                 dit++
             )
             {
@@ -478,13 +558,21 @@ int main(int argc, char *argv[])
             sit++
         )
         {
-            if(devices[(*it).second.device].options.find((*sit).first) == devices[(*it).second.device].options.end())
+            string testopt = (*sit).first + "=" + (*sit).second;
+            uc(testopt);
+            if(devices[(*it).second.device].options.find(testopt) == devices[(*it).second.device].options.end())
             {
-                return 10;
+                testopt = (*sit).first;
+                uc(testopt);
+                if(devices[(*it).second.device].options.find(testopt) == devices[(*it).second.device].options.end())
+                {
+                    cout << "Unknown option " << testopt << endl;
+                    return 10;
+                }
             }
             for(
-                dit = devices[(*it).second.device].options[(*sit).first].sets.begin();
-                dit != devices[(*it).second.device].options[(*sit).first].sets.end();
+                dit = devices[(*it).second.device].options[testopt].sets.begin();
+                dit != devices[(*it).second.device].options[testopt].sets.end();
                 dit++
             )
             {
@@ -512,7 +600,6 @@ int main(int argc, char *argv[])
     out << endl;
     out << "KERNOBJ += ";
 
-    vector <string>::iterator vit;
 
     for(vit = files.begin(); vit != files.end(); vit++)
     {

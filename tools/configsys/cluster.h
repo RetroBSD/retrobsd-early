@@ -12,6 +12,7 @@ class cluster {
     public:
         map <string,string> defines;
         vector <string> files;
+        vector <string> nofiles;
         map <string,string> sets;
         vector <string> requires;
         vector <string> targets;

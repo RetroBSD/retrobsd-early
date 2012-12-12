@@ -42,6 +42,10 @@ always
     file vers.o 
     require ufs
     require tty
+
+    define CPU_KHZ '((CRYSTAL*1000)/CPU_IDIV*CPU_MUL/CPU_ODIV)'
+    define BUS_KHZ 'CPU_KHZ/BUS_DIV'
+
 end always
 
 option cpu_khz
