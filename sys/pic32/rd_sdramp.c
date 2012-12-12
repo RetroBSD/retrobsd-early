@@ -26,7 +26,17 @@ int sw_dkn = -1;                /* Statistics slot number */
  * physical specs of SDRAM chip
  */
 #define RAM_COLS 512
+
+#if SDR_ADDRESS_LINES == 13
+#define RAM_ROWS (4096*2)
+#elif SDR_ADDRESS_LINES == 12
 #define RAM_ROWS 4096
+#elif SDR_ADDRESS_LINES == 11
+#define RAM_ROWS 2048
+#else
+#error Invalid Configuration - SDR_ADDRESS_LINES
+#endif
+
 #define RAM_BANKS 4
 
 
@@ -55,7 +65,7 @@ m->partitions[n].type=t; 		\
 m->partitions[n].lbastart=s;		\
 m->partitions[n].lbalength=l;
 
-void build_ramdisk_mbr( struct mbr* m );
+//void build_ramdisk_mbr( struct mbr* m );
 
 // FIXME - FOLLOWING shared with gpio.c - needs to be made common
 
@@ -109,21 +119,59 @@ static void sdram_bank_c(unsigned bank)
 	bankport->lat = v;
 }
 
+static void sdram_upperlowerbyte( unsigned bit )
+{
+	struct gpioreg * dqm_port = (struct gpioreg *)&SDR_DQM_PORT;
+#ifdef SDR_DQM_UDQM_BIT
+
+	if( bit == 0 )
+	{
+		dqm_port->latset = (1<<SDR_DQM_UDQM_BIT);
+		dqm_port->latclr = (1<<SDR_DQM_LDQM_BIT);
+	}
+	else
+	{
+		dqm_port->latset = (1<<SDR_DQM_LDQM_BIT);
+		dqm_port->latclr = (1<<SDR_DQM_UDQM_BIT);
+	}
+
+//		dqm_port->latset = (1<<SDR_DQM_UDQM_BIT);
+//		dqm_port->latclr = (1<<SDR_DQM_LDQM_BIT);
+#else
+	dqm_port->latclr = (1<<SDR_DQM_LDQM_BIT);
+#endif
+}
 static void sdram_init_c()
 {
 	struct gpioreg * bank_port = (struct gpioreg *)&SDR_BANK_PORT;
+	struct gpioreg * dqm_port = (struct gpioreg *)&SDR_DQM_PORT;
+	struct gpioreg * address_lb_port = (struct gpioreg *)&SDR_ADDRESS_LB_PORT;
 	struct gpioreg * address_port = (struct gpioreg *)&SDR_ADDRESS_PORT;
 	struct gpioreg * data_port = (struct gpioreg *)&SDR_DATA_PORT;
 	struct gpioreg * control_port = (struct gpioreg *)&SDR_CONTROL_PORT;
 	struct gpioreg * cke_port = (struct gpioreg *)&SDR_CKE_PORT;
 	struct ocreg * ocr_reg = (struct ocreg *)&SDR_OCR;
 
-	address_port->trisclr = ADDRESS_MASK;	
+// make f13 a ground pin?
+address_lb_port->latclr = (1<<13)|(1<<8);
+address_lb_port->trisclr = (1<<13)|(1<<8);
+
+	address_lb_port->trisclr = ADDRESS_LB_MASK;	
+	address_port->trisclr = ADDRESS_MASK;
+	
 	/* AD1PCFGSET = 0xFFFF; */
 	bank_port->trisclr = BANK_ALL_MASK;
 
+#ifdef SDR_DQM_UDQM_BIT
+	dqm_port->latset = (1<<SDR_DQM_UDQM_BIT);
+#endif
+	dqm_port->latclr = (1<<SDR_DQM_LDQM_BIT);
+	dqm_port->trisclr = SDR_DQM_MASK;
+
     	/* All address lines low */
+	address_lb_port->latclr = ADDRESS_LB_MASK;
 	address_port->latclr = ADDRESS_MASK;
+        
 	bank_port->latclr = BANK_ALL_MASK;
 
 	/* Initialize data lines */
@@ -146,7 +194,6 @@ static void sdram_init_c()
 	data_dir_port->latset = (1<<SDR_DATA_DIR_BIT); 
 	data_dir_port->trisclr = (1<<SDR_DATA_DIR_BIT);
 #endif
-
 
 	/* SDRAM clock output */
     
@@ -187,63 +234,49 @@ static void sdram_init_c()
 	sdram_init();
 }
 
-static void sdram_output_column( unsigned psuedo_column )
-{
-	struct gpioreg * address_port = (struct gpioreg *)&SDR_ADDRESS_PORT;
-	unsigned t5 = psuedo_column & 0x1f;
-	t5 = t5 << 2;
-	unsigned t6 = psuedo_column & 0x20;
-	t6 = t6 << 9;
-	t5 |= t6;
 
-	t6 = address_port->lat;
-	t6 &= ~ADDRESS_MASK;
-	t6 |= t5;
-	address_port->lat = t6;
+//static void sdram_output_column( unsigned column )
+static void sdram_output_addr( unsigned addr )
+{
+	struct gpioreg * address_lb_port = (struct gpioreg *)&SDR_ADDRESS_LB_PORT;
+	struct gpioreg * address_port = (struct gpioreg *)&SDR_ADDRESS_PORT;
+	address_lb_port->lat = (address_lb_port->lat & ~ADDRESS_LB_MASK) | ((addr & 0x7) << SDR_ADDRESS_LB_A0_BIT);
+	address_port->lat = (address_port->lat & ~ADDRESS_MASK) 
+		| ((addr & (ADDRESS_MASK<<(3-SDR_ADDRESS_A3_BIT))) >> (3-SDR_ADDRESS_A3_BIT));
 }
 
 static void sdram_active_c( unsigned row_address )
 {
-	struct gpioreg * address_port = (struct gpioreg *)&SDR_ADDRESS_PORT;
-	unsigned t5 = row_address << 2;
-	t5 &= ADDRESS_MASK;
-	unsigned t6 = row_address & 0x40;
-	t6 = t6 << 8;
-	t5 |= t6;
-	t6 = row_address & 0x100;
-	t6 = t6 << 7;
-	t5 |= t6;
-	
-	t6 = address_port->lat;
-	t6 &= ~ADDRESS_MASK;
-	t6 |= t5;
-	address_port->lat = t6;	
-
+	sdram_output_addr( row_address );
 	sdram_active();
 }
 
-static void sdram_write_c(uint16_t pseudocoladdr, uint64_t val)
+static void sdram_write_c(uint16_t coladdr, uint64_t val)
 {
-	sdram_output_column( pseudocoladdr );
+	sdram_output_addr( coladdr );
 	sdram_write( val );
 }
 
-static uint64_t sdram_read_c(uint16_t pseudocoladdr)
+static uint64_t sdram_read_c(uint16_t coladdr)
 {
-	sdram_output_column( pseudocoladdr );
+	sdram_output_addr( coladdr );
 	return sdram_read();
 }
 
 static void 
 read_chunk_from_sdram( uint64_t* dest, unsigned int blockNumber )
 {
-	int startColumn = ( ( blockNumber & ( BLOCKS_PER_ROW - 1 ) ) * CHUNK_SIZE ) / RAM_BURST_COUNT;
+	int startColumn = ( ( blockNumber & ( BLOCKS_PER_ROW - 1 ) ) * CHUNK_SIZE ); // / RAM_BURST_COUNT;
 	int rowAndBank = blockNumber / BLOCKS_PER_ROW;
 	int row = rowAndBank & ( RAM_ROWS - 1 );
 	int bank = rowAndBank / RAM_ROWS;
+	int sbank = bank / 4;
+	bank  = bank & 0b011;
 	int col = startColumn;
 
-	while( col < startColumn + CHUNK_SIZE/RAM_BURST_COUNT ) {
+	sdram_upperlowerbyte( sbank );
+
+	while( col < startColumn + CHUNK_SIZE/*/RAM_BURST_COUNT*/ ) {
 		int x = mips_intr_disable();
 		sdram_wake();
 		sdram_bank_c(bank);
@@ -251,7 +284,7 @@ read_chunk_from_sdram( uint64_t* dest, unsigned int blockNumber )
 		int i;
 		for( i = 0; i < RAM_BURST_GROUP_COUNT; i++ ) {
 			*dest++ = sdram_read_c( col );
-			col += 1; //RAM_BURST_COUNT;
+			col += RAM_BURST_COUNT;
 		}
 		sdram_precharge();
 		sdram_precharge_all();
@@ -260,24 +293,23 @@ read_chunk_from_sdram( uint64_t* dest, unsigned int blockNumber )
 		mips_intr_restore (x);
 
 		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
 	} 
 }
 
 static void 
 write_chunk_to_sdram( uint64_t* src, unsigned int blockNumber )
 {
-	int startColumn = ( ( blockNumber & ( BLOCKS_PER_ROW - 1 ) ) * CHUNK_SIZE ) / RAM_BURST_COUNT;
+	int startColumn = ( ( blockNumber & ( BLOCKS_PER_ROW - 1 ) ) * CHUNK_SIZE ); /// RAM_BURST_COUNT;
 	int rowAndBank = blockNumber / BLOCKS_PER_ROW;
 	int row = rowAndBank & ( RAM_ROWS - 1 );
 	int bank = rowAndBank / RAM_ROWS;
+	int sbank = bank / 4;
+	bank  = bank & 0b011;
   
+	sdram_upperlowerbyte( sbank );
+
 	int col = startColumn;
-	while( col < startColumn + CHUNK_SIZE/RAM_BURST_COUNT ) {
+	while( col < startColumn + CHUNK_SIZE /*/RAM_BURST_COUNT*/ ) {
 		int x = mips_intr_disable();
 
 		sdram_wake();
@@ -286,7 +318,7 @@ write_chunk_to_sdram( uint64_t* src, unsigned int blockNumber )
 		int i;
 		for( i = 0; i < RAM_BURST_GROUP_COUNT; i++ ) {
 			sdram_write_c( col, *src++ );
-			col += 1; //RAM_BURST_COUNT;
+			col += RAM_BURST_COUNT;
 		}
 		sdram_precharge();
 		sdram_precharge_all();
@@ -294,11 +326,6 @@ write_chunk_to_sdram( uint64_t* src, unsigned int blockNumber )
 
 		mips_intr_restore (x);
       
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
-		asm volatile ("nop");
 		asm volatile ("nop");
 	} 
 }
@@ -338,7 +365,9 @@ sdramp_write (int unit, unsigned blockno, char *data, unsigned nbytes)
 
 	while( nbytes >= CHUNK_SIZE ) {
 		bcopy( data, swaptemp, CHUNK_SIZE );
+        int x = mips_intr_disable();
 		write_chunk_to_sdram( (uint64_t*) swaptemp, blockno );
+        mips_intr_restore(x);
 		data += CHUNK_SIZE;
 		blockno += 1;
 		nbytes -= CHUNK_SIZE;
@@ -346,24 +375,29 @@ sdramp_write (int unit, unsigned blockno, char *data, unsigned nbytes)
 	if( nbytes ) {
 		read_chunk_from_sdram( (uint64_t*) swaptemp, blockno );
 		bcopy( data, swaptemp, nbytes );
+        int x = mips_intr_disable();
 		write_chunk_to_sdram( (uint64_t*) swaptemp, blockno );
+        mips_intr_restore(x);
 	}
 	return 1;
 }
 
 void sdramp_preinit (int unit)
 {
+        printf("sdramp_preinit\n");
+        
 	int x = mips_intr_disable();
 	struct buf *bp;
 	sdram_init_c();
 	mips_intr_restore(x);
 
-        bp = prepartition_device("sdramp0");
+        bp = prepartition_device("sdramp0"/*,sdramp_size(0)*/);
         if(bp)
         {
                 sdramp_write (0, 0, bp->b_addr, 512);
                 brelse(bp);
         }
+
 }
 
 int sdramp_open(int unit, int flag, int mode)
@@ -373,10 +407,10 @@ int sdramp_open(int unit, int flag, int mode)
 
 int sdramp_size(int unit)
 {
-	return 1024*8;
+	return (1<<SDR_ADDRESS_LINES) / 2 * 4 * SDR_DATA_BYTES;
 }
 
-
+#if 0
 // FIXME - this does not supply any more than
 // is currently used by the rdisk functions. It does
 // not build a completely or valid mbr.
@@ -388,3 +422,4 @@ void build_ramdisk_mbr( struct mbr* m )
 	RAMDISK_MBR_PARTS;
 #endif
 }
+#endif

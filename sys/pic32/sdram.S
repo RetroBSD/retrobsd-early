@@ -116,9 +116,12 @@ sdram_init:
 	/* Get ready for the commands we are about to issue. */
 	li 	$t4, (1<<SDR_CONTROL_CAS_BIT) 	
 	li 	$t5, (1<<SDR_CONTROL_WE_BIT) 
+
 	/* Mode Register: CL:2, BL:8 (0x23) */
 	/*li 	$t6, 0x1810*/
-	li	$t6, (1<<SDR_ADDRESS_A5_BIT)|(1<<SDR_ADDRESS_A1_BIT)|(1<<SDR_ADDRESS_A0_BIT)
+	//li	$t3, (1<<SDR_ADDRESS_LB_A1_BIT)|(1<<SDR_ADDRESS_LB_A0_BIT)
+	//li	$t6, (1<<SDR_ADDRESS_A5_BIT)
+
 	li 	$t7, CONTROL_ALL_MASK 
 	li 	$t8, (1<<SDR_ADDRESS_A10_BIT)	/* A10 */
 
@@ -148,23 +151,30 @@ sdram_init:
 	clock4
 
 	/* Auto Refresh 5 */
-	clock4
+	li	$t4, ADDRESS_LB_MASK
+	li	$t5, ADDRESS_MASK
+	clock2
 
 	/* Auto Refresh 6 */
-	clock4
+	sw	$t4, (SDR_ADDRESS_LB_PORT-TRISA) + LAT_OFFSET + CLR_OP_OFFSET($t0)
+	sw	$t5, (SDR_ADDRESS_PORT-TRISA) + LAT_OFFSET + CLR_OP_OFFSET($t0)
+	clock2
+
+	/* Mode Register: CL:2, BL:8 (0x23) */
 
 	/* Auto Refresh 7 */
-	clock4
+	li	$t4, (1<<SDR_ADDRESS_LB_A1_BIT)|(1<<SDR_ADDRESS_LB_A0_BIT)
+	sw	$t4, (SDR_ADDRESS_LB_PORT-TRISA) + LAT_OFFSET + SET_OP_OFFSET($t0)
+	clock2
 
 	/* Auto Refresh 8 */
-	li	$t4, ADDRESS_MASK
-	sw	$t4, (SDR_ADDRESS_PORT-TRISA) + LAT_OFFSET + CLR_OP_OFFSET($t0)
+	li	$t4, (1<<SDR_ADDRESS_A5_BIT)
+	sw	$t4, (SDR_ADDRESS_PORT-TRISA) + LAT_OFFSET + SET_OP_OFFSET($t0)
 	clock2
 
 	/* Load Mode Register */
-	sw	$t6, (SDR_ADDRESS_PORT-TRISA) + LAT_OFFSET + SET_OP_OFFSET($t0)
 	sw	$t7, (SDR_CONTROL_PORT-TRISA) + LAT_OFFSET + CLR_OP_OFFSET($t0)
-	clock2
+	clock3
 
 	/* Command Inhibit */
 	sw	$t7, (SDR_CONTROL_PORT-TRISA) + LAT_OFFSET + SET_OP_OFFSET($t0)
@@ -230,10 +240,10 @@ sdram_write:
 	li 	$t7, (1<<SDR_CONTROL_CS_BIT) | (1<<SDR_CONTROL_CAS_BIT) | (1<<SDR_CONTROL_WE_BIT) 
 
 
-#ifdef SDRAM_FPGA_DIR_SUPPORT
-	li	$t3, (1<<SDR_DATA_DIR_BIT)
-	sw	$t3, (SDR_DATA_DIR_PORT-TRISA) + LAT_OFFSET + INV_OP_OFFSET($t0)
-#endif
+//#ifdef SDRAM_FPGA_DIR_SUPPORT
+//	li	$t3, (1<<SDR_DATA_DIR_BIT)
+//	sw	$t3, (SDR_DATA_DIR_PORT-TRISA) + LAT_OFFSET + INV_OP_OFFSET($t0)
+//#endif
 
 	/* Set data lines */
 	srl 	$t5, $a0, 24
@@ -245,7 +255,7 @@ sdram_write:
 	
 	/* Write */
 	sw	$t7, (SDR_CONTROL_PORT-TRISA) + LAT_OFFSET + INV_OP_OFFSET($t0) /* LHLL */
-	sw	$t4, (SDR_DATA_PORT-TRISA) + TRIS_OFFSET + INV_OP_OFFSET($t0)   /* 1 - enable data lines */
+	sw	$t4, (SDR_DATA_PORT-TRISA) + TRIS_OFFSET + CLR_OP_OFFSET($t0)   /* 1 - enable data lines */
 	srl 	$t5, $a0, 16
 	clock1
 
@@ -282,15 +292,16 @@ sdram_write:
 	sb	$a1, (SDR_DATA_PORT-TRISA) + LAT_OFFSET + NOP_OP_OFFSET($t0)    /* 8 */
 	clock3
 
-	sw	$t4, (SDR_DATA_PORT-TRISA) + TRIS_OFFSET + INV_OP_OFFSET($t0)   /* Data lines input again */
+	sw	$t4, (SDR_DATA_PORT-TRISA) + LAT_OFFSET + CLR_OP_OFFSET($t0)   /* PIC32 errata - thanks Pito. */
+	sw	$t4, (SDR_DATA_PORT-TRISA) + TRIS_OFFSET + SET_OP_OFFSET($t0)   /* Data lines input again */
 
 	.set macro
 	
-#ifdef SDRAM_FPGA_DIR_SUPPORT
-	clock4
-	li	$t3, (1<<SDR_DATA_DIR_BIT)
-	sw	$t3, (SDR_DATA_DIR_PORT-TRISA) + LAT_OFFSET + INV_OP_OFFSET($t0)
-#endif
+//#ifdef SDRAM_FPGA_DIR_SUPPORT
+//	clock4
+//	li	$t3, (1<<SDR_DATA_DIR_BIT)
+//	sw	$t3, (SDR_DATA_DIR_PORT-TRISA) + LAT_OFFSET + INV_OP_OFFSET($t0)
+//#endif
 
 
 	jr	$ra

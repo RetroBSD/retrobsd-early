@@ -8,14 +8,12 @@ core pic32mx7
 linker bootloader-sdram
 mapping generic
 
-device kernel cpu_khz=80000 bus_khz=80000 invled=E2
-
-device console invled=E3 device=tty1
+device kernel cpu_khz=80000 bus_khz=80000 invled=B10
+device console invled=B11 device=tty1
 device uart2
-
-device rdisk invled=E1 invswap=E0
-device sd0 port=1 cs=A9
-device sd1 port=1 cs=A10
+device rdisk invled=B9 invswap=B8
+device sd0 port=2 cs=A9
 device sdramp
 
-device gpio
+option PARTITION=sdramp0:sa@2048,fs@14000
+
