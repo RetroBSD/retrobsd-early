@@ -178,7 +178,7 @@ void mainloop()
     /* Для команд с тремя вариантами аргументов */
     void (*lnfun)(int, int);
     void (*spfun)(int, int, int, int);
-    struct viewport *oport;
+    viewport_t *oport;
 
     /*
      * Обработка одного символа или команды
@@ -210,7 +210,7 @@ void mainloop()
                 lread1 = -1;
                 goto contin;
             }
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
 
             /* Строки у нас нет? Дай! */
@@ -224,54 +224,54 @@ void mainloop()
                 thisrow = cursorline;
                 if (lread1 == CCBACKSPACE)
                     thiscol--;
-                if (ncline < thiscol + 2) {
+                if (cline_len < thiscol + 2) {
                     if (lread1 == CCBACKSPACE)
                         movecursor(CCMOVELEFT);
                     lread1 = -1;
                     goto contin;
                 }
-                for (i=thiscol; i<ncline-2; i++)
+                for (i=thiscol; i<cline_len-2; i++)
                     cline[i] = cline[i+1];
-                ncline--;
+                cline_len--;
                 thiscol -= curwksp->ulhccno;
                 putup(-(1+thiscol),cursorline);
                 poscursor(thiscol,thisrow);
-                fcline = 1;
+                cline_modified = 1;
                 lread1 = -1;
                 goto contin;
             }
             /* Проверка на границу окна */
             if (cursorcol > curport->rtext) {
-                if (fcline) {
+                if (cline_modified) {
                     putline(0);
                     movep(defrport);
                     goto contin;
                 }
                 goto margerr;
             }
-            fcline = 1;
+            cline_modified = 1;
             j = (lread1 == CCBACKSPACE);
             if (j) {
                 movecursor(CCMOVELEFT);
                 lread1 = ' ';
             }
             i = cursorcol + curwksp->ulhccno;
-            if (i >= (lcline - 2))
+            if (i >= (cline_max - 2))
                 excline(i + 2);
-            if (i >= ncline-1) {
-                for (k=ncline-1; k<=i; k++)
+            if (i >= cline_len-1) {
+                for (k=cline_len-1; k<=i; k++)
                     cline[k] = ' ';
-                cline[i+1] = NEWLINE;
-                ncline = i+2;
+                cline[i+1] = '\n';
+                cline_len = i+2;
             }
             else if (imodesw) {
                 thiscol = cursorcol + curwksp->ulhccno;
                 thisrow = cursorline;
-                if (ncline >= lcline)
-                    excline(ncline+1);
-                for (i=ncline; i>thiscol; i--)
+                if (cline_len >= cline_max)
+                    excline(cline_len+1);
+                for (i=cline_len; i>thiscol; i--)
                     cline[i] = cline[i-1];
-                ncline++;
+                cline_len++;
                 thiscol -= curwksp->ulhccno;
                 putup(-(1 + thiscol), cursorline);
                 poscursor(thiscol, thisrow);
@@ -282,7 +282,7 @@ void mainloop()
 
             /* Замена символа */
             if (lread1 == CCCTRLQUOTE)
-                lread1 = esc0;
+                lread1 = COCURS;
             if (cursorcol == curport->rtext - 10)
                 putcha(COBELL);
             cline[i] = lread1;
@@ -348,7 +348,7 @@ void mainloop()
             goto funcdone;
 
         case CCOPEN:
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             openlines(curwksp->ulhclno + cursorline, definsert);
             goto funcdone;
@@ -358,13 +358,13 @@ void mainloop()
             goto funcdone;
 
         case CCCLOSE:
-            if (openwrite[curfile]==0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             closelines(curwksp->ulhclno + cursorline, defdelete);
             goto funcdone;
 
         case CCPUT:
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             if (pickbuf->nrows == 0)
                 goto nopickerr;
@@ -501,7 +501,7 @@ yesarg:
             goto funcdone;
 
         case CCOPEN:
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             if (paramtype != 0) {
                 lnfun = openlines;
@@ -526,7 +526,7 @@ yesarg:
             goto funcdone;
 
         case CCCLOSE:
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             if (paramtype != 0) {
                 if (paramtype > 0 && paramv && paramv[0] == '>') {
@@ -549,7 +549,7 @@ yesarg:
             }
             if (paramtype != 0)
                 goto notstrerr;
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             if (deletebuf->nrows == 0)
                 goto nodelerr;
@@ -589,9 +589,9 @@ yesarg:
                 break;
             case 'w':
                 if(paramv[1] == ' ' && paramv[2] == '+')
-                    openwrite[curwksp->wfile] = 1;
+                    file[curwksp->wfile].writable = 1;
                 else
-                    openwrite[curwksp->wfile] = 0;
+                    file[curwksp->wfile].writable = 0;
                 break;
             case 'k':
                 defkey();
@@ -631,7 +631,7 @@ yesarg:
 
         case CCGOTO:
             if (paramtype == 0)
-                gtfcn(nlines[curfile]);
+                gtfcn(file[curfile].nlines);
             else if (paramtype > 0) {
                 if(paramv && paramv[0] == '$') {
                     mgotag(paramv + 1);
@@ -700,7 +700,7 @@ yesarg:
             if (paramtype <= 0)
                 goto notstrerr;
             dechars(paramv, paraml);
-            if (openwrite[curfile] == 0)
+            if (file[curfile].writable == 0)
                 goto nowriterr;
             callexec();
             goto funcdone;
@@ -802,7 +802,7 @@ errclear:
             poscursor(PARAMREDIT + 2, 0);
             if (oport->wksp->wfile) {
                 putstr("file ", PARAMRINFO);
-                putstr(openfnames[oport->wksp->wfile], PARAMRINFO);
+                putstr(file[oport->wksp->wfile].name, PARAMRINFO);
             }
             putstr(" line ", PARAMRINFO);
             clsave = cursorline;
@@ -878,7 +878,7 @@ void search(delta)
     at = cline + col + curwksp->ulhccno;
     for (;;) {
         at += delta;
-        while (at < cline || at >  cline + ncline - lkey) {
+        while (at < cline || at >  cline + cline_len - lkey) {
             /* Прервать, если было прерывание с терминала */
             i = interrupt();
             if (i || (ln += delta) < 0 ||
@@ -895,7 +895,7 @@ void search(delta)
             putline(0);
             at = cline;
             if (delta < 0)
-                at += ncline - lkey;
+                at += cline_len - lkey;
         }
         sk = searchkey;
         fk = at;

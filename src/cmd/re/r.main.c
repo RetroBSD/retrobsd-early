@@ -37,10 +37,10 @@ int defpick    = 1;                 /* PICK       */
 char deffile[] = "/share/re.help";  /* Help file */
 
 /* Инициализации  */
-int lcline  = 0;
-int icline  = 20; /* Инкремент для расширения */
+int cline_max  = 0;
+int cline_incr = 20; /* Инкремент для расширения */
 int clineno = -1;
-char fcline = 0;
+char cline_modified = 0;
 
 /* Файл / протокол */
 int ttyfile  = -1;
@@ -49,7 +49,7 @@ int inputfile = 0;
 int oldttmode;
 
 char *ttynm, *ttytmp, *rfile;
-struct savebuf pb, db;
+clipboard_t pb, db;
 
 /*
  * Фатальный сигнал
@@ -102,7 +102,7 @@ static void startup(restart)
     groupid = getgid();
     setuid(userid);
     setgid(groupid);
-    for (i=LINEL; i; )
+    for (i=NCOLS; i; )
         blanks[--i] = ' ';
     name = getenv("USER");
     if (! name)
@@ -139,28 +139,33 @@ static void startup(restart)
     /*  Рабочий файл нужен на read/write - приходится переоткрыть */
     close(i);
     i = open(tmpname, 2);
-    openfnames[i] = tmpname;
-    openwrite[i] = 1;
+    file[i].name = tmpname;
+    file[i].writable = 1;
     tempfile = i;
     /* файл '#' -- запоминание убранного и отмеченного  */
-    openfnames[2] = "#";
-    nlines[2] = 0;
-    pickwksp = (struct workspace *)salloc(SWKSP);
-    pickwksp->curfsd = openfsds[2] = (struct fsd *)salloc(SFSD);
+    file[2].name = "#";
+    file[2].nlines = 0;
+    pickwksp = (workspace_t*) salloc(sizeof(workspace_t));
+    pickwksp->cursegm = file[2].chain = (segment_t*) salloc(sizeof_segment_t);
     pickwksp->wfile = 2;
     pickbuf = &pb;
     deletebuf = &db;
+
     /* Устанавливаем режимы терминала */
     ttstartup();
+
     /* Устанавливаем описатель всего экрана */
-    setupviewport(&wholescreen,0,LINEL-1,0,NLINES-1,0);
+    setupviewport(&wholescreen, 0, NCOLS-1, 0, NLINES-1, 0);
+
     /* Устанавливаем описатель окна параметров */
-    setupviewport(&paramport,0,LINEL-1,NLINES-NPARAMLINES,NLINES-1,0);
+    setupviewport(&paramport, 0, NCOLS-1, NLINES-NPARAMLINES, NLINES-1, 0);
     paramport.rtext--;
     paramport.redit = PARAMREDIT;
+
     /* Закрываем терминал на прием сообщений от других */
     oldttmode = getpriv(0);
     chmod(ttynm,0600);
+
     /*
      * Переопределяем сигналы
      */
@@ -178,11 +183,11 @@ static void startup(restart)
  */
 static void makestate()
 {
-    register struct viewport *port;
+    register viewport_t *port;
 
     nportlist = 1;
-    port = portlist[0] = (struct viewport *)salloc(SVIEWPORT);
-    setupviewport(portlist[0], 0, LINEL-1, 0, NLINES-NPARAMLINES-1, 1);
+    port = portlist[0] = (viewport_t*) salloc(sizeof(viewport_t));
+    setupviewport(portlist[0], 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, 1);
     drawport(port, 0);
     poscursor(0, 0);
 }
@@ -199,7 +204,7 @@ static void getstate(ichar)
     register char *f1;
     char *fname;
     int gbuf;
-    struct viewport *port;
+    viewport_t *port;
 
     if (ichar != '!' || (gbuf = open(rfile, 0)) <= 0 ||
         (nportlist = get1w(gbuf)) == -1) {
@@ -209,7 +214,7 @@ make:   makestate();
     }
     portnum = get1w(gbuf);
     for (n=0; n<nportlist; n++) {
-        port = portlist[n] = (struct viewport *)salloc(SVIEWPORT);
+        port = portlist[n] = (viewport_t*) salloc(sizeof(viewport_t));
         port->prevport = get1w(gbuf);
         lmarg = get1w(gbuf);
         rmarg = get1w(gbuf);
@@ -287,7 +292,7 @@ static void savestate()
     register int portnum;
     register char *f1;
     char *fname;
-    register struct viewport *port;
+    register viewport_t *port;
     int sbuf;
 
     curwksp->ccol = cursorcol;
@@ -308,7 +313,7 @@ static void savestate()
         put1w(port->rmarg, sbuf);
         put1w(port->tmarg, sbuf);
         put1w(port->bmarg, sbuf);
-        f1 = fname = openfnames[port->altwksp->wfile];
+        f1 = fname = file[port->altwksp->wfile].name;
         if (f1) {
             while (*f1++);
             nletters = f1 - fname;
@@ -324,7 +329,7 @@ static void savestate()
         } else
             put1w(0, sbuf);
 
-        f1 = fname = openfnames[port->wksp->wfile];
+        f1 = fname = file[port->wksp->wfile].name;
         if (f1) {
             while (*f1++);
             nletters = f1 - fname;
@@ -455,19 +460,19 @@ void fatal(s)
 #ifdef DEBUG
     if (inputfile || ! isatty(1)) {
         register int i;
-        register struct workspace *w;
+        register workspace_t *w;
 
         if (s)
             printf("%s\n\n", s);
         for (i = 0; i < MAXFILES; i++)
-            if (openfsds[i]) {
-                printf("\n*** OPENFSDS[%d] - file %s\n", i, openfnames[i]);
-                printfsd(openfsds[i]);
+            if (file[i].chain) {
+                printf("\n*** File[%d] = %s\n", i, file[i].name);
+                printsegm(file[i].chain);
             }
         for (i = 0; i < nportlist; i++) {
             w = portlist[i]->wksp;
-            printf("\nViewport #%d: FSD chain %d, current line %d at block %p,\n",
-                i, w->wfile, w->curlno, w->curfsd);
+            printf("\nViewport #%d: chain %d, current line %d at block %p,\n",
+                i, w->wfile, w->curlno, w->cursegm);
             printf(" first line %d, ulhc (%d,%d)\n",
                 w->curflno, w->ulhccno, w->ulhclno);
         }

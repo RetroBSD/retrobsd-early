@@ -8,11 +8,11 @@
 
 /*
  * Write file from channel n to file.
- * When no file given use the name from openfnames[n].
+ * When no file given use the name from file[n].name.
  * When no permission to write, ask to write to ".".
  */
-int savefile(file, n)
-    char *file;
+int savefile(filename, n)
+    char *filename;
     int n;
 {
     register char *f1;
@@ -21,10 +21,10 @@ int savefile(file, n)
     int newf, nowrbak = 0;
 
     /* дай справочник */
-    if (file) {
-        f0 = file;
+    if (filename) {
+        f0 = filename;
     } else {
-        f0 = openfnames[n];
+        f0 = file[n].name;
         nowrbak = 1;
     }
     for (f1=f2=f0; *f1; f1++)
@@ -44,7 +44,7 @@ int savefile(file, n)
     j = checkpriv(i);
     close (i);
     if (j != 2) {
-        if (file) {
+        if (filename) {
             error ("Can't write in specified directory");
             return(0);
         }
@@ -74,9 +74,9 @@ int savefile(file, n)
     }
     /* Готовимся к записи файла f0 */
     f1 = append (f0, "~");
-    if (nowrbak && ! movebak[n]) {
+    if (nowrbak && ! file[n].backup_done) {
         nowrbak = 0;
-        movebak[n] = 1;
+        file[n].backup_done = 1;
     }
     if (! nowrbak) {
         unlink(f1);
@@ -96,7 +96,7 @@ int savefile(file, n)
     /* Собственно запись. */
     telluser("save: ", 0);
     telluser(f0, 6);
-    return (fsdwrite(openfsds[n], 077777, newf) == -1 ? 0 : 1);
+    return segmwrite(file[n].chain, 077777, newf) == -1 ? 0 : 1;
 }
 
 /*
@@ -106,25 +106,25 @@ int savefile(file, n)
  * команды "exec".
  * Ответ - число записанных строк, или -1, если ошибка.
  */
-int fsdwrite(ff, nl, newf)
-    struct fsd *ff;
+int segmwrite(ff, nl, newf)
+    segment_t *ff;
     int nl, newf;
 {
-    register struct fsd *f;
+    register segment_t *f;
     register char *c;
     register int i;
     int j, k, bflag, tlines;
 
-    if (lcline < LBUFFER)
+    if (cline_max < LBUFFER)
         excline(LBUFFER);
     f = ff;
     bflag = 1;
     tlines = 0;
-    while (f->fsdfile && nl) {
-        if (f->fsdfile > 0) {
+    while (f->fdesc && nl) {
+        if (f->fdesc > 0) {
             i = 0;
-            c = &f->fsdbytes;
-            for (j=f->fsdnlines; j; j--) {
+            c = &f->data;
+            for (j=f->nlines; j; j--) {
                 if (nl < 0) {
                     /* Проверяем счетчик пустых строк */
                     if (bflag && *c != 1)
@@ -143,10 +143,10 @@ int fsdwrite(ff, nl, newf)
                 if (nl > 0 && --nl == 0)
                     break;
             }
-            lseek(f->fsdfile, f->seek, 0);
+            lseek(f->fdesc, f->seek, 0);
             while (i) {
                 j = (i < LBUFFER) ? i : LBUFFER;
-                if (read(f->fsdfile, cline, j) < 0)
+                if (read(f->fdesc, cline, j) < 0)
                     /* ignore errors */;
                 if (write(newf, cline, j) < 0) {
                     error("DANGER -- WRITE ERROR");
@@ -156,7 +156,7 @@ int fsdwrite(ff, nl, newf)
                 i -= j;
             }
         } else {
-            j = f->fsdnlines;
+            j = f->nlines;
             if (nl < 0) {
                 if (bflag == 0 && ++nl == 0)
                     j = 0;
@@ -168,7 +168,7 @@ int fsdwrite(ff, nl, newf)
             }
             k = j;
             while (k)
-                cline[--k] = NEWLINE;
+                cline[--k] = '\n';
             if (j && write(newf, cline, j) < 0) {
                 error("DANGER -- WRITE ERROR");
                 close(newf);
@@ -176,7 +176,7 @@ int fsdwrite(ff, nl, newf)
             }
             tlines += j;
         }
-        f = f->fwdptr;
+        f = f->next;
     }
     close(newf);
     return tlines;
@@ -191,8 +191,8 @@ int fsdwrite(ff, nl, newf)
  * Код ответа -1, если файл не открыли и не создали.
  * Если putflg равен 1, файл тут же выводится в окно.
  */
-int editfile(file, line, col, mkflg, puflg)
-    char *file;
+int editfile(filename, line, col, mkflg, puflg)
+    char *filename;
     int line, col, mkflg, puflg;
 {
     int i, j;
@@ -201,9 +201,9 @@ int editfile(file, line, col, mkflg, puflg)
 
     fn = -1;
     for (i=0; i<MAXFILES; ++i) {
-        if (openfnames[i] != 0) {
-            c = file;
-            d = openfnames[i];
+        if (file[i].name != 0) {
+            c = filename;
+            d = file[i].name;
             while (*c++ == *d) {
                 if (*(d++) == 0) {
                     fn = i;
@@ -213,7 +213,7 @@ int editfile(file, line, col, mkflg, puflg)
         }
     }
     if (fn < 0) {
-        fn = open(file, 0);  /* Файл существует? */
+        fn = open(filename, 0);  /* Файл существует? */
         if (fn >= 0) {
             if (fn >= MAXFILES) {
                 error("Too many files -- editor limit!");
@@ -226,25 +226,25 @@ int editfile(file, line, col, mkflg, puflg)
                 close(fn);
                 return(0);
             }
-            openwrite[fn] = (j == 2) ? 1 : 0;
+            file[fn].writable = (j == 2) ? 1 : 0;
             telluser("Use: ",0);
-            telluser(file, 5);
+            telluser(filename, 5);
         } else {
             if (! mkflg)
                 return (-1);
             telluser("Hit ^N to create new file: ",0);
-            telluser(file, 28);
+            telluser(filename, 28);
             lread1 = -1;
             read1();
             if (lread1 != CCSETFILE && lread1 != 'Y' &&lread1 != 'y')
                 return(-1);
             /* Находим справочник */
-            for (c=d=file; *c; c++)
+            for (c=d=filename; *c; c++)
                 if (*c == '/')
                     d = c;
-            if (d > file) {
+            if (d > filename) {
                 *d = '\0';
-                i = open(file,0);
+                i = open(filename, 0);
             } else
                 i = open(".",0);
 
@@ -254,17 +254,17 @@ int editfile(file, line, col, mkflg, puflg)
             }
             if (checkpriv(i) != 2) {
                 error("Can't write in:");
-                telluser (file,21);
+                telluser (filename, 21);
                 return(0);
             }
             close(i);
-            if (d > file)
+            if (d > filename)
                 *d = '/';
 
             /* Создаем файл */
-            fn = creat(file,FILEMODE);
+            fn = creat(filename, FILEMODE);
             close(fn);
-            fn = open(file, 0);
+            fn = open(filename, 0);
             if (fn < 0) {
                 error("Create failed!");
                 return(0);
@@ -274,19 +274,19 @@ int editfile(file, line, col, mkflg, puflg)
                 error("Too many files -- Editor limit!");
                 return(0);
             }
-            openwrite[fn] = 1;
-            if (chown(file, userid, groupid) < 0)
+            file[fn].writable = 1;
+            if (chown(filename, userid, groupid) < 0)
                 /* ignore errors */;
         }
         paraml = 0;   /* so its kept around */
-        openfnames[fn] = file;
+        file[fn].name = filename;
     }
     /* Выталкиваем буфер, так как здесь долгая операция */
     dumpcbuf();
     switchwksp();
-    if (openfsds[fn] == (struct fsd *)0)
-        openfsds[fn] = file2fsd(fn);
-    curwksp->curfsd = openfsds[fn];
+    if (file[fn].chain == (segment_t *)0)
+        file[fn].chain = file2segm(fn);
+    curwksp->cursegm = file[fn].chain;
     curfile = curwksp->wfile = fn;
     curwksp->curlno = curwksp->curflno = 0;
     curwksp->ulhclno = line;
@@ -307,7 +307,7 @@ int endit()
     register int i, ko = 1;
 
     for (i=0; i<MAXFILES; i++)
-        if (openfsds[i] && openwrite[i] == EDITED)
+        if (file[i].chain && file[i].writable == EDITED)
             if (savefile(NULL, i) == 0)
                 ko = 0;
     return(ko);

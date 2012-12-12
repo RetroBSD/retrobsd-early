@@ -20,16 +20,12 @@ struct tag {
     int line, col, nfile;
 };
 
-#define MSBUF SSAVEBUF
-#define MSTAG sizeof(struct tag)
-#define MSMAC sizeof(char *)
-
 #define LMAC ('z'-'a'+1)
 
 int csrsw; /* Для яркой отметки на экране */
 
 union macro {
-    struct savebuf mbuf;
+    clipboard_t mbuf;
     struct tag mtag;
     char *mstring;
 } *mtaba[LMAC];
@@ -81,13 +77,13 @@ err:
  * ответ 1, если хорошо, иначе 0
  */
 int msrbuf(sbuf, name, op)
-    register struct savebuf *sbuf;
+    register clipboard_t *sbuf;
     register char *name;
     int op;
 {
     register union macro *m;
 
-    m = mname(name, MBUF, (op ? 0 : MSBUF));
+    m = mname(name, MBUF, (op ? 0 : sizeof(clipboard_t)));
     if (m) {
         if (op)
             *sbuf = m->mbuf;
@@ -107,10 +103,10 @@ int msvtag(name)
     register char *name;
 {
     register union macro *m;
-    register struct workspace *cws;
+    register workspace_t *cws;
 
     cws = curwksp;
-    m = mname(name, MTAG, MSTAG);
+    m = mname(name, MTAG, sizeof(struct tag));
     if (! m)
         return 0;
     m->mtag.line  = cursorline + cws->ulhclno;
@@ -135,7 +131,7 @@ int mgotag(name)
             return 0;
     i = m->mtag.nfile;
     if (curwksp->wfile != i) {
-        editfile(openfnames[i], 0, 0, 0, 0);
+        editfile(file[i].name, 0, 0, 0, 0);
         fnew = 1;
     }
     cgoto(m->mtag.line, m->mtag.col, -1, fnew);
@@ -154,7 +150,7 @@ int mdeftag(name)
     char *name;
 {
     register union macro *m;
-    register struct workspace *cws;
+    register workspace_t *cws;
     int cl, ln, f = 0;
 
     m = mname(name, MTAG, 0);
@@ -208,7 +204,7 @@ int defmac(name)
 {
     register union macro *m;
 
-    m = mname(name, MMAC, MSMAC);
+    m = mname(name, MMAC, sizeof(char*));
     if (! m)
         return 0;
     param(1);
@@ -247,7 +243,7 @@ int defkey()
 #define LKEY 20 /* Макс. число символов, генерируемых новой клавишей */
     char bufc[LKEY+1], *buf;
     register int lc;
-    struct viewport *curp;
+    viewport_t *curp;
     int curl,curc;
     register char *c, *c1;
 

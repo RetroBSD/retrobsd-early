@@ -53,7 +53,7 @@ void putup(lo, lf)
         else {
             if (lf >= 0)
                 chars(1);
-            i = (ncline - 1) - curwksp->ulhccno;
+            i = (cline_len - 1) - curwksp->ulhccno;
             if (i < 0)
                 i = 0;
             else if (i > curport->rtext) {
@@ -94,7 +94,7 @@ void putup(lo, lf)
         if (k > 0) {
             putblanks(k);
         }
-        if (curport->ltext + cursorcol >= LINEL)
+        if (curport->ltext + cursorcol >= NCOLS)
             cursorcol = - curport->ltext;
         if (rmargflg && rmargflg != curport->rmchars[l0]) {
             poscursor(curport->rmarg - curport->ltext, l0);
@@ -228,7 +228,7 @@ void putch(j, flg)
             curport->lastcol[cursorline] = cursorcol + 1;
     }
     ++cursorcol;
-    if (curport->ltext + cursorcol >= LINEL)
+    if (curport->ltext + cursorcol >= NCOLS)
         cursorcol = - curport->ltext;
     putcha(j);
     if (cursorcol <= 0)
@@ -259,7 +259,7 @@ char *param(macro)
     char *cp,*c2;
     int c;
     register int i,pn;
-    struct viewport *w;
+    viewport_t *w;
 #define LPARAM 20       /* length increment */
 
     if (paraml != 0 && paramv != 0)
@@ -380,10 +380,10 @@ loop:
  * When vertf, draw a vertical borders.
  */
 void drawport(newp, vertf)
-    struct viewport *newp;
+    viewport_t *newp;
     int vertf;
 {
-    register struct viewport *newport;
+    register viewport_t *newport;
     register int i, c;
     int j;
 
@@ -435,7 +435,7 @@ void telluser(msg, col)
     char *msg;
     int col;
 {
-    struct viewport *oldport;
+    viewport_t *oldport;
     register int c,l;
     oldport = curport;
     c = cursorcol;
@@ -461,7 +461,7 @@ void rescreen()
 {
     register int i;
     int j;
-    register struct viewport *curp, *curp0 = curport;
+    register viewport_t *curp, *curp0 = curport;
     int col = cursorcol, lin = cursorline;
 
     switchport(&wholescreen);

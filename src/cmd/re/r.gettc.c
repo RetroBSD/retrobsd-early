@@ -62,7 +62,7 @@ const char in0tab[32] = {
  * Таблица кодов клавиш терминала и их комбинаций
  * Сюда же записываются коды при переопределении
  */
-struct ex_int inctab[] = {
+keycode_t keytab[] = {
     { CCMOVEUP,     "ku",   },  { CCMOVEUP,     "\33OA",   },
     { CCMOVEDOWN,   "kd",   },  { CCMOVEDOWN,   "\33OB",   },
     { CCMOVERIGHT,  "kr",   },  { CCMOVERIGHT,  "\33OC",   },
@@ -144,15 +144,15 @@ static char *gettcs(termcap, tc)
 }
 
 /*
- * сортировка inctab для работы функции findt
+ * сортировка keytab для работы функции findt
  */
 static void itsort(fb, fe, ns)
-    struct ex_int *fb,*fe;
+    keycode_t *fb,*fe;
     int ns;
 {
-    register struct ex_int *fr, *fw;
+    register keycode_t *fr, *fw;
     char c;
-    struct ex_int temp;
+    keycode_t temp;
 
     fw = fb - 1;
     while (fw != fe) {
@@ -178,7 +178,7 @@ static void itsort(fb, fe, ns)
 void tcread()
 {
     register int i;
-    register struct ex_int *ir, *iw;
+    register keycode_t *ir, *iw;
     char *termcap;
 
     /* Terminal description is placed in TERMCAP variable. */
@@ -198,16 +198,16 @@ void tcread()
         puts1 ("re: terminal does not support direct positioning\n");
         exit(1);
     }
-    LINEL = tgetnum(termcap, "co");
+    NCOLS = tgetnum(termcap, "co");
     NLINES = tgetnum(termcap, "li");
-    if (LINEL <= 60 || NLINES < 8) {
+    if (NCOLS <= 60 || NLINES < 8) {
         puts1 ("re: too small screen size\n");
         exit(1);
     }
-    if (LINEL > LINELM)
-        LINEL = LINELM;
-    if (NLINES > NLINESM)
-        NLINES = NLINESM;
+    if (NCOLS > MAXCOLS)
+        NCOLS = MAXCOLS;
+    if (NLINES > MAXLINES)
+        NLINES = MAXLINES;
     for (i=0; i<COMCOD; i++) {
         cvtout[i] = gettcs(termcap, cvtout[i]);
     }
@@ -217,7 +217,7 @@ void tcread()
         cvtout[COCURS] = "@";
 
     /* Input codes. */
-    iw = inctab;
+    iw = keytab;
     for (ir=iw; ir->excc; ir++) {
         if (ir->excc[0] > ' ') {
             iw->excc = gettcs(termcap, ir->excc);
@@ -232,5 +232,5 @@ void tcread()
     }
     iw->excc = NULL;
     iw->incc = 0;
-    itsort(inctab, iw-1, 0);
+    itsort(keytab, iw-1, 0);
 }

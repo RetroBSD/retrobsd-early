@@ -190,7 +190,7 @@ void dumpcbuf()
 
 /*
  * Поиск кода клавиши.
- * struct ex_int * (fb , fe) = NULL при подаче
+ * keycode_t * (fb, fe) = NULL при подаче
  * первого символа с данной клавиши.
  * Дальше они используются при поиске кода.
  * Коды ответа:
@@ -199,14 +199,14 @@ void dumpcbuf()
  * >=0   - код команды.
  */
 static int findt (fb, fe, sy, ns)
-    struct ex_int **fb, **fe;
+    keycode_t **fb, **fe;
     char sy;
     int ns;
 {
     char sy1;
-    register struct ex_int *fi;
+    register keycode_t *fi;
 
-    fi = *fb ? *fb : inctab;
+    fi = *fb ? *fb : keytab;
     *fb = 0;
     if (sy == 0)
         return BADF;
@@ -373,7 +373,7 @@ rmacname:
     }
     /* Введен управляющий символ - ищем команду в таблице */
     {
-        struct ex_int *i1, *i2;
+        keycode_t *i1, *i2;
         int ts, k;
         i1 = i2 = 0;
         ts = 0;
@@ -482,8 +482,8 @@ int addkey(cmd, key)
     int cmd;
     char *key;
 {
-    struct ex_int *fb, *fe;
-    register struct ex_int *fw;
+    keycode_t *fb, *fe;
+    register keycode_t *fw;
     register int ns, i;
 
     ns=0;

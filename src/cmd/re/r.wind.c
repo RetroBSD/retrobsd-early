@@ -107,9 +107,9 @@ void cgoto(ln, col, slin, lkey)
  * Compute cursorcol, cursorline for new window.
  */
 void switchport(ww)
-    struct viewport *ww;
+    viewport_t *ww;
 {
-    register struct viewport *w = ww;
+    register viewport_t *w = ww;
 
     cursorcol  -= (w->ltext - curport->ltext);
     cursorline -= (w->ttext - curport->ttext);
@@ -124,11 +124,11 @@ void switchport(ww)
  * Flag c = 1 when borders enable.
  */
 void setupviewport(ww, cl, cr, lt, lb, c)
-    struct viewport *ww;
+    viewport_t *ww;
     int cl, cr, lt, lb, c;
 {
     register int i,size;
-    register struct viewport *w;
+    register viewport_t *w;
 
     w = ww;
     w->lmarg = cl;
@@ -151,8 +151,8 @@ void setupviewport(ww, cl, cr, lt, lb, c)
     w->bedit = w->btext;
 
     /* eventually this extra space may not be needed */
-    w->wksp = (struct workspace *)salloc(SWKSP);
-    w->altwksp = (struct workspace *)salloc(SWKSP);
+    w->wksp = (workspace_t*) salloc(sizeof(workspace_t));
+    w->altwksp = (workspace_t*) salloc(sizeof(workspace_t));
     size = NLINES - lt + 1;
     w->firstcol = salloc(size);
     for (i=0; i<size; i++)
@@ -160,7 +160,7 @@ void setupviewport(ww, cl, cr, lt, lb, c)
     w->lastcol = salloc(size);
     w->lmchars = salloc(size);
     w->rmchars = salloc(size);
-    w->wksp->curfsd = openfsds[2]; /* "#" - так как он всегда есть */
+    w->wksp->cursegm = file[2].chain; /* "#" - так как он всегда есть */
 }
 
 
@@ -170,7 +170,7 @@ void setupviewport(ww, cl, cr, lt, lb, c)
 void makeport(file)
     char *file;
 {
-    register struct viewport *oldport, *newport;
+    register viewport_t *oldport, *newport;
     char horiz;             /* 1 - если горизонтально */
     register int i;
     int portnum;
@@ -189,7 +189,7 @@ void makeport(file)
         return;
     }
     oldport = curport;
-    newport = portlist[nportlist++] = (struct viewport *) salloc(SVIEWPORT);
+    newport = portlist[nportlist++] = (viewport_t*) salloc(sizeof(viewport_t));
 
     /* Find a port number */
     for (portnum=0; portlist[portnum] != curport; portnum++);
@@ -243,7 +243,7 @@ void removeport()
 {
     int j, pnum;
     register int i;
-    register struct viewport *theport, *pport;
+    register viewport_t *theport, *pport;
 
     if (nportlist == 1) {
         error ("Can't remove remaining port.");
@@ -292,7 +292,7 @@ void removeport()
 void chgport(portnum)
     int portnum;
 {
-    register struct viewport *oldport, *newport;
+    register viewport_t *oldport, *newport;
 
     oldport = curport;
     if (portnum < 0) {
@@ -321,35 +321,35 @@ void chgport(portnum)
  *
  * Делается следующее:
  *  1. Перевыдаются все окна, в которые попал измененный участок;
- *  2. Получают новые ссылки на fsd в тех рабочих пространствах,
- *     которые изменялись (из за breakfsd они могли измениться);
+ *  2. Получают новые ссылки на segm в тех рабочих пространствах,
+ *     которые изменялись (из за breaksegm они могли измениться);
  *  3. Пересчитываются текущие номера строк в рабочих областях, если они
  *     отображают хвосты изменившихся файлов.
  */
 void redisplay(w, fn, from, to, delta)
-    struct workspace *w;
+    workspace_t *w;
     int from, to, delta, fn;
 {
-    register struct workspace *tw;
+    register workspace_t *tw;
     register int i,j;
     int k,l,m;
-    struct viewport *oport;
+    viewport_t *oport;
     for (i = 0; i < nportlist; i++)
     {
         if ((tw = portlist[i]->altwksp)->wfile == fn && tw != w)
         {
-            /* Исправим указатель на fsd. */
+            /* Исправим указатель на segm. */
             tw->curlno = tw->curflno = 0;
-            tw->curfsd = openfsds[fn];
+            tw->cursegm = file[fn].chain;
             /* Исправить номер строки */
             j = delta >= 0 ? to : from;
             if (tw->ulhclno > j) tw->ulhclno += delta;
         }
         if ((tw = portlist[i]->wksp)->wfile == fn && tw != w)
         {
-            /* Исправляем указатель на fsd. */
+            /* Исправляем указатель на segm. */
             tw->curlno = tw->curflno = 0;
-            tw->curfsd = openfsds[fn];
+            tw->cursegm = file[fn].chain;
             /* Исправляем номер строки и позиции на экране */
             j = delta >= 0 ? to : from;
             if (tw->ulhclno > j) tw->ulhclno += delta;
