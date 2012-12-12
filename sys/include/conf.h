@@ -54,25 +54,9 @@ struct cdevsw
     const struct devspec *devs;
 };
 
-/*
- * tty line control switch.
- */
-struct linesw
-{
-	int	(*l_open) (dev_t, struct tty*);
-	int	(*l_close) (struct tty*, int);
-	int	(*l_read) (struct tty*, struct uio*, int);
-	int	(*l_write) (struct tty*, struct uio*, int);
-	int	(*l_ioctl) (struct tty*, u_int, caddr_t, int);
-	void	(*l_rint) (int, struct tty*);
-	void	(*l_start) (struct tty*);
-	int	(*l_modem) (struct tty*, int);
-};
-
 #ifdef KERNEL
 extern const struct	bdevsw bdevsw[];
 extern const struct	cdevsw cdevsw[];
-extern const struct	linesw linesw[];
 
 extern int nulldev();
 extern int norw(dev_t dev, struct uio *uio, int flag);

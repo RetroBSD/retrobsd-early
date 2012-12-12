@@ -315,7 +315,7 @@ char *name;
 	printf("%s line\n", name);
 	lseek(fc, (long)nl[type].n_value, 0);
 	read(fc, tty, sizeof(struct tty));
-	printf(" # RAW CAN OUT         MODE     ADDR  DEL  COL     STATE       PGRP DISC\n");
+	printf(" # RAW CAN OUT         MODE     ADDR  DEL  COL     STATE       PGRP\n");
 	ttyprt(tty, 0);
 }
 
@@ -344,34 +344,7 @@ struct tty *atp;
 	putf(tp->t_state&TS_RCOLL, 'r');
 	putf(tp->t_state&TS_WCOLL, 'w');
 	putf(tp->t_state&TS_ASYNC, 'a');
-	printf("%6d", tp->t_pgrp);
-	switch (tp->t_line) {
-#ifdef OTTYDISC
-	case OTTYDISC:
-		printf("\n");
-		break;
-#endif
-	case NTTYDISC:
-		printf(" ntty\n");
-		break;
-#ifdef NETLDISC
-	case NETLDISC:
-		printf(" berknet\n");
-		break;
-#endif
-#ifdef TABLDISC
-	case TABLDISC:
-		printf(" tab\n");
-		break;
-#endif
-#ifdef SLIPDISC
-	case SLIPDISC:
-		printf(" slip\n");
-		break;
-#endif
-	default:
-		printf(" %d\n", tp->t_line);
-	}
+	printf("%6d\n", tp->t_pgrp);
 }
 
 dousr()

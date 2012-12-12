@@ -67,11 +67,11 @@ const struct devspec uartdevs[] = {
 
 void cnstart (struct tty *tp);
 struct uartreg *uart[NUART] = {
-	(struct uartreg*) &U1MODE, 
-	(struct uartreg*) &U2MODE, 
-	(struct uartreg*) &U3MODE, 
-	(struct uartreg*) &U4MODE, 
-	(struct uartreg*) &U5MODE, 
+	(struct uartreg*) &U1MODE,
+	(struct uartreg*) &U2MODE,
+	(struct uartreg*) &U3MODE,
+	(struct uartreg*) &U4MODE,
+	(struct uartreg*) &U5MODE,
 	(struct uartreg*) &U6MODE
 };
 
@@ -80,9 +80,9 @@ void uartinit()
 	unsigned char unit;
     int i;
 
-    // Our first task is to find out what our major 
+    // Our first task is to find out what our major
     // number is, so that the console can continue to work.
-    
+
     for (i=0; i<nchrdev; i++) {
         if (cdevsw[i].d_open == uartopen) {
             uart_major = i;
@@ -101,27 +101,27 @@ void uartinit()
 		// SPI4 is U2/U5 (1/4)
 
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             continue;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             continue;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             continue;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             continue;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             continue;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             continue;
 #endif
 
@@ -172,27 +172,27 @@ int uartopen(dev_t dev, int flag, int mode)
 		return (ENXIO);
 
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
 
@@ -273,9 +273,7 @@ int uartopen(dev_t dev, int flag, int mode)
 	} else {
 		IECSET(2) = 1 << (uirq[unit].rx-64);
 	}
-	if (! linesw[tp->t_line].l_open)
-		return (ENODEV);
-	return ((*linesw[tp->t_line].l_open)(dev, tp));
+	return ttyopen(dev, tp);
 }
 
 /*ARGSUSED*/
@@ -286,27 +284,27 @@ uartclose (dev, flag, mode)
 	register int unit = minor(dev);
 	register struct tty *tp = &uartttys[unit];
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
 
@@ -317,8 +315,6 @@ uartclose (dev, flag, mode)
 	if ((SD0_PORT == 4) && (unit==1 || unit==4))
 		return (ENODEV);
 
-	if (linesw[tp->t_line].l_close)
-		(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	return(0);
 }
@@ -333,27 +329,27 @@ uartread (dev, uio, flag)
 	register int unit = minor(dev);
 	register struct tty *tp = &uartttys[unit];
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
 
@@ -364,9 +360,7 @@ uartread (dev, uio, flag)
         if ((SD0_PORT == 4) && (unit==1 || unit==4))
                 return (ENODEV);
 
-	if (! linesw[tp->t_line].l_read)
-		return (ENODEV);
-	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
+	return ttread(tp, uio, flag);
 }
 
 /*ARGSUSED*/
@@ -380,27 +374,27 @@ uartwrite (dev, uio, flag)
 	register struct tty *tp = &uartttys[unit];
 
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
         if ((SD0_PORT == 2) && (unit==2 || unit==5))
@@ -410,9 +404,7 @@ uartwrite (dev, uio, flag)
         if ((SD0_PORT == 4) && (unit==1 || unit==4))
                 return (ENODEV);
 
-	if (! linesw[tp->t_line].l_write)
-		return (ENODEV);
-	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
+	return ttwrite(tp, uio, flag);
 }
 
 int
@@ -424,27 +416,27 @@ uartselect (dev, rw)
 	register struct tty *tp = &uartttys[unit];
 
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
         if ((SD0_PORT == 2) && (unit==2 || unit==5))
@@ -469,27 +461,27 @@ uartioctl (dev, cmd, addr, flag)
 	register int error;
 
 #ifndef UART1_ENABLED
-        if (unit==0) 
+        if (unit==0)
             return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return ENODEV;
 #endif
         if ((SD0_PORT == 2) && (unit==2 || unit==5))
@@ -499,11 +491,6 @@ uartioctl (dev, cmd, addr, flag)
         if ((SD0_PORT == 4) && (unit==1 || unit==4))
                 return (ENODEV);
 
-	if (linesw[tp->t_line].l_ioctl) {
-		error = (*linesw[tp->t_line].l_ioctl) (tp, cmd, addr, flag);
-		if (error >= 0)
-			return (error);
-	}
 	error = ttioctl(tp, cmd, addr, flag);
 	if (error < 0)
 		error = ENOTTY;
@@ -524,30 +511,29 @@ uartintr (dev)
             return;
 #endif
 #ifndef UART2_ENABLED
-        if (unit==1) 
+        if (unit==1)
             return;
 #endif
 #ifndef UART3_ENABLED
-        if (unit==2) 
+        if (unit==2)
             return;
 #endif
 #ifndef UART4_ENABLED
-        if (unit==3) 
+        if (unit==3)
             return;
 #endif
 #ifndef UART5_ENABLED
-        if (unit==4) 
+        if (unit==4)
             return;
 #endif
 #ifndef UART6_ENABLED
-        if (unit==5) 
+        if (unit==5)
             return;
 #endif
         /* Receive */
 	while (reg->sta & PIC32_USTA_URXDA) {
                 c = reg->rxreg;
-                if (linesw[tp->t_line].l_rint)
-                        (*linesw[tp->t_line].l_rint) (c, tp);
+                ttyinput(c, tp);
         }
 	if (reg->sta & PIC32_USTA_OERR)
 		reg->staclr = PIC32_USTA_OERR;
@@ -579,8 +565,7 @@ uartintr (dev)
 		}
                 if (tp->t_state & TS_BUSY) {
                         tp->t_state &= ~TS_BUSY;
-                        if (linesw[tp->t_line].l_start)
-                                (*linesw[tp->t_line].l_start) (tp);
+                        ttstart(tp);
                 }
         }
 }
@@ -596,23 +581,23 @@ void uartstart (register struct tty *tp)
         return;
 #endif
 #ifndef UART2_ENABLED
-    if (unit==1) 
+    if (unit==1)
         return;
 #endif
 #ifndef UART3_ENABLED
-    if (unit==2) 
+    if (unit==2)
         return;
 #endif
 #ifndef UART4_ENABLED
-    if (unit==3) 
+    if (unit==3)
         return;
 #endif
 #ifndef UART5_ENABLED
-    if (unit==4) 
+    if (unit==4)
         return;
 #endif
 #ifndef UART6_ENABLED
-    if (unit==5) 
+    if (unit==5)
         return;
 #endif
 	s = spltty();
@@ -654,23 +639,23 @@ void uartputc(dev_t dev, char c)
         return;
 #endif
 #ifndef UART2_ENABLED
-    if (unit==1) 
+    if (unit==1)
         return;
 #endif
 #ifndef UART3_ENABLED
-    if (unit==2) 
+    if (unit==2)
         return;
 #endif
 #ifndef UART4_ENABLED
-    if (unit==3) 
+    if (unit==3)
         return;
 #endif
 #ifndef UART5_ENABLED
-    if (unit==4) 
+    if (unit==4)
         return;
 #endif
 #ifndef UART6_ENABLED
-    if (unit==5) 
+    if (unit==5)
         return;
 #endif
     s = spltty();
@@ -719,23 +704,23 @@ char uartgetc(dev_t dev)
         return ENODEV;
 #endif
 #ifndef UART2_ENABLED
-    if (unit == 1) 
+    if (unit == 1)
         return ENODEV;
 #endif
 #ifndef UART3_ENABLED
-    if (unit == 2) 
+    if (unit == 2)
         return ENODEV;
 #endif
 #ifndef UART4_ENABLED
-    if (unit == 3) 
+    if (unit == 3)
         return ENODEV;
 #endif
 #ifndef UART5_ENABLED
-    if (unit == 4) 
+    if (unit == 4)
         return ENODEV;
 #endif
 #ifndef UART6_ENABLED
-    if (unit == 5) 
+    if (unit == 5)
         return ENODEV;
 #endif
     s = spltty();
@@ -756,4 +741,3 @@ char uartgetc(dev_t dev)
     splx(s);
     return (unsigned char) c;
 }
-

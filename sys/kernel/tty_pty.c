@@ -82,10 +82,7 @@ int ptsopen(dev_t dev, int flag, int mode)
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
-	if (linesw[tp->t_line].l_open)
-		error = (*linesw[tp->t_line].l_open)(dev, tp);
-	else
-		error = ENODEV;
+	error = ttyopen(dev, tp);
 	ptcwakeup (tp, FREAD | FWRITE);
 	return (error);
 }
@@ -95,11 +92,9 @@ int ptsclose(dev_t dev, int flag, int mode)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	if (linesw[tp->t_line].l_close)
-		(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 	ptcwakeup(tp, FREAD|FWRITE);
-    return 0;
+        return 0;
 }
 
 int ptsread(dev_t dev, register struct uio *uio, int flag)
@@ -134,8 +129,8 @@ again:
 		if (tp->t_canq.c_cc)
 			return (error);
 	} else
-		if (tp->t_oproc && linesw[tp->t_line].l_read)
-			error = (*linesw[tp->t_line].l_read)(tp, uio, flag);
+		if (tp->t_oproc)
+			error = ttread(tp, uio, flag);
 	ptcwakeup(tp, FWRITE);
 	return (error);
 }
@@ -152,9 +147,7 @@ int ptswrite(dev_t dev, register struct uio *uio, int flag)
 	tp = &pt_tty[minor(dev)];
 	if (tp->t_oproc == 0)
 		return (EIO);
-	if (! linesw[tp->t_line].l_write)
-		return (ENODEV);
-	return ((*linesw[tp->t_line].l_write) (tp, uio, flag));
+	return ttwrite(tp, uio, flag);
 }
 
 /*
@@ -208,8 +201,7 @@ int ptcopen(dev_t dev, int flag, int mode)
 	if (tp->t_oproc)
 		return (EIO);
 	tp->t_oproc = ptsstart;
-	if (linesw[tp->t_line].l_modem)
-		(void)(*linesw[tp->t_line].l_modem) (tp, 1);
+	ttymodem(tp, 1);
 	pti = &pt_ioctl[minor(dev)];
 	pti->pt_flags = 0;
 	pti->pt_send = 0;
@@ -222,11 +214,10 @@ int ptcclose(dev_t dev, int flag, int mode)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	if (linesw[tp->t_line].l_modem)
-		(void)(*linesw[tp->t_line].l_modem) (tp, 0);
+	ttymodem(tp, 0);
 	tp->t_state &= ~TS_CARR_ON;
 	tp->t_oproc = 0;		/* mark closed */
-    return 0;
+        return 0;
 }
 
 int ptcread(dev_t dev, register struct uio *uio, int flag)
@@ -424,8 +415,7 @@ again:
 				wakeup((caddr_t)&tp->t_rawq);
 				goto block;
 			}
-			if (linesw[tp->t_line].l_rint)
-				(*linesw[tp->t_line].l_rint) (*cp++, tp);
+			ttyinput(*cp++, tp);
 			cnt++;
 			cc--;
 		}
@@ -496,31 +486,7 @@ int ptyioctl(dev_t dev, u_int cmd, caddr_t data, int flag)
 				;
 			break;
 		}
-/*
- * Unsure if the comment below still applies or not.  For now put the
- * new code in ifdef'd out.
- */
-#ifdef	four_four_bsd
-	if (linesw[t->t_line].l_ioctl)
-		error = (*linesw[t->t_line].l_ioctl) (tp, cmd, data, flag);
-	else
-		error = ttioctl (tp, cmd, data, flag);
-#else
 	error = ttioctl (tp, cmd, data, flag);
-	/*
-	 * Since we use the tty queues internally,
-	 * pty's can't be switched to disciplines which overwrite
-	 * the queues.  We can't tell anything about the discipline
-	 * from here...
-	 */
-	if (linesw[tp->t_line].l_rint &&
-	    linesw[tp->t_line].l_rint != ttyinput) {
-		(*linesw[tp->t_line].l_close)(tp, flag);
-		tp->t_line = 0;
-		(void)(*linesw[tp->t_line].l_open)(dev, tp);
-		error = ENOTTY;
-	}
-#endif
 	if (error < 0) {
 		if (pti->pt_flags & PF_UCNTL &&
 		    (cmd & ~0xff) == UIOCCMD(0)) {

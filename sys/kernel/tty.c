@@ -333,7 +333,6 @@ ttioctl(tp, com, data, flag)
 	caddr_t data;
 	int flag;
 {
-	int dev = tp->t_dev;
 	int s;
 	long newflags;
 
@@ -356,8 +355,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCLSET:
 	case TIOCSTI:
 	case TIOCSWINSZ:
-		while (tp->t_line == NTTYDISC &&
-		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
+		while (u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag & SVFORK) == 0 &&
 		   !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
 		   !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
@@ -374,31 +372,14 @@ ttioctl(tp, com, data, flag)
 
 	/* get discipline number */
 	case TIOCGETD:
-		*(int *)data = tp->t_line;
+		*(int *)data = 0;
 		break;
 
 	/* set line discipline */
 	case TIOCSETD: {
 		register int t = *(int *)data;
-		int error = 0;
-
-		if ((unsigned) t >= nldisp)
+		if (t != 0)
 			return (ENXIO);
-		if (t != tp->t_line) {
-			s = spltty();
-			if (linesw[tp->t_line].l_close)
-				(*linesw[tp->t_line].l_close) (tp, flag);
-			if (linesw[t].l_open)
-				error = (*linesw[t].l_open) (dev, tp);
-			else
-				error = ENODEV;
-			if (error) {
-				splx(s);
-				return (error);
-			}
-			tp->t_line = t;
-			splx(s);
-		}
 		break;
 	}
 
@@ -463,8 +444,7 @@ ttioctl(tp, com, data, flag)
 			return (EPERM);
 		if (u.u_uid && u.u_ttyp != tp)
 			return (EACCES);
-		if (linesw[tp->t_line].l_rint)
-			(*linesw[tp->t_line].l_rint) (*(char *)data, tp);
+		ttyinput (*(char *)data, tp);
 		break;
 
 	case TIOCSETP:
@@ -668,8 +648,6 @@ ttyopen(dev, tp)
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		tp->t_state |= TS_ISOPEN;
 		bzero((caddr_t)&tp->t_winsize, sizeof(tp->t_winsize));
-		if (tp->t_line != NTTYDISC)
-			ttywflush(tp);
 	}
 	return (0);
 }
@@ -691,7 +669,6 @@ ttylclose (tp, flag)
 		ttyflush(tp, FREAD|FWRITE);
 	else
 		ttywflush(tp);
-	tp->t_line = 0;
 	return (0);
 }
 
@@ -1035,33 +1012,31 @@ ttyinput (c, tp)
 	 * case statement is labeled ``endcase'', so goto
 	 * it after a case match, or similar.
 	 */
-	if (tp->t_line == NTTYDISC) {
-		if (CCEQ(tp->t_lnextc, c)) {
-			if (t_flags & ECHO)
-				ttyout("^\b", tp);
-			tp->t_state |= TS_LNCH;
-			goto endcase;
-		}
-		if (CCEQ(tp->t_flushc, c)) {
-			if (t_flags & FLUSHO)
-				tp->t_flags &= ~FLUSHO;
-			else {
-				ttyflush(tp, FWRITE);
-				ttyecho(c, tp);
-				if (tp->t_rawq.c_cc + tp->t_canq.c_cc)
-					ttyretype(tp);
-				tp->t_flags |= FLUSHO;
-			}
-			goto startoutput;
-		}
-		if (CCEQ(tp->t_suspc, c)) {
-			if ((t_flags & NOFLSH) == 0)
-				ttyflush(tp, FREAD);
-			ttyecho(c, tp);
-			gsignal(tp->t_pgrp, SIGTSTP);
-			goto endcase;
-		}
-	}
+        if (CCEQ(tp->t_lnextc, c)) {
+                if (t_flags & ECHO)
+                        ttyout("^\b", tp);
+                tp->t_state |= TS_LNCH;
+                goto endcase;
+        }
+        if (CCEQ(tp->t_flushc, c)) {
+                if (t_flags & FLUSHO)
+                        tp->t_flags &= ~FLUSHO;
+                else {
+                        ttyflush(tp, FWRITE);
+                        ttyecho(c, tp);
+                        if (tp->t_rawq.c_cc + tp->t_canq.c_cc)
+                                ttyretype(tp);
+                        tp->t_flags |= FLUSHO;
+                }
+                goto startoutput;
+        }
+        if (CCEQ(tp->t_suspc, c)) {
+                if ((t_flags & NOFLSH) == 0)
+                        ttyflush(tp, FREAD);
+                ttyecho(c, tp);
+                gsignal(tp->t_pgrp, SIGTSTP);
+                goto endcase;
+        }
 
 	/*
 	 * Handle start/stop characters.
@@ -1096,8 +1071,7 @@ ttyinput (c, tp)
 	 */
 	if (t_flags & CBREAK) {
 		if (tp->t_rawq.c_cc > TTYHOG) {
-			if (tp->t_outq.c_cc < TTHIWAT(tp) &&
-			    tp->t_line == NTTYDISC)
+			if (tp->t_outq.c_cc < TTHIWAT(tp))
 				(void) ttyoutput(CTRL('g'), tp);
 		} else if (putc(c, &tp->t_rawq) == 0) {
 			ttwakeup (tp);
@@ -1132,42 +1106,38 @@ ttyinput (c, tp)
 	}
 
 	/*
-	 * New line discipline,
-	 * check word erase/reprint line.
+	 * Check word erase/reprint line.
 	 */
-	if (tp->t_line == NTTYDISC) {
-		if (CCEQ(tp->t_werasc, c)) {
-			if (tp->t_rawq.c_cc == 0)
-				goto endcase;
-			do {
-				c = unputc(&tp->t_rawq);
-				if (c != ' ' && c != '\t')
-					goto erasenb;
-				ttyrub(c, tp);
-			} while (tp->t_rawq.c_cc);
-			goto endcase;
-	erasenb:
-			do {
-				ttyrub(c, tp);
-				if (tp->t_rawq.c_cc == 0)
-					goto endcase;
-				c = unputc(&tp->t_rawq);
-			} while (c != ' ' && c != '\t');
-			(void) putc(c, &tp->t_rawq);
-			goto endcase;
-		}
-		if (CCEQ(tp->t_rprntc, c)) {
-			ttyretype(tp);
-			goto endcase;
-		}
-	}
+        if (CCEQ(tp->t_werasc, c)) {
+                if (tp->t_rawq.c_cc == 0)
+                        goto endcase;
+                do {
+                        c = unputc(&tp->t_rawq);
+                        if (c != ' ' && c != '\t')
+                                goto erasenb;
+                        ttyrub(c, tp);
+                } while (tp->t_rawq.c_cc);
+                goto endcase;
+erasenb:
+                do {
+                        ttyrub(c, tp);
+                        if (tp->t_rawq.c_cc == 0)
+                                goto endcase;
+                        c = unputc(&tp->t_rawq);
+                } while (c != ' ' && c != '\t');
+                (void) putc(c, &tp->t_rawq);
+                goto endcase;
+        }
+        if (CCEQ(tp->t_rprntc, c)) {
+                ttyretype(tp);
+                goto endcase;
+        }
 
 	/*
 	 * Check for input buffer overflow
 	 */
 	if (tp->t_rawq.c_cc+tp->t_canq.c_cc >= TTYHOG) {
-		if (tp->t_line == NTTYDISC)
-			(void) ttyoutput(CTRL('g'), tp);
+		(void) ttyoutput(CTRL('g'), tp);
 		goto endcase;
 	}
 
@@ -1407,7 +1377,7 @@ loop:
 		/*
 		 * Check for delayed suspend character.
 		 */
-		if (tp->t_line == NTTYDISC && CCEQ(tp->t_dsuspc, c)) {
+		if (CCEQ(tp->t_dsuspc, c)) {
 			gsignal(tp->t_pgrp, SIGTSTP);
 			if (first) {
 				sleep((caddr_t)&lbolt, TTIPRI);

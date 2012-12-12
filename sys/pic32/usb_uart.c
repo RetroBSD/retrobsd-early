@@ -85,7 +85,7 @@ int usbopen (dev_t dev, int flag, int mode)
 
 	tp->t_oproc = usbstart;
 
-	if ((tp->t_state & TS_ISOPEN) == 0) 
+	if ((tp->t_state & TS_ISOPEN) == 0)
 	{
 		tp->t_ispeed = BBAUD(UARTUSB_BAUD);
 		tp->t_ospeed = BBAUD(UARTUSB_BAUD);
@@ -102,9 +102,7 @@ int usbopen (dev_t dev, int flag, int mode)
 		tp->t_ospeed = BBAUD(UARTUSB_BAUD);
 	}
 	cdc_set_line_coding(speed_bps[tp->t_ospeed], NUM_STOP_BITS_1, PARITY_NONE, 8);
-	if (! linesw[tp->t_line].l_open)
-		return (ENODEV);
-	return (*linesw[tp->t_line].l_open) (dev, tp);
+	return ttyopen (dev, tp);
 }
 
 int usbclose (dev, flag, mode)
@@ -112,8 +110,6 @@ int usbclose (dev, flag, mode)
 {
     register struct tty *tp = &usbttys[0];
 
-    if (linesw[tp->t_line].l_close)
-        (*linesw[tp->t_line].l_close) (tp, flag);
     ttyclose (tp);
     return 0;
 }
@@ -125,9 +121,7 @@ int usbread (dev, uio, flag)
 {
     register struct tty *tp = &usbttys[0];
 
-    if (! linesw[tp->t_line].l_read)
-        return (ENODEV);
-    return (*linesw[tp->t_line].l_read) (tp, uio, flag);
+    return ttread (tp, uio, flag);
 }
 
 int usbwrite (dev, uio, flag)
@@ -137,9 +131,7 @@ int usbwrite (dev, uio, flag)
 {
     register struct tty *tp = &usbttys[0];
 
-    if (! linesw[tp->t_line].l_write)
-        return (ENODEV);
-    return (*linesw[tp->t_line].l_write) (tp, uio, flag);
+    return ttwrite (tp, uio, flag);
 }
 
 int usbioctl (dev, cmd, addr, flag)
@@ -150,11 +142,6 @@ int usbioctl (dev, cmd, addr, flag)
     register struct tty *tp = &usbttys[0];
     register int error;
 
-    if (linesw[tp->t_line].l_ioctl) {
-        error = (*linesw[tp->t_line].l_ioctl) (tp, cmd, addr, flag);
-        if (error >= 0)
-            return error;
-    }
     error = ttioctl (tp, cmd, addr, flag);
     if (error < 0)
             error = ENOTTY;
@@ -259,8 +246,7 @@ static void usb_rx (int c)
 
     if ((tp->t_state & TS_ISOPEN) == 0)
         return;
-    if (linesw[tp->t_line].l_rint)
-        (*linesw[tp->t_line].l_rint) (c, tp);
+    ttyinput (c, tp);
 }
 
 /*
@@ -287,8 +273,7 @@ void usbintr (int chan)
 
         if (tp->t_state & TS_BUSY) {
             tp->t_state &= ~TS_BUSY;
-            if (linesw[tp->t_line].l_start)
-                    (*linesw[tp->t_line].l_start) (tp);
+            ttstart (tp);
         }
     }
 

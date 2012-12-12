@@ -66,7 +66,6 @@ struct tty {
 	long	t_state;		/* some of both */
 	int	t_pgrp;			/* tty */
 	int	t_delct;		/* tty */
-	int	t_line;			/* glue */
 	int	t_col;			/* tty */
 	int	t_ispeed, t_ospeed;	/* device */
 	int	t_rocount, t_rocol;	/* tty */
