@@ -7,7 +7,7 @@ linker bootloader
 option PARTITION=sramc0:sa@1500,fs@2572
 
 device kernel cpu_khz=80000 bus_khz=80000 invled=6
-device console port=UART2
+device console device=tty1
 device uart2 baud=115200
 device sd0 port=2 cs=SS
 device adc

@@ -30,6 +30,11 @@
 #include "glcd.h"
 #include "debug.h"
 
+const struct devspec glcddevs[] = {
+    { 0, "glcd0" },
+    { 0, 0 }
+};
+
 #define _BC(R,B) (R &= ~(1<<B))
 #define _BS(R,B) (R |= (1<<B))
 

@@ -5,7 +5,7 @@ mapping fubarino
 linker bootloader
 
 device kernel led=21 cpu_khz=80000 bus_khz=80000
-device console port=USB
+device console device=ttyUSB0
 device uartusb
 device sd0 port=2 cs=SS
 device adc

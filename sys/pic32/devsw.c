@@ -18,6 +18,10 @@
 #include "errno.h"
 #include "uart.h"
 
+#include "swap.h"
+
+extern int strcmp(char *s1, char *s2);
+
 #ifdef UARTUSB_ENABLED
 #include "usb_uart.h"
 #endif
@@ -49,21 +53,6 @@
 #ifdef PTY_ENABLED
 #include "pty.h"
 #endif
-
-extern int rdopen (dev_t dev, int flag, int mode);
-extern int rdclose(dev_t dev, int flag, int mode);
-extern daddr_t rdsize (dev_t dev);
-extern void rdstrategy(register struct buf *bp);
-
-extern int swopen(dev_t dev, int mode, int flag);
-extern int swclose(dev_t dev, int mode, int flag);
-extern void swstrategy(register struct buf *bp);
-extern daddr_t swsize(dev_t dev);
-extern int swcread(dev_t dev, register struct uio *uio, int flag);
-extern int swcwrite(dev_t dev, register struct uio *uio, int flag);
-extern int swcioctl (dev_t dev, register u_int cmd, caddr_t addr, int flag);
-extern int swcopen(dev_t dev, int mode, int flag);
-extern int swcclose(dev_t dev, int mode, int flag);
 
 /*
  * Null routine; placed in insignificant entries
@@ -104,173 +93,160 @@ void noroot (csr)
 const struct bdevsw	bdevsw[] = {
 { 
 	rdopen,		rdclose,	rdstrategy,
-	noroot,		rdsize,		rdioctl,	0 },
+	noroot,		rdsize,		rdioctl,	0, rd0devs },
 { 
 	rdopen,		rdclose,	rdstrategy,
-	noroot,		rdsize,		rdioctl,	0 },
+	noroot,		rdsize,		rdioctl,	0, rd1devs },
 { 
 	rdopen,		rdclose,	rdstrategy,
-	noroot,		rdsize,		rdioctl,	0 },
+	noroot,		rdsize,		rdioctl,	0, rd2devs },
 { 
 	rdopen,		rdclose,	rdstrategy,
-	noroot,		rdsize,		rdioctl,	0,},
+	noroot,		rdsize,		rdioctl,	0, rd3devs },
 { 
 	swopen,		swclose,	swstrategy,
-	noroot,		swsize,		swcioctl,	0 },
+	noroot,		swsize,		swcioctl,	0, swapbdevs },
+{
+    0,          0,          0,
+    0,          0,          0,          0, 0 },
 };
 
-const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]);
+const int nblkdev = sizeof(bdevsw) / sizeof(bdevsw[0]) - 1;
 
 // The RetroDisks require the same master number as the disk entry in the
 // rdisk.c file.  A bit of a bind, but it means that the RetroDisk
 // devices must be numbered from master 0 upwards.
 
 const struct cdevsw	cdevsw[] = {
+
+// Static drivers - every system has these:
+
 { /* cn = 0 */
 	cnopen,		cnclose,	cnread,		cnwrite,
 	cnioctl,	nulldev,	cnttys,		cnselect,
-	nostrategy,	},
+	nostrategy, 0, 0, cndevs 
+},
+
 { /* mem = 1 */
 	nulldev,	nulldev,	mmrw,		mmrw,
 	noioctl,	nulldev,	0,		seltrue,
-	nostrategy,	},
+	nostrategy, 0, 0, mmdevs 
+},
+
 { /* tty = 2 */
 	syopen,		nulldev,	syread,		sywrite,
 	syioctl,	nulldev,	0,		syselect,
-	nostrategy,	},
+	nostrategy, 0, 0, sydevs 
+},
+
+{ /* fd = 3 */
+	fdopen,		nulldev,	norw,		norw,
+	noioctl,	nulldev,	0,		seltrue,
+	nostrategy, 0, 0, fddevs 
+},
+
+{ /* swap = 4 */
+	swcopen,	swcclose,	swcread,	swcwrite,
+	swcioctl,	nulldev,	0,		seltrue,
+	nostrategy, 0, 0, swapcdevs 
+},
+
+
+// Optional drivers from here on:
+
+#ifdef LOG_ENABLED
 { /* log = 3 */
 	logopen,	logclose,	logread,	norw,
 	logioctl,	nulldev,	0,		logselect,
-	nostrategy,	},
-{ /* fd = 4 */
-	fdopen,		nulldev,	norw,		norw,
-	noioctl,	nulldev,	0,		seltrue,
-	nostrategy,	},
+	nostrategy, 0, 0, logdevs 
+},
+#endif
+
+#if defined(UART1_ENABLED) || defined(UART2_ENABLED) || defined(UART3_ENABLED) || defined(UART4_ENABLED) || defined(UART5_ENABLED) || defined(UART6_ENABLED)
+{
+    uartopen,      uartclose,     uartread,      uartwrite,
+    uartioctl,     nulldev,       uartttys,      uartselect,
+    nostrategy,    uartgetc,      uartputc,      uartdevs 
+},
+#endif
+
+#ifdef UARTUSB_ENABLED
+{
+    usbopen,        usbclose,       usbread,        usbwrite,
+    usbioctl,       nulldev,        usbttys,        usbselect,
+    nostrategy, usbgetc, usbputc, usbdevs
+},
+#endif
+
+#ifdef PTY_ENABLED
+{  
+    ptsopen,        ptsclose,       ptsread,        ptswrite,
+    ptyioctl,       nulldev,        pt_tty,        ptcselect,
+    nostrategy, 0, 0, ptsdevs
+}, {
+    ptcopen,        ptcclose,       ptcread,        ptcwrite,
+    ptyioctl,       nulldev,        pt_tty,        ptcselect,
+    nostrategy, 0, 0, ptcdevs
+},
+#endif
 
 #ifdef GPIO_ENABLED
-{ /* gpio = 5 */
+{
 	gpioopen,	gpioclose,	gpioread,	gpiowrite,
 	gpioioctl,	nulldev,	0,              seltrue,
-	nostrategy,	},
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+	nostrategy, 0, 0, gpiodevs 
+},
 #endif
 
 #ifdef ADC_ENABLED
-{ /* adc = 6 */
+{
 	adc_open,	adc_close,	adc_read,	adc_write,
 	adc_ioctl,	nulldev,	0,              seltrue,
-	nostrategy,	},
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+	nostrategy, 0, 0, adcdevs
+},
 #endif
 
 #ifdef SPI_ENABLED
-{ /* spi = 7 */
+{
 	spidev_open,	spidev_close,	spidev_read,	spidev_write,
 	spidev_ioctl,	nulldev,	0,              seltrue,
-	nostrategy,	},
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+	nostrategy, 0, 0, spidevs
+},
 #endif
-// GLCD = 8 
+
 #ifdef GLCD_ENABLED
-{
+{ 
     glcd_open,      glcd_close,     glcd_read,      glcd_write,
     glcd_ioctl,     nulldev,        0,              seltrue,
-    nostrategy,     },
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+    nostrategy,  0, 0, glcddevs
+},
 #endif
-// OC = 9
+
 #ifdef OC_ENABLED
 {
     oc_open,        oc_close,       oc_read,        oc_write,
     oc_ioctl,       nulldev,        0,              seltrue,
-    nostrategy,     },
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+    nostrategy, 0, 0, ocdevs
+},
 #endif
-{ // SWAP = 10
-	swcopen,	swcclose,	swcread,	swcwrite,
-	swcioctl,	nulldev,	0,		seltrue,
-	nostrategy,	},
 
 // Ignore this for now - it's WIP.
 #ifdef PICGA_ENABLED
-{ // PICGA = 11
+{
     picga_open,     picga_close,    picga_read,     picga_write,
     picga_ioctl,    nulldev,        0,              seltrue,
-    nostrategy,     },
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
+    nostrategy, 0, 0, picgadevs
+},
 #endif
 
-#if defined(UART1_ENABLED) || defined(UART2_ENABLED) || defined(UART3_ENABLED) || defined(UART4_ENABLED) || defined(UART5_ENABLED) || defined(UART6_ENABLED)
-{ // UARTS = 12
-    uartopen,      uartclose,     uartread,      uartwrite,
-    uartioctl,     nulldev,        uartttys,       uartselect,
-    nostrategy,     },
-#else
+// End the list with a blank entry
 {
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
-#endif
-
-#ifdef UARTUSB_ENABLED
-{   // USB - 13
-    usbopen,        usbclose,       usbread,        usbwrite,
-    usbioctl,       nulldev,        usbttys,        usbselect,
-    nostrategy,     },
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
-#endif
-
-#ifdef PTY_ENABLED
-{   // PTS - 14
-    ptsopen,        ptsclose,       ptsread,        ptswrite,
-    ptyioctl,       nulldev,        pt_tty,        ptcselect,
-    nostrategy,     },
-{   // PTC - 15
-    ptcopen,        ptcclose,       ptcread,        ptcwrite,
-    ptyioctl,       nulldev,        pt_tty,        ptcselect,
-    nostrategy,     },
-#else
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
-{
-    nulldev,        nulldev,        norw,           norw,
-    noioctl,        nulldev,        0,              seltrue,
-    nostrategy,     },
-#endif
-
-
+    0,              0,              0,              0,
+    0,              0,              0,              0,
+    0, 0 
+},
 };
-const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]);
+const int nchrdev = sizeof(cdevsw) / sizeof(cdevsw[0]) - 1;
 
 /*
  * Routine that identifies /dev/mem and /dev/kmem.
@@ -361,4 +337,36 @@ blktochr(dev)
 			return(i);
 	}
 	return(NODEV);
+}
+
+/*
+ * Search through the devspec entries in the cdevsw
+ * table looking for a device name match.
+ */
+
+dev_t get_cdev_by_name(char *name)
+{
+    int maj, i;
+
+    for (maj = 0; maj < nchrdev; maj++) {
+        for (i = 0; cdevsw[maj].devs[i].devname != 0; i++) {
+            if (!strcmp(cdevsw[maj].devs[i].devname, name)) {
+                return makedev(maj, cdevsw[maj].devs[i].unit);
+            }
+        }
+    }
+    return -1;
+}
+
+char *cdevname(dev_t dev)
+{
+    int maj = major(dev);
+    int i;
+
+    for (i=0; cdevsw[maj].devs[i].devname != 0; i++) {
+        if (cdevsw[maj].devs[i].unit == minor(dev)) {
+            return cdevsw[maj].devs[i].devname;
+        }
+    }
+    return NULL;
 }

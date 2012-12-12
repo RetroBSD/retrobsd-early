@@ -13,6 +13,10 @@
 
 #include "uio.h"
 #include "tty.h"
+#include "conf.h"
+
+extern const struct devspec ptsdevs[];
+extern const struct devspec ptcdevs[];
 
 
 #ifndef NPTY

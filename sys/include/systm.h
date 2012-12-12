@@ -31,6 +31,7 @@
  * comes into existence when the kernel is loaded and hence cannot be
  * patched by a stalking hacker.
  */
+#include "conf.h"
 extern int securelevel;		/* system security level */
 
 extern const char version[];	/* system version */
@@ -72,6 +73,8 @@ extern	const char icodeend[];          /* its end */
 struct inode;
 daddr_t bmap (struct inode *ip, daddr_t bn, int rwflg, int flags);
 
+extern void kmemdev();
+
 /*
  * Structure of the system-entry table
  */
@@ -88,6 +91,9 @@ extern char	*panicstr;
 extern int	boothowto;		/* reboot flags, from boot */
 extern int	selwait;
 extern size_t	physmem;		/* total amount of physical memory */
+
+extern dev_t get_cdev_by_name(char *);
+extern char *cdevname(dev_t dev);
 
 void panic (char *msg);
 void printf (char *fmt, ...);
@@ -230,13 +236,20 @@ void	vfork (void);		/* awaiting fork w/ copy on write */
 struct buf;
 struct uio;
 
+void cninit();
 int cnopen (dev_t dev, int flag, int mode);
 int cnclose (dev_t dev, int flag, int mode);
 int cnread (dev_t dev, struct uio *uio, int flag);
 int cnwrite (dev_t dev, struct uio *uio, int flag);
 int cnioctl (dev_t dev, u_int cmd, caddr_t addr, int flag);
 int cnselect (dev_t dev, int rw);
-void cnintr (dev_t dev);
+
+extern const struct devspec cndevs[];
+extern const struct devspec mmdevs[];
+extern const struct devspec sydevs[];
+extern const struct devspec logdevs[];
+extern const struct devspec fddevs[];
+
 #ifdef TS_ISOPEN
 extern struct tty cnttys[];
 #endif

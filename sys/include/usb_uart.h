@@ -24,6 +24,11 @@
 #ifndef _USB_UART_H
 #define _USB_UART_H
 
+#include "conf.h"
+
+extern const struct devspec usbdevs[];
+extern unsigned int usb_major;
+
 #define USB_MAJOR 13
 
 extern struct tty usbttys[1];
@@ -35,8 +40,8 @@ extern int usbwrite(dev_t dev, struct uio *uio, int flag);
 extern int usbioctl(dev_t dev, register u_int cmd, caddr_t addr, int flag);
 extern int usbselect(dev_t dev, int rw);
 extern void usbstart (register struct tty *tp);
-extern void usbputc(char c);
-extern int usbgetc();
+extern void usbputc(dev_t dev, char c);
+extern char usbgetc(dev_t dev);
 extern void usbintr(int chan);
 
 #endif

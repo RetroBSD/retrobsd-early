@@ -23,6 +23,16 @@
 #include "types.h"
 #include "ttydev.h"
 
+const struct devspec ptsdevs[] = {
+    { 0, "ttyp0" }, { 1, "ttyp1" }, { 2, "ttyp2" }, { 3, "ttyp3" },
+    { 0, 0 }
+};
+
+const struct devspec ptcdevs[] = {
+    { 0, "ptyp0" }, { 1, "ptyp1" }, { 2, "ptyp2" }, { 3, "ptyp3" },
+    { 0, 0 }
+};
+
 extern	int	TTYHOG;		/* see tty.c */
 
 #define BUFSIZ 100		/* Chunk size iomoved to/from user */

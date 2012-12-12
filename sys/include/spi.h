@@ -22,7 +22,7 @@
 #ifdef KERNEL
 #include "conf.h"
 
-//extern const struct devspec spidevs[];
+extern const struct devspec spidevs[];
 
 int spidev_open (dev_t dev, int flag, int mode);
 int spidev_close (dev_t dev, int flag, int mode);

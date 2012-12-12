@@ -13,6 +13,8 @@ OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
 PROGTOOL        = $(AVRDUDE) -c stk500v2 -p pic32 -b 115200
 
+DEFS += -DCONFIG=$(CONFIG)
+
 
 all:		.deps sys machine unix.elf
 		$(SIZE) unix.elf
@@ -44,6 +46,9 @@ load:           unix.hex
 vers.o:		$(BUILDPATH)/newvers.sh $(H)/*.h $(M)/*.[ch] $(S)/*.c
 		sh $(BUILDPATH)/newvers.sh > vers.c
 		$(CC) -c vers.c
+
+reconfig:
+		$(CONFIGPATH)/config $(CONFIG)
 
 .SUFFIXES:	.i .srec .hex .dis .cpp .cxx .bin .elf
 

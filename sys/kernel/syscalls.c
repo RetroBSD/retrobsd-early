@@ -60,7 +60,7 @@ const char *const syscallnames[] = {
 	"getegid",		/*  48 = getegid */
 	"setgid",		/*  49 = setgid */
 	"setegid",		/*  50 = setegid */
-	"#51",			/*  51 - unused */
+	"kmemdev",		/*  51 = kmemdev  */
 	"phys",			/*  52 = (2.9) set phys addr */
 	"lock",			/*  53 = (2.9) lock in core */
 	"ioctl",		/*  54 = ioctl */

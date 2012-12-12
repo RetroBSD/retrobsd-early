@@ -1,6 +1,8 @@
 #ifndef _RDISK_H
 #define _RDISK_H
 
+#include "conf.h"
+
 #define RDISK_FS 	0xB7
 #define RDISK_SWAP 	0xB8
 
@@ -83,6 +85,10 @@ extern dev_t get_swap_device();
 extern unsigned char partition_type(dev_t dev);
 extern struct buf *prepartition_device(char *devname);
 
+extern const struct devspec rd0devs[];
+extern const struct devspec rd1devs[];
+extern const struct devspec rd2devs[];
+extern const struct devspec rd3devs[];
 #endif 
 
 #define RDGETMEDIASIZE _IOR('r',1,int)

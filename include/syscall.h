@@ -59,7 +59,7 @@
 #define	SYS_getegid	48
 #define	SYS_setgid	49
 #define	SYS_setegid	50
-				/* 51 is old; acct */
+#define SYS_kmemdev 51
 #define	SYS_phys	52
 #define	SYS_lock	53
 #define	SYS_ioctl	54

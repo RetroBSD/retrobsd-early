@@ -9,6 +9,19 @@
 #include "systm.h"
 #include "uio.h"
 
+const struct devspec mmdevs[] = {
+    { 0, "mem" },
+    { 1, "kmem" },
+    { 2, "null" },
+    { 3, "zero" },
+    { 0, 0 }
+};
+
+void kmemdev()
+{
+    u.u_rval = get_cdev_by_name("kmem");
+}
+
 /*
  * Read/write routine for /dev/mem family.
  */

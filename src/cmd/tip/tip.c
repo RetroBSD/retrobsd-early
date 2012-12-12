@@ -17,8 +17,9 @@
 /*
  * Baud rate mapping table
  */
+
 int bauds[] = {
-    0, 50, 75, 110, 134, 150, 200, 300, 600,
+    0, 50, 75, 150, 200, 300, 600,
     1200, 1800, 2400, 4800, 9600, 19200, 
     38400, 57600, 115200, 230400, 460800,
     500000, 576000, 921600, 1000000, 1152000,
@@ -513,15 +514,15 @@ void pwrite(fd, buf, n)
     char *buf;
     register int n;
 {
-    register int i;
+    //register int i;
     register char *bp;
     extern int errno;
 
     bp = buf;
-    for (i = 0; i < n; i++) {
-        *bp = partab[(*bp) & 0177];
-        bp++;
-    }
+    //for (i = 0; i < n; i++) {
+    //    *bp = partab[(*bp) & 0177];
+    //    bp++;
+    //}
     if (write(fd, buf, n) < 0) {
         if (errno == EIO)
             tipabort("Lost carrier.");

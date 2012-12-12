@@ -136,7 +136,9 @@ main()
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
 	 */
+#ifdef LOG_ENABLED
 	loginit();
+#endif
 	coutinit();
 	cinit();
 	pqinit();

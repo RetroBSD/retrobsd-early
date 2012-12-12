@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "ioctl.h"
 #include "rdisk.h"
+#include "conf.h"
 
 #define Q2(X) #X
 #define QUOTE(X) Q2((X))
@@ -49,6 +50,11 @@ int no_open(int u, int a, int b) { return 0; }
 int no_size(int u) { return 0; }
 int no_read(int u, unsigned int o, char *dat, unsigned int bs) { return 0; }
 int no_write(int u, unsigned int o, char *dat, unsigned int bs) { return 0; }
+
+const struct devspec rd0devs[] = { { 0, "rd0" }, { 1, "rd0a" }, { 2, "rd0b" }, { 3, "rd0c" }, { 4, "rd0d" }, { 0, 0 } };
+const struct devspec rd1devs[] = { { 0, "rd1" }, { 1, "rd1a" }, { 2, "rd1b" }, { 3, "rd1c" }, { 4, "rd1d" }, { 0, 0 } };
+const struct devspec rd2devs[] = { { 0, "rd2" }, { 1, "rd2a" }, { 2, "rd2b" }, { 3, "rd2c" }, { 4, "rd2d" }, { 0, 0 } };
+const struct devspec rd3devs[] = { { 0, "rd3" }, { 1, "rd3a" }, { 2, "rd3b" }, { 3, "rd3c" }, { 4, "rd3d" }, { 0, 0 } };
 
 // This is the list of physical storage devices on the system.
 // Uncomment the ones you want below.  Maximum 4 at the moment.
@@ -542,6 +548,8 @@ int strcmp(char *s1, char *s2)
 		p1++;
 		p2++;
 	}
+    if(*p1 < *p2) return -1;
+    if(*p1 > *p2) return 1;
 	return 0;
 }
 

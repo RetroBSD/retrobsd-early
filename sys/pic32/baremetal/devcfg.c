@@ -4,7 +4,7 @@
 #include "machine/pic32mx.h"
 
 PIC32_DEVCFG (
-    DEVCFG0_DEBUG_ENABLED,      /* ICE debugger enabled */
+    DEVCFG0_DEBUG_DISABLED,     /* ICE debugger enabled */
 
     DEVCFG1_FNOSC_FRCDIVPLL |   /* Internal FRC oscillator with PLL */
     DEVCFG1_POSCMOD_DISABLE |        /* No crystal */

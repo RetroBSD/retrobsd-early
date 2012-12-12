@@ -325,6 +325,7 @@ startup()
 #ifdef UARTUSB_ENABLED
     usbinit();
 #endif
+    cninit();
 
 
         /* Get total RAM size. */

@@ -70,12 +70,14 @@ unsigned int mr_read_block(unsigned int chip, unsigned int address, unsigned int
     spi_transfer(fd[chip], address);
 
     // If the length is a multiple of 32 bits, then do a 32 bit transfer
+/*
     if((length & 0x03) == 0)
         spi_bulk_read_32(fd[chip],length,data);
     else if((length & 0x01) == 0)
         spi_bulk_read_16(fd[chip],length,data);
     else 
-        spi_bulk_read(fd[chip],length,data);
+*/
+        spi_bulk_read(fd[chip],length,(unsigned char *)data);
 
 	spi_deselect(fd[chip]);
 
@@ -177,12 +179,14 @@ unsigned int mr_write_block(unsigned int chip, unsigned int address, unsigned in
     spi_transfer(fd[chip], address>>8);
     spi_transfer(fd[chip], address);
 
+/*
     if((length & 0x03) == 0)
         spi_bulk_write_32(fd[chip],length,data);
     else if((length & 0x01) == 0)
         spi_bulk_write_16(fd[chip],length,data);
     else 
-        spi_bulk_write(fd[chip],length,data);
+*/
+        spi_bulk_write(fd[chip],length,(unsigned char *)data);
 
     spi_deselect(fd[chip]);
 

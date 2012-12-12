@@ -27,7 +27,6 @@ always
     file kern_synch.o
     file kern_sysctl.o
     file kern_time.o
-    file subr_log.o
     file subr_prf.o
     file subr_rmap.o
     file sys_generic.o
@@ -39,7 +38,6 @@ always
     file vm_sched.o
     file vm_swap.o
     file vm_swp.o
-    file kern_glob.o
     file swap.o
     file vers.o 
     require ufs
@@ -63,4 +61,8 @@ option invled
     define LED_KERNEL_PORT  $TRIS(%1)
     define LED_KERNEL_PIN   $PIN(%1)
     define LED_KERNEL_INVERT YES
+end option
+
+option highlight
+    define KERNEL_HIGHLIGHT YES
 end option

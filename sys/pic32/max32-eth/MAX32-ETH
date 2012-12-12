@@ -11,7 +11,7 @@ linker bootloader-max32
 
 device kernel led=LED cpu_khz=80000 bus_khz=80000
 
-device console port=UART1
+device console device=tty0
 device uart1 baud=115200
 device uart2 baud=115200
 device uart3 baud=115200

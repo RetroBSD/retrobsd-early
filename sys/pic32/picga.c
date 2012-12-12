@@ -32,6 +32,11 @@
 #include "spi_bus.h"
 #include "debug.h"
 
+const struct devspec picgadevs[] = {
+    { 0, "picga" },
+    { 0, 0 }
+};
+
 extern int uwritec(struct uio *);
 
 int fd;

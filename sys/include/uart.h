@@ -6,6 +6,9 @@
 #define NUART 6
 #define UART_MAJOR 12
 
+#ifdef KERNEL
+#include "conf.h"
+
 struct uart_irq {
 	int	er;
 	int 	rx;
@@ -51,8 +54,12 @@ extern int uartselect (register dev_t dev, int rw);
 extern int uartioctl (dev_t dev, register u_int cmd, caddr_t addr, int flag);
 extern void uartintr(dev_t dev);
 extern void uartstart (register struct tty *tp);
-extern void uartputc(int unit, char c);
-extern int uartgetc(int unit);
+extern void uartputc(dev_t dev, char c);
+extern char uartgetc(dev_t dev);
 
+extern const struct devspec uartdevs[];
+extern unsigned int uart_major;
+
+#endif
 
 #endif

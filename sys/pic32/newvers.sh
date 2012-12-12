@@ -27,11 +27,11 @@ echo $SVN >.oldversion
 echo $SVN ${USER-root} `pwd` `date +'%Y-%m-%d'` `hostname` $CV| \
 awk ' {
 	version = $1;
-        user = $2;
-        dir = $3;
-        date = $4;
+    user = $2;
+    dir = $3;
+    date = $4;
 	host = $5;
-        cv = $6;
+    cv = $6;
 	printf "const char version[] = \"2.11 BSD Unix for PIC32, revision %s build %d:\\n", version, cv;
 	printf "     Compiled %s by %s@%s:\\n", date, user, host;
 	printf "     %s\\n\";\n", dir;

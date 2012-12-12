@@ -18,6 +18,13 @@
 #endif
 #include <syslog.h>
 
+const struct devspec fddevs[] = {
+    { 0, "stdin" },
+    { 1, "stdout" },
+    { 2, "stderr" },
+    { 0, 0 }
+};
+
 /*
  * Descriptor management.
  */

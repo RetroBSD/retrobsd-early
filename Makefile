@@ -95,48 +95,17 @@ BDEVS           += dev/rd2!b2:0 dev/rd2a!b2:1 dev/rd2b!b2:2 dev/rd2c!b2:3 dev/rd
 BDEVS           += dev/rd3!b3:0 dev/rd3a!b3:1 dev/rd3b!b3:2 dev/rd3c!b3:3 dev/rd3d!b3:4
 BDEVS		    += dev/swap!b4:64 dev/swap0!b4:0 dev/swap1!b4:1 dev/swap2!b4:2
 
-D_CONSOLE       += dev/console!c0:0
-D_MEM		    += dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3
-D_TTY		    += dev/tty!c2:0
-D_LOG		    += dev/klog!c3:0
-D_FD		    += dev/stdin!c4:0 dev/stdout!c4:1 dev/stderr!c4:2
-D_GPIO	    	+= dev/porta!c5:0  dev/portb!c5:1  dev/portc!c5:2 \
-                   dev/portd!c5:3  dev/porte!c5:4  dev/portf!c5:5 \
-		           dev/portg!c5:6  dev/confa!c5:64 dev/confb!c5:65 \
-		           dev/confc!c5:66 dev/confd!c5:67 dev/confe!c5:68 \
-		           dev/conff!c5:69 dev/confg!c5:70
-D_ADC            = dev/adc0!c6:0 dev/adc1!c6:1 dev/adc2!c6:2 dev/adc3!c6:3 \
-                   dev/adc4!c6:4 dev/adc5!c6:5 dev/adc6!c6:6 dev/adc7!c6:7 \
-                   dev/adc8!c6:8 dev/adc9!c6:9 dev/adc10!c6:10 dev/adc11!c6:11 \
-                   dev/adc12!c6:12 dev/adc13!c6:13 dev/adc14!c6:14 dev/adc15!c6:15
-D_SPI           += dev/spi1!c7:0 dev/spi2!c7:1 dev/spi3!c7:2 dev/spi4!c7:3
-D_GLCD		    += dev/glcd0!c8:0
-D_PWM		     = dev/oc1!c9:0 dev/oc2!c9:1 dev/oc3!c9:2 dev/oc4!c9:3 dev/oc5!c9:4
-D_TEMP           = dev/temp0!c10:0 dev/temp1!c10:1 dev/temp2!c10:2
-
-FDDEVS           = dev/fd/ dev/fd/0!c5:0 dev/fd/1!c5:1 dev/fd/2!c5:2 \
-                   dev/fd/3!c5:3 dev/fd/4!c5:4 dev/fd/5!c5:5 dev/fd/6!c5:6 \
-                   dev/fd/7!c5:7 dev/fd/8!c5:8 dev/fd/9!c5:9 dev/fd/10!c5:10 \
-                   dev/fd/11!c5:11 dev/fd/12!c5:12 dev/fd/13!c5:13 \
-                   dev/fd/14!c5:14 dev/fd/15!c5:15 dev/fd/16!c5:16 \
-                   dev/fd/17!c5:17 dev/fd/18!c5:18 dev/fd/19!c5:19 \
-                   dev/fd/20!c5:20 dev/fd/21!c5:21 dev/fd/22!c5:22 \
-                   dev/fd/23!c5:23 dev/fd/24!c5:24 dev/fd/25!c5:25 \
-                   dev/fd/26!c5:26 dev/fd/27!c5:27 dev/fd/28!c5:28 \
-                   dev/fd/29!c5:29
-D_UART           = dev/tty0!c12:0 dev/tty1!c12:1 dev/tty2!c12:2 \
-                   dev/tty3!c12:3 dev/tty4!c12:4 dev/tty5!c12:5
-D_USB            = dev/ttyUSB0!c13:0
-D_PTS            = dev/ttyp0!c14:0 dev/ttyp1!c14:1 dev/ttyp2!c14:2 dev/ttyp3!c14:3
-D_PTC            = dev/ptyp0!c15:0 dev/ptyp1!c15:1 dev/ptyp2!c15:2 dev/ptyp3!c15:3
+D_CONSOLE        = dev/console!c0:0
+D_MEM		     = dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3
+D_TTY		     = dev/tty!c2:0
+D_FD		     = dev/stdin!c3:0 dev/stdout!c3:1 dev/stderr!c3:2
+D_TEMP           = dev/temp0!c4:0 dev/temp1!c4:1 dev/temp2!c4:2 
 
 U_DIRS           = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES          = $(shell find u -type f ! -path '*/.svn/*')
 U_ALL            = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
 
-CDEVS            = $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_LOG) $(D_FD) $(D_GPIO) \
-		           $(D_ADC) $(D_SPI) $(D_GLCD) $(D_PWM) $(D_TEMP) $(D_UART) \
-                   $(D_USB) $(D_PTS) $(D_PTC)
+CDEVS            = $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_FD) $(D_TEMP) 
 
 all:            tools build kernel
 		$(MAKE) fs
@@ -163,10 +132,11 @@ build: 		tools lib
 filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
 		$(FSUTIL) -n$(FS_KBYTES) $@
-		$(FSUTIL) -a $@ $(ALLDIRS) $(ALLFILES)
-		$(FSUTIL) -a $@ $(MANFILES)
+		$(FSUTIL) -a $@ $(ALLDIRS) 
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
+		$(FSUTIL) -a $@ $(ALLFILES) 
+		$(FSUTIL) -a $@ $(MANFILES)
 
 swap.img:
 		dd if=/dev/zero of=$@ bs=1k count=$(SWAP_KBYTES)

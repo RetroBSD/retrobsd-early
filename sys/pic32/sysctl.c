@@ -20,6 +20,7 @@
 #include "namei.h"
 #include "vmmeter.h"
 #include "map.h"
+#include "conf.h"
 
 /*
  * Errno messages.
@@ -172,6 +173,8 @@ static const struct {
         { "_rate",          (int) &rate         },  /* vmstat */
         { "_sum",           (int) &sum          },  /* vmstat */
 #endif
+        { "_bdevsw",        (int) &bdevsw       },
+        { "_cdevsw",        (int) &cdevsw       },
         { 0, 0 },
 };
 

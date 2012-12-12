@@ -32,7 +32,7 @@ SYSOBJS		= __sysctl.o accept.o access.o adjtime.o bind.o chdir.o \
 		  getgid.o getegid.o getpgrp.o getpid.o \
 		  getppid.o getuid.o geteuid.o profil.o sigpending.o sync.o \
                   ufetch.o ustore.o ucall.o umask.o vfork.o vhangup.o \
-		  rdglob.o wrglob.o msec.o
+		  rdglob.o wrglob.o msec.o kmemdev.o
 
 OBJS		= ${COBJS} ${ASMOBJS} ${SYSOBJS}
 

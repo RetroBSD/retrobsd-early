@@ -506,6 +506,10 @@ int main(int argc, char *argv[])
     out << "LDSCRIPT = " << machine << "/lds/"<< config.linker << ".ld" << endl;
 
     out << endl;
+    out << "CONFIG = " << argv[1] << endl;
+    out << "CONFIGPATH = " << path << endl;
+
+    out << endl;
 
     out << "include " << machine << "/kernel-post.mk" << endl;
     out.close();

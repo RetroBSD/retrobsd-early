@@ -37,6 +37,11 @@
 #define GPIO_LOL	(IOC_IN   | 1 << 25 | 'g'<<8)   /* display lol picture */
 
 #ifdef KERNEL
+
+#include "conf.h"
+
+extern const struct devspec gpiodevs[];
+
 int gpioopen (dev_t dev, int flag, int mode);
 int gpioclose (dev_t dev, int flag, int mode);
 int gpioread (dev_t dev, struct uio *uio, int flag);

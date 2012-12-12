@@ -11,7 +11,7 @@ mapping generic
 
 device kernel cpu_khz=80000 bus_khz=80000 led=D2
 
-device console port=USB
+device console device=ttyUSB0
 device uartusb
 
 device rdisk led=D1

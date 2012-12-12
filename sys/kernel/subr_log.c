@@ -30,6 +30,12 @@ int	nlog = 1;
 #include "uio.h"
 #include "map.h"
 #include "systm.h"
+#include "conf.h"
+
+const struct devspec logdevs[] = {
+    { 0, "klog" },
+    { 0, 0 }
+};
 
 #define LOG_RDPRI	(PZERO + 1)
 

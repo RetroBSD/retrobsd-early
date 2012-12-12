@@ -30,6 +30,14 @@
 #include <machine/pic32mx.h>
 #include <machine/usb_device.h>
 #include <machine/usb_function_cdc.h>
+
+unsigned int usb_major = 0;
+
+const struct devspec usbdevs[] = {
+    { 0, "ttyUSB0" },
+    { 0, 0 }
+};
+
 #define CONCAT(x,y) x ## y
 #define BBAUD(x) CONCAT(B,x)
 
@@ -48,13 +56,19 @@ static unsigned speed_bps [NSPEEDS] = {
 struct tty usbttys [1];
 
 void usbstart (struct tty *tp);
-
+int usbopen (dev_t dev, int flag, int mode);
 /*
  * Initialize USB module SFRs and firmware variables to known state.
  * Enable interrupts.
  */
 void usbinit()
 {
+    int i;
+    for (i=0; i<nchrdev; i++) {
+        if (cdevsw[i].d_open == usbopen) {
+            usb_major = i;
+        }
+    }
     usb_device_init();
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
 
@@ -187,8 +201,7 @@ out:	/* Disable transmit_interrupt. */
 /*
  * Put a symbol on console terminal.
  */
-void usbputc (c)
-    char c;
+void usbputc(dev_t dev, char c)
 {
     register int s;
 
@@ -223,8 +236,7 @@ static void store_char (int c)
 /*
  * Receive a symbol from console terminal.
  */
-int
-usbgetc ()
+char usbgetc(dev_t dev)
 {
     register int s;
 

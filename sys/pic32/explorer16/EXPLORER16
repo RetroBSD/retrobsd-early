@@ -9,7 +9,7 @@ mapping generic
 
 device kernel cpu_khz=80000 bus_khz=80000 led=A1
 
-device console led=A2 port=UART2
+device console led=A2 device=tty1
 device uart2 baud=115200
 
 device rdisk led=A0 swap=A3

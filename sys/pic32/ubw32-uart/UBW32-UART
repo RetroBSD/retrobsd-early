@@ -10,7 +10,7 @@ mapping generic
 
 device kernel cpu_khz=80000 bus_khz=80000 invled=E2
 
-device console invled=E3 port=UART2
+device console invled=E3 device=tty1
 device uart2
 
 device rdisk invled=E1 invswap=E0

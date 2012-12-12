@@ -16,7 +16,6 @@
 
 unsigned char global_segment[GLOBSZ];
 
-
 void rdglob()
 {
         struct a {
