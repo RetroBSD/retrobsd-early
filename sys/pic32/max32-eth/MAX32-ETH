@@ -21,3 +21,5 @@ device sd0 port=2 cs=4
 device gpio
 device spi
 device adc
+
+device foreignbootloader

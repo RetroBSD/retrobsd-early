@@ -9,7 +9,7 @@ core pic32mx7
 linker bootloader-ubw32
 mapping generic
 
-device kernel cpu_khz=80000 bus_khz=80000 invled=D1
+device kernel invled=D1
 
 device console device=ttyUSB0
 device uartusb
@@ -17,3 +17,6 @@ device uartusb
 device sd0 port=2 cs=B13
 device gpio
 device adc
+
+device bootloader button=E7 led=E3 user=0x1d005000
+
