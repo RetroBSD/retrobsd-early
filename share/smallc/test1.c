@@ -1,3 +1,5 @@
+int ga[5];
+
 main()
 {
     int a, b, c, d;
@@ -12,6 +14,12 @@ main()
     int *picp;
     int e1, e2;
 
+    ga[0] = 10;
+    ga[1] = 20;
+    ga[2] = 30;
+    ga[3] = 40;
+    ga[4] = 50;
+    
     a = 21;
     b = 31;
     c = 71;
@@ -43,6 +51,11 @@ main()
     printf("          *pi + 1 = %d (11)\n",   *pi + 1);
     printf("        *(pi + 1) = %d (20)\n",   *(pi + 1));
     printf("&arr[3] - &arr[0] = %d (3)\n",    &arr[3] - &arr[0]);
+    printf("    arr[3]-arr[0] = %d (30)\n",   arr[3] - arr[0]);
+    printf("    arr[3]+arr[0] = %d (50)\n",   arr[3] + arr[0]);
+    printf("  &ga[3] - &ga[0] = %d (3)\n",    &ga[3] - &ga[0]);
+    printf("      ga[3]-ga[0] = %d (30)\n",   ga[3] - ga[0]);
+    printf("      ga[3]+ga[0] = %d (50)\n",   ga[3] + ga[0]);
     printf("\n");
 
     printf("               *pic = %d (13)\n", *pic);
@@ -195,9 +208,7 @@ main()
     printf("          *pip: %d 40\n", *pip);
     printf("    *(pip - 3): %d 10\n", *(pip - 3));
     printf("      *&arr[3]: %d 40\n", *&arr[3]);
-    // The following causes an address error, so it has been removed
-    // and needs to be fixed
-    printf("*(&arr[3] - 3): %d 10 broken - causes address error\n", 0/**(&arr[3]-3)*/);
+    printf("*(&arr[3] - 3): %d 10\n", *(&arr[3]-3));
 }
 
 printt (t, str)

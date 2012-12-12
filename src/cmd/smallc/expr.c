@@ -624,14 +624,19 @@ hier10 (lvalue_t *lval) {
                         return (0);
                 }
                 ptr = lval->symbol;
-                if( ptr ) lval->ptr_type = ptr->type;
-                if (lval->indirect)
-                        return (0);
-                /* global and non-array */
-                gen_immediate_a ();
-                output_string ((ptr = lval->symbol)->name);
-                newline ();
-                lval->indirect = ptr->type;
+                if( ptr ) { 
+                        lval->ptr_type = ptr->type;
+                        if (lval->indirect)
+                            return (0);
+                        /* global and non-array */
+                        gen_immediate_a ();
+                        output_string ((ptr = lval->symbol)->name);
+                        newline ();
+                        lval->indirect = ptr->type;
+                } else {
+                        lval->ptr_type = lval->indirect;
+                        lval->indirect = 0;
+                }
                 return (0);
         } else {
                 k = hier11 (lval);
