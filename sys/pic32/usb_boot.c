@@ -26,6 +26,19 @@
 #include <machine/pic32mx.h>
 #include <machine/io.h>
 
+#define TRIS_VAL(p)     (&p)[0]
+#define TRIS_CLR(p)     (&p)[1]
+#define TRIS_SET(p)     (&p)[2]
+#define TRIS_INV(p)     (&p)[3]
+#define PORT_VAL(p)     (&p)[4]
+#define PORT_CLR(p)     (&p)[5]
+#define PORT_SET(p)     (&p)[6]
+#define PORT_INV(p)     (&p)[7]
+#define LAT_VAL(p)      (&p)[8]
+#define LAT_CLR(p)      (&p)[9]
+#define LAT_SET(p)      (&p)[10]
+#define LAT_INV(p)      (&p)[11]
+
 /*
  * Flash memory.
  */
@@ -127,6 +140,8 @@ static unsigned int base_address;
 /*
  * Chip configuration.
  */
+
+#if (BL_CRYSTAL == 8)
 PIC32_DEVCFG (
     DEVCFG0_DEBUG_DISABLED,     /* ICE debugger disabled */
 
@@ -148,6 +163,30 @@ PIC32_DEVCFG (
     DEVCFG3_FCANIO |            /* CAN pins default */
     DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
     DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
+#elif (BL_CRYSTAL == 4)
+    DEVCFG0_DEBUG_DISABLED,     /* ICE debugger disabled */
+
+    DEVCFG1_FNOSC_PRIPLL |      /* Primary oscillator with PLL */
+    DEVCFG1_IESO |              /* Internal-external switch over */
+    DEVCFG1_POSCMOD_HS |        /* HS oscillator */
+    DEVCFG1_FPBDIV_1 |          /* Peripheral bus clock = SYSCLK/1 */
+    DEVCFG1_WDTPS_1,            /* Watchdog postscale = 1/1024 */
+
+    DEVCFG2_FPLLIDIV_1 |        /* PLL divider = 1/1 */
+    DEVCFG2_FPLLMUL_20 |        /* PLL multiplier = 20x */
+    DEVCFG2_UPLLIDIV_2 |        /* USB PLL divider = 1/2 */
+    DEVCFG2_FPLLODIV_1,         /* PLL postscaler = 1/1 */
+
+    DEVCFG3_USERID(0xffff) |    /* User-defined ID */
+    DEVCFG3_FSRSSEL_7 |         /* Assign irq priority 7 to shadow set */
+    DEVCFG3_FMIIEN |            /* Ethernet MII enable */
+    DEVCFG3_FETHIO |            /* Ethernet pins default */
+    DEVCFG3_FCANIO |            /* CAN pins default */
+    DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
+    DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
+#else
+#error Unsupported crystal setting
+#endif
 
 /*
  * Boot code.
@@ -163,83 +202,23 @@ asm ("          .text");
 
 static inline void button_init()
 {
-#if defined (UBW32)
-    TRISESET = 1 << 7;
-
-#elif defined (MAXIMITE)
-    TRISCSET = 1 << 13;
-
-#elif defined (DIP)
-    TRISGSET = 1 << 6;
-
-#elif defined (STARTERKIT)
-    TRISDSET = 1 << 6;
-#else
-#error "Unknown board"
-#endif
+    TRIS_SET(BL_BUTTON_PORT) = 1 << BL_BUTTON_PIN;
 }
 
 static inline int button_pressed()
 {
-#if defined (UBW32)
-    return ! (PORTE & (1 << 7));
-
-#elif defined (MAXIMITE)
-    return ! (PORTC & (1 << 13));
-
-#elif defined (DIP)
-    return ! (PORTG & (1 << 6));
-
-#elif defined (STARTERKIT)
-    return ! (PORTD & (1 << 6));
-#else
-#error "Unknown board"
-#endif
+    return ! (PORT_VAL(BL_BUTTON_PORT) & (1 << BL_BUTTON_PIN));
 }
 
 static inline void led_init()
 {
-#if defined (UBW32)
-    LATECLR = 0xF;
-    TRISECLR = 0xF;
-    PORTEINV = 7;
-
-#elif defined (MAXIMITE)
-    LATECLR = 2;
-    TRISECLR = 2;
-    LATFCLR = 1;
-    TRISFCLR = 1;
-
-#elif defined (DIP)
-    LATECLR = 0xF0;
-    TRISECLR = 0xF0;
-    PORTEINV = 0x40;
-
-#elif defined (STARTERKIT)
-    TRISDCLR = 7 << 0;
-    LATDCLR = 1 << 0;
-    LATDSET = 6 << 0;
-#else
-#error "Unknown board"
-#endif
+    LAT_CLR(BL_LED_PORT) = 1 << BL_LED_PIN;
+    TRIS_CLR(BL_LED_PORT) = 1 << BL_LED_PIN;
 }
 
 static inline void led_toggle()
 {
-#if defined (UBW32)
-    PORTEINV = 3 << 2;
-
-#elif defined (MAXIMITE)
-    PORTEINV = 1 << 1;
-
-#elif defined (DIP)
-    PORTEINV = 3 << 6;
-
-#elif defined (STARTERKIT)
-    LATDINV = 7 << 0;
-#else
-#error "Unknown board"
-#endif
+    LAT_INV(BL_LED_PORT) = 1 << BL_LED_PIN;
 }
 
 #if 0

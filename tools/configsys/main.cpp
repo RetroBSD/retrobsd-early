@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
         }
     }
 
+
     // Then the instances:
 
     for(it = config.instances.begin(); it != config.instances.end(); it++)
@@ -297,6 +298,43 @@ int main(int argc, char *argv[])
         }
     }
 
+    vector <string> targets;
+
+    // First the core:
+
+    for (
+        fit = cores[config.core.device].always.targets.begin();
+        fit != cores[config.core.device].always.targets.end();
+        fit++
+    ) {
+        bool exist = false;
+        for (eit = targets.begin(); eit != targets.end(); eit++) {
+            if(*eit == *fit)
+                exist = true;
+        }
+        if (!exist) {
+            targets.push_back(*fit);
+        }
+    }
+
+    // Then the instances:
+
+    for (it = config.instances.begin(); it != config.instances.end(); it++) {
+        for (
+            fit = devices[(*it).second.device].always.targets.begin();
+            fit != devices[(*it).second.device].always.targets.end();
+            fit++
+        ) {
+            bool exist = false;
+            for (eit = targets.begin(); eit != targets.end(); eit++) {
+                if(*eit == *fit)
+                    exist = true;
+            }
+            if (!exist) {
+                targets.push_back(*fit);
+            }
+        }
+    }
 
     // Next let's do the defines.  We need to do this for the "always"
     // and also for every instance.  We also need to do string replacements
@@ -477,6 +515,13 @@ int main(int argc, char *argv[])
     vector <string>::iterator vit;
 
     for(vit = files.begin(); vit != files.end(); vit++)
+    {
+        out << (*vit) << " ";
+    }
+    out << endl;
+    out << "EXTRA_TARGETS = ";
+
+    for(vit = targets.begin(); vit != targets.end(); vit++)
     {
         out << (*vit) << " ";
     }

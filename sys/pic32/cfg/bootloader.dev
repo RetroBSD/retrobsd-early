@@ -1,0 +1,31 @@
+always
+    target bootloader
+    define USB_NUM_STRING_DESCRIPTORS 3
+    define USB_MAX_EP_NUMBER 1
+    define USB_EP0_BUFF_SIZE 8
+    define HID_INPUT_REPORT_BYTES 2
+    define HID_OUTPUT_REPORT_BYTES 2
+    define HID_FEATURE_REPORT_BYTES 2
+    define HID_INT_OUT_EP_SIZE 64
+    define HID_INT_IN_EP_SIZE 64
+    define HID_RPT01_SIZE 29
+    define FLASH_JUMP 0x9d000000
+end always
+
+option led
+    define BL_LED_PORT $TRIS(%1)
+    define BL_LED_PIN  $PIN(%1)
+end option
+
+option button
+    define BL_BUTTON_PORT $TRIS(%1)
+    define BL_BUTTON_PIN  $PIN(%1)
+end option
+
+option crystal
+    define BL_CRYSTAL %1
+end option
+
+option jump
+    define FLASH_JUMP %1
+end option

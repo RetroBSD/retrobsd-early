@@ -47,6 +47,11 @@ void cluster::read(ifstream& f)
             temp >> in;
             this->files.push_back(in);
         }
+        if(in == "TARGET")
+        {
+            temp >> in;
+            this->targets.push_back(in);
+        }
     }
     return;
 }

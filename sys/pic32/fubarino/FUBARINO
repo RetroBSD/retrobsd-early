@@ -12,3 +12,6 @@ device adc
 device glcd
 device oc
 device gpio
+
+device bootloader led=21 button=23 crystal=8
+

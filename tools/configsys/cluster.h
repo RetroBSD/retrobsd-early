@@ -14,6 +14,7 @@ class cluster {
         vector <string> files;
         map <string,string> sets;
         vector <string> requires;
+        vector <string> targets;
 
     public:
         void read(ifstream&);
