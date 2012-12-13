@@ -21,6 +21,7 @@
 struct smux_packet rx;
 struct smux_packet tx;
 
+FILE *pipe;
 int pipe_fd;
 
 int string_contains(char *haystack, char *needle, int len)
@@ -38,6 +39,40 @@ void send_tx()
 {
     write(pipe_fd, &tx, tx.len + 3);
     fsync(pipe_fd);
+}
+
+int fdgetline(int fd, unsigned char *buffer, int maxlen)
+{
+    fd_set rfd;
+    struct timeval tv;
+    int nr = 0;
+    int rc = 0;
+    char inch[2];
+
+    for (;;) {
+        tv.tv_sec = 0;
+        tv.tv_usec = 1000;
+        FD_ZERO(&rfd);
+        FD_SET(fd, &rfd);
+        rc = select(fd+1, &rfd, NULL, NULL, &tv);
+        if (rc <= 0) {
+            return nr;
+        }
+
+        if (FD_ISSET(fd, &rfd)) {
+            read(fd, inch, 1);
+            if (inch[0] == '\n') {
+                return nr;
+            }
+            if (inch[0] != '\r') {
+                buffer[nr++] = inch[0];
+                buffer[nr] = 0;
+            }
+            if (nr == maxlen) {
+                return maxlen;
+            }
+        }
+    } 
 }
 
 int read_chunk(int fd, void *buf, int ml)
@@ -146,7 +181,8 @@ int main(int argc, char *argv[])
         return 10;
     }
 
-    pipe_fd = open(argv[1], O_RDWR);
+    pipe = fopen(argv[1],"r+");
+    pipe_fd = fileno(pipe);
     if (pipe_fd < 0) {
         printf("Unable to open %s\n", argv[1]);
         return 10;
@@ -185,13 +221,18 @@ int main(int argc, char *argv[])
 
     fds[1] = sockfd;
         
+    write(pipe_fd, "\r", 1);
+    bzero(buffer,256);
     for (;;) {
-        write(pipe_fd, "\r", 1);
-        bzero(buffer,256);
-        nr = read_chunk(pipe_fd, buffer, 255);
-        if (nr > 0) {
-            if (string_contains(buffer, "ogin:", nr)) {
-                write(pipe_fd, "smux\n", 5);
+        if ((nr = fdgetline(pipe_fd, buffer, 255)) > 0) {
+            printf("%s\n", buffer);
+            if(string_contains(buffer, "ogin:", nr)) {
+                write(pipe_fd, "smux\r", 5);
+            }
+            if(string_contains(buffer, "assword:", nr)) {
+                write(pipe_fd, "\r", 1);
+            }
+            if(string_contains(buffer, "Welcome to RetroBSD", nr)) {
                 break;
             }
         }
@@ -285,7 +326,7 @@ int main(int argc, char *argv[])
                                 //printf("Connected OK, stream ID is %d\n", rx.stream);
                                 tx.type = C_DATA;
                                 tx.len = 1;
-                                tx.stream = i;
+                                tx.stream = stream;
                                 sprintf(tx.data, "\r");
                                 send_tx();
                                 break;
@@ -296,10 +337,14 @@ int main(int argc, char *argv[])
                         }
                     } else {
                         tx.type = C_DATA;
-                        tx.stream = i;
+                        tx.stream = stream;
                         nr = read(fds[stream], buffer, 255);
 
                         if (nr <= 0) {
+                            tx.type = C_DISCONNECT;
+                            tx.stream = stream;
+                            tx.len = 0;
+                            send_tx();
                             close(fds[stream]);
                             fds[stream] = -1;
                             printf("Connection %d closed\n", stream);
