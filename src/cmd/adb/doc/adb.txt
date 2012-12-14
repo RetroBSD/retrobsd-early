@@ -1,1056 +1,760 @@
+====== A Tutorial Introduction to ADB ======
 
+//J. F. Maranzano, S. R. Bourne//
+//May 5, 1977//
 
+===== 1.  Introduction =====
 
-
-
-
-
-
-
-               [1mA Tutorial Introduction to ADB[0m
-
-
-                      [4mJ.[24m [4mF.[24m [4mMaranzano[0m
-                        [4mS.[24m [4mR.[24m [4mBourne[0m
-                            UNIX
-                         Debugging
-                       C Programming
-
-
-
-                          [4mABSTRACT[0m
-
-          Debugging tools generally provide a wealth of
-     information about the inner workings of  programs.
-     These  tools  have  been  available  on UNIX(R) to
-     allow users to examine ``core'' files that  result
-     from  aborted  programs.  A new debugging program,
-     ADB, provides  enhanced  capabilities  to  examine
-     "core"  and  other  program  files in a variety of
-     formats, run programs  with  embedded  breakpoints
-     and patch files.
-
-          ADB  is an indispensable but complex tool for
-     debugging crashed systems and/or  programs.   This
-     document  provides  an  introduction  to  ADB with
-     examples of its use.  It explains the various for-
-     matting  options,  techniques for debugging C pro-
-     grams, examples of printing file  system  informa-
-     tion and patching.
-
-
-
-May 5, 1977
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-               [1mA Tutorial Introduction to ADB[0m
-
-
-                      [4mJ.[24m [4mF.[24m [4mMaranzano[0m
-                        [4mS.[24m [4mR.[24m [4mBourne[0m
-                            UNIX
-                         Debugging
-                       C Programming
-
-
-[1m1.  Introduction[0m
-
-     ADB  is  a  new  debugging program that is available on
-UNIX.  It provides capabilities to look  at  ``core''  files
+ADB  is  a  new  debugging program that is available on
+UNIX.  It provides capabilities to look  at  "core"  files
 resulting  from  aborted programs, print output in a variety
 of formats, patch files,  and  run  programs  with  embedded
 breakpoints.   This  document  provides examples of the more
-useful features of ADB.  The reader is expected to be famil-
-iar with the basic commands on UNIX with the C language, and
+useful features of ADB.  The reader is expected to be familiar
+with the basic commands on UNIX with the C language, and
 with References 1, 2 and 3.
 
-[1m2.  A Quick Survey[0m
 
-[1m2.1.  Invocation[0m
+===== 2. A Quick Survey =====
 
-     ADB is invoked as:
-          [1madb objfile corefile[0m
-where [4mobjfile[24m is an executable UNIX file and [4mcorefile[24m  is  a
+==== 2.1. Invocation ====
+
+ADB is invoked as:
+          **adb objfile corefile**
+where ''objfile'' is an executable UNIX file and ''corefile''  is  a
 core image file.  Many times this will look like:
-          [1madb a.out core[0m
+          **adb a.out core**
 or more simply:
-          [1madb[0m
-where  the  defaults  are  [4ma.out[24m and [4mcore[24m respectively.  The
+          **adb**
+where  the  defaults  are  ''a.out'' and ''core'' respectively.  The
 filename minus (-) means ignore this argument as in:
-          [1madb - core[0m
+          **adb - core**
 
-     ADB has requests  for  examining  locations  in  either
-file.   The [1m?  [22mrequest examines the contents of [4mobjfile,[24m the
-[1m/ [22mrequest examines the [4mcorefile.[24m  The general form of  these
+ADB has requests  for  examining  locations  in  either file.
+The **?**  request examines the contents of ''objfile'',
+the **/** request examines the ''corefile''.  The general form of  these
 requests is:
-          [1maddress ? format[0m
+          **address ? format**
 or
-          [1maddress / format[0m
+          **address / format**
 
-[1m2.2.  Current Address[0m
+==== 2.2. Current Address ====
 
-     ADB maintains a current address, called dot, similar in
+ADB maintains a current address, called dot, similar in
 function to the current pointer in the UNIX editor.  When an
-address is entered, the current address is set to that loca-
-tion, so that:
-          [1m0126?i[0m
-
-
-
-
-
-
-
-
-
-                             -2-
-
-
+address is entered, the current address is set to that location,
+so that:
+          **0126?i**
 sets dot to octal 126 and prints  the  instruction  at  that
 address.  The request:
-          [1m.,10/d[0m
+          **.,10/d**
 prints  10  decimal  numbers  starting  at dot.  Dot ends up
 referring to the address of the  last  item  printed.   When
-used  with  the  [1m? [22mor [1m/ [22mrequests, the current address can be
-advanced by typing newline; it can be decremented by  typing
-[1m^[22m.
+used  with  the  **?** or **/** requests, the current address can be
+advanced by typing newline; it can be decremented by  typing **^**.
 
-     Addresses  are represented by expressions.  Expressions
+Addresses  are represented by expressions.  Expressions
 are made up from decimal, octal, and  hexadecimal  integers,
-and  symbols from the program under test.  These may be com-
-bined with the operators +, -, *, %  (integer  division),  &
+and  symbols from the program under test.  These may be combined
+with the operators +, -, *, %  (integer  division),  &
 (bitwise and), | (bitwise inclusive or),  # (round up to the
 next multiple), and ~ (not).  (All arithmetic within ADB  is
 32  bits.)   When typing a symbolic address for a C program,
-the user can type [4mname[24m or [4m_name;[24m  ADB  will  recognize  both
+the user can type ''name'' or ''_name'';  ADB  will  recognize  both
 forms.
 
-[1m2.3.  Formats[0m
+==== 2.3. Formats ====
 
-     To print data, a user specifies a collection of letters
+To print data, a user specifies a collection of letters
 and characters that describe the  format  of  the  printout.
 Formats  are "remembered" in the sense that typing a request
 without one will cause the new printout  to  appear  in  the
 previous  format.   The following are the most commonly used
 format letters.
-          [1mb      one byte in octal[0m
-          [1mc      one byte as a character[0m
-          [1mo      one word in octal[0m
-          [1md      one word in decimal[0m
-          [1mf      two words in floating point[0m
-          [1mi      PDP 11 instruction[0m
-          [1ms      a null terminated character string[0m
-          [1ma      the value of dot[0m
-          [1mu      one word as unsigned integer[0m
-          [1mn      print a newline[0m
-          [1mr      print a blank space[0m
-          [1m^      backup dot[0m
+
+|| b || one byte in octal ||
+|| c || one byte as a character ||
+|| o || one word in octal ||
+|| d || one word in decimal ||
+|| f || two words in floating point ||
+|| i || PDP 11 instruction ||
+|| s || a null terminated character string ||
+|| a || the value of dot ||
+|| u || one word as unsigned integer ||
+|| n || print a newline ||
+|| r || print a blank space ||
+|| ^ || backup dot ||
+
 (Format letters are also available for  "long"  values,  for
-example,  `[1mD[22m'  for long decimal, and `[1mF[22m' for double floating
+example,  `**D**'  for long decimal, and `**F**' for double floating
 point.)  For other formats see the ADB manual.
 
-[1m2.4.  General Request Meanings[0m
+==== 2.4. General Request Meanings ====
 
-     The general form of a request is:
-          [1maddress,count command modifier[0m
-which sets `dot' to [4maddress[24m and executes the  command  [4mcount[0m
+The general form of a request is:
+          **address,count command modifier**
+which sets `dot' to ''address'' and executes the  command  ''count''
 times.
 
-     The  following  table illustrates some general ADB com-
-mand meanings:
-          [1mCommand        Meaning[0m
-              [1m?  Print contents from [4m[22ma.out[24m [1mfile[0m
+The  following  table illustrates some general ADB command meanings:
 
+^^ Command ^^ Meaning ^^
+|| ?       || Print contents from ''a.out'' file ||
+|| /       || Print contents from ''core'' file ||
+|| =       || Print value of "dot" ||
+|| :       || Breakpoint control ||
+|| $       || Miscellaneous requests ||
+|| ;       || Request separator ||
+|| !       || Escape to shell ||
 
-
-
-
-
-
-
-
-                             -3-
-
-
-              [1m/  Print contents from [4m[22mcore[24m [1mfile[0m
-              [1m=  Print value of "dot"[0m
-              [1m:  Breakpoint control[0m
-              [1m$  Miscellaneous requests[0m
-              [1m;  Request separator[0m
-              [1m!  Escape to shell[0m
-
-     ADB catches signals, so a user cannot use a quit signal
+ADB catches signals, so a user cannot use a quit signal
 to  exit from ADB.  The request $q or $Q (or cntl-D) must be
 used to exit from ADB.
 
-[1m3.  Debugging C Programs[0m
+===== 3. Debugging C Programs =====
 
-[1m3.1.  Debugging A Core Image[0m
+==== 3.1. Debugging A Core Image ====
 
-     Consider the C program in Figure  1.   The  program  is
+Consider the C program in Figure  1.   The  program  is
 used  to  illustrate  a  common error made by C programmers.
 The object of the program is to change the lower case "t" to
-upper  case in the string pointed to by [4mcharp[24m and then write
+upper  case in the string pointed to by ''charp'' and then write
 the character string to the file indicated  by  argument  1.
 The  bug  shown  is  that the character "T" is stored in the
-pointer [4mcharp[24m instead of the string  pointed  to  by  [4mcharp.[0m
+pointer ''charp'' instead of the string  pointed  to  by  ''charp''.
 Executing the program produces a core file because of an out
 of bounds memory reference.
 
-     ADB is invoked by:
-          [1madb a.out core[0m
+ADB is invoked by:
+          **adb a.out core**
 The first debugging request:
-          [1m$c[0m
+          **$c**
 is used to  give  a  C  backtrace  through  the  subroutines
-called.   As  shown in Figure 2 only one function ([4mmain[24m) was
-called and the arguments [4margc[24m and [4margv[24m have octal values  02
-and 0177762 respectively.  Both of these values look reason-
-able; 02 = two arguments, 0177762  =  address  on  stack  of
+called.   As  shown in Figure 2 only one function (''main'') was
+called and the arguments ''argc'' and ''argv'' have octal values  02
+and 0177762 respectively.  Both of these values look reasonable;
+02 = two arguments, 0177762  =  address  on  stack  of
 parameter vector.
 The next request:
-          [1m$C[0m
+          **$C**
 is  used to give a C backtrace plus an interpretation of all
 the local variables in each function  and  their  values  in
-octal.   The  value of the variable [4mcc[24m looks incorrect since
-[4mcc[24m was declared as a character.
+octal.   The  value of the variable ''cc'' looks incorrect since
+''cc'' was declared as a character.
 
-     The next request:
-          [1m$r[0m
+The next request:
+          **$r**
 prints out the registers including the program  counter  and
 an interpretation of the instruction at that location.
 
-     The request:
-          [1m$e[0m
+The request:
+          **$e**
 prints out the values of all external variables.
 
-     A map exists for each file handled by ADB.  The map for
-the [4ma.out[24m file is referenced by [1m? [22mwhereas the map  for  [4mcore[0m
-file  is referenced by [1m/[22m.  Furthermore, a good rule of thumb
-
-
-
-
-
-
-
-
-
-                             -4-
-
-
-is to use [1m? [22mfor instructions and [1m/ [22mfor data when looking  at
+A map exists for each file handled by ADB.  The map for
+the ''a.out'' file is referenced by **?** whereas the map  for  ''core**
+file  is referenced by **/**.  Furthermore, a good rule of thumb
+is to use **?** for instructions and **/** for data when looking  at
 programs.  To print out information about the maps type:
-          [1m$m[0m
+          **$m**
 This  produces  a  report of the contents of the maps.  More
 about these maps later.
 
-     In our example, it is useful to see the contents of the
-string pointed to by [4mcharp.[24m  This is done by:
-          [1m*charp/s[0m
-which says use [4mcharp[24m as a pointer in the [4mcore[24m file and print
+In our example, it is useful to see the contents of the
+string pointed to by ''charp.''  This is done by:
+          ***charp/s**
+which says use ''charp'' as a pointer in the ''core'' file and print
 the  information  as  a  character  string.   This  printout
 clearly  shows  that  the  character  buffer was incorrectly
 overwritten and helps  identify  the  error.   Printing  the
-locations  around  [4mcharp[24m  shows that the buffer is unchanged
+locations  around  ''charp''  shows that the buffer is unchanged
 but that the pointer is destroyed.  Using ADB similarly,  we
 could  print  information about the arguments to a function.
 The request:
-          [1mmain.argc/d[0m
-prints the decimal [4mcore[24m image value of the argument [4margc[24m  in
-the function [4mmain.[0m
+          **main.argc/d**
+prints the decimal ''core'' image value of the argument ''argc''  in
+the function //main.//
 The request:
-          [1m*main.argv,3/o[0m
+          ***main.argv,3/o**
 prints  the  octal  values  of  the  three consecutive cells
-pointed to by [4margv[24m in the function [4mmain.[24m   Note  that  these
-values  are  the addresses of the arguments to main.  There-
-fore:
-          [1m0177770/s[0m
+pointed to by ''argv'' in the function ''main.''   Note  that  these
+values  are  the addresses of the arguments to main.  Therefore:
+          **0177770/s**
 prints the ASCII value of the first argument.   Another  way
 to print this value would have been
-          [1m*"/s[0m
+          ***"/s**
 The " means ditto which remembers the last address typed, in
-this case [4mmain.argc[24m ; the [1m* [22minstructs ADB to use the address
-field of the [4mcore[24m file as a pointer.
+this case ''main.argc'' ; the ** * ** instructs ADB to use the address
+field of the ''core'' file as a pointer.
 
-     The request:
-          [1m.=o[0m
+The request:
+          **.=o**
 prints the current address (not its contents) in octal which
-has been set to the address of the first argument.  The cur-
-rent  address, dot, is used by ADB to "remember" its current
-location.  It allows the user to reference  locations  rela-
-tive to the current address, for example:
-          [1m.-10/d[0m
+has been set to the address of the first argument.  The current
+address, dot, is used by ADB to "remember" its current
+location.  It allows the user to reference  locations  relative
+to the current address, for example:
+          **.-10/d**
 
-[1m3.2.  Multiple Functions[0m
+==== 3.2. Multiple Functions ====
 
-     Consider  the  C program illustrated in Figure 3.  This
-program calls functions [4mf,[24m [4mg,[24m  and  [4mh[24m  until  the  stack  is
+Consider  the  C program illustrated in Figure 3.  This
+program calls functions ''f,'' ''g,''  and  ''h''  until  the  stack  is
 exhausted and a core image is produced.
 
-     Again you can enter the debugger via:
-          [1madb[0m
-which  assumes  the  names [4ma.out[24m and [4mcore[24m for the executable
+Again you can enter the debugger via:
+          **adb**
+which  assumes  the  names ''a.out'' and ''core'' for the executable
 file and core image file respectively.  The request:
-          [1m$c[0m
+          **$c**
+will fill a page of backtrace references to  //f,''  ''g,''  and  ''h.//
+Figure  4  shows an abbreviated list (typing ''DEL'' will terminate
+the output and bring you back to ADB request level).
 
-
-
-
-
-
-
-
-
-                             -5-
-
-
-will fill a page of backtrace references to  [4mf,[24m  [4mg,[24m  and  [4mh.[0m
-Figure  4  shows an abbreviated list (typing [4mDEL[24m will termi-
-nate the output and bring you back to ADB request level).
-
-     The request:
-          [1m,5$C[0m
+The request:
+          **,5$C**
 prints the five most recent activations.
 
-     Notice that each function ([4mf,g,h[24m) has a counter of  the
+Notice that each function (''f,g,h'') has a counter of  the
 number of times it was called.
 
-     The request:
-          [1mfcnt/d[0m
-prints  the decimal value of the counter for the function [4mf.[0m
-Similarly [4mgcnt[24m and [4mhcnt[24m could  be  printed.   To  print  the
+The request:
+          **fcnt/d**
+prints  the decimal value of the counter for the function //f.//
+Similarly ''gcnt'' and ''hcnt'' could  be  printed.   To  print  the
 value  of  an  automatic  variable,  for example the decimal
-value of [4mx[24m in the last call of the function [4mh,[24m type:
-          [1mh.x/d[0m
+value of ''x'' in the last call of the function ''h,'' type:
+          **h.x/d**
 It is currently not possible  in  the  exported  version  to
 print  stack frames other than the most recent activation of
-a function.  Therefore, a user can print everything with  [1m$C[0m
+a function.  Therefore, a user can print everything with  **$C**
 or the occurrence of a variable in the most recent call of a
-function.  It is possible with the [1m$C [22mrequest,  however,  to
-print the stack frame starting at some address as [1maddress$C.[0m
+function.  It is possible with the **$C** request,  however,  to
+print the stack frame starting at some address as **address$C.**
 
-[1m3.3.  Setting Breakpoints[0m
+==== 3.3. Setting Breakpoints ====
 
-     Consider  the  C  program  in  Figure 5.  This program,
-which changes tabs into blanks,  is  adapted  from  [4mSoftware[0m
-[4mTools[24m by Kernighan and Plauger, pp. 18-27.
+Consider  the  C  program  in  Figure 5.  This program,
+which changes tabs into blanks,  is  adapted  from  //Software//
+''Tools'' by Kernighan and Plauger, pp. 18-27.
 
-     We  will run this program under the control of ADB (see
+We  will run this program under the control of ADB (see
 Figure 6a) by:
-          [1madb a.out -[0m
+          **adb a.out -**
 Breakpoints are set in the program as:
-          [1maddress:b  [request][0m
+          **address:b  [request]**
 The requests:
-          [1msettab+4:b[0m
-          [1mfopen+4:b[0m
-          [1mgetc+4:b[0m
-          [1mtabpos+4:b[0m
+          **settab+4:b**
+          **fopen+4:b**
+          **getc+4:b**
+          **tabpos+4:b**
 set breakpoints at the start of these functions.  C does not
 generate  statement  labels.   Therefore it is currently not
-possible to plant breakpoints at locations other than  func-
-tion  entry points without a knowledge of the code generated
-by the C compiler.  The above addresses are entered as  [1msym-[0m
-[1mbol+4  [22mso that they will appear in any C backtrace since the
+possible to plant breakpoints at locations other than  function
+entry points without a knowledge of the code generated
+by the C compiler.  The above addresses are entered as  **symbol+4**
+so that they will appear in any C backtrace since the
 first instruction of each function is a call to the  C  save
-routine ([4mcsv[24m).  Note that some of the functions are from the
+routine (''csv'').  Note that some of the functions are from the
 C library.
 
-     To print the location of breakpoints one types:
-          [1m$b[0m
-The display  indicates  a  [4mcount[24m  field.   A  breakpoint  is
-
-
-
-
-
-
-
-
-
-                             -6-
-
-
-bypassed  [4mcount[24m [4m-1[24m times before causing a stop.  The [4mcommand[0m
+To print the location of breakpoints one types:
+          **$b**
+The display  indicates  a  ''count''  field.   A  breakpoint  is
+bypassed  //count'' ''-1'' times before causing a stop.  The ''command//
 field indicates the ADB requests to be  executed  each  time
-the  breakpoint  is  encountered.  In our example no [4mcommand[0m
+the  breakpoint  is  encountered.  In our example no //command//
 fields are present.
 
-     By displaying the original instructions at the function
-[4msettab[24m  we  see  that the breakpoint is set after the jsr to
+By displaying the original instructions at the function
+''settab''  we  see  that the breakpoint is set after the jsr to
 the C save routine.  We can display the  instructions  using
 the ADB request:
-          [1msettab,5?ia[0m
-This  request  displays five instructions starting at [4msettab[0m
+          **settab,5?ia**
+This  request  displays five instructions starting at //settab//
 with the addresses  of  each  location  displayed.   Another
 variation is:
-          [1msettab,5?i[0m
+          **settab,5?i**
 which  displays  the  instructions  with  only  the starting
 address.
 
-     Notice that we accessed the addresses  from  the  [4ma.out[0m
-file  with  the  [1m?  [22mcommand.   In  general when asking for a
+Notice that we accessed the addresses  from  the  //a.out//
+file  with  the  **?**  command.   In  general when asking for a
 printout of multiple items, ADB  will  advance  the  current
 address  the  number  of  bytes  necessary  to  satisfy  the
-request; in the above example five  instructions  were  dis-
-played  and  the  current  address was advanced 18 (decimal)
+request; in the above example five  instructions  were  displayed
+and  the  current  address was advanced 18 (decimal)
 bytes.
 
-     To run the program one simply types:
-          [1m:r[0m
-To delete a breakpoint, for instance the entry to the  func-
-tion [4msettab,[24m one types:
-          [1msettab+4:d[0m
+To run the program one simply types:
+          **:r**
+To delete a breakpoint, for instance the entry to the  function
+''settab,'' one types:
+          **settab+4:d**
 To  continue  execution  of  the program from the breakpoint
 type:
-          [1m:c[0m
+          **:c**
 
-     Once the program has  stopped  (in  this  case  at  the
-breakpoint  for  [4mfopen),[24m ADB requests can be used to display
+Once the program has  stopped  (in  this  case  at  the
+breakpoint  for  ''fopen),'' ADB requests can be used to display
 the contents of memory.  For example:
-          [1m$C[0m
+          **$C**
 to display a stack trace, or:
-          [1mtabs,3/8o[0m
+          **tabs,3/8o**
 to print three lines of 8  locations  each  from  the  array
-called [4mtabs.[24m  By this time (at location [4mfopen)[24m in the C pro-
-gram, [4msettab[24m has been called and should have set  a  one  in
-every eighth location of [4mtabs.[0m
+called ''tabs.''  By this time (at location ''fopen)'' in the C program,
+''settab'' has been called and should have set  a  one  in
+every eighth location of //tabs.//
 
-[1m3.4.  Advanced Breakpoint Usage[0m
+==== 3.4. Advanced Breakpoint Usage ====
 
-     We continue execution of the program with:
-          [1m:c[0m
-See Figure 6b.  [4mGetc[24m is called three times and  the contents
-of the variable [4mc[24m in the function [4mmain[24m  are  displayed  each
+We continue execution of the program with:
+          **:c**
+See Figure 6b.  ''Getc'' is called three times and  the contents
+of the variable ''c'' in the function ''main''  are  displayed  each
 time.   The  single  character  on the left hand edge is the
-output from the C program.  On the third occurrence of  [4mgetc[0m
+output from the C program.  On the third occurrence of  //getc//
 the  program  stops.   We  can  look  at  the full buffer of
-
-
-
-
-
-
-
-
-
-                             -7-
-
-
 characters by typing:
-          [1mibuf+6/20c[0m
+          **ibuf+6/20c**
 When we continue the program with:
-          [1m:c[0m
-we hit our first breakpoint at [4mtabpos[24m since there is  a  tab
+          **:c**
+we hit our first breakpoint at ''tabpos'' since there is  a  tab
 following the "This" word of the data.
 
-     Several breakpoints of [4mtabpos[24m will occur until the pro-
-gram has changed the tab into equivalent blanks.   Since  we
-feel that [4mtabpos[24m is working, we can remove the breakpoint at
+Several breakpoints of ''tabpos'' will occur until the program
+has changed the tab into equivalent blanks.   Since  we
+feel that ''tabpos'' is working, we can remove the breakpoint at
 that location by:
-          [1mtabpos+4:d[0m
+          **tabpos+4:d**
 If the program is continued with:
-          [1m:c[0m
+          **:c**
 it resumes normal execution after ADB prints the message
-          [1ma.out:running[0m
+          **a.out:running**
 
-     The UNIX quit and interrupt signals act on  ADB  itself
+The UNIX quit and interrupt signals act on  ADB  itself
 rather than on the program being debugged.  If such a signal
-occurs then the program being debugged is stopped  and  con-
-trol  is returned to ADB.  The signal is saved by ADB and is
+occurs then the program being debugged is stopped  and  control
+is returned to ADB.  The signal is saved by ADB and is
 passed on to the test program if:
-          [1m:c[0m
-is typed.  This can be useful when  testing  interrupt  han-
-dling  routines.   The  signal  is not passed on to the test
+          **:c**
+is typed.  This can be useful when  testing  interrupt  handling
+routines.   The  signal  is not passed on to the test
 program if:
-          [1m:c  0[0m
+          **:c  0**
 is typed.
 
-     Now let us reset the breakpoint at [4msettab[24m  and  display
+Now let us reset the breakpoint at ''settab''  and  display
 the instructions located there when we reach the breakpoint.
 This is accomplished by:
-          [1msettab+4:b  settab,5?ia  [22m*
+          **settab+4:b  settab,5?ia**  (*
 It  is  also  possible  to execute the ADB requests for each
 occurrence of the breakpoint but only stop after  the  third
 occurrence by typing:
-          [1mgetc+4,3:b  main.c?C  [22m*
-This request will print the local variable [4mc[24m in the function
-[4mmain[24m at each occurrence of the breakpoint.  The semicolon is
+          **getc+4,3:b  main.c?C**   (*
+This request will print the local variable ''c'' in the function
+''main'' at each occurrence of the breakpoint.  The semicolon is
 used to separate multiple ADB requests on a single line.
 
-     Warning:  setting  a breakpoint causes the value of dot
+Warning:  setting  a breakpoint causes the value of dot
 to be changed; executing the  program  under  ADB  does  not
 change dot.  Therefore:
-          [1msettab+4:b  .,5?ia[0m
+          **settab+4:b  .,5?ia**
 -----------
-* Owing to a bug in early versions of ADB (includ-
-ing  the  version  distributed  in Generic 3 UNIX)
+(* Owing to a bug in early versions of ADB (including
+the  version  distributed  in Generic 3 UNIX)
 these statements must be written as:
-          [1msettab+4:b     settab,5?ia;0[0m
-          [1mgetc+4,3:b     main.c?C;0[0m
-          [1msettab+4:b     settab,5?ia; ptab/o;0[0m
-Note that [1m;0 [22mwill set dot to zero and stop at  the
+          **settab+4:b     settab,5?ia;0**
+          **getc+4,3:b     main.c?C;0**
+          **settab+4:b     settab,5?ia; ptab/o;0**
+Note that **;0** will set dot to zero and stop at  the
 breakpoint.
 
-
-
-
-
-
-
-
-
-                             -8-
-
-
-          [1mfopen+4:b[0m
+          **fopen+4:b**
 will  print  the  last  thing dot was set to (in the example
-[4mfopen+4[24m) [4mnot[24m the current location ([4msettab+4[24m)  at  which  the
+''fopen+4'') ''not'' the current location (''settab+4'')  at  which  the
 program is executing.
 
-     A  breakpoint can be overwritten without first deleting
+A  breakpoint can be overwritten without first deleting
 the old breakpoint.  For example:
-          [1msettab+4:b  settab,5?ia; ptab/o  [22m*
+          **settab+4:b  settab,5?ia; ptab/o**  (*
 could be entered after typing the above requests.
 
-     Now the display of breakpoints:
-          [1m$b[0m
-shows the above request for the [4msettab[24m breakpoint.  When the
-breakpoint  at  [4msettab[24m  is  encountered the ADB requests are
-executed.  Note that  the  location  at  [4msettab+4[24m  has  been
+Now the display of breakpoints:
+          **$b**
+shows the above request for the ''settab'' breakpoint.  When the
+breakpoint  at  ''settab''  is  encountered the ADB requests are
+executed.  Note that  the  location  at  ''settab+4''  has  been
 changed  to  plant  the  breakpoint; all the other locations
 match their original value.
 
-     Using the functions, [4mf,[24m [4mg[24m and [4mh[24m shown in Figure  3,  we
-can  follow  the execution of each function by planting non-
-stopping breakpoints.  We call ADB with the executable  pro-
-gram of Figure 3 as follows:
-          [1madb ex3 -[0m
+Using the functions, ''f,'' ''g'' and ''h'' shown in Figure  3,  we
+can  follow  the execution of each function by planting non-stopping
+breakpoints.  We call ADB with the executable  program
+of Figure 3 as follows:
+          **adb ex3 -**
 Suppose we enter the following breakpoints:
-          [1mh+4:b  hcnt/d;  h.hi/;  h.hr/[0m
-          [1mg+4:b  gcnt/d;  g.gi/;  g.gr/[0m
-          [1mf+4:b  fcnt/d;  f.fi/;  f.fr/[0m
-          [1m:r[0m
+          **h+4:b  hcnt/d;  h.hi/;  h.hr/**
+          **g+4:b  gcnt/d;  g.gi/;  g.gr/**
+          **f+4:b  fcnt/d;  f.fi/;  f.fr/**
+          **:r**
 Each  request  line indicates that the variables are printed
-in decimal (by the specification [1md[22m).  Since  the  format  is
-not  changed,  the  [1md  [22mcan  be  left  off  all but the first
+in decimal (by the specification **d**).  Since  the  format  is
+not  changed,  the  **d**  can  be  left  off  all but the first
 request.
 
-     The output in Figure 7 illustrates two points.   First,
+The output in Figure 7 illustrates two points.   First,
 the  ADB  requests  in  the breakpoint line are not examined
 until the program under test is run.  That means any  errors
 in  those  ADB  requests is not detected until run time.  At
 the location of the error ADB stops running the program.
 
-     The second point is the way ADB handles register  vari-
-ables.   ADB  uses  the  symbol  table to address variables.
-Register variables, like [4mf.fr[24m above, have pointers to unini-
-tialized places on the stack.  Therefore the message "symbol
+The second point is the way ADB handles register  variables.
+ADB  uses  the  symbol  table to address variables.
+Register variables, like ''f.fr'' above, have pointers to uninitialized
+places on the stack.  Therefore the message "symbol
 not found".
 
-     Another way of getting at the data in this  example  is
+Another way of getting at the data in this  example  is
 to print the variables used in the call as:
-          [1mf+4:b  fcnt/d;  f.a/;  f.b/;  f.fi/[0m
-          [1mg+4:b  gcnt/d;  g.p/;  g.q/;  g.gi/[0m
-          [1m:c[0m
+          **f+4:b  fcnt/d;  f.a/;  f.b/;  f.fi/**
+          **g+4:b  gcnt/d;  g.p/;  g.q/;  g.gi/**
+          **:c**
 The  operator  /  was used instead of ?  to read values from
-the [4mcore[24m file.  The output for each function,  as  shown  in
-Figure  7,  has  the  same  format.  For the function [4mf[24m, for
-example, it  shows  the  name  and  value  of  the  [4mexternal[0m
+the ''core'' file.  The output for each function,  as  shown  in
+Figure  7,  has  the  same  format.  For the function ''f'', for
+example, it  shows  the  name  and  value  of  the  //external//
+variable  ''fcnt.''   It also shows the address on the stack and
+value of the variables //a,'' ''b'' and ''fi.//
 
-
-
-
-
-
-
-
-
-                             -9-
-
-
-variable  [4mfcnt.[24m   It also shows the address on the stack and
-value of the variables [4ma,[24m [4mb[24m and [4mfi.[0m
-
-     Notice that the addresses on the stack will continue to
-decrease  until  no address space is left for program execu-
-tion at which time (after many pages of output) the  program
+Notice that the addresses on the stack will continue to
+decrease  until  no address space is left for program execution
+at which time (after many pages of output) the  program
 under  test  aborts.  A display with names would be produced
 by requests like the following:
-          [1mf+4:b  fcnt/d;  f.a/"a="d;  f.b/"b="d;  f.fi/"fi="d[0m
+          **f+4:b  fcnt/d;  f.a/"a="d;  f.b/"b="d;  f.fi/"fi="d**
 In this format the quoted string is  printed  literally  and
-the  [1md  [22mproduces  a  decimal  display of the variables.  The
+the  **d**  produces  a  decimal  display of the variables.  The
 results are shown in Figure 7.
 
-[1m3.5.  Other Breakpoint Facilities[0m
+==== 3.5. Other Breakpoint Facilities ====
+
+(*) Arguments and change of standard input  and  output  are
+passed to a program as:
+              **:r  arg1  arg2 ... <infile  >outfile**
+This  request  kills any existing program under test and
+starts the ''a.out'' afresh.
+
+(*) The program being debugged can be single stepped by:
+              **:s**
+If necessary, this request will  start  up  the  program
+being  debugged  and  stop  after  executing  the  first
+instruction.
+
+(*) ADB allows a program to be entered at a specific address
+by typing:
+              **address:r**
+
+(*) The  count  field can be used to skip the first ''n'' breakpoints as:
+              **,n:r**
+The request:
+              **,n:c**
+may also be used for skipping the  first  ''n''  breakpoints
+when continuing a program.
 
 
-+o   Arguments and change of standard input  and  output  are
-    passed to a program as:
-              [1m:r  arg1  arg2 ... <infile  >outfile[0m
-    This  request  kills any existing program under test and
-    starts the [4ma.out[24m afresh.
+(*) A  program can be continued at an address different from
+the breakpoint by:
+              **address:c**
 
-+o   The program being debugged can be single stepped by:
-              [1m:s[0m
-    If necessary, this request will  start  up  the  program
-    being  debugged  and  stop  after  executing  the  first
-    instruction.
-
-+o   ADB allows a program to be entered at a specific address
-    by typing:
-              [1maddress:r[0m
-
-+o   The  count  field can be used to skip the first [4mn[24m break-
-    points as:
-              [1m,n:r[0m
-    The request:
-              [1m,n:c[0m
-    may also be used for skipping the  first  [4mn[24m  breakpoints
-    when continuing a program.
+(*) The program being debugged runs as  a  separate  process
+and can be killed by:
+              **:k**
 
 
-+o   A  program can be continued at an address different from
-    the breakpoint by:
-              [1maddress:c[0m
+===== 4. Maps =====
 
-+o   The program being debugged runs as  a  separate  process
-    and can be killed by:
-              [1m:k[0m
-
-
-[1m4.  Maps[0m
-
-     UNIX  supports  several executable file formats.  These
+UNIX  supports  several executable file formats.  These
 are used to tell the loader how to load  the  program  file.
 
-
-
-
-
-
-
-
-
-                            -10-
-
-
 File  type  407  is  the most common and is generated by a C
-compiler invocation such as [1mcc pgm.c[22m.  A 410  file  is  pro-
-duced  by  a  C  compiler  command  of the form [1mcc -n pgm.c[22m,
-whereas a 411 file is produced by [1mcc -i pgm.c[22m.   ADB  inter-
-prets  these  different  file formats and provides access to
+compiler invocation such as **cc pgm.c**.  A 410  file  is  produced
+by  a  C  compiler  command  of the form **cc -n pgm.c**,
+whereas a 411 file is produced by **cc -i pgm.c**.   ADB  interprets
+these  different  file formats and provides access to
 the different segments through a set of maps (see Figure 8).
 To print the maps type:
-          [1m$m[0m
+          **$m**
 
-     In  407  files,  both  text (instructions) and data are
-intermixed.  This makes it impossible for ADB to differenti-
-ate  data from instructions and some of the printed symbolic
+In  407  files,  both  text (instructions) and data are
+intermixed.  This makes it impossible for ADB to differentiate
+data from instructions and some of the printed symbolic
 addresses  look  incorrect;  for  example,   printing   data
 addresses as offsets from routines.
 
-     In  410 files (shared text), the instructions are sepa-
-rated from data and [1m?* [22maccesses the data part of  the  [4ma.out[0m
-file.   The  [1m?*  [22mrequest tells ADB to use the second part of
-the map in the [4ma.out[24m file.  Accessing data in the [4mcore[24m  file
+In  410 files (shared text), the instructions are separated
+from data and **?* ** accesses the data part of  the  ''a.out**
+file.   The  **?* ** request tells ADB to use the second part of
+the map in the ''a.out'' file.  Accessing data in the ''core''  file
 shows the data after it was modified by the execution of the
 program.  Notice also that the data segment may  have  grown
 during program execution.
 
-     In  411 files (separated I & D space), the instructions
+In  411 files (separated I & D space), the instructions
 and data are also separated.  However, in this  case,  since
-data is mapped through a separate set of segmentation regis-
-ters, the base of the  data  segment  is  also  relative  to
+data is mapped through a separate set of segmentation registers,
+the base of the  data  segment  is  also  relative  to
 address  zero.   In this case since the addresses overlap it
-is necessary to use the [1m?* [22moperator to access the data space
-of  the  [4ma.out[24m  file.   In both 410 and 411 files the corre-
-sponding core file does not contain the program text.
+is necessary to use the **?* ** operator to access the data space
+of  the  ''a.out''  file.   In both 410 and 411 files the corresponding
+core file does not contain the program text.
 
-     Figure 9 shows the display of three maps for  the  same
+Figure 9 shows the display of three maps for  the  same
 program  linked  as a 407, 410, 411 respectively.  The b, e,
 and f fields are used by ADB  to  map  addresses  into  file
 addresses.   The  "f1"  field is the length of the header at
-the beginning of the file (020 bytes for an [4ma.out[24m  file  and
-02000  bytes  for  a [4mcore[24m file).  The "f2" field is the dis-
-placement from the beginning of the file to the data.  For a
+the beginning of the file (020 bytes for an ''a.out''  file  and
+02000  bytes  for  a ''core'' file).  The "f2" field is the displacement
+from the beginning of the file to the data.  For a
 407  file  with  mixed text and data this is the same as the
 length of the header; for 410 and  411  files  this  is  the
 length of the header plus the size of the text portion.
 
-     The  "b"  and  "e"  fields  are the starting and ending
+The  "b"  and  "e"  fields  are the starting and ending
 locations for a segment.  Given an address, A, the  location
-in the file (either [4ma.out[24m or [4mcore[24m) is calculated as:
-          [1mb1<=A<=e1 => file address = (A-b1)+f1[0m
-          [1mb2<=A<=e2 => file address = (A-b2)+f2[0m
-A  user  can access locations by using the ADB defined vari-
-ables.  The [1m$v [22mrequest prints the variables  initialized  by
+in the file (either ''a.out'' or ''core'') is calculated as:
+          **b1<=A<=e1 => file address = (A-b1)+f1**
+          **b2<=A<=e2 => file address = (A-b2)+f2**
+A  user  can access locations by using the ADB defined variables.
+The **$v** request prints the variables  initialized  by
 ADB:
-          [1mb      base address of data segment[0m
-          [1md      length of the data segment[0m
-          [1ms      length of the stack[0m
 
+|| b || base address of data segment ||
+|| d || length of the data segment ||
+|| s || length of the stack ||
+|| t || length of the text ||
+|| m || execution type (407,410,411) ||
 
-
-
-
-
-
-
-
-                            -11-
-
-
-          [1mt      length of the text[0m
-          [1mm      execution type (407,410,411)[0m
-
-     In  Figure 9 those variables not present are zero.  Use
+In  Figure 9 those variables not present are zero.  Use
 can be made of these variables by expressions such as:
-          [1m<b[0m
+          **<b**
 in the address field.  Similarly the value of  the  variable
 can be changed by an assignment request such as:
-          [1m02000>b[0m
-that  sets  [1mb  [22mto octal 2000.  These variables are useful to
-know if the file under examination is an executable or  [4mcore[0m
+          **02000>b**
+that  sets  **b**  to octal 2000.  These variables are useful to
+know if the file under examination is an executable or  //core//
 image file.
 
-     ADB reads the header of the [4mcore[24m image file to find the
+ADB reads the header of the ''core'' image file to find the
 values for these variables.  If the  second  file  specified
-does  not  seem  to be a [4mcore[24m file, or if it is missing then
+does  not  seem  to be a ''core'' file, or if it is missing then
 the header of the executable file is used instead.
 
-[1m5.  Advanced Usage[0m
 
-     It is possible with ADB to combine formatting  requests
+===== 5. Advanced Usage =====
+
+It is possible with ADB to combine formatting  requests
 to provide elaborate displays.  Below are several examples.
 
-[1m5.1.  Formatted dump[0m
+==== 5.1. Formatted dump ====
 
-     The line:
-          [1m<b,-1/4o4^8Cn[0m
+The line:
+          **<b,-1/4o4^8Cn**
 prints  4 octal words followed by their ASCII interpretation
 from the data space of the core image  file.   Broken  down,
 the various request pieces mean:
 
-          <b     The base address of the data segment.
+|| <b    || The base address of the data segment. ||
+|| <b,-1 || Print  from  the base address to the end of file.  A negative count is  used  here  and elsewhere  to  loop  indefinitely  or until some error condition (like end of file)  is detected. ||
 
-          <b,-1  Print  from  the base address to the end of
-                 file.  A negative count is  used  here  and
-                 elsewhere  to  loop  indefinitely  or until
-                 some error condition (like end of file)  is
-                 detected.
+The format **4o4^8Cn** is broken down as follows:
 
-The format [1m4o4^8Cn [22mis broken down as follows:
+|| 4o || Print 4 octal locations. ||
+|| 4^ || Backup  the current address 4 locations (to the original start of the field). ||
+|| 8C || Print 8  consecutive  characters  using  an escape  convention;  each  character in the range 0 to 037 is printed as @ followed  by the  corresponding  character  in the range  0140 to 0177.  An @ is printed as @@. ||
+|| n  || Print a newline. ||
 
-          4o     Print 4 octal locations.
-
-          4^     Backup  the current address 4 locations (to
-                 the original start of the field).
-
-          8C     Print 8  consecutive  characters  using  an
-                 escape  convention;  each  character in the
-                 range 0 to 037 is printed as @ followed  by
-                 the  corresponding  character  in the range
-                 0140 to 0177.  An @ is printed as @@.
-
-          n      Print a newline.
-
-
-
-
-
-
-
-
-
-
-                            -12-
-
-
-     The request:
-          [1m<b,<d/4o4^8Cn[0m
+The request:
+          **<b,<d/4o4^8Cn**
 could have been used instead to allow the printing  to  stop
 at the end of the data segment (<d provides the data segment
 size in bytes).
 
-     The formatting requests  can  be  combined  with  ADB's
+The formatting requests  can  be  combined  with  ADB's
 ability  to  read  in  a script to produce a core image dump
 script.  ADB is invoked as:
-          [1madb a.out core < dump[0m
-to read in a script file, [4mdump,[24m of requests.  An example  of
+          **adb a.out core < dump**
+to read in a script file, ''dump,'' of requests.  An example  of
 such a script is:
-          [1m120$w[0m
-          [1m4095$s[0m
-          [1m$v[0m
-          [1m=3n[0m
-          [1m$m[0m
-          [1m=3n"C Stack Backtrace"[0m
-          [1m$C[0m
-          [1m=3n"C External Variables"[0m
-          [1m$e[0m
-          [1m=3n"Registers"[0m
-          [1m$r[0m
-          [1m0$s[0m
-          [1m=3n"Data Segment"[0m
-          [1m<b,-1/8ona[0m
+          **120$w**
+          **4095$s**
+          **$v**
+          **=3n**
+          **$m**
+          **=3n"C Stack Backtrace"**
+          **$C**
+          **=3n"C External Variables"**
+          **$e**
+          **=3n"Registers"**
+          **$r**
+          **0$s**
+          **=3n"Data Segment"**
+          **<b,-1/8ona**
 
-     The  request  [1m120$w [22msets the width of the output to 120
+The  request  **120$w** sets the width of the output to 120
 characters (normally, the  width  is  80  characters).   ADB
 attempts to print addresses as:
-          [1msymbol + offset[0m
-The  request [1m4095$s [22mincreases the maximum permissible offset
+          **symbol + offset**
+The  request **4095$s** increases the maximum permissible offset
 to the nearest symbolic address from 255 (default) to  4095.
-The  request  [1m= [22mcan be used to print literal strings.  Thus,
-headings are provided in this [4mdump[24m program with requests  of
+The  request  **=** can be used to print literal strings.  Thus,
+headings are provided in this ''dump'' program with requests  of
 the form:
-          [1m=3n"C Stack Backtrace"[0m
+          **=3n"C Stack Backtrace"**
 that  spaces three lines and prints the literal string.  The
-request [1m$v [22mprints all non-zero ADB variables (see Figure 8).
-The  request  [1m0$s [22msets the maximum offset for symbol matches
+request **$v** prints all non-zero ADB variables (see Figure 8).
+The  request  **0$s** sets the maximum offset for symbol matches
 to zero thus suppressing the printing of symbolic labels  in
 favor  of octal values.  Note that this is only done for the
 printing of the data segment.  The request:
-          [1m<b,-1/8ona[0m
+          **<b,-1/8ona**
 prints a dump from the base of the data segment to  the  end
 of  file with an octal address field and eight octal numbers
 per line.
 
-     Figure 11 shows the results of some formatting requests
+Figure 11 shows the results of some formatting requests
 on the C program of Figure 10.
 
+==== 5.2. Directory Dump ====
 
-
-
-
-
-
-
-
-
-
-
-
-                            -13-
-
-
-[1m5.2.  Directory Dump[0m
-
-     As  another  illustration (Figure 12) consider a set of
+As  another  illustration (Figure 12) consider a set of
 requests to dump the contents of a directory (which is  made
-up of an integer [4minumber[24m followed by a 14 character name):
-          [1madb dir -[0m
-          [1m=n8t"Inum"8t"Name"[0m
-          [1m0,-1? u8t14cn[0m
-In  this  example,  the  [1mu [22mprints the [4minumber[24m as an unsigned
-decimal integer, the [1m8t [22mmeans that ADB  will  space  to  the
-next  multiple  of  8 on the output line, and the [1m14c [22mprints
+up of an integer ''inumber'' followed by a 14 character name):
+          **adb dir -**
+          **=n8t"Inum"8t"Name"**
+          **0,-1? u8t14cn**
+In  this  example,  the  **u** prints the ''inumber'' as an unsigned
+decimal integer, the **8t** means that ADB  will  space  to  the
+next  multiple  of  8 on the output line, and the **14c** prints
 the 14 character file name.
 
-[1m5.3.  Ilist Dump[0m
+==== 5.3. Ilist Dump ====
 
-     Similarly the contents of the [4milist[24m of a  file  system,
-(e.g. /dev/src, on UNIX systems distributed by the UNIX Sup-
-port Group; see UNIX Programmer's Manual Section V) could be
+Similarly the contents of the ''ilist'' of a  file  system,
+(e.g. /dev/src, on UNIX systems distributed by the UNIX Support
+Group; see UNIX Programmer's Manual Section V) could be
 dumped with the following set of requests:
-          [1madb /dev/src -[0m
-          [1m02000>b[0m
-          [1m?m <b[0m
-          [1m<b,-1?"flags"8ton"links,uid,gid"8t3bn",size"8tbrdn"addr"8t8un"times"8t2Y2na[0m
+          **adb /dev/src -**
+          **02000>b**
+          **?m <b**
+          **<b,-1?"flags"8ton"links,uid,gid"8t3bn",size"8tbrdn"addr"8t8un"times"8t2Y2na**
 In  this  example  the  value  of  the  base for the map was
-changed to 02000 (by saying [1m?m<b[22m) since that is the start of
-an  [4milist[24m within a file system.  An artifice ([1mbrd [22mabove) was
+changed to 02000 (by saying **?m<b**) since that is the start of
+an  ''ilist'' within a file system.  An artifice (**brd** above) was
 used to print the 24 bit size field as a byte, a space,  and
 a  decimal  integer.   The  last access time and last modify
-time are printed with the [1m2Y [22moperator.  Figure 12 shows por-
-tions  of  these requests as applied to a directory and file
+time are printed with the **2Y** operator.  Figure 12 shows portions
+of  these requests as applied to a directory and file
 system.
 
-[1m5.4.  Converting values[0m
+==== 5.4. Converting values ====
 
-     ADB may be used to convert values from one  representa-
-tion to another.  For example:
-          [1m072 = odx[0m
+ADB may be used to convert values from one  representation
+to another.  For example:
+          **072 = odx**
 will print
-          [1m072    58      #3a[0m
+          **072    58      #3a**
 which  is the octal, decimal and hexadecimal representations
 of 072 (octal).  The format is  remembered  so  that  typing
 subsequent  numbers  will  print  them in the given formats.
 Character values may be converted similarly, for example:
-          [1m'a' = co[0m
+          **'a' = co**
 prints
-          [1ma      0141[0m
+          **a      0141**
 It may also be used to evaluate expressions  but  be  warned
 that  all binary operators have the same precedence which is
 lower than that for unary operators.
 
-[1m6.  Patching[0m
 
-     Patching files with ADB is accomplished with the [4mwrite,[0m
-[1mw  [22mor  [1mW[22m,  request  (which  is  not like the [4med[24m editor write
+===== 6. Patching =====
 
-
-
-
-
-
-
-
-
-                            -14-
-
-
+Patching files with ADB is accomplished with the //write,// **w**  or  **W**,
+request  (which  is  not like the ''ed'' editor write
 command).  This  is  often  used  in  conjunction  with  the
-[4mlocate,[24m  [1ml [22mor [1mL [22mrequest.  In general, the request syntax for
-[1ml [22mand [1mw [22mare similar as follows:
-          [1m?l value[0m
-The request [1ml [22mis used to match on two bytes, [1mL [22mis  used  for
-four  bytes.   The  request  [1mw  [22mis  used to write two bytes,
-whereas [1mW [22mwrites four bytes.   The  [1mvalue  [22mfield  in  either
-[4mlocate[24m or [4mwrite[24m requests is an expression.  Therefore, deci-
-mal and octal numbers, or character strings are supported.
+''locate,''  **l** or **L** request.  In general, the request syntax
+for **l** and **w** are similar as follows:
+          **?l value**
+The request **l** is used to match on two bytes, **L** is  used  for
+four  bytes.   The  request  **w**  is  used to write two bytes,
+whereas **W** writes four bytes.   The  **value**  field  in  either
+''locate'' or ''write'' requests is an expression.  Therefore, decimal
+and octal numbers, or character strings are supported.
 
-     In order to modify a file, ADB must be called as:
-          [1madb -w file1 file2[0m
-When called with this option, [4mfile1[24m and [4mfile2[24m are created if
+In order to modify a file, ADB must be called as:
+          **adb -w file1 file2**
+When called with this option, ''file1'' and ''file2'' are created if
 necessary and opened for both reading and writing.
 
-     For example, consider the C program shown in Figure 10.
+For example, consider the C program shown in Figure 10.
 We can change the word "This" to "The "  in  the  executable
-file for this program, [4mex7[24m, by using the following requests:
-          [1madb -w ex7 -[0m
-          [1m?l 'Th'[0m
-          [1m?W 'The '[0m
-The request [1m?l [22mstarts at dot and stops at the first match of
+file for this program, ''ex7'', by using the following requests:
+          **adb -w ex7 -**
+          **?l 'Th'**
+          **?W 'The '**
+The request **?l** starts at dot and stops at the first match of
 "Th" having set dot to the address of  the  location  found.
-Note  the  use of [1m? [22mto write to the [4ma.out[24m file.  The form [1m?*[0m
+Note  the  use of **?** to write to the ''a.out'' file.  The form **?* **
 would have been used for a 411 file.
 
-     More frequently the request will be typed as:
-          [1m?l 'Th'; ?s[0m
+More frequently the request will be typed as:
+          **?l 'Th'; ?s**
 and locates the first  occurrence  of  "Th"  and  print  the
 entire  string.   Execution of this ADB request will set dot
 to the address of the "Th" characters.
 
-     As another example  of  the  utility  of  the  patching
+As another example  of  the  utility  of  the  patching
 facility,  consider  a  C program that has an internal logic
 flag.  The flag could be set by the user through ADB and the
 program run.  For example:
-          [1madb a.out -[0m
-          [1m:s arg1 arg2[0m
-          [1mflag/w 1[0m
-          [1m:c[0m
-The  [1m:s  [22mrequest  is  normally used to single step through a
+          **adb a.out -**
+          **:s arg1 arg2**
+          **flag/w 1**
+          **:c**
+The  **:s**  request  is  normally used to single step through a
 process or start a process in single  step  mode.   In  this
-case it starts [4ma.out[24m as a subprocess with arguments [1marg1 [22mand
-[1marg2[22m.  If there is a subprocess running  ADB  writes  to  it
-rather  than  to the file so the [1mw [22mrequest causes [4mflag[24m to be
+case it starts ''a.out'' as a subprocess with arguments **arg1** and **arg2**.
+If there is a subprocess running  ADB  writes  to  it
+rather  than  to the file so the **w** request causes ''flag'' to be
 changed in the memory of the subprocess.
 
-[1m7.  Anomalies[0m
 
-     Below is a list  of  some  strange  things  that  users
+===== 7. Anomalies =====
+
+Below is a list  of  some  strange  things  that  users
 should be aware of.
 
-1.   Function  calls  and  arguments are put on the stack by
-     the C save routine.  Putting breakpoints at  the  entry
+  - Function  calls  and  arguments are put on the stack by the C save routine.  Putting breakpoints at  the  entry point  to  routines means that the function appears not to have been called when the breakpoint occurs.
+
+  - When printing addresses, ADB uses either text  or  data symbols  from  the  ''a.out''  file.  This sometimes causes unexpected symbol names to be printed with  data  (e.g. ''savr5+022'').  This does not happen if **?** is used for text (instructions) and **/** for data.
+
+  - ADB cannot handle C  register  variables  in  the  most recently activated function.
+
+===== 8. Acknowledgements =====
+
+The authors are grateful for the thoughtful comments on
+how to organize this document from R. B. Brandt, E. N.  Pinson
+and B. A. Tague.  D. M. Ritchie made the system changes
+necessary to accommodate tracing within ADB. He also participated
+in  discussions during the writing of ADB.  His earlier
+work with DB and CDB led to many of the features  found in ADB.
 
 
+===== 9. References =====
 
+  - D.  M. Ritchie and K. Thompson, "The UNIX Time-Sharing System", CACM, July, 1974.
 
+  - B. W. Kernighan and D. M. Ritchie, "The C Programming Language", Prentice-Hall, 1978.
 
+  - K. Thompson and D. M. Ritchie, UNIX Programmer's Manual - 7th Edition, 1978.
 
-
-
-
-                            -15-
-
-
-     point  to  routines means that the function appears not
-     to have been called when the breakpoint occurs.
-
-2.   When printing addresses, ADB uses either text  or  data
-     symbols  from  the  [4ma.out[24m  file.  This sometimes causes
-     unexpected symbol names to be printed with  data  (e.g.
-     [4msavr5+022[24m).  This does not happen if [1m? [22mis used for text
-     (instructions) and [1m/ [22mfor data.
-
-3.   ADB cannot handle C  register  variables  in  the  most
-     recently activated function.
-
-
-[1m8.  Acknowledgements[0m
-
-     The authors are grateful for the thoughtful comments on
-how to organize this document from R. B. Brandt, E. N.  Pin-
-son  and B. A. Tague.  D. M. Ritchie made the system changes
-necessary to accommodate tracing within ADB. He also partic-
-ipated  in  discussions during the writing of ADB.  His ear-
-lier work with DB and CDB led to many of the features  found
-in ADB.
-
-[1m9.  References[0m
-
-
-1.   D.  M. Ritchie and K. Thompson, ``The UNIX Time-Sharing
-     System,'' CACM, July, 1974.
-
-2.   B. W. Kernighan and D. M. Ritchie,  [4mThe[24m  [4mC[24m  [4mProgramming[0m
-     [4mLanguage,[24m Prentice-Hall, 1978.
-
-3.   K. Thompson and D. M. Ritchie, UNIX Programmer's Manual
-     - 7th Edition, 1978.
-
-4.   B. W. Kernighan and  P.  J.  Plauger,  [4mSoftware[24m  [4mTools,[0m
-     Addison-Wesley, 1976.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  - B. W. Kernighan and  P.  J.  Plauger, "Software Tools", Addison-Wesley, 1976.

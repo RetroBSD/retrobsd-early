@@ -1,12 +1,5 @@
-
-
-
-
-
-
-[1mFigure 1:  C program with pointer bug[0m
-
-
+=== Figure 1:  C program with pointer bug ===
+<code c>
      struct buf {
           int fildes;
           int nleft;
@@ -38,50 +31,18 @@
                putc(cc,obuf);
           fflush(obuf);
      }
+</code>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                             -2-
-
-
-[1mFigure 2:  ADB output for C program of Figure 1[0m
-
-
-     [1madb a.out core[0m
-     [1m$c[0m
+=== Figure 2:  ADB output for C program of Figure 1 ===
+     **adb a.out core**
+     **$c**
      ~main(02,0177762)
-     [1m$C[0m
+     **$C**
      ~main(02,0177762)
           argc:         02
           argv:         0177762
           cc:      02124
-     [1m$r[0m
+     **$r**
      ps   0170010
      pc   0204 ~main+0152
      sp   0177740
@@ -92,120 +53,46 @@
      r1   0
      r0   0124
      ~main+0152:    mov  _obuf,(sp)
-     [1m$e[0m
+     **$e**
      savr5:        0
      _obuf:        0
      _charp:       0124
      _errno:       0
      _fout:        0
-     [1m$m[0m
+     **$m**
      text map    `ex1'
      b1 = 0              e1   = 02360          f1 = 020
      b2 = 0              e2   = 02360          f2 = 020
      data map    `core1'
      b1 = 0              e1   = 03500          f1 = 02000
      b2 = 0175400        e2   = 0200000        f2 = 05500
-     [1m*charp/s[0m
+     ***charp/s**
      0124:          TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTLxNh@x&_
      ~
-     [1mcharp/s[0m
+     **charp/s**
      _charp:        T
 
      _charp+02:     this is a sentence.
 
      _charp+026:    Input file missing
-     [1mmain.argc/d[0m
+     **main.argc/d**
      0177756:  2
-     [1m*main.argv/3o[0m
+     ***main.argv/3o**
      0177762:  0177770   0177776   0177777
-     [1m0177770/s[0m
+     **0177770/s**
      0177770:  a.out
-     [1m*main.argv/3o[0m
+     ***main.argv/3o**
      0177762:  0177770   0177776   0177777
-     [1m*"/s[0m
+     ***"/s**
      0177770:  a.out
-
-
-
-
-
-
-
-
-
-                             -3-
-
-
-      [1m.=o[0m
+     **.=o**
                0177770
-      [1m.-10/d[0m
+     **.-10/d**
      0177756:  2
-     [1m$q[0m
+     **$q**
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                             -4-
-
-
-[1mFigure  3:   Multiple  function  C  program  for stack trace[0m
-[1millustration[0m
-
-
+=== Figure  3:   Multiple  function  C  program  for stack trace ===
+<code c>
      int  fcnt,gcnt,hcnt;
      h(x,y)
      {
@@ -241,38 +128,11 @@
      {
           f(1,1);
      }
+</code>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                             -5-
-
-
-[1mFigure 4:  ADB output for C program of Figure 3[0m
-
-
-     [1madb[0m
-     [1m$c[0m
+=== Figure 4:  ADB output for C program of Figure 3 ===
+     **adb**
+     **$c**
      ~h(04452,04451)
      ~g(04453,011124)
      ~f(02,04451)
@@ -283,9 +143,9 @@
      ~g(04447,011114)
      ~f(02,04445)
      ~h(04444,04443)
-     [1mHIT DEL KEY[0m
+     **HIT DEL KEY**
      adb
-     [1m,5$C[0m
+     **,5$C**
      ~h(04452,04451)
           x:       04452
           y:       04451
@@ -310,33 +170,18 @@
           q:       011120
           gi:      04447
           gr:      04450
-     [1mfcnt/d[0m
+     **fcnt/d**
      _fcnt:         1173
-     [1mgcnt/d[0m
+     **gcnt/d**
      _gcnt:         1173
-     [1mhcnt/d[0m
+     **hcnt/d**
      _hcnt:         1172
-     [1mh.x/d[0m
+     **h.x/d**
      022004:        2346
-     [1m$q[0m
+     **$q**
 
-
-
-
-
-
-
-
-
-
-
-
-                             -6-
-
-
-[1mFigure 5:  C program to decode tabs[0m
-
-
+=== Figure 5:  C program to decode tabs ===
+<code c>
      #define MAXLINE     80
      #define YES         1
      #define NO          0
@@ -388,167 +233,70 @@
      {
           int i;
           for(i = 0; i<= MAXLINE; i++)
-
-
-
-
-
-
-
-
-
-                             -7-
-
-
                (i%TABSP) ? (tabs[i] = NO) : (tabs[i] = YES);
      }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                             -8-
-
-
-[1mFigure 6a:  ADB output for C program of Figure 5[0m
-
-
-     [1madb a.out -[0m
-     [1msettab+4:b[0m
-     [1mfopen+4:b[0m
-     [1mgetc+4:b[0m
-     [1mtabpos+4:b[0m
-     [1m$b[0m
+</code>
+
+=== Figure 6a:  ADB output for C program of Figure 5 ===
+     **adb a.out -**
+     **settab+4:b**
+     **fopen+4:b**
+     **getc+4:b**
+     **tabpos+4:b**
+     **$b**
      breakpoints
      count     bkpt      command
      1    ~tabpos+04
      1    _getc+04
      1    _fopen+04
      1    ~settab+04
-     [1msettab,5?ia[0m
+     **settab,5?ia**
      ~settab:       jsr  r5,csv
      ~settab+04:    tst  -(sp)
      ~settab+06:    clr  0177770(r5)
      ~settab+012:   cmp  $0120,0177770(r5)
      ~settab+020:   blt  ~settab+076
      ~settab+022:
-     [1msettab,5?i[0m
+     **settab,5?i**
      ~settab:       jsr  r5,csv
                tst  -(sp)
                clr  0177770(r5)
                cmp  $0120,0177770(r5)
                blt  ~settab+076
-     [1m:r[0m
+     **:r**
      a.out: running
      breakpoint     ~settab+04:    tst  -(sp)
-     [1msettab+4:d[0m
-     [1m:c[0m
+     **settab+4:d**
+     **:c**
      a.out: running
      breakpoint     _fopen+04:     mov  04(r5),nulstr+012
-     [1m$C[0m
+     **$C**
      _fopen(02302,02472)
      ~main(01,0177770)
           col:     01
           c:       0
           ptab:         03500
-     [1mtabs,3/8o[0m
+     **tabs,3/8o**
      03500:         01   0    0    0    0    0    0    0
                01   0    0    0    0    0    0    0
                01   0    0    0    0    0    0    0
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                             -9-
-
-
-[1mFigure 6b:  ADB output for C program of Figure 5[0m
-
-
-     [1m:c[0m
+=== Figure 6b:  ADB output for C program of Figure 5 ===
+     **:c**
      a.out: running
      breakpoint     _getc+04: mov  04(r5),r1
-     [1mibuf+6/20c[0m
+     **ibuf+6/20c**
      __cleanu+0202:      This is   a test    of
-     [1m:c[0m
+     **:c**
      a.out: running
      breakpoint     ~tabpos+04:    cmp  $0120,04(r5)
-     [1mtabpos+4:d[0m
-     [1msettab+4:b  settab,5?ia[0m
-     [1msettab+4:b  settab,5?ia;  0[0m
-     [1mgetc+4,3:b  main.c?C;  0[0m
-     [1msettab+4:b  settab,5?ia;  ptab/o;  0[0m
-     [1m$b[0m
+     **tabpos+4:d**
+     **settab+4:b  settab,5?ia**
+     **settab+4:b  settab,5?ia;  0**
+     **getc+4,3:b  main.c?C;  0**
+     **settab+4:b  settab,5?ia;  ptab/o;  0**
+     **$b**
      breakpoints
      count     bkpt      command
      1    ~tabpos+04
@@ -568,51 +316,20 @@
      i0177744: i
      s0177744: s
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -10-
-
-
-[1mFigure 7:  ADB output for C program with breakpoints[0m
-
-     [1madb ex3 -[0m
-     [1mh+4:b hcnt/d; h.hi/; h.hr/[0m
-     [1mg+4:b gcnt/d; g.gi/; g.gr/[0m
-     [1mf+4:b fcnt/d; f.fi/; f.fr/[0m
-     [1m:r[0m
+=== Figure 7:  ADB output for C program with breakpoints ===
+     **adb ex3 -**
+     **h+4:b hcnt/d; h.hi/; h.hr/**
+     **g+4:b gcnt/d; g.gi/; g.gr/**
+     **f+4:b fcnt/d; f.fi/; f.fr/**
+     **:r**
      ex3: running
      _fcnt:         0
      0177732:  214
      symbol not found
-     [1mf+4:b fcnt/d; f.a/; f.b/; f.fi/[0m
-     [1mg+4:b gcnt/d; g.p/; g.q/; g.gi/[0m
-     [1mh+4:b hcnt/d; h.x/; h.y/; h.hi/[0m
-     [1m:c[0m
+     **f+4:b fcnt/d; f.a/; f.b/; f.fi/**
+     **g+4:b gcnt/d; g.p/; g.q/; g.gi/**
+     **h+4:b hcnt/d; h.x/; h.y/; h.hi/**
+     **:c**
      ex3: running
      _fcnt:         0
      0177746:  1
@@ -634,11 +351,11 @@
      0177646:  5
      0177650:  8
      0177632:  214
-     [1mHIT DEL[0m
-     [1mf+4:b fcnt/d; f.a/"a = "d; f.b/"b = "d; f.fi/"fi = "d[0m
-     [1mg+4:b gcnt/d; g.p/"p = "d; g.q/"q = "d; g.gi/"gi = "d[0m
-     [1mh+4:b hcnt/d; h.x/"x = "d; h.y/"h = "d; h.hi/"hi = "d[0m
-     [1m:r[0m
+     **HIT DEL**
+     **f+4:b fcnt/d; f.a/"a = "d; f.b/"b = "d; f.fi/"fi = "d**
+     **g+4:b gcnt/d; g.p/"p = "d; g.q/"q = "d; g.gi/"gi = "d**
+     **h+4:b hcnt/d; h.x/"x = "d; h.y/"h = "d; h.hi/"hi = "d**
+     **:r**
      ex3: running
      _fcnt:         0
      0177746:  a = 1
@@ -652,88 +369,16 @@
      0177706:  x = 2
      0177710:  y = 1
      0177672:  hi = 214
-
-
-
-
-
-
-
-
-
-                            -11-
-
-
      _fcnt:         1
      0177666:  a = 2
      0177670:  b = 3
      0177652:  fi = 214
-     [1mHIT DEL[0m
-     [1m$q[0m
+     **HIT DEL**
+     **$q**
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -12-
-
-
-[1mFigure 8:  ADB address maps[0m
-
-[4m407[24m [4mfiles[0m
-
+=== Figure 8:  ADB address maps ===
+<code>
 a.out       hdr             text+data
           |____|_____________________________|
                 0                           D
@@ -741,131 +386,34 @@ a.out       hdr             text+data
 core        hdr             text+data                stack
           |______|_____________________________......|________|
                   0                           D   S          E
+</code>
+
+The following ''adb'' variables are set.
+
+|| b || base of data    || 0 ||
+|| d || length of data  || D ||
+|| s || length of stack || S ||
+|| t || length of text  || 0 ||
 
 
-[4m410[24m [4mfiles[24m [4m(shared[24m [4mtext)[0m
-
-a.out       hdr              text                    data
-          |____|_____________________________|________________|
-                0                           T B              D
-
-core        hdr         data             stack
-          |______|________________......|________|
-                  B               D  S          E
-
-
-[4m411[24m [4mfiles[24m [4m(separated[24m [4mI[24m [4mand[24m [4mD[24m [4mspace)[0m
-
-a.out       hdr             text                     data
-          |____|_____________________________|________________|
-                0                           T 0              D
-
-core        hdr         data             stack
-          |______|________________......|________|
-                  0               D  S          E
-
-
-The following [4madb[24m variables are set.
-
-                                   407       410       411
-
-       b       base of data        0         B         0
-       d       length of data      D         D-B       D
-       s       length of stack     S         S         S
-       t       length of text      0         T         T
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -13-
-
-
-[1mFigure 9:  ADB output for maps[0m
-
-     [1madb map407 core407[0m
-     [1m$m[0m
-     text map    `map407'
+=== Figure 9:  ADB output for maps ===
+     **adb map core**
+     **$m**
+     text map    `map'
      b1 = 0              e1   = 0256           f1 = 020
      b2 = 0              e2   = 0256           f2 = 020
-     data map    `core407'
+     data map    `core'
      b1 = 0              e1   = 0300           f1 = 02000
      b2 = 0175400        e2   = 0200000   f2 = 02300
-     [1m$v[0m
+     **$v**
      variables
      d = 0300
      m = 0407
      s = 02400
-     [1m$q[0m
+     **$q**
 
-
-     [1madb map410 core410[0m
-     [1m$m[0m
-     text map    `map410'
-     b1 = 0              e1   = 0200           f1 = 020
-     b2 = 020000         e2   = 020116    f2 = 0220
-     data map    `core410'
-     b1 = 020000         e1   = 020200    f1 = 02000
-     b2 = 0175400        e2   = 0200000   f2 = 02200
-     [1m$v[0m
-     variables
-     b = 020000
-     d = 0200
-     m = 0410
-     s = 02400
-     t = 0200
-     [1m$q[0m
-
-
-     [1madb map411 core411[0m
-     [1m$m[0m
-     text map    `map411'
-     b1 = 0              e1   = 0200           f1 = 020
-     b2 = 0              e2   = 0116           f2 = 0220
-     data map    `core411'
-     b1 = 0              e1   = 0200           f1 = 02000
-     b2 = 0175400        e2   = 0200000   f2 = 02200
-     [1m$v[0m
-     variables
-     d = 0200
-     m = 0411
-     s = 02400
-     t = 0200
-     [1m$q[0m
-
-
-
-
-
-
-
-
-
-
-
-
-                            -14-
-
-
-[1mFigure 10:  Simple C program for illustrating formatting and[0m
-[1mpatching[0m
-
-
+=== Figure 10:  Simple C program for illustrating formatting and patching ===
+<code c>
      char str1[]    "This is a character string";
      int  one  1;
      int  number    456;
@@ -876,62 +424,12 @@ The following [4madb[24m variables are set.
      {
           one = 2;
      }
+</code>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -15-
-
-
-[1mFigure 11:  ADB output illustrating fancy formats[0m
-
-[1madb map410 core410[0m
-[1m<b,-1/8ona[0m
+=== Figure 11:  ADB output illustrating fancy formats ===
+<code>
+**adb map410 core410**
+**<b,-1/8ona**
 020000:        0    064124    071551    064440    020163    020141    064143    071141
 _str1+016:     061541    062564    020162    072163    064562    063556    0    02
 _number:
@@ -939,7 +437,7 @@ _number:  0710 0    02322     040240    0    064124    071551    064440
 _str2+06: 020163    064164    020145    062563    067543    062156    061440    060550
 _str2+026:     060562    072143    071145    071440    071164    067151    0147 0
 savr5+02: 0    0    0    0    0    0    0    0
-[1m<b,20/4o4^8Cn[0m
+**<b,20/4o4^8Cn**
 020000:        0    064124    071551    064440    @`@`This i
           020163    020141    064143    071141    s a char
           061541    062564    020162    072163    acter st
@@ -953,7 +451,7 @@ _number:  0710 0    02322     040240    H@a@`@`R@d @@
           0    0    0    0    @`@`@`@`@`@`@`@`
           0    0    0    0    @`@`@`@`@`@`@`@`
 data address not found
-[1m<b,20/4o4^8t8cna[0m
+**<b,20/4o4^8t8cna**
 020000:        0    064124    071551    064440         This i
 _str1+06: 020163    020141    064143    071141         s a char
 _str1+016:     061541    062564    020162    072163         acter st
@@ -968,7 +466,7 @@ _str2+036:     071164    067151    0147 0         tring
 savr5+02: 0    0    0    0
 savr5+012:     0    0    0    0
 data address not found
-[1m<b,10/2b8t^2cn[0m
+**<b,10/2b8t^2cn**
 020000:        0    0
 _str1:         0124 0150      Th
           0151 0163      is
@@ -979,26 +477,15 @@ _str1:         0124 0150      Th
           0141 0162      ar
           0141 0143      ac
           0164 0145      te
-[1m$Q[0m
+**$Q**
+</code>
 
 
-
-
-
-
-
-
-
-
-
-                            -16-
-
-
-[1mFigure 12:  Directory and inode dumps[0m
-
-[1madb dir -[0m
-[1m=nt"Inode"t"Name"[0m
-[1m0,-1?ut14cn[0m
+=== Figure 12:  Directory and inode dumps ===
+<code>
+**adb dir -**
+**=nt"Inode"t"Name"**
+**0,-1?ut14cn**
 
           Inode     Name
 0:        652  .
@@ -1010,16 +497,16 @@ _str1:         0124 0150      Th
 
 
 
-[1madb /dev/src -[0m
-[1m02000>b[0m
-[1m?m<b[0m
+**adb /dev/src -**
+**02000>b**
+**?m<b**
 new map       `/dev/src'
 b1 = 02000          e1   = 0100000000     f1 = 0
 b2 = 0              e2   = 0         f2 = 0
-[1m$v[0m
+**$v**
 variables
 b = 02000
-[1m<b,-1?"flags"8ton"links,uid,gid"8t3bn"size"8tbrdn"addr"8t8un"times"8t2Y2na[0m
+**<b,-1?"flags"8ton"links,uid,gid"8t3bn"size"8tbrdn"addr"8t8un"times"8t2Y2na**
 02000:         flags     073145
           links,uid,gid  0163 0164 0141
           size 0162 10356
@@ -1037,218 +524,4 @@ b = 02000
           size 0147 29545
           addr 25972     8306 28265     8308 25642     15216     2314 25970
           times     1977 Apr 2 08:58:01 1977 Feb 5 10:21:44
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -17-
-
-
-                        [1mADB Summary[0m
-
-
-
-
-[1mCommand Summary[0m
-
-a)   formatted printing
-
-[1m? [4m[22mformat[0m
-       print from [4ma.out[24m file according to [4mformat[0m
-
-[1m/ [4m[22mformat[0m
-       print from [4mcore[24m file according to [4mformat[0m
-
-[1m= [4m[22mformat[0m
-       print the value of [4mdot[0m
-
-[1m?w [22mexpr
-       write expression into [4ma.out[24m file
-
-[1m/w [22mexpr
-       write expression into [4mcore[24m file
-
-[1m?l [22mexpr
-       locate expression in [4ma.out[24m file
-
-b)   breakpoint and program control
-
-[1m:b     [22mset breakpoint at [4mdot[0m
-[1m:c     [22mcontinue running program
-[1m:d     [22mdelete breakpoint
-[1m:k     [22mkill the program being debugged
-[1m:r     [22mrun [4ma.out[24m file under ADB control
-[1m:s     [22msingle step
-
-c)   miscellaneous printing
-
-[1m$b     [22mprint current breakpoints
-[1m$c     [22mC stack trace
-[1m$e     [22mexternal variables
-[1m$f     [22mfloating registers
-[1m$m     [22mprint ADB segment maps
-[1m$q     [22mexit from ADB
-[1m$r     [22mgeneral registers
-[1m$s     [22mset offset for symbol match
-[1m$v     [22mprint ADB variables
-[1m$w     [22mset output line width
-
-d)   calling the shell
-
-[1m!      [22mcall [4mshell[24m to read rest of line
-
-
-
-
-
-
-
-
-
-
-
-                            -18-
-
-
-e)   assignment to variables
-
-[1m>[4m[22mname[24m  assign dot to variable or register [4mname[0m
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                            -19-
-
-
-[1mFormat Summary[0m
-
-[1ma      [22mthe value of dot
-[1mb      [22mone byte in octal
-[1mc      [22mone byte as a character
-[1md      [22mone word in decimal
-[1mf      [22mtwo words in floating point
-[1mi      [22mPDP 11 instruction
-[1mo      [22mone word in octal
-[1mn      [22mprint a newline
-[1mr      [22mprint a blank space
-[1ms      [22ma null terminated character string
-[4mn[24m[1mt     [22mmove to next [4mn[24m space tab
-[1mu      [22mone word as unsigned integer
-[1mx      [22mhexadecimal
-[1mY      [22mdate
-[1m^      [22mbackup dot
-[1m"..."  [22mprint string
-
-
-[1mExpression Summary[0m
-
-a) expression components
-
-[1mdecimal integer[22me.g. 256
-[1moctal integer[22me.g. 0277
-[1mhexadecimal[22me.g. #ff
-[1msymbols[22me.g. flag  _main  main.argc
-[1mvariables[22me.g. <b
-[1mregisters[22me.g. <pc <r0
-[1m(expression)[22mexpression grouping
-
-b) dyadic operators
-
-[1m+      [22madd
-[1m-      [22msubtract
-[1m*      [22mmultiply
-[1m%      [22minteger division
-[1m&      [22mbitwise and
-[1m|      [22mbitwise or
-[1m#      [22mround up to the next multiple
-
-c) monadic operators
-
-[1m~      [22mnot
-[1m*      [22mcontents of location
-[1m-      [22minteger negate
-
-
-
-
-
-
-
-
-
-
-
-
-
+</code>
