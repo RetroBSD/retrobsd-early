@@ -103,7 +103,7 @@ D_TEMP           = dev/temp0!c4:0 dev/temp1!c4:1 dev/temp2!c4:2
 
 U_DIRS           = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES          = $(shell find u -type f ! -path '*/.svn/*')
-U_ALL            = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
+#U_ALL            = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
 
 CDEVS            = $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_FD) $(D_TEMP) 
 
@@ -145,7 +145,8 @@ user.img:	$(FSUTIL)
 ifneq ($(U_KBYTES), 0)
 		rm -f $@
 		$(FSUTIL) -n$(U_KBYTES) $@
-		(cd u; ../$(FSUTIL) -a ../$@ $(U_ALL))
+		(cd u; find . -type d -exec ../$(FSUTIL) -a ../$@ '{}/' \;)
+		(cd u; find . -type f -exec ../$(FSUTIL) -a ../$@ '{}' \+)
 endif
 
 sdcard.rd:	filesys.img swap.img user.img
