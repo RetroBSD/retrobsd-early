@@ -5,6 +5,7 @@
 #include <sys/termios.h>
 #include <strings.h>
 #include <errno.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -21,7 +22,6 @@
 struct smux_packet rx;
 struct smux_packet tx;
 
-FILE *pipe;
 int pipe_fd;
 
 int string_contains(char *haystack, char *needle, int len)
@@ -148,6 +148,9 @@ int rx_link_data()
 
 int main(int argc, char *argv[])
 {
+    char *username = "smux";
+    char *password = "";
+    char *device = "/dev/ttyACM0";
     int nr;
     unsigned char buffer[300];
     struct termios tty;
@@ -166,25 +169,41 @@ int main(int argc, char *argv[])
     int stream;
 
     int ready[MAXFD];
+    int fds[MAXFD];
+
+    int opt;
 
     signal(SIGPIPE, SIG_IGN);
 
-    int fds[MAXFD];
 
     for (i=0; i<MAXFD; i++) {
         fds[i] = -1;
         ready[i] = 0;
     }
 
-    if (argc != 2) {
-        printf("Usage: smux <tty>\n");
-        return 10;
+    while ((opt = getopt(argc, argv, "hd:u:p:")) != -1) {
+        switch (opt) {
+        case 'd':
+            device = optarg;
+            break;
+        case 'u':
+            username = optarg;
+            break;
+        case 'p':
+            password = optarg;
+            break;
+        case 'h':
+            printf("Usage: %s [-d device] [-u username] [-p password]\n", argv[0]);
+            return(0);
+        default:
+            printf("Unknown option: %c\n", opt);
+            return(10);
+        }
     }
 
-    pipe = fopen(argv[1],"r+");
-    pipe_fd = fileno(pipe);
+    pipe_fd = open(device, O_RDWR | O_EXCL);
     if (pipe_fd < 0) {
-        printf("Unable to open %s\n", argv[1]);
+        printf("Unable to open %s\n", device);
         return 10;
     }
 
@@ -221,16 +240,18 @@ int main(int argc, char *argv[])
 
     fds[1] = sockfd;
         
-    write(pipe_fd, "\r", 1);
+    write(pipe_fd, "\r\r\r", 1);
     bzero(buffer,256);
     for (;;) {
         if ((nr = fdgetline(pipe_fd, buffer, 255)) > 0) {
             printf("%s\n", buffer);
             if(string_contains(buffer, "ogin:", nr)) {
-                write(pipe_fd, "smux\r", 5);
+                sprintf(buffer, "%s\r", username);
+                write(pipe_fd, buffer, strlen(buffer));
             }
             if(string_contains(buffer, "assword:", nr)) {
-                write(pipe_fd, "\r", 1);
+                sprintf(buffer, "%s\r", password);
+                write(pipe_fd, buffer, strlen(buffer));
             }
             if(string_contains(buffer, "Welcome to RetroBSD", nr)) {
                 break;
@@ -238,11 +259,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    while (read_chunk(pipe_fd, buffer, 99) > 0)
-        printf("%s\n", buffer);
-
-
     printf("Logged in - starting main loop\n");
+
+    doping = time(NULL) + 5;
+    nextping = time(NULL) + 10;
 
     // Main loop.  Do this forever.
     for (;;) {
@@ -271,6 +291,7 @@ int main(int argc, char *argv[])
                 tx.len = 0;
                 send_tx();
                 ready[stream] = 0;
+		printf("Attempting to connect stream %d\n", stream);
             }
             if (fds[stream] != -1) {
 
@@ -295,6 +316,7 @@ int main(int argc, char *argv[])
                             for (i=0; i<MAXFD; i++) {
                                 if (fds[i] == -1) {
                                     fds[i] = infd;
+					printf("Found spare FD in stream %d\n", i);
                                     break;
                                 }
                             }
@@ -307,7 +329,7 @@ int main(int argc, char *argv[])
                                 //printf("> IAC DO LINEMODE IAC WILL ECHO\n");
                                 write(infd, buffer, 6);
                                 fsync(infd);
-                                ready[stream] = 0;
+                                ready[i] = 1;
                             }
                         }
                     } else if (fds[stream] == pipe_fd) {
@@ -323,7 +345,7 @@ int main(int argc, char *argv[])
                                 //printf("%d>%s", rx.stream, rx.data);
                                 break;
                             case C_CONNECTOK:
-                                //printf("Connected OK, stream ID is %d\n", rx.stream);
+                                printf("Connected OK, stream ID is %d\n", rx.stream);
                                 tx.type = C_DATA;
                                 tx.len = 1;
                                 tx.stream = stream;
@@ -397,7 +419,6 @@ int main(int argc, char *argv[])
                                         if (buffer[i] == 34) {
                                             sprintf(iac, "%c%c%c%c%c%c%c", IAC, SB, 34, 1, 4, IAC, SE);
                                             write(fds[stream], iac, 7);
-                                            ready[stream] = 1;
                                         }
                                         while ((buffer[i] != SE) && (buffer[i-1] != SE)) {
                                             i++;
