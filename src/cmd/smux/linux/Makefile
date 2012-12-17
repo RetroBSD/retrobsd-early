@@ -1,6 +1,6 @@
-OBJS=smux.o
-BIN=smux
-CFLAGS=-ggdb3
+OBJS    = smux.o
+BIN     = smux
+CFLAGS  = -O -Wall -Werror
 
 $(BIN): $(OBJS)
 	$(CC) -o $(BIN) $(OBJS) -ggdb3

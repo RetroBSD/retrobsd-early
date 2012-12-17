@@ -72,12 +72,11 @@ int fdgetline(int fd, unsigned char *buffer, int maxlen)
                 return maxlen;
             }
         }
-    } 
+    }
 }
 
 int read_chunk(int fd, void *buf, int ml)
 {
-    int c;
     fd_set rfd;
     struct timeval tv;
     tv.tv_sec = 1;
@@ -213,7 +212,7 @@ int main(int argc, char *argv[])
     tty.c_cflag &= ~CSTOPB;
     tty.c_cflag |= CS8 | CLOCAL;
     tcsetattr(pipe_fd, TCSANOW, &tty);
-    tcflush(pipe_fd, TCOFLUSH); 
+    tcflush(pipe_fd, TCOFLUSH);
 
     fds[0] = pipe_fd;
 
@@ -230,7 +229,7 @@ int main(int argc, char *argv[])
 
     i = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &i, sizeof(int));
-    
+
     if (bind(sockfd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
         printf("Unable to bind socket\n");
         return(10);
@@ -239,13 +238,13 @@ int main(int argc, char *argv[])
     listen(sockfd, 10);
 
     fds[1] = sockfd;
-        
+
     write(pipe_fd, "\r\r\r", 1);
     bzero(buffer,256);
     for (;;) {
         if ((nr = fdgetline(pipe_fd, buffer, 255)) > 0) {
             printf("%s\n", buffer);
-            if(string_contains(buffer, "ogin:", nr)) {
+            if(string_contains((char*)buffer, "ogin:", nr)) {
                 sprintf(buffer, "%s\r", username);
                 write(pipe_fd, buffer, strlen(buffer));
             }

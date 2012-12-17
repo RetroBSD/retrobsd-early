@@ -25,6 +25,7 @@ BAREMETAL       = sys/pic32/baremetal/BAREMETAL
 RETROONE	    = sys/pic32/retroone/RETROONE
 FUBARINO	    = sys/pic32/fubarino/FUBARINO
 FUBARINOUART	= sys/pic32/fubarino-uart/FUBARINO-UART
+MMBMX7          = sys/pic32/mmb-mx7/MMB-MX7
 
 # Select target board
 TARGET          ?= $(MAX32)
@@ -99,13 +100,13 @@ D_CONSOLE        = dev/console!c0:0
 D_MEM		     = dev/mem!c1:0 dev/kmem!c1:1 dev/null!c1:2 dev/zero!c1:3
 D_TTY		     = dev/tty!c2:0
 D_FD		     = dev/stdin!c3:0 dev/stdout!c3:1 dev/stderr!c3:2
-D_TEMP           = dev/temp0!c4:0 dev/temp1!c4:1 dev/temp2!c4:2 
+D_TEMP           = dev/temp0!c4:0 dev/temp1!c4:1 dev/temp2!c4:2
 
 U_DIRS           = $(addsuffix /,$(shell find u -type d ! -path '*/.svn*'))
 U_FILES          = $(shell find u -type f ! -path '*/.svn/*')
 #U_ALL            = $(patsubst u/%,%,$(U_DIRS) $(U_FILES))
 
-CDEVS            = $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_FD) $(D_TEMP) 
+CDEVS            = $(D_CONSOLE) $(D_MEM) $(D_TTY) $(D_FD) $(D_TEMP)
 
 all:            tools build kernel
 		$(MAKE) fs
@@ -132,10 +133,10 @@ build: 		tools lib
 filesys.img:	$(FSUTIL) $(ALLFILES)
 		rm -f $@
 		$(FSUTIL) -n$(FS_KBYTES) $@
-		$(FSUTIL) -a $@ $(ALLDIRS) 
+		$(FSUTIL) -a $@ $(ALLDIRS)
 		$(FSUTIL) -a $@ $(CDEVS)
 		$(FSUTIL) -a $@ $(BDEVS)
-		$(FSUTIL) -a $@ $(ALLFILES) 
+		$(FSUTIL) -a $@ $(ALLFILES)
 		$(FSUTIL) -a $@ $(MANFILES)
 
 swap.img:
@@ -182,7 +183,7 @@ cleanall:       clean
 
 installfs: filesys.img
 ifdef SDCARD
-	sudo dd bs=10M if=sdcard.rd of=$(SDCARD)
+	sudo dd bs=32k if=sdcard.rd of=$(SDCARD)
 else
 	@echo "Error: No SDCARD defined."
 endif
