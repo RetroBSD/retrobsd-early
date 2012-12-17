@@ -1,6 +1,6 @@
 # Fubarino configuration file
 
-core pic32mx7 
+core pic32mx7
 mapping fubarino
 linker bootloader
 
@@ -13,5 +13,4 @@ device glcd
 device oc
 device gpio
 
-device bootloader led=21 button=23 crystal=8
-
+device bootloader led=21 button=23 crystal=8 jump=0x9d000000

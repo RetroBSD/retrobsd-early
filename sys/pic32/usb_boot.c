@@ -26,19 +26,6 @@
 #include <machine/pic32mx.h>
 #include <machine/io.h>
 
-#define TRIS_VAL(p)     (&p)[0]
-#define TRIS_CLR(p)     (&p)[1]
-#define TRIS_SET(p)     (&p)[2]
-#define TRIS_INV(p)     (&p)[3]
-#define PORT_VAL(p)     (&p)[4]
-#define PORT_CLR(p)     (&p)[5]
-#define PORT_SET(p)     (&p)[6]
-#define PORT_INV(p)     (&p)[7]
-#define LAT_VAL(p)      (&p)[8]
-#define LAT_CLR(p)      (&p)[9]
-#define LAT_SET(p)      (&p)[10]
-#define LAT_INV(p)      (&p)[11]
-
 /*
  * Flash memory.
  */
@@ -138,56 +125,20 @@ static unsigned int buf_index;
 static unsigned int base_address;
 
 /*
- * Chip configuration.
+ * GPIO pin control.
  */
-
-
-//#if (BL_CRYSTAL == 8)
-//PIC32_DEVCFG (
-//    DEVCFG0_DEBUG_DISABLED,     /* ICE debugger disabled */
-//
-//    DEVCFG1_FNOSC_PRIPLL |      /* Primary oscillator with PLL */
-//    DEVCFG1_IESO |              /* Internal-external switch over */
-//    DEVCFG1_POSCMOD_HS |        /* HS oscillator */
-//    DEVCFG1_FPBDIV_1 |          /* Peripheral bus clock = SYSCLK/1 */
-//    DEVCFG1_WDTPS_1,            /* Watchdog postscale = 1/1024 */
-//
-//    DEVCFG2_FPLLIDIV_2 |        /* PLL divider = 1/2 */
-//    DEVCFG2_FPLLMUL_20 |        /* PLL multiplier = 20x */
-//    DEVCFG2_UPLLIDIV_2 |        /* USB PLL divider = 1/2 */
-//    DEVCFG2_FPLLODIV_1,         /* PLL postscaler = 1/1 */
-//
-//    DEVCFG3_USERID(0xffff) |    /* User-defined ID */
-//    DEVCFG3_FSRSSEL_7 |         /* Assign irq priority 7 to shadow set */
-//    DEVCFG3_FMIIEN |            /* Ethernet MII enable */
-//    DEVCFG3_FETHIO |            /* Ethernet pins default */
-//    DEVCFG3_FCANIO |            /* CAN pins default */
-//    DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
-//    DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
-//#elif (BL_CRYSTAL == 4)
-//    DEVCFG0_DEBUG_DISABLED,     /* ICE debugger disabled */
-//
-//    DEVCFG1_FNOSC_PRIPLL |      /* Primary oscillator with PLL */
-//    DEVCFG1_IESO |              /* Internal-external switch over */
-//    DEVCFG1_POSCMOD_HS |        /* HS oscillator */
-//    DEVCFG1_FPBDIV_1 |          /* Peripheral bus clock = SYSCLK/1 */
-//    DEVCFG1_WDTPS_1,            /* Watchdog postscale = 1/1024 */
-//
-//    DEVCFG2_FPLLIDIV_1 |        /* PLL divider = 1/1 */
-//    DEVCFG2_FPLLMUL_20 |        /* PLL multiplier = 20x */
-//    DEVCFG2_UPLLIDIV_2 |        /* USB PLL divider = 1/2 */
-//    DEVCFG2_FPLLODIV_1,         /* PLL postscaler = 1/1 */
-//
-//    DEVCFG3_USERID(0xffff) |    /* User-defined ID */
-//    DEVCFG3_FSRSSEL_7 |         /* Assign irq priority 7 to shadow set */
-//    DEVCFG3_FMIIEN |            /* Ethernet MII enable */
-//    DEVCFG3_FETHIO |            /* Ethernet pins default */
-//    DEVCFG3_FCANIO |            /* CAN pins default */
-//    DEVCFG3_FUSBIDIO |          /* USBID pin: controlled by USB */
-//    DEVCFG3_FVBUSONIO);         /* VBuson pin: controlled by USB */
-//#else
-//#error Unsupported crystal setting
-//#endif
+#define TRIS_VAL(p)     (&p)[0]
+#define TRIS_CLR(p)     (&p)[1]
+#define TRIS_SET(p)     (&p)[2]
+#define TRIS_INV(p)     (&p)[3]
+#define PORT_VAL(p)     (&p)[4]
+#define PORT_CLR(p)     (&p)[5]
+#define PORT_SET(p)     (&p)[6]
+#define PORT_INV(p)     (&p)[7]
+#define LAT_VAL(p)      (&p)[8]
+#define LAT_CLR(p)      (&p)[9]
+#define LAT_SET(p)      (&p)[10]
+#define LAT_INV(p)      (&p)[11]
 
 /*
  * Boot code.
@@ -201,6 +152,12 @@ asm ("          la      $gp, _gp");
 asm ("          jr      $ra");
 asm ("          .text");
 
+/*
+ * A single buttin is used to control the bootloader mode.
+ * Configured by parameters:
+ *      BL_BUTTON_PORT = TRISA ... TRISG
+ *      BL_BUTTON_PIN  = 0 ... 15
+ */
 static inline void button_init()
 {
     TRIS_SET(BL_BUTTON_PORT) = 1 << BL_BUTTON_PIN;
@@ -211,15 +168,102 @@ static inline int button_pressed()
     return ! (PORT_VAL(BL_BUTTON_PORT) & (1 << BL_BUTTON_PIN));
 }
 
+/*
+ * Up to three LEDs can be used to indicate a bootloader mode.
+ * Configured by parameters:
+ *      - first LED:  BL_LED_PORT, BL_LED_PIN, BL_LED_INVERT
+ *      - second LED: BL_LED2_PORT, BL_LED2_PIN, BL_LED2_INVERT
+ *      - third LED:  BL_LED3_PORT, BL_LED3_PIN, BL_LED3_INVERT
+ *
+ * Additionally, up to two output signals can be set or cleared at startup.
+ * Configured by parameters:
+ *      BL_SET_PORT, BL_SET_PIN
+ *      BL_SET2_PORT, BL_SET2_PIN
+ *      BL_CLEAR_PORT, BL_CLEAR_PIN
+ *      BL_CLEAR2_PORT, BL_CLEAR2_PIN
+ *
+ * Settings for UBW32 board:
+ *      - first LED is E2, inverted
+ *      - second LED is E3
+ *      - set signals E0 and E1
+ *
+ * For Maximite board:
+ *      - LED is E1, inverted
+ *      - clear signal F0
+ *
+ * For eflightworks DIP board:
+ *      - first LED is E6, inverted
+ *      - second LED is E7
+ *      - clear signals E4 and E5
+ *
+ * For PIC32 Starter Kit board:
+ *      - first LED is D0
+ *      - second LED is D1, inverted
+ *      - third LED is D2, inverted
+ */
 static inline void led_init()
 {
+    /* First LED. */
+#ifdef BL_LED_INVERT
+    LAT_SET(BL_LED_PORT) = 1 << BL_LED_PIN;
+#else
     LAT_CLR(BL_LED_PORT) = 1 << BL_LED_PIN;
+#endif
     TRIS_CLR(BL_LED_PORT) = 1 << BL_LED_PIN;
+
+    /* Optional second LED. */
+#ifdef BL_LED2_PORT
+#ifdef BL_LED2_INVERT
+    LAT_SET(BL_LED2_PORT) = 1 << BL_LED2_PIN;
+#else
+    LAT_CLR(BL_LED2_PORT) = 1 << BL_LED2_PIN;
+#endif
+    TRIS_CLR(BL_LED2_PORT) = 1 << BL_LED2_PIN;
+#endif
+
+    /* Optional third LED. */
+#ifdef BL_LED3_PORT
+#ifdef BL_LED3_INVERT
+    LAT_SET(BL_LED3_PORT) = 1 << BL_LED3_PIN;
+#else
+    LAT_CLR(BL_LED3_PORT) = 1 << BL_LED3_PIN;
+#endif
+    TRIS_CLR(BL_LED3_PORT) = 1 << BL_LED3_PIN;
+#endif
+
+    /* Additional signals. */
+#ifdef BL_SET_PORT
+    LAT_SET(BL_SET_PORT) = 1 << BL_SET_PIN;
+    TRIS_CLR(BL_SET_PORT) = 1 << BL_SET_PIN;
+#endif
+#ifdef BL_SET2_PORT
+    LAT_SET(BL_SET2_PORT) = 1 << BL_SET2_PIN;
+    TRIS_CLR(BL_SET2_PORT) = 1 << BL_SET2_PIN;
+#endif
+#ifdef BL_CLEAR_PORT
+    LAT_CLR(BL_CLEAR_PORT) = 1 << BL_CLEAR_PIN;
+    TRIS_CLR(BL_CLEAR_PORT) = 1 << BL_CLEAR_PIN;
+#endif
+#ifdef BL_CLEAR2_PORT
+    LAT_CLR(BL_CLEAR2_PORT) = 1 << BL_CLEAR2_PIN;
+    TRIS_CLR(BL_CLEAR2_PORT) = 1 << BL_CLEAR2_PIN;
+#endif
 }
 
 static inline void led_toggle()
 {
+    /* First LED. */
     LAT_INV(BL_LED_PORT) = 1 << BL_LED_PIN;
+
+    /* Optional second LED. */
+#ifdef BL_LED2_PORT
+    LAT_INV(BL_LED2_PORT) = 1 << BL_LED2_PIN;
+#endif
+
+    /* Optional third LED. */
+#ifdef BL_LED3_PORT
+    LAT_INV(BL_LED3_PORT) = 1 << BL_LED3_PIN;
+#endif
 }
 
 #if 0

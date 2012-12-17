@@ -72,11 +72,11 @@ void usbinit()
     usb_device_init();
     IECSET(1) = 1 << (PIC32_IRQ_USB - 32);
 
-#if defined(CONSOLE_USB) && !defined(USB_AUTOBOOT)
+#if !defined(USB_AUTOBOOT)
     /* Wait for any user input. */
-	while(!cdc_consume(0))
+    while (! cdc_consume(0))
 #endif
-		usb_device_tasks();
+        usb_device_tasks();
 }
 
 int usbopen (dev_t dev, int flag, int mode)

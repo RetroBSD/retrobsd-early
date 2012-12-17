@@ -56,8 +56,6 @@ volatile CTRL_TRF_SETUP usb_setup_pkt;           // 8-byte only
 // Buffer for control transfer data
 static volatile unsigned char ctrl_trf_data [USB_EP0_BUFF_SIZE];
 
-extern void bzero (void *dst, unsigned nbytes);
-
 /*
  * This function initializes the device stack
  * it in the default state
@@ -96,7 +94,8 @@ void usb_device_init(void)
     U1ADDR = 0x00;
 
     // Clear all of the endpoint control registers
-    bzero((void*) &U1EP(1), USB_MAX_EP_NUMBER - 1);
+    for (i=1; i<USB_MAX_EP_NUMBER; i++)
+        U1EP(i) = 0;
 
     // Clear all of the BDT entries
     for (i=0; i<(sizeof(usb_buffer)/sizeof(BDT_ENTRY)); i++) {
@@ -1274,14 +1273,18 @@ void usb_ctrl_trf_rx_service(void)
  */
 void usb_std_set_cfg_handler(void)
 {
+    unsigned i;
+
     // This will generate a zero length packet
     usb_in_pipe[0].info.bits.busy = 1;
 
     // disable all endpoints except endpoint 0
-    bzero((void*) &U1EP(1), USB_MAX_EP_NUMBER - 1);
+    for (i=1; i<USB_MAX_EP_NUMBER; i++)
+        U1EP(i) = 0;
 
     // clear the alternate interface settings
-    bzero((void*) &usb_alternate_interface, USB_MAX_NUM_INT);
+    for (i=0; i<USB_MAX_NUM_INT; i++)
+        usb_alternate_interface[i] = 0;
 
     // set the current configuration
     usb_active_configuration = usb_setup_pkt.bConfigurationValue;

@@ -19,4 +19,4 @@ device sd0 port=3 cs=D4
 
 device gpio
 
-device bootloader button=D6 led=E6 jump=0x9d000000
+device bootloader button=D6 jump=0x9d000000 led=E7 invled2=E6 clear=E4 clear2=E5
