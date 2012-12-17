@@ -109,8 +109,8 @@ int msvtag(name)
     m = mname(name, MTAG, sizeof(tag_t));
     if (! m)
         return 0;
-    m->mtag.line  = cursorline + cws->ulhclno;
-    m->mtag.col   = cursorcol  + cws->ulhccno;
+    m->mtag.line  = cursorline + cws->toprow;
+    m->mtag.col   = cursorcol  + cws->topcol;
     m->mtag.nfile = cws->wfile;
     return 1;
 }
@@ -164,8 +164,8 @@ int mdeftag(name)
     paramtype = -2;
     paramr1 = m->mtag.line;
     paramc1 = m->mtag.col ;
-    paramr0 += cws -> ulhclno;
-    paramc0 += cws -> ulhccno;
+    paramr0 += cws -> toprow;
+    paramc0 += cws -> topcol;
     if (paramr0 > paramr1) {
         f++;
         ln = paramr1;
@@ -183,10 +183,10 @@ int mdeftag(name)
     if (f) {
         cgoto(ln, cl, -1, 0);
     }
-    paramr0 -= cws -> ulhclno;
-    paramr1 -= cws -> ulhclno;
-    paramc0 -= cws -> ulhccno;
-    paramc1 -= cws -> ulhccno;
+    paramr0 -= cws -> toprow;
+    paramr1 -= cws -> toprow;
+    paramc0 -= cws -> topcol;
+    paramc1 -= cws -> topcol;
     if (paramr1 == paramr0)
         telluser("**:columns defined by tag", 0);
     else if (paramc1 == paramc0)
@@ -243,14 +243,14 @@ int defkey()
 #define LKEY 20 /* Макс. число символов, генерируемых новой клавишей */
     char bufc[LKEY+1], *buf;
     register int lc;
-    viewport_t *curp;
+    window_t *curp;
     int curl,curc;
     register char *c, *c1;
 
-    curp = curport;
+    curp = curwin;
     curc = cursorcol;
     curl = cursorline;
-    switchport(&paramport);
+    win_switch(&paramwin);
     poscursor(22, 0);
     telluser(" enter <new key><del>:",0);
     lc = 0;
@@ -282,7 +282,7 @@ reterr: lc = 0;
     lc = addkey(keysym, buf);
 ret:
     keysym = -1;
-    switchport(curp);
+    win_switch(curp);
     poscursor(curc, curl);
     return lc;
 }

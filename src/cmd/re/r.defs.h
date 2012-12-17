@@ -28,12 +28,12 @@
 #define MAXCOLS     128     /* max. width of screen */
 #define MAXLINES    48      /* max. height of screen */
 #define LBUFFER     256     /* lower limit for the current line buffer */
-#define PARAMREDIT  40      /* input field of paramport */
-#define PARAMRINFO  78      /* last column of paramport */
-#define NPARAMLINES 1       /* number of lines in paramport */
+#define PARAMREDIT  40      /* input field of paramwin */
+#define PARAMRINFO  78      /* last column of paramwin */
+#define NPARAMLINES 1       /* number of lines in paramwin */
 #define FILEMODE    0664    /* access mode for newly created files */
 #define MAXFILES    14      /* max. files under edit */
-#define MAXPORTLIST 10      /* max.windows */
+#define MAXWINLIST  10      /* max.windows */
 #define NTABS       30
 #define BIGTAB      32767
 
@@ -107,55 +107,50 @@ file_t file[MAXFILES];     /* Table of files */
 int curfile;
 
 /*
- * workspace - структура, которая описывает файл
+ * Workspace describes a generic file under edit.
  */
 typedef struct {
-    segment_t *cursegm;     /* ptr на текущий segm */
-    int ulhclno;            /* номер строки, верхней на экране */
-    int ulhccno;            /* номер колонки, которая 0 на экране */
-    int curlno;             /* текущий номер строки */
-    int curflno;            /* номер строки, первой в cursegm */
-    int wfile;              /* номер файла, 0 - если нет вообще */
-    int ccol;               /* curorcol, когда не активен */
-    int crow;               /* cursorline, когда неактивен */
+    segment_t *cursegm;     /* Current segment */
+    int toprow;             /* Top left row on a display */
+    int topcol;             /* Top left column on a display */
+    int line;               /* Current line number */
+    int segmline;           /* Number of first line in the current segment */
+    int wfile;              /* File number, or 0 when not attached */
+    int cursorcol;          /* Saved cursorcol, when not active */
+    int cursorrow;          /* Saved cursorline, when not active */
 } workspace_t;
 
 workspace_t *curwksp, *pickwksp;
 
 /*
- * viewport - описатель окна на экране терминала
- * все координаты на экране, а также ltext и ttext, измеряются по отношению
- *      к (0,0) = начало экрана. Остальные 6 границ приводятся по отношению
- *      к ltext и ttext.
+ * Window - a region on the display.
+ * All display coordinates, and also text_topcol and text_toprow, are measured relative
+ * to (0,0) = top left of screen. Other 6 borders are relative to text_topcol and text_toprow.
  */
 typedef struct {
-    workspace_t *wksp;      /* Ссылка на workspace         */
-    workspace_t *altwksp;   /* Альтернативное workspace */
-    int prevport;           /* Номер пред. окна   */
-    int ltext;              /* Границы  текста (по отн. к 0,0) */
-    int rtext;              /* Длина в ширину                  */
-    int ttext;              /* Верхняя граница                 */
-    int btext;              /* Высота окна                     */
+    workspace_t *wksp;      /* Pointer to workspace */
+    workspace_t *altwksp;   /* Alternative workspace */
+    int prevwinnum;         /* Number of previous window */
+    int text_toprow;        /* Top row of text area */
+    int text_topcol;        /* Left column of text area */
+    int text_height;        /* Height of text area */
+    int text_width;         /* Width of text area */
     int lmarg;              /* границы окна == ..text или +1 */
     int rmarg;
     int tmarg;
     int bmarg;
-    int ledit;              /* область редактирования в окне */
-    int redit;
-    int tedit;
-    int bedit;
     char *firstcol;         /* Номера первых колонок, !=' '  */
     char *lastcol;          /*  -//-  последних -//-         */
     char *lmchars;          /* символы - левые ограничители  */
     char *rmchars;          /* символы - правые ограничители */
-} viewport_t;
+} window_t;
 
-viewport_t *portlist[MAXPORTLIST];
-int nportlist;
+window_t *winlist[MAXWINLIST];
+int nwinlist;
 
-viewport_t *curport;        /* текущее окно */
-viewport_t wholescreen;     /* весь экран   */
-viewport_t paramport;       /* окно для параметров */
+window_t *curwin;           /* Current window */
+window_t wholescreen;       /* The whole screen */
+window_t paramwin;          /* Window to enter arguments */
 
 /*
  * Copy-and-paste clipboard.
@@ -181,22 +176,22 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCTAB       7       /* tab                  ^I              */
 #define CCBACKTAB   010     /* tab left             ^X t            */
 #define CCPICK      011     /* pick                         f6      */
-#define CCMAKEPORT  012     /* make a viewport              f4      */
+#define CCMAKEWIN   012     /* make a window                f4      */
 #define CCOPEN      013     /* insert                       f7      */
 #define CCSETFILE   014     /* set file                     f5      */
-#define CCCHPORT    015     /* change port                  f3      */
+#define CCCHWINDOW  015     /* change window                f3      */
 #define CCPLPAGE    016     /* minus a page                 page down */
 #define CCGOTO      017     /* goto linenumber              f10     */
 #define CCDOCMD     020     /* execute a filter     ^X x            */
 #define CCMIPAGE    021     /* plus a page                  page up */
 #define CCPLSRCH    022     /* plus search          ^F              */
-#define CCRPORT     023     /* port right           ^X f            */
+#define CCRINDENT   023     /* shift view right     ^X f            */
 #define CCPLLINE    024     /* minus a line         ^X p            */
 #define CCDELCH     025     /* character delete     ^D      delete  */
 #define CCSAVEFILE  026     /* make new file                f2      */
 #define CCMILINE    027     /* plus a line          ^X n            */
 #define CCMISRCH    030     /* minus search         ^B              */
-#define CCLPORT     031     /* port left            ^X b            */
+#define CCLINDENT   031     /* shift view left      ^X b            */
 #define CCPUT       032     /* put                          f11     */
 #define CCTABS      033     /* set tabs             ^X t            */
 #define CCINSMODE   034     /* insert mode          ^X i    insert  */
@@ -210,7 +205,7 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMAC       0200    /* macro marker */
 
 int cursorline;             /* physical screen position of */
-int cursorcol;              /* cursor from (0,0)=ulhc of text in port */
+int cursorcol;              /* cursor from (0,0)=ulhc of text in window */
 
 extern char cntlmotions[];
 
@@ -222,9 +217,9 @@ extern int keysym;          /* Текущий входной символ, -1 - 
 char intrflag;              /* 1 - был сигнал INTR */
 int highlight_position;     /* Highlight the current cursor position */
 
-/* Умолчания */
-extern int defplline,defplpage,defmiline,defmipage,deflport,defrport,
-        definsert, defdelete, defpick;
+/* Defaults. */
+extern int defplline, defplpage, defmiline, defmipage,
+        deflindent, defrindent, definsert, defdelete, defpick;
 extern char deffile[];
 
 int message_displayed;      /* Arg area contains an error message */
@@ -298,13 +293,11 @@ void putstr (char *, int);      /* put a string, limited by column */
 void putblanks (int);           /* output a line of spaces */
 int endit (void);               /* end a session and write all */
 void switchfile (void);         /* switch to alternative file */
-void chgport (int);             /* switch to another window */
 void search (int);              /* search a text in file */
 void put (clipboard_t *, int, int); /* put a buffer into file */
 int msrbuf (clipboard_t *, char *, int); /* store or get a buffer by name */
 void gtfcn (int);               /* go to line by number */
 int savefile (char *, int);     /* save a file */
-void makeport (char *);         /* make new window */
 void error (char *);            /* display error message */
 char *param (int);              /* get a parameter */
 int chars (int);                /* read next line from file */
@@ -325,10 +318,12 @@ int mgotag (char *);            /* return a cursor back to named position */
 void execr (char **);           /* run command with given parameters */
 void telluser (char *, int);    /* display a message in arg area */
 void doreplace(int, int, int, int*); /* replace lines via pipe */
-void removeport (void);         /* remove last window */
-void switchport (viewport_t *); /* switch to given window */
-void drawport(viewport_t *, int); /* draw borders for a window */
-void setupviewport (viewport_t *, int, int, int, int, int);
+void win_make (char *);         /* make new window */
+void win_remove (void);         /* remove last window */
+void win_goto (int);            /* switch to window by number */
+void win_switch (window_t *);   /* switch to given window */
+void win_draw (window_t *, int); /* draw borders for a window */
+void win_create (window_t *, int, int, int, int, int);
                                 /* create new window */
 void dumpcbuf (void);           /* flush output buffer */
 char *s2i (char *, int *);      /* convert a string to number */
@@ -340,16 +335,16 @@ void openspaces (int, int, int, int); /* insert spaces */
 void closespaces (int, int, int, int); /* delete rectangular area */
 void pickspaces (int, int, int, int); /* get rectangular area to pick buffer */
 int interrupt (void);           /* we have been interrupted? */
-int wseek (workspace_t *, int); /* set file position by line number */
-int wposit (workspace_t *, int); /* set workspace position */
-void redisplay (workspace_t *, int, int, int, int);
+void wksp_switch (void);        /* switch to alternative workspace */
+int wksp_seek (workspace_t *, int); /* set file position by line number */
+int wksp_position (workspace_t *, int); /* set workspace position */
+void wksp_redraw (workspace_t *, int, int, int, int);
                                 /* redisplay windows of the file */
 void cgoto (int, int, int, int); /* scroll window to show a given area */
 char *append (char *, char *);  /* append strings */
 char *tgoto (char *, int, int); /* cursor addressing */
 segment_t *file2segm (int);     /* create a file descriptor list for a file */
 void puts1 (char *);            /* write a string to stdout */
-void switchwksp (void);         /* switch to alternative workspace */
 void checksegm (void);          /* check segm correctness */
 int segmwrite (segment_t *, int, int); /* write descriptor chain to file */
 void printsegm (segment_t *);   /* debug output of segm chains */

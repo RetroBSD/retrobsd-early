@@ -69,7 +69,7 @@ static int callexec()
     /*
      * 1. Разбираем размер области.
      */
-    i = curwksp->ulhclno + cursorline;
+    i = curwksp->toprow + cursorline;
     m = 1;
     cp = paramv;
     if (*cp == '-' || (*cp >= '0' && *cp <= '9')) {
@@ -173,7 +173,7 @@ void mainloop()
     /* Для команд с тремя вариантами аргументов */
     void (*lnfun)(int, int);
     void (*spfun)(int, int, int, int);
-    viewport_t *oport;
+    window_t *owin;
 
     /*
      * Обработка одного символа или команды
@@ -183,20 +183,20 @@ void mainloop()
 newnumber:
         keysym = -1;        /* mark the symbol as used */
 errclear:
-        oport = curport;
+        owin = curwin;
         k = cursorline;
         j = cursorcol;
-        switchport(&paramport);
-        paramport.redit = PARAMRINFO;
+        win_switch(&paramwin);
+        paramwin.text_width = PARAMRINFO;
         if (clr_arg_area) {
             if (! message_displayed) {
                 poscursor(0, 0);
                 putstr(blanks, PARAMRINFO);
             }
             poscursor(PARAMREDIT + 2, 0);
-            if (oport->wksp->wfile) {
+            if (owin->wksp->wfile) {
                 putstr("file ", PARAMRINFO);
-                putstr(file[oport->wksp->wfile].name, PARAMRINFO);
+                putstr(file[owin->wksp->wfile].name, PARAMRINFO);
             }
             putstr(" line ", PARAMRINFO);
             lnum_row = cursorline;
@@ -204,7 +204,7 @@ errclear:
         }
         /* Display the current line number. */
         poscursor(lnum_col, lnum_row);
-        i = oport->wksp->ulhclno + k + 1;
+        i = owin->wksp->toprow + k + 1;
         cp = ich + 8;
         *--cp = '\0';
         do {
@@ -216,8 +216,8 @@ errclear:
         while (cp != ich)
             *--cp = ' ';
         putstr(ich, PARAMRINFO);
-        switchport(oport);
-        paramport.redit = PARAMREDIT;
+        win_switch(owin);
+        paramwin.text_width = PARAMREDIT;
         poscursor(j, k);
         if (highlight_position) {
             putch(COCURS, 1);
@@ -255,13 +255,13 @@ nextkey:
                 goto nowriterr;
 
             /* Строки у нас нет? Дай! */
-            i = curwksp->ulhclno + cursorline;
+            i = curwksp->toprow + cursorline;
             if (clineno != i)
                 getlin(i);
 
             /* исключение символа */
             if (keysym == CCDELCH || (insert_mode && keysym == CCBACKSPACE)) {
-                int thiscol = cursorcol + curwksp->ulhccno;
+                int thiscol = cursorcol + curwksp->topcol;
                 int thisrow = cursorline;
 
                 if (keysym == CCBACKSPACE)
@@ -275,7 +275,7 @@ nextkey:
                 for (i=thiscol; i<cline_len-2; i++)
                     cline[i] = cline[i+1];
                 cline_len--;
-                thiscol -= curwksp->ulhccno;
+                thiscol -= curwksp->topcol;
                 putup(-(1+thiscol), cursorline);
                 poscursor(thiscol, thisrow);
                 cline_modified = 1;
@@ -283,10 +283,10 @@ nextkey:
                 goto nextkey;
             }
             /* Проверка на границу окна */
-            if (cursorcol > curport->rtext) {
+            if (cursorcol > curwin->text_width) {
                 if (cline_modified) {
                     putline(0);
-                    movep(defrport);
+                    movep(defrindent);
                     goto nextkey;
                 }
                 goto margerr;
@@ -297,7 +297,7 @@ nextkey:
                 movecursor(CCMOVELEFT);
                 keysym = ' ';
             }
-            i = cursorcol + curwksp->ulhccno;
+            i = cursorcol + curwksp->topcol;
             if (i >= (cline_max - 2))
                 excline(i + 2);
             if (i >= cline_len-1) {
@@ -307,7 +307,7 @@ nextkey:
                 cline_len = i+2;
             }
             else if (insert_mode) {
-                int thiscol = cursorcol + curwksp->ulhccno;
+                int thiscol = cursorcol + curwksp->topcol;
                 int thisrow = cursorline;
 
                 if (cline_len >= cline_max)
@@ -315,24 +315,27 @@ nextkey:
                 for (i=cline_len; i>thiscol; i--)
                     cline[i] = cline[i-1];
                 cline_len++;
-                thiscol -= curwksp->ulhccno;
+                thiscol -= curwksp->topcol;
                 putup(-(1 + thiscol), cursorline);
                 poscursor(thiscol, thisrow);
             }
-            /* Выставим границу */
-            if (cursorcol >= curport->rtext)
-                curport->redit = curport->rtext + 1;
-
+#if 0
+            /* Set the margin... I do not understand this (vak) */
+            if (cursorcol >= curwin->text_width)
+                curwin->edit_width = curwin->text_width + 1;
+#endif
             /* Замена символа */
             if (keysym == CCCTRLQUOTE)
                 keysym = COCURS;
-            if (cursorcol == curport->rtext - 10)
+            if (cursorcol == curwin->text_width - 10)
                 putcha(COBELL);
             cline[i] = keysym;
             putch(keysym, 1);
 
+#if 0
             /* Если переехали границу */
-            curport->redit = curport->rtext;
+            curwin->edit_width = curwin->text_width;
+#endif
             if (j)
                 movecursor(CCMOVELEFT);
             keysym = -1;
@@ -341,9 +344,9 @@ nextkey:
         /* Сдвиг вниз, если последняя строка  */
         if (keysym == CCRETURN) {
             putline(0);
-            if (cursorline == curport->btext)
+            if (cursorline == curwin->text_height)
                 movew(defplline);
-            i = curwksp->ulhccno;
+            i = curwksp->topcol;
             if (i !=0)
                 movep(-i);
             movecursor(keysym);
@@ -366,8 +369,8 @@ nextkey:
             goto nextkey;
         }
         /* Если граница поля */
-        if (cursorcol > curport->rtext)
-            poscursor(curport->rtext, cursorline);
+        if (cursorcol > curwin->text_width)
+            poscursor(curwin->text_width, cursorline);
         putline(0);
         switch (keysym) {
         case CCQUIT:
@@ -378,22 +381,22 @@ nextkey:
         case CCENTER:
             goto gotarg;
 
-        case CCLPORT:
-            movep(- deflport);
+        case CCLINDENT:
+            movep(- deflindent);
             continue;
 
         case CCSETFILE:
             switchfile();
             continue;
 
-        case CCCHPORT:
-            chgport(-1);
+        case CCCHWINDOW:
+            win_goto(-1);
             continue;
 
         case CCOPEN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            openlines(curwksp->ulhclno + cursorline, definsert);
+            openlines(curwksp->toprow + cursorline, definsert);
             continue;
 
         case CCMISRCH:
@@ -403,7 +406,7 @@ nextkey:
         case CCCLOSE:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            closelines(curwksp->ulhclno + cursorline, defdelete);
+            closelines(curwksp->toprow + cursorline, defdelete);
             continue;
 
         case CCPUT:
@@ -411,12 +414,12 @@ nextkey:
                 goto nowriterr;
             if (pickbuf->nrows == 0)
                 goto nopickerr;
-            put(pickbuf, curwksp->ulhclno + cursorline,
-                curwksp->ulhccno + cursorcol);
+            put(pickbuf, curwksp->toprow + cursorline,
+                curwksp->topcol + cursorcol);
             continue;
 
         case CCPICK:
-            picklines(curwksp->ulhclno + cursorline, defpick);
+            picklines(curwksp->toprow + cursorline, defpick);
             continue;
 
         case CCINSMODE:
@@ -428,15 +431,15 @@ nextkey:
             continue;
 
         case CCMIPAGE:
-            movew(- defmipage * (1 + curport->btext));
+            movew(- defmipage * (1 + curwin->text_height));
             continue;
 
         case CCPLSRCH:
             search(1);
             continue;
 
-        case CCRPORT:
-            movep(defrport);
+        case CCRINDENT:
+            movep(defrindent);
             continue;
 
         case CCPLLINE:
@@ -458,15 +461,15 @@ nextkey:
             goto notstrerr;
 
         case CCPLPAGE:
-            movew(defplpage * (1 + curport->btext));
+            movew(defplpage * (1 + curwin->text_height));
             continue;
 
-        case CCMAKEPORT:
-            makeport(deffile);
+        case CCMAKEWIN:
+            win_make(deffile);
             continue;
 
         case CCTABS:
-            settab(curwksp->ulhccno + cursorcol);
+            settab(curwksp->topcol + cursorcol);
             continue;
 
         case CCREDRAW:                  /* Redraw screen */
@@ -515,7 +518,7 @@ yesarg:
         case CCENTER:
             continue;
 
-        case CCLPORT:
+        case CCLINDENT:
             if (paramtype <= 0)
                 goto notstrerr;
             if (s2i(paramv, &i))
@@ -534,14 +537,14 @@ yesarg:
             editfile(paramv, 0, 0, 1, 1);
             continue;
 
-        case CCCHPORT:
+        case CCCHWINDOW:
             if (paramtype <= 0)
                 goto notstrerr;
             if (s2i(paramv, &i))
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
-            chgport(i - 1);
+            win_goto(i - 1);
             continue;
 
         case CCOPEN:
@@ -552,8 +555,8 @@ yesarg:
                 spfun = openspaces;
                 goto spdir;
             }
-            splitline(curwksp->ulhclno + paramr0,
-                paramc0 + curwksp->ulhccno);
+            splitline(curwksp->toprow + paramr0,
+                paramc0 + curwksp->topcol);
             continue;
 
         case CCMISRCH:
@@ -581,8 +584,8 @@ yesarg:
                 spfun = closespaces;
                 goto spdir;
             }
-            combineline(curwksp->ulhclno + paramr0,
-                paramc0 + curwksp->ulhccno);
+            combineline(curwksp->toprow + paramr0,
+                paramc0 + curwksp->topcol);
             continue;
 
         case CCPUT:
@@ -597,8 +600,8 @@ yesarg:
                 goto nowriterr;
             if (deletebuf->nrows == 0)
                 goto nodelerr;
-            put(deletebuf, curwksp->ulhclno + cursorline,
-                curwksp->ulhccno + cursorcol);
+            put(deletebuf, curwksp->toprow + cursorline,
+                curwksp->topcol + cursorcol);
             continue;
 
         case CCMOVELEFT:
@@ -693,10 +696,10 @@ yesarg:
                 goto notstrerr;
             if (s2i(paramv, &i))
                 goto notinterr;
-            movew(- i * (1 + curport->btext));
+            movew(- i * (1 + curwin->text_height));
             continue;
 
-        case CCRPORT:
+        case CCRINDENT:
             if (paramtype <= 0)
                 goto notstrerr;
             if (s2i(paramv, &i))
@@ -732,7 +735,7 @@ yesarg:
             if (paramtype < 0)
                 goto notstrerr;
             else if (paramtype == 0)
-                movew(cursorline - curport->btext);
+                movew(cursorline - curwin->text_height);
             else if (paramtype > 0) {
                 if (s2i(paramv, &i))
                     goto notinterr;
@@ -754,22 +757,22 @@ yesarg:
                 goto notstrerr;
             if (s2i(paramv, &i))
                 goto notinterr;
-            movew(i * (1 + curport->btext));
+            movew(i * (1 + curwin->text_height));
             continue;
 
-        case CCMAKEPORT:
+        case CCMAKEWIN:
             if (paramtype == 0)
-                removeport();
+                win_remove();
             else if (paramtype < 0)
                 goto notstrerr;
             else {
                 dechars(paramv, paraml);
-                makeport(paramv);
+                win_make(paramv);
             }
             continue;
 
         case CCTABS:
-            clrtab(curwksp->ulhccno + cursorcol);
+            clrtab(curwksp->topcol + cursorcol);
             continue;
 
         default:
@@ -786,14 +789,14 @@ spdir:
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
-            (*lnfun)(curwksp->ulhclno + cursorline, i);
+            (*lnfun)(curwksp->toprow + cursorline, i);
         } else {
             if (paramc1 == paramc0) {
-                (*lnfun)(curwksp->ulhclno + paramr0,
+                (*lnfun)(curwksp->toprow + paramr0,
                     (paramr1 - paramr0) + 1);
             } else
-                (*spfun)(curwksp->ulhclno + paramr0,
-                    curwksp->ulhccno + paramc0,
+                (*spfun)(curwksp->toprow + paramr0,
+                    curwksp->topcol + paramc0,
                     (paramc1 - paramc0),
                     (paramr1 - paramr0) + 1);
         }
@@ -863,17 +866,17 @@ void search(delta)
     sk = searchkey;
     while (*sk++)
         lkey++;
-    ln = lin + curwksp->ulhclno;
+    ln = lin + curwksp->toprow;
     getlin (ln);
     putline(0);
-    at = cline + col + curwksp->ulhccno;
+    at = cline + col + curwksp->topcol;
     for (;;) {
         at += delta;
         while (at < cline || at >  cline + cline_len - lkey) {
             /* Прервать, если было прерывание с терминала */
             i = interrupt();
             if (i || (ln += delta) < 0 ||
-                (wposit(curwksp, ln) && delta == 1))
+                (wksp_position(curwksp, ln) && delta == 1))
             {
                 putup(lin, lin);
                 poscursor(col, lin);

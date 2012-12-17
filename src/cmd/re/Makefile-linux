@@ -21,4 +21,4 @@ re:             $(OBJ)
 $(OBJ):         r.defs.h
 
 clean:
-		rm -f *.o *~ re
+		rm -f *.o *~ re *.dis *.elf

@@ -23,9 +23,9 @@ void putup(lo, lf)
     if (lo > 0)
         lo = 0; /* Нач. колонка */
     l1 = lo;
-    lmc = (curport->lmarg == curport->ltext ? 0 :
-        curwksp->ulhccno == 0 ? LMCH : MLMCH);
-    rmargflg = (curport->ltext + curport->rtext < curport->rmarg);
+    lmc = (curwin->lmarg == curwin->text_topcol ? 0 :
+        curwksp->topcol == 0 ? LMCH : MLMCH);
+    rmargflg = (curwin->text_topcol + curwin->text_width < curwin->rmarg);
     while (l0 <= lf) {
         lo = l1;
         if (l0 < 0) {
@@ -35,17 +35,17 @@ void putup(lo, lf)
         } else {
             if (l0 != lf && interrupt())
                 return;
-            i = wseek(curwksp, curwksp->ulhclno + l0);
+            i = wksp_seek(curwksp, curwksp->toprow + l0);
             if (i && lmc != 0)
                 lmc = ELMCH;
         }
-        if (lmc == curport->lmchars[l0] || lmc == 0 || lo < 0)
+        if (lmc == curwin->lmchars[l0] || lmc == 0 || lo < 0)
             poscursor(0, l0);
         else {
             poscursor(-1, l0);
             putch(lmc, 0);
         }
-        curport->lmchars[l0] = lmc;
+        curwin->lmchars[l0] = lmc;
         if (rmargflg != 0)
             rmargflg = RMCH;
         if (i != 0)
@@ -53,13 +53,13 @@ void putup(lo, lf)
         else {
             if (lf >= 0)
                 chars(1);
-            i = (cline_len - 1) - curwksp->ulhccno;
+            i = (cline_len - 1) - curwksp->topcol;
             if (i < 0)
                 i = 0;
-            else if (i > curport->rtext) {
-                if (i > 1 + curport->rtext && rmargflg)
+            else if (i > curwin->text_width) {
+                if (i > 1 + curwin->text_width && rmargflg)
                     rmargflg = MRMCH;
-                i = 1 + curport->rtext;
+                i = 1 + curwin->text_width;
             }
         }
         /*
@@ -67,42 +67,42 @@ void putup(lo, lf)
          * Пытаемся пропустить начальные пробелы
          */
         if (lo == 0) {
-            for (fc=0; cline != 0 && cline[curwksp->ulhccno + fc]==' '; fc++);
-            j = curport->rtext+1;
+            for (fc=0; cline != 0 && cline[curwksp->topcol + fc]==' '; fc++);
+            j = curwin->text_width+1;
             if (fc > j)
                 fc = j;
             if (fc > 127)
                 fc = 127;
-            lo = (curport->firstcol)[l0] > fc ?
-                - fc : - (curport->firstcol)[l0];
+            lo = (curwin->firstcol)[l0] > fc ?
+                - fc : - (curwin->firstcol)[l0];
             if (i + lo <= 0)
                 lo = 0;
             else
-                curport->firstcol[l0] = fc;
+                curwin->firstcol[l0] = fc;
         }
         if (lo)
             poscursor(-lo, l0);
         j = i + lo;
-        cp = cline + curwksp->ulhccno - lo;
+        cp = cline + curwksp->topcol - lo;
         while(j--)
             putcha(*cp++);
         cursorcol += (i + lo);
-        if (curport->lastcol[l0] < cursorcol)
-            curport->lastcol[l0] = cursorcol;
+        if (curwin->lastcol[l0] < cursorcol)
+            curwin->lastcol[l0] = cursorcol;
         /* Хвост строки заполняем пробелами */
-        k = (j = curport->lastcol[l0]) - i;
+        k = (j = curwin->lastcol[l0]) - i;
         if (k > 0) {
             putblanks(k);
         }
-        if (curport->ltext + cursorcol >= NCOLS)
-            cursorcol = - curport->ltext;
-        if (rmargflg && rmargflg != curport->rmchars[l0]) {
-            poscursor(curport->rmarg - curport->ltext, l0);
+        if (curwin->text_topcol + cursorcol >= NCOLS)
+            cursorcol = - curwin->text_topcol;
+        if (rmargflg && rmargflg != curwin->rmchars[l0]) {
+            poscursor(curwin->rmarg - curwin->text_topcol, l0);
             putch(rmargflg,0);
         } else
             movecursor(0);
-        curport->rmchars[l0] = rmargflg;
-        curport->lastcol[l0] = (k > 0 ? i : j);
+        curwin->rmchars[l0] = rmargflg;
+        curwin->lastcol[l0] = (k > 0 ? i : j);
         ++l0;
     }
 }
@@ -139,8 +139,8 @@ void poscursor(col, lin)
             return;
         }
     }
-    scol = col + curport->ltext;
-    slin = lin + curport->ttext;    /* screen col, lin */
+    scol = col + curwin->text_topcol;
+    slin = lin + curwin->text_toprow;    /* screen col, lin */
     cursorcol = col;
     cursorline = lin;
     pcursor(scol, slin);            /* direct positioning */
@@ -175,7 +175,7 @@ void movecursor(arg)
         --lin;
         break;
     case CCRETURN:              /* return */
-        col = curport->ledit;
+        col = 0;
         /* fall through... */
     case CCMOVEDOWN:            /* move down 1 line */
         ++lin;
@@ -188,28 +188,28 @@ void movecursor(arg)
         break;
     case CCTAB:                 /* tab */
         i = 0;
-        col = col + curwksp->ulhccno;
+        col = col + curwksp->topcol;
         while (col >= tabstops[i])
             i++;
-        col = tabstops[i] - curwksp->ulhccno;
+        col = tabstops[i] - curwksp->topcol;
         break;
     case CCBACKTAB:             /* tab left */
         i = 0;
-        col = col + curwksp->ulhccno;
+        col = col + curwksp->topcol;
         while (col >  tabstops[i])
             i++;
-        col = (i ? tabstops[i-1] - curwksp->ulhccno : -1);
+        col = (i ? tabstops[i-1] - curwksp->topcol : -1);
         break;
     }
-    if (col > curport->redit)
-        col = curport->ledit;
-    else if (col < curport->ledit)
-        col = curport->redit;
+    if (col > curwin->text_width)
+        col = 0;
+    else if (col < 0)
+        col = curwin->text_width;
 
-    if (lin < curport->tedit)
-        lin = curport->bedit;
-    else if (lin > curport->bedit)
-        lin = curport->tedit;
+    if (lin < 0)
+        lin = curwin->text_height;
+    else if (lin > curwin->text_height)
+        lin = 0;
 
     poscursor(col, lin);
 }
@@ -222,19 +222,19 @@ void putch(j, flg)
     int j, flg;
 {
     if (flg && keysym != ' ') {
-        if (curport->firstcol[cursorline] > cursorcol)
-            curport->firstcol[cursorline] = cursorcol;
-        if (curport->lastcol[cursorline] <= cursorcol)
-            curport->lastcol[cursorline] = cursorcol + 1;
+        if (curwin->firstcol[cursorline] > cursorcol)
+            curwin->firstcol[cursorline] = cursorcol;
+        if (curwin->lastcol[cursorline] <= cursorcol)
+            curwin->lastcol[cursorline] = cursorcol + 1;
     }
     ++cursorcol;
-    if (curport->ltext + cursorcol >= NCOLS)
-        cursorcol = - curport->ltext;
+    if (curwin->text_topcol + cursorcol >= NCOLS)
+        cursorcol = - curwin->text_topcol;
     putcha(j);
     if (cursorcol <= 0)
-        poscursor(curport->ledit,
-            cursorline < curport->tedit ? curport->tedit :
-            cursorline > curport->bedit ? curport->tedit :
+        poscursor(0,
+            cursorline < 0 ? 0 :
+            cursorline > curwin->text_height ? 0 :
             cursorline);
     movecursor(0);
 }
@@ -259,7 +259,7 @@ char *param(macro)
     char *cp,*c2;
     int c;
     register int i,pn;
-    viewport_t *w;
+    window_t *w;
 #define LPARAM 20       /* length increment */
 
     if (paraml != 0 && paramv != 0)
@@ -268,10 +268,10 @@ char *param(macro)
     paramr1 = paramr0 = cursorline;
     putch(COCURS,1);
     poscursor(cursorcol,cursorline);
-    w = curport;
+    w = curwin;
 back:
     telluser(macro ? "mac: " : "arg: ", 0);
-    switchport(&paramport);
+    win_switch(&paramwin);
     poscursor(5,0);
     do {
         keysym = -1;
@@ -282,7 +282,7 @@ back:
         goto rmac;
     if (MOVECMD(keysym)) {
         telluser("arg: *** cursor defined ***", 0);
-        switchport(w);
+        win_switch(w);
         poscursor(paramc0, paramr0);
 t0:
         while (MOVECMD(keysym)) {
@@ -332,7 +332,7 @@ loop:
         }
         /* Конец ввода параметра */
         if ((! macro && keysym < ' ') || c==CCBACKSPACE || c==CCQUIT) {
-            if (c == CCBACKSPACE && cursorcol != curport->ledit) {
+            if (c == CCBACKSPACE && cursorcol != 0) {
                 /* backspace */
                 if (pn == 0) {
                     keysym = -1;
@@ -369,7 +369,7 @@ loop:
         }
         paramtype = 1;
     }
-    switchport(w);
+    win_switch(w);
     putup(paramr0, paramr0);
     poscursor(paramc0, paramr0);
     return (paramv);
@@ -379,38 +379,37 @@ loop:
  * Draw borders for a window.
  * When vertf, draw a vertical borders.
  */
-void drawport(newp, vertf)
-    viewport_t *newp;
+void win_draw(win, vertf)
+    register window_t *win;
     int vertf;
 {
-    register viewport_t *newport;
-    register int i, c;
-    int j;
+    register int i;
 
-    newport = newp;
-    switchport(&wholescreen);
-    if(newport->tmarg != newport->ttext) {
-        poscursor(newport->lmarg,newport->tmarg);
-        for (i = newport->lmarg; i <= newport->rmarg; i++)
+    win_switch(&wholescreen);
+    if (win->tmarg != win->text_toprow) {
+        poscursor(win->lmarg, win->tmarg);
+        for (i = win->lmarg; i <= win->rmarg; i++)
             putch(TMCH, 0);
     }
-    if (vertf)
-        for (j = newport->tmarg + 1; j <= newport->bmarg - 1; j++) {
-            c = newport->lmchars[j - newport->tmarg - 1];
+    if (vertf) {
+        int j;
+        for (j = win->tmarg + 1; j <= win->bmarg - 1; j++) {
+            int c = win->lmchars[j - win->tmarg - 1];
             if (c != 0) {
-                poscursor(newport->lmarg, j);
+                poscursor(win->lmarg, j);
                 putch(c, 0);
-                poscursor(newport->rmarg, j);
-                putch(newport->rmchars[j - newport->tmarg - 1], 0);
+                poscursor(win->rmarg, j);
+                putch(win->rmchars[j - win->tmarg - 1], 0);
             }
         }
-    if (newport->tmarg != newport->ttext) {
-        poscursor(newport->lmarg, newport->bmarg);
-        for (i = newport->lmarg; i <= newport->rmarg; i++)
+    }
+    if (win->tmarg != win->text_toprow) {
+        poscursor(win->lmarg, win->bmarg);
+        for (i = win->lmarg; i <= win->rmarg; i++)
             putch(BMCH, 0);
     }
-    /* poscursor(newport->lmarg + 1,newport->tmarg + 1); */
-    switchport(newport);
+    /* poscursor(win->lmarg + 1, win->tmarg + 1); */
+    win_switch(win);
 }
 
 /*
@@ -435,21 +434,21 @@ void telluser(msg, col)
     char *msg;
     int col;
 {
-    viewport_t *oldport;
+    window_t *oldwin;
     register int c,l;
-    oldport = curport;
+    oldwin = curwin;
     c = cursorcol;
     l = cursorline;
-    switchport(&paramport);
+    win_switch(&paramwin);
     if (col == 0)
     {
         poscursor(0,0);
-        putblanks(paramport.redit);
+        putblanks(paramwin.text_width);
     }
     poscursor(col,0);
     /* while (*msg) putch(*msg++, 0); */
     putstr(msg, PARAMREDIT);
-    switchport(oldport);
+    win_switch(oldwin);
     poscursor(c,l);
     dumpcbuf();
 }
@@ -461,26 +460,26 @@ void rescreen()
 {
     register int i;
     int j;
-    register viewport_t *curp, *curp0 = curport;
+    register window_t *curp, *curp0 = curwin;
     int col = cursorcol, lin = cursorline;
 
-    switchport(&wholescreen);
+    win_switch(&wholescreen);
     cursorcol = cursorline = 0;
     putcha(COFIN);
     putcha(COSTART);
     putcha(COHO);
-    for (j=0; j<nportlist; j++) {
-        switchport(portlist[j]);
-        curp = curport;
-        for (i=0; i<curport->btext+1; i++) {
+    for (j=0; j<nwinlist; j++) {
+        win_switch(winlist[j]);
+        curp = curwin;
+        for (i=0; i<curwin->text_height+1; i++) {
             curp->firstcol[i] = 0;
-            curp->lastcol[i] = 0; /* curport->rtext;*/
+            curp->lastcol[i] = 0; /* curwin->text_width;*/
             curp->lmchars[i] = curp->rmchars[i] =' ';
         }
-        drawport(curp, 0);
-        putup(0, curp->btext);
+        win_draw(curp, 0);
+        putup(0, curp->text_height);
     }
-    switchport(curp0);
+    win_switch(curp0);
     poscursor(col, lin);
 }
 

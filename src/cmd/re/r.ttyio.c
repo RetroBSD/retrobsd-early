@@ -333,11 +333,11 @@ new:
             goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */
-            keysym = CCRPORT;
+            keysym = CCRINDENT;
             goto readychr;
         case 'b':           /* ^X b */
         case 'B':           /* ^X B */
-            keysym = CCLPORT;
+            keysym = CCLINDENT;
             goto readychr;
         case 'h':           /* ^X h */
         case 'H':           /* ^X H */

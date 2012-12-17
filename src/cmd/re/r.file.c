@@ -283,16 +283,16 @@ int editfile(filename, line, col, mkflg, puflg)
     }
     /* Выталкиваем буфер, так как здесь долгая операция */
     dumpcbuf();
-    switchwksp();
+    wksp_switch();
     if (file[fn].chain == (segment_t *)0)
         file[fn].chain = file2segm(fn);
     curwksp->cursegm = file[fn].chain;
     curfile = curwksp->wfile = fn;
-    curwksp->curlno = curwksp->curflno = 0;
-    curwksp->ulhclno = line;
-    curwksp->ulhccno = col;
+    curwksp->line = curwksp->segmline = 0;
+    curwksp->toprow = line;
+    curwksp->topcol = col;
     if (puflg) {
-        putup(0, curport->btext);
+        putup(0, curwin->text_height);
         poscursor(0, defplline);
     }
     return(1);

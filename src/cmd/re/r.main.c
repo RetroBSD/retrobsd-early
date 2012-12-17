@@ -25,12 +25,12 @@ int keysym = -1;         /* -1 означает, что символ испол�
 
 /* Параметры для движения по файлу */
 
-int defplline = 10;                 /* +LINE       */
-int defmiline = 10;                 /* -LINE       */
-int defplpage =  1;                 /* +PAGE      */
-int defmipage =  1;                 /* -PAGE      */
-int deflport  = 30;                 /* LEFT PORT  */
-int defrport  = 30;                 /* RIGHT PORT */
+int defplline  = 10;                /* +LINE       */
+int defmiline  = 10;                /* -LINE       */
+int defplpage  =  1;                /* +PAGE      */
+int defmipage  =  1;                /* -PAGE      */
+int deflindent = 30;                /* LEFT INDENT */
+int defrindent = 30;                /* RIGHT INDENT */
 int definsert  = 1;                 /* OPEN       */
 int defdelete  = 1;                 /* CLOSE      */
 int defpick    = 1;                 /* PICK       */
@@ -155,12 +155,12 @@ static void startup(restart)
     ttstartup();
 
     /* Устанавливаем описатель всего экрана */
-    setupviewport(&wholescreen, 0, NCOLS-1, 0, NLINES-1, 0);
+    win_create(&wholescreen, 0, NCOLS-1, 0, NLINES-1, 0);
 
     /* Устанавливаем описатель окна параметров */
-    setupviewport(&paramport, 0, NCOLS-1, NLINES-NPARAMLINES, NLINES-1, 0);
-    paramport.rtext--;
-    paramport.redit = PARAMREDIT;
+    win_create(&paramwin, 0, NCOLS-1, NLINES-NPARAMLINES, NLINES-1, 0);
+    paramwin.text_width--;
+    paramwin.text_width = PARAMREDIT;
 
     /* Закрываем терминал на прием сообщений от других */
     oldttmode = getpriv(0);
@@ -173,7 +173,7 @@ static void startup(restart)
         signal(i, sig);
     signal(SIGINT, testsig);
     signal(SIGQUIT, igsig);
-    curport = &wholescreen;
+    curwin = &wholescreen;
     putcha(COSTART);
     putcha(COHO);
 }
@@ -183,12 +183,12 @@ static void startup(restart)
  */
 static void makestate()
 {
-    register viewport_t *port;
+    register window_t *win;
 
-    nportlist = 1;
-    port = portlist[0] = (viewport_t*) salloc(sizeof(viewport_t));
-    setupviewport(portlist[0], 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, 1);
-    drawport(port, 0);
+    nwinlist = 1;
+    win = winlist[0] = (window_t*) salloc(sizeof(window_t));
+    win_create(winlist[0], 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, 1);
+    win_draw(win, 0);
     poscursor(0, 0);
 }
 
@@ -199,29 +199,29 @@ static void makestate()
 static void getstate(ichar)
     char ichar;
 {
-    int nletters, lmarg, rmarg, tmarg, bmarg, row, col, portnum, gf;
+    int nletters, lmarg, rmarg, tmarg, bmarg, row, col, winnum, gf;
     register int i, n;
     register char *f1;
     char *fname;
     int gbuf;
-    viewport_t *port;
+    window_t *win;
 
     if (ichar != '!' || (gbuf = open(rfile, 0)) <= 0 ||
-        (nportlist = get1w(gbuf)) == -1) {
+        (nwinlist = get1w(gbuf)) == -1) {
 make:   makestate();
         ichar = ' ';
         return;
     }
-    portnum = get1w(gbuf);
-    for (n=0; n<nportlist; n++) {
-        port = portlist[n] = (viewport_t*) salloc(sizeof(viewport_t));
-        port->prevport = get1w(gbuf);
+    winnum = get1w(gbuf);
+    for (n=0; n<nwinlist; n++) {
+        win = winlist[n] = (window_t*) salloc(sizeof(window_t));
+        win->prevwinnum = get1w(gbuf);
         lmarg = get1w(gbuf);
         rmarg = get1w(gbuf);
         tmarg = get1w(gbuf);
         bmarg = get1w(gbuf);
-        setupviewport(port, lmarg, rmarg, tmarg, bmarg, 1);
-        drawport(port, 0);
+        win_create(win, lmarg, rmarg, tmarg, bmarg, 1);
+        win_draw(win, 0);
         gf = 0;
         nletters = get1w(gbuf);
         if (nletters != 0) {
@@ -233,9 +233,9 @@ make:   makestate();
             col = get1w(gbuf);
             if (editfile(fname, row, col, 0, 0) == 1)
                 gf = 1;
-            curwksp->ccol = get1w(gbuf);
-            curwksp->crow = get1w(gbuf);
-            poscursor(curwksp->ccol, curwksp->crow);
+            curwksp->cursorcol = get1w(gbuf);
+            curwksp->cursorrow = get1w(gbuf);
+            poscursor(curwksp->cursorcol, curwksp->cursorrow);
         }
         nletters = get1w(gbuf);
         if (nletters < 0)
@@ -246,22 +246,22 @@ make:   makestate();
         } while (*f1++);
         row = get1w(gbuf);
         col = get1w(gbuf);
-        if (editfile(fname, row, col, 0, (n != portnum)) == 1)
+        if (editfile(fname, row, col, 0, (n != winnum)) == 1)
             gf = 1;
-        curwksp->ccol = get1w(gbuf);
-        curwksp->crow = get1w(gbuf);
+        curwksp->cursorcol = get1w(gbuf);
+        curwksp->cursorrow = get1w(gbuf);
         if (gf == 0) {
-            if (editfile(deffile, 0, 0, 0, (n != portnum)) <= 0)
+            if (editfile(deffile, 0, 0, 0, (n != winnum)) <= 0)
                 error("Default file gone: notify sys admin.");
-            curwksp->ccol = curwksp->crow = 0;
+            curwksp->cursorcol = curwksp->cursorrow = 0;
         }
-        poscursor(curwksp->ccol, curwksp->crow);
+        poscursor(curwksp->cursorcol, curwksp->cursorrow);
     }
-    switchport(portlist[portnum]);
-    poscursor(curwksp->ccol, curwksp->crow);
-    if (nportlist > 1)
-        for (i=0; i<nportlist; i++)
-            chgport(-1);
+    win_switch(winlist[winnum]);
+    poscursor(curwksp->cursorcol, curwksp->cursorrow);
+    if (nwinlist > 1)
+        for (i=0; i<nwinlist; i++)
+            win_goto(-1);
     close(gbuf);
 }
 
@@ -289,31 +289,31 @@ static void writefile(code1, str, code2)
 static void savestate()
 {
     int i, nletters;
-    register int portnum;
+    register int winnum;
     register char *f1;
     char *fname;
-    register viewport_t *port;
+    register window_t *win;
     int sbuf;
 
-    curwksp->ccol = cursorcol;
-    curwksp->crow = cursorline;
+    curwksp->cursorcol = cursorcol;
+    curwksp->cursorrow = cursorline;
     unlink(rfile);
     sbuf = creat(rfile, FILEMODE);
     if (sbuf <= 0)
         return;
-    put1w(nportlist, sbuf);
-    for (portnum=0; portnum < nportlist; portnum++)
-        if (portlist[portnum] == curport)
+    put1w(nwinlist, sbuf);
+    for (winnum=0; winnum < nwinlist; winnum++)
+        if (winlist[winnum] == curwin)
             break;
-    put1w(portnum, sbuf);
-    for (i=0; i<nportlist; i++) {
-        port = portlist[i];
-        put1w(port->prevport, sbuf);
-        put1w(port->lmarg, sbuf);
-        put1w(port->rmarg, sbuf);
-        put1w(port->tmarg, sbuf);
-        put1w(port->bmarg, sbuf);
-        f1 = fname = file[port->altwksp->wfile].name;
+    put1w(winnum, sbuf);
+    for (i=0; i<nwinlist; i++) {
+        win = winlist[i];
+        put1w(win->prevwinnum, sbuf);
+        put1w(win->lmarg, sbuf);
+        put1w(win->rmarg, sbuf);
+        put1w(win->tmarg, sbuf);
+        put1w(win->bmarg, sbuf);
+        f1 = fname = file[win->altwksp->wfile].name;
         if (f1) {
             while (*f1++);
             nletters = f1 - fname;
@@ -322,14 +322,14 @@ static void savestate()
             do {
                 put1c(*f1, sbuf);
             } while (*f1++);
-            put1w(port->altwksp->ulhclno, sbuf);
-            put1w(port->altwksp->ulhccno, sbuf);
-            put1w(port->altwksp->ccol, sbuf);
-            put1w(port->altwksp->crow, sbuf);
+            put1w(win->altwksp->toprow, sbuf);
+            put1w(win->altwksp->topcol, sbuf);
+            put1w(win->altwksp->cursorcol, sbuf);
+            put1w(win->altwksp->cursorrow, sbuf);
         } else
             put1w(0, sbuf);
 
-        f1 = fname = file[port->wksp->wfile].name;
+        f1 = fname = file[win->wksp->wfile].name;
         if (f1) {
             while (*f1++);
             nletters = f1 - fname;
@@ -338,10 +338,10 @@ static void savestate()
             do {
                 put1c(*f1, sbuf);
             } while (*f1++);
-            put1w(port->wksp->ulhclno, sbuf);
-            put1w(port->wksp->ulhccno, sbuf);
-            put1w(port->wksp->ccol, sbuf);
-            put1w(port->wksp->crow, sbuf);
+            put1w(win->wksp->toprow, sbuf);
+            put1w(win->wksp->topcol, sbuf);
+            put1w(win->wksp->cursorcol, sbuf);
+            put1w(win->wksp->cursorrow, sbuf);
         }
     }
     close(sbuf);
@@ -396,12 +396,12 @@ int main(nargs, args)
         i = defplline + 1;
         if ((nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
             i = defplline+1;
-        poscursor(curwksp->ccol, curwksp->crow);
+        poscursor(curwksp->cursorcol, curwksp->cursorrow);
         writefile(CCENTER, args[1], CCSETFILE);
         if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
             /* Failed to open file - use empty buffer. */
-            putup(0, curport->btext);
-            poscursor(curwksp->ccol, curwksp->crow);
+            putup(0, curwin->text_height);
+            poscursor(curwksp->cursorcol, curwksp->cursorrow);
         } else {
             /* File opened. */
             if (nargs > 2 && i > 1)
@@ -409,8 +409,8 @@ int main(nargs, args)
         }
     } else {
         /* Saved session restored. */
-        putup(0, curport->btext);
-        poscursor(curwksp->ccol, curwksp->crow);
+        putup(0, curwin->text_height);
+        poscursor(curwksp->cursorcol, curwksp->cursorrow);
     }
     telluser("", 0);
     mainloop();
@@ -469,12 +469,12 @@ void fatal(s)
                 printf("\n*** File[%d] = %s\n", i, file[i].name);
                 printsegm(file[i].chain);
             }
-        for (i = 0; i < nportlist; i++) {
-            w = portlist[i]->wksp;
-            printf("\nViewport #%d: chain %d, current line %d at block %p,\n",
-                i, w->wfile, w->curlno, w->cursegm);
+        for (i = 0; i < nwinlist; i++) {
+            w = winlist[i]->wksp;
+            printf("\nWindow #%d: chain %d, current line %d at block %p,\n",
+                i, w->wfile, w->line, w->cursegm);
             printf(" first line %d, ulhc (%d,%d)\n",
-                w->curflno, w->ulhccno, w->ulhclno);
+                w->segmline, w->topcol, w->toprow);
         }
         for (i=12; i; i--)
             signal(i, 0);

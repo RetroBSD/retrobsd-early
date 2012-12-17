@@ -402,7 +402,7 @@ void putbks(col, n)
  * После этого chars(0) считает требуемую строку.
  * Код ответа = 1, если такой строки нет, 0 если ОК
  */
-int wseek(wksp, lno)
+int wksp_seek(wksp, lno)
     workspace_t *wksp;
     int lno;
 {
@@ -411,12 +411,12 @@ int wseek(wksp, lno)
     register int j, l;
 
     /* 1. Получим segm, в котором "сидит" данная строка */
-    if (wposit(wksp, lno))
+    if (wksp_position(wksp, lno))
         return (1);
 
     /* Теперь вычислим смещение */
     l = wksp->cursegm->seek;
-    i = lno - wksp->curflno;
+    i = lno - wksp->segmline;
     cp = &(wksp->cursegm->data);
     while (i-- != 0) {
         if ((j = *(cp++)) & 0200) {
@@ -432,7 +432,7 @@ int wseek(wksp, lno)
 /*
  * Set workspace position to segm with given line.
  */
-int wposit(wk,lno)
+int wksp_position(wk,lno)
     workspace_t *wk;
     int lno;
 {
@@ -441,21 +441,21 @@ int wposit(wk,lno)
     wksp = wk;
     if (lno < 0)
         fatal("Wposit neg arg");
-    while (lno >= (wksp->curflno + wksp->cursegm->nlines)) {
+    while (lno >= (wksp->segmline + wksp->cursegm->nlines)) {
         if (wksp->cursegm->fdesc == 0) {
-            wksp->curlno = wksp->curflno;
+            wksp->line = wksp->segmline;
             return (1);
         }
-        wksp->curflno += wksp->cursegm->nlines;
+        wksp->segmline += wksp->cursegm->nlines;
         wksp->cursegm = wksp->cursegm->next;
     }
-    while (lno < wksp->curflno) {
+    while (lno < wksp->segmline) {
         if ((wksp->cursegm = wksp->cursegm->prev) == 0)
             fatal("Wposit 0 prev");
-        wksp->curflno -= wksp->cursegm->nlines;
+        wksp->segmline -= wksp->cursegm->nlines;
     }
-    if (wksp->curflno < 0) fatal("WPOSIT LINE CT LOST");
-    wksp->curlno = lno;
+    if (wksp->segmline < 0) fatal("WPOSIT LINE CT LOST");
+    wksp->line = lno;
     return 0;
 }
 
@@ -464,29 +464,32 @@ int wposit(wk,lno)
  */
 void switchfile()
 {
-    if (curport->altwksp->wfile == 0) {
+    if (curwin->altwksp->wfile == 0) {
         if (editfile(deffile, 0, 0, 0, 1) <= 0)
             error("Default file gone: notify sys admin.");
         return;
     }
-    switchwksp();
-    putup(0, curport->btext);
-    poscursor(curwksp->ccol, curwksp->crow);
+    wksp_switch();
+    putup(0, curwin->text_height);
+    poscursor(curwksp->cursorcol, curwksp->cursorrow);
 }
 
 /*
  * Switch to alternative workspace.
  */
-void switchwksp()
+void wksp_switch()
 {
-    register workspace_t *tempwksp;
+    register workspace_t *oldwksp;
 
-    curwksp->ccol = cursorcol;
-    curwksp->crow = cursorline;
-    tempwksp = curwksp;
-    curwksp = curport->wksp = curport->altwksp;
+    curwksp->cursorcol = cursorcol;
+    curwksp->cursorrow = cursorline;
+
+    oldwksp = curwksp;
+    curwksp = curwin->altwksp;
     curfile = curwksp->wfile;
-    curport->altwksp = tempwksp;
+
+    curwin->wksp = curwksp;
+    curwin->altwksp = oldwksp;
 }
 
 /*
@@ -518,7 +521,7 @@ static segment_t *blanklines(n)
 
 /*
  * разломать segm по строке n в пространстве
- * w. curlno = curflno при возврате, и cursegm указывает на первую
+ * w. line = segmline при возврате, и cursegm указывает на первую
  * строку после разрыва (которая может быть строкой из конечного
  * блока). Исходный segm остается, возможно, с неиспользуемым
  * остатком списка длин.
@@ -529,7 +532,7 @@ static segment_t *blanklines(n)
  * Если "reall=1" то блок перед разрывом переразмещается в памяти с
  * целью экономии места.
  * ВНИМАНИЕ: breaksegm может нарушить корректность указателей в  workspace.
- * Поэтому после всех операций нужно вызывать "redisplay".
+ * Поэтому после всех операций нужно вызывать "wksp_redraw".
  */
 static int breaksegm(w, n, reall)
     workspace_t *w;
@@ -543,25 +546,25 @@ static int breaksegm(w, n, reall)
     off_t offs;
 
     DEBUGCHECK;
-    if (wposit(w, n)) {
+    if (wksp_position(w, n)) {
         f = w->cursegm;
         ff = f->prev;
         free((char *)f);
-        fn = blanklines(n - w->curlno);
+        fn = blanklines(n - w->line);
         w->cursegm = fn;
         fn->prev = ff;
         if (ff)
             ff->next = fn;
         else
             file[w->wfile].chain = fn;
-        wposit(w, n);
+        wksp_position(w, n);
         return (1);
     }
     f = w->cursegm;
     cc = c = &f->data;
     offs = 0;
     ff = f;
-    nby = n - w->curflno;
+    nby = n - w->segmline;
     if (nby != 0) {
         /* get down to the nth line */
         for (i=0; i<nby; i++) {
@@ -611,7 +614,7 @@ static int breaksegm(w, n, reall)
         }
     }
     w->cursegm = ff;
-    w->curflno = n;
+    w->segmline = n;
     DEBUGCHECK;
     return (0);
 }
@@ -671,7 +674,7 @@ static int catsegm(w)
         *f = *f0;
         f->next = f2->next;
         w->cursegm = f;
-        w->curflno -= nl0;
+        w->segmline -= nl0;
         nl0 = f->nlines = nl0 + nl1;
         c = &(f->data);
         i =lb0;
@@ -702,7 +705,7 @@ static int catsegm(w)
 /*
  * Вставить описатель f в файл, описываемый wksp,
  * перед строкой at.
- * Вызывающая программа должна вызвать redisplay с
+ * Вызывающая программа должна вызвать wksp_redraw с
  * соответствующими аргументами.
  */
 static void insert(wksp, f, at)
@@ -725,7 +728,7 @@ static void insert(wksp, f, at)
     wf->prev = ff;
     f->prev = w0;
     wksp->cursegm = f;
-    wksp->curlno = wksp->curflno = at;
+    wksp->line = wksp->segmline = at;
     if (file[wksp->wfile].writable)
         file[wksp->wfile].writable = EDITED;
     catsegm(wksp);
@@ -742,9 +745,9 @@ void openlines(from, number)
         return;
     file[curfile].nlines += number;
     insert(curwksp, blanklines(number), from);
-    redisplay((workspace_t *)NULL, curfile,
+    wksp_redraw((workspace_t *)NULL, curfile,
         from, from + number - 1, number);
-    poscursor(cursorcol, from - curwksp->ulhclno);
+    poscursor(cursorcol, from - curwksp->toprow);
 }
 
 /*
@@ -760,11 +763,11 @@ void openspaces(line, col, number, nl)
         putbks(col, number);
         cline_modified = 1;
         putline(0);
-        j = i - curwksp->ulhclno;
-        if (j <= curport->btext)
+        j = i - curwksp->toprow;
+        if (j <= curwin->text_height)
             putup(j, j);
     }
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+    poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
 
 /*
@@ -829,9 +832,9 @@ void splitline(line, col)
         putline(0);
         cline[col] = csave;
         insert(curwksp, writemp(cline+col, nsave-col), line+1);
-        redisplay((workspace_t *)NULL, curfile, line, line+1, 1);
+        wksp_redraw((workspace_t *)NULL, curfile, line, line+1, 1);
     }
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+    poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
 
 /*
@@ -839,7 +842,7 @@ void splitline(line, col)
  * Исключить указанные строки из wksp.
  * Возвращает указатель на segm - цепь исключенных строк,
  * с добавленнык концевым блоком.
- * Требует redisplay.
+ * Требует wksp_redraw.
  */
 static segment_t *delete(wksp,from,to)
     workspace_t *wksp;
@@ -867,7 +870,7 @@ static segment_t *delete(wksp,from,to)
 
 /*
  * Delete lines from file.
- * frum < 0 - do not redisplay (used for "exec").
+ * frum < 0 - do not call wksp_redraw (used for "exec").
  */
 void closelines(frum, number)
     int frum, number;
@@ -882,16 +885,16 @@ void closelines(frum, number)
             file[curfile].nlines = from + 1;
     f = delete(curwksp, from, from + number - 1);
     if (frum >= 0)
-        redisplay((workspace_t *)NULL, curfile, from,
+        wksp_redraw((workspace_t *)NULL, curfile, from,
             from + number - 1, -number);
     n = file[2].nlines;
     insert(pickwksp, f, n);
-    redisplay((workspace_t *)NULL, 2, n, n, number);
+    wksp_redraw((workspace_t *)NULL, 2, n, n, number);
     deletebuf->linenum = n;
     deletebuf->nrows = number;
     deletebuf->ncolumns = 0;
     file[2].nlines += number;
-    poscursor(cursorcol, from - curwksp->ulhclno);
+    poscursor(cursorcol, from - curwksp->toprow);
 }
 
 /*
@@ -971,14 +974,14 @@ static void pcspaces(line, col, number, nl, flg)
             cline_len -= number;
             cline_modified = 1;
             putline(0);
-            i = j - curwksp->ulhclno;
-            if (i <= curport->btext)
+            i = j - curwksp->toprow;
+            if (i <= curwin->text_height)
                 putup(i, i);
         }
     }
     n = file[2].nlines;
     insert(pickwksp, f0, n);
-    redisplay((workspace_t *)NULL, 2, n, n, nl);
+    wksp_redraw((workspace_t *)NULL, 2, n, n, nl);
     if (flg) {
         deletebuf->linenum = n;
         deletebuf->nrows = nl;
@@ -990,7 +993,7 @@ static void pcspaces(line, col, number, nl, flg)
     }
     file[2].nlines += nl;
     free(linebuf);
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+    poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
 
 /*
@@ -1030,8 +1033,8 @@ void combineline(line, col)
     putline(0);
     free((char *)temp);
     delete(curwksp, line+1, line+1);
-    redisplay((workspace_t *)NULL, curfile, line, line+1, -1);
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+    wksp_redraw((workspace_t *)NULL, curfile, line, line+1, -1);
+    poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
 
 /*
@@ -1082,7 +1085,7 @@ static segment_t *copysegm(f, end)
  * segment_t *pick(wksp,from,to) -
  * Возвращает указатель на segm - цепь указанных строк,
  * с добавленным концевым блоком.
- * Требует redisplay.
+ * Требует wksp_redraw.
  */
 static segment_t *pick(wksp,from,to)
     workspace_t *wksp;
@@ -1107,15 +1110,15 @@ void picklines(from, number)
 
     f = pick(curwksp, from, from + number - 1);
     /* because of breaksegm */
-    redisplay((workspace_t *)NULL, curfile, from, from + number - 1, 0);
+    wksp_redraw((workspace_t *)NULL, curfile, from, from + number - 1, 0);
     n = file[2].nlines;
     insert(pickwksp, f, n);
-    redisplay((workspace_t *)NULL, 2, n, n, number);
+    wksp_redraw((workspace_t *)NULL, 2, n, n, number);
     pickbuf->linenum = n;
     pickbuf->nrows = number;
     pickbuf->ncolumns = 0;
     file[2].nlines += number;
-    poscursor(cursorcol, from - curwksp->ulhclno);
+    poscursor(cursorcol, from - curwksp->toprow);
 }
 
 /*
@@ -1153,7 +1156,7 @@ static void plines(buf, line)
         g = g->next;
     }
     insert(curwksp,f,line);
-    redisplay((workspace_t *)NULL,curfile,line,line,lbuf);
+    wksp_redraw((workspace_t *)NULL,curfile,line,line,lbuf);
     poscursor(cc,cl);
     if ((file[curfile].nlines += lbuf) <= (j = line + lbuf))
         file[curfile].nlines = j+1;
@@ -1188,12 +1191,12 @@ static void pspaces(buf, line, col)
             cline[col+j] = linebuf[j];
         cline_modified = 1;
         putline(0);
-        j = line+i-curwksp->ulhclno;
-        if (j <= curport->btext)
+        j = line+i-curwksp->toprow;
+        if (j <= curwin->text_height)
             putup(j, j);
     }
     free(linebuf);
-    poscursor(col - curwksp->ulhccno, line - curwksp->ulhclno);
+    poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
 
 /*
@@ -1221,7 +1224,7 @@ void getlin(ln)
 {
     cline_modified = 0;
     clineno = ln;
-    if (wseek(curwksp, ln)) {
+    if (wksp_seek(curwksp, ln)) {
         if (cline_max == 0)
             excline(1);
         cline[0] = '\n';
@@ -1253,7 +1256,7 @@ void putline(n)
     cline_modified = 0;
     cline[cline_len-1] = '\n';
     cl = writemp(cline+n,cline_len-n);
-    w = curport->wksp;             /* w s can be replaced by curwksp */
+    w = curwin->wksp;             /* w s can be replaced by curwksp */
     i = clineno;
     flg = breaksegm(w,i,1);
     wg = w->cursegm;
@@ -1268,11 +1271,11 @@ void putline(n)
     free((char *)wg);
     cl->prev = w0;
     w->cursegm = cl;
-    w->curlno = w->curflno = i;
+    w->line = w->segmline = i;
     file[w->wfile].writable = EDITED;
     clineno = -1;
     catsegm(w);
-    redisplay(w, w->wfile, i, i, 0);
+    wksp_redraw(w, w->wfile, i, i, 0);
     DEBUGCHECK;
 }
 
@@ -1336,7 +1339,7 @@ void doreplace(line, m, jproc, pipef)
         insert(curwksp, ee, line);
         file[curfile].nlines += l;
     }
-    redisplay((workspace_t *)NULL, curfile, line, line + m, l - m);
+    wksp_redraw((workspace_t *)NULL, curfile, line, line + m, l - m);
     poscursor(cursorcol, cursorline);
 }
 
@@ -1387,8 +1390,8 @@ void checksegm()
     nl = 0;
     f = file[curfile].chain;
     while (f) {
-        if (curwksp->curlno >= nl &&
-            curwksp->curlno < nl + f->nlines &&
+        if (curwksp->line >= nl &&
+            curwksp->line < nl + f->nlines &&
             curwksp->cursegm != f && curwksp->cursegm->prev)
             fatal("CKFSD CURFSD LOST");
 
