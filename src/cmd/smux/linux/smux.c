@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <time.h>
 #define TELOPTS
 #define TELCMDS
 
@@ -37,7 +38,8 @@ int string_contains(char *haystack, char *needle, int len)
 
 void send_tx()
 {
-    write(pipe_fd, &tx, tx.len + 3);
+    int rv __attribute__((unused));
+    rv = write(pipe_fd, &tx, tx.len + 3);
     fsync(pipe_fd);
 }
 
@@ -48,6 +50,7 @@ int fdgetline(int fd, char *buffer, int maxlen)
     int nr = 0;
     int rc = 0;
     char inch[2];
+    int rv __attribute__((unused));
 
     for (;;) {
         tv.tv_sec = 0;
@@ -60,7 +63,7 @@ int fdgetline(int fd, char *buffer, int maxlen)
         }
 
         if (FD_ISSET(fd, &rfd)) {
-            read(fd, inch, 1);
+            rv = read(fd, inch, 1);
             if (inch[0] == '\n') {
                 return nr;
             }
@@ -81,7 +84,7 @@ int read_chunk(int fd, void *buf, int ml)
     struct timeval tv;
     tv.tv_sec = 1;
     tv.tv_usec = 0;
-    int rv;
+    int rv __attribute__((unused));
 
     FD_ZERO(&rfd);
     FD_SET(fd, &rfd);
@@ -164,6 +167,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in sa;
     int infd;
     int stream;
+    int rv __attribute__((unused));
 
     int ready[MAXFD];
     int fds[MAXFD];
@@ -237,18 +241,18 @@ int main(int argc, char *argv[])
 
     fds[1] = sockfd;
 
-    write(pipe_fd, "\r\r\r", 1);
+    rv = write(pipe_fd, "\r\r\r", 1);
     bzero(buffer,256);
     for (;;) {
         if ((nr = fdgetline(pipe_fd, buffer, 255)) > 0) {
             printf("%s\n", buffer);
             if(string_contains(buffer, "ogin:", nr)) {
                 sprintf(buffer, "%s\r", username);
-                write(pipe_fd, buffer, strlen(buffer));
+                rv = write(pipe_fd, buffer, strlen(buffer));
             }
             if(string_contains(buffer, "assword:", nr)) {
                 sprintf(buffer, "%s\r", password);
-                write(pipe_fd, buffer, strlen(buffer));
+                rv = write(pipe_fd, buffer, strlen(buffer));
             }
             if(string_contains(buffer, "Welcome to RetroBSD", nr)) {
                 break;
@@ -324,7 +328,7 @@ int main(int argc, char *argv[])
                                 printf("New connection stream %d\n", i);
                                 sprintf(buffer, "%c%c%c%c%c%c", IAC, DO, TELOPT_LINEMODE, IAC, WILL, TELOPT_ECHO);
                                 //printf("> IAC DO LINEMODE IAC WILL ECHO\n");
-                                write(infd, buffer, 6);
+                                rv = write(infd, buffer, 6);
                                 fsync(infd);
                                 ready[i] = 1;
                             }
@@ -338,7 +342,7 @@ int main(int argc, char *argv[])
                                 break;
                             case C_DATA:
                                 nextping = time(NULL) + 10;
-                                write(fds[rx.stream], rx.data, rx.len);
+                                rv = write(fds[rx.stream], rx.data, rx.len);
                                 //printf("%d>%s", rx.stream, rx.data);
                                 break;
                             case C_CONNECTOK:
@@ -384,7 +388,7 @@ int main(int argc, char *argv[])
                                     case WILL:
                                         i++;
                                         sprintf(iac, "%c%c%c", IAC, DONT, buffer[i]);
-                                        write(fds[stream], iac, 3);
+                                        rv = write(fds[stream], iac, 3);
                                         fsync(fds[stream]);
                                         break;
                                     case WONT:
@@ -393,17 +397,17 @@ int main(int argc, char *argv[])
                                         switch ((unsigned char)buffer[i]) {
                                         case TELOPT_SGA:
                                             sprintf(iac, "%c%c%c", IAC, WILL, TELOPT_SGA);
-                                            write(fds[stream], iac, 3);
+                                            rv = write(fds[stream], iac, 3);
                                             break;
                                         case TELOPT_ECHO:
                                             break;
                                         case TELOPT_LINEMODE:
                                             sprintf(iac, "%c%c%c%c%c%c%c", IAC, SB, 34, 1, 0, IAC, SE);
-                                            write(fds[stream], iac, 7);
+                                            rv = write(fds[stream], iac, 7);
                                             break;
                                         default:
                                             sprintf(iac, "%c%c%c", IAC, WONT, buffer[i]);
-                                            write(fds[stream], iac, 3);
+                                            rv = write(fds[stream], iac, 3);
                                             break;
                                         }
                                         break;
@@ -414,7 +418,7 @@ int main(int argc, char *argv[])
                                         i++;
                                         if (buffer[i] == 34) {
                                             sprintf(iac, "%c%c%c%c%c%c%c", IAC, SB, 34, 1, 4, IAC, SE);
-                                            write(fds[stream], iac, 7);
+                                            rv = write(fds[stream], iac, 7);
                                         }
                                         while ((buffer[i] != (char)SE) && (buffer[i-1] != (char)SE)) {
                                             i++;
