@@ -16,7 +16,7 @@ struct smux_packet {
     unsigned char type;
     unsigned char stream;
     unsigned char len;
-    unsigned char data[255];
+    char data[255];
 };
 
 // Initiate a connection
@@ -33,7 +33,7 @@ struct smux_packet {
 #define C_DATA       0x05
 
 // Proxy is terminating, close everything down.
-#define C_QUIT       0x06 
+#define C_QUIT       0x06
 
 // If we don't see a PING every 10 seconds, the
 // link must have died - abort.

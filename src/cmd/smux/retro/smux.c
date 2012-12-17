@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <errno.h>
@@ -34,7 +35,7 @@ int allocate_pty()
     for (i = 0; i < MAXPTY; i++) {
         sprintf(dev, "/dev/ptyp%d", i);
         if (stat(dev, &sb) == -1) {
-            return -1; 
+            return -1;
         }
         fd = open(dev, O_RDWR | O_EXCL);
         if (fd > 0) {
@@ -51,7 +52,6 @@ void close_pty(int fd)
 
 void raw()
 {
-    int flags;
     ioctl(0, TIOCGETP, &term_orig);
     term_smux = term_orig;
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     struct timeval tv;
     int fd;
     int maxfd;
- 
+
     tv.tv_sec = 1;
     tv.tv_usec = 0;
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
                             case C_CONNECT:
                                 // We want to create a new channel.  First off, get a ptyp
                                 // device.
-    
+
                                 fd = allocate_pty();
                                 if (fd < 0) {
                                     tx.type = C_CONNECTFAIL;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
                                     write(fds[rx.stream], rx.data, rx.len);
                                 }
                                 break;
-                        
+
                             case C_QUIT:
                                 cooked();
                                 return(0);

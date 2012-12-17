@@ -41,7 +41,7 @@ void send_tx()
     fsync(pipe_fd);
 }
 
-int fdgetline(int fd, unsigned char *buffer, int maxlen)
+int fdgetline(int fd, char *buffer, int maxlen)
 {
     fd_set rfd;
     struct timeval tv;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
     char *password = "";
     char *device = "/dev/ttyACM0";
     int nr;
-    unsigned char buffer[300];
+    char buffer[300];
     struct termios tty;
     int i;
     int maxfd;
@@ -163,8 +163,6 @@ int main(int argc, char *argv[])
     int sockfd;
     struct sockaddr_in sa;
     int infd;
-    int flags;
-    int mode;
     int stream;
 
     int ready[MAXFD];
@@ -244,7 +242,7 @@ int main(int argc, char *argv[])
     for (;;) {
         if ((nr = fdgetline(pipe_fd, buffer, 255)) > 0) {
             printf("%s\n", buffer);
-            if(string_contains((char*)buffer, "ogin:", nr)) {
+            if(string_contains(buffer, "ogin:", nr)) {
                 sprintf(buffer, "%s\r", username);
                 write(pipe_fd, buffer, strlen(buffer));
             }
@@ -373,17 +371,16 @@ int main(int argc, char *argv[])
                             buffer[nr] = 0;
                             //printf("Got %d bytes\n", nr);
                             int j = 0;
-                            int ipos = 0;
-                            unsigned char iac[100];
+                            char iac[100];
                             for (i=0; i<nr; i++) {
-                                switch (buffer[i]) {
+                                switch ((unsigned char)buffer[i]) {
                                 case '\r':
                                     tx.data[j++] = buffer[i];
                                     i++;
                                     break;
                                 case IAC:
                                     i++;
-                                    switch (buffer[i]) {
+                                    switch ((unsigned char)buffer[i]) {
                                     case WILL:
                                         i++;
                                         sprintf(iac, "%c%c%c", IAC, DONT, buffer[i]);
@@ -393,7 +390,7 @@ int main(int argc, char *argv[])
                                     case WONT:
                                     case DO:
                                         i++;
-                                        switch (buffer[i]) {
+                                        switch ((unsigned char)buffer[i]) {
                                         case TELOPT_SGA:
                                             sprintf(iac, "%c%c%c", IAC, WILL, TELOPT_SGA);
                                             write(fds[stream], iac, 3);
@@ -419,7 +416,7 @@ int main(int argc, char *argv[])
                                             sprintf(iac, "%c%c%c%c%c%c%c", IAC, SB, 34, 1, 4, IAC, SE);
                                             write(fds[stream], iac, 7);
                                         }
-                                        while ((buffer[i] != SE) && (buffer[i-1] != SE)) {
+                                        while ((buffer[i] != (char)SE) && (buffer[i-1] != (char)SE)) {
                                             i++;
                                         }
                                         i++;
@@ -430,7 +427,7 @@ int main(int argc, char *argv[])
                                         tx.data[j++] = buffer[i];
                                         break;
                                     default:
-                                        printf("Unhandled IAC: %d\n", buffer[i]);
+                                        printf("Unhandled IAC: %d\n", (unsigned char)buffer[i]);
                                         i++;
                                     }
                                 default:

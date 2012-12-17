@@ -3,7 +3,7 @@ BIN     = smux
 CFLAGS  = -O -Wall -Werror
 
 $(BIN): $(OBJS)
-	$(CC) -o $(BIN) $(OBJS) -ggdb3
+	$(CC) -o $(BIN) $(OBJS)
 
 clean:
 	rm -f smux.o smux
