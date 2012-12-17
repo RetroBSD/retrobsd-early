@@ -104,7 +104,7 @@ struct condev condevs[] = {
 	{ "SYTEK", "sytek", sykopn, nulldev, sykcls },
 #endif
 #ifdef ATT2224
-	{ "ACU", "att", Acuopn, attopn, attcls },	
+	{ "ACU", "att", Acuopn, attopn, attcls },
 #endif
 
 
@@ -151,7 +151,7 @@ register char *flds[];
 	FILE *dfp;
 #ifdef VMSDTR	/* Modem control on vms(works dtr) */
 	int modem_control;
-	short iosb[4]; 
+	short iosb[4];
 	int sys$qiow();	/* use this for long reads on vms */
 	int ret;
 	long mode[2];
@@ -306,7 +306,7 @@ register char *flds[];
 		}
 		for(cd = condevs; cd->CU_meth != NULL; cd++) {
 			if (snccmp(line, cd->CU_meth) == SAME) {
-				if (snccmp(dev.D_brand, cd->CU_brand) == SAME) 
+				if (snccmp(dev.D_brand, cd->CU_brand) == SAME)
 					break;
 				strncpy(nobrand, dev.D_brand, sizeof nobrand);
 			}
@@ -368,7 +368,7 @@ int num, denom;
 	struct timeval tv;
 	tv.tv_sec = num / denom;
 	tv.tv_usec = (num * 1000000L / denom ) % 1000000L;
-	(void) select (0, (int *)0, (int *)0, (int *)0, &tv);
+	(void) select (0, (fd_set*)0, (fd_set*)0, (fd_set*)0, &tv);
 }
 #endif
 
@@ -524,7 +524,7 @@ char *type, *dev;
 	int status;
 	FILE *fil;
 	char buf[80];
-	
+
 	fflush(stderr);
 	fflush(stdout);
 	pipe(fildes);

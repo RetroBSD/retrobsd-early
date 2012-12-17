@@ -9,7 +9,7 @@ TOPSRC          = $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
 ALL=	uucico uucp uux uuxqt uulog uuclean uuname uupoll uusnap \
-	uuencode uudecode uusend uuq 
+	uuencode uudecode uusend uuq
 
 LIBOBJ  = logent.o ulockf.o uucpdefs.o subdir.o gename.o assert.o expfile.o \
           chkpth.o cpmv.o uucpname.o getpwinfo.o versys.o xqt.o getargs.o \
@@ -24,7 +24,7 @@ CC      = $(GCCPREFIX)gcc -mips16 -EL -msoft-float -nostdinc -fshort-double -I$(
 OWNER=	uucp
 GROUP=	daemon
 
-CFLAGS += -Os
+CFLAGS += -Os -Werror
 
 SBINDIR=	${DESTDIR}/usr/sbin
 LIBEXECDIR=	${DESTDIR}/usr/libexec

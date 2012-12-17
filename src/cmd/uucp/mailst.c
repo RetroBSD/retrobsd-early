@@ -85,7 +85,8 @@ char	*mode;
 rpclose(ptr)
 FILE *ptr;
 {
-	register f, r, (*hstat)(), (*istat)(), (*qstat)();
+	register f, r;
+        register sig_t hstat, istat, qstat;
 	int status;
 
 	f = fileno(ptr);

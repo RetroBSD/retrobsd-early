@@ -396,7 +396,7 @@ register int n;
 				tv.tv_usec = r % 1000000L;
 				DEBUG(11, "PKCGET stall for %d", tv.tv_sec);
 				DEBUG(11, ".%06d sec\n", tv.tv_usec);
-				(void) select (0, (int *)0, (int *)0, (int *)0, &tv);
+				(void) select (0, (fd_set*)0, (fd_set*)0, (fd_set*)0, &tv);
 			}
 		}
 #endif
