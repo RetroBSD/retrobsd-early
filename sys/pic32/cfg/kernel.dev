@@ -39,7 +39,7 @@ always
     file vm_swap.o
     file vm_swp.o
     file swap.o
-    file vers.o 
+    file vers.o
     require ufs
     require tty
     require global
@@ -70,4 +70,9 @@ end option
 
 option highlight
     define KERNEL_HIGHLIGHT YES
+end option
+
+option clear_pin
+    define GPIO_CLEAR_PORT $TRIS(%1)
+    define GPIO_CLEAR_PIN  $PIN(%1)
 end option

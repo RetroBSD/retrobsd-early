@@ -172,7 +172,7 @@ startup()
 	/* Setup memory. */
         BMXPUPBA = 512 << 10;                   /* Kernel Flash memory size */
 #ifdef KERNEL_EXECUTABLE_RAM
-	/* 
+	/*
          * Set boundry for kernel executable ram on smallest
          * 2k boundry required to allow the keram segement to fit.
          * This means that there is possibly some u0area ramspace that
@@ -194,7 +194,7 @@ startup()
 	 */
 	INTCON = 0;				/* Interrupt Control */
 	IPTMR = 0;				/* Temporal Proximity Timer */
-	IFS(0) = 
+	IFS(0) =
 		PIC32_IPC_IP0(2) | PIC32_IPC_IP1(1) |
 		PIC32_IPC_IP2(1) | PIC32_IPC_IP3(1) |
 		PIC32_IPC_IS0(0) | PIC32_IPC_IS1(0) |
@@ -250,6 +250,10 @@ startup()
 #ifdef LED_SWAP_PORT                             /* Auxiliary */
         LED_SWAP_OFF();
 	TRIS_CLR(LED_SWAP_PORT) = 1 << LED_SWAP_PIN;
+#endif
+#ifdef GPIO_CLEAR_PORT                           /* Clear pin */
+	LAT_CLR(GPIO_CLEAR_PORT) = 1 << GPIO_CLEAR_PIN;
+	TRIS_CLR(GPIO_CLEAR_PORT) = 1 << GPIO_CLEAR_PIN;
 #endif
 #ifdef POWER_ENABLED
         power_init();
@@ -499,7 +503,7 @@ boot (dev, howto)
                 RSWRSTSET = 1;
                 (void) RSWRST;
 
-#endif	
+#endif
 
 	for (;;) {
 #ifdef UARTUSB_ENABLED

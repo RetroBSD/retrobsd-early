@@ -359,7 +359,7 @@ const unsigned char usb_config1_descriptor[] =
     1,                                  // Index value of this configuration
     0,                                  // Configuration string index
     _DEFAULT | _SELF,                   // Attributes, see usb_device.h
-    50,                                 // Max power consumption (2X mA)
+    150,                                // Max power consumption (2X mA)
 
     /* Interface Descriptor */
     9,                                  // sizeof(USB_INTF_DSC)
