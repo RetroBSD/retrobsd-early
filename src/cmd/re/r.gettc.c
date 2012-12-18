@@ -227,10 +227,10 @@ void tcread()
             }
         } else
             iw->value = ir->value;
-        iw->ccode = ir->ccode;
+        iw->keysym = ir->keysym;
         iw++;
     }
     iw->value = NULL;
-    iw->ccode = 0;
+    iw->keysym = 0;
     itsort(keytab, iw-1, 0);
 }

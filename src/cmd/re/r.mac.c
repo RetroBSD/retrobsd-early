@@ -110,7 +110,7 @@ int msvtag(name)
     if (! m)
         return 0;
     m->mtag.line  = cursorline + cws->toprow;
-    m->mtag.col   = cursorcol  + cws->topcol;
+    m->mtag.col   = cursorcol  + cws->coloffset;
     m->mtag.nfile = cws->wfile;
     return 1;
 }
@@ -164,8 +164,8 @@ int mdeftag(name)
     param_type = -2;
     param_r1 = m->mtag.line;
     param_c1 = m->mtag.col ;
-    param_r0 += cws -> toprow;
-    param_c0 += cws -> topcol;
+    param_r0 += cws->toprow;
+    param_c0 += cws->coloffset;
     if (param_r0 > param_r1) {
         f++;
         ln = param_r1;
@@ -185,8 +185,8 @@ int mdeftag(name)
     }
     param_r0 -= cws->toprow;
     param_r1 -= cws->toprow;
-    param_c0 -= cws->topcol;
-    param_c1 -= cws->topcol;
+    param_c0 -= cws->coloffset;
+    param_c1 -= cws->coloffset;
     if (param_r1 == param_r0)
         telluser("**:columns defined by tag", 0);
     else if (param_c1 == param_c0)

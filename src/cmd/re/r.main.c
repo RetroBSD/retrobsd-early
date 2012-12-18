@@ -15,28 +15,22 @@
 #include <signal.h>
 #include <sys/stat.h>
 
-int tabstops[NTABS] = {
-    -1, 0,  8,  16, 24,  32,  40,  48,  56,  64,
-    72, 80, 88, 96, 104, 112, 120, 128, 136, BIGTAB,
-    0,  0,  0,  0,  0,   0,   0,   0,   0,   0,
-};
-
-int keysym = -1;         /* -1 означает, что символ использован */
+int keysym = -1;         /* -1 when the symbol already processed */
 
 /* Параметры для движения по файлу */
 
-int defplline  = 10;                /* +LINE       */
-int defmiline  = 10;                /* -LINE       */
-int defplpage  =  1;                /* +PAGE      */
-int defmipage  =  1;                /* -PAGE      */
-int deflindent = 30;                /* LEFT INDENT */
-int defrindent = 30;                /* RIGHT INDENT */
-int definsert  = 1;                 /* OPEN       */
-int defdelete  = 1;                 /* CLOSE      */
-int defpick    = 1;                 /* PICK       */
-char deffile[] = "/share/re.help";  /* Help file */
+int defplline  = 10;                /* +LINE        */
+int defmiline  = 10;                /* -LINE        */
+int defplpage  = 1;                 /* +PAGE        */
+int defmipage  = 1;                 /* -PAGE        */
+int defloffset = 30;                /* LEFT OFFSET  */
+int defroffset = 30;                /* RIGHT OFFSET */
+int definsert  = 1;                 /* OPEN         */
+int defdelete  = 1;                 /* CLOSE        */
+int defpick    = 1;                 /* PICK         */
+char deffile[] = "/share/re.help";  /* Help file    */
 
-/* Инициализации  */
+/* Initial values. */
 int cline_max  = 0;
 int cline_incr = 20; /* Инкремент для расширения */
 int clineno = -1;
@@ -179,25 +173,11 @@ static void startup(restart)
 }
 
 /*
- * Create initial window state.
- */
-static void makestate()
-{
-    register window_t *win;
-
-    nwinlist = 1;
-    win = winlist[0] = (window_t*) salloc(sizeof(window_t));
-    win_create(winlist[0], 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, 1);
-    win_draw(win, 0);
-    poscursor(0, 0);
-}
-
-/*
  * Make or restore window state.
  * '!' - restore, ' ' - make new.
  */
-static void getstate(ichar)
-    char ichar;
+static void getstate(init_flag)
+    char init_flag;
 {
     int nletters, base_col, max_col, base_row, max_row, row, col, winnum, gf;
     register int i, n;
@@ -206,21 +186,28 @@ static void getstate(ichar)
     int gbuf;
     window_t *win;
 
-    if (ichar != '!' || (gbuf = open(rfile, 0)) <= 0 ||
-        (nwinlist = get1w(gbuf)) == -1) {
-make:   makestate();
-        ichar = ' ';
+    if (init_flag != '!' || (gbuf = open(rfile, 0)) <= 0 ||
+        (nwinlist = get1w(gbuf)) == -1)
+    {
+make:   /* Create initial window state. */
+        nwinlist = 1;
+        win = (window_t*) salloc(sizeof(window_t));
+        winlist[0] = win;
+        win_create(win, 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, MULTIWIN);
+        win_draw(win, 0);
+        poscursor(0, 0);
         return;
     }
     winnum = get1w(gbuf);
     for (n=0; n<nwinlist; n++) {
-        win = winlist[n] = (window_t*) salloc(sizeof(window_t));
+        win = (window_t*) salloc(sizeof(window_t));
+        winlist[n] = win;
         win->prevwinnum = get1w(gbuf);
         base_col = get1w(gbuf);
         max_col = get1w(gbuf);
         base_row = get1w(gbuf);
         max_row = get1w(gbuf);
-        win_create(win, base_col, max_col, base_row, max_row, 1);
+        win_create(win, base_col, max_col, base_row, max_row, MULTIWIN);
         win_draw(win, 0);
         gf = 0;
         nletters = get1w(gbuf);
@@ -323,7 +310,7 @@ static void savestate()
                 put1c(*f1, sbuf);
             } while (*f1++);
             put1w(win->altwksp->toprow, sbuf);
-            put1w(win->altwksp->topcol, sbuf);
+            put1w(win->altwksp->coloffset, sbuf);
             put1w(win->altwksp->cursorcol, sbuf);
             put1w(win->altwksp->cursorrow, sbuf);
         } else
@@ -339,7 +326,7 @@ static void savestate()
                 put1c(*f1, sbuf);
             } while (*f1++);
             put1w(win->wksp->toprow, sbuf);
-            put1w(win->wksp->topcol, sbuf);
+            put1w(win->wksp->coloffset, sbuf);
             put1w(win->wksp->cursorcol, sbuf);
             put1w(win->wksp->cursorrow, sbuf);
         }
@@ -356,42 +343,43 @@ int main(nargs, args)
     char *args[];
 {
     int restart, i;
-    char *cp, ichar;
+    char *cp, init_flag = ' ';
 
     tcread();
 
-    /* режим работы 0 - норм, 1 - повторный, 2 - из файла /tmp/tt.. */
+    /* Mode: 0 - normal, 1 - restart, 2 - from journal file /tmp/rej.. */
     restart = 0;
     if (nargs == 1) {
         restart = 1;
-        ichar = '!';
+        init_flag = '!';
 
     } else if (*(cp = args[1]) == '-') {
         if (*++cp) {
             /* Указан файл протокола */
-            if ((inputfile = open( cp,0)) < 0) {
-                puts1("Can't open command file.\n");
+            inputfile = open(cp, 0);
+            if (inputfile < 0) {
+                puts1("Can't open journal file.\n");
                 return 1;
             }
         } else
             restart = 2;
         nargs = 1;
-    } else
-        ichar = ' ';
+    }
 
     startup(restart);
     if (inputfile) {
-        if (read(inputfile, &ichar, 1) <= 0) {
+        if (read(inputfile, &init_flag, 1) <= 0) {
             cleanup();
-            puts1("Command file is empty.\n");
+            puts1("Journal file is empty.\n");
             return 1;
         }
     } else {
         /* For repeated session */
-        if (write(journal, &ichar, 1) != 1)
+        if (write(journal, &init_flag, 1) != 1)
             /* ignore errors */;
     }
-    getstate(ichar);
+    getstate(init_flag);
+
     if (nargs > 1 && *args[1] != '\0') {
         i = defplline + 1;
         if ((nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
@@ -474,7 +462,7 @@ void fatal(s)
             printf("\nWindow #%d: chain %d, current line %d at block %p,\n",
                 i, w->wfile, w->line, w->cursegm);
             printf(" first line %d, ulhc (%d,%d)\n",
-                w->segmline, w->topcol, w->toprow);
+                w->segmline, w->coloffset, w->toprow);
         }
         for (i=12; i; i--)
             signal(i, 0);

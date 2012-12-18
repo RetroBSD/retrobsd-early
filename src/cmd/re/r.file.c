@@ -290,7 +290,7 @@ int editfile(filename, line, col, mkflg, puflg)
     curfile = curwksp->wfile = fn;
     curwksp->line = curwksp->segmline = 0;
     curwksp->toprow = line;
-    curwksp->topcol = col;
+    curwksp->coloffset = col;
     if (puflg) {
         drawlines(0, curwin->text_height);
         poscursor(0, defplline);

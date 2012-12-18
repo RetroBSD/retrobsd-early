@@ -767,7 +767,7 @@ void openspaces(line, col, number, nl)
         if (j <= curwin->text_height)
             drawlines(j, j);
     }
-    poscursor(col - curwksp->topcol, line - curwksp->toprow);
+    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
 }
 
 /*
@@ -834,7 +834,7 @@ void splitline(line, col)
         insert(curwksp, writemp(cline+col, nsave-col), line+1);
         wksp_redraw((workspace_t *)NULL, curfile, line, line+1, 1);
     }
-    poscursor(col - curwksp->topcol, line - curwksp->toprow);
+    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
 }
 
 /*
@@ -993,7 +993,7 @@ static void pcspaces(line, col, number, nl, flg)
     }
     file[2].nlines += nl;
     free(linebuf);
-    poscursor(col - curwksp->topcol, line - curwksp->toprow);
+    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
 }
 
 /*
@@ -1034,7 +1034,7 @@ void combineline(line, col)
     free((char *)temp);
     delete(curwksp, line+1, line+1);
     wksp_redraw((workspace_t *)NULL, curfile, line, line+1, -1);
-    poscursor(col - curwksp->topcol, line - curwksp->toprow);
+    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
 }
 
 /*
@@ -1196,7 +1196,7 @@ static void pspaces(buf, line, col)
             drawlines(j, j);
     }
     free(linebuf);
-    poscursor(col - curwksp->topcol, line - curwksp->toprow);
+    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
 }
 
 /*

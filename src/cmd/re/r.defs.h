@@ -23,7 +23,7 @@
 #   define DEBUGCHECK /* */
 #endif
 
-#define MOVECMD(x)  ((x) >= CCMOVEUP && (x) <= CCBACKTAB)
+#define MOVECMD(x)  ((x) >= CCMOVEUP && (x) <= CCEND)
 #define CTRLCHAR(x) (((x) >= 0 && (x) < ' ') || ((x) >= 0177 && (x) < 0240))
 #define MAXCOLS     128     /* max. width of screen */
 #define MAXLINES    48      /* max. height of screen */
@@ -34,8 +34,10 @@
 #define FILEMODE    0664    /* access mode for newly created files */
 #define MAXFILES    14      /* max. files under edit */
 #define MAXWINLIST  10      /* max.windows */
-#define NTABS       30
-#define BIGTAB      32767
+
+#ifndef MULTIWIN
+#define MULTIWIN    1       /* enable splitting a screen into multiple windows */
+#endif
 
 #define BADF        -1
 #define CONTF       -2
@@ -112,7 +114,7 @@ int curfile;
 typedef struct {
     segment_t *cursegm;     /* Current segment */
     int toprow;             /* Top left row on a display */
-    int topcol;             /* Top left column on a display */
+    int coloffset;          /* Column offset of a displayed text */
     int line;               /* Current line number */
     int segmline;           /* Number of first line in the current segment */
     int wfile;              /* File number, or 0 when not attached */
@@ -174,7 +176,7 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMOVERIGHT 5       /* move right                   right   */
 #define CCMOVELEFT  6       /* move left                    left    */
 #define CCTAB       7       /* tab                  ^I              */
-#define CCBACKTAB   010     /* tab left             ^X t            */
+#define CCEND       010     /* cursor to end        ^X e    end     */
 #define CCPICK      011     /* pick                         f6      */
 #define CCMAKEWIN   012     /* make a window                f4      */
 #define CCOPEN      013     /* insert                       f7      */
@@ -185,23 +187,21 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCDOCMD     020     /* execute a filter     ^X x            */
 #define CCMIPAGE    021     /* plus a page                  page up */
 #define CCPLSRCH    022     /* plus search          ^F              */
-#define CCRINDENT   023     /* shift view right     ^X f            */
+#define CCROFFSET   023     /* shift view right     ^X f            */
 #define CCPLLINE    024     /* minus a line         ^X p            */
 #define CCDELCH     025     /* character delete     ^D      delete  */
 #define CCSAVEFILE  026     /* make new file                f2      */
 #define CCMILINE    027     /* plus a line          ^X n            */
 #define CCMISRCH    030     /* minus search         ^B              */
-#define CCLINDENT   031     /* shift view left      ^X b            */
+#define CCLOFFSET   031     /* shift view left      ^X b            */
 #define CCPUT       032     /* put                          f11     */
-#define CCTABS      033     /* set tabs             ^X t            */
+#define CCREDRAW    033     /* redraw all           ^L              */
 #define CCINSMODE   034     /* insert mode          ^X i    insert  */
 #define CCBACKSPACE 035     /* backspace and erase  ^H              */
 #define CCCLOSE     036     /* delete               ^Y      f8      */
 #define CCENTER     037     /* enter parameter      ^A      f1      */
 #define CCQUIT      0177    /* terminate session    ^X ^C           */
-#define CCREDRAW    0236    /* redraw all           ^L              */
-#define CCEND       0237    /* cursor to end        ^X e    end     */
-#define CCINTRUP    0240    /* interrupt (journal) */
+#define CCINTRUP    0237    /* interrupt (journal) */
 #define CCMAC       0200    /* macro marker */
 
 int cursorline;             /* physical position of */
@@ -212,7 +212,6 @@ int NCOLS, NLINES;          /* size of the screen */
 extern char *curspos, *cvtout[];
 extern char cntlmotions[];
 
-extern int tabstops[];
 char blanks[MAXCOLS];
 extern const char in0tab[]; /* input control codes */
 
@@ -222,7 +221,7 @@ int highlight_position;     /* Highlight the current cursor position */
 
 /* Defaults. */
 extern int defplline, defplpage, defmiline, defmipage,
-        deflindent, defrindent, definsert, defdelete, defpick;
+        defloffset, defroffset, definsert, defdelete, defpick;
 extern char deffile[];
 
 int message_displayed;      /* Arg area contains an error message */
@@ -267,7 +266,7 @@ char *tmpname;              /* name of file, for do command */
  * Translation of control codes to escape sequences.
  */
 typedef struct {
-    int ccode;
+    int keysym;
     char *value;
 } keycode_t;
 
@@ -281,7 +280,6 @@ void movecursor (int);          /* cursor movement operation */
 void poscursor (int, int);      /* position a cursor in current window */
 void pcursor (int, int);        /* move screen cursor */
 void drawlines (int, int);      /* show lines of file */
-void movep (int);               /* move a window to right */
 void movew (int);               /* move a window down */
 void excline (int);             /* extend cline array */
 int putcha (int);               /* output symbol or op */
@@ -335,6 +333,7 @@ int interrupt (void);           /* we have been interrupted? */
 void wksp_switch (void);        /* switch to alternative workspace */
 int wksp_seek (workspace_t *, int); /* set file position by line number */
 int wksp_position (workspace_t *, int); /* set workspace position */
+void wksp_offset (int);         /* shift a text view */
 void wksp_redraw (workspace_t *, int, int, int, int);
                                 /* redisplay windows of the file */
 void cgoto (int, int, int, int); /* scroll window to show a given area */

@@ -24,7 +24,7 @@ void drawlines(lo, lf)
         lo = 0; /* Нач. колонка */
     l1 = lo;
     lmc = (curwin->base_col == curwin->text_col ? 0 :
-        curwksp->topcol == 0 ? LMCH : MLMCH);
+        curwksp->coloffset == 0 ? LMCH : MLMCH);
     max_colflg = (curwin->text_col + curwin->text_width < curwin->max_col);
     while (l0 <= lf) {
         lo = l1;
@@ -53,7 +53,7 @@ void drawlines(lo, lf)
         else {
             if (lf >= 0)
                 chars(1);
-            i = (cline_len - 1) - curwksp->topcol;
+            i = (cline_len - 1) - curwksp->coloffset;
             if (i < 0)
                 i = 0;
             else if (i > curwin->text_width) {
@@ -68,7 +68,7 @@ void drawlines(lo, lf)
          */
         if (lo == 0) {
             int fc;
-            for (fc=0; cline != 0 && cline[curwksp->topcol + fc]==' '; fc++);
+            for (fc=0; cline != 0 && cline[curwksp->coloffset + fc]==' '; fc++);
             j = curwin->text_width + 1;
             if (fc > j)
                 fc = j;
@@ -83,7 +83,7 @@ void drawlines(lo, lf)
         if (lo)
             poscursor(-lo, l0);
         j = i + lo;
-        cp = cline + curwksp->topcol - lo;
+        cp = cline + curwksp->coloffset - lo;
         while(j--)
             putcha(*cp++);
         cursorcol += (i + lo);
@@ -163,15 +163,21 @@ void poscursor(col, lin)
 void movecursor(arg)
     int arg;
 {
-    register int lin, col, i;
+    register int lin, col;
 
     lin = cursorline;
     col = cursorcol;
     switch (arg) {
     case 0:
         break;
-    case CCHOME:                /* home cursor */
-        col = lin = 0;
+    case CCHOME:                /* home: cursor to line start */
+        if (curwksp->coloffset != 0)
+            wksp_offset(-curwksp->coloffset);
+        col = 0;
+        break;
+    case CCEND:                 /* home: cursor to line end */
+        col = curwin->lastcol[cursorline];
+        // TODO: increase offset
         break;
     case CCMOVEUP:              /* move up 1 line */
         --lin;
@@ -182,25 +188,16 @@ void movecursor(arg)
     case CCMOVEDOWN:            /* move down 1 line */
         ++lin;
         break;
-    case CCMOVERIGHT:           /* forward move */
+    case CCMOVERIGHT:           /* move forward */
         ++col;
         break;
     case CCMOVELEFT:            /* backspace */
         --col;
         break;
     case CCTAB:                 /* tab */
-        i = 0;
-        col = col + curwksp->topcol;
-        while (col >= tabstops[i])
-            i++;
-        col = tabstops[i] - curwksp->topcol;
-        break;
-    case CCBACKTAB:             /* tab left */
-        i = 0;
-        col = col + curwksp->topcol;
-        while (col >  tabstops[i])
-            i++;
-        col = (i ? tabstops[i-1] - curwksp->topcol : -1);
+        col += curwksp->coloffset;
+        col = (col + 4) & ~3;
+        col -= curwksp->coloffset;
         break;
     }
     if (col > curwin->text_width)

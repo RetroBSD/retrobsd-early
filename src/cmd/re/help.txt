@@ -16,7 +16,7 @@
   ^X ^C - Exit wih Saving                                |   ^    |
   ^X i  - Insert Mode                                    |   |    |
   ^X x  - Run External Command                  _________|________|_________
-  ^X n  - +Line        ^X f  - +Indent          |        |        |        |
-  ^X p  - -Line        ^X b  - -Indent          | <--    |   |    |  -->   |
+  ^X n  - +Line        ^X f  - +Offset          |        |        |        |
+  ^X p  - -Line        ^X b  - -Offset          | <--    |   |    |  -->   |
   ^X $x - Run Macro                             |        |   V    |        |
   ^A >x <Enter> - Create Macro                  |________|________|________|

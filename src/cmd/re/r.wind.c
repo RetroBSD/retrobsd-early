@@ -28,18 +28,18 @@ void movew(nl)
 }
 
 /*
- * Move a window by nc columns to right.
+ * Shift a text view by nc columns to right.
  */
-void movep(nc)
+void wksp_offset(nc)
     int nc;
 {
     register int cl, cc;
 
     cl = cursorline;
     cc = cursorcol;
-    if ((curwksp->topcol + nc) < 0)
-        nc = - curwksp->topcol;
-    curwksp->topcol += nc;
+    if ((curwksp->coloffset + nc) < 0)
+        nc = - curwksp->coloffset;
+    curwksp->coloffset += nc;
     drawlines(0, curwin->text_height);
     cc -= nc;
     if (cc < 0)
@@ -87,9 +87,9 @@ void cgoto(ln, col, slin, lkey)
             curwksp->toprow = 0;
         }
     }
-    col -= curwksp->topcol;
+    col -= curwksp->coloffset;
     if (col < 0 || col > curwin->text_width) {
-        curwksp->topcol += col;
+        curwksp->coloffset += col;
         col = 0;
         lkey = -1;
     }
@@ -121,45 +121,43 @@ void win_switch(ww)
 
 /*
  * Create new window.
- * Flag c = 1 when borders enable.
+ * Flag need_borders = 1 when borders enable.
  */
-void win_create(ww, cl, cr, lt, lb, c)
-    window_t *ww;
-    int cl, cr, lt, lb, c;
+void win_create(w, col_left, col_right, row_top, row_bottom, need_borders)
+    register window_t *w;
+    int col_left, col_right, row_top, row_bottom, need_borders;
 {
     register int i, size;
-    register window_t *w;
 
-    w = ww;
-    w->base_col = cl;
-    w->max_col = cr;
-    w->base_row = lt;
-    w->max_row = lb;
-    if (c) {
-        w->text_col = cl + 1;
-        w->text_width = cr - cl - 2;
-        w->text_row = lt + 1;
-        w->text_height = lb - lt - 2;
+    w->base_col = col_left;
+    w->max_col  = col_right;
+    w->base_row = row_top;
+    w->max_row  = row_bottom;
+    if (need_borders) {
+        w->text_col    = col_left + 1;
+        w->text_width  = col_right - col_left - 2;
+        w->text_row    = row_top + 1;
+        w->text_height = row_bottom - row_top - 2;
     } else {
-        w->text_col = cl;
-        w->text_width = cr - cl;
-        w->text_row = lt;
-        w->text_height = lb - lt;
+        w->text_col    = col_left;
+        w->text_width  = col_right - col_left;
+        w->text_row    = row_top;
+        w->text_height = row_bottom - row_top;
     }
 
-    /* eventually this extra space may not be needed */
     w->wksp = (workspace_t*) salloc(sizeof(workspace_t));
     w->altwksp = (workspace_t*) salloc(sizeof(workspace_t));
-    size = NLINES - lt + 1;
+
+    /* eventually this extra space may not be needed */
+    size = NLINES - row_top + 1;
     w->firstcol = (unsigned char*) salloc(size);
     for (i=0; i<size; i++)
         w->firstcol[i] = w->text_width + 1;
     w->lastcol = (unsigned char*) salloc(size);
     w->leftbar = salloc(size);
     w->rightbar = salloc(size);
-    w->wksp->cursegm = file[2].chain; /* "#" - так как он всегда есть */
+    w->wksp->cursegm = file[2].chain; /* "#", as it's always available */
 }
-
 
 /*
  * Make new window.
@@ -168,32 +166,29 @@ void win_open(file)
     char *file;
 {
     register window_t *oldwin, *win;
-    char horiz;             /* 1 - если горизонтально */
-    register int i;
     int winnum;
 
-    /* Есть ли место */
+    /* Any space for a new window? */
     if (nwinlist >= MAXWINLIST) {
         error("Can't make any more windows.");
         return;
     }
-    if (cursorcol == 0 && cursorline > 0
-        && cursorline < curwin->text_height) horiz = 1;
-    else if (cursorline == 0 && cursorcol > 0
-        && cursorcol < curwin->text_width-1) horiz = 0;
-    else {
-        error("Can't put a window there.");
-        return;
-    }
-    oldwin = curwin;
     win = winlist[nwinlist++] = (window_t*) salloc(sizeof(window_t));
 
-    /* Find a win number */
-    for (winnum=0; winlist[winnum] != curwin; winnum++);
+    /* Find a window number. */
+    oldwin = curwin;
+    for (winnum=0; winlist[winnum] != oldwin; winnum++);
     win->prevwinnum = winnum;
-    oldwin->wksp->cursorcol = oldwin->altwksp->cursorcol = 0;
-    oldwin->wksp->cursorrow = oldwin->altwksp->cursorrow = 0;
-    if (horiz) {
+
+#if MULTIWIN
+    /*
+     * Split the window into two, horizontally or vertically.
+     */
+    if (cursorcol == 0 && cursorline > 0
+        && cursorline < oldwin->text_height)
+    {
+        /* Split horizontally. */
+        register int i;
         win_create(win, oldwin->base_col, oldwin->max_col,
             oldwin->base_row + cursorline + 1, oldwin->max_row, 1);
         oldwin->max_row = oldwin->base_row + cursorline + 1;
@@ -202,7 +197,11 @@ void win_open(file)
             win->firstcol[i] = oldwin->firstcol[i + cursorline + 1];
             win->lastcol[i] = oldwin->lastcol[i + cursorline + 1];
         }
-    } else {
+    } else if (cursorline == 0 && cursorcol > 0
+        && cursorcol < oldwin->text_width-1)
+    {
+        /* Split vertically. */
+        register int i;
         win_create(win, oldwin->base_col + cursorcol + 2, oldwin->max_col,
             oldwin->base_row, oldwin->max_row, 1);
         oldwin->max_col = oldwin->base_col + cursorcol + 1;
@@ -215,7 +214,21 @@ void win_open(file)
                 oldwin->rightbar[i] = MRMCH;
             }
         }
+    } else {
+        error("Can't put a window there.");
+        nwinlist--;
+        free(win);
+        return;
     }
+#else
+    /*
+     * Every window occupies the entire screen.
+     */
+    win_create(win, oldwin->base_col, oldwin->max_col,
+        oldwin->base_row, oldwin->max_row, 1);
+#endif
+    oldwin->wksp->cursorcol = oldwin->altwksp->cursorcol = 0;
+    oldwin->wksp->cursorrow = oldwin->altwksp->cursorrow = 0;
     win_switch(win);
     defplline = defmiline = (win->max_row - win->base_row)/ 4 + 1;
     if (editfile (file, 0, 0, 1, 1) <= 0 &&
@@ -354,12 +367,12 @@ void wksp_redraw(w, fn, from, to, delta)
             tw->cursegm = file[fn].chain;
 
             /* Исправляем номер строки и позиции на экране */
-            j = delta >= 0 ? to : from;
+            j = (delta >= 0) ? to : from;
             if (tw->toprow > j)
                 tw->toprow += delta;
 
             /* Если изменилось, перевыдать окно */
-            j = (from > tw->toprow ? from : tw->toprow);
+            j = (from > tw->toprow) ? from : tw->toprow;
             k = tw->toprow + winlist[i]->text_height;
             if (k > to)
                 k = to;

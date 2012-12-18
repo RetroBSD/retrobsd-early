@@ -230,7 +230,7 @@ exit:
     fi = *fb;
     if (fi->value[ns + 1])
         return CONTF;
-    return fi->ccode;
+    return fi->keysym;
 }
 
 /*
@@ -333,19 +333,19 @@ new:
             goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */
-            keysym = CCRINDENT;
+            keysym = CCROFFSET;
             goto readychr;
         case 'b':           /* ^X b */
         case 'B':           /* ^X B */
-            keysym = CCLINDENT;
+            keysym = CCLOFFSET;
             goto readychr;
         case 'h':           /* ^X h */
         case 'H':           /* ^X H */
             keysym = CCHOME;
             goto readychr;
-        case 't':           /* ^X t */
-        case 'T':           /* ^X T */
-            keysym = CCBACKTAB;
+        case 'e':           /* ^X e */
+        case 'E':           /* ^X E */
+            keysym = CCEND;
             goto readychr;
         case 'i':           /* ^X i */
         case 'I':           /* ^X I */
@@ -475,9 +475,9 @@ int rawinput()
  */
 extern int nfinc; /* число свободных мест в таблице */
 
-int addkey(cmd, key)
-    int cmd;
-    char *key;
+int addkey(key, value)
+    int key;
+    char *value;
 {
     keycode_t *fb, *fe;
     register keycode_t *fw;
@@ -485,7 +485,7 @@ int addkey(cmd, key)
 
     ns=0;
     fb = fe = 0;
-    while ((i = findt(&fb, &fe, key[ns], ns)) == CONTF && key[ns++]);
+    while ((i = findt(&fb, &fe, value[ns], ns)) == CONTF && value[ns++]);
     if (i != BADF) {
         telluser("key redefined",0);
         fw = fb;
@@ -506,8 +506,8 @@ retn:
 #ifdef TEST
     test("addkey out");
 #endif
-    fw->value = key;
-    fw->ccode = cmd;
+    fw->value = value;
+    fw->keysym = key;
     return(1);
 }
 
