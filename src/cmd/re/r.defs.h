@@ -139,8 +139,8 @@ typedef struct {
     int max_col;            /* Right column of the window */
     int text_row;           /* Top row of text area */
     int text_col;           /* Left column of text area */
-    int text_height;        /* Height of text area */
-    int text_width;         /* Width of text area */
+    int text_height;        /* Height-1 of text area */
+    int text_width;         /* Width-1 of text area */
     unsigned char *firstcol; /* Numbers of first non-space symbols */
     unsigned char *lastcol; /* Numbers of last non-space symbols */
     char *leftbar;          /* Symbols on left edge */
@@ -280,7 +280,6 @@ void movecursor (int);          /* cursor movement operation */
 void poscursor (int, int);      /* position a cursor in current window */
 void pcursor (int, int);        /* move screen cursor */
 void drawlines (int, int);      /* show lines of file */
-void movew (int);               /* move a window down */
 void excline (int);             /* extend cline array */
 int putcha (int);               /* output symbol or op */
 void putch (int, int);          /* put a symbol at current position */
@@ -333,7 +332,8 @@ int interrupt (void);           /* we have been interrupted? */
 void wksp_switch (void);        /* switch to alternative workspace */
 int wksp_seek (workspace_t *, int); /* set file position by line number */
 int wksp_position (workspace_t *, int); /* set workspace position */
-void wksp_offset (int);         /* shift a text view */
+void wksp_forward (int);        /* move page down or up */
+void wksp_offset (int);         /* shift a text view to right or left */
 void wksp_redraw (workspace_t *, int, int, int, int);
                                 /* redisplay windows of the file */
 void cgoto (int, int, int, int); /* scroll window to show a given area */

@@ -9,21 +9,33 @@
 /*
  * Move a current window by nl rows down.
  */
-void movew(nl)
+void wksp_forward(nl)
     int nl;
 {
     register int cc, cl;
 
+    if (nl < 0) {
+        if (curwksp->toprow == 0) {
+            if (cursorline != 0)
+                poscursor(cursorcol, 0);
+            return;
+        }
+    } else {
+        int last_line = file[curfile].nlines - curwksp->toprow;
+        if (last_line <= curwin->text_height) {
+            if (cursorline != last_line)
+                poscursor(cursorcol, last_line);
+            return;
+        }
+    }
     curwksp->toprow += nl;
+    if (curwksp->toprow > file[curfile].nlines - curwin->text_height)
+        curwksp->toprow = file[curfile].nlines - curwin->text_height;
     if (curwksp->toprow < 0)
         curwksp->toprow = 0;
     cc = cursorcol;
-    cl = cursorline - nl;
+    cl = cursorline;
     drawlines(0, curwin->text_height);
-    if (cl < 0 || cl > curwin->text_height) {
-        cl = defplline;
-        cc = 0;
-    }
     poscursor(cc, cl);
 }
 
@@ -57,7 +69,7 @@ void gtfcn(number)
 {
     register int i;
 
-    movew(number - curwksp->toprow - defplline);
+    wksp_forward(number - curwksp->toprow - defplline);
     i = number - curwksp->toprow;
     if (i >= 0) {
         if (i > curwin->text_height)

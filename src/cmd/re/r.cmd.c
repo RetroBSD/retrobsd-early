@@ -294,6 +294,7 @@ nextkey:
             /* <Enter> - split the line. */
             if (file[curfile].writable == 0)
                 goto nowriterr;
+            putline();
             splitline(curwksp->toprow + cursorline,
                 cursorcol + curwksp->coloffset);
             movecursor(keysym);
@@ -308,7 +309,7 @@ nextkey:
             }
             putline();
             if (cursorline == 0)
-                movew(-defmiline);
+                wksp_forward(-defmiline);
             movecursor(keysym);
             keysym = -1;
             goto errclear;
@@ -316,7 +317,7 @@ nextkey:
         if (keysym == CCMOVEDOWN) {
             putline();
             if (cursorline == curwin->text_height)
-                movew(defplline);
+                wksp_forward(defplline);
             movecursor(keysym);
             keysym = -1;
             goto errclear;
@@ -393,7 +394,7 @@ nextkey:
             continue;
 
         case CCMIPAGE:
-            movew(- defmipage * (1 + curwin->text_height));
+            wksp_forward(- defmipage * (1 + curwin->text_height));
             continue;
 
         case CCPLSRCH:
@@ -405,7 +406,7 @@ nextkey:
             continue;
 
         case CCPLLINE:
-            movew(defplline);
+            wksp_forward(defplline);
             continue;
 
         case CCDELCH:
@@ -416,14 +417,14 @@ nextkey:
             continue;
 
         case CCMILINE:
-            movew(-defmiline);
+            wksp_forward(-defmiline);
             continue;
 
         case CCDOCMD:
             goto notstrerr;
 
         case CCPLPAGE:
-            movew(defplpage * (1 + curwin->text_height));
+            wksp_forward(defplpage * (1 + curwin->text_height));
             continue;
 
         case CCMAKEWIN:
@@ -654,7 +655,7 @@ yesarg:
                 goto notstrerr;
             if (s2i(param_str, &i))
                 goto notinterr;
-            movew(- i * (1 + curwin->text_height));
+            wksp_forward(- i * (1 + curwin->text_height));
             continue;
 
         case CCROFFSET:
@@ -669,11 +670,11 @@ yesarg:
             if (param_type < 0)
                 goto notstrerr;
             else if (param_type == 0)
-                movew(cursorline);
+                wksp_forward(cursorline);
             else if (param_type > 0) {
                 if (s2i(param_str, &i))
                     goto notinterr;
-                movew(i);
+                wksp_forward(i);
             }
             continue;
 
@@ -693,11 +694,11 @@ yesarg:
             if (param_type < 0)
                 goto notstrerr;
             else if (param_type == 0)
-                movew(cursorline - curwin->text_height);
+                wksp_forward(cursorline - curwin->text_height);
             else if (param_type > 0) {
                 if (s2i(param_str, &i))
                     goto notinterr;
-                movew(-i);
+                wksp_forward(-i);
             }
             continue;
 
@@ -715,7 +716,7 @@ yesarg:
                 goto notstrerr;
             if (s2i(param_str, &i))
                 goto notinterr;
-            movew(i * (1 + curwin->text_height));
+            wksp_forward(i * (1 + curwin->text_height));
             continue;
 
         case CCMAKEWIN:
