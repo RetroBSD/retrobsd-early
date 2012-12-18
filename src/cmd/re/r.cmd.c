@@ -71,9 +71,9 @@ static int callexec()
      */
     i = curwksp->toprow + cursorline;
     m = 1;
-    cp = paramv;
+    cp = param_str;
     if (*cp == '-' || (*cp >= '0' && *cp <= '9')) {
-        cp = s2i(paramv, &m);
+        cp = s2i(param_str, &m);
         if (cp == 0)
             goto noargerr;
     }
@@ -130,7 +130,7 @@ static int callexec()
             exit(-1);
         close(1);               /* Вывод в рабочий файл */
         open(tmpname, 1);
-        lseek(1, tempfl, 0);
+        lseek(1, tempseek, 0);
         j = 2;
         /* Закрываем все, что осталось открыто */
         while ((k = dup(1)) >= 0)
@@ -224,7 +224,7 @@ errclear:
             poscursor(j, k);
             dumpcbuf();
             sleep(1);
-            putup(k, k);
+            drawlines(k, k);
             poscursor(j, k);
         }
         if (insert_mode && clr_arg_area && ! message_displayed)
@@ -276,7 +276,7 @@ nextkey:
                     cline[i] = cline[i+1];
                 cline_len--;
                 thiscol -= curwksp->topcol;
-                putup(-(1+thiscol), cursorline);
+                drawlines(-thiscol-1, cursorline);
                 poscursor(thiscol, thisrow);
                 cline_modified = 1;
                 keysym = -1;
@@ -285,7 +285,7 @@ nextkey:
             /* Проверка на границу окна */
             if (cursorcol > curwin->text_width) {
                 if (cline_modified) {
-                    putline(0);
+                    putline();
                     movep(defrindent);
                     goto nextkey;
                 }
@@ -316,7 +316,7 @@ nextkey:
                     cline[i] = cline[i-1];
                 cline_len++;
                 thiscol -= curwksp->topcol;
-                putup(-(1 + thiscol), cursorline);
+                drawlines(-thiscol-1, cursorline);
                 poscursor(thiscol, thisrow);
             }
 #if 0
@@ -343,7 +343,7 @@ nextkey:
         }
         /* Сдвиг вниз, если последняя строка  */
         if (keysym == CCRETURN) {
-            putline(0);
+            putline();
             if (cursorline == curwin->text_height)
                 movew(defplline);
             i = curwksp->topcol;
@@ -362,7 +362,7 @@ nextkey:
                 keysym == CCRETURN || keysym == CCHOME)
             {
                 /* Row changed: save current line. */
-                putline(0);
+                putline();
                 goto newnumber;
             }
             keysym = -1;
@@ -371,7 +371,7 @@ nextkey:
         /* Если граница поля */
         if (cursorcol > curwin->text_width)
             poscursor(curwin->text_width, cursorline);
-        putline(0);
+        putline();
         switch (keysym) {
         case CCQUIT:
             if (endit())
@@ -465,7 +465,7 @@ nextkey:
             continue;
 
         case CCMAKEWIN:
-            win_make(deffile);
+            win_open(deffile);
             continue;
 
         case CCTABS:
@@ -474,7 +474,7 @@ nextkey:
 
         case CCREDRAW:                  /* Redraw screen */
         case CCEND:                     /* TODO */
-            rescreen();
+            redisplay();
             keysym = -1;
             continue;
 
@@ -502,10 +502,10 @@ gotarg:
 yesarg:
         switch (keysym) {
         case CCQUIT:
-            if (paraml > 0 &&
-                (dechars(paramv, paraml), *paramv) == 'a')
+            if (param_len > 0 &&
+                (dechars(param_str, param_len), *param_str) == 'a')
             {
-                if (*(paramv+1) != 'd')
+                if (param_str[1] != 'd')
                     return;
                 cleanup();
                 inputfile = -1; /* to force a dump */
@@ -519,28 +519,28 @@ yesarg:
             continue;
 
         case CCLINDENT:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             movep(-i);
             continue;
 
         case CCSETFILE:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (paramv == 0)
+            if (param_str == 0)
                 goto noargerr;
             if (use0flg || ! inputfile)
-                dechars(paramv, paraml);
+                dechars(param_str, param_len);
             use0flg = 1;
-            editfile(paramv, 0, 0, 1, 1);
+            editfile(param_str, 0, 0, 1, 1);
             continue;
 
         case CCCHWINDOW:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
@@ -550,51 +550,51 @@ yesarg:
         case CCOPEN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            if (paramtype != 0) {
+            if (param_type != 0) {
                 lnfun = openlines;
                 spfun = openspaces;
                 goto spdir;
             }
-            splitline(curwksp->toprow + paramr0,
-                paramc0 + curwksp->topcol);
+            splitline(curwksp->toprow + param_r0,
+                param_c0 + curwksp->topcol);
             continue;
 
         case CCMISRCH:
         case CCPLSRCH:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (paramv == 0)
+            if (param_str == 0)
                 goto noargerr;
             if (searchkey)
                 free(searchkey);
-            searchkey = paramv;
-            paraml = 0;
+            searchkey = param_str;
+            param_len = 0;
             search(keysym == CCPLSRCH ? 1 : -1);
             continue;
 
         case CCCLOSE:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            if (paramtype != 0) {
-                if (paramtype > 0 && paramv && paramv[0] == '>') {
-                    msrbuf(deletebuf, paramv+1, 0);
+            if (param_type != 0) {
+                if (param_type > 0 && param_str && param_str[0] == '>') {
+                    msrbuf(deletebuf, param_str+1, 0);
                     continue;
                 }
                 lnfun = closelines;
                 spfun = closespaces;
                 goto spdir;
             }
-            combineline(curwksp->toprow + paramr0,
-                paramc0 + curwksp->topcol);
+            combineline(curwksp->toprow + param_r0,
+                param_c0 + curwksp->topcol);
             continue;
 
         case CCPUT:
-            if (paramtype > 0 && paramv && paramv[0] == '$') {
-                if (msrbuf(pickbuf, paramv+1, 1))
+            if (param_type > 0 && param_str && param_str[0] == '$') {
+                if (msrbuf(pickbuf, param_str+1, 1))
                     goto errclear;
                 continue;
             }
-            if (paramtype != 0)
+            if (param_type != 0)
                 goto notstrerr;
             if (file[curfile].writable == 0)
                 goto nowriterr;
@@ -611,7 +611,7 @@ yesarg:
         case CCMOVEUP:
         case CCMOVERIGHT:
         case CCBACKTAB:
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
@@ -621,21 +621,21 @@ yesarg:
             continue;
 
         case CCRETURN:
-            if (paramtype <= 0 || ! paramv)
+            if (param_type <= 0 || ! param_str)
                 goto notimperr;
-            dechars(paramv, paraml);
-            switch (paramv[0]) {
+            dechars(param_str, param_len);
+            switch (param_str[0]) {
             case '>':
-                msvtag(paramv + 1);
+                msvtag(param_str + 1);
                 break;
             case '$':
-                if(mdeftag(paramv + 1)){
+                if(mdeftag(param_str + 1)){
                     keysym = -1;
                     goto reparg;
                 }
                 break;
             case 'w':
-                if(paramv[1] == ' ' && paramv[2] == '+')
+                if(param_str[1] == ' ' && param_str[2] == '+')
                     file[curwksp->wfile].writable = 1;
                 else
                     file[curwksp->wfile].writable = 0;
@@ -644,15 +644,15 @@ yesarg:
                 defkey();
                 break;
             case 'r':           /* Redraw screen */
-                rescreen();
+                redisplay();
                 break;
             case 'd':
-                if (paramv[1] == ' ')
-                    defmac(&paramv[2]);
+                if (param_str[1] == ' ')
+                    defmac(&param_str[2]);
                 break;
             case 'q':
                 keysym = CCQUIT;
-                if (paramv[1] == 'a') {
+                if (param_str[1] == 'a') {
                     return;
                 }
                 goto nextkey;
@@ -662,10 +662,10 @@ yesarg:
             continue;
 
         case CCPICK:
-            if (paramtype == 0)
+            if (param_type == 0)
                 goto notimperr;
-            if (paramtype > 0 && paramv && paramv[0] == '>') {
-                msrbuf(pickbuf, paramv+1, 0);
+            if (param_type > 0 && param_str && param_str[0] == '>') {
+                msrbuf(pickbuf, param_str+1, 0);
                 continue;
             }
             lnfun = picklines;
@@ -677,14 +677,14 @@ yesarg:
             continue;
 
         case CCGOTO:
-            if (paramtype == 0)
+            if (param_type == 0)
                 gtfcn(file[curfile].nlines);
-            else if (paramtype > 0) {
-                if(paramv && paramv[0] == '$') {
-                    mgotag(paramv + 1);
+            else if (param_type > 0) {
+                if(param_str && param_str[0] == '$') {
+                    mgotag(param_str + 1);
                     continue;
                 }
-                if (s2i(paramv, &i))
+                if (s2i(param_str, &i))
                     goto notinterr;
                 gtfcn(i - 1);
             } else
@@ -692,28 +692,28 @@ yesarg:
             continue;
 
         case CCMIPAGE:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             movew(- i * (1 + curwin->text_height));
             continue;
 
         case CCRINDENT:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             movep(i);
             continue;
 
         case CCPLLINE:
-            if (paramtype < 0)
+            if (param_type < 0)
                 goto notstrerr;
-            else if (paramtype == 0)
+            else if (param_type == 0)
                 movew(cursorline);
-            else if (paramtype > 0) {
-                if (s2i(paramv, &i))
+            else if (param_type > 0) {
+                if (s2i(param_str, &i))
                     goto notinterr;
                 movew(i);
             }
@@ -723,51 +723,51 @@ yesarg:
             goto notimperr;
 
         case CCSAVEFILE:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (paramv == 0)
+            if (param_str == 0)
                 goto noargerr;
-            dechars(paramv, paraml);
-            savefile(paramv, curfile);
+            dechars(param_str, param_len);
+            savefile(param_str, curfile);
             continue;
 
         case CCMILINE:
-            if (paramtype < 0)
+            if (param_type < 0)
                 goto notstrerr;
-            else if (paramtype == 0)
+            else if (param_type == 0)
                 movew(cursorline - curwin->text_height);
-            else if (paramtype > 0) {
-                if (s2i(paramv, &i))
+            else if (param_type > 0) {
+                if (s2i(param_str, &i))
                     goto notinterr;
                 movew(-i);
             }
             continue;
 
         case CCDOCMD:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            dechars(paramv, paraml);
+            dechars(param_str, param_len);
             if (file[curfile].writable == 0)
                 goto nowriterr;
             callexec();
             continue;
 
         case CCPLPAGE:
-            if (paramtype <= 0)
+            if (param_type <= 0)
                 goto notstrerr;
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             movew(i * (1 + curwin->text_height));
             continue;
 
         case CCMAKEWIN:
-            if (paramtype == 0)
+            if (param_type == 0)
                 win_remove();
-            else if (paramtype < 0)
+            else if (param_type < 0)
                 goto notstrerr;
             else {
-                dechars(paramv, paraml);
-                win_make(paramv);
+                dechars(param_str, param_len);
+                win_open(param_str);
             }
             continue;
 
@@ -779,26 +779,26 @@ yesarg:
             goto badkeyerr;
         }
 spdir:
-        if (paramtype > 0) {
-            if(paramv[0] == '$') {
-                if (mdeftag(paramv + 1))
+        if (param_type > 0) {
+            if(param_str[0] == '$') {
+                if (mdeftag(param_str + 1))
                     goto spdir;
                 continue;
             }
-            if (s2i(paramv, &i))
+            if (s2i(param_str, &i))
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
             (*lnfun)(curwksp->toprow + cursorline, i);
         } else {
-            if (paramc1 == paramc0) {
-                (*lnfun)(curwksp->toprow + paramr0,
-                    (paramr1 - paramr0) + 1);
+            if (param_c1 == param_c0) {
+                (*lnfun)(curwksp->toprow + param_r0,
+                    (param_r1 - param_r0) + 1);
             } else
-                (*spfun)(curwksp->toprow + paramr0,
-                    curwksp->topcol + paramc0,
-                    (paramc1 - paramc0),
-                    (paramr1 - paramr0) + 1);
+                (*spfun)(curwksp->toprow + param_r0,
+                    curwksp->topcol + param_c0,
+                    (param_c1 - param_c0),
+                    (param_r1 - param_r0) + 1);
         }
         continue;
 badkeyerr:
@@ -846,7 +846,7 @@ void search(delta)
     register char *at, *sk, *fk;
     int ln, lkey, col, lin, slin, i;
 
-    paraml = 0;
+    param_len = 0;
     if (searchkey == 0 || *searchkey == 0) {
         error("Nothing to search for.");
         return;
@@ -868,7 +868,7 @@ void search(delta)
         lkey++;
     ln = lin + curwksp->toprow;
     getlin (ln);
-    putline(0);
+    putline();
     at = cline + col + curwksp->topcol;
     for (;;) {
         at += delta;
@@ -878,7 +878,7 @@ void search(delta)
             if (i || (ln += delta) < 0 ||
                 (wksp_position(curwksp, ln) && delta == 1))
             {
-                putup(lin, lin);
+                drawlines(lin, lin);
                 poscursor(col, lin);
                 error(i ? "Interrupt." : "Search key not found.");
                 highlight_position = 0;
@@ -886,7 +886,7 @@ void search(delta)
                 return;
             }
             getlin(ln);
-            putline(0);
+            putline();
             at = cline;
             if (delta < 0)
                 at += cline_len - lkey;

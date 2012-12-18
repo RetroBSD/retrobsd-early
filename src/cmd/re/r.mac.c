@@ -142,9 +142,9 @@ int mgotag(name)
 /*
  * Функция mdeftag вырабатывает параметры, описывающие область
  * между текущим положением курсора и меткой "name". Она заполняет:
- *      paramtype = -2
- *      paramc1   =    соответствует точке "name"
- *      paramr1   =           -- // --
+ *      param_type = -2
+ *      param_c1   =    соответствует точке "name"
+ *      param_r1   =           -- // --
  */
 int mdeftag(name)
     char *name;
@@ -161,35 +161,35 @@ int mdeftag(name)
         error("another file");
         return(0);
     }
-    paramtype = -2;
-    paramr1 = m->mtag.line;
-    paramc1 = m->mtag.col ;
-    paramr0 += cws -> toprow;
-    paramc0 += cws -> topcol;
-    if (paramr0 > paramr1) {
+    param_type = -2;
+    param_r1 = m->mtag.line;
+    param_c1 = m->mtag.col ;
+    param_r0 += cws -> toprow;
+    param_c0 += cws -> topcol;
+    if (param_r0 > param_r1) {
         f++;
-        ln = paramr1;
-        paramr1 = paramr0;
-        paramr0 = ln;
+        ln = param_r1;
+        param_r1 = param_r0;
+        param_r0 = ln;
     } else
-        ln = paramr0;
-    if (paramc0 > paramc1) {
+        ln = param_r0;
+    if (param_c0 > param_c1) {
         f++;
-        cl = paramc1;
-        paramc1 = paramc0;
-        paramc0 = cl;
+        cl = param_c1;
+        param_c1 = param_c0;
+        param_c0 = cl;
     } else
-        cl = paramc0;
+        cl = param_c0;
     if (f) {
         cgoto(ln, cl, -1, 0);
     }
-    paramr0 -= cws -> toprow;
-    paramr1 -= cws -> toprow;
-    paramc0 -= cws -> topcol;
-    paramc1 -= cws -> topcol;
-    if (paramr1 == paramr0)
+    param_r0 -= cws->toprow;
+    param_r1 -= cws->toprow;
+    param_c0 -= cws->topcol;
+    param_c1 -= cws->topcol;
+    if (param_r1 == param_r0)
         telluser("**:columns defined by tag", 0);
-    else if (paramc1 == paramc0)
+    else if (param_c1 == param_c0)
         telluser("**:lines defined by tag", 0);
     else
         telluser("**:square defined by tag", 0);
@@ -208,10 +208,10 @@ int defmac(name)
     if (! m)
         return 0;
     param(1);
-    if (paramtype == 1 && paramv) {
-        m->mstring = paramv;
-        paraml = 0;
-        paramv = NULL;
+    if (param_type == 1 && param_str) {
+        m->mstring = param_str;
+        param_len = 0;
+        param_str = NULL;
         return 1;
     }
     return 0;

@@ -43,13 +43,13 @@ int clineno = -1;
 char cline_modified = 0;
 
 /* Файл / протокол */
-int ttyfile  = -1;
+int journal  = -1;
 int inputfile = 0;
 
 int oldttmode;
 
-char *ttynm, *ttytmp, *rfile;
-clipboard_t pb, db;
+static char *ttynm, *jname, *rfile;
+static clipboard_t pb, db;
 
 /*
  * Фатальный сигнал
@@ -87,7 +87,7 @@ void testsig(n)
 
 /*
  * Инициализация режимов и файлов
- * 2 - повторить сеанс из ttyfile
+ * 2 - повторить сеанс из journal
  * 1 - начать заново
  */
 static void startup(restart)
@@ -113,21 +113,21 @@ static void startup(restart)
     c = ttynm + strlen (ttynm) - 2;
     if (*c == '/')
         *c = '-';
-    tmpname = append(append("/tmp/retm", c), name);
-    ttytmp  = append(append("/tmp/rett", c), name);
-    rfile   = append(append("/tmp/resv", c), name);
+    tmpname = append(append("/tmp/ret", c), name);
+    jname   = append(append("/tmp/rej", c), name);
+    rfile   = append(append("/tmp/res", c), name);
     if (restart) {
-        ttyfile = open(ttytmp, 2);
-        if (ttyfile >= 0 && restart != 2)
-            close(ttyfile);
+        journal = open(jname, 2);
+        if (journal >= 0 && restart != 2)
+            close(journal);
     }
     if (restart != 2) {
-        unlink(ttytmp);
-        ttyfile = creat(ttytmp, FILEMODE);
+        unlink(jname);
+        journal = creat(jname, FILEMODE);
     } else
-        inputfile = ttyfile;
-    if (ttyfile < 0) {
-        puts1("can't open ttyfile.\n");
+        inputfile = journal;
+    if (journal < 0) {
+        puts1("can't open journal.\n");
         exit(1);
     }
     unlink(tmpname);
@@ -164,7 +164,7 @@ static void startup(restart)
 
     /* Закрываем терминал на прием сообщений от других */
     oldttmode = getpriv(0);
-    chmod(ttynm,0600);
+    chmod(ttynm, 0600);
 
     /*
      * Переопределяем сигналы
@@ -199,7 +199,7 @@ static void makestate()
 static void getstate(ichar)
     char ichar;
 {
-    int nletters, lmarg, rmarg, tmarg, bmarg, row, col, winnum, gf;
+    int nletters, base_col, max_col, base_row, max_row, row, col, winnum, gf;
     register int i, n;
     register char *f1;
     char *fname;
@@ -216,11 +216,11 @@ make:   makestate();
     for (n=0; n<nwinlist; n++) {
         win = winlist[n] = (window_t*) salloc(sizeof(window_t));
         win->prevwinnum = get1w(gbuf);
-        lmarg = get1w(gbuf);
-        rmarg = get1w(gbuf);
-        tmarg = get1w(gbuf);
-        bmarg = get1w(gbuf);
-        win_create(win, lmarg, rmarg, tmarg, bmarg, 1);
+        base_col = get1w(gbuf);
+        max_col = get1w(gbuf);
+        base_row = get1w(gbuf);
+        max_row = get1w(gbuf);
+        win_create(win, base_col, max_col, base_row, max_row, 1);
         win_draw(win, 0);
         gf = 0;
         nletters = get1w(gbuf);
@@ -274,12 +274,12 @@ static void writefile(code1, str, code2)
 {
     int len;
 
-    if (write(ttyfile, &code1, 1) != 1)
+    if (write(journal, &code1, 1) != 1)
         /* ignore errors */;
     len = strlen (str);
-    if (len > 0 && write(ttyfile, str, len) != len)
+    if (len > 0 && write(journal, str, len) != len)
         /* ignore errors */;
-    if (write(ttyfile, &code2, 1) != 1)
+    if (write(journal, &code2, 1) != 1)
         /* ignore errors */;
 }
 
@@ -309,10 +309,10 @@ static void savestate()
     for (i=0; i<nwinlist; i++) {
         win = winlist[i];
         put1w(win->prevwinnum, sbuf);
-        put1w(win->lmarg, sbuf);
-        put1w(win->rmarg, sbuf);
-        put1w(win->tmarg, sbuf);
-        put1w(win->bmarg, sbuf);
+        put1w(win->base_col, sbuf);
+        put1w(win->max_col, sbuf);
+        put1w(win->base_row, sbuf);
+        put1w(win->max_row, sbuf);
         f1 = fname = file[win->altwksp->wfile].name;
         if (f1) {
             while (*f1++);
@@ -388,7 +388,7 @@ int main(nargs, args)
         }
     } else {
         /* For repeated session */
-        if (write(ttyfile, &ichar, 1) != 1)
+        if (write(journal, &ichar, 1) != 1)
             /* ignore errors */;
     }
     getstate(ichar);
@@ -400,7 +400,7 @@ int main(nargs, args)
         writefile(CCENTER, args[1], CCSETFILE);
         if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
             /* Failed to open file - use empty buffer. */
-            putup(0, curwin->text_height);
+            drawlines(0, curwin->text_height);
             poscursor(curwksp->cursorcol, curwksp->cursorrow);
         } else {
             /* File opened. */
@@ -409,7 +409,7 @@ int main(nargs, args)
         }
     } else {
         /* Saved session restored. */
-        putup(0, curwin->text_height);
+        drawlines(0, curwin->text_height);
         poscursor(curwksp->cursorcol, curwksp->cursorrow);
     }
     telluser("", 0);
@@ -432,7 +432,7 @@ void cleanup()
     ttcleanup();
     close(tempfile);
     unlink(tmpname);
-    close(ttyfile);
+    close(journal);
     chmod(ttynm, 07777 & oldttmode);
 }
 
@@ -455,7 +455,7 @@ void fatal(s)
         puts1("ran out of space.\n");
     puts1("\nNow the good news - your editing session can be reproduced\n");
     puts1("from file ");
-    puts1(ttytmp);
+    puts1(jname);
     puts1("\nUse command 're -' to do it.\n");
 #ifdef DEBUG
     if (inputfile || ! isatty(1)) {
@@ -480,6 +480,6 @@ void fatal(s)
             signal(i, 0);
     }
 #endif
-    close(ttyfile);
+    close(journal);
     exit(1);
 }

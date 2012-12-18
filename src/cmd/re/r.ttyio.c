@@ -211,9 +211,9 @@ static int findt (fb, fe, sy, ns)
     if (sy == 0)
         return BADF;
     for (; fi != *fe; fi++) {
-        if (! *fe && ! fi->excc)
+        if (! *fe && ! fi->value)
             goto exit;
-        sy1 = fi->excc[ns];
+        sy1 = fi->value[ns];
         if (*fb) {
             if (sy != sy1)
                 goto exit;
@@ -228,9 +228,9 @@ exit:
     if (! *fb)
         return BADF;
     fi = *fb;
-    if (fi->excc[ns + 1])
+    if (fi->value[ns + 1])
         return CONTF;
-    return fi->incc;
+    return fi->ccode;
 }
 
 /*
@@ -243,10 +243,10 @@ static int readfc()
     do {
         keysym = isy0f;
         if (intrflag || read(inputfile, &sy1, 1) !=1) {
-            if (inputfile != ttyfile)
+            if (inputfile != journal)
                 close(inputfile);
             else
-                lseek(ttyfile, (long) -1, 1);
+                lseek(journal, (long) -1, 1);
             inputfile = 0;
             intrflag = 0;
             putcha(COBELL);
@@ -404,7 +404,7 @@ readychr:
     }
 retn:
     sy1 = keysym;
-    if (write (ttyfile, &sy1, 1) != 1)
+    if (write (journal, &sy1, 1) != 1)
         /* ignore errors */;
     /*
      * Конец того, что относится к терминалу (до quit).
@@ -443,7 +443,7 @@ int interrupt()
     if (intrflag) {
         intrflag = 0;
         sy1 = CCINTRUP;
-        if (write(ttyfile, &sy1, 1) != 1)
+        if (write(journal, &sy1, 1) != 1)
             /* ignore errors */;
         return 1;
     }
@@ -465,7 +465,7 @@ int rawinput()
         intrflag = 0;
     }
     c &= 0177;
-    if (write(ttyfile, &c, 1) != 1)
+    if (write(journal, &c, 1) != 1)
         /* ignore errors */;
     return (unsigned char) c;
 }
@@ -498,7 +498,7 @@ int addkey(cmd, key)
     }
     fw = fe;
     nfinc--;
-    while ((fw++)->excc);
+    while ((fw++)->value);
     do {
         *fw = *(fw-1);
     } while (--fw != fe);
@@ -506,8 +506,8 @@ retn:
 #ifdef TEST
     test("addkey out");
 #endif
-    fw ->excc = key;
-    fw->incc = cmd;
+    fw->value = key;
+    fw->ccode = cmd;
     return(1);
 }
 

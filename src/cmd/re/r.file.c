@@ -278,7 +278,7 @@ int editfile(filename, line, col, mkflg, puflg)
             if (chown(filename, userid, groupid) < 0)
                 /* ignore errors */;
         }
-        paraml = 0;   /* so its kept around */
+        param_len = 0;   /* so its kept around */
         file[fn].name = filename;
     }
     /* Выталкиваем буфер, так как здесь долгая операция */
@@ -292,7 +292,7 @@ int editfile(filename, line, col, mkflg, puflg)
     curwksp->toprow = line;
     curwksp->topcol = col;
     if (puflg) {
-        putup(0, curwin->text_height);
+        drawlines(0, curwin->text_height);
         poscursor(0, defplline);
     }
     return(1);

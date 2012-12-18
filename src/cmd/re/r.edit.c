@@ -470,7 +470,7 @@ void switchfile()
         return;
     }
     wksp_switch();
-    putup(0, curwin->text_height);
+    drawlines(0, curwin->text_height);
     poscursor(curwksp->cursorcol, curwksp->cursorrow);
 }
 
@@ -762,10 +762,10 @@ void openspaces(line, col, number, nl)
         getlin(i);
         putbks(col, number);
         cline_modified = 1;
-        putline(0);
+        putline();
         j = i - curwksp->toprow;
         if (j <= curwin->text_height)
-            putup(j, j);
+            drawlines(j, j);
     }
     poscursor(col - curwksp->topcol, line - curwksp->toprow);
 }
@@ -783,7 +783,7 @@ static segment_t *writemp(buf,n)
 
     if (charsfi == tempfile)
         charsfi = 0;
-    lseek(tempfile, tempfl, 0);
+    lseek(tempfile, tempseek, 0);
 
     n = dechars(buf, n-1);
     if (write(tempfile, buf, n) != n)
@@ -796,7 +796,7 @@ static segment_t *writemp(buf,n)
     f1->next = f2;
     f1->nlines = 1;
     f1->fdesc = tempfile;
-    f1->seek = tempfl;
+    f1->seek = tempseek;
     if (n <= 127)
         f1->data = n;
     else {
@@ -804,7 +804,7 @@ static segment_t *writemp(buf,n)
         *p++ = (n / 128)|0200;
         *p = n % 128;
     }
-    tempfl += n;
+    tempseek += n;
     return (f1);
 }
 
@@ -829,7 +829,7 @@ void splitline(line, col)
         nsave = cline_len;
         cline_len = col+1;
         cline_modified = 1;
-        putline(0);
+        putline();
         cline[col] = csave;
         insert(curwksp, writemp(cline+col, nsave-col), line+1);
         wksp_redraw((workspace_t *)NULL, curfile, line, line+1, 1);
@@ -927,7 +927,7 @@ static void pcspaces(line, col, number, nl, flg)
         bp = &(f1->data);
         f1->nlines = nl;
         f1->fdesc = tempfile;
-        f1->seek = tempfl;
+        f1->seek = tempseek;
         for (j=line0; j<line0+nl; j++) {
             getlin(j);
             if (col+number >= cline_len) {
@@ -941,7 +941,7 @@ static void pcspaces(line, col, number, nl, flg)
             for (i=0; i<number; i++)
                 linebuf[i] = cline[col+i];
             linebuf[number] = '\n';
-            lseek(tempfile, tempfl, 0);
+            lseek(tempfile, tempseek, 0);
             if (charsfi == tempfile)
                 charsfi = 0;
             n = dechars(linebuf, number);
@@ -950,7 +950,7 @@ static void pcspaces(line, col, number, nl, flg)
             if (n > 127)
                 *bp++ = (n/128) | 0200;
             *bp++ = n % 128;
-            tempfl += n;
+            tempseek += n;
         }
         f2 = f1;
         line0 = line0 + nl;
@@ -973,10 +973,10 @@ static void pcspaces(line, col, number, nl, flg)
                 cline[i-number] = cline[i];
             cline_len -= number;
             cline_modified = 1;
-            putline(0);
+            putline();
             i = j - curwksp->toprow;
             if (i <= curwin->text_height)
-                putup(i, i);
+                drawlines(i, i);
         }
     }
     n = file[2].nlines;
@@ -1030,7 +1030,7 @@ void combineline(line, col)
         cline[col+i] = temp[i];
     cline_len = col + nsave;
     cline_modified = 1;
-    putline(0);
+    putline();
     free((char *)temp);
     delete(curwksp, line+1, line+1);
     wksp_redraw((workspace_t *)NULL, curfile, line, line+1, -1);
@@ -1190,10 +1190,10 @@ static void pspaces(buf, line, col)
         for (j=0; j<nc; j++)
             cline[col+j] = linebuf[j];
         cline_modified = 1;
-        putline(0);
+        putline();
         j = line+i-curwksp->toprow;
         if (j <= curwin->text_height)
-            putup(j, j);
+            drawlines(j, j);
     }
     free(linebuf);
     poscursor(col - curwksp->topcol, line - curwksp->toprow);
@@ -1234,11 +1234,9 @@ void getlin(ln)
 }
 
 /*
- * putline(nl) -
  * Поместить строку из cline в curwksp, строка nl.
  */
-void putline(n)
-    int n;
+void putline()
 {
     segment_t *w0,*cl;
     register segment_t *wf, *wg;
@@ -1255,7 +1253,7 @@ void putline(n)
         file[curfile].nlines = clineno + 1;
     cline_modified = 0;
     cline[cline_len-1] = '\n';
-    cl = writemp(cline+n,cline_len-n);
+    cl = writemp(cline, cline_len);
     w = curwin->wksp;             /* w s can be replaced by curwksp */
     i = clineno;
     flg = breaksegm(w,i,1);
@@ -1327,9 +1325,9 @@ void doreplace(line, m, jproc, pipef)
     charsfi = -1;                   /* forget old position before fork */
     if (m)
         closelines(-1-line,m);
-    charsin(tempfile, tempfl);
+    charsin(tempfile, tempseek);
     ee = e = temp2segm(tempfile);
-    tempfl = charskl;
+    tempseek = charskl;
     l = 0;
     if (e->nlines) {
         while (e->fdesc) {

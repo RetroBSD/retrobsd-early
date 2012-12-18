@@ -124,25 +124,25 @@ workspace_t *curwksp, *pickwksp;
 
 /*
  * Window - a region on the display.
- * All display coordinates, and also text_topcol and text_toprow, are measured relative
- * to (0,0) = top left of screen. Other 6 borders are relative to text_topcol and text_toprow.
+ * All display coordinates, and also text_col and text_row, are measured relative
+ * to (0,0) = top left of screen. Other 6 borders are relative to text_col and text_row.
  */
 typedef struct {
     workspace_t *wksp;      /* Pointer to workspace */
     workspace_t *altwksp;   /* Alternative workspace */
     int prevwinnum;         /* Number of previous window */
-    int text_toprow;        /* Top row of text area */
-    int text_topcol;        /* Left column of text area */
+    int base_row;           /* Top row of the window */
+    int base_col;           /* Left column of the window */
+    int max_row;            /* Bottom row of the window */
+    int max_col;            /* Right column of the window */
+    int text_row;           /* Top row of text area */
+    int text_col;           /* Left column of text area */
     int text_height;        /* Height of text area */
     int text_width;         /* Width of text area */
-    int lmarg;              /* границы окна == ..text или +1 */
-    int rmarg;
-    int tmarg;
-    int bmarg;
-    char *firstcol;         /* Номера первых колонок, !=' '  */
-    char *lastcol;          /*  -//-  последних -//-         */
-    char *lmchars;          /* символы - левые ограничители  */
-    char *rmchars;          /* символы - правые ограничители */
+    unsigned char *firstcol; /* Numbers of first non-space symbols */
+    unsigned char *lastcol; /* Numbers of last non-space symbols */
+    char *leftbar;          /* Symbols on left edge */
+    char *rightbar;         /* Symbols on right edge */
 } window_t;
 
 window_t *winlist[MAXWINLIST];
@@ -156,15 +156,15 @@ window_t paramwin;          /* Window to enter arguments */
  * Copy-and-paste clipboard.
  */
 typedef struct {
-    int linenum;            /* Номер первой строки в "#" */
-    int nrows;              /* Число строк               */
-    int ncolumns;           /* Число колонок             */
+    int linenum;            /* Index of first line in "#" */
+    int nrows;              /* Number of lines */
+    int ncolumns;           /* Number of columns */
 } clipboard_t;
 
 clipboard_t *pickbuf, *deletebuf;
 
 /*
- * Управляющие символы
+ * Control codes.
  */
 #define CCCTRLQUOTE 0       /* knockdown next char  ^P              */
 #define CCMOVEUP    1       /* move up 1 line               up      */
@@ -199,22 +199,25 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCCLOSE     036     /* delete               ^Y      f8      */
 #define CCENTER     037     /* enter parameter      ^A      f1      */
 #define CCQUIT      0177    /* terminate session    ^X ^C           */
-#define CCREDRAW    0236    /* redraw screen        ^L              */
+#define CCREDRAW    0236    /* redraw all           ^L              */
 #define CCEND       0237    /* cursor to end        ^X e    end     */
-#define CCINTRUP    0240    /* interrupt (ttyfile) */
+#define CCINTRUP    0240    /* interrupt (journal) */
 #define CCMAC       0200    /* macro marker */
 
-int cursorline;             /* physical screen position of */
+int cursorline;             /* physical position of */
 int cursorcol;              /* cursor from (0,0)=ulhc of text in window */
 
+int NCOLS, NLINES;          /* size of the screen */
+
+extern char *curspos, *cvtout[];
 extern char cntlmotions[];
 
 extern int tabstops[];
 char blanks[MAXCOLS];
 extern const char in0tab[]; /* input control codes */
 
-extern int keysym;          /* Текущий входной символ, -1 - дай еще! */
-char intrflag;              /* 1 - был сигнал INTR */
+extern int keysym;          /* Current input symbol, -1 - need more */
+char intrflag;              /* INTR signal occured */
 int highlight_position;     /* Highlight the current cursor position */
 
 /* Defaults. */
@@ -225,53 +228,47 @@ extern char deffile[];
 int message_displayed;      /* Arg area contains an error message */
 
 /*
- * Глобальные параметры для param():
- * paraml - длина параметра;
- * char *paramv - сам параметр,
- * paramtype - тип параметра,
- * paramc0, paramr0, paramc1< paramr1 -
- * размеры области при "cursor defined"
+ * Global variables for param().
+ * param_len    - length of the parameter;
+ * param_str    - string value of the parameter,
+ * param_type - type of the parameter,
+ * param_c0, param_r0, param_c1,
+ * param_r1   - coordinates of cursor-defined area
  */
-int paraml;
-char *paramv, paramtype;
-int paramc0, paramr0, paramc1, paramr1;
+int param_len;
+char *param_str, param_type;
+int param_c0, param_r0, param_c1, param_r1;
 
 /*
  * Current line.
  */
-char *cline;                /* массив для строки */
-int cline_max;              /* макс. длина */
-int cline_len;              /* текущая длина */
-int cline_incr;             /* следующее приращение длины */
-char cline_modified;        /* флаг 'было изменение' */
-int clineno;                /* номер строки в файле */
+char *cline;                /* allocated array */
+int cline_max;              /* allocated length */
+int cline_len;              /* used length */
+int cline_incr;             /* increment for reallocation */
+char cline_modified;        /* line was modified */
+int clineno;                /* line number in file */
 
 /*
- * Описатели файлов:
- * tempfile, tempfl - дескриптор и смещение во временном файле
- * ttyfile - дескриптор файда протокола
- * inputfile - дескриптор файла ввода команд из протокола
+ * File descriptors:
  */
-int tempfile;
-off_t tempfl;
-int ttyfile;
-int inputfile;
+int tempfile;               /* Temporary file */
+off_t tempseek;             /* Offset in temporary file */
+int journal;                /* Journaling file */
+int inputfile;              /* Input file (stdin or journal) */
 
 char *searchkey, *symac;
 
 int userid, groupid;
 
-char *tmpname;                  /* name of file, for do command */
-
-int NCOLS, NLINES;              /* size of the screen */
-extern char *curspos, *cvtout[];
+char *tmpname;              /* name of file, for do command */
 
 /*
- * Таблица клавиатуры (команда / строка символов)
+ * Translation of control codes to escape sequences.
  */
 typedef struct {
-    int incc;
-    char *excc;
+    int ccode;
+    char *value;
 } keycode_t;
 
 extern keycode_t keytab[];
@@ -279,11 +276,11 @@ extern keycode_t keytab[];
 int getkeysym (void);           /* read command from terminal */
 int rawinput (void);            /* read raw input character */
 void getlin (int);              /* get a line from current file */
-void putline (int);             /* put a line to current file */
+void putline (void);            /* put a line to current file */
 void movecursor (int);          /* cursor movement operation */
 void poscursor (int, int);      /* position a cursor in current window */
 void pcursor (int, int);        /* move screen cursor */
-void putup (int, int);          /* show lines of file */
+void drawlines (int, int);      /* show lines of file */
 void movep (int);               /* move a window to right */
 void movew (int);               /* move a window down */
 void excline (int);             /* extend cline array */
@@ -311,14 +308,14 @@ int msvtag (char *name);        /* save a file position by name */
 int mdeftag (char *);           /* define a file area by name */
 int defkey (void);              /* redefine a keyboard key */
 int addkey(int, char *);        /* add new command key to the code table */
-void rescreen (void);           /* redraw a screen */
+void redisplay (void);          /* redraw all */
 int defmac (char *);            /* define a macro sequence */
 char *rmacl (int);              /* get macro sequence by name */
 int mgotag (char *);            /* return a cursor back to named position */
 void execr (char **);           /* run command with given parameters */
 void telluser (char *, int);    /* display a message in arg area */
 void doreplace(int, int, int, int*); /* replace lines via pipe */
-void win_make (char *);         /* make new window */
+void win_open (char *);         /* make new window */
 void win_remove (void);         /* remove last window */
 void win_goto (int);            /* switch to window by number */
 void win_switch (window_t *);   /* switch to given window */

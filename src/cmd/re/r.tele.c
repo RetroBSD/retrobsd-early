@@ -7,25 +7,25 @@
 #include "r.defs.h"
 
 /*
- * putup(l0,lf) - выдать строки с l0 до lf
+ * drawlines(l0,lf) - выдать строки с l0 до lf
  * Особый случай - если l0 отрицательно, то выдать только строку lf.
  * При этом строка берется из cline, и выдавать только с колонки -l0.
  */
-void putup(lo, lf)
+void drawlines(lo, lf)
     int lo, lf;
 {
-    register int i, l0, fc;
+    register int i, l0;
     int j, k, l1;
-    char lmc, *cp, rmargflg;
+    char lmc, *cp, max_colflg;
 
     l0 = lo;
     lo += 2;
     if (lo > 0)
         lo = 0; /* Нач. колонка */
     l1 = lo;
-    lmc = (curwin->lmarg == curwin->text_topcol ? 0 :
+    lmc = (curwin->base_col == curwin->text_col ? 0 :
         curwksp->topcol == 0 ? LMCH : MLMCH);
-    rmargflg = (curwin->text_topcol + curwin->text_width < curwin->rmarg);
+    max_colflg = (curwin->text_col + curwin->text_width < curwin->max_col);
     while (l0 <= lf) {
         lo = l1;
         if (l0 < 0) {
@@ -39,15 +39,15 @@ void putup(lo, lf)
             if (i && lmc != 0)
                 lmc = ELMCH;
         }
-        if (lmc == curwin->lmchars[l0] || lmc == 0 || lo < 0)
+        if (lmc == curwin->leftbar[l0] || lmc == 0 || lo < 0)
             poscursor(0, l0);
         else {
             poscursor(-1, l0);
             putch(lmc, 0);
         }
-        curwin->lmchars[l0] = lmc;
-        if (rmargflg != 0)
-            rmargflg = RMCH;
+        curwin->leftbar[l0] = lmc;
+        if (max_colflg != 0)
+            max_colflg = RMCH;
         if (i != 0)
             i = 0;
         else {
@@ -57,8 +57,8 @@ void putup(lo, lf)
             if (i < 0)
                 i = 0;
             else if (i > curwin->text_width) {
-                if (i > 1 + curwin->text_width && rmargflg)
-                    rmargflg = MRMCH;
+                if (i > 1 + curwin->text_width && max_colflg)
+                    max_colflg = MRMCH;
                 i = 1 + curwin->text_width;
             }
         }
@@ -67,14 +67,14 @@ void putup(lo, lf)
          * Пытаемся пропустить начальные пробелы
          */
         if (lo == 0) {
+            int fc;
             for (fc=0; cline != 0 && cline[curwksp->topcol + fc]==' '; fc++);
-            j = curwin->text_width+1;
+            j = curwin->text_width + 1;
             if (fc > j)
                 fc = j;
-            if (fc > 127)
-                fc = 127;
-            lo = (curwin->firstcol)[l0] > fc ?
-                - fc : - (curwin->firstcol)[l0];
+            if (fc > 255)
+                fc = 255;
+            lo = (curwin->firstcol[l0] > fc) ? - fc : - curwin->firstcol[l0];
             if (i + lo <= 0)
                 lo = 0;
             else
@@ -89,19 +89,21 @@ void putup(lo, lf)
         cursorcol += (i + lo);
         if (curwin->lastcol[l0] < cursorcol)
             curwin->lastcol[l0] = cursorcol;
+
         /* Хвост строки заполняем пробелами */
-        k = (j = curwin->lastcol[l0]) - i;
+        j = curwin->lastcol[l0];
+        k = j - i;
         if (k > 0) {
             putblanks(k);
         }
-        if (curwin->text_topcol + cursorcol >= NCOLS)
-            cursorcol = - curwin->text_topcol;
-        if (rmargflg && rmargflg != curwin->rmchars[l0]) {
-            poscursor(curwin->rmarg - curwin->text_topcol, l0);
-            putch(rmargflg,0);
+        if (curwin->text_col + cursorcol >= NCOLS)
+            cursorcol = - curwin->text_col;
+        if (max_colflg && max_colflg != curwin->rightbar[l0]) {
+            poscursor(curwin->max_col - curwin->text_col, l0);
+            putch(max_colflg,0);
         } else
             movecursor(0);
-        curwin->rmchars[l0] = rmargflg;
+        curwin->rightbar[l0] = max_colflg;
         curwin->lastcol[l0] = (k > 0 ? i : j);
         ++l0;
     }
@@ -139,8 +141,8 @@ void poscursor(col, lin)
             return;
         }
     }
-    scol = col + curwin->text_topcol;
-    slin = lin + curwin->text_toprow;    /* screen col, lin */
+    scol = col + curwin->text_col;
+    slin = lin + curwin->text_row;    /* screen col, lin */
     cursorcol = col;
     cursorline = lin;
     pcursor(scol, slin);            /* direct positioning */
@@ -228,8 +230,8 @@ void putch(j, flg)
             curwin->lastcol[cursorline] = cursorcol + 1;
     }
     ++cursorcol;
-    if (curwin->text_topcol + cursorcol >= NCOLS)
-        cursorcol = - curwin->text_topcol;
+    if (curwin->text_col + cursorcol >= NCOLS)
+        cursorcol = - curwin->text_col;
     putcha(j);
     if (cursorcol <= 0)
         poscursor(0,
@@ -242,15 +244,15 @@ void putch(j, flg)
 /*
  * Get a parameter.
  * Три типа параметров.
- *         paramtype = -1 -- определение области
- *         paramtype = 0  -- пустой аргумент
- *         paramtype = 1  -- строка.
- *         при использовании макро бывает paramtype = -2 - tag defined
- * Возвращается указатель на введенную строку (paramv).
- * Длина возвращается в переменной paraml.
- * Если при очередном вызове paraml не 0, старый paramv
+ *         param_type = -1 -- определение области
+ *         param_type = 0  -- пустой аргумент
+ *         param_type = 1  -- строка.
+ *         при использовании макро бывает param_type = -2 - tag defined
+ * Возвращается указатель на введенную строку (param_str).
+ * Длина возвращается в переменной param_len.
+ * Если при очередном вызове param_len не 0, старый param_str
  * освобождается, так что если старый параметр нужен,
- * нужно обнулить paraml.
+ * нужно обнулить param_len.
  */
 char *param(macro)
     int macro;
@@ -262,17 +264,17 @@ char *param(macro)
     window_t *w;
 #define LPARAM 20       /* length increment */
 
-    if (paraml != 0 && paramv != 0)
-        free(paramv);
-    paramc1 = paramc0 = cursorcol;
-    paramr1 = paramr0 = cursorline;
+    if (param_len != 0 && param_str != 0)
+        free(param_str);
+    param_c1 = param_c0 = cursorcol;
+    param_r1 = param_r0 = cursorline;
     putch(COCURS,1);
     poscursor(cursorcol,cursorline);
     w = curwin;
 back:
     telluser(macro ? "mac: " : "arg: ", 0);
     win_switch(&paramwin);
-    poscursor(5,0);
+    poscursor(5, 0);
     do {
         keysym = -1;
         getkeysym();
@@ -283,27 +285,27 @@ back:
     if (MOVECMD(keysym)) {
         telluser("arg: *** cursor defined ***", 0);
         win_switch(w);
-        poscursor(paramc0, paramr0);
+        poscursor(param_c0, param_r0);
 t0:
         while (MOVECMD(keysym)) {
             movecursor(keysym);
-            if (cursorline == paramr0 && cursorcol == paramc0)
+            if (cursorline == param_r0 && cursorcol == param_c0)
                 goto back;
             keysym = -1;
             getkeysym();
         }
         if (CTRLCHAR(keysym) && keysym != CCBACKSPACE) {
-            if (cursorcol > paramc0)
-                paramc1 = cursorcol;
+            if (cursorcol > param_c0)
+                param_c1 = cursorcol;
             else
-                paramc0 = cursorcol;
-            if (cursorline > paramr0)
-                paramr1 = cursorline;
+                param_c0 = cursorcol;
+            if (cursorline > param_r0)
+                param_r1 = cursorline;
             else
-                paramr0 = cursorline;
-            paraml = 0;
-            paramv = NULL;
-            paramtype = -1;
+                param_r0 = cursorline;
+            param_len = 0;
+            param_str = NULL;
+            param_type = -1;
         } else {
             error("Printing character illegal here");
             keysym = -1;
@@ -311,24 +313,24 @@ t0:
             goto t0;
         }
     } else if (CTRLCHAR(keysym)) {
-        paraml = 0;
-        paramv = NULL;
-        paramtype = 0;
+        param_len = 0;
+        param_str = NULL;
+        param_type = 0;
     } else {
 rmac:
-        paraml = pn = 0;
+        param_len = pn = 0;
 loop:
         c = getkeysym();
-        if (pn >= paraml) {
-            cp = paramv;
-            paramv = salloc(paraml + LPARAM + 1); /* 1 for dechars */
-            c1 = paramv;
+        if (pn >= param_len) {
+            cp = param_str;
+            param_str = salloc(param_len + LPARAM + 1); /* 1 for dechars */
+            c1 = param_str;
             c2 = cp;
-            for (i=0; i<paraml; ++i)
+            for (i=0; i<param_len; ++i)
                 *c1++ = *c2++;
-            if (paraml)
+            if (param_len)
                 free(cp);
-            paraml += LPARAM;
+            param_len += LPARAM;
         }
         /* Конец ввода параметра */
         if ((! macro && keysym < ' ') || c==CCBACKSPACE || c==CCQUIT) {
@@ -340,12 +342,12 @@ loop:
                 }
                 movecursor(CCMOVELEFT);
                 --pn;
-                if ((paramv[pn] & 0340) == 0) {
+                if ((param_str[pn] & 0340) == 0) {
                     putch(' ', 0);
                     movecursor(CCMOVELEFT);
                     movecursor(CCMOVELEFT);
                 }
-                paramv[pn] = 0;
+                param_str[pn] = 0;
                 putch(' ', 0);
                 movecursor(CCMOVELEFT);
                 keysym = -1;
@@ -357,7 +359,7 @@ loop:
         }
         if (c == 0177)          /* del is a control code */
             c = 0;
-        paramv[pn++] = c;
+        param_str[pn++] = c;
         if (c != 0) {
             if ((c & 0140) == 0){
                 putch('^', 0);
@@ -367,12 +369,12 @@ loop:
             keysym = -1;
             goto loop;
         }
-        paramtype = 1;
+        param_type = 1;
     }
     win_switch(w);
-    putup(paramr0, paramr0);
-    poscursor(paramc0, paramr0);
-    return (paramv);
+    drawlines(param_r0, param_r0);
+    poscursor(param_c0, param_r0);
+    return (param_str);
 }
 
 /*
@@ -386,29 +388,29 @@ void win_draw(win, vertf)
     register int i;
 
     win_switch(&wholescreen);
-    if (win->tmarg != win->text_toprow) {
-        poscursor(win->lmarg, win->tmarg);
-        for (i = win->lmarg; i <= win->rmarg; i++)
+    if (win->base_row != win->text_row) {
+        poscursor(win->base_col, win->base_row);
+        for (i = win->base_col; i <= win->max_col; i++)
             putch(TMCH, 0);
     }
     if (vertf) {
         int j;
-        for (j = win->tmarg + 1; j <= win->bmarg - 1; j++) {
-            int c = win->lmchars[j - win->tmarg - 1];
+        for (j = win->base_row + 1; j <= win->max_row - 1; j++) {
+            int c = win->leftbar[j - win->base_row - 1];
             if (c != 0) {
-                poscursor(win->lmarg, j);
+                poscursor(win->base_col, j);
                 putch(c, 0);
-                poscursor(win->rmarg, j);
-                putch(win->rmchars[j - win->tmarg - 1], 0);
+                poscursor(win->max_col, j);
+                putch(win->rightbar[j - win->base_row - 1], 0);
             }
         }
     }
-    if (win->tmarg != win->text_toprow) {
-        poscursor(win->lmarg, win->bmarg);
-        for (i = win->lmarg; i <= win->rmarg; i++)
+    if (win->base_row != win->text_row) {
+        poscursor(win->base_col, win->max_row);
+        for (i = win->base_col; i <= win->max_col; i++)
             putch(BMCH, 0);
     }
-    /* poscursor(win->lmarg + 1, win->tmarg + 1); */
+    /* poscursor(win->base_col + 1, win->base_row + 1); */
     win_switch(win);
 }
 
@@ -456,7 +458,7 @@ void telluser(msg, col)
 /*
  * Redraw a screen.
  */
-void rescreen()
+void redisplay()
 {
     register int i;
     int j;
@@ -471,13 +473,14 @@ void rescreen()
     for (j=0; j<nwinlist; j++) {
         win_switch(winlist[j]);
         curp = curwin;
-        for (i=0; i<curwin->text_height+1; i++) {
+        for (i=0; i<curp->text_height+1; i++) {
             curp->firstcol[i] = 0;
             curp->lastcol[i] = 0; /* curwin->text_width;*/
-            curp->lmchars[i] = curp->rmchars[i] =' ';
+            curp->leftbar[i] = ' ';
+            curp->rightbar[i] = ' ';
         }
         win_draw(curp, 0);
-        putup(0, curp->text_height);
+        drawlines(0, curp->text_height);
     }
     win_switch(curp0);
     poscursor(col, lin);

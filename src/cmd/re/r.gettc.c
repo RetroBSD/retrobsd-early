@@ -157,9 +157,9 @@ static void itsort(fb, fe, ns)
     fw = fb - 1;
     while (fw != fe) {
         fr = fb = ++fw;
-        c = fw->excc[ns];
+        c = fw->value[ns];
         while (fr++ != fe) {
-            if (fr->excc[ns] == c) {
+            if (fr->value[ns] == c) {
                 if (fr != ++fw) {
                     temp = *fr;
                     *fr = *fw;
@@ -218,19 +218,19 @@ void tcread()
 
     /* Input codes. */
     iw = keytab;
-    for (ir=iw; ir->excc; ir++) {
-        if (ir->excc[0] > ' ') {
-            iw->excc = gettcs(termcap, ir->excc);
-            if (iw->excc == 0) {
+    for (ir=iw; ir->value; ir++) {
+        if (ir->value[0] > ' ') {
+            iw->value = gettcs(termcap, ir->value);
+            if (iw->value == 0) {
                 nfinc++;
                 continue;
             }
         } else
-            iw->excc = ir->excc;
-        iw->incc = ir->incc;
+            iw->value = ir->value;
+        iw->ccode = ir->ccode;
         iw++;
     }
-    iw->excc = NULL;
-    iw->incc = 0;
+    iw->value = NULL;
+    iw->ccode = 0;
     itsort(keytab, iw-1, 0);
 }
