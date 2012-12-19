@@ -153,8 +153,7 @@ static void startup(restart)
 
     /* Устанавливаем описатель окна параметров */
     win_create(&paramwin, 0, NCOLS-1, NLINES-NPARAMLINES, NLINES-1, 0);
-    paramwin.text_width--;
-    paramwin.text_width = PARAMREDIT;
+    paramwin.text_maxcol = PARAMREDIT;
 
     /* Закрываем терминал на прием сообщений от других */
     oldttmode = getpriv(0);
@@ -388,7 +387,7 @@ int main(nargs, args)
         writefile(CCENTER, args[1], CCSETFILE);
         if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
             /* Failed to open file - use empty buffer. */
-            drawlines(0, curwin->text_height);
+            drawlines(0, curwin->text_maxrow);
             poscursor(curwksp->cursorcol, curwksp->cursorrow);
         } else {
             /* File opened. */
@@ -397,7 +396,7 @@ int main(nargs, args)
         }
     } else {
         /* Saved session restored. */
-        drawlines(0, curwin->text_height);
+        drawlines(0, curwin->text_maxrow);
         poscursor(curwksp->cursorcol, curwksp->cursorrow);
     }
     telluser("", 0);
@@ -431,7 +430,6 @@ void fatal(s)
     char *s;
 {
     putcha(COFIN);
-    putcha(COBELL);
     putcha(COBELL);
     dumpcbuf();
     ttcleanup();

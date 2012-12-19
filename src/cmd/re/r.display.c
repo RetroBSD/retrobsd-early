@@ -25,7 +25,7 @@ void drawlines(lo, lf)
     l1 = lo;
     lmc = (curwin->base_col == curwin->text_col ? 0 :
         curwksp->coloffset == 0 ? LMCH : MLMCH);
-    max_colflg = (curwin->text_col + curwin->text_width < curwin->max_col);
+    max_colflg = (curwin->text_col + curwin->text_maxcol < curwin->max_col);
     while (l0 <= lf) {
         lo = l1;
         if (l0 < 0) {
@@ -56,10 +56,10 @@ void drawlines(lo, lf)
             i = (cline_len - 1) - curwksp->coloffset;
             if (i < 0)
                 i = 0;
-            else if (i > curwin->text_width) {
-                if (i > 1 + curwin->text_width && max_colflg)
+            else if (i > curwin->text_maxcol) {
+                if (i > 1 + curwin->text_maxcol && max_colflg)
                     max_colflg = MRMCH;
-                i = 1 + curwin->text_width;
+                i = 1 + curwin->text_maxcol;
             }
         }
         /*
@@ -69,7 +69,7 @@ void drawlines(lo, lf)
         if (lo == 0) {
             int fc;
             for (fc=0; cline != 0 && cline[curwksp->coloffset + fc]==' '; fc++);
-            j = curwin->text_width + 1;
+            j = curwin->text_maxcol + 1;
             if (fc > j)
                 fc = j;
             if (fc > 255)
@@ -100,7 +100,7 @@ void drawlines(lo, lf)
             cursorcol = - curwin->text_col;
         if (max_colflg && max_colflg != curwin->rightbar[l0]) {
             poscursor(curwin->max_col - curwin->text_col, l0);
-            putch(max_colflg,0);
+            putch(max_colflg, 0);
         } else
             movecursor(0);
         curwin->rightbar[l0] = max_colflg;
@@ -200,14 +200,14 @@ void movecursor(arg)
         col -= curwksp->coloffset;
         break;
     }
-    if (col > curwin->text_width)
+    if (col > curwin->text_maxcol)
         col = 0;
     else if (col < 0)
-        col = curwin->text_width;
+        col = curwin->text_maxcol;
 
     if (lin < 0)
-        lin = curwin->text_height;
-    else if (lin > curwin->text_height)
+        lin = curwin->text_maxrow;
+    else if (lin > curwin->text_maxrow)
         lin = 0;
 
     poscursor(col, lin);
@@ -233,7 +233,7 @@ void putch(j, flg)
     if (cursorcol <= 0)
         poscursor(0,
             cursorline < 0 ? 0 :
-            cursorline > curwin->text_height ? 0 :
+            cursorline > curwin->text_maxrow ? 0 :
             cursorline);
     movecursor(0);
 }
@@ -418,8 +418,6 @@ void error(msg)
     char *msg;
 {
     putcha(COBELL);
-    putcha(COBELL);
-    putcha(COBELL);
     telluser("**** ", 0);
     telluser(msg, 5);
     message_displayed = 1;
@@ -442,7 +440,7 @@ void telluser(msg, col)
     if (col == 0)
     {
         poscursor(0,0);
-        putblanks(paramwin.text_width);
+        putblanks(paramwin.text_maxcol);
     }
     poscursor(col,0);
     /* while (*msg) putch(*msg++, 0); */
@@ -470,14 +468,14 @@ void redisplay()
     for (j=0; j<nwinlist; j++) {
         win_switch(winlist[j]);
         curp = curwin;
-        for (i=0; i<curp->text_height+1; i++) {
+        for (i=0; i<curp->text_maxrow+1; i++) {
             curp->firstcol[i] = 0;
-            curp->lastcol[i] = 0; /* curwin->text_width;*/
+            curp->lastcol[i] = 0; /* curwin->text_maxcol;*/
             curp->leftbar[i] = ' ';
             curp->rightbar[i] = ' ';
         }
         win_draw(curp, 0);
-        drawlines(0, curp->text_height);
+        drawlines(0, curp->text_maxrow);
     }
     win_switch(curp0);
     poscursor(col, lin);

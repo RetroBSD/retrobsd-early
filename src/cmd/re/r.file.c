@@ -292,7 +292,7 @@ int editfile(filename, line, col, mkflg, puflg)
     curwksp->toprow = line;
     curwksp->coloffset = col;
     if (puflg) {
-        drawlines(0, curwin->text_height);
+        drawlines(0, curwin->text_maxrow);
         poscursor(0, defplline);
     }
     return(1);

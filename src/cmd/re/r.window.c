@@ -22,20 +22,20 @@ void wksp_forward(nl)
         }
     } else {
         int last_line = file[curfile].nlines - curwksp->toprow;
-        if (last_line <= curwin->text_height) {
+        if (last_line <= curwin->text_maxrow) {
             if (cursorline != last_line)
                 poscursor(cursorcol, last_line);
             return;
         }
     }
     curwksp->toprow += nl;
-    if (curwksp->toprow > file[curfile].nlines - curwin->text_height)
-        curwksp->toprow = file[curfile].nlines - curwin->text_height;
+    if (curwksp->toprow > file[curfile].nlines - curwin->text_maxrow)
+        curwksp->toprow = file[curfile].nlines - curwin->text_maxrow;
     if (curwksp->toprow < 0)
         curwksp->toprow = 0;
     cc = cursorcol;
     cl = cursorline;
-    drawlines(0, curwin->text_height);
+    drawlines(0, curwin->text_maxrow);
     poscursor(cc, cl);
 }
 
@@ -52,12 +52,12 @@ void wksp_offset(nc)
     if ((curwksp->coloffset + nc) < 0)
         nc = - curwksp->coloffset;
     curwksp->coloffset += nc;
-    drawlines(0, curwin->text_height);
+    drawlines(0, curwin->text_maxrow);
     cc -= nc;
     if (cc < 0)
         cc = 0;
-    else if (cc > curwin->text_width)
-        cc = curwin->text_width;
+    else if (cc > curwin->text_maxcol)
+        cc = curwin->text_maxcol;
     poscursor(cc, cl);
 }
 
@@ -72,8 +72,8 @@ void gtfcn(number)
     wksp_forward(number - curwksp->toprow - defplline);
     i = number - curwksp->toprow;
     if (i >= 0) {
-        if (i > curwin->text_height)
-            i = curwin->text_height;
+        if (i > curwin->text_maxrow)
+            i = curwin->text_maxrow;
         poscursor(cursorcol, i);
     }
 }
@@ -90,7 +90,7 @@ void cgoto(ln, col, slin, lkey)
     register int lin;
 
     lin = ln - curwksp->toprow;
-    if (lkey || lin < 0 || lin  > curwin->text_height) {
+    if (lkey || lin < 0 || lin  > curwin->text_maxrow) {
         lkey = -1;
         lin = defplline;
         curwksp->toprow = ln - defplline;
@@ -100,13 +100,13 @@ void cgoto(ln, col, slin, lkey)
         }
     }
     col -= curwksp->coloffset;
-    if (col < 0 || col > curwin->text_width) {
+    if (col < 0 || col > curwin->text_maxcol) {
         curwksp->coloffset += col;
         col = 0;
         lkey = -1;
     }
     if (lkey)
-        drawlines(0, curwin->text_height);
+        drawlines(0, curwin->text_maxrow);
     else if (slin >=0)
         drawlines(slin, slin);
 
@@ -147,14 +147,14 @@ void win_create(w, col_left, col_right, row_top, row_bottom, need_borders)
     w->max_row  = row_bottom;
     if (need_borders) {
         w->text_col    = col_left + 1;
-        w->text_width  = col_right - col_left - 2;
         w->text_row    = row_top + 1;
-        w->text_height = row_bottom - row_top - 2;
+        w->text_maxcol = col_right - col_left - 2;
+        w->text_maxrow = row_bottom - row_top - 2;
     } else {
         w->text_col    = col_left;
-        w->text_width  = col_right - col_left;
         w->text_row    = row_top;
-        w->text_height = row_bottom - row_top;
+        w->text_maxcol = col_right - col_left;
+        w->text_maxrow = row_bottom - row_top;
     }
 
     w->wksp = (workspace_t*) salloc(sizeof(workspace_t));
@@ -164,7 +164,7 @@ void win_create(w, col_left, col_right, row_top, row_bottom, need_borders)
     size = NLINES - row_top + 1;
     w->firstcol = (unsigned char*) salloc(size);
     for (i=0; i<size; i++)
-        w->firstcol[i] = w->text_width + 1;
+        w->firstcol[i] = w->text_maxcol + 1;
     w->lastcol = (unsigned char*) salloc(size);
     w->leftbar = salloc(size);
     w->rightbar = salloc(size);
@@ -197,32 +197,32 @@ void win_open(file)
      * Split the window into two, horizontally or vertically.
      */
     if (cursorcol == 0 && cursorline > 0
-        && cursorline < oldwin->text_height)
+        && cursorline < oldwin->text_maxrow)
     {
         /* Split horizontally. */
         register int i;
         win_create(win, oldwin->base_col, oldwin->max_col,
             oldwin->base_row + cursorline + 1, oldwin->max_row, 1);
         oldwin->max_row = oldwin->base_row + cursorline + 1;
-        oldwin->text_height = cursorline - 1;
-        for (i=0; i <= win->text_height; i++) {
+        oldwin->text_maxrow = cursorline - 1;
+        for (i=0; i <= win->text_maxrow; i++) {
             win->firstcol[i] = oldwin->firstcol[i + cursorline + 1];
             win->lastcol[i] = oldwin->lastcol[i + cursorline + 1];
         }
     } else if (cursorline == 0 && cursorcol > 0
-        && cursorcol < oldwin->text_width-1)
+        && cursorcol < oldwin->text_maxcol-1)
     {
         /* Split vertically. */
         register int i;
         win_create(win, oldwin->base_col + cursorcol + 2, oldwin->max_col,
             oldwin->base_row, oldwin->max_row, 1);
         oldwin->max_col = oldwin->base_col + cursorcol + 1;
-        oldwin->text_width = cursorcol - 1;
-        for (i=0; i <= win->text_height; i++) {
-            if (oldwin->lastcol[i] > oldwin->text_width + 1) {
+        oldwin->text_maxcol = cursorcol - 1;
+        for (i=0; i <= win->text_maxrow; i++) {
+            if (oldwin->lastcol[i] > oldwin->text_maxcol + 1) {
                 win->firstcol[i] = 0;
                 win->lastcol[i] = oldwin->lastcol[i] - cursorcol - 2;
-                oldwin->lastcol[i] = oldwin->text_width + 1;
+                oldwin->lastcol[i] = oldwin->text_maxcol + 1;
                 oldwin->rightbar[i] = MRMCH;
             }
         }
@@ -269,28 +269,28 @@ void win_remove()
     pwin = winlist[pwinnum];
     if (pwin->max_row != win->max_row) {
         /* Vertical */
-        pwin->firstcol[j = pwin->text_height+1] = 0;
-        pwin->lastcol[j++] = pwin->text_width+1;
-        for (i=0; i<=win->text_height; i++) {
+        pwin->firstcol[j = pwin->text_maxrow+1] = 0;
+        pwin->lastcol[j++] = pwin->text_maxcol+1;
+        for (i=0; i<=win->text_maxrow; i++) {
             pwin->firstcol[j+i] = win->firstcol[i];
             pwin->lastcol[j+i] = win->lastcol[i];
         }
         pwin->max_row = win->max_row;
-        pwin->text_height = pwin->max_row - pwin->base_row - 2;
+        pwin->text_maxrow = pwin->max_row - pwin->base_row - 2;
     } else {
         /* Горизонтальное */
-        for (i=0; i<=pwin->text_height; i++) {
+        for (i=0; i<=pwin->text_maxrow; i++) {
             pwin->lastcol[i] = win->lastcol[i] +
                 win->base_col - pwin->base_col;
-            if (pwin->firstcol[i] > pwin->text_width)
-                pwin->firstcol[i] = pwin->text_width;
+            if (pwin->firstcol[i] > pwin->text_maxcol)
+                pwin->firstcol[i] = pwin->text_maxcol;
         }
         pwin->max_col = win->max_col;
-        pwin->text_width = pwin->max_col - pwin->base_col - 2;
+        pwin->text_maxcol = pwin->max_col - pwin->base_col - 2;
     }
     win_draw(pwin, 1);
     win_goto(pwinnum);
-    drawlines(0, curwin->text_height);
+    drawlines(0, curwin->text_maxrow);
     poscursor(0, 0);
     DEBUGCHECK;
     free(win->firstcol);
@@ -385,7 +385,7 @@ void wksp_redraw(w, fn, from, to, delta)
 
             /* Если изменилось, перевыдать окно */
             j = (from > tw->toprow) ? from : tw->toprow;
-            k = tw->toprow + winlist[i]->text_height;
+            k = tw->toprow + winlist[i]->text_maxrow;
             if (k > to)
                 k = to;
             if (j <= k) {
@@ -394,7 +394,7 @@ void wksp_redraw(w, fn, from, to, delta)
                 m = cursorline;
                 win_switch(winlist[i]);
                 drawlines(j - tw->toprow,
-                    delta == 0 ? k - tw->toprow : winlist[i]->text_height);
+                    delta == 0 ? k - tw->toprow : winlist[i]->text_maxrow);
                 win_switch(owin);
                 poscursor(l, m);
             }

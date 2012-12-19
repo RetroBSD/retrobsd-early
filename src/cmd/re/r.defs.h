@@ -127,7 +127,7 @@ workspace_t *curwksp, *pickwksp;
 /*
  * Window - a region on the display.
  * All display coordinates, and also text_col and text_row, are measured relative
- * to (0,0) = top left of screen. Other 6 borders are relative to text_col and text_row.
+ * to (0,0) = top left of screen.
  */
 typedef struct {
     workspace_t *wksp;      /* Pointer to workspace */
@@ -139,8 +139,8 @@ typedef struct {
     int max_col;            /* Right column of the window */
     int text_row;           /* Top row of text area */
     int text_col;           /* Left column of text area */
-    int text_height;        /* Height-1 of text area */
-    int text_width;         /* Width-1 of text area */
+    int text_maxrow;        /* Height-1 of text area */
+    int text_maxcol;         /* Width-1 of text area */
     unsigned char *firstcol; /* Numbers of first non-space symbols */
     unsigned char *lastcol; /* Numbers of last non-space symbols */
     char *leftbar;          /* Symbols on left edge */

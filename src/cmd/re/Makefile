@@ -10,8 +10,8 @@ include $(TOPSRC)/target.mk
 
 CFLAGS		+= -DDEBUG -Wall -Werror -DMULTIWIN=0
 
-OBJS            = r.cmd.o r.edit.o r.file.o r.gettc.o r.hlam.o \
-                  r.mac.o r.main.o r.tele.o r.termc.o r.ttyio.o r.wind.o
+OBJ             = r.cmd.o r.edit.o r.file.o r.gettc.o r.misc.o \
+                  r.macro.o r.main.o r.display.o r.termcap.o r.ttyio.o r.window.o
 
 all:            re
 

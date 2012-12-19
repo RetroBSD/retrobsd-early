@@ -120,6 +120,53 @@ noargerr:
 }
 
 /*
+ * Insert a symbol to current line at a current position.
+ */
+static void cline_insert_char(keysym)
+{
+    int i, c;
+
+    /* Check the window margin. */
+    if (cursorcol > curwin->text_maxcol) {
+        if (cline_modified)
+            putline();
+        wksp_offset(defroffset);
+        i = curwksp->toprow + cursorline;
+        if (clineno != i)
+            getlin(i);
+    }
+    cline_modified = 1;
+    c = cursorcol + curwksp->coloffset;
+    if (c >= cline_max - 2) {
+        /* Expand the line. */
+        excline(c + 2);
+    }
+    if (c >= cline_len - 1) {
+        /* Append spaces to the line. */
+        for (i=cline_len-1; i<=c; i++)
+            cline[i] = ' ';
+        cline[c+1] = '\n';
+        cline_len = c + 2;
+    }
+    else if (insert_mode) {
+        /* Push the rest of the line. */
+        if (cline_len >= cline_max)
+            excline(cline_len + 1);
+        for (i=cline_len; i>c; i--)
+            cline[i] = cline[i-1];
+        cline_len++;
+        drawlines(- c + curwksp->coloffset - 1, cursorline);
+        poscursor(c - curwksp->coloffset, cursorline);
+    }
+
+    /* Store the symbol. */
+    if (keysym == CCCTRLQUOTE)
+        keysym = COCURS;
+    cline[c] = keysym;
+    putch(keysym, 1);
+}
+
+/*
  * Main editor loop.
  */
 void mainloop()
@@ -144,7 +191,7 @@ errclear:
         k = cursorline;
         j = cursorcol;
         win_switch(&paramwin);
-        paramwin.text_width = PARAMRINFO;
+        paramwin.text_maxcol = PARAMRINFO;
         if (clr_arg_area) {
             if (! message_displayed) {
                 poscursor(0, 0);
@@ -174,7 +221,7 @@ errclear:
             *--cp = ' ';
         putstr(ich, PARAMRINFO);
         win_switch(owin);
-        paramwin.text_width = PARAMREDIT;
+        paramwin.text_maxcol = PARAMREDIT;
         poscursor(j, k);
         if (highlight_position) {
             putch(COCURS, 1);
@@ -198,26 +245,42 @@ nextkey:
         }
 
         /*
-         * Редактирование в строке
+         * Edit the current line.
          */
         if (! CTRLCHAR(keysym) || keysym == CCCTRLQUOTE ||
-            keysym == CCBACKSPACE || keysym == CCDELCH)
+            keysym == CCBACKSPACE || keysym == CCDELCH ||
+            (keysym == CCTAB && insert_mode))
         {
-            /* Отмена в 1 колонке */
+            /* Backspace at column 0. */
             if (keysym == CCBACKSPACE && cursorcol == 0) {
-                keysym = -1;
-                goto nextkey;
+                int lnum = curwksp->toprow + cursorline;
+                if (lnum > file[curfile].nlines) {
+                    /* Beyond end of file - move up. */
+                    movecursor(CCMOVEUP);
+                    keysym = -1;
+                    goto nextkey;
+                }
+                if (file[curfile].writable == 0 || lnum == 0) {
+                    /* File not writable or at line 0. */
+                    keysym = -1;
+                    goto nextkey;
+                }
+                /* Append the current line to the previous one. */
+                putline();
+                getlin(lnum - 1);
+                combineline(lnum - 1, cline_len - 1);
+                continue;
             }
             if (file[curfile].writable == 0)
                 goto nowriterr;
 
-            /* Строки у нас нет? Дай! */
+            /* No current line? Get it! */
             i = curwksp->toprow + cursorline;
             if (clineno != i)
                 getlin(i);
 
-            /* исключение символа */
-            if (keysym == CCDELCH || (insert_mode && keysym == CCBACKSPACE)) {
+            /* Delete the symbol. */
+            if (keysym == CCDELCH || keysym == CCBACKSPACE) {
                 int thiscol = cursorcol + curwksp->coloffset;
                 int thisrow = cursorline;
 
@@ -239,54 +302,13 @@ nextkey:
                 keysym = -1;
                 goto nextkey;
             }
-            /* Проверка на границу окна */
-            if (cursorcol > curwin->text_width) {
-                if (cline_modified) {
-                    putline();
-                    wksp_offset(defroffset);
-                    goto nextkey;
-                }
-                goto margerr;
-            }
-            cline_modified = 1;
-            j = (keysym == CCBACKSPACE);
-            if (j) {
-                movecursor(CCMOVELEFT);
-                keysym = ' ';
-            }
-            i = cursorcol + curwksp->coloffset;
-            if (i >= (cline_max - 2))
-                excline(i + 2);
-            if (i >= cline_len-1) {
-                for (k=cline_len-1; k<=i; k++)
-                    cline[k] = ' ';
-                cline[i+1] = '\n';
-                cline_len = i+2;
-            }
-            else if (insert_mode) {
-                int thiscol = cursorcol + curwksp->coloffset;
-                int thisrow = cursorline;
-
-                if (cline_len >= cline_max)
-                    excline(cline_len+1);
-                for (i=cline_len; i>thiscol; i--)
-                    cline[i] = cline[i-1];
-                cline_len++;
-                thiscol -= curwksp->coloffset;
-                drawlines(-thiscol-1, cursorline);
-                poscursor(thiscol, thisrow);
-            }
-
-            /* Замена символа */
-            if (keysym == CCCTRLQUOTE)
-                keysym = COCURS;
-            if (cursorcol == curwin->text_width - 10)
-                putcha(COBELL);
-            cline[i] = keysym;
-            putch(keysym, 1);
-
-            if (j)
-                movecursor(CCMOVELEFT);
+            if (keysym == CCTAB) {
+                /* Expand tabs to 4 spaces. */
+                do {
+                    cline_insert_char(' ');
+                } while ((cursorcol + curwksp->coloffset) & 3);
+            } else
+                cline_insert_char(keysym);
             keysym = -1;
             goto nextkey;
         }
@@ -316,7 +338,7 @@ nextkey:
         }
         if (keysym == CCMOVEDOWN) {
             putline();
-            if (cursorline == curwin->text_height)
+            if (cursorline == curwin->text_maxrow)
                 wksp_forward(defplline);
             movecursor(keysym);
             keysym = -1;
@@ -332,8 +354,8 @@ nextkey:
             goto nextkey;
         }
         /* Если граница поля */
-        if (cursorcol > curwin->text_width)
-            poscursor(curwin->text_width, cursorline);
+        if (cursorcol > curwin->text_maxcol)
+            poscursor(curwin->text_maxcol, cursorline);
         putline();
         switch (keysym) {
         case CCQUIT:
@@ -394,7 +416,7 @@ nextkey:
             continue;
 
         case CCMIPAGE:
-            wksp_forward(- defmipage * (1 + curwin->text_height));
+            wksp_forward(- defmipage * (1 + curwin->text_maxrow));
             continue;
 
         case CCPLSRCH:
@@ -424,7 +446,7 @@ nextkey:
             goto notstrerr;
 
         case CCPLPAGE:
-            wksp_forward(defplpage * (1 + curwin->text_height));
+            wksp_forward(defplpage * (1 + curwin->text_maxrow));
             continue;
 
         case CCMAKEWIN:
@@ -655,7 +677,7 @@ yesarg:
                 goto notstrerr;
             if (s2i(param_str, &i))
                 goto notinterr;
-            wksp_forward(- i * (1 + curwin->text_height));
+            wksp_forward(- i * (1 + curwin->text_maxrow));
             continue;
 
         case CCROFFSET:
@@ -694,7 +716,7 @@ yesarg:
             if (param_type < 0)
                 goto notstrerr;
             else if (param_type == 0)
-                wksp_forward(cursorline - curwin->text_height);
+                wksp_forward(cursorline - curwin->text_maxrow);
             else if (param_type > 0) {
                 if (s2i(param_str, &i))
                     goto notinterr;
@@ -716,7 +738,7 @@ yesarg:
                 goto notstrerr;
             if (s2i(param_str, &i))
                 goto notinterr;
-            wksp_forward(i * (1 + curwin->text_height));
+            wksp_forward(i * (1 + curwin->text_maxrow));
             continue;
 
         case CCMAKEWIN:
@@ -779,9 +801,6 @@ nodelerr:
         continue;
 notimperr:
         error("Feature not implemented yet.");
-        continue;
-margerr:
-        error("Margin stusk; move cursor to free.");
         continue;
 nowriterr:
         error("You cannot modify this file!");

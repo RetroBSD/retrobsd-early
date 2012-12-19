@@ -470,7 +470,7 @@ void switchfile()
         return;
     }
     wksp_switch();
-    drawlines(0, curwin->text_height);
+    drawlines(0, curwin->text_maxrow);
     poscursor(curwksp->cursorcol, curwksp->cursorrow);
 }
 
@@ -764,7 +764,7 @@ void openspaces(line, col, number, nl)
         cline_modified = 1;
         putline();
         j = i - curwksp->toprow;
-        if (j <= curwin->text_height)
+        if (j <= curwin->text_maxrow)
             drawlines(j, j);
     }
     poscursor(col - curwksp->coloffset, line - curwksp->toprow);
@@ -819,11 +819,11 @@ void splitline(line, col)
 
     if (line >= file[curfile].nlines)
         return;
-    file[curfile].nlines++;
     getlin(line);
     if (col >= cline_len - 1)
         openlines(line+1, 1);
     else {
+        file[curfile].nlines++;
         csave = cline[col];
         cline[col] = '\n';
         nsave = cline_len;
@@ -975,7 +975,7 @@ static void pcspaces(line, col, number, nl, flg)
             cline_modified = 1;
             putline();
             i = j - curwksp->toprow;
-            if (i <= curwin->text_height)
+            if (i <= curwin->text_maxrow)
                 drawlines(i, i);
         }
     }
@@ -1014,8 +1014,10 @@ void combineline(line, col)
     register char *temp;
     register int nsave, i;
 
-    if (file[curfile].nlines <= line-2)
+    if (file[curfile].nlines > line+1)
         file[curfile].nlines--;
+    else
+        file[curfile].nlines = line+1;
     getlin(line+1);
     temp = salloc(cline_len);
     for (i=0; i<cline_len; i++)
@@ -1192,7 +1194,7 @@ static void pspaces(buf, line, col)
         cline_modified = 1;
         putline();
         j = line+i-curwksp->toprow;
-        if (j <= curwin->text_height)
+        if (j <= curwin->text_maxrow)
             drawlines(j, j);
     }
     free(linebuf);
