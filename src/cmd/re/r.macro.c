@@ -227,7 +227,7 @@ char *rmacl(isy)
         char nm[2];
         register macro_t *m;
 
-        nm[0] = isy - (CCMAC + 1) + 'a';
+        nm[0] = isy - (CCMACRO + 1) + 'a';
         nm[1] = 0;
         m = mname(nm, MMAC, 0);
         if (! m)
@@ -268,10 +268,10 @@ reterr: lc = 0;
     getkeysym();
     if (! CTRLCHAR(keysym)) {
         if (keysym == '$')
-            keysym = CCMAC;
+            keysym = CCMACRO;
 
         else if(keysym >= 'a' && keysym <= 'z')
-            keysym += CCMAC + 1 -'a';
+            keysym += CCMACRO + 1 -'a';
         else
             goto reterr;
     }

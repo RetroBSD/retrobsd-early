@@ -245,7 +245,7 @@ void win_open(file)
     defplline = defmiline = (win->max_row - win->base_row)/ 4 + 1;
     if (editfile (file, 0, 0, 1, 1) <= 0 &&
         editfile (deffile, 0, 0, 0, 1) <= 0)
-        error("Default file gone: notify sys admin.");
+        error("Cannot open help file.");
     win_draw(oldwin, 1);
     win_draw(win, 1);
     poscursor(0, 0);

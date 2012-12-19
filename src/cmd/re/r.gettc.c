@@ -25,13 +25,13 @@ char *curspos;
  */
 const char in0tab[32] = {
     -1,             /* ^@ */
-    CCENTER,        /* ^A */
+    CCPARAM,        /* ^A */
     CCMISRCH,       /* ^B */
-    -1,             /* ^C */
+    CCCOPY,         /* ^C */
     CCDELCH,        /* ^D */
     -1,             /* ^E */
     CCPLSRCH,       /* ^F */
-    -1,             /* ^G */
+    CCGOTO,         /* ^G */
     CCBACKSPACE,    /* ^H */
     CCTAB,          /* ^I */
     CCRETURN,       /* ^J */
@@ -39,17 +39,17 @@ const char in0tab[32] = {
     CCREDRAW,       /* ^L */
     CCRETURN,       /* ^M */
     CCSETFILE,      /* ^N */
-    -1,             /* ^O */
+    CCINSLIN,       /* ^O */
     CCCTRLQUOTE,    /* ^P */
     -1 /*special*/, /* ^Q */
     -1,             /* ^R */
     -1 /*special*/, /* ^S */
     -1,             /* ^T */
     -1,             /* ^U */
-    -1,             /* ^V */
+    CCPASTE,        /* ^V */
     -1,             /* ^W */
     -1 /*special*/, /* ^X */
-    CCCLOSE,        /* ^Y */
+    CCDELLIN,       /* ^Y */
     -1,             /* ^Z */
     -1 /*special*/, /* ^[ */
     -1,             /* ^\ */
@@ -73,17 +73,17 @@ keycode_t keytab[] = {
     { CCMIPAGE,     "kP",   },
     { CCINSMODE,    "kI",   },
     { CCDELCH,      "kD",   },
-    { CCENTER,      "k1",   },  { CCENTER,      "\33OP",   },
+    { CCPARAM,      "k1",   },  { CCPARAM,      "\33OP",   },
     { CCSAVEFILE,   "k2",   },  { CCSAVEFILE,   "\33OQ",   },
-    { CCCHWINDOW,   "k3",   },  { CCCHWINDOW,   "\33OR",   },
-    { CCMAKEWIN,    "k4",   },  { CCMAKEWIN,    "\33OS",   },
-    { CCSETFILE,    "k5",   },  { CCSETFILE,    "\33OT",   },
-    { CCPICK,       "k6",   },
-    { CCOPEN,       "k7",   },
-    { CCCLOSE,      "k8",   },
+    { CCSETFILE,    "k3",   },  { CCSETFILE,    "\33OR",   },
+    { CCREDRAW,     "k4",   },  { CCREDRAW,     "\33OS",   }, // free
+    { CCCOPY,       "k5",   },  { CCCOPY,       "\33OT",   },
+    { CCPASTE,      "k6",   },
+    { CCPLSRCH,     "k7",   },
+    { CCGOTO,       "k8",   },
     { CCREDRAW,     "k9",   }, // free
-    { CCGOTO,       "k0",   },
-    { CCPUT,        "F1",   },
+    { CCREDRAW,     "k0",   }, // free
+    { CCREDRAW,     "F1",   }, // free
     { CCREDRAW,     "F2",   }, // free
     { 0,            0,      },
     { 0,            0,      },
@@ -186,7 +186,7 @@ void tcread()
     if (! termcap) {
         /* Default: linux console. */
         termcap = ":co#80:li#25:cm=\33[%i%d;%dH:cl=\33[H\33[2J:ho=\33[H:"
-                  "up=\33[A:do=\33[B:nd=\33[C:le=\10:cu=\33[7m \33[m:"
+                  "up=\33[A:do=\33[B:nd=\33[C:le=\10:cu=\33[7m@\33[m:"
                   "ku=\33[A:kd=\33[B:kr=\33[C:kl=\33[D:kP=\33[5~:kN=\33[6~:"
                   "kI=\33[2~:kD=\33[3~:kh=\33[1~:kH=\33[4~:"
                   "k1=\33[A:k2=\33[B:k3=\33[C:k4=\33[D:k5=\33[15~:"

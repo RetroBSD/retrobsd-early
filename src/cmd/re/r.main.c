@@ -238,7 +238,7 @@ make:   /* Create initial window state. */
         curwksp->cursorrow = get1w(gbuf);
         if (gf == 0) {
             if (editfile(deffile, 0, 0, 0, (n != winnum)) <= 0)
-                error("Default file gone: notify sys admin.");
+                error("Cannot open help file.");
             curwksp->cursorcol = curwksp->cursorrow = 0;
         }
         poscursor(curwksp->cursorcol, curwksp->cursorrow);
@@ -384,7 +384,7 @@ int main(nargs, args)
         if ((nargs > 2) && (s2i(args[2],&i) || i <= defplline+1))
             i = defplline+1;
         poscursor(curwksp->cursorcol, curwksp->cursorrow);
-        writefile(CCENTER, args[1], CCSETFILE);
+        writefile(CCPARAM, args[1], CCSETFILE);
         if (editfile(args[1], i - defplline - 1, 0, 1, 1) <= 0) {
             /* Failed to open file - use empty buffer. */
             drawlines(0, curwin->text_maxrow);
@@ -392,7 +392,7 @@ int main(nargs, args)
         } else {
             /* File opened. */
             if (nargs > 2 && i > 1)
-                writefile(CCENTER, args[2], CCGOTO);
+                writefile(CCPARAM, args[2], CCGOTO);
         }
     } else {
         /* Saved session restored. */

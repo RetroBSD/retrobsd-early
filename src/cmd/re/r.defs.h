@@ -177,16 +177,16 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMOVELEFT  6       /* move left                    left    */
 #define CCTAB       7       /* tab                  ^I              */
 #define CCEND       010     /* cursor to end        ^X e    end     */
-#define CCPICK      011     /* pick                         f6      */
-#define CCMAKEWIN   012     /* make a window                f4      */
-#define CCOPEN      013     /* insert                       f7      */
-#define CCSETFILE   014     /* set file                     f5      */
-#define CCCHWINDOW  015     /* change window                f3      */
-#define CCPLPAGE    016     /* minus a page                 page down */
-#define CCGOTO      017     /* goto linenumber              f10     */
+#define CCCOPY      011     /* copy to clipboard    ^C      f5      */
+#define CCMAKEWIN   012     /* make a window        --disabled--    */
+#define CCINSLIN    013     /* insert line/block    ^O              */
+#define CCSETFILE   014     /* set file             ^N      f3      */
+#define CCCHWINDOW  015     /* change window        --disabled--    */
+#define CCPLPAGE    016     /* minus a page                 pg down */
+#define CCGOTO      017     /* goto linenumber      ^G      f8      */
 #define CCDOCMD     020     /* execute a filter     ^X x            */
 #define CCMIPAGE    021     /* plus a page                  page up */
-#define CCPLSRCH    022     /* plus search          ^F              */
+#define CCPLSRCH    022     /* plus search          ^F      f7      */
 #define CCROFFSET   023     /* shift view right     ^X f            */
 #define CCPLLINE    024     /* minus a line         ^X p            */
 #define CCDELCH     025     /* character delete     ^D      delete  */
@@ -194,15 +194,15 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMILINE    027     /* plus a line          ^X n            */
 #define CCMISRCH    030     /* minus search         ^B              */
 #define CCLOFFSET   031     /* shift view left      ^X b            */
-#define CCPUT       032     /* put                          f11     */
+#define CCPASTE     032     /* paste from clipboard ^V      f6      */
 #define CCREDRAW    033     /* redraw all           ^L              */
 #define CCINSMODE   034     /* insert mode          ^X i    insert  */
 #define CCBACKSPACE 035     /* backspace and erase  ^H              */
-#define CCCLOSE     036     /* delete               ^Y      f8      */
-#define CCENTER     037     /* enter parameter      ^A      f1      */
+#define CCDELLIN    036     /* delete line/block    ^Y              */
+#define CCPARAM     037     /* enter parameter      ^A      f1      */
 #define CCQUIT      0177    /* terminate session    ^X ^C           */
 #define CCINTRUP    0237    /* interrupt (journal) */
-#define CCMAC       0200    /* macro marker */
+#define CCMACRO     0200    /* macro marker */
 
 int cursorline;             /* physical position of */
 int cursorcol;              /* cursor from (0,0)=ulhc of text in window */
@@ -322,8 +322,8 @@ void win_create (window_t *, int, int, int, int, int);
 void dumpcbuf (void);           /* flush output buffer */
 char *s2i (char *, int *);      /* convert a string to number */
 char *salloc (int);             /* allocate zeroed memory */
-void openlines (int, int);      /* insert lines */
-void closelines (int, int);     /* delete lines from file */
+void insertlines (int, int);    /* insert lines */
+void deletelines (int, int);    /* delete lines from file */
 void picklines (int, int);      /* get lines from file to pick workspace */
 void openspaces (int, int, int, int); /* insert spaces */
 void closespaces (int, int, int, int); /* delete rectangular area */

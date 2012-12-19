@@ -466,7 +466,7 @@ void switchfile()
 {
     if (curwin->altwksp->wfile == 0) {
         if (editfile(deffile, 0, 0, 0, 1) <= 0)
-            error("Default file gone: notify sys admin.");
+            error("Cannot open help file.");
         return;
     }
     wksp_switch();
@@ -738,7 +738,7 @@ static void insert(wksp, f, at)
 /*
  * Insert lines.
  */
-void openlines(from, number)
+void insertlines(from, number)
     int from, number;
 {
     if (from >= file[curfile].nlines)
@@ -821,7 +821,7 @@ void splitline(line, col)
         return;
     getlin(line);
     if (col >= cline_len - 1)
-        openlines(line+1, 1);
+        insertlines(line+1, 1);
     else {
         file[curfile].nlines++;
         csave = cline[col];
@@ -872,7 +872,7 @@ static segment_t *delete(wksp,from,to)
  * Delete lines from file.
  * frum < 0 - do not call wksp_redraw (used for "exec").
  */
-void closelines(frum, number)
+void deletelines(frum, number)
     int frum, number;
 {
     register int n,from;
@@ -1326,7 +1326,7 @@ void doreplace(line, m, jproc, pipef)
     }
     charsfi = -1;                   /* forget old position before fork */
     if (m)
-        closelines(-1-line,m);
+        deletelines(-1-line,m);
     charsin(tempfile, tempseek);
     ee = e = temp2segm(tempfile);
     tempseek = charskl;

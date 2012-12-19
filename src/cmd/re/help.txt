@@ -1,22 +1,22 @@
- ____________________________________________________________________________
- |  F1 |  F2  |  F3  |  F4  |  F5  |  F6  |  F7  |  F8  |  F9  | F10  | F11 |
- |     |      | Next | New  | New  |      |      |      |      |      |     |
- | Arg | Save |Window|Window| File | Pick | Open | Close| ---- | Goto | Put |
- |_____|______|______|______|______|______|______|______|______|______|_____|
+ ____________________________  ______________________________
+ |  F1 |  F2  |  F3  |  F4  |  |  F5  |  F6   |  F7  |  F8  |
+ |     |      | Next |      |  |      |       |      |      |
+ | Arg | Save | File | ---- |  | Copy | Paste |Search| Goto |
+ |_____|______|______|______|  |______|_______|______|______|
                                                 ____________________________
-  ^N    - Help, New File                        |        |        |        |
-  ^A    - Arguments                             | Insert |  Home  |  Page  |
+  ^N     - Help, New/Next File                  |        |        |        |
+  ^A     - Arguments                            | Insert |  Home  |  Page  |
   ^A qa <Enter> - Exit without Saving           |        |        |  Up    |
-  ^F    - Search Forward                        |________|________|________|
-  ^B    - Search Backward                       |        |        |        |
-  ^D    - Delete symbol                         | Delete |  End   |  Page  |
-  ^Y    - Close (delete line)                   |        |        |  Down  |
-  ^P    - Quote next symbol                     |________|________|________|
-  ^L    - Redraw Screen                                  |        |
-  ^X ^C - Exit wih Saving                                |   ^    |
-  ^X i  - Insert Mode                                    |   |    |
-  ^X x  - Run External Command                  _________|________|_________
-  ^X n  - +Line        ^X f  - +Offset          |        |        |        |
-  ^X p  - -Line        ^X b  - -Offset          | <--    |   |    |  -->   |
-  ^X $x - Run Macro                             |        |   V    |        |
+  ^F, ^B - Search Forward, Backward             |________|________|________|
+  ^D     - Delete symbol                        |        |        |        |
+  ^Y     - Delete line/block                    | Delete |  End   |  Page  |
+  ^C     - Copy line/block                      |        |        |  Down  |
+  ^V     - Paste line/block                     |________|________|________|
+  ^P     - Quote next symbol                             |        |
+  ^X ^C  - Exit wih Saving                               |   ^    |
+  ^X i   - Insert Mode                                   |   |    |
+  ^X x   - Run External Command                 _________|________|_________
+  ^X n   - +Line        ^X f  - +Offset         |        |        |        |
+  ^X p   - -Line        ^X b  - -Offset         | <--    |   |    |  -->   |
+  ^X $x  - Run Macro                            |        |   V    |        |
   ^A >x <Enter> - Create Macro                  |________|________|________|

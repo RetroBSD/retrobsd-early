@@ -251,8 +251,8 @@ nextkey:
             keysym == CCBACKSPACE || keysym == CCDELCH ||
             (keysym == CCTAB && insert_mode))
         {
-            /* Backspace at column 0. */
-            if (keysym == CCBACKSPACE && cursorcol == 0) {
+            /* Backspace at column 0: join lines. */
+            if (keysym == CCBACKSPACE && cursorcol + curwksp->coloffset == 0) {
                 int lnum = curwksp->toprow + cursorline;
                 if (lnum > file[curfile].nlines) {
                     /* Beyond end of file - move up. */
@@ -278,6 +278,27 @@ nextkey:
             i = curwksp->toprow + cursorline;
             if (clineno != i)
                 getlin(i);
+
+            /* Delete char after line end: join lines. */
+            if (keysym == CCDELCH &&
+                cursorcol + curwksp->coloffset >= cline_len - 1)
+            {
+                int lnum = curwksp->toprow + cursorline;
+                if (lnum >= file[curfile].nlines) {
+                    /* Beyond end of file. */
+                    keysym = -1;
+                    goto nextkey;
+                }
+                if (file[curfile].writable == 0) {
+                    /* File not writable. */
+                    keysym = -1;
+                    goto nowriterr;
+                }
+                /* Append the next line to the current one. */
+                putline();
+                combineline(lnum, cursorcol + curwksp->coloffset);
+                continue;
+            }
 
             /* Delete the symbol. */
             if (keysym == CCDELCH || keysym == CCBACKSPACE) {
@@ -363,7 +384,7 @@ nextkey:
                 return;
             continue;
 
-        case CCENTER:
+        case CCPARAM:
             goto gotarg;
 
         case CCLOFFSET:
@@ -378,23 +399,23 @@ nextkey:
             win_goto(-1);
             continue;
 
-        case CCOPEN:
+        case CCINSLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            openlines(curwksp->toprow + cursorline, definsert);
+            insertlines(curwksp->toprow + cursorline, definsert);
             continue;
 
         case CCMISRCH:
             search(-1);
             continue;
 
-        case CCCLOSE:
+        case CCDELLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            closelines(curwksp->toprow + cursorline, defdelete);
+            deletelines(curwksp->toprow + cursorline, defdelete);
             continue;
 
-        case CCPUT:
+        case CCPASTE:
             if (file[curfile].writable == 0)
                 goto nowriterr;
             if (pickbuf->nrows == 0)
@@ -403,7 +424,7 @@ nextkey:
                 curwksp->coloffset + cursorcol);
             continue;
 
-        case CCPICK:
+        case CCCOPY:
             picklines(curwksp->toprow + cursorline, defpick);
             continue;
 
@@ -435,7 +456,7 @@ nextkey:
             goto notimperr;
 
         case CCSAVEFILE:
-            savefile(NULL,curfile);
+            savefile(NULL, curfile);
             continue;
 
         case CCMILINE:
@@ -496,7 +517,7 @@ yesarg:
                 return;
             continue;
 
-        case CCENTER:
+        case CCPARAM:
             continue;
 
         case CCLOFFSET:
@@ -528,11 +549,11 @@ yesarg:
             win_goto(i - 1);
             continue;
 
-        case CCOPEN:
+        case CCINSLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
             if (param_type != 0) {
-                lnfun = openlines;
+                lnfun = insertlines;
                 spfun = openspaces;
                 goto spdir;
             }
@@ -553,7 +574,7 @@ yesarg:
             search(keysym == CCPLSRCH ? 1 : -1);
             continue;
 
-        case CCCLOSE:
+        case CCDELLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
             if (param_type != 0) {
@@ -561,7 +582,7 @@ yesarg:
                     msrbuf(deletebuf, param_str+1, 0);
                     continue;
                 }
-                lnfun = closelines;
+                lnfun = deletelines;
                 spfun = closespaces;
                 goto spdir;
             }
@@ -569,7 +590,7 @@ yesarg:
                 param_c0 + curwksp->coloffset);
             continue;
 
-        case CCPUT:
+        case CCPASTE:
             if (param_type > 0 && param_str && param_str[0] == '$') {
                 if (msrbuf(pickbuf, param_str+1, 1))
                     goto errclear;
@@ -642,7 +663,7 @@ yesarg:
             }
             continue;
 
-        case CCPICK:
+        case CCCOPY:
             if (param_type == 0)
                 goto notimperr;
             if (param_type > 0 && param_str && param_str[0] == '>') {

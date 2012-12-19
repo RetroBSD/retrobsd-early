@@ -360,7 +360,7 @@ rmacname:
             if (read(inputfile, &sy1, 1) != 1)
                 goto readquit;
             if (sy1 >= 'a' && sy1 <='z') {
-                keysym = (unsigned char) sy1 - 'a' + CCMAC+1;
+                keysym = (unsigned char) sy1 - 'a' + CCMACRO + 1;
                 goto readychr;
             }
             goto new;
@@ -387,7 +387,7 @@ rmacname:
             goto new;
         }
         keysym = k;
-        if (keysym == CCMAC)
+        if (keysym == CCMACRO)
             goto rmacname;
         goto readychr;
     }
@@ -412,13 +412,13 @@ retn:
      */
 retnm:
     keysym = (unsigned char) keysym;
-    if (keysym > CCMAC && keysym <= CCMAC+1+'z'-'a' && (symac = rmacl(keysym)))
+    if (keysym > CCMACRO && keysym <= CCMACRO+1+'z'-'a' && (symac = rmacl(keysym)))
         goto rmac;
 retnl:
     return keysym;
 readquit:
     if (intrflag) {
-        keysym = CCENTER;
+        keysym = CCPARAM;
         intrflag = 0;
         goto readychr;
     }
