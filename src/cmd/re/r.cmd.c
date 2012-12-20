@@ -27,7 +27,7 @@ static int callexec()
     /*
      * 1. Разбираем размер области.
      */
-    i = curwksp->toprow + cursorline;
+    i = curwksp->topline + cursorline;
     m = 1;
     cp = param_str;
     if (*cp == '-' || (*cp >= '0' && *cp <= '9')) {
@@ -131,12 +131,12 @@ static void cline_insert_char(keysym)
         if (cline_modified)
             putline();
         wksp_offset(defroffset);
-        i = curwksp->toprow + cursorline;
+        i = curwksp->topline + cursorline;
         if (clineno != i)
             getlin(i);
     }
     cline_modified = 1;
-    c = cursorcol + curwksp->coloffset;
+    c = cursorcol + curwksp->offset;
     if (c >= cline_max - 2) {
         /* Expand the line. */
         excline(c + 2);
@@ -155,8 +155,8 @@ static void cline_insert_char(keysym)
         for (i=cline_len; i>c; i--)
             cline[i] = cline[i-1];
         cline_len++;
-        drawlines(- c + curwksp->coloffset - 1, cursorline);
-        poscursor(c - curwksp->coloffset, cursorline);
+        drawlines(- c + curwksp->offset - 1, cursorline);
+        poscursor(c - curwksp->offset, cursorline);
     }
 
     /* Store the symbol. */
@@ -208,7 +208,7 @@ errclear:
         }
         /* Display the current line number. */
         poscursor(lnum_col, lnum_row);
-        i = owin->wksp->toprow + k + 1;
+        i = owin->wksp->topline + k + 1;
         cp = ich + 8;
         *--cp = '\0';
         do {
@@ -252,8 +252,8 @@ nextkey:
             (keysym == CCTAB && insert_mode))
         {
             /* Backspace at column 0: join lines. */
-            if (keysym == CCBACKSPACE && cursorcol + curwksp->coloffset == 0) {
-                int lnum = curwksp->toprow + cursorline;
+            if (keysym == CCBACKSPACE && cursorcol + curwksp->offset == 0) {
+                int lnum = curwksp->topline + cursorline;
                 if (lnum > file[curfile].nlines) {
                     /* Beyond end of file - move up. */
                     movecursor(CCMOVEUP);
@@ -275,15 +275,15 @@ nextkey:
                 goto nowriterr;
 
             /* No current line? Get it! */
-            i = curwksp->toprow + cursorline;
+            i = curwksp->topline + cursorline;
             if (clineno != i)
                 getlin(i);
 
             /* Delete char after line end: join lines. */
             if (keysym == CCDELCH &&
-                cursorcol + curwksp->coloffset >= cline_len - 1)
+                cursorcol + curwksp->offset >= cline_len - 1)
             {
-                int lnum = curwksp->toprow + cursorline;
+                int lnum = curwksp->topline + cursorline;
                 if (lnum >= file[curfile].nlines) {
                     /* Beyond end of file. */
                     keysym = -1;
@@ -296,13 +296,13 @@ nextkey:
                 }
                 /* Append the next line to the current one. */
                 putline();
-                combineline(lnum, cursorcol + curwksp->coloffset);
+                combineline(lnum, cursorcol + curwksp->offset);
                 continue;
             }
 
             /* Delete the symbol. */
             if (keysym == CCDELCH || keysym == CCBACKSPACE) {
-                int thiscol = cursorcol + curwksp->coloffset;
+                int thiscol = cursorcol + curwksp->offset;
                 int thisrow = cursorline;
 
                 if (keysym == CCBACKSPACE)
@@ -316,7 +316,7 @@ nextkey:
                 for (i=thiscol; i<cline_len-2; i++)
                     cline[i] = cline[i+1];
                 cline_len--;
-                thiscol -= curwksp->coloffset;
+                thiscol -= curwksp->offset;
                 drawlines(-thiscol-1, cursorline);
                 poscursor(thiscol, thisrow);
                 cline_modified = 1;
@@ -327,7 +327,7 @@ nextkey:
                 /* Expand tabs to 4 spaces. */
                 do {
                     cline_insert_char(' ');
-                } while ((cursorcol + curwksp->coloffset) & 3);
+                } while ((cursorcol + curwksp->offset) & 3);
             } else
                 cline_insert_char(keysym);
             keysym = -1;
@@ -338,29 +338,8 @@ nextkey:
             if (file[curfile].writable == 0)
                 goto nowriterr;
             putline();
-            splitline(curwksp->toprow + cursorline,
-                cursorcol + curwksp->coloffset);
-            movecursor(keysym);
-            keysym = -1;
-            goto errclear;
-        }
-        if (keysym == CCMOVEUP) {
-            if (curwksp->toprow == 0 && cursorline == 0) {
-                /* Already on first line. */
-                keysym = -1;
-                goto nextkey;
-            }
-            putline();
-            if (cursorline == 0)
-                wksp_forward(-defmiline);
-            movecursor(keysym);
-            keysym = -1;
-            goto errclear;
-        }
-        if (keysym == CCMOVEDOWN) {
-            putline();
-            if (cursorline == curwin->text_maxrow)
-                wksp_forward(defplline);
+            splitline(curwksp->topline + cursorline,
+                cursorcol + curwksp->offset);
             movecursor(keysym);
             keysym = -1;
             goto errclear;
@@ -402,7 +381,7 @@ nextkey:
         case CCINSLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            insertlines(curwksp->toprow + cursorline, definsert);
+            insertlines(curwksp->topline + cursorline, definsert);
             continue;
 
         case CCMISRCH:
@@ -412,7 +391,7 @@ nextkey:
         case CCDELLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            deletelines(curwksp->toprow + cursorline, defdelete);
+            deletelines(curwksp->topline + cursorline, defdelete);
             continue;
 
         case CCPASTE:
@@ -420,12 +399,12 @@ nextkey:
                 goto nowriterr;
             if (pickbuf->nrows == 0)
                 goto nopickerr;
-            put(pickbuf, curwksp->toprow + cursorline,
-                curwksp->coloffset + cursorcol);
+            put(pickbuf, curwksp->topline + cursorline,
+                curwksp->offset + cursorcol);
             continue;
 
         case CCCOPY:
-            picklines(curwksp->toprow + cursorline, defpick);
+            picklines(curwksp->topline + cursorline, defpick);
             continue;
 
         case CCINSMODE:
@@ -500,7 +479,7 @@ reparg:
          * Дай аргумент!
          */
 gotarg:
-        param(0);
+        param();
 yesarg:
         switch (keysym) {
         case CCQUIT:
@@ -557,8 +536,8 @@ yesarg:
                 spfun = openspaces;
                 goto spdir;
             }
-            splitline(curwksp->toprow + param_r0,
-                param_c0 + curwksp->coloffset);
+            splitline(curwksp->topline + param_r0,
+                param_c0 + curwksp->offset);
             continue;
 
         case CCMISRCH:
@@ -586,8 +565,8 @@ yesarg:
                 spfun = closespaces;
                 goto spdir;
             }
-            combineline(curwksp->toprow + param_r0,
-                param_c0 + curwksp->coloffset);
+            combineline(curwksp->topline + param_r0,
+                param_c0 + curwksp->offset);
             continue;
 
         case CCPASTE:
@@ -602,8 +581,8 @@ yesarg:
                 goto nowriterr;
             if (deletebuf->nrows == 0)
                 goto nodelerr;
-            put(deletebuf, curwksp->toprow + cursorline,
-                curwksp->coloffset + cursorcol);
+            put(deletebuf, curwksp->topline + cursorline,
+                curwksp->offset + cursorcol);
             continue;
 
         case CCMOVELEFT:
@@ -642,15 +621,8 @@ yesarg:
                 else
                     file[curwksp->wfile].writable = 0;
                 break;
-            case 'k':
-                defkey();
-                break;
             case 'r':           /* Redraw screen */
                 redisplay();
-                break;
-            case 'd':
-                if (param_str[1] == ' ')
-                    defmac(&param_str[2]);
                 break;
             case 'q':
                 keysym = CCQUIT;
@@ -787,14 +759,14 @@ spdir:
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
-            (*lnfun)(curwksp->toprow + cursorline, i);
+            (*lnfun)(curwksp->topline + cursorline, i);
         } else {
             if (param_c1 == param_c0) {
-                (*lnfun)(curwksp->toprow + param_r0,
+                (*lnfun)(curwksp->topline + param_r0,
                     (param_r1 - param_r0) + 1);
             } else
-                (*spfun)(curwksp->toprow + param_r0,
-                    curwksp->coloffset + param_c0,
+                (*spfun)(curwksp->topline + param_r0,
+                    curwksp->offset + param_c0,
                     (param_c1 - param_c0),
                     (param_r1 - param_r0) + 1);
         }
@@ -861,10 +833,10 @@ void search(delta)
     sk = searchkey;
     while (*sk++)
         lkey++;
-    ln = lin + curwksp->toprow;
+    ln = lin + curwksp->topline;
     getlin (ln);
     putline();
-    at = cline + col + curwksp->coloffset;
+    at = cline + col + curwksp->offset;
     for (;;) {
         at += delta;
         while (at < cline || at >  cline + cline_len - lkey) {
@@ -877,7 +849,6 @@ void search(delta)
                 poscursor(col, lin);
                 error(i ? "Interrupt." : "Search key not found.");
                 highlight_position = 0;
-                symac = 0;
                 return;
             }
             getlin(ln);

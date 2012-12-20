@@ -15,24 +15,24 @@ void wksp_forward(nl)
     register int cc, cl;
 
     if (nl < 0) {
-        if (curwksp->toprow == 0) {
+        if (curwksp->topline == 0) {
             if (cursorline != 0)
                 poscursor(cursorcol, 0);
             return;
         }
     } else {
-        int last_line = file[curfile].nlines - curwksp->toprow;
+        int last_line = file[curfile].nlines - curwksp->topline;
         if (last_line <= curwin->text_maxrow) {
             if (cursorline != last_line)
                 poscursor(cursorcol, last_line);
             return;
         }
     }
-    curwksp->toprow += nl;
-    if (curwksp->toprow > file[curfile].nlines - curwin->text_maxrow)
-        curwksp->toprow = file[curfile].nlines - curwin->text_maxrow;
-    if (curwksp->toprow < 0)
-        curwksp->toprow = 0;
+    curwksp->topline += nl;
+    if (curwksp->topline > file[curfile].nlines - curwin->text_maxrow)
+        curwksp->topline = file[curfile].nlines - curwin->text_maxrow;
+    if (curwksp->topline < 0)
+        curwksp->topline = 0;
     cc = cursorcol;
     cl = cursorline;
     drawlines(0, curwin->text_maxrow);
@@ -49,9 +49,9 @@ void wksp_offset(nc)
 
     cl = cursorline;
     cc = cursorcol;
-    if ((curwksp->coloffset + nc) < 0)
-        nc = - curwksp->coloffset;
-    curwksp->coloffset += nc;
+    if ((curwksp->offset + nc) < 0)
+        nc = - curwksp->offset;
+    curwksp->offset += nc;
     drawlines(0, curwin->text_maxrow);
     cc -= nc;
     if (cc < 0)
@@ -69,8 +69,8 @@ void gtfcn(number)
 {
     register int i;
 
-    wksp_forward(number - curwksp->toprow - defplline);
-    i = number - curwksp->toprow;
+    wksp_forward(number - curwksp->topline - defplline);
+    i = number - curwksp->topline;
     if (i >= 0) {
         if (i > curwin->text_maxrow)
             i = curwin->text_maxrow;
@@ -89,19 +89,19 @@ void cgoto(ln, col, slin, lkey)
 {
     register int lin;
 
-    lin = ln - curwksp->toprow;
+    lin = ln - curwksp->topline;
     if (lkey || lin < 0 || lin  > curwin->text_maxrow) {
         lkey = -1;
         lin = defplline;
-        curwksp->toprow = ln - defplline;
-        if (curwksp->toprow < 0) {
-            lin += curwksp->toprow;
-            curwksp->toprow = 0;
+        curwksp->topline = ln - defplline;
+        if (curwksp->topline < 0) {
+            lin += curwksp->topline;
+            curwksp->topline = 0;
         }
     }
-    col -= curwksp->coloffset;
+    col -= curwksp->offset;
     if (col < 0 || col > curwin->text_maxcol) {
-        curwksp->coloffset += col;
+        curwksp->offset += col;
         col = 0;
         lkey = -1;
     }
@@ -246,8 +246,8 @@ void win_open(file)
     if (editfile (file, 0, 0, 1, 1) <= 0 &&
         editfile (deffile, 0, 0, 0, 1) <= 0)
         error("Cannot open help file.");
-    win_draw(oldwin, 1);
-    win_draw(win, 1);
+    win_borders(oldwin, 1);
+    win_borders(win, 1);
     poscursor(0, 0);
 }
 
@@ -288,7 +288,7 @@ void win_remove()
         pwin->max_col = win->max_col;
         pwin->text_maxcol = pwin->max_col - pwin->base_col - 2;
     }
-    win_draw(pwin, 1);
+    win_borders(pwin, 1);
     win_goto(pwinnum);
     drawlines(0, curwin->text_maxrow);
     poscursor(0, 0);
@@ -330,7 +330,7 @@ void win_goto(winnum)
     if (win == oldwin)
         return;
 
-    /* win_draw(oldwin, win); */
+    /* win_borders(oldwin, win); */
     win_switch(win);
     defplline = defmiline = (win->max_row - win->base_row) / 4 + 1;
     poscursor(curwin->wksp->cursorcol, curwin->wksp->cursorrow);
@@ -369,8 +369,8 @@ void wksp_redraw(w, fn, from, to, delta)
 
             /* Исправить номер строки */
             j = delta >= 0 ? to : from;
-            if (tw->toprow > j)
-                tw->toprow += delta;
+            if (tw->topline > j)
+                tw->topline += delta;
         }
         tw = winlist[i]->wksp;
         if (tw->wfile == fn && tw != w) {
@@ -380,12 +380,12 @@ void wksp_redraw(w, fn, from, to, delta)
 
             /* Исправляем номер строки и позиции на экране */
             j = (delta >= 0) ? to : from;
-            if (tw->toprow > j)
-                tw->toprow += delta;
+            if (tw->topline > j)
+                tw->topline += delta;
 
             /* Если изменилось, перевыдать окно */
-            j = (from > tw->toprow) ? from : tw->toprow;
-            k = tw->toprow + winlist[i]->text_maxrow;
+            j = (from > tw->topline) ? from : tw->topline;
+            k = tw->topline + winlist[i]->text_maxrow;
             if (k > to)
                 k = to;
             if (j <= k) {
@@ -393,8 +393,8 @@ void wksp_redraw(w, fn, from, to, delta)
                 l = cursorcol;
                 m = cursorline;
                 win_switch(winlist[i]);
-                drawlines(j - tw->toprow,
-                    delta == 0 ? k - tw->toprow : winlist[i]->text_maxrow);
+                drawlines(j - tw->topline,
+                    delta == 0 ? k - tw->topline : winlist[i]->text_maxrow);
                 win_switch(owin);
                 poscursor(l, m);
             }

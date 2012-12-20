@@ -223,7 +223,7 @@ int editfile(filename, line, col, mkflg, puflg)
         } else {
             if (! mkflg)
                 return (-1);
-            telluser("Hit ^N to create new file: ",0);
+            telluser("Press ^N to create new file: ",0);
             telluser(filename, 28);
             keysym = -1;
             getkeysym();
@@ -275,16 +275,16 @@ int editfile(filename, line, col, mkflg, puflg)
     /* Выталкиваем буфер, так как здесь долгая операция */
     dumpcbuf();
     wksp_switch();
-    if (file[fn].chain == (segment_t *)0)
+    if (! file[fn].chain)
         file[fn].chain = file2segm(fn);
     curwksp->cursegm = file[fn].chain;
     curfile = curwksp->wfile = fn;
     curwksp->line = curwksp->segmline = 0;
-    curwksp->toprow = line;
-    curwksp->coloffset = col;
+    curwksp->topline = line;
+    curwksp->offset = col;
     if (puflg) {
         drawlines(0, curwin->text_maxrow);
-        poscursor(0, defplline);
+        poscursor(0, 0);
     }
     return(1);
 }

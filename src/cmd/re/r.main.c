@@ -23,8 +23,8 @@ int defplline  = 10;                /* +LINE        */
 int defmiline  = 10;                /* -LINE        */
 int defplpage  = 1;                 /* +PAGE        */
 int defmipage  = 1;                 /* -PAGE        */
-int defloffset = 30;                /* LEFT OFFSET  */
-int defroffset = 30;                /* RIGHT OFFSET */
+int defloffset = 24;                /* LEFT OFFSET  */
+int defroffset = 24;                /* RIGHT OFFSET */
 int definsert  = 1;                 /* OPEN         */
 int defdelete  = 1;                 /* CLOSE        */
 int defpick    = 1;                 /* PICK         */
@@ -193,7 +193,7 @@ make:   /* Create initial window state. */
         win = (window_t*) salloc(sizeof(window_t));
         winlist[0] = win;
         win_create(win, 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, MULTIWIN);
-        win_draw(win, 0);
+        win_borders(win, 0);
         poscursor(0, 0);
         return;
     }
@@ -207,7 +207,7 @@ make:   /* Create initial window state. */
         base_row = get1w(gbuf);
         max_row = get1w(gbuf);
         win_create(win, base_col, max_col, base_row, max_row, MULTIWIN);
-        win_draw(win, 0);
+        win_borders(win, 0);
         gf = 0;
         nletters = get1w(gbuf);
         if (nletters != 0) {
@@ -308,8 +308,8 @@ static void savestate()
             do {
                 put1c(*f1, sbuf);
             } while (*f1++);
-            put1w(win->altwksp->toprow, sbuf);
-            put1w(win->altwksp->coloffset, sbuf);
+            put1w(win->altwksp->topline, sbuf);
+            put1w(win->altwksp->offset, sbuf);
             put1w(win->altwksp->cursorcol, sbuf);
             put1w(win->altwksp->cursorrow, sbuf);
         } else
@@ -324,8 +324,8 @@ static void savestate()
             do {
                 put1c(*f1, sbuf);
             } while (*f1++);
-            put1w(win->wksp->toprow, sbuf);
-            put1w(win->wksp->coloffset, sbuf);
+            put1w(win->wksp->topline, sbuf);
+            put1w(win->wksp->offset, sbuf);
             put1w(win->wksp->cursorcol, sbuf);
             put1w(win->wksp->cursorrow, sbuf);
         }
@@ -460,7 +460,7 @@ void fatal(s)
             printf("\nWindow #%d: chain %d, current line %d at block %p,\n",
                 i, w->wfile, w->line, w->cursegm);
             printf(" first line %d, ulhc (%d,%d)\n",
-                w->segmline, w->coloffset, w->toprow);
+                w->segmline, w->offset, w->topline);
         }
         for (i=12; i; i--)
             signal(i, 0);

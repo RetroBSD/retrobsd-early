@@ -273,16 +273,8 @@ int getkeysym()
 
     /* Если остался неиспользованным символ */
     if (keysym != -1)
-        goto retnl;
+        return keysym;
 
-    /* Если еще не кончилось макро-расширение */
-rmac:
-    if (symac) {
-        keysym = (unsigned char) *symac++;
-        if (*symac == 0)
-            symac = 0;
-        goto retnl;
-    }
     /* Если идет чтение из файла */
     if (inputfile != 0 && readfc())
         goto retnm;
@@ -355,15 +347,6 @@ new:
         case 'X':           /* ^X X */
             keysym = CCDOCMD;
             goto readychr;
-        case '$':           /* ^X $ */
-rmacname:
-            if (read(inputfile, &sy1, 1) != 1)
-                goto readquit;
-            if (sy1 >= 'a' && sy1 <='z') {
-                keysym = (unsigned char) sy1 - 'a' + CCMACRO + 1;
-                goto readychr;
-            }
-            goto new;
         default:
             ;
         }
@@ -387,8 +370,6 @@ rmacname:
             goto new;
         }
         keysym = k;
-        if (keysym == CCMACRO)
-            goto rmacname;
         goto readychr;
     }
     /* ========================================================= */
@@ -412,9 +393,6 @@ retn:
      */
 retnm:
     keysym = (unsigned char) keysym;
-    if (keysym > CCMACRO && keysym <= CCMACRO+1+'z'-'a' && (symac = rmacl(keysym)))
-        goto rmac;
-retnl:
     return keysym;
 readquit:
     if (intrflag) {

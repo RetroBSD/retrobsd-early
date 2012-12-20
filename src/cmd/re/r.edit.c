@@ -80,7 +80,8 @@ static int exinss(si, se, so, no, mo)
             break;
         }
         if (sy == '\11') {
-            i = (n & ~7) + 8;
+            /* Expand tabs to 4 spaces. */
+            i = (n + 4) & ~3;
             if (i > mo) {
                 ir = 2;
                 break;
@@ -408,24 +409,24 @@ int wksp_seek(wksp, lno)
 {
     register char *cp;
     int i;
-    register int j, l;
+    register int j, seek;
 
     /* 1. Получим segm, в котором "сидит" данная строка */
     if (wksp_position(wksp, lno))
         return (1);
 
     /* Теперь вычислим смещение */
-    l = wksp->cursegm->seek;
+    seek = wksp->cursegm->seek;
     i = lno - wksp->segmline;
     cp = &(wksp->cursegm->data);
     while (i-- != 0) {
         if ((j = *(cp++)) & 0200) {
-            l += 128*(j&0177);
+            seek += 128*(j&0177);
             j = *(cp++);
         }
-        l += j;
+        seek += j;
     }
-    charsin(wksp->cursegm->fdesc, l);
+    charsin(wksp->cursegm->fdesc, seek);
     return (0);
 }
 
@@ -747,7 +748,7 @@ void insertlines(from, number)
     insert(curwksp, blanklines(number), from);
     wksp_redraw((workspace_t *)NULL, curfile,
         from, from + number - 1, number);
-    poscursor(cursorcol, from - curwksp->toprow);
+    poscursor(cursorcol, from - curwksp->topline);
 }
 
 /*
@@ -763,11 +764,11 @@ void openspaces(line, col, number, nl)
         putbks(col, number);
         cline_modified = 1;
         putline();
-        j = i - curwksp->toprow;
+        j = i - curwksp->topline;
         if (j <= curwin->text_maxrow)
             drawlines(j, j);
     }
-    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
+    poscursor(col - curwksp->offset, line - curwksp->topline);
 }
 
 /*
@@ -817,8 +818,10 @@ void splitline(line, col)
     register int nsave;
     register char csave;
 
-    if (line >= file[curfile].nlines)
+    if (line >= file[curfile].nlines) {
+        file[curfile].nlines++;
         return;
+    }
     getlin(line);
     if (col >= cline_len - 1)
         insertlines(line+1, 1);
@@ -834,7 +837,7 @@ void splitline(line, col)
         insert(curwksp, writemp(cline+col, nsave-col), line+1);
         wksp_redraw((workspace_t *)NULL, curfile, line, line+1, 1);
     }
-    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
+    poscursor(col - curwksp->offset, line - curwksp->topline);
 }
 
 /*
@@ -894,7 +897,7 @@ void deletelines(frum, number)
     deletebuf->nrows = number;
     deletebuf->ncolumns = 0;
     file[2].nlines += number;
-    poscursor(cursorcol, from - curwksp->toprow);
+    poscursor(cursorcol, from - curwksp->topline);
 }
 
 /*
@@ -974,7 +977,7 @@ static void pcspaces(line, col, number, nl, flg)
             cline_len -= number;
             cline_modified = 1;
             putline();
-            i = j - curwksp->toprow;
+            i = j - curwksp->topline;
             if (i <= curwin->text_maxrow)
                 drawlines(i, i);
         }
@@ -993,7 +996,7 @@ static void pcspaces(line, col, number, nl, flg)
     }
     file[2].nlines += nl;
     free(linebuf);
-    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
+    poscursor(col - curwksp->offset, line - curwksp->topline);
 }
 
 /*
@@ -1036,7 +1039,7 @@ void combineline(line, col)
     free((char *)temp);
     delete(curwksp, line+1, line+1);
     wksp_redraw((workspace_t *)NULL, curfile, line, line+1, -1);
-    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
+    poscursor(col - curwksp->offset, line - curwksp->topline);
 }
 
 /*
@@ -1120,7 +1123,7 @@ void picklines(from, number)
     pickbuf->nrows = number;
     pickbuf->ncolumns = 0;
     file[2].nlines += number;
-    poscursor(cursorcol, from - curwksp->toprow);
+    poscursor(cursorcol, from - curwksp->topline);
 }
 
 /*
@@ -1193,12 +1196,12 @@ static void pspaces(buf, line, col)
             cline[col+j] = linebuf[j];
         cline_modified = 1;
         putline();
-        j = line+i-curwksp->toprow;
+        j = line+i-curwksp->topline;
         if (j <= curwin->text_maxrow)
             drawlines(j, j);
     }
     free(linebuf);
-    poscursor(col - curwksp->coloffset, line - curwksp->toprow);
+    poscursor(col - curwksp->offset, line - curwksp->topline);
 }
 
 /*

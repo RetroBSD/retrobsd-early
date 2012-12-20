@@ -113,8 +113,8 @@ int curfile;
  */
 typedef struct {
     segment_t *cursegm;     /* Current segment */
-    int toprow;             /* Top left row on a display */
-    int coloffset;          /* Column offset of a displayed text */
+    int topline;            /* Top left row on a display */
+    int offset;             /* Column offset of a displayed text */
     int line;               /* Current line number */
     int segmline;           /* Number of first line in the current segment */
     int wfile;              /* File number, or 0 when not attached */
@@ -202,7 +202,6 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCPARAM     037     /* enter parameter      ^A      f1      */
 #define CCQUIT      0177    /* terminate session    ^X ^C           */
 #define CCINTRUP    0237    /* interrupt (journal) */
-#define CCMACRO     0200    /* macro marker */
 
 int cursorline;             /* physical position of */
 int cursorcol;              /* cursor from (0,0)=ulhc of text in window */
@@ -256,7 +255,7 @@ off_t tempseek;             /* Offset in temporary file */
 int journal;                /* Journaling file */
 int inputfile;              /* Input file (stdin or journal) */
 
-char *searchkey, *symac;
+char *searchkey;
 
 int userid, groupid;
 
@@ -293,7 +292,7 @@ int msrbuf (clipboard_t *, char *, int); /* store or get a buffer by name */
 void gtfcn (int);               /* go to line by number */
 int savefile (char *, int);     /* save a file */
 void error (char *);            /* display error message */
-char *param (int);              /* get a parameter */
+char *param (void);             /* get a parameter */
 int chars (int);                /* read next line from file */
 int dechars (char *, int);      /* conversion of line from internal to external form */
 void cleanup (void);            /* cleanup before exit */
@@ -303,11 +302,8 @@ void splitline (int, int);      /* split a line at given position */
 void combineline (int, int);    /* merge a line with next one */
 int msvtag (char *name);        /* save a file position by name */
 int mdeftag (char *);           /* define a file area by name */
-int defkey (void);              /* redefine a keyboard key */
 int addkey(int, char *);        /* add new command key to the code table */
 void redisplay (void);          /* redraw all */
-int defmac (char *);            /* define a macro sequence */
-char *rmacl (int);              /* get macro sequence by name */
 int mgotag (char *);            /* return a cursor back to named position */
 void execr (char **);           /* run command with given parameters */
 void telluser (char *, int);    /* display a message in arg area */
@@ -316,7 +312,7 @@ void win_open (char *);         /* make new window */
 void win_remove (void);         /* remove last window */
 void win_goto (int);            /* switch to window by number */
 void win_switch (window_t *);   /* switch to given window */
-void win_draw (window_t *, int); /* draw borders for a window */
+void win_borders (window_t *, int); /* draw borders for a window */
 void win_create (window_t *, int, int, int, int, int);
                                 /* create new window */
 void dumpcbuf (void);           /* flush output buffer */

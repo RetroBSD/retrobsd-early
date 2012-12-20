@@ -16,7 +16,7 @@ void drawlines(lo, lf)
 {
     register int i, l0;
     int j, k, l1;
-    char lmc, *cp, max_colflg;
+    char lmc, *cp, draw_border;
 
     l0 = lo;
     lo += 2;
@@ -24,8 +24,8 @@ void drawlines(lo, lf)
         lo = 0; /* Нач. колонка */
     l1 = lo;
     lmc = (curwin->base_col == curwin->text_col ? 0 :
-        curwksp->coloffset == 0 ? LMCH : MLMCH);
-    max_colflg = (curwin->text_col + curwin->text_maxcol < curwin->max_col);
+        curwksp->offset == 0 ? LMCH : MLMCH);
+    draw_border = (curwin->text_col + curwin->text_maxcol < curwin->max_col);
     while (l0 <= lf) {
         lo = l1;
         if (l0 < 0) {
@@ -35,30 +35,30 @@ void drawlines(lo, lf)
         } else {
             if (l0 != lf && interrupt())
                 return;
-            i = wksp_seek(curwksp, curwksp->toprow + l0);
+            i = wksp_seek(curwksp, curwksp->topline + l0);
             if (i && lmc != 0)
                 lmc = ELMCH;
         }
-        if (lmc == curwin->leftbar[l0] || lmc == 0 || lo < 0)
+        if (! lmc || lo < 0 || lmc == curwin->leftbar[l0])
             poscursor(0, l0);
         else {
             poscursor(-1, l0);
             putch(lmc, 0);
         }
         curwin->leftbar[l0] = lmc;
-        if (max_colflg != 0)
-            max_colflg = RMCH;
+        if (draw_border != 0)
+            draw_border = RMCH;
         if (i != 0)
             i = 0;
         else {
             if (lf >= 0)
                 chars(1);
-            i = (cline_len - 1) - curwksp->coloffset;
+            i = (cline_len - 1) - curwksp->offset;
             if (i < 0)
                 i = 0;
             else if (i > curwin->text_maxcol) {
-                if (i > 1 + curwin->text_maxcol && max_colflg)
-                    max_colflg = MRMCH;
+                if (draw_border && i > 1 + curwin->text_maxcol)
+                    draw_border = MRMCH;
                 i = 1 + curwin->text_maxcol;
             }
         }
@@ -68,7 +68,7 @@ void drawlines(lo, lf)
          */
         if (lo == 0) {
             int fc;
-            for (fc=0; cline != 0 && cline[curwksp->coloffset + fc]==' '; fc++);
+            for (fc=0; cline != 0 && cline[curwksp->offset + fc]==' '; fc++);
             j = curwin->text_maxcol + 1;
             if (fc > j)
                 fc = j;
@@ -83,7 +83,7 @@ void drawlines(lo, lf)
         if (lo)
             poscursor(-lo, l0);
         j = i + lo;
-        cp = cline + curwksp->coloffset - lo;
+        cp = cline + curwksp->offset - lo;
         while(j--)
             putcha(*cp++);
         cursorcol += (i + lo);
@@ -96,14 +96,22 @@ void drawlines(lo, lf)
         if (k > 0) {
             putblanks(k);
         }
-        if (curwin->text_col + cursorcol >= NCOLS)
-            cursorcol = - curwin->text_col;
-        if (max_colflg && max_colflg != curwin->rightbar[l0]) {
+        if (i > curwin->text_maxcol) {
+            /* Too long line - add continuation mark. */
+            pcursor(curwin->text_col + curwin->text_maxcol, l0);
+            putcha('~');
+        }
+        if (curwin->text_col + cursorcol >= NCOLS) {
+            /* Cursor lost after last column: move it to known position. */
+            cursorcol = 0;
+            pcursor(0, l0);
+        }
+        if (draw_border && draw_border != curwin->rightbar[l0]) {
             poscursor(curwin->max_col - curwin->text_col, l0);
-            putch(max_colflg, 0);
-        } else
-            movecursor(0);
-        curwin->rightbar[l0] = max_colflg;
+            putch(draw_border, 0);
+        } /*else
+            movecursor(0);*/
+        curwin->rightbar[l0] = draw_border;
         curwin->lastcol[l0] = (k > 0 ? i : j);
         ++l0;
     }
@@ -171,44 +179,83 @@ void movecursor(arg)
     case 0:
         break;
     case CCHOME:                /* home: cursor to line start */
-        if (curwksp->coloffset != 0)
-            wksp_offset(-curwksp->coloffset);
-        col = 0;
+        col = - curwksp->offset;
         break;
+    case CCMOVELEFT:            /* backspace */
+        if (col + curwksp->offset > 0) {
+            --col;
+            break;
+        }
+        if (lin + curwksp->topline <= 0)
+            break;
+        lin--;
+        /* fall through... */
     case CCEND:                 /* home: cursor to line end */
-        col = curwin->lastcol[cursorline];
-        // TODO: increase offset
-        break;
-    case CCMOVEUP:              /* move up 1 line */
-        --lin;
+        if (clineno != curwksp->topline + lin)
+            getlin(curwksp->topline + lin);
+        col = cline_len - 1 - curwksp->offset;
+        if (col >= 0 && col <= curwin->text_maxcol)
+            break;
+        curwksp->offset = cline_len - 1 - curwin->text_maxcol + defroffset;
+        if (curwksp->offset < 0)
+            curwksp->offset = 0;
+        drawlines(0, curwin->text_maxrow);
+        clineno = -1;
+        getlin(curwksp->topline + lin);
+        col = cline_len - 1 - curwksp->offset;
         break;
     case CCRETURN:              /* return */
         col = 0;
         /* fall through... */
     case CCMOVEDOWN:            /* move down 1 line */
-        ++lin;
+        if (lin < curwin->text_maxrow)
+            ++lin;
+        else {
+            putline();
+            lin += curwksp->topline + 1;
+            wksp_forward(defplline);
+            lin -= curwksp->topline;
+        }
+        break;
+    case CCMOVEUP:              /* move up 1 line */
+        if (lin > 0)
+            --lin;
+        else if (curwksp->topline > 0) {
+            putline();
+            lin += curwksp->topline - 1;
+            wksp_forward(- defmiline);
+            lin -= curwksp->topline;
+        }
         break;
     case CCMOVERIGHT:           /* move forward */
         ++col;
         break;
-    case CCMOVELEFT:            /* backspace */
-        --col;
-        break;
     case CCTAB:                 /* tab */
-        col += curwksp->coloffset;
+        col += curwksp->offset;
         col = (col + 4) & ~3;
-        col -= curwksp->coloffset;
+        col -= curwksp->offset;
         break;
     }
-    if (col > curwin->text_maxcol)
-        col = 0;
-    else if (col < 0)
-        col = curwin->text_maxcol;
+    if (col > curwin->text_maxcol) {
+        curwksp->offset += defroffset;
+        col -= defroffset;
+        drawlines(0, curwin->text_maxrow);
+        clineno = -1;
+    } else if (col < 0) {
+        curwksp->offset -= defloffset - col;
+        col = defloffset;
+        if (curwksp->offset < 0) {
+            col += curwksp->offset;
+            curwksp->offset = 0;
+        }
+        drawlines(0, curwin->text_maxrow);
+        clineno = -1;
+    }
 
     if (lin < 0)
-        lin = curwin->text_maxrow;
-    else if (lin > curwin->text_maxrow)
         lin = 0;
+    else if (lin > curwin->text_maxrow)
+        lin = curwin->text_maxrow;
 
     poscursor(col, lin);
 }
@@ -244,15 +291,13 @@ void putch(j, flg)
  *         param_type = -1 -- определение области
  *         param_type = 0  -- пустой аргумент
  *         param_type = 1  -- строка.
- *         при использовании макро бывает param_type = -2 - tag defined
  * Возвращается указатель на введенную строку (param_str).
  * Длина возвращается в переменной param_len.
  * Если при очередном вызове param_len не 0, старый param_str
  * освобождается, так что если старый параметр нужен,
  * нужно обнулить param_len.
  */
-char *param(macro)
-    int macro;
+char *param()
 {
     register char *c1;
     char *cp,*c2;
@@ -269,7 +314,7 @@ char *param(macro)
     poscursor(cursorcol,cursorline);
     w = curwin;
 back:
-    telluser(macro ? "mac: " : "arg: ", 0);
+    telluser("Cmd: ", 0);
     win_switch(&paramwin);
     poscursor(5, 0);
     do {
@@ -277,8 +322,6 @@ back:
         getkeysym();
     } while (keysym == CCBACKSPACE);
 
-    if (macro)
-        goto rmac;
     if (MOVECMD(keysym)) {
         telluser("arg: *** cursor defined ***", 0);
         win_switch(w);
@@ -314,7 +357,6 @@ t0:
         param_str = NULL;
         param_type = 0;
     } else {
-rmac:
         param_len = pn = 0;
 loop:
         c = getkeysym();
@@ -330,7 +372,7 @@ loop:
             param_len += LPARAM;
         }
         /* Конец ввода параметра */
-        if ((! macro && keysym < ' ') || c==CCBACKSPACE || c==CCQUIT) {
+        if (keysym < ' ' || c==CCBACKSPACE || c==CCQUIT) {
             if (c == CCBACKSPACE && cursorcol != 0) {
                 /* backspace */
                 if (pn == 0) {
@@ -378,10 +420,11 @@ loop:
  * Draw borders for a window.
  * When vertf, draw a vertical borders.
  */
-void win_draw(win, vertf)
+void win_borders(win, vertf)
     register window_t *win;
     int vertf;
 {
+#if MULTIWIN
     register int i;
 
     win_switch(&wholescreen);
@@ -408,6 +451,7 @@ void win_draw(win, vertf)
             putch(BMCH, 0);
     }
     /* poscursor(win->base_col + 1, win->base_row + 1); */
+#endif
     win_switch(win);
 }
 
@@ -432,21 +476,21 @@ void telluser(msg, col)
     int col;
 {
     window_t *oldwin;
-    register int c,l;
+    register int c, l;
+
     oldwin = curwin;
     c = cursorcol;
     l = cursorline;
     win_switch(&paramwin);
-    if (col == 0)
-    {
-        poscursor(0,0);
+    if (col == 0) {
+        poscursor(0, 0);
         putblanks(paramwin.text_maxcol);
     }
-    poscursor(col,0);
+    poscursor(col, 0);
     /* while (*msg) putch(*msg++, 0); */
     putstr(msg, PARAMREDIT);
     win_switch(oldwin);
-    poscursor(c,l);
+    poscursor(c, l);
     dumpcbuf();
 }
 
@@ -474,7 +518,7 @@ void redisplay()
             curp->leftbar[i] = ' ';
             curp->rightbar[i] = ' ';
         }
-        win_draw(curp, 0);
+        win_borders(curp, 0);
         drawlines(0, curp->text_maxrow);
     }
     win_switch(curp0);
