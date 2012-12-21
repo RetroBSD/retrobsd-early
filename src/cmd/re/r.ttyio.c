@@ -317,11 +317,11 @@ new:
             goto readychr;
         case 'n':           /* ^X n */
         case 'N':           /* ^X N */
-            keysym = CCPLLINE;
+            keysym = CCPLPAGE;
             goto readychr;
         case 'p':           /* ^X p */
         case 'P':           /* ^X P */
-            keysym = CCMILINE;
+            keysym = CCMIPAGE;
             goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */

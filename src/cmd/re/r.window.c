@@ -69,7 +69,7 @@ void gtfcn(number)
 {
     register int i;
 
-    wksp_forward(number - curwksp->topline - defplline);
+    wksp_forward(number - curwksp->topline - curwin->text_maxrow / 2);
     i = number - curwksp->topline;
     if (i >= 0) {
         if (i > curwin->text_maxrow)
@@ -92,8 +92,8 @@ void cgoto(ln, col, slin, lkey)
     lin = ln - curwksp->topline;
     if (lkey || lin < 0 || lin  > curwin->text_maxrow) {
         lkey = -1;
-        lin = defplline;
-        curwksp->topline = ln - defplline;
+        lin = curwin->text_maxrow / 2;
+        curwksp->topline = ln - lin;
         if (curwksp->topline < 0) {
             lin += curwksp->topline;
             curwksp->topline = 0;
@@ -242,7 +242,7 @@ void win_open(file)
     oldwin->wksp->cursorcol = oldwin->altwksp->cursorcol = 0;
     oldwin->wksp->cursorrow = oldwin->altwksp->cursorrow = 0;
     win_switch(win);
-    defplline = defmiline = (win->max_row - win->base_row)/ 4 + 1;
+    //defplline = defmiline = (win->max_row - win->base_row)/ 4 + 1;
     if (editfile (file, 0, 0, 1, 1) <= 0 &&
         editfile (deffile, 0, 0, 0, 1) <= 0)
         error("Cannot open help file.");
@@ -332,7 +332,7 @@ void win_goto(winnum)
 
     /* win_borders(oldwin, win); */
     win_switch(win);
-    defplline = defmiline = (win->max_row - win->base_row) / 4 + 1;
+    //defplline = defmiline = (win->max_row - win->base_row) / 4 + 1;
     poscursor(curwin->wksp->cursorcol, curwin->wksp->cursorrow);
 }
 

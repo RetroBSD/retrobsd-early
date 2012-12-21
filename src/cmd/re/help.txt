@@ -16,7 +16,7 @@
   ^X ^C  - Exit wih Saving                               |   ^    |
   ^X i   - Insert Mode                                   |   |    |
                                                 _________|________|_________
-  ^X n   - +Line        ^X f  - +Offset         |        |        |        |
-  ^X p   - -Line        ^X b  - -Offset         | <--    |   |    |  -->   |
+  ^X n   - Page Down    ^X f  - +Offset         |        |        |        |
+  ^X p   - Page Up      ^X b  - -Offset         | <--    |   |    |  -->   |
   ^X $x  - Run Macro                            |        |   V    |        |
   ^A >x <Enter> - Create Macro                  |________|________|________|

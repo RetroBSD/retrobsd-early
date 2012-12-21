@@ -156,8 +156,6 @@ int mdeftag(name)
     param_type = -2;
     param_r1 = m->mtag.line;
     param_c1 = m->mtag.col ;
-    param_r0 += cws->topline;
-    param_c0 += cws->offset;
     if (param_r0 > param_r1) {
         f++;
         ln = param_r1;
@@ -176,15 +174,11 @@ int mdeftag(name)
     if (f) {
         cgoto(ln, cl, -1, 0);
     }
-    param_r0 -= cws->topline;
-    param_r1 -= cws->topline;
-    param_c0 -= cws->offset;
-    param_c1 -= cws->offset;
     if (param_r1 == param_r0)
-        telluser("**:columns defined by tag", 0);
+        telluser("*** Columns defined by tag ***", 0);
     else if (param_c1 == param_c0)
-        telluser("**:lines defined by tag", 0);
+        telluser("*** Lines defined by tag ***", 0);
     else
-        telluser("**:square defined by tag", 0);
+        telluser("*** Square defined by tag ***", 0);
     return 1;
 }

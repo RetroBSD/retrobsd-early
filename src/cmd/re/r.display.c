@@ -213,7 +213,7 @@ void movecursor(arg)
         else {
             putline();
             lin += curwksp->topline + 1;
-            wksp_forward(defplline);
+            wksp_forward(curwin->text_maxrow / 2);
             lin -= curwksp->topline;
         }
         break;
@@ -223,7 +223,7 @@ void movecursor(arg)
         else if (curwksp->topline > 0) {
             putline();
             lin += curwksp->topline - 1;
-            wksp_forward(- defmiline);
+            wksp_forward(- curwin->text_maxrow / 2);
             lin -= curwksp->topline;
         }
         break;
@@ -234,6 +234,16 @@ void movecursor(arg)
         col += curwksp->offset;
         col = (col + 4) & ~3;
         col -= curwksp->offset;
+        break;
+    case CCPLPAGE:
+        putline();
+        wksp_forward(curwin->text_maxrow);
+        lin = cursorline;
+        break;
+    case CCMIPAGE:
+        putline();
+        wksp_forward(- curwin->text_maxrow);
+        lin = cursorline;
         break;
     }
     if (col > curwin->text_maxcol) {
@@ -300,19 +310,21 @@ void putch(j, flg)
 char *param()
 {
     register char *c1;
-    char *cp,*c2;
-    int c;
-    register int i,pn;
+    char *cp, *c2;
+    int c, ccol, cline, old_offset, old_topline;
+    register int i, pn;
     window_t *w;
 #define LPARAM 20       /* length increment */
 
     if (param_len != 0 && param_str != 0)
         free(param_str);
-    param_c1 = param_c0 = cursorcol;
-    param_r1 = param_r0 = cursorline;
-    putch(COCURS,1);
-    poscursor(cursorcol,cursorline);
+    param_c1 = param_c0 = cursorcol + curwksp->offset;
+    param_r1 = param_r0 = cursorline + curwksp->topline;
+    putch(COCURS, 1);
+    poscursor(cursorcol, cursorline);
     w = curwin;
+    old_topline = curwksp->topline;
+    old_offset = curwksp->offset;
 back:
     telluser("Cmd: ", 0);
     win_switch(&paramwin);
@@ -323,35 +335,36 @@ back:
     } while (keysym == CCBACKSPACE);
 
     if (MOVECMD(keysym)) {
-        telluser("arg: *** cursor defined ***", 0);
+        telluser("*** Area defined by cursor ***", 0);
         win_switch(w);
-        poscursor(param_c0, param_r0);
+        poscursor(param_c0 - curwksp->offset, param_r0 - curwksp->topline);
 t0:
         while (MOVECMD(keysym)) {
             movecursor(keysym);
-            if (cursorline == param_r0 && cursorcol == param_c0)
+            if (cursorline + curwksp->topline == param_r0 &&
+                cursorcol + curwksp->offset == param_c0)
                 goto back;
             keysym = -1;
             getkeysym();
         }
-        if (CTRLCHAR(keysym) && keysym != CCBACKSPACE) {
-            if (cursorcol > param_c0)
-                param_c1 = cursorcol;
-            else
-                param_c0 = cursorcol;
-            if (cursorline > param_r0)
-                param_r1 = cursorline;
-            else
-                param_r0 = cursorline;
-            param_len = 0;
-            param_str = NULL;
-            param_type = -1;
-        } else {
+        if (! CTRLCHAR(keysym) || keysym == CCBACKSPACE) {
             error("Printing character illegal here");
             keysym = -1;
             getkeysym();
             goto t0;
         }
+        if (cursorcol + curwksp->offset > param_c0)
+            param_c1 = cursorcol + curwksp->offset;
+        else
+            param_c0 = cursorcol + curwksp->offset;
+        if (cursorline + curwksp->topline > param_r0)
+            param_r1 = cursorline + curwksp->topline;
+        else
+            param_r0 = cursorline + curwksp->topline;
+        param_len = 0;
+        param_str = NULL;
+        param_type = -1;
+
     } else if (CTRLCHAR(keysym)) {
         param_len = 0;
         param_str = NULL;
@@ -411,8 +424,19 @@ loop:
         param_type = 1;
     }
     win_switch(w);
-    drawlines(param_r0, param_r0);
-    poscursor(param_c0, param_r0);
+    cline = param_r0 - curwksp->topline;
+    ccol = param_c0 - curwksp->offset;
+    if (cline >= curwin->text_row && cline <= curwin->text_maxrow &&
+        ccol >= curwin->text_col && ccol <= curwin->text_maxcol) {
+        drawlines(cline, cline);
+    } else {
+        curwksp->topline = old_topline;
+        curwksp->offset = old_offset;
+        cline = param_r0 - curwksp->topline;
+        ccol = param_c0 - curwksp->offset;
+        drawlines(0, curwin->text_maxrow);
+    }
+    poscursor(ccol, cline);
     return (param_str);
 }
 
@@ -504,6 +528,22 @@ void redisplay()
     register window_t *curp, *curp0 = curwin;
     int col = cursorcol, lin = cursorline;
 
+    /* Center the current line. */
+    i = curwin->text_maxrow / 2;
+    if (lin < i && curwksp->topline > i - lin) {
+        curwksp->topline -= i - lin;
+        lin = i;
+    } else if (lin > i) {
+        j = file[curfile].nlines - curwin->text_maxrow;
+        if (curwksp->topline < j) {
+            curwksp->topline += lin - i;
+            lin = i;
+            if (curwksp->topline > j) {
+                lin += curwksp->topline - j;
+                curwksp->topline = j;
+            }
+        }
+    }
     win_switch(&wholescreen);
     cursorcol = cursorline = 0;
     putcha(COFIN);

@@ -106,7 +106,7 @@ static int callexec()
         execr(execargs);
         /* exit теперь в EXECR, -1 если ошибка */
     }
-    /* Отец: */
+    /* Parent. */
     telluser("Executing ...",0);
     free((char *)execargs);
     doreplace(i, m, j, pipef);
@@ -172,12 +172,13 @@ static void cline_insert_char(keysym)
 static void drawstatus()
 {
     window_t *owin;
-    char ich[8], *cp;
-    int i, j, k;
+    char numstr[8];
+    int i, ccol, cline;
 
+    /* Switch to param window. */
     owin = curwin;
-    k = cursorline;
-    j = cursorcol;
+    cline = cursorline;
+    ccol = cursorcol;
     win_switch(&paramwin);
     paramwin.text_maxcol = NCOLS;
     if (clr_arg_area) {
@@ -201,25 +202,24 @@ static void drawstatus()
                              "~~~~~~~Line:~~~~~~~", NCOLS);
     }
     /* Display the current line number. */
-    i = owin->wksp->topline + k + 1;
-    cp = ich + 8;
-    *--cp = '\0';
-    do {
-        (*--cp = '0' + (i % 10));
-        i /= 10;
-    } while (i);
+    i = sprintf (numstr, "%u", owin->wksp->topline + cline + 1);
+    while (i < 6)
+        numstr[i++] = '~';
+    numstr[i] = '\0';
     poscursor(PARAMWIDTH+12, 0);
-    putstr(cp, NCOLS-2);
+    putstr(numstr, NCOLS-2);
+
+    /* Switch back to editor window. */
     win_switch(owin);
     paramwin.text_maxcol = PARAMWIDTH;
-    poscursor(j, k);
+    poscursor(ccol, cline);
     if (highlight_position) {
         putch(COCURS, 1);
-        poscursor(j, k);
+        poscursor(ccol, cline);
         dumpcbuf();
         sleep(1);
-        drawlines(k, k);
-        poscursor(j, k);
+        drawlines(cline, cline);
+        poscursor(ccol, cline);
     }
 }
 
@@ -360,6 +360,7 @@ nextkey:
         if (keysym <= CCEND) {
             movecursor(keysym);
             if (keysym == CCMOVEUP || keysym == CCMOVEDOWN ||
+                keysym == CCPLPAGE || keysym == CCMIPAGE ||
                 keysym == CCRETURN || keysym == CCHOME) {
                 /* Row changed: save current line. */
                 putline();
@@ -390,14 +391,10 @@ nextkey:
             switchfile();
             continue;
 
-        case CCCHWINDOW:
-            win_goto(-1);
-            continue;
-
         case CCINSLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            insertlines(curwksp->topline + cursorline, definsert);
+            insertlines(curwksp->topline + cursorline, 1);
             continue;
 
         case CCMISRCH:
@@ -407,7 +404,7 @@ nextkey:
         case CCDELLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            deletelines(curwksp->topline + cursorline, defdelete);
+            deletelines(curwksp->topline + cursorline, 1);
             continue;
 
         case CCPASTE:
@@ -420,7 +417,7 @@ nextkey:
             continue;
 
         case CCCOPY:
-            picklines(curwksp->topline + cursorline, defpick);
+            picklines(curwksp->topline + cursorline, 1);
             continue;
 
         case CCINSMODE:
@@ -430,21 +427,12 @@ nextkey:
         case CCGOTO:
             gtfcn(0);
             continue;
-
-        case CCMIPAGE:
-            wksp_forward(- defmipage * (1 + curwin->text_maxrow));
-            continue;
-
         case CCPLSRCH:
             search(1);
             continue;
 
         case CCROFFSET:
             wksp_offset(defroffset);
-            continue;
-
-        case CCPLLINE:
-            wksp_forward(defplline);
             continue;
 
         case CCDELCH:
@@ -454,27 +442,22 @@ nextkey:
             savefile(NULL, curfile);
             continue;
 
-        case CCMILINE:
-            wksp_forward(-defmiline);
-            continue;
-
         case CCDOCMD:
             goto notstrerr;
 
-        case CCPLPAGE:
-            wksp_forward(defplpage * (1 + curwin->text_maxrow));
-            continue;
-
-        case CCMAKEWIN:
-            win_open(deffile);
-            continue;
-
         case CCREDRAW:                  /* Redraw screen */
-        case CCEND:                     /* TODO */
             redisplay();
             keysym = -1;
             continue;
+#if MULTIWIN
+        case CCMAKEWIN:
+            win_open(deffile);
+            continue;
+        case CCCHWINDOW:
+            win_goto(-1);
+            continue;
 
+#endif
         /* case CCMOVELEFT: */
         /* case CCTAB:      */
         /* case CCMOVEDOWN: */
@@ -534,16 +517,6 @@ yesarg:
             editfile(param_str, 0, 0, 1, 1);
             continue;
 
-        case CCCHWINDOW:
-            if (param_type <= 0)
-                goto notstrerr;
-            if (s2i(param_str, &i))
-                goto notinterr;
-            if (i <= 0)
-                goto notposerr;
-            win_goto(i - 1);
-            continue;
-
         case CCINSLIN:
             if (file[curfile].writable == 0)
                 goto nowriterr;
@@ -552,8 +525,7 @@ yesarg:
                 spfun = openspaces;
                 goto spdir;
             }
-            splitline(curwksp->topline + param_r0,
-                param_c0 + curwksp->offset);
+            splitline(param_r0, param_c0);
             continue;
 
         case CCMISRCH:
@@ -581,8 +553,7 @@ yesarg:
                 spfun = closespaces;
                 goto spdir;
             }
-            combineline(curwksp->topline + param_r0,
-                param_c0 + curwksp->offset);
+            combineline(param_r0, param_c0);
             continue;
 
         case CCPASTE:
@@ -681,32 +652,12 @@ yesarg:
                 goto noargerr;
             continue;
 
-        case CCMIPAGE:
-            if (param_type <= 0)
-                goto notstrerr;
-            if (s2i(param_str, &i))
-                goto notinterr;
-            wksp_forward(- i * (1 + curwin->text_maxrow));
-            continue;
-
         case CCROFFSET:
             if (param_type <= 0)
                 goto notstrerr;
             if (s2i(param_str, &i))
                 goto notinterr;
             wksp_offset(i);
-            continue;
-
-        case CCPLLINE:
-            if (param_type < 0)
-                goto notstrerr;
-            else if (param_type == 0)
-                wksp_forward(cursorline);
-            else if (param_type > 0) {
-                if (s2i(param_str, &i))
-                    goto notinterr;
-                wksp_forward(i);
-            }
             continue;
 
         case CCDELCH:
@@ -721,18 +672,6 @@ yesarg:
             savefile(param_str, curfile);
             continue;
 
-        case CCMILINE:
-            if (param_type < 0)
-                goto notstrerr;
-            else if (param_type == 0)
-                wksp_forward(cursorline - curwin->text_maxrow);
-            else if (param_type > 0) {
-                if (s2i(param_str, &i))
-                    goto notinterr;
-                wksp_forward(-i);
-            }
-            continue;
-
         case CCDOCMD:
             if (param_type <= 0)
                 goto notstrerr;
@@ -741,15 +680,7 @@ yesarg:
                 goto nowriterr;
             callexec();
             continue;
-
-        case CCPLPAGE:
-            if (param_type <= 0)
-                goto notstrerr;
-            if (s2i(param_str, &i))
-                goto notinterr;
-            wksp_forward(i * (1 + curwin->text_maxrow));
-            continue;
-
+#if MULTIWIN
         case CCMAKEWIN:
             if (param_type == 0)
                 win_remove();
@@ -761,6 +692,16 @@ yesarg:
             }
             continue;
 
+        case CCCHWINDOW:
+            if (param_type <= 0)
+                goto notstrerr;
+            if (s2i(param_str, &i))
+                goto notinterr;
+            if (i <= 0)
+                goto notposerr;
+            win_goto(i - 1);
+            continue;
+#endif
         default:
             goto badkeyerr;
         }
@@ -778,11 +719,9 @@ spdir:
             (*lnfun)(curwksp->topline + cursorline, i);
         } else {
             if (param_c1 == param_c0) {
-                (*lnfun)(curwksp->topline + param_r0,
-                    (param_r1 - param_r0) + 1);
+                (*lnfun)(param_r0, (param_r1 - param_r0) + 1);
             } else
-                (*spfun)(curwksp->topline + param_r0,
-                    curwksp->offset + param_c0,
+                (*spfun)(param_r0, param_c0,
                     (param_c1 - param_c0),
                     (param_r1 - param_r0) + 1);
         }

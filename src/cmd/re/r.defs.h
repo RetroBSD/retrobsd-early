@@ -175,22 +175,20 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMOVERIGHT 5       /* move right                   right   */
 #define CCMOVELEFT  6       /* move left                    left    */
 #define CCTAB       7       /* tab                  ^I              */
-#define CCEND       010     /* cursor to end        ^X e    end     */
-#define CCCOPY      011     /* copy to clipboard    ^C      f5      */
-#define CCMAKEWIN   012     /* make a window        --disabled--    */
-#define CCINSLIN    013     /* insert line/block    ^O              */
-#define CCSETFILE   014     /* set file             ^N      f3      */
-#define CCCHWINDOW  015     /* change window        --disabled--    */
-#define CCPLPAGE    016     /* minus a page                 pg down */
-#define CCGOTO      017     /* goto linenumber      ^G      f8      */
-#define CCDOCMD     020     /* execute a filter     ^X x    f4      */
-#define CCMIPAGE    021     /* plus a page                  page up */
+#define CCPLPAGE    010     /* minus a page         ^X n    pg down */
+#define CCMIPAGE    011     /* plus a page          ^X p    page up */
+#define CCEND       012     /* cursor to end        ^X e    end     */
+#define CCCOPY      013     /* copy to clipboard    ^C      f5      */
+#define CCMAKEWIN   014     /* make a window        --disabled--    */
+#define CCINSLIN    015     /* insert line/block    ^O              */
+#define CCSETFILE   016     /* set file             ^N      f3      */
+#define CCCHWINDOW  017     /* change window        --disabled--    */
+#define CCGOTO      020     /* goto linenumber      ^G      f8      */
+#define CCDOCMD     021     /* execute a filter     ^X x    f4      */
 #define CCPLSRCH    022     /* plus search          ^F      f7      */
 #define CCROFFSET   023     /* shift view right     ^X f            */
-#define CCPLLINE    024     /* minus a line         ^X p            */
-#define CCDELCH     025     /* character delete     ^D      delete  */
-#define CCSAVEFILE  026     /* make new file                f2      */
-#define CCMILINE    027     /* plus a line          ^X n            */
+#define CCDELCH     024     /* character delete     ^D      delete  */
+#define CCSAVEFILE  025     /* make new file                f2      */
 #define CCMISRCH    030     /* minus search         ^B              */
 #define CCLOFFSET   031     /* shift view left      ^X b            */
 #define CCPASTE     032     /* paste from clipboard ^V      f6      */
@@ -217,8 +215,7 @@ int highlight_position;     /* Highlight the current cursor position */
 int message_displayed;      /* Arg area contains an error message */
 
 /* Defaults. */
-extern int defplline, defplpage, defmiline, defmipage,
-        defloffset, defroffset, definsert, defdelete, defpick;
+extern int defloffset, defroffset;
 extern char deffile[];
 
 /*

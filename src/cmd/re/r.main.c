@@ -21,13 +21,8 @@ int keysym = -1;         /* -1 when the symbol already processed */
 
 int defplline  = 10;                /* +LINE        */
 int defmiline  = 10;                /* -LINE        */
-int defplpage  = 1;                 /* +PAGE        */
-int defmipage  = 1;                 /* -PAGE        */
 int defloffset = 24;                /* LEFT OFFSET  */
 int defroffset = 24;                /* RIGHT OFFSET */
-int definsert  = 1;                 /* OPEN         */
-int defdelete  = 1;                 /* CLOSE        */
-int defpick    = 1;                 /* PICK         */
 char deffile[] = "/share/re.help";  /* Help file    */
 
 /* Initial values. */
