@@ -396,7 +396,7 @@ int main(nargs, args)
     mainloop();
     putcha(COFIN);
     dumpcbuf();
-    printf("\n");
+    putch('\n', 0);
     cleanup();
     savestate();    /* Записать выходное состояние */
     dumpcbuf();

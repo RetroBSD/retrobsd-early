@@ -8,7 +8,8 @@
 TOPSRC		= $(shell cd ../../..; pwd)
 include $(TOPSRC)/target.mk
 
-CFLAGS		+= -DDEBUG -Wall -Werror -DMULTIWIN=0
+CFLAGS		+= -Wall -Werror -DMULTIWIN=0
+#CFLAGS		+= -DDEBUG
 
 OBJS            = r.cmd.o r.edit.o r.file.o r.gettc.o r.misc.o \
                   r.macro.o r.main.o r.display.o r.termcap.o r.ttyio.o r.window.o

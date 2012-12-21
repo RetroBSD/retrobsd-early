@@ -172,7 +172,7 @@ static void cline_insert_char(keysym)
 static void drawstatus()
 {
     window_t *owin;
-    char numstr[8];
+    char numstr[16], *cp;
     int i, ccol, cline;
 
     /* Switch to param window. */
@@ -202,12 +202,21 @@ static void drawstatus()
                              "~~~~~~~Line:~~~~~~~", NCOLS);
     }
     /* Display the current line number. */
-    i = sprintf (numstr, "%u", owin->wksp->topline + cline + 1);
-    while (i < 6)
-        numstr[i++] = '~';
-    numstr[i] = '\0';
+    i = owin->wksp->topline + cline + 1;
+    cp = numstr + sizeof(numstr);
+    *--cp = '\0';
+    *--cp = '~';
+    *--cp = '~';
+    *--cp = '~';
+    *--cp = '~';
+    *--cp = '~';
+    do {
+        (*--cp = '0' + (i % 10));
+        i /= 10;
+    } while (i);
+    cp[6] = '\0';
     poscursor(PARAMWIDTH+12, 0);
-    putstr(numstr, NCOLS-2);
+    putstr(cp, NCOLS-2);
 
     /* Switch back to editor window. */
     win_switch(owin);
