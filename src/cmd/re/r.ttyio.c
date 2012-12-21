@@ -20,6 +20,7 @@ static struct termios tioparam;
 
 static struct sgttyb templ;
 static struct tchars tchars0;
+static struct ltchars ltchars0;
 
 #endif /* TERMIOS */
 
@@ -73,13 +74,23 @@ void ttstartup()
 #else /* TERMIOS */
 #ifdef TIOCGETC
     struct tchars tcharsw;
+    struct ltchars ltc;
 
     ioctl(0, TIOCGETC, &tchars0);
+    ioctl(0, TIOCGLTC, &ltchars0);
     tcharsw = tchars0;
     tcharsw.t_eofc = -1;        /* end-of-file */
     tcharsw.t_quitc = -1;       /* quit */
     tcharsw.t_intrc = -1;	/* interrupt */
+    ltc = ltchars0;
+    ltc.t_suspc = -1;           /* stop process */
+    ltc.t_dsuspc = -1;          /* delayed stop process */
+    ltc.t_rprntc = -1;          /* reprint line */
+    ltc.t_flushc = -1;          /* flush output */
+    ltc.t_werasc = -1;          /* word erase */
+    ltc.t_lnextc = -1;          /* literal next character */
     ioctl(0, TIOCSETC, &tcharsw);
+    ioctl(0, TIOCSLTC, &ltc);
 #endif
 #ifdef TIOCGETP
     {
@@ -107,6 +118,7 @@ void ttcleanup()
 #else /* TERMIOS */
     ioctl(0, TIOCSETP, &templ);
     ioctl(0, TIOCSETC, &tchars0);
+    ioctl(0, TIOCSLTC, &ltchars0);
 #endif /* TERMIOS */
 }
 
