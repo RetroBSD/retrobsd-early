@@ -167,72 +167,81 @@ static void cline_insert_char(keysym)
 }
 
 /*
+ * Draw the bottom line: message, file name, current line number.
+ */
+static void drawstatus()
+{
+    window_t *owin;
+    char ich[8], *cp;
+    int i, j, k;
+
+    owin = curwin;
+    k = cursorline;
+    j = cursorcol;
+    win_switch(&paramwin);
+    paramwin.text_maxcol = NCOLS;
+    if (clr_arg_area) {
+        if (! message_displayed) {
+            poscursor(0, 0);
+            //putcha(COERLN);
+            for (i=PARAMWIDTH; i>0; i--)
+                putch('~', 0);
+        }
+        if (owin->wksp->wfile) {
+            i = strlen(file[owin->wksp->wfile].name);
+            if (i < PARAMWIDTH-4) {
+                poscursor(PARAMWIDTH-i-2, 0);
+                putch('"', 0);
+                putstr(file[owin->wksp->wfile].name, NCOLS-2);
+                putch('"', 0);
+            }
+        }
+        poscursor(PARAMWIDTH, 0);
+        putstr(insert_mode ? "~~Ins~~Line:~~~~~~~" :
+                             "~~~~~~~Line:~~~~~~~", NCOLS);
+    }
+    /* Display the current line number. */
+    i = owin->wksp->topline + k + 1;
+    cp = ich + 8;
+    *--cp = '\0';
+    do {
+        (*--cp = '0' + (i % 10));
+        i /= 10;
+    } while (i);
+    poscursor(PARAMWIDTH+12, 0);
+    putstr(cp, NCOLS-2);
+    win_switch(owin);
+    paramwin.text_maxcol = PARAMWIDTH;
+    poscursor(j, k);
+    if (highlight_position) {
+        putch(COCURS, 1);
+        poscursor(j, k);
+        dumpcbuf();
+        sleep(1);
+        drawlines(k, k);
+        poscursor(j, k);
+    }
+}
+
+/*
  * Main editor loop.
  */
 void mainloop()
 {
-    int i, m, k;
-    register int j;
-    int lnum_row = 0, lnum_col = 0;     /* position to draw a line number */
-    char ich[8], *cp;
     /* Для команд с тремя вариантами аргументов */
     void (*lnfun)(int, int);
     void (*spfun)(int, int, int, int);
-    window_t *owin;
+    int i, m;
 
     /*
      * Обработка одного символа или команды
      */
     for (;;) {
         clr_arg_area = 1;
+newnumber:
         keysym = -1;        /* mark the symbol as used */
 errclear:
-        owin = curwin;
-        k = cursorline;
-        j = cursorcol;
-        win_switch(&paramwin);
-        paramwin.text_maxcol = PARAMRINFO;
-        if (clr_arg_area) {
-            if (! message_displayed) {
-                poscursor(0, 0);
-                putstr(blanks, PARAMRINFO);
-            }
-            poscursor(PARAMREDIT + 2, 0);
-            if (owin->wksp->wfile) {
-                putstr("file ", PARAMRINFO);
-                putstr(file[owin->wksp->wfile].name, PARAMRINFO);
-            }
-            putstr(" line ", PARAMRINFO);
-            lnum_row = cursorline;
-            lnum_col = cursorcol;
-        }
-        /* Display the current line number. */
-        poscursor(lnum_col, lnum_row);
-        i = owin->wksp->topline + k + 1;
-        cp = ich + 8;
-        *--cp = '\0';
-        do {
-            (*--cp = '0' + (i % 10));
-            i /= 10;
-        } while (i);
-        putstr(cp, PARAMRINFO);
-        *cp = '\0';
-        while (cp != ich)
-            *--cp = ' ';
-        putstr(ich, PARAMRINFO);
-        win_switch(owin);
-        paramwin.text_maxcol = PARAMREDIT;
-        poscursor(j, k);
-        if (highlight_position) {
-            putch(COCURS, 1);
-            poscursor(j, k);
-            dumpcbuf();
-            sleep(1);
-            drawlines(k, k);
-            poscursor(j, k);
-        }
-        if (insert_mode && clr_arg_area && ! message_displayed)
-            telluser("     *** I n s e r t   m o d e ***", 0);
+        drawstatus();
 nextkey:
         highlight_position = 0;
         clr_arg_area = 0;
@@ -346,14 +355,21 @@ nextkey:
         }
 
         /*
-         * Если команда перемещения
+         * Cursor movement.
          */
         if (keysym <= CCEND) {
             movecursor(keysym);
+            if (keysym == CCMOVEUP || keysym == CCMOVEDOWN ||
+                keysym == CCRETURN || keysym == CCHOME) {
+                /* Row changed: save current line. */
+                putline();
+                goto newnumber;
+            }
             keysym = -1;
             goto nextkey;
         }
-        /* Если граница поля */
+
+        /* Window margin. */
         if (cursorcol > curwin->text_maxcol)
             poscursor(curwin->text_maxcol, cursorline);
         putline();
@@ -571,7 +587,7 @@ yesarg:
 
         case CCPASTE:
             if (param_type > 0 && param_str && param_str[0] == '$') {
-                if (msrbuf(pickbuf, param_str+1, 1))
+                if (msrbuf(deletebuf, param_str+1, 1))
                     goto errclear;
                 continue;
             }
@@ -772,25 +788,25 @@ spdir:
         }
         continue;
 badkeyerr:
-        error("Illegal key or unnown macro");
+        error("Unknown command.");
         continue;
 notstrerr:
-        error("Argument must be a string.");
+        error("Need a string parameter.");
         continue;
 noargerr:
         error("Invalid argument.");
         continue;
 notinterr:
-        error("Argument must be numerik.");
+        error("Need a numeric parameter.");
         continue;
 notposerr:
-        error("Argument must be positive.");
+        error("Need a positive parameter.");
         continue;
 nopickerr:
-        error("Nothing in the pick buffer.");
+        error("Clipboard is empty.");
         continue;
 nodelerr:
-        error ("Nothing in the close buffer.");
+        error ("Delete buffer is empty.");
         continue;
 notimperr:
         error("Feature not implemented yet.");

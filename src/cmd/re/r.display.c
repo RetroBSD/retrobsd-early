@@ -488,7 +488,7 @@ void telluser(msg, col)
     }
     poscursor(col, 0);
     /* while (*msg) putch(*msg++, 0); */
-    putstr(msg, PARAMREDIT);
+    putstr(msg, PARAMWIDTH);
     win_switch(oldwin);
     poscursor(c, l);
     dumpcbuf();

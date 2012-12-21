@@ -96,8 +96,6 @@ static void startup(restart)
     groupid = getgid();
     setuid(userid);
     setgid(groupid);
-    for (i=NCOLS; i; )
-        blanks[--i] = ' ';
     name = getenv("USER");
     if (! name)
         name = getnm(userid);
@@ -152,8 +150,8 @@ static void startup(restart)
     win_create(&wholescreen, 0, NCOLS-1, 0, NLINES-1, 0);
 
     /* Устанавливаем описатель окна параметров */
-    win_create(&paramwin, 0, NCOLS-1, NLINES-NPARAMLINES, NLINES-1, 0);
-    paramwin.text_maxcol = PARAMREDIT;
+    win_create(&paramwin, 0, NCOLS-1, NLINES-1, NLINES-1, 0);
+    paramwin.text_maxcol = PARAMWIDTH;
 
     /* Закрываем терминал на прием сообщений от других */
     oldttmode = getpriv(0);
@@ -192,7 +190,7 @@ make:   /* Create initial window state. */
         nwinlist = 1;
         win = (window_t*) salloc(sizeof(window_t));
         winlist[0] = win;
-        win_create(win, 0, NCOLS-1, 0, NLINES-NPARAMLINES-1, MULTIWIN);
+        win_create(win, 0, NCOLS-1, 0, NLINES-2, MULTIWIN);
         win_borders(win, 0);
         poscursor(0, 0);
         return;

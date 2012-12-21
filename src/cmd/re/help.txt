@@ -1,7 +1,7 @@
  ____________________________  ______________________________
  |  F1 |  F2  |  F3  |  F4  |  |  F5  |  F6   |  F7  |  F8  |
  |     |      | Next |      |  |      |       |      |      |
- | Arg | Save | File | ---- |  | Copy | Paste |Search| Goto |
+ | Arg | Save | File |Filter|  | Copy | Paste |Search| Goto |
  |_____|______|______|______|  |______|_______|______|______|
                                                 ____________________________
   ^N     - Help, New/Next File                  |        |        |        |
@@ -15,7 +15,7 @@
   ^P     - Quote next symbol                             |        |
   ^X ^C  - Exit wih Saving                               |   ^    |
   ^X i   - Insert Mode                                   |   |    |
-  ^X x   - Run External Command                 _________|________|_________
+                                                _________|________|_________
   ^X n   - +Line        ^X f  - +Offset         |        |        |        |
   ^X p   - -Line        ^X b  - -Offset         | <--    |   |    |  -->   |
   ^X $x  - Run Macro                            |        |   V    |        |

@@ -15,7 +15,7 @@ char *cvtout[] = {
     /* COHO    */ "ho",             /* CORT   */ "nd",
     /* COLT    */ "le",             /* COCURS */ "cu",
     /* COBELL  */ "\007",           /* COFIN  */ "cl?fs?te",
-    /* COERASE */ "cl",
+    /* COERASE */ "cl",             /* COERLN */ "ce",
 };
 
 char *curspos;
@@ -76,7 +76,7 @@ keycode_t keytab[] = {
     { CCPARAM,      "k1",   },  { CCPARAM,      "\33OP",   },
     { CCSAVEFILE,   "k2",   },  { CCSAVEFILE,   "\33OQ",   },
     { CCSETFILE,    "k3",   },  { CCSETFILE,    "\33OR",   },
-    { CCREDRAW,     "k4",   },  { CCREDRAW,     "\33OS",   }, // free
+    { CCDOCMD,      "k4",   },  { CCDOCMD,      "\33OS",   },
     { CCCOPY,       "k5",   },  { CCCOPY,       "\33OT",   },
     { CCPASTE,      "k6",   },
     { CCPLSRCH,     "k7",   },
@@ -215,6 +215,8 @@ void tcread()
         cvtout[COBELL] = "\0";
     if (! cvtout[COCURS])
         cvtout[COCURS] = "@";
+    if (! cvtout[COERLN])
+        cvtout[COERLN] = "\33[K";
 
     /* Input codes. */
     iw = keytab;

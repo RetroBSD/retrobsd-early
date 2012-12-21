@@ -25,12 +25,10 @@
 
 #define MOVECMD(x)  ((x) >= CCMOVEUP && (x) <= CCEND)
 #define CTRLCHAR(x) (((x) >= 0 && (x) < ' ') || ((x) >= 0177 && (x) < 0240))
-#define MAXCOLS     128     /* max. width of screen */
-#define MAXLINES    48      /* max. height of screen */
+#define MAXCOLS     256     /* max. width of screen */
+#define MAXLINES    64      /* max. height of screen */
 #define LBUFFER     256     /* lower limit for the current line buffer */
-#define PARAMREDIT  40      /* input field of paramwin */
-#define PARAMRINFO  78      /* last column of paramwin */
-#define NPARAMLINES 1       /* number of lines in paramwin */
+#define PARAMWIDTH  (NCOLS-18) /* input field of paramwin */
 #define FILEMODE    0664    /* access mode for newly created files */
 #define MAXFILES    14      /* max. files under edit */
 #define MAXWINLIST  10      /* max.windows */
@@ -55,7 +53,8 @@
 #define COBELL      8
 #define COFIN       9
 #define COERASE     10
-#define COMCOD      11      /* Number of output codes */
+#define COERLN      11
+#define COMCOD      12      /* Number of output codes */
 
 /* margin characters */
 #define LMCH        '|'
@@ -184,7 +183,7 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCCHWINDOW  015     /* change window        --disabled--    */
 #define CCPLPAGE    016     /* minus a page                 pg down */
 #define CCGOTO      017     /* goto linenumber      ^G      f8      */
-#define CCDOCMD     020     /* execute a filter     ^X x            */
+#define CCDOCMD     020     /* execute a filter     ^X x    f4      */
 #define CCMIPAGE    021     /* plus a page                  page up */
 #define CCPLSRCH    022     /* plus search          ^F      f7      */
 #define CCROFFSET   023     /* shift view right     ^X f            */
@@ -210,20 +209,17 @@ int NCOLS, NLINES;          /* size of the screen */
 
 extern char *curspos, *cvtout[];
 extern char cntlmotions[];
-
-char blanks[MAXCOLS];
 extern const char in0tab[]; /* input control codes */
 
 extern int keysym;          /* Current input symbol, -1 - need more */
 char intrflag;              /* INTR signal occured */
 int highlight_position;     /* Highlight the current cursor position */
+int message_displayed;      /* Arg area contains an error message */
 
 /* Defaults. */
 extern int defplline, defplpage, defmiline, defmipage,
         defloffset, defroffset, definsert, defdelete, defpick;
 extern char deffile[];
-
-int message_displayed;      /* Arg area contains an error message */
 
 /*
  * Global variables for param().
