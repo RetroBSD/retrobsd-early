@@ -17,67 +17,70 @@
 
 int keysym = -1;         /* -1 when the symbol already processed */
 
-/* Параметры для движения по файлу */
-
+/*
+ * Parameters for file scrolling.
+ */
 int defplline  = 10;                /* +LINE        */
 int defmiline  = 10;                /* -LINE        */
 int defloffset = 24;                /* LEFT OFFSET  */
 int defroffset = 24;                /* RIGHT OFFSET */
+
 char deffile[] = "/share/re.help";  /* Help file    */
 
 /* Initial values. */
 int cline_max  = 0;
-int cline_incr = 20; /* Инкремент для расширения */
+int cline_incr = 20; /* Increment for line expand */
 int clineno = -1;
 char cline_modified = 0;
 
-/* Файл / протокол */
-int journal  = -1;
-int inputfile = 0;
+int journal  = -1;                  /* File descriptor for a journal */
+int inputfile = 0;                  /* Journal or stdin */
 
-int oldttmode;
+int oldttmode;                      /* Saved access mode of /dev/tty */
 
 static char *ttynm, *jname, *rfile;
 static clipboard_t pb, db;
 
+static void checksig(int);
+
 /*
- * Фатальный сигнал
+ * Fatal signal catched.
  */
-void sig(n)
+void fatalsig(n)
     int n;
 {
     fatal("Fatal signal");
 }
 
 /*
- * Установить игнорирование
+ * Ignore signals ^C and ^\
  */
-static void igsig(n)
+static void ignsig(n)
     int n;
 {
-    void testsig(int);
-
-    signal(3, igsig);
-    signal(2, testsig);
+    signal(SIGQUIT, ignsig);
+    signal(SIGINT, checksig);
 }
 
 /*
- * проверить, не было ли прерывания
+ * On first ^C from a user - set intrflag.
+ * On second ^C - abort the editor session.
  */
-void testsig(n)
+static void checksig(n)
     int n;
 {
-    signal(2, igsig);
+    signal(SIGINT, ignsig);
     if (intrflag)
         fatal("RE WAS INTERRUPTED\n");
-    igsig(0);
+    ignsig(0);
     intrflag = 1;
 }
 
 /*
- * Инициализация режимов и файлов
- * 2 - повторить сеанс из journal
- * 1 - начать заново
+ * Initialize modes and files.
+ * 0 - start a new session
+ * 1 - restore a previous session
+ * 2 - replay the session from a journal
  */
 static void startup(restart)
     int restart;
@@ -123,13 +126,13 @@ static void startup(restart)
         puts1("Can't open temporary file.\n");
         exit(1);
     }
-    /*  Рабочий файл нужен на read/write - приходится переоткрыть */
+    /* Temporary file should be rd/wr, need to reopen. */
     close(i);
     i = open(tmpname, 2);
     file[i].name = tmpname;
     file[i].writable = 1;
     tempfile = i;
-    /* файл '#' -- запоминание убранного и отмеченного  */
+    /* Pseudo-file '#' - store all deleted and copied/pasted. */
     file[2].name = "#";
     file[2].nlines = 0;
     pickwksp = (workspace_t*) salloc(sizeof(workspace_t));
@@ -138,30 +141,30 @@ static void startup(restart)
     pickbuf = &pb;
     deletebuf = &db;
 
-    /* Устанавливаем режимы терминала */
+    /* Set tty modes. */
     ttstartup();
 
-    /* Устанавливаем описатель всего экрана */
+    /* Setup a window for a whole screen. */
     win_create(&wholescreen, 0, NCOLS-1, 0, NLINES-1, 0);
 
-    /* Устанавливаем описатель окна параметров */
+    /* Setup a window for a Cmd line. */
     win_create(&paramwin, 0, NCOLS-1, NLINES-1, NLINES-1, 0);
     paramwin.text_maxcol = PARAMWIDTH;
 
-    /* Закрываем терминал на прием сообщений от других */
+    /* Close the terminal from 'write' messages from other users. */
     oldttmode = getpriv(0);
     chmod(ttynm, 0600);
 
     /*
-     * Переопределяем сигналы
+     * Catch signals.
      */
     for (i=SIGTERM; i; i--)
-        signal(i, sig);
-    signal(SIGINT, testsig);
-    signal(SIGQUIT, igsig);
+        signal(i, fatalsig);
+    signal(SIGINT, checksig);
+    signal(SIGQUIT, ignsig);
     curwin = &wholescreen;
-    putcha(COSTART);
-    putcha(COHO);
+    putch(COSTART);
+    putch(COHO);
 }
 
 /*
@@ -327,8 +330,7 @@ static void savestate()
 }
 
 /*
- * main(nargs,args)
- * Головная программа
+ * Main routine.
  */
 int main(nargs, args)
     int nargs;
@@ -347,7 +349,7 @@ int main(nargs, args)
 
     } else if (*(cp = args[1]) == '-') {
         if (*++cp) {
-            /* Указан файл протокола */
+            /* Journal file specified. */
             inputfile = open(cp, 0);
             if (inputfile < 0) {
                 puts1("Can't open journal file.\n");
@@ -394,11 +396,11 @@ int main(nargs, args)
     }
     telluser("", 0);
     mainloop();
-    putcha(COFIN);
+    putch(COFIN);
     dumpcbuf();
-    putch('\n', 0);
+    wputc('\n', 0);
     cleanup();
-    savestate();    /* Записать выходное состояние */
+    savestate();    /* Save a session. */
     dumpcbuf();
     return 0;
 }
@@ -408,7 +410,7 @@ int main(nargs, args)
  */
 void cleanup()
 {
-    /* restore tty mode and exit */
+    /* Restore tty mode and exit */
     ttcleanup();
     close(tempfile);
     unlink(tmpname);
@@ -422,8 +424,8 @@ void cleanup()
 void fatal(s)
     char *s;
 {
-    putcha(COFIN);
-    putcha(COBELL);
+    putch(COFIN);
+    putch(COBELL);
     dumpcbuf();
     ttcleanup();
     puts1("\nFirst the bad news: editor just ");

@@ -80,18 +80,17 @@ void gtfcn(number)
 
 /*
  * Scroll window to show a given area.
- * slin - номер строки, на которой был курсор раньше
- * (для стирания отметки курсора)
- * lkey = 0 - не двигать окно, если можно.
+ * slin - line number with a cursor tag, to erase
+ * ok_to_move=0 - do not move the window, when possible
  */
-void cgoto(ln, col, slin, lkey)
-    int ln, col, slin, lkey;
+void cgoto(ln, col, slin, ok_to_move)
+    int ln, col, slin, ok_to_move;
 {
     register int lin;
 
     lin = ln - curwksp->topline;
-    if (lkey || lin < 0 || lin  > curwin->text_maxrow) {
-        lkey = -1;
+    if (ok_to_move || lin < 0 || lin  > curwin->text_maxrow) {
+        ok_to_move = -1;
         lin = curwin->text_maxrow / 2;
         curwksp->topline = ln - lin;
         if (curwksp->topline < 0) {
@@ -103,9 +102,9 @@ void cgoto(ln, col, slin, lkey)
     if (col < 0 || col > curwin->text_maxcol) {
         curwksp->offset += col;
         col = 0;
-        lkey = -1;
+        ok_to_move = -1;
     }
-    if (lkey)
+    if (ok_to_move)
         drawlines(0, curwin->text_maxrow);
     else if (slin >=0)
         drawlines(slin, slin);
@@ -278,7 +277,7 @@ void win_remove()
         pwin->max_row = win->max_row;
         pwin->text_maxrow = pwin->max_row - pwin->base_row - 2;
     } else {
-        /* Горизонтальное */
+        /* Horizontal */
         for (i=0; i<=pwin->text_maxrow; i++) {
             pwin->lastcol[i] = win->lastcol[i] +
                 win->base_col - pwin->base_col;
@@ -339,17 +338,15 @@ void win_goto(winnum)
 /*
  * Redisplay changed windows after lines in file shifted.
  *
- * w - Рабочее пространство;
- * fn - индекс измененного файла;
- * from, to, delta - диапазон изменившихся строк и
- * общее изменение числа строк в нем
+ * w - workspace;
+ * fn - index of changed file;
+ * from, to, delta - ranged of changed lines and a number of lines in it
  *
- * Делается следующее:
- *  1. Перевыдаются все окна, в которые попал измененный участок;
- *  2. Получают новые ссылки на segm в тех рабочих пространствах,
- *     которые изменялись (из за breaksegm они могли измениться);
- *  3. Пересчитываются текущие номера строк в рабочих областях, если они
- *     отображают хвосты изменившихся файлов.
+ * Actions:
+ * 1. Redraw all windows, overlapped with the given area;
+ * 2. Changed workspaces get updated segm pointers;
+ * 3. Line numbers updated in workspaces, containing the tails
+ *    of changed files.
  */
 void wksp_redraw(w, fn, from, to, delta)
     workspace_t *w;
@@ -363,27 +360,27 @@ void wksp_redraw(w, fn, from, to, delta)
     for (i = 0; i < nwinlist; i++) {
         tw = winlist[i]->altwksp;
         if (tw->wfile == fn && tw != w) {
-            /* Исправим указатель на segm. */
+            /* Update segm pointer. */
             tw->line = tw->segmline = 0;
             tw->cursegm = file[fn].chain;
 
-            /* Исправить номер строки */
+            /* Update a line number */
             j = delta >= 0 ? to : from;
             if (tw->topline > j)
                 tw->topline += delta;
         }
         tw = winlist[i]->wksp;
         if (tw->wfile == fn && tw != w) {
-            /* Исправляем указатель на segm. */
+            /* Update a segm pointer. */
             tw->line = tw->segmline = 0;
             tw->cursegm = file[fn].chain;
 
-            /* Исправляем номер строки и позиции на экране */
+            /* Update a line number */
             j = (delta >= 0) ? to : from;
             if (tw->topline > j)
                 tw->topline += delta;
 
-            /* Если изменилось, перевыдать окно */
+            /* Redraw the window, if changed */
             j = (from > tw->topline) ? from : tw->topline;
             k = tw->topline + winlist[i]->text_maxrow;
             if (k > to)

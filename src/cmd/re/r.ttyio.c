@@ -14,6 +14,7 @@
 #ifndef NCC
 #   define NCC NCCS
 #endif
+
 static struct termios tioparam;
 
 #else /* TERMIOS */
@@ -25,16 +26,15 @@ static struct ltchars ltchars0;
 #endif /* TERMIOS */
 
 /*
- * Работа с буфером символов
+ * Output character buffer.
  */
-#define NPUTCBUF 256   /* Размер буфера вывода */
+#define OUTBUFSZ    256     /* Size of output buffer */
 
-static char putcbuf[NPUTCBUF];
-static int iputcbuf = 0;
+static char out_buf[OUTBUFSZ];
+static int out_count = 0;
 
-static char *sy0;
-static int isy0f = -1;
-static int knockdown = 0;
+static int jsym_next = -1;
+static int quote_flag = 0;
 
 /*
  * Setup terminal modes.
@@ -123,13 +123,13 @@ void ttcleanup()
 }
 
 /*
- * Вывод символа в безусловном режиме
+ * Output a raw character, buffered.
  */
-static void putchb(c)
+static void putcbuf(c)
     int c;
 {
-    putcbuf[iputcbuf++] = c & 0177;
-    if (iputcbuf == NPUTCBUF)
+    out_buf[out_count++] = c;
+    if (out_count == OUTBUFSZ)
         dumpcbuf();
 }
 
@@ -143,31 +143,30 @@ void pcursor(col, lin)
 
     c = tgoto (curspos, col, lin);
     while ((sy = *c++)) {
-        putchb(sy);
+        putcbuf(sy);
     }
 }
 
 /*
- * putcha(c) - выдать символ "c".
- * "c" может быть кодом управления.
- * Возвращается 0, если запрошенная операция невозможна
+ * Output a symbol or output control code.
+ * Return 0 on error.
  */
-int putcha(c)
+int putch(c)
     int c;
 {
     register int cr;
     register char *s;
 
-    cr = c & 0177;
+    cr = (unsigned char) c;
     if (cr >= 0 && cr <= COMCOD) {
         s = cvtout[cr];
         if (! s)
             return(0);
         while ((cr = *s++) != 0)
-            putchb(cr);
+            putcbuf(cr);
     } else {
-        putcbuf[iputcbuf++] = c;
-        if (iputcbuf == NPUTCBUF)
+        out_buf[out_count++] = c;
+        if (out_count == OUTBUFSZ)
             dumpcbuf();
     }
     return(1);
@@ -181,8 +180,8 @@ void putblanks(k)
 {
     cursorcol += k;
     while (k--) {
-        putcbuf[iputcbuf++] = ' ';
-        if (iputcbuf == NPUTCBUF)
+        out_buf[out_count++] = ' ';
+        if (out_count == OUTBUFSZ)
             dumpcbuf();
     }
     dumpcbuf();
@@ -193,22 +192,21 @@ void putblanks(k)
  */
 void dumpcbuf()
 {
-    if (iputcbuf == 0)
+    if (out_count == 0)
         return;
-    if (write(2, putcbuf, iputcbuf) != iputcbuf)
+    if (write(2, out_buf, out_count) != out_count)
         /* ignore errors */;
-    iputcbuf = 0;
+    out_count = 0;
 }
 
 /*
- * Поиск кода клавиши.
- * keycode_t * (fb, fe) = NULL при подаче
- * первого символа с данной клавиши.
- * Дальше они используются при поиске кода.
- * Коды ответа:
- * CONTF - дай следующий символ,
- * BADF  - такой последовательности нет в таблице,
- * >=0   - код команды.
+ * Decode an input key code.
+ * Values *fb, *fe are NULL on first call,
+ * then used for key search.
+ * Return values:
+ *      CONTF - need next char;
+ *      BADF  - no such keycode;
+ *      >=0   - keycode detected.
  */
 static int findt (fb, fe, sy, ns)
     keycode_t **fb, **fe;
@@ -246,68 +244,56 @@ exit:
 }
 
 /*
- * Получение символа из файла протокола.
- * возвращается 0, если файл кончился
+ * Read a command from the journal file.
+ * Return 0 on EOF.
  */
 static int readfc()
 {
     char sy1 = CCQUIT;
     do {
-        keysym = isy0f;
-        if (intrflag || read(inputfile, &sy1, 1) !=1) {
+        keysym = jsym_next;
+        if (intrflag || read(inputfile, &sy1, 1) != 1) {
             if (inputfile != journal)
                 close(inputfile);
             else
                 lseek(journal, (long) -1, 1);
             inputfile = 0;
             intrflag = 0;
-            putcha(COBELL);
+            putch(COBELL);
             dumpcbuf();
             return 0;
         }
-        isy0f = (unsigned char) sy1;
+        jsym_next = (unsigned char) sy1;
     } while (keysym < 0);
     return 1;
 }
 
 /*
- * getkeysym()
- * Чтание очередного символа с терминала.
- * Кроме того, здесь же разворачиваются макро и
- * происходит чтение из файла протокола.
- * Ответ приходит в keysym.
+ * Read a symbol from the user terminal, or from journal.
+ * Received symbol or keycode is stored in keysym.
  */
 int getkeysym()
 {
+    keycode_t *i1, *i2;
+    int ts, k;
     char sy1;
 
     dumpcbuf();
 
-    /* Если остался неиспользованным символ */
+    /* Previous symbol not consumed yet. */
     if (keysym != -1)
         return keysym;
 
-    /* Если идет чтение из файла */
+    /* Read from a jornal file. */
     if (inputfile != 0 && readfc())
-        goto retnm;
-    /*
-     * Ниже - то, что относится к терминалу
-     * =====================================
-     */
-    /* Было преобразование и символы не кончились */
-    if (sy0 != 0) {
-        keysym = (unsigned char) *sy0++;
-        if (*sy0 == 0)
-            sy0 = 0;
-        goto retn;
-    }
-    /* Чтение с клавиатуры */
+        return keysym;
+
+    /* Read from a terminal keyboard. */
 new:
     intrflag = 0;
     if (read(inputfile, &sy1, 1) != 1)
         goto readquit;
 
-    /* Если символ не управляющий */
     keysym = (unsigned char) sy1;
     if (keysym == 0177) {
         keysym = CCBACKSPACE;
@@ -315,14 +301,15 @@ new:
     }
     if (keysym > 037)
         goto readychr;
-    if (knockdown) {
+    if (quote_flag) {
         keysym += 0100;
         goto readychr;
     }
-    /* Если символ - ^X? */
+    /* Decode ^X sequences. */
     if (keysym == ('X' & 037)) {
         if (read(inputfile, &sy1, 1) != 1)
             goto readquit;
+
         switch (sy1) {
         case 'C' & 037:     /* ^X ^C */
             keysym = CCQUIT;
@@ -365,47 +352,38 @@ new:
         keysym = sy1 & 037;
         goto corrcntr;
     }
-    /* Введен управляющий символ - ищем команду в таблице */
-    {
-        keycode_t *i1, *i2;
-        int ts, k;
-        i1 = i2 = 0;
-        ts = 0;
-        sy1 = keysym;
-        while ((k = findt(&i1, &i2, sy1, ts++)) == CONTF) {
-            if (read(inputfile, &sy1, 1) != 1)
-                goto readquit;
-        }
-        if (k == BADF) {
-            if (ts == 1)
-                goto corrcntr;
-            goto new;
-        }
-        keysym = k;
-        goto readychr;
+    /* Control code detected - search in the table. */
+    i1 = i2 = 0;
+    ts = 0;
+    sy1 = keysym;
+    while ((k = findt(&i1, &i2, sy1, ts++)) == CONTF) {
+        if (read(inputfile, &sy1, 1) != 1)
+            goto readquit;
     }
-    /* ========================================================= */
+    if (k == BADF) {
+        if (ts == 1)
+            goto corrcntr;
+        goto new;
+    }
+    keysym = k;
+    goto readychr;
+
 corrcntr:
     if (keysym > 0 && keysym <= 037)
         keysym = in0tab[keysym];
 readychr:
     if (keysym == -1)
         goto new;
-    knockdown = 0;
+    quote_flag = 0;
     if (keysym == CCCTRLQUOTE) {
-        knockdown = 1;
+        quote_flag = 1;
     }
-retn:
     sy1 = keysym;
     if (write (journal, &sy1, 1) != 1)
         /* ignore errors */;
-    /*
-     * Конец того, что относится к терминалу (до quit).
-     * ================================================
-     */
-retnm:
     keysym = (unsigned char) keysym;
     return keysym;
+
 readquit:
     if (intrflag) {
         keysym = CCPARAM;
@@ -424,8 +402,8 @@ int interrupt()
     char sy1;
 
     if (inputfile) {
-        if (isy0f == CCINTRUP) {
-            isy0f = -1;
+        if (jsym_next == CCINTRUP) {
+            jsym_next = -1;
             return 1;
         }
         return 0;
@@ -438,24 +416,4 @@ int interrupt()
         return 1;
     }
     return 0;
-}
-
-/*
- * Read raw input characters.
- */
-int rawinput()
-{
-    char c;
-
-    if (inputfile && readfc())
-        return keysym;
-    if (read(0, &c, 1) != 1) {
-        /* Translate EOF to ^? symbol. */
-        c = '\177';
-        intrflag = 0;
-    }
-    c &= 0177;
-    if (write(journal, &c, 1) != 1)
-        /* ignore errors */;
-    return (unsigned char) c;
 }

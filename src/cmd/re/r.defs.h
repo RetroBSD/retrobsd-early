@@ -265,7 +265,6 @@ typedef struct {
 extern keycode_t keytab[];
 
 int getkeysym (void);           /* read command from terminal */
-int rawinput (void);            /* read raw input character */
 void getlin (int);              /* get a line from current file */
 void putline (void);            /* put a line to current file */
 void movecursor (int);          /* cursor movement operation */
@@ -273,15 +272,16 @@ void poscursor (int, int);      /* position a cursor in current window */
 void pcursor (int, int);        /* move screen cursor */
 void drawlines (int, int);      /* show lines of file */
 void cline_expand (int);        /* extend cline array */
-int putcha (int);               /* output symbol or op */
-void putch (int, int);          /* put a symbol at current position */
-void putstr (char *, int);      /* put a string, limited by column */
+int putch (int);                /* output symbol or op */
+void wputc (int, int);          /* put a symbol to a current window */
+void wputs (char *, int);       /* put a string to a current window */
 void putblanks (int);           /* output a line of spaces */
 int endit (void);               /* end a session and write all */
 void switchfile (void);         /* switch to alternative file */
 void search (int);              /* search a text in file */
 void paste (clipboard_t *, int, int); /* put a buffer into file */
-int msrbuf (clipboard_t *, char *, int); /* store or get a buffer by name */
+int mfetch (clipboard_t *, char *); /* get a buffer by name */
+void mstore (clipboard_t *, char *); /* store a buffer by name */
 void gtfcn (int);               /* go to line by number */
 int savefile (char *, int);     /* save a file */
 void error (char *);            /* display error message */

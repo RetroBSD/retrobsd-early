@@ -7,9 +7,9 @@
 #include "r.defs.h"
 
 /*
- * Типы макросов
- * TAG - точка в файле
- * BUF - буфер вставки
+ * Types of macros
+ * TAG - poition in file
+ * BUF - paste buffer
  */
 #define MTAG 1
 #define MBUF 2
@@ -30,9 +30,9 @@ static macro_t *mtab_data[NMACRO];
 static char mtab_type[NMACRO];
 
 /*
- * Функция поиска описателя по имени
- * если nbytes=0, то ищет и проверяет тип,
- * иначе создает новый описатель
+ * Find a macro by name.
+ * When nbytes=0, it finds and checks a type.
+ * Otherwise, creates a new descriptor.
  */
 static macro_t *mfind(name, typ, nbytes)
     register char *name;
@@ -55,7 +55,7 @@ static macro_t *mfind(name, typ, nbytes)
         /* Reallocate. */
         if (mtab_data[i]) {
             free(mtab_data[i]);
-            telluser("macro redefined",0);
+            telluser("Macro redefined",0);
         }
         mtab_data[i] = (macro_t*) salloc(nbytes);
         mtab_type[i] = typ;
@@ -64,32 +64,41 @@ static macro_t *mfind(name, typ, nbytes)
 }
 
 /*
- * Функция запоминает и выдает буфер вставки
- * op = 1 - выдать, 0 - запомнить
- * ответ 1, если хорошо, иначе 0
+ * Fetch a clipboard by name.
+ * Return 0 on error.
  */
-int msrbuf(cb, name, op)
+int mfetch(cb, name)
     register clipboard_t *cb;
     register char *name;
-    int op;
 {
     register macro_t *m;
 
-    m = mfind(name, MBUF, (op ? 0 : sizeof(clipboard_t)));
+    m = mfind(name, MBUF, 0);
     if (! m)
         return 0;
 
-    if (op)
-        *cb = m->mclipboard;
-    else
-        m->mclipboard = *cb;
+    *cb = m->mclipboard;
     return 1;
 }
 
 /*
- * Функция запоминает текущее положение курсора в файле под именем name.
- * Ее дефект в том, что tag (метка) не связана с файлом жестко и
- * перемещается при редактировании предыдущих строк файла
+ * Store a clipboard by name.
+ */
+void mstore(cb, name)
+    register clipboard_t *cb;
+    register char *name;
+{
+    register macro_t *m;
+
+    m = mfind(name, MBUF, sizeof(clipboard_t));
+    if (m)
+        m->mclipboard = *cb;
+}
+
+/*
+ * Save a current cursor position in a file under the given name.
+ * The deficiency is that the tag is not linked to a file
+ * and moves when lines are inserted or deleted.
  */
 int msvtag(name)
     register char *name;
@@ -132,11 +141,8 @@ int mgotag(name)
 }
 
 /*
- * Функция mdeftag вырабатывает параметры, описывающие область
- * между текущим положением курсора и меткой "name". Она заполняет:
- *      param_type = -2
- *      param_c1   =    соответствует точке "name"
- *      param_r1   =           -- // --
+ * Define the parameters, describing the text area between the current
+ * cursor and a given tag name.  Param_type is set to -2.
  */
 int mdeftag(name)
     char *name;
@@ -150,7 +156,7 @@ int mdeftag(name)
         return 0;
     cws = curwksp;
     if (m->mtag.nfile != cws->wfile) {
-        error("another file");
+        error("File mismatch");
         return(0);
     }
     param_type = -2;

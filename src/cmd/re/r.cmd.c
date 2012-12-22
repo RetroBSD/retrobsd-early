@@ -169,7 +169,7 @@ static void cline_insert_char(keysym)
     if (keysym == CCCTRLQUOTE)
         keysym = COCURS;
     cline[c] = keysym;
-    putch(keysym, 1);
+    wputc(keysym, 1);
 }
 
 /*
@@ -190,22 +190,22 @@ static void drawstatus()
     if (clr_arg_area) {
         if (! message_displayed) {
             poscursor(0, 0);
-            //putcha(COERLN);
+            //putch(COERLN);
             for (i=PARAMWIDTH; i>0; i--)
-                putch('~', 0);
+                wputc('~', 0);
         }
         if (owin->wksp->wfile) {
             i = strlen(file[owin->wksp->wfile].name);
             if (i < PARAMWIDTH-4) {
                 poscursor(PARAMWIDTH-i-2, 0);
-                putch('"', 0);
-                putstr(file[owin->wksp->wfile].name, NCOLS-2);
-                putch('"', 0);
+                wputc('"', 0);
+                wputs(file[owin->wksp->wfile].name, NCOLS-2);
+                wputc('"', 0);
             }
         }
         poscursor(PARAMWIDTH, 0);
-        putstr(insert_mode ? "~~Ins~~Line:~~~~~~~" :
-                             "~~~~~~~Line:~~~~~~~", NCOLS);
+        wputs(insert_mode ? "~~Ins~~Line:~~~~~~~" :
+                            "~~~~~~~Line:~~~~~~~", NCOLS);
     }
     /* Display the current line number. */
     i = owin->wksp->topline + cline + 1;
@@ -222,14 +222,14 @@ static void drawstatus()
     } while (i);
     cp[6] = '\0';
     poscursor(PARAMWIDTH+12, 0);
-    putstr(cp, NCOLS-2);
+    wputs(cp, NCOLS-2);
 
     /* Switch back to editor window. */
     win_switch(owin);
     paramwin.text_maxcol = PARAMWIDTH;
     poscursor(ccol, cline);
     if (highlight_position) {
-        putch(COCURS, 1);
+        wputc(COCURS, 1);
         poscursor(ccol, cline);
         dumpcbuf();
         sleep(1);
@@ -553,7 +553,7 @@ gotcmd:
                 goto nowriterr;
             if (param_type != 0) {
                 if (param_type > 0 && param_str && param_str[0] == '>') {
-                    msrbuf(deletebuf, param_str+1, 0);
+                    mstore(deletebuf, param_str + 1);
                     continue;
                 }
                 linefunc = deletelines;
@@ -565,7 +565,7 @@ gotcmd:
 
         case CCPASTE:
             if (param_type > 0 && param_str && param_str[0] == '$') {
-                if (msrbuf(deletebuf, param_str+1, 1))
+                if (mfetch(deletebuf, param_str + 1))
                     goto errclear;
                 continue;
             }
@@ -639,7 +639,7 @@ gotcmd:
             if (param_type == 0)
                 goto notimperr;
             if (param_type > 0 && param_str && param_str[0] == '>') {
-                msrbuf(pickbuf, param_str+1, 0);
+                mstore(pickbuf, param_str + 1);
                 continue;
             }
             linefunc = picklines;
@@ -787,7 +787,7 @@ void search(delta)
         telluser("-", 0);
     telluser("Search: ", 1);
     telluser(searchkey, 9);
-    putch(COCURS, 1);
+    wputc(COCURS, 1);
     poscursor(col, lin);
     dumpcbuf();
     lkey = 0;

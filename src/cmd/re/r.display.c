@@ -45,7 +45,7 @@ void drawlines(lo, lf)
             poscursor(0, l0);
         else {
             poscursor(-1, l0);
-            putch(lmc, 0);
+            wputc(lmc, 0);
         }
         curwin->leftbar[l0] = lmc;
         if (draw_border != 0)
@@ -88,7 +88,7 @@ void drawlines(lo, lf)
         j = i + lo;
         cp = cline + curwksp->offset - lo;
         while(j--)
-            putcha(*cp++);
+            putch(*cp++);
         cursorcol += (i + lo);
         if (curwin->lastcol[l0] < cursorcol)
             curwin->lastcol[l0] = cursorcol;
@@ -102,7 +102,7 @@ void drawlines(lo, lf)
         if (i > curwin->text_maxcol) {
             /* Too long line - add continuation mark. */
             pcursor(curwin->text_col + curwin->text_maxcol, l0);
-            putcha('~');
+            putch('~');
         }
         if (curwin->text_col + cursorcol >= NCOLS) {
             /* Cursor lost after last column: move it to known position. */
@@ -111,7 +111,7 @@ void drawlines(lo, lf)
         }
         if (draw_border && draw_border != curwin->rightbar[l0]) {
             poscursor(curwin->max_col - curwin->text_col, l0);
-            putch(draw_border, 0);
+            wputc(draw_border, 0);
         }
         curwin->rightbar[l0] = draw_border;
         curwin->lastcol[l0] = (k > 0 ? i : j);
@@ -131,21 +131,21 @@ void poscursor(col, lin)
     if (cursorline == lin) {
         if (cursorcol == col)
             return;
-        if ((cursorcol == col-1) && putcha(CORT)) {
+        if ((cursorcol == col-1) && putch(CORT)) {
             ++cursorcol;
             return;
         }
-        if ((cursorcol == col+1) && putcha(COLT)) {
+        if ((cursorcol == col+1) && putch(COLT)) {
             --cursorcol;
             return;
         }
     }
     if (cursorcol == col) {
-        if ((cursorline == lin-1) && putcha(CODN)) {
+        if ((cursorline == lin-1) && putch(CODN)) {
             ++cursorline;
             return;
         }
-        if ((cursorline == lin+1) && putcha(COUP)) {
+        if ((cursorline == lin+1) && putch(COUP)) {
             --cursorline;
             return;
         }
@@ -274,7 +274,7 @@ void movecursor(arg)
  * Put a symbol to current position.
  * When flag=1, count it to line size.
  */
-void putch(j, flg)
+void wputc(j, flg)
     int j, flg;
 {
     if (flg && keysym != ' ') {
@@ -286,7 +286,7 @@ void putch(j, flg)
     ++cursorcol;
     if (curwin->text_col + cursorcol >= NCOLS)
         cursorcol = - curwin->text_col;
-    putcha(j);
+    putch(j);
     if (cursorcol <= 0)
         poscursor(0,
             cursorline < 0 ? 0 :
@@ -318,7 +318,7 @@ char *param()
         free(param_str);
     param_c1 = param_c0 = cursorcol + curwksp->offset;
     param_r1 = param_r0 = cursorline + curwksp->topline;
-    putch(COCURS, 1);
+    wputc(COCURS, 1);
     poscursor(cursorcol, cursorline);
     w = curwin;
     old_topline = curwksp->topline;
@@ -393,12 +393,12 @@ loop:
                 movecursor(CCMOVELEFT);
                 --pn;
                 if ((param_str[pn] & 0340) == 0) {
-                    putch(' ', 0);
+                    wputc(' ', 0);
                     movecursor(CCMOVELEFT);
                     movecursor(CCMOVELEFT);
                 }
                 param_str[pn] = 0;
-                putch(' ', 0);
+                wputc(' ', 0);
                 movecursor(CCMOVELEFT);
                 keysym = -1;
                 if (pn == 0)
@@ -412,10 +412,10 @@ loop:
         param_str[pn++] = c;
         if (c != 0) {
             if ((c & 0140) == 0){
-                putch('^', 0);
+                wputc('^', 0);
                 c = c | 0100;
             }
-            putch(c, 0);
+            wputc(c, 0);
             keysym = -1;
             goto loop;
         }
@@ -453,7 +453,7 @@ void win_borders(win, vertf)
     if (win->base_row != win->text_row) {
         poscursor(win->base_col, win->base_row);
         for (i = win->base_col; i <= win->max_col; i++)
-            putch(TMCH, 0);
+            wputc(TMCH, 0);
     }
     if (vertf) {
         int j;
@@ -461,16 +461,16 @@ void win_borders(win, vertf)
             int c = win->leftbar[j - win->base_row - 1];
             if (c != 0) {
                 poscursor(win->base_col, j);
-                putch(c, 0);
+                wputc(c, 0);
                 poscursor(win->max_col, j);
-                putch(win->rightbar[j - win->base_row - 1], 0);
+                wputc(win->rightbar[j - win->base_row - 1], 0);
             }
         }
     }
     if (win->base_row != win->text_row) {
         poscursor(win->base_col, win->max_row);
         for (i = win->base_col; i <= win->max_col; i++)
-            putch(BMCH, 0);
+            wputc(BMCH, 0);
     }
     /* poscursor(win->base_col + 1, win->base_row + 1); */
 #endif
@@ -483,7 +483,7 @@ void win_borders(win, vertf)
 void error(msg)
     char *msg;
 {
-    putcha(COBELL);
+    putch(COBELL);
     telluser("**** ", 0);
     telluser(msg, 5);
     message_displayed = 1;
@@ -509,8 +509,8 @@ void telluser(msg, col)
         putblanks(paramwin.text_maxcol);
     }
     poscursor(col, 0);
-    /* while (*msg) putch(*msg++, 0); */
-    putstr(msg, PARAMWIDTH);
+    /* while (*msg) wputc(*msg++, 0); */
+    wputs(msg, PARAMWIDTH);
     win_switch(oldwin);
     poscursor(c, l);
     dumpcbuf();
@@ -544,9 +544,9 @@ void redisplay()
     }
     win_switch(&wholescreen);
     cursorcol = cursorline = 0;
-    putcha(COFIN);
-    putcha(COSTART);
-    putcha(COHO);
+    putch(COFIN);
+    putch(COSTART);
+    putch(COHO);
     for (j=0; j<nwinlist; j++) {
         win_switch(winlist[j]);
         curp = curwin;
@@ -566,12 +566,12 @@ void redisplay()
 /*
  * Put a string, limited by column.
  */
-void putstr(ss, ml)
+void wputs(ss, ml)
     char *ss;
     int ml;
 {
     register char *s = ss;
 
     while (*s && cursorcol < ml)
-        putch(*s++, 0);
+        wputc(*s++, 0);
 }

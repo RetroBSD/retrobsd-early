@@ -92,15 +92,6 @@ void puts1(s)
 }
 
 /*
- * Absolute value of a number.
- */
-int abs(number)
-    int number;
-{
-    return (number < 0) ? -number : number;
-}
-
-/*
  * Append strings.
  * Allocates memory.
  */
