@@ -91,11 +91,10 @@ int savefile(filename, n)
 }
 
 /*
- * Запись по цепочке описателей f в файл "newf"
- * Если maxlines # 0  - записывать только maxlines строк или
- * -maxlines абзацев текста (maxlines используется в случае
- * команды "exec".
- * Ответ - число записанных строк, или -1, если ошибка.
+ * Write a segment chain into the file.
+ * When maxlines>0 - put only maxlines lines of text.
+ * When maxlines<0 - put only -maxlines paragraphs.
+ * Return a count of written lines, or -1 on error.
  */
 int segmwrite(ff, maxlines, newf)
     segment_t *ff;
@@ -107,7 +106,7 @@ int segmwrite(ff, maxlines, newf)
     int j, k, bflag, tlines;
 
     if (cline_max < LBUFFER)
-        excline(LBUFFER);
+        cline_expand(LBUFFER);
     f = ff;
     bflag = 1;
     tlines = 0;
@@ -117,7 +116,7 @@ int segmwrite(ff, maxlines, newf)
             c = &f->data;
             for (j=f->nlines; j; j--) {
                 if (maxlines < 0) {
-                    /* Проверяем счетчик пустых строк */
+                    /* Check the count of empty lines. */
                     if (bflag && *c != 1)
                         bflag = 0;
                     else if (bflag == 0 && *c == 1) {
@@ -130,7 +129,7 @@ int segmwrite(ff, maxlines, newf)
                     i += 128 * (*c++ & 0177);
                 i += *c++;
                 ++tlines;
-                /* Проверяем счетчик строк */
+                /* Check the line count. */
                 if (maxlines > 0 && --maxlines == 0)
                     break;
             }
@@ -174,13 +173,11 @@ int segmwrite(ff, maxlines, newf)
 }
 
 /*
- * Открыть файл file для редактирования, начиная со строки
- * line и колонки col.
- * Файл открывается в текущем окне.
- * Если файла нет, а mkflg равен 1, то запрашивается
- * разрешение создать файл.
- * Код ответа -1, если файл не открыли и не создали.
- * Если putflg равен 1, файл тут же выводится в окно.
+ * Open the file for editing, starting from the given line and column.
+ * File is opened in the current window.  When file does not exist,
+ * and mkflg==1, ask a user for a permission to create a file.
+ * Return -1, when the file was not opened and not created.
+ * When putflg==1, file is displayed on the screen.
  */
 int editfile(filename, line, col, mkflg, puflg)
     char *filename;
@@ -204,7 +201,7 @@ int editfile(filename, line, col, mkflg, puflg)
         }
     }
     if (fn < 0) {
-        fn = open(filename, 0);  /* Файл существует? */
+        fn = open(filename, 0);  /* File exists? */
         if (fn >= 0) {
             if (fn >= MAXFILES) {
                 error("Too many files -- editor limit!");
@@ -229,7 +226,7 @@ int editfile(filename, line, col, mkflg, puflg)
             getkeysym();
             if (keysym != CCSETFILE && keysym != 'Y' && keysym != 'y')
                 return(-1);
-            /* Находим справочник */
+            /* Find the directory. */
             for (c=d=filename; *c; c++)
                 if (*c == '/')
                     d = c;
@@ -237,7 +234,7 @@ int editfile(filename, line, col, mkflg, puflg)
                 *d = '\0';
                 i = open(filename, 0);
             } else
-                i = open(".",0);
+                i = open(".", 0);
 
             if (i < 0) {
                 error("Specified directory does not exist.");
@@ -252,7 +249,7 @@ int editfile(filename, line, col, mkflg, puflg)
             if (d > filename)
                 *d = '/';
 
-            /* Создаем файл */
+            /* Create file */
             fn = creat(filename, FILEMODE);
             close(fn);
             fn = open(filename, 0);
@@ -272,7 +269,7 @@ int editfile(filename, line, col, mkflg, puflg)
         param_len = 0;   /* so its kept around */
         file[fn].name = filename;
     }
-    /* Выталкиваем буфер, так как здесь долгая операция */
+    /* Flush the output buffer, as here is a long operation. */
     dumpcbuf();
     wksp_switch();
     if (! file[fn].chain)

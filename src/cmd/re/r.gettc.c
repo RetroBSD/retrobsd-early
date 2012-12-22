@@ -7,7 +7,7 @@
 #include "r.defs.h"
 
 /*
- * Выходные коды
+ * Output codes
  */
 char *cvtout[] = {
     /* COSTART */ "cl?is?ti?ho",    /* COUP   */ "up",
@@ -59,8 +59,7 @@ const char in0tab[32] = {
 };
 
 /*
- * Таблица кодов клавиш терминала и их комбинаций
- * Сюда же записываются коды при переопределении
+ * Table of input key codes.
  */
 keycode_t keytab[] = {
     { CCMOVEUP,     "ku",   },  { CCMOVEUP,     "\33OA",   },
@@ -69,8 +68,8 @@ keycode_t keytab[] = {
     { CCMOVELEFT,   "kl",   },  { CCMOVELEFT,   "\33OD",   },
     { CCHOME,       "kh",   },  { CCHOME,       "\33OH",   },
     { CCEND,        "kH",   },  { CCEND,        "\33OF",   },
-    { CCPLPAGE,     "kN",   },
-    { CCMIPAGE,     "kP",   },
+    { CCPGDOWN,     "kN",   },
+    { CCPGUP,       "kP",   },
     { CCINSMODE,    "kI",   },
     { CCDELCH,      "kD",   },
     { CCPARAM,      "k1",   },  { CCPARAM,      "\33OP",   },
@@ -96,13 +95,14 @@ keycode_t keytab[] = {
     { 0,            0,      },
 };
 
-/* Декодирование termcap */
-int nfinc = 8;
+/*
+ * Parsing the termcap
+ */
 
 /*
- * дай описание возможности "tc"
- * tc="XXYY..ZZ", знак вопроса перед кодом
- * возможности означает - не обязательна
+ * Get a descriptor "tc".
+ * tc="XXYY..ZZ"
+ * Auestion mark bebore the code denodes an optional feature.
  */
 static char *gettcs(termcap, tc)
     char *termcap, *tc;
@@ -144,7 +144,7 @@ static char *gettcs(termcap, tc)
 }
 
 /*
- * сортировка keytab для работы функции findt
+ * Sort the keytab for the function findt().
  */
 static void itsort(fb, fe, ns)
     keycode_t *fb,*fe;
@@ -224,7 +224,6 @@ void tcread()
         if (ir->value[0] > ' ') {
             iw->value = gettcs(termcap, ir->value);
             if (iw->value == 0) {
-                nfinc++;
                 continue;
             }
         } else

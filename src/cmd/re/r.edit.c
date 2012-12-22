@@ -8,59 +8,61 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#define NBYMAX 150      /* Макс. размер байтов для data, +1 */
-
-static int charskl;     /* Положение символа (для chars) */
+#define NBYMAX      150         /* Max size for segment data, +1 */
 
 /*
- * Настройка программы чтения из файла
+ * Setup for a file read routine.
  */
-#define CHARBUFSZ 512
+#define CHARBUFSZ   512
 
-static int charsoff;    /* position of next read from charsfi */
-static int charsfi, charsi, charsn;
-
-static char charsbuf[CHARBUFSZ];
+static int file_desc;           /* Input file descriptor */
+static int file_offset;         /* Position of next read from file_desc */
+static char read_buf[CHARBUFSZ];
+static int buf_count;           /* Number of valid bytes in read_buf */
+static int buf_next;            /* Next unread index in read_buf */
+static int cline_read_offset;   /* Offset of next unread symbol */
 
 /*
- * Настроить программу чтения символов "char" на
- * файл "fi" с позиции offset = сдвиг.
+ * Setup for a cline_read routine to read a given file starting
+ * from a given offset.
  */
-static void charsin(fi, offset)
+static void cline_setup(fi, offset)
     int fi, offset;
 {
     if (fi <= 0) {
-        charsfi = fi;
+        file_desc = fi;
         return;
     }
-    if (charsfi == fi && offset <= charsoff && offset >= charsoff - charsn) {
+    if (file_desc == fi && offset <= file_offset &&
+        offset >= file_offset - buf_count)
+    {
         /* New offset is inside the last buffer. */
-        charsi = charsn + offset - charsoff;
+        buf_next = buf_count + offset - file_offset;
     } else {
         lseek(fi, (off_t) offset, 0);
-        charsoff = offset;
-        charsi = 0;
-        charsn = 0;
+        file_offset = offset;
+        buf_next = 0;
+        buf_count = 0;
     }
     cline_len = 0;
-    charsfi = fi;
-    charskl = charsoff + charsi - charsn;
+    file_desc = fi;
+    cline_read_offset = file_offset + buf_next - buf_count;
 }
 
 /*
- * Преобразование строки из внешней во внутреннюю форму.
- * *si - Текущий входной символ
- * *(se-1) - Последний ранее считанный входной символ
- * *so - текущее место в строке вывода
- *  no - текущая колонка на выводе, +1 (1, если пусто)
- *  mo - макс. номер колонки в олученной строке
+ * Convert a line from external to internal form.
+ *  *si     - current input symbol
+ *  *(se-1) - previous input symbol
+ *  *so     - current place in output string
+ *   no     - current column on output, +1 (1 when empty)
+ *   mo     - max resulting column number
  *
- * Код ответа:
- *       0 - end of line
- *       1 - end of input string
- *       2 - the output line overflow
+ * Return value:
+ *      0 - end of line
+ *      1 - end of input string
+ *      2 - overflow of the output line
  */
-static int exinss(si, se, so, no, mo)
+static int ext_to_int(si, se, so, no, mo)
     char **si, *se, **so;
     int *no, mo;
 {
@@ -141,80 +143,76 @@ next:
 
 /*
  * Main function for reading next line from file.
- * Управляется глобальными переменными charsoff и charsfi.
- * (сдвиг в файле и дескриптор).
- * Возвращает: последний символ либо -1 при конце файла.
- * Если flg = 1 - заполняется строка "cline".
- * Длина строки возвращается в cline_len, с учетом символа конца.
- * Строка оканчивается символом LINE FEED или -1, если конец файла.
- * ============================================================
- * При вводе строка разворачивается из файловой в экранную форму.
- * При этом заменяются символы табуляции, неграфические символы,
- * а в режимах "lcase" или "lat" часть символов преобразуются в пару
- * символов.
- * Обратное преобразование (из экранной в файловую форму)
- * делается функцией "dechar".
+ * Controlled by global variables file_desc and file_offset.
+ * Returns a last symbol or -1 on EOF.
+ * When parameter fill_cline is nonzero, a buffer "cline" is filled with data.
+ * Length of a line (including trailing \n) is returned in cline_len.
+ * Last byte is \n, or -1 on EOF.
  *
- * Если flg = 0 - строка не формируется, этот режим служит для
- * составления цепи дескрипторов.
+ * Line is converted from external to internal format.
+ * Tabs are expanded, non-printing characters converted to pair of bytes.
+ * To convert it back, use int_to_ext() function.
+ *
+ * When parameter fill_cline is zero, cline is not allocated.
+ * This mode is used to build a descriptor chain.
  */
-int chars(flg)
-    int flg;
+int cline_read(fill_cline)
+    int fill_cline;
 {
-    register char *c,*se;
+    register char *c, *se;
     register int ko;
     char *si, *so;
 
-    if (charsfi <= 0) {
+    if (file_desc <= 0) {
         if (cline_max == 0)
-            excline(1);
+            cline_expand(1);
         cline_len = 1;
         cline[0] = '\n';
         return ('\n');
     }
     if (! cline)
-        excline(0);
+        cline_expand(0);
     so = cline;
-    ko = (charsi >= charsn) ? 1 : 2;
+    ko = (buf_next >= buf_count) ? 1 : 2;
     do {
         if (ko == 1) {
-            charsi = 0;
-            charsn = read(charsfi, charsbuf, CHARBUFSZ);
-            if (charsn < 0) {
+            buf_next = 0;
+            buf_count = read(file_desc, read_buf, CHARBUFSZ);
+            if (buf_count < 0) {
                 error("Read Error");
-                charsn = 0;
+                buf_count = 0;
             }
-            charsoff += charsn;
+            file_offset += buf_count;
         }
-        if (charsn <= charsi) {
+        if (buf_count <= buf_next) {
             ko = 1;
             break;
         } /* read buf empty */
 
-        si = charsbuf + charsi;
-        se = charsbuf + charsn;
-        if (! flg) {
+        si = read_buf + buf_next;
+        se = read_buf + buf_count;
+        if (! fill_cline) {
             c = si;
             while (*c++ != '\n' && c != se);
-            charsi = c - charsbuf;
+            buf_next = c - read_buf;
             ko = (*(c-1) == '\n') ? 0 : 1;
             continue;
         }
-        while (! cline_max || (ko = exinss(&si, se, &so, &cline_len, cline_max)) == 2) {
+        while (! cline_max || (ko = ext_to_int(&si, se, &so, &cline_len, cline_max)) == 2) {
             cline_len = so - cline;
-            excline(0);
+            cline_expand(0);
             so = cline + cline_len;
         }
-        charsi = si - charsbuf;
+        buf_next = si - read_buf;
     } while (ko);
 
     /* ko=0 - '\n', 1 - end of file */
-    charskl = charsoff + charsi - charsn;
+    cline_read_offset = file_offset + buf_next - buf_count;
     if (ko == 1)
-        charsfi = 0;
+        file_desc = 0;
 
-    /* Убрать хвостовые пробелы */
-    if (flg && so) {
+    /* Remove trailing spaces. */
+    if (fill_cline && so) {
         *so = ' ';
         c = so;
         while (*c == ' ' && c-- != cline);
@@ -225,10 +223,10 @@ int chars(flg)
 }
 
 /*
- * Разложить файл на segm-цепь.
- * работает с текущего места в файле chan
+ * Scan a file and create a segment chain.
+ * Works from a current offset in the file.
  */
-static segment_t *temp2segm(chan)
+static segment_t *fdesc2segm(chan)
     int chan;
 {
     register segment_t *thissegm = 0, *lastsegm = 0;
@@ -236,15 +234,14 @@ static segment_t *temp2segm(chan)
     register int nby = 0;
     char *bpt;
     int c;
-    char fby[NBYMAX+1];
+    char fby [NBYMAX+1];
     int i, lct, nl = 0, sl, kl;
 
-    /* основной цикл. c - очередной символ, но -1 означает
-     * конец файла, а -2 - вход в цикл.
-     */
     c = -2;
     sl = 0;
     for (;;) {
+        /* Here c is a next symbol: -1 designates EOF, -2 - enter a loop
+         */
         if ((c < 0) || nby >= NBYMAX || nl == FSDMAXL) {
             if (c != -2) {
                 lastsegm = thissegm;
@@ -264,17 +261,17 @@ static segment_t *temp2segm(chan)
                     *bpt++ = fby[i];
             }
             if (c == -1) {
-                /* Поместим блок конца и выйдем */
-                thissegm->next = lastsegm = (segment_t *)salloc(sizeof_segment_t);
+                /* Append a tail block and done. */
+                thissegm->next = lastsegm = (segment_t*) salloc(sizeof_segment_t);
                 lastsegm->prev = thissegm;
                 return (firstsegm);
             }
-            sl = charskl;
+            sl = cline_read_offset;
             nl = nby = lct = 0;
         }
-        kl = charskl;
-        c = chars(0);
-        lct = charskl - kl;
+        kl = cline_read_offset;
+        c = cline_read(0);
+        lct = cline_read_offset - kl;
         if (c != -1 || lct) {
             if (lct > 127) {
                 fby[nby++] = (lct / 128) | 0200;
@@ -289,31 +286,31 @@ static segment_t *temp2segm(chan)
 /*
  * Create a file descriptor list for a file.
  */
-segment_t *file2segm(fname)
-    int fname;
+segment_t *file2segm(fd)
+    int fd;
 {
-    charsin(fname, 0);
-    return temp2segm(fname);
+    cline_setup(fd, 0);
+    return fdesc2segm(fd);
 }
 
 /*
- * Conversion of line from internal to external form.
- * Преобразование делается прямо в строке line.
- * n - длина строки. В строке должно быть не менее n+1 символов,
- * так как в конец полученной строки пишется '\n'.
- * Возвращает число символов в полученной строке.
- * Хвостовые пробелы исключаются.
+ * Conversion of a line from internal to external form,
+ * performed right in place.
+ * Line should contain at least nbytes+1 symbols.
+ * Returns a length of resulting string.
+ * Tail spaces are stripped.
  */
-int dechars(line, n)
+int int_to_ext(line, nbytes)
     char *line;
-    int n;
+    int nbytes;
 {
     register char *fm,*to;  /* pointers for move */
     register unsigned cc;   /* current character */
-    int lnb;       /* 1 + last non-blank col */
+    int lnb;                /* 1 + last non-blank col */
     int cn;                 /* col number */
     int i, j;
-    line[n] = '\n';
+
+    line[nbytes] = '\n';
     fm = to = line;
     cn = -1;
     lnb = 0;
@@ -322,7 +319,7 @@ int dechars(line, n)
         if (cc != ' ') {
             while (++lnb <= cn)
                 *to++ = ' ';
-            /* расшифровка символов */
+            /* decode non-printing symbols */
             if (cc == COCURS) {
                 if (*fm >= '@' || (unsigned)*fm > 0200) {
                     *to++ = *fm++ & 037;
@@ -349,34 +346,31 @@ int dechars(line, n)
 }
 
 /*
- * excline(n) -
- * расширить массив cline.
- * cline содержит текущую строку, причем
- * cline_max - содержит максимальную длину массива cline;
- * cline_len - длина текущей строки.
+ * Expand a cline array to contain at least a given number of bytes.
+ * cline contains an allocated string;
+ * cline_max is an allocated length.
  */
-void excline(n)
-    int n;
+void cline_expand(minbytes)
+    int minbytes;
 {
-    register int j;
-    register char *tmp;
+    register int nbytes;
+    register char *buf;
 
-    j = cline_max + cline_incr;
-    if (j < n)
-        j = n;
-    tmp = salloc(j+1);
+    nbytes = cline_max + cline_incr;
+    if (nbytes < minbytes)
+        nbytes = minbytes;
+    buf = salloc(nbytes + 1);
     cline_incr += cline_incr >> 1;
-    while (--cline_max >= 0)
-        tmp[cline_max] = cline[cline_max];
-    cline_max = j;
-    if (cline != 0)
+    if (cline != 0) {
+        memcpy (buf, cline, cline_max);
         free(cline);
-    cline = tmp;
+    }
+    cline = buf;
+    cline_max = nbytes;
 }
 
 /*
- * putbks(col,n) -
- * вставить n пробелов в колонке col текущей строки
+ * Insert n spaces into cline at position col.
  */
 void putbks(col, n)
     int col, n;
@@ -390,7 +384,7 @@ void putbks(col, n)
         col = cline_len-1;
     }
     if (cline_max <= (cline_len += n))
-        excline(cline_len);
+        cline_expand(cline_len);
     for (i = cline_len - (n + 1); i >= col; i--)
         cline[i + n] = cline[i];
     for (i = col + n - 1; i >= col; i--)
@@ -398,10 +392,9 @@ void putbks(col, n)
 }
 
 /*
- * Установить файл и смещение для ввода строки nlo
- * из рабочего пространства wksp.
- * После этого chars(0) считает требуемую строку.
- * Код ответа = 1, если такой строки нет, 0 если ОК
+ * Setup a file and offset to get a line nlo from workspace wksp.
+ * After this call, a function cline_read(0) will fetch the needed line.
+ * Return 0 when done, 1 when no such line.
  */
 int wksp_seek(wksp, lno)
     workspace_t *wksp;
@@ -411,11 +404,11 @@ int wksp_seek(wksp, lno)
     int i;
     register int j, seek;
 
-    /* 1. Получим segm, в котором "сидит" данная строка */
+    /* Get a needed segment. */
     if (wksp_position(wksp, lno))
         return (1);
 
-    /* Теперь вычислим смещение */
+    /* Now compute the offset. */
     seek = wksp->cursegm->seek;
     i = lno - wksp->segmline;
     cp = &(wksp->cursegm->data);
@@ -426,7 +419,7 @@ int wksp_seek(wksp, lno)
         }
         seek += j;
     }
-    charsin(wksp->cursegm->fdesc, seek);
+    cline_setup(wksp->cursegm->fdesc, seek);
     return (0);
 }
 
@@ -494,7 +487,7 @@ void wksp_switch()
 }
 
 /*
- * создай дескриптор n пустых строк
+ * Create a segment with n empty lines.
  */
 static segment_t *blanklines(n)
     int n;
@@ -521,23 +514,21 @@ static segment_t *blanklines(n)
 }
 
 /*
- * разломать segm по строке n в пространстве
- * w. line = segmline при возврате, и cursegm указывает на первую
- * строку после разрыва (которая может быть строкой из конечного
- * блока). Исходный segm остается, возможно, с неиспользуемым
- * остатком списка длин.
- * Если функция применяется к концу файла, текущая
- * позиция остается в конце файла, на конечном блоке.
- * Если указанная строка выходит за пределы файла, добавляются
- * описатели пустых строк (с каналом -1).
- * Если "reall=1" то блок перед разрывом переразмещается в памяти с
- * целью экономии места.
- * ВНИМАНИЕ: breaksegm может нарушить корректность указателей в  workspace.
- * Поэтому после всех операций нужно вызывать "wksp_redraw".
+ * Split a segment by line n in workspace w.
+ * On return, w.line == segmline and cursegm points to the first line
+ * after the break (which can be a line from the tail block).
+ * Initial segm can keep some unused space.
+ * When applied to the end of file, the current position will be
+ * at the final segment.
+ * When the needed line is beyond the end of file, additional segments
+ * are appended (with fdesc == -1).
+ * When realloc_flag==1, the block is reallocated to free some space.
+ * WARNING: breaksegm can disrupt the validity of pointers in workspace.
+ * Recommended to call wksp_redraw().
  */
-static int breaksegm(w, n, reall)
+static int breaksegm(w, n, realloc_flag)
     workspace_t *w;
-    int n, reall;
+    int n, realloc_flag;
 {
     int nby, i, j, jj, k, lfb0;
     register segment_t *f,*ff;
@@ -600,7 +591,7 @@ static int breaksegm(w, n, reall)
         ff->prev = f;
         f->next = ff;
         f->nlines = nby;
-        if (reall && jj > 4 && f->prev) {
+        if (realloc_flag && jj > 4 && f->prev) {
             ff = (segment_t *)salloc(sizeof_segment_t+lfb0);
             *ff = *f;
             c = &(ff->data);
@@ -621,10 +612,8 @@ static int breaksegm(w, n, reall)
 }
 
 /*
- * программа пытается слить несколько segm - блоков в один
- * для экономии памяти.
- * делается попытка слить в один блок w->cursegm->prev и
- * w->cursegm, если они описывают смежную информацию.
+ * Try to merge several segments into one to save some space.
+ * Join w->cursegm->prev and w->cursegm, in case they are adjacent.
  */
 static int catsegm(w)
     workspace_t *w;
@@ -634,9 +623,9 @@ static int catsegm(w)
     register char *c;
     char *cc;
     int i, j, l0=0, l1=0, lb0=0, lb1, dl, nl0, nl1, fd0, kod = 0;
-    /* l0,  l1:  число байтов в участке файла, описываемом f0, f;
-     * lb0, lb1: длина описателя длин в segm;
-     * nl0, nl1: число строк в segm */
+    /* l0,  l1:  byte count in a file area, described by f0, f;
+     * lb0, lb1: length of data in segm;
+     * nl0, nl1: number of lines in segm */
 
     f = w->cursegm;
     if ((f0 = f->prev) == 0) {
@@ -648,8 +637,8 @@ static int catsegm(w)
     nl0 = f0->nlines;
     while (fd0>0 && fd0==f->fdesc && (nl0+(nl1=f->nlines)< FSDMAXL)) {
         dl = f->seek - f0->seek;
-        /*  подсчитываем длину блока, eсли она неизвестна */
-        if (l0==0) {
+        /* Compute the block length, if unknown */
+        if (l0 == 0) {
             i = nl0;
             cc = c = &f0->data;
             while(i--) {
@@ -661,7 +650,7 @@ static int catsegm(w)
         }
         if (dl != l0)
             return(kod);
-        /* сливаем два segm  и пытаемся повторить */
+        /* Merge two segments and try to repeat */
         i = nl1;
         cc = c = &(f0->data);
         while (i--) {
@@ -704,10 +693,8 @@ static int catsegm(w)
 }
 
 /*
- * Вставить описатель f в файл, описываемый wksp,
- * перед строкой at.
- * Вызывающая программа должна вызвать wksp_redraw с
- * соответствующими аргументами.
+ * Insert a segment f into file, described by wksp, before the line at.
+ * The calling routine should call wksp_redraw() with needed args.
  */
 static void insert(wksp, f, at)
     workspace_t *wksp;
@@ -772,22 +759,22 @@ void openspaces(line, col, number, nl)
 }
 
 /*
- * Дописать строку buf длиной n во врем. файл.
- * Возвращает описатель этой строки.
+ * Append a line buf of length n to the temporary file.
+ * Return a segment for this line.
  */
-static segment_t *writemp(buf,n)
+static segment_t *writemp(buf, nbytes)
     char *buf;
-    int n;
+    int nbytes;
 {
     register segment_t *f1, *f2;
     register char *p;
 
-    if (charsfi == tempfile)
-        charsfi = 0;
+    if (file_desc == tempfile)
+        file_desc = 0;
     lseek(tempfile, tempseek, 0);
 
-    n = dechars(buf, n-1);
-    if (write(tempfile, buf, n) != n)
+    nbytes = int_to_ext(buf, nbytes-1);
+    if (write(tempfile, buf, nbytes) != nbytes)
         return 0;
 
     /* now make segm */
@@ -798,14 +785,14 @@ static segment_t *writemp(buf,n)
     f1->nlines = 1;
     f1->fdesc = tempfile;
     f1->seek = tempseek;
-    if (n <= 127)
-        f1->data = n;
+    if (nbytes <= 127)
+        f1->data = nbytes;
     else {
         p = &f1->data;
-        *p++ = (n / 128)|0200;
-        *p = n % 128;
+        *p++ = (nbytes / 128)|0200;
+        *p = nbytes % 128;
     }
-    tempseek += n;
+    tempseek += nbytes;
     return (f1);
 }
 
@@ -841,15 +828,13 @@ void splitline(line, col)
 }
 
 /*
- * segment_t *delete(wksp,from,to) -
- * Исключить указанные строки из wksp.
- * Возвращает указатель на segm - цепь исключенных строк,
- * с добавленнык концевым блоком.
- * Требует wksp_redraw.
+ * Delete specified lines from the workspace.
+ * Returns a segment chain of the deleted lines, with tail segment appended.
+ * Needs wksp_redraw().
  */
-static segment_t *delete(wksp,from,to)
+static segment_t *delete(wksp, from, to)
     workspace_t *wksp;
-    int from,to;
+    int from, to;
 {
     segment_t *w0;
     register segment_t *wf,*f0,*ff;
@@ -912,8 +897,8 @@ static void pcspaces(line, col, number, nl, flg)
     register int i;
     int j, n, line0, line1;
 
-    if (charsfi == tempfile)
-        charsfi = 0;
+    if (file_desc == tempfile)
+        file_desc = 0;
     linebuf = salloc(number+1);
     f0 = f2 = 0;
     line0 = line;
@@ -935,7 +920,7 @@ static void pcspaces(line, col, number, nl, flg)
             getlin(j);
             if (col+number >= cline_len) {
                 if (col+number >= cline_max)
-                    excline(col+number+1);
+                    cline_expand(col+number+1);
                 for (i=cline_len-1; i<col+number; i++)
                     cline[i] = ' ';
                 cline[col+number] = '\n';
@@ -945,9 +930,9 @@ static void pcspaces(line, col, number, nl, flg)
                 linebuf[i] = cline[col+i];
             linebuf[number] = '\n';
             lseek(tempfile, tempseek, 0);
-            if (charsfi == tempfile)
-                charsfi = 0;
-            n = dechars(linebuf, number);
+            if (file_desc == tempfile)
+                file_desc = 0;
+            n = int_to_ext(linebuf, number);
             if (write(tempfile, linebuf, n) != n)
                 puts1("Error writing temp file!\n");
             if (n > 127)
@@ -966,7 +951,7 @@ static void pcspaces(line, col, number, nl, flg)
             getlin(j);
             if (col+number >= cline_len) {
                 if (col+number >= cline_max)
-                    excline(col+number+1);
+                    cline_expand(col+number+1);
                 for (i=cline_len-1; i<col+number; i++)
                     cline[i] = ' ';
                 cline[col+number] = '\n';
@@ -1028,7 +1013,7 @@ void combineline(line, col)
     nsave = cline_len;
     getlin(line);
     if (col+nsave > cline_max)
-        excline(col+nsave);
+        cline_expand(col+nsave);
     for (i=cline_len-1; i<col; i++)
         cline[i] = ' ';
     for (i=0; i<nsave; i++)
@@ -1043,11 +1028,11 @@ void combineline(line, col)
 }
 
 /*
- * Возвращает копию цепи segm, от f до end, не включая end.
- * Если end = NULL - до конца файла.
+ * Returns a copy of segment subchain, from f to end, not including end.
+ * When end = NULL - up to the end of file.
  */
 static segment_t *copysegm(f, end)
-    segment_t *f,*end;
+    segment_t *f, *end;
 {
     segment_t *res, *ff, *rend = 0;
     register int i;
@@ -1059,7 +1044,7 @@ static segment_t *copysegm(f, end)
         for (i = f->nlines; i; i--)
             if (*c1++ & 0200)
                 c1++;
-        c2 = (char*) f; /* !!! Подсчет места !!!*/
+        c2 = (char*) f; /* !!! Count the size !!! */
         i = c1 - c2;
         c2 = salloc(i);
         ff = (segment_t*) c2;
@@ -1087,18 +1072,16 @@ static segment_t *copysegm(f, end)
 }
 
 /*
- * segment_t *pick(wksp,from,to) -
- * Возвращает указатель на segm - цепь указанных строк,
- * с добавленным концевым блоком.
- * Требует wksp_redraw.
+ * Returns a segment chain for the given lines, tail segment appended.
+ * Needs wksp_redraw.
  */
-static segment_t *pick(wksp,from,to)
+static segment_t *pick(wksp, from, to)
     workspace_t *wksp;
-    int from,to;
+    int from, to;
 {
     segment_t *wf;
 
-    breaksegm(wksp,to+1,1);
+    breaksegm(wksp, to+1, 1);
     wf = wksp->cursegm;
     breaksegm(wksp, from, 1);
     return copysegm(wksp->cursegm, wf);
@@ -1127,7 +1110,7 @@ void picklines(from, number)
 }
 
 /*
- * Get rectangular area to pick buffer.
+ * Get a rectangular area to pick buffer.
  */
 void pickspaces(line, col, number, nl)
     int line, col, number, nl;
@@ -1136,8 +1119,8 @@ void pickspaces(line, col, number, nl)
 }
 
 /*
- * Поместить на указанное место строки из buf.
- * Должно быть buf->ncolumns == 0 .
+ * Paste lines from the clipboard before the specified line.
+ * (buf->ncolumns must be 0)
  */
 static void plines(buf, line)
     clipboard_t *buf;
@@ -1150,26 +1133,26 @@ static void plines(buf, line)
 
     cc = cursorcol;
     cl = cursorline;
-    breaksegm(pickwksp, buf->linenum + buf->nrows,1);
+    breaksegm(pickwksp, buf->linenum + buf->nrows, 1);
     w1 = pickwksp->cursegm;
-    breaksegm(pickwksp, buf->linenum,1);
+    breaksegm(pickwksp, buf->linenum, 1);
     w0 = pickwksp->cursegm;
-    f = g = copysegm(w0,w1);
+    f = g = copysegm(w0, w1);
     lbuf = 0;
     while (g->fdesc) {
         lbuf += g->nlines;
         g = g->next;
     }
-    insert(curwksp,f,line);
-    wksp_redraw((workspace_t *)NULL,curfile,line,line,lbuf);
-    poscursor(cc,cl);
+    insert(curwksp, f, line);
+    wksp_redraw((workspace_t *)NULL, curfile, line, line, lbuf);
+    poscursor(cc, cl);
     if ((file[curfile].nlines += lbuf) <= (j = line + lbuf))
         file[curfile].nlines = j+1;
 }
 
 /*
- * Поместить на указанное место взятое "buf"
- * Должно быть buf->ncolumns != 0 .
+ * Paste a block from clipboard to a specified line/col.
+ * (buf->ncolumns must be nonzero)
  */
 static void pspaces(buf, line, col)
     clipboard_t *buf;
@@ -1205,11 +1188,10 @@ static void pspaces(buf, line, col)
 }
 
 /*
- * Поместить на указанное место взятое "buf"
- * Если buf->ncolumns == 0, вставляются строки,
- * иначе прямоугольная область.
+ * Paste a text from clipboard to a specified place in a file.
+ * When buf->ncolumns == 0, lines are inserted, otherwise columns.
  */
-void put(buf, line, col)
+void paste(buf, line, col)
     clipboard_t *buf;
     int line, col;
 {
@@ -1220,9 +1202,8 @@ void put(buf, line, col)
 }
 
 /*
- * getlin(ln) -
- * Дай строку ln из текущего curwksp.
- * строка попадает в cline, длина - в cline_len.
+ * Get a line from the current workspace.
+ * Line is stored in cline, length in cline_len.
  */
 void getlin(ln)
     int ln;
@@ -1231,15 +1212,15 @@ void getlin(ln)
     clineno = ln;
     if (wksp_seek(curwksp, ln)) {
         if (cline_max == 0)
-            excline(1);
+            cline_expand(1);
         cline[0] = '\n';
         cline_len = 1;
     } else
-        chars(1);
+        cline_read(1);
 }
 
 /*
- * Поместить строку из cline в curwksp, строка nl.
+ * Store cline into the current workspace, at line number clineno.
  */
 void putline()
 {
@@ -1283,7 +1264,7 @@ void putline()
 }
 
 /*
- * Почистить цепочку segm.
+ * Free the segment chain.
  */
 void freesegm(f)
     segment_t *f;
@@ -1319,22 +1300,23 @@ void doreplace(line, m, jproc, pipef)
         }
     }
     while (wait(&n) != jproc);          /* wait for completion */
-    if ((n & 0177400) == 0157400) {
-        error("Can't find program to execute.");
+    if ((n & 0xFF00) == 0xDF00) {
+        error("Can't find the program to execute.");
         return;
     }
-    if ((n & 0177400) == 0177000 || (n & 0377) != 0) {
+    if ((n & 0xFF00) == 0xFE00 || (n & 0xFF) != 0) {
         error("Abnormal termination of program.");
         return;
     }
-    charsfi = -1;                   /* forget old position before fork */
+    file_desc = -1;                   /* forget old position before fork */
     if (m)
         deletelines(-1-line,m);
-    charsin(tempfile, tempseek);
-    ee = e = temp2segm(tempfile);
-    tempseek = charskl;
+    cline_setup(tempfile, tempseek);
+    ee = fdesc2segm(tempfile);
+    tempseek = cline_read_offset;
     l = 0;
-    if (e->nlines) {
+    if (ee->nlines) {
+        e = ee;
         while (e->fdesc) {
             l += e->nlines;
             e = e->next;
@@ -1344,16 +1326,6 @@ void doreplace(line, m, jproc, pipef)
     }
     wksp_redraw((workspace_t *)NULL, curfile, line, line + m, l - m);
     poscursor(cursorcol, cursorline);
-}
-
-/*
- * Run command with parameters args.
- */
-void execr(args)
-    char **args;
-{
-    execvp(*args, args);
-    exit(0337); /* Код ответа согласован с doreplace */
 }
 
 #ifdef DEBUG

@@ -7,13 +7,13 @@
 #include "r.defs.h"
 #include <sys/wait.h>
 
-static int insert_mode = 1; /* Insert mode */
-static int clr_arg_area;    /* Need to erase the arg area */
-static char use0flg;        /* используется для блокировки преобразования первого имени файла при "red -" */
+static int insert_mode = 1;     /* Insert mode */
+static int clr_arg_area;        /* Need to erase the arg area */
+static int fname_cvt_flag;      /* Disable filename conversion on "re -" */
 
 /*
- * Выполнить команду "exec"
- * Ответ 1, если не было ошибок
+ * Run an external filter.
+ * Return 0 in case of errors.
  */
 static int callexec()
 {
@@ -25,30 +25,35 @@ static int callexec()
 #define NARGS 20
 
     /*
-     * 1. Разбираем размер области.
+     * Get a counter of paragraphs (positive) or lines (negative or 'l').
+     * Assume 1 paragraph by default.
      */
     i = curwksp->topline + cursorline;
     m = 1;
     cp = param_str;
     if (*cp == '-' || (*cp >= '0' && *cp <= '9')) {
         cp = s2i(param_str, &m);
-        if (cp == 0)
-            goto noargerr;
+        if (cp == 0) {
+noargerr:   error("Invalid argument.");
+            return(0);
+        }
     }
-    m = -m;           /* По умолчанию - 1 параграф */
+    m = -m;
     if (*cp == 'l') {
         cp++;
         m = -m;
-    }  /* nl == -n */
+    }
+
     /*
-     * 2. Готовим строку аргументов.
+     * Build an arg vector.
      */
-    e = execargs = (char **)salloc(NARGS*(sizeof (char *)));
-    while (*cp == ' ') cp++;
+    e = execargs = (char**) salloc(NARGS*(sizeof (char *)));
+    while (*cp == ' ')
+        cp++;
     while (*cp != 0) {
-        *e++ = cp;              /* адрес аргумента */
-        if ((e - execargs) >= NARGS)
-            goto noargerr; /* Слишком много */
+        *e++ = cp;              /* arg address */
+        if (e >= execargs + NARGS)
+            goto noargerr;      /* too much */
         if (*cp == '"') {
             cp++;
             e[-1]++;
@@ -72,51 +77,52 @@ static int callexec()
             *cp++ = 0;
     }
     *e = 0;
+
     /*
-     * 3. Запускаем команду через pipe
-     * (red) | (команда;red)
-     * Вторая копия red занимается тем, что дочитывает
-     * остаток информации из трубы.
+     * Run the command through pipe.
+     * (re) | (command; re)
+     * Second copy of re will fetch the rest from the pipe.
      */
-    if (pipe(pipef) == -1)
+    if (pipe(pipef) < 0) {
+nopiperr:
+        error("Can not fork or write pipe.");
+        return(0);
+    }
+    j = fork();
+    if (j < 0)
         goto nopiperr;
-    if ((j = fork()) == -1)
-        goto nopiperr;
-    if (j == 0) {               /* команда;red */
-        close(0);               /* Замыкаем в станд. ввод */
+    if (j == 0) {               /* command; re */
+        close(0);               /* set as stdin */
         if (dup(pipef[0]) < 0)
             exit(-1);
-        close(1);               /* Вывод в рабочий файл */
+        close(1);               /* output to temporary file */
         open(tmpname, 1);
         lseek(1, tempseek, 0);
         j = 2;
-        /* Закрываем все, что осталось открыто */
+
+        /* Close all other descriptors. */
         while ((k = dup(1)) >= 0)
             if (k > j)
                 j = k;
         while (j >= 2)
             close(j--);
-        if ((i = fork()) == -1)
+        i = fork();
+        if (i < 0)
             goto nopiperr;
-        if (i != 0) {                       /* ;red   */
-            while (wait(&m) != i);          /* Ждем, затем читаем */
-            while (read(0, pwbuf, 100));    /* Пока не надоест */
-            exit(m >> 8);                   /* И возвр. статус      */
+        if (i != 0) {                       /* re */
+            while (wait(&m) != i);          /* wait, then read */
+            while (read(0, pwbuf, 100));    /* until exhausted */
+            exit(m >> 8);                   /* and return the status */
         }
-        execr(execargs);
-        /* exit теперь в EXECR, -1 если ошибка */
+        execvp(execargs[0], execargs);
+        exit(0xDF);                         /* exit code matches doreplace */
     }
+
     /* Parent. */
     telluser("Executing ...",0);
-    free((char *)execargs);
+    free((char*)execargs);
     doreplace(i, m, j, pipef);
     return(1);
-nopiperr:
-    error("Can not fork or write pipe.");
-    return(0);
-noargerr:
-    error("Invalid argument.");
-    return(0);
 }
 
 /*
@@ -139,7 +145,7 @@ static void cline_insert_char(keysym)
     c = cursorcol + curwksp->offset;
     if (c >= cline_max - 2) {
         /* Expand the line. */
-        excline(c + 2);
+        cline_expand(c + 2);
     }
     if (c >= cline_len - 1) {
         /* Append spaces to the line. */
@@ -151,7 +157,7 @@ static void cline_insert_char(keysym)
     else if (insert_mode) {
         /* Push the rest of the line. */
         if (cline_len >= cline_max)
-            excline(cline_len + 1);
+            cline_expand(cline_len + 1);
         for (i=cline_len; i>c; i--)
             cline[i] = cline[i-1];
         cline_len++;
@@ -237,14 +243,10 @@ static void drawstatus()
  */
 void mainloop()
 {
-    /* Для команд с тремя вариантами аргументов */
-    void (*lnfun)(int, int);
-    void (*spfun)(int, int, int, int);
+    void (*linefunc)(int, int);
+    void (*blockfunc)(int, int, int, int);
     int i, m;
 
-    /*
-     * Обработка одного символа или команды
-     */
     for (;;) {
         clr_arg_area = 1;
 newnumber:
@@ -369,7 +371,7 @@ nextkey:
         if (keysym <= CCEND) {
             movecursor(keysym);
             if (keysym == CCMOVEUP || keysym == CCMOVEDOWN ||
-                keysym == CCPLPAGE || keysym == CCMIPAGE ||
+                keysym == CCPGDOWN || keysym == CCPGUP ||
                 keysym == CCRETURN || keysym == CCHOME) {
                 /* Row changed: save current line. */
                 putline();
@@ -390,7 +392,7 @@ nextkey:
             continue;
 
         case CCPARAM:
-            goto gotarg;
+            break;
 
         case CCLOFFSET:
             wksp_offset(- defloffset);
@@ -419,9 +421,11 @@ nextkey:
         case CCPASTE:
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            if (pickbuf->nrows == 0)
-                goto nopickerr;
-            put(pickbuf, curwksp->topline + cursorline,
+            if (pickbuf->nrows == 0) {
+                error("Clipboard is empty.");
+                continue;
+            }
+            paste(pickbuf, curwksp->topline + cursorline,
                 curwksp->offset + cursorcol);
             continue;
 
@@ -436,6 +440,7 @@ nextkey:
         case CCGOTO:
             gtfcn(0);
             continue;
+
         case CCPLSRCH:
             search(1);
             continue;
@@ -462,10 +467,10 @@ nextkey:
         case CCMAKEWIN:
             win_open(deffile);
             continue;
+
         case CCCHWINDOW:
             win_goto(-1);
             continue;
-
 #endif
         /* case CCMOVELEFT: */
         /* case CCTAB:      */
@@ -476,23 +481,16 @@ nextkey:
         default:
             goto badkeyerr;
         }
-        /* Повтор ввода аргумента */
-reparg:
-        getkeysym();
-        if (CTRLCHAR(keysym))
-            goto yesarg;
-        goto noargerr;
 
         /*
-         * Дай аргумент!
+         * Cmd: prompt.
          */
-gotarg:
         param();
-yesarg:
+gotcmd:
         switch (keysym) {
         case CCQUIT:
             if (param_len > 0 &&
-                (dechars(param_str, param_len), *param_str) == 'a')
+                (int_to_ext(param_str, param_len), *param_str) == 'a')
             {
                 if (param_str[1] != 'd')
                     return;
@@ -520,9 +518,9 @@ yesarg:
                 goto notstrerr;
             if (param_str == 0)
                 goto noargerr;
-            if (use0flg || ! inputfile)
-                dechars(param_str, param_len);
-            use0flg = 1;
+            if (fname_cvt_flag || ! inputfile)
+                int_to_ext(param_str, param_len);
+            fname_cvt_flag = 1;
             editfile(param_str, 0, 0, 1, 1);
             continue;
 
@@ -530,9 +528,9 @@ yesarg:
             if (file[curfile].writable == 0)
                 goto nowriterr;
             if (param_type != 0) {
-                lnfun = insertlines;
-                spfun = openspaces;
-                goto spdir;
+                linefunc = insertlines;
+                blockfunc = openspaces;
+                break;
             }
             splitline(param_r0, param_c0);
             continue;
@@ -558,9 +556,9 @@ yesarg:
                     msrbuf(deletebuf, param_str+1, 0);
                     continue;
                 }
-                lnfun = deletelines;
-                spfun = closespaces;
-                goto spdir;
+                linefunc = deletelines;
+                blockfunc = closespaces;
+                break;
             }
             combineline(param_r0, param_c0);
             continue;
@@ -575,9 +573,11 @@ yesarg:
                 goto notstrerr;
             if (file[curfile].writable == 0)
                 goto nowriterr;
-            if (deletebuf->nrows == 0)
-                goto nodelerr;
-            put(deletebuf, curwksp->topline + cursorline,
+            if (deletebuf->nrows == 0) {
+                error ("Delete buffer is empty.");
+                continue;
+            }
+            paste(deletebuf, curwksp->topline + cursorline,
                 curwksp->offset + cursorcol);
             continue;
 
@@ -600,15 +600,19 @@ yesarg:
         case CCRETURN:
             if (param_type <= 0 || ! param_str)
                 goto notimperr;
-            dechars(param_str, param_len);
+            int_to_ext(param_str, param_len);
             switch (param_str[0]) {
             case '>':
                 msvtag(param_str + 1);
                 break;
             case '$':
-                if(mdeftag(param_str + 1)){
+                if (mdeftag(param_str + 1)) {
+                    /* Wait again on a Cmd: prompt. */
                     keysym = -1;
-                    goto reparg;
+                    getkeysym();
+                    if (! CTRLCHAR(keysym))
+                        goto noargerr;
+                    goto gotcmd;
                 }
                 break;
             case 'w':
@@ -638,9 +642,9 @@ yesarg:
                 msrbuf(pickbuf, param_str+1, 0);
                 continue;
             }
-            lnfun = picklines;
-            spfun = pickspaces;
-            goto spdir;
+            linefunc = picklines;
+            blockfunc = pickspaces;
+            break;
 
         case CCINSMODE:
             insert_mode = ! insert_mode;
@@ -677,14 +681,14 @@ yesarg:
                 goto notstrerr;
             if (param_str == 0)
                 goto noargerr;
-            dechars(param_str, param_len);
+            int_to_ext(param_str, param_len);
             savefile(param_str, curfile);
             continue;
 
         case CCDOCMD:
             if (param_type <= 0)
                 goto notstrerr;
-            dechars(param_str, param_len);
+            int_to_ext(param_str, param_len);
             if (file[curfile].writable == 0)
                 goto nowriterr;
             callexec();
@@ -696,7 +700,7 @@ yesarg:
             else if (param_type < 0)
                 goto notstrerr;
             else {
-                dechars(param_str, param_len);
+                int_to_ext(param_str, param_len);
                 win_open(param_str);
             }
             continue;
@@ -725,14 +729,13 @@ spdir:
                 goto notinterr;
             if (i <= 0)
                 goto notposerr;
-            (*lnfun)(curwksp->topline + cursorline, i);
+            linefunc(curwksp->topline + cursorline, i);
+
+        } else if (param_c1 == param_c0) {
+            linefunc(param_r0, (param_r1 - param_r0) + 1);
         } else {
-            if (param_c1 == param_c0) {
-                (*lnfun)(param_r0, (param_r1 - param_r0) + 1);
-            } else
-                (*spfun)(param_r0, param_c0,
-                    (param_c1 - param_c0),
-                    (param_r1 - param_r0) + 1);
+            blockfunc(param_r0, param_c0,
+                (param_c1 - param_c0), (param_r1 - param_r0) + 1);
         }
         continue;
 badkeyerr:
@@ -749,12 +752,6 @@ notinterr:
         continue;
 notposerr:
         error("Need a positive parameter.");
-        continue;
-nopickerr:
-        error("Clipboard is empty.");
-        continue;
-nodelerr:
-        error ("Delete buffer is empty.");
         continue;
 notimperr:
         error("Feature not implemented yet.");
@@ -788,7 +785,7 @@ void search(delta)
         telluser("+", 0);
     else
         telluser("-", 0);
-    telluser("search: ", 1);
+    telluser("Search: ", 1);
     telluser(searchkey, 9);
     putch(COCURS, 1);
     poscursor(col, lin);
@@ -804,7 +801,7 @@ void search(delta)
     for (;;) {
         at += delta;
         while (at < cline || at >  cline + cline_len - lkey) {
-            /* Прервать, если было прерывание с терминала */
+            /* Abort on interrupt from the tty. */
             i = interrupt();
             if (i || (ln += delta) < 0 ||
                 (wksp_position(curwksp, ln) && delta == 1))

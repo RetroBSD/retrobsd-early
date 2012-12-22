@@ -329,11 +329,11 @@ new:
             goto readychr;
         case 'n':           /* ^X n */
         case 'N':           /* ^X N */
-            keysym = CCPLPAGE;
+            keysym = CCPGDOWN;
             goto readychr;
         case 'p':           /* ^X p */
         case 'P':           /* ^X P */
-            keysym = CCMIPAGE;
+            keysym = CCPGUP;
             goto readychr;
         case 'f':           /* ^X f */
         case 'F':           /* ^X F */
@@ -459,53 +459,3 @@ int rawinput()
         /* ignore errors */;
     return (unsigned char) c;
 }
-
-/*
- * Add new command key to the code table.
- */
-extern int nfinc; /* число свободных мест в таблице */
-
-int addkey(key, value)
-    int key;
-    char *value;
-{
-    keycode_t *fb, *fe;
-    register keycode_t *fw;
-    register int ns, i;
-
-    ns=0;
-    fb = fe = 0;
-    while ((i = findt(&fb, &fe, value[ns], ns)) == CONTF && value[ns++]);
-    if (i != BADF) {
-        telluser("key redefined",0);
-        fw = fb;
-        goto retn;
-    }
-    /* Код новый = нужно расширить таблицу */
-    if (!nfinc) {
-        error("too many key's");
-        return(0);
-    }
-    fw = fe;
-    nfinc--;
-    while ((fw++)->value);
-    do {
-        *fw = *(fw-1);
-    } while (--fw != fe);
-retn:
-#ifdef TEST
-    test("addkey out");
-#endif
-    fw->value = value;
-    fw->keysym = key;
-    return(1);
-}
-
-#ifdef TEST
-test(s)
-char *s;
-{
-    printf("test: %s\n",s);
-    return(0);
-}
-#endif

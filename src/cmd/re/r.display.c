@@ -7,9 +7,11 @@
 #include "r.defs.h"
 
 /*
- * drawlines(l0,lf) - выдать строки с l0 до lf
- * Особый случай - если l0 отрицательно, то выдать только строку lf.
- * При этом строка берется из cline, и выдавать только с колонки -l0.
+ * Draw lines from lo to lf.
+ * In case lo is negative:
+ * - draw only line lf;
+ * - use cline as a source;
+ * - draw only from column -lo.
  */
 void drawlines(lo, lf)
     int lo, lf;
@@ -21,7 +23,7 @@ void drawlines(lo, lf)
     l0 = lo;
     lo += 2;
     if (lo > 0)
-        lo = 0; /* Нач. колонка */
+        lo = 0;         /* Initial column */
     l1 = lo;
     lmc = (curwin->base_col == curwin->text_col ? 0 :
         curwksp->offset == 0 ? LMCH : MLMCH);
@@ -52,7 +54,7 @@ void drawlines(lo, lf)
             i = 0;
         else {
             if (lf >= 0)
-                chars(1);
+                cline_read(1);
             i = (cline_len - 1) - curwksp->offset;
             if (i < 0)
                 i = 0;
@@ -62,9 +64,10 @@ void drawlines(lo, lf)
                 i = 1 + curwin->text_maxcol;
             }
         }
+
         /*
-         * Вывод символов.
-         * Пытаемся пропустить начальные пробелы
+         * Draw symbols.
+         * Skip initial spaces, when possible.
          */
         if (lo == 0) {
             int fc;
@@ -90,7 +93,7 @@ void drawlines(lo, lf)
         if (curwin->lastcol[l0] < cursorcol)
             curwin->lastcol[l0] = cursorcol;
 
-        /* Хвост строки заполняем пробелами */
+        /* Fill a tail by spaces. */
         j = curwin->lastcol[l0];
         k = j - i;
         if (k > 0) {
@@ -109,8 +112,7 @@ void drawlines(lo, lf)
         if (draw_border && draw_border != curwin->rightbar[l0]) {
             poscursor(curwin->max_col - curwin->text_col, l0);
             putch(draw_border, 0);
-        } /*else
-            movecursor(0);*/
+        }
         curwin->rightbar[l0] = draw_border;
         curwin->lastcol[l0] = (k > 0 ? i : j);
         ++l0;
@@ -118,8 +120,7 @@ void drawlines(lo, lf)
 }
 
 /*
- * poscursor(col,lin) -
- * Позиционирование курсора в текущем окне
+ * Position a cursor in a current window.
  */
 void poscursor(col, lin)
     int col, lin;
@@ -157,16 +158,15 @@ void poscursor(col, lin)
 }
 
 /*
- * Движение курсора в границах окна "curscreen"
- * Значение аргумента:
- * UP - Вверх
- * CR - переход на начало строки
- * DN - вниз на строку
- * RT - вправо на колонку
- * LT - влево на колонку
- * TB - прямая табуляция
- * BT - табуляция назад
- *  0 - не операции (только проверить)
+ * Move a cursor within the current window.
+ * Argument is:
+ *  CCMOVELEFT, CCMOVERIGHT - one column to left or to right
+ *  CCMOVEUP, CCMOVEDOWN    - one line up or down
+ *  CCPGUP, CCPGDOWN        - page down or up
+ *  CCHOME, CCEND           - to line start or end
+ *  CCRETURN                - to start of next line
+ *  CCTAB                   - to next tab stop
+ *  0                       - no movement, check only
  */
 void movecursor(arg)
     int arg;
@@ -235,12 +235,12 @@ void movecursor(arg)
         col = (col + 4) & ~3;
         col -= curwksp->offset;
         break;
-    case CCPLPAGE:
+    case CCPGDOWN:
         putline();
         wksp_forward(curwin->text_maxrow);
         lin = cursorline;
         break;
-    case CCMIPAGE:
+    case CCPGUP:
         putline();
         wksp_forward(- curwin->text_maxrow);
         lin = cursorline;
@@ -296,16 +296,14 @@ void putch(j, flg)
 }
 
 /*
- * Get a parameter.
- * Три типа параметров.
- *         param_type = -1 -- определение области
- *         param_type = 0  -- пустой аргумент
- *         param_type = 1  -- строка.
- * Возвращается указатель на введенную строку (param_str).
- * Длина возвращается в переменной param_len.
- * Если при очередном вызове param_len не 0, старый param_str
- * освобождается, так что если старый параметр нужен,
- * нужно обнулить param_len.
+ * Get a "Cmd:" parameter.
+ * On return, param_type contains a type of entered parameter:
+ *     0 -- no value entered.
+ *    -1 -- text area defined. Coordinates of top left corner are saved in
+ *          param_c0, param_r0, bottom right corner - in param_c1, param_r1.
+ *     1 -- string value.  Allocated string is in param_str,
+ *          length in param_len.  Old value of param_str is deallocated
+ *          on a next call.
  */
 char *param()
 {
@@ -375,7 +373,7 @@ loop:
         c = getkeysym();
         if (pn >= param_len) {
             cp = param_str;
-            param_str = salloc(param_len + LPARAM + 1); /* 1 for dechars */
+            param_str = salloc(param_len + LPARAM + 1); /* 1 for int_to_ext */
             c1 = param_str;
             c2 = cp;
             for (i=0; i<param_len; ++i)
@@ -384,7 +382,7 @@ loop:
                 free(cp);
             param_len += LPARAM;
         }
-        /* Конец ввода параметра */
+
         if (keysym < ' ' || c==CCBACKSPACE || c==CCQUIT) {
             if (c == CCBACKSPACE && cursorcol != 0) {
                 /* backspace */

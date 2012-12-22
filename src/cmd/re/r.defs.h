@@ -175,8 +175,8 @@ clipboard_t *pickbuf, *deletebuf;
 #define CCMOVERIGHT 5       /* move right                   right   */
 #define CCMOVELEFT  6       /* move left                    left    */
 #define CCTAB       7       /* tab                  ^I              */
-#define CCPLPAGE    010     /* minus a page         ^X n    pg down */
-#define CCMIPAGE    011     /* plus a page          ^X p    page up */
+#define CCPGDOWN    010     /* next page            ^X n    pg down */
+#define CCPGUP      011     /* previous page        ^X p    page up */
 #define CCEND       012     /* cursor to end        ^X e    end     */
 #define CCCOPY      013     /* copy to clipboard    ^C      f5      */
 #define CCMAKEWIN   014     /* make a window        --disabled--    */
@@ -272,7 +272,7 @@ void movecursor (int);          /* cursor movement operation */
 void poscursor (int, int);      /* position a cursor in current window */
 void pcursor (int, int);        /* move screen cursor */
 void drawlines (int, int);      /* show lines of file */
-void excline (int);             /* extend cline array */
+void cline_expand (int);        /* extend cline array */
 int putcha (int);               /* output symbol or op */
 void putch (int, int);          /* put a symbol at current position */
 void putstr (char *, int);      /* put a string, limited by column */
@@ -280,14 +280,14 @@ void putblanks (int);           /* output a line of spaces */
 int endit (void);               /* end a session and write all */
 void switchfile (void);         /* switch to alternative file */
 void search (int);              /* search a text in file */
-void put (clipboard_t *, int, int); /* put a buffer into file */
+void paste (clipboard_t *, int, int); /* put a buffer into file */
 int msrbuf (clipboard_t *, char *, int); /* store or get a buffer by name */
 void gtfcn (int);               /* go to line by number */
 int savefile (char *, int);     /* save a file */
 void error (char *);            /* display error message */
 char *param (void);             /* get a parameter */
-int chars (int);                /* read next line from file */
-int dechars (char *, int);      /* conversion of line from internal to external form */
+int cline_read (int);           /* read next line from file */
+int int_to_ext (char *, int);   /* conversion of line from internal to external form */
 void cleanup (void);            /* cleanup before exit */
 void fatal (char *);            /* print error message and exit */
 int editfile (char *, int, int, int, int); /* open a file for editing */
@@ -295,7 +295,6 @@ void splitline (int, int);      /* split a line at given position */
 void combineline (int, int);    /* merge a line with next one */
 int msvtag (char *name);        /* save a file position by name */
 int mdeftag (char *);           /* define a file area by name */
-int addkey(int, char *);        /* add new command key to the code table */
 void redisplay (void);          /* redraw all */
 int mgotag (char *);            /* return a cursor back to named position */
 void execr (char **);           /* run command with given parameters */
