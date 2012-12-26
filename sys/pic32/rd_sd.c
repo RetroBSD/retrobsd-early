@@ -579,6 +579,25 @@ int sdinit (int unit, int flag)
 {
 	unsigned nsectors;
     /* Detect a card. */
+
+#ifdef SD0_ENA_PORT
+    /* On Duinomite Mega board, pin B13 set low
+     * enables a +3.3V power to SD card. */
+    if (unit == 0) {
+        LAT_CLR(SD0_ENA_PORT) = 1 << SD0_ENA_PIN;
+        udelay (1000);
+    }
+#endif
+
+#ifdef SD1_ENA_PORT
+    /* On Duinomite Mega board, pin B13 set low
+     * enables a +3.3V power to SD card. */
+    if (unit == 1) {
+        LAT_CLR(SD1_ENA_PORT) = 1 << SD1_ENA_PIN;
+        udelay (1000);
+    }
+#endif
+
     if (!card_init(unit)) 
     {
         printf ("sd%d: no SD/MMC card detected\n", unit);
@@ -599,6 +618,28 @@ int sdinit (int unit, int flag)
     }
 	DEBUG("sd%d: init done\n",unit);
 	return 0;
+}
+
+int sddeinit(int unit)
+{
+#ifdef SD0_ENA_PORT
+    /* On Duinomite Mega board, pin B13 set low
+     * enables a +3.3V power to SD card. */
+    if (unit == 0) {
+        LAT_SET(SD0_ENA_PORT) = 1 << SD0_ENA_PIN;
+        udelay (1000);
+    }
+#endif
+
+#ifdef SD1_ENA_PORT
+    /* On Duinomite Mega board, pin B13 set low
+     * enables a +3.3V power to SD card. */
+    if (unit == 1) {
+        LAT_SET(SD1_ENA_PORT) = 1 << SD1_ENA_PIN;
+        udelay (1000);
+    }
+#endif
+    return 0;
 }
 
 int sdopen(int unit, int flags, int mode)

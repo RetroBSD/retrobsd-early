@@ -26,6 +26,7 @@ extern struct buf *getnewbuf();
 extern int card_read(int unit, unsigned int offset, char *data, unsigned int bcount);
 extern int card_write(int unit, unsigned int offset, char *data, unsigned int bcount);
 extern int sdinit(int unit, int flag);
+extern int sddeinit(int unit);
 extern void sd_preinit(int unit);
 extern int sdopen(int unit, int flags, int mode);
 extern int sdsize(int unit);
@@ -62,10 +63,10 @@ const struct devspec rd3devs[] = { { 0, "rd3" }, { 1, "rd3a" }, { 2, "rd3b" }, {
 
 const struct diskentry disks[] = {
 
-	{sd_preinit, sdinit, no_deinit, sdopen, sdsize, card_read, card_write, 0, RD_DEFAULT},
+	{sd_preinit, sdinit, sddeinit, sdopen, sdsize, card_read, card_write, 0, RD_DEFAULT},
 
 #ifdef SD1_PORT
-	{sd_preinit, sdinit, no_deinit, sdopen, sdsize, card_read, card_write, 1, RD_DEFAULT},
+	{sd_preinit, sdinit, sddeinit, sdopen, sdsize, card_read, card_write, 1, RD_DEFAULT},
 #endif
 
 #ifdef SRAMC_ENABLED

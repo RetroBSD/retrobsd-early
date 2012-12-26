@@ -18,7 +18,7 @@ option mhz
 end option
 
 option power
-    define SD%0_POWER_PORT $TRIS(%1)
-    define SD%0_POWER_PIN $PIN(%1)
+    define SD%0_ENA_PORT $TRIS(%1)
+    define SD%0_ENA_PIN $PIN(%1)
 end option
 
