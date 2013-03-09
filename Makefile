@@ -19,11 +19,14 @@ MAXIMITE        = sys/pic32/maximite/MAXIMITE
 EXPLORER16      = sys/pic32/explorer16/EXPLORER16
 STARTERKIT      = sys/pic32/starter-kit/STARTER-KIT
 DUINOMITE       = sys/pic32/duinomite/DUINOMITE
+DUINOMITEUART   = sys/pic32/duinomite-uart/DUINOMITE-UART
+DUINOMITEE      = sys/pic32/duinomite-e/DUINOMITE-E
+DUINOMITEEUART  = sys/pic32/duinomite-e-uart/DUINOMITE-E-UART
 PINGUINO        = sys/pic32/pinguino-micro/PINGUINO-MICRO
 DIP             = sys/pic32/dip/DIP
 BAREMETAL       = sys/pic32/baremetal/BAREMETAL
-RETROONE	    = sys/pic32/retroone/RETROONE
-FUBARINO	    = sys/pic32/fubarino/FUBARINO
+RETROONE	= sys/pic32/retroone/RETROONE
+FUBARINO	= sys/pic32/fubarino/FUBARINO
 FUBARINOUART	= sys/pic32/fubarino-uart/FUBARINO-UART
 MMBMX7          = sys/pic32/mmb-mx7/MMB-MX7
 

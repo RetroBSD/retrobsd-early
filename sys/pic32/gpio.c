@@ -189,6 +189,24 @@ gpio_filter (mask, portnum)
 #ifdef SD1_ENA_PORT
         mask = filter_out (mask, portnum, &SD1_ENA_PORT, SD1_ENA_PIN);
 #endif
+#ifdef UART1_ENA_PORT
+        mask = filter_out (mask, portnum, &UART1_ENA_PORT, UART1_ENA_PIN);
+#endif
+#ifdef UART2_ENA_PORT
+        mask = filter_out (mask, portnum, &UART2_ENA_PORT, UART2_ENA_PIN);
+#endif
+#ifdef UART3_ENA_PORT
+        mask = filter_out (mask, portnum, &UART3_ENA_PORT, UART3_ENA_PIN);
+#endif
+#ifdef UART4_ENA_PORT
+        mask = filter_out (mask, portnum, &UART4_ENA_PORT, UART4_ENA_PIN);
+#endif
+#ifdef UART5_ENA_PORT
+        mask = filter_out (mask, portnum, &UART5_ENA_PORT, UART5_ENA_PIN);
+#endif
+#ifdef UART6_ENA_PORT
+        mask = filter_out (mask, portnum, &UART6_ENA_PORT, UART6_ENA_PIN);
+#endif
 #ifdef SW_DATA_PORT
         mask = filter_out (mask, portnum, &SW_DATA_PORT, SW_DATA_PIN);
 #endif

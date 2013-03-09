@@ -553,16 +553,14 @@ void sd_preinit (int unit)
     sd_fd[unit] = fd;
 
 #ifdef SD0_ENA_PORT
-    /* On Duinomite Mega board, pin B13 set low
-     * enables a +3.3V power to SD card. */
+    /* Enable SD0 phy - pin is assumed to be active low */
     TRIS_CLR(SD0_ENA_PORT) = 1 << SD0_ENA_PIN;
     LAT_CLR(SD0_ENA_PORT) = 1 << SD0_ENA_PIN;
     udelay (1000);
 #endif
 
 #ifdef SD1_ENA_PORT
-    /* On Duinomite Mega board, pin B13 set low
-     * enables a +3.3V power to SD card. */
+    /* Enable SD1 phy - pin is assumed to be active low */
     TRIS_CLR(SD1_ENA_PORT) = 1 << SD1_ENA_PIN;
     LAT_CLR(SD1_ENA_PORT) = 1 << SD1_ENA_PIN;
     udelay (1000);

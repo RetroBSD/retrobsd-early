@@ -135,21 +135,57 @@ void uartinit()
         switch(unit)
         {
             case 0:
+#ifdef UART1_ENA_PORT
+	        /* Enable UART1 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART1_ENA_PORT) = 1 << UART1_ENA_PIN;
+		LAT_CLR(UART1_ENA_PORT) = 1 << UART1_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART1_BAUD);
                 break;
             case 1:
+#ifdef UART2_ENA_PORT
+	        /* Enable UART2 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART2_ENA_PORT) = 1 << UART2_ENA_PIN;
+		LAT_CLR(UART2_ENA_PORT) = 1 << UART2_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART2_BAUD);
                 break;
             case 2:
+#ifdef UART3_ENA_PORT
+	        /* Enable UART3 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART3_ENA_PORT) = 1 << UART3_ENA_PIN;
+		LAT_CLR(UART3_ENA_PORT) = 1 << UART3_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART3_BAUD);
                 break;
             case 3:
+#ifdef UART4_ENA_PORT
+	        /* Enable UART4 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART4_ENA_PORT) = 1 << UART4_ENA_PIN;
+		LAT_CLR(UART4_ENA_PORT) = 1 << UART4_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART4_BAUD);
                 break;
             case 4:
+#ifdef UART5_ENA_PORT
+	        /* Enable UART5 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART5_ENA_PORT) = 1 << UART5_ENA_PIN;
+		LAT_CLR(UART5_ENA_PORT) = 1 << UART5_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART5_BAUD);
                 break;
             case 5:
+#ifdef UART6_ENA_PORT
+	        /* Enable UART6 phy - pin is assumed to be active low */
+	        TRIS_CLR(UART6_ENA_PORT) = 1 << UART6_ENA_PIN;
+		LAT_CLR(UART6_ENA_PORT) = 1 << UART6_ENA_PIN;
+		udelay(2500);
+#endif
                 uart[unit]->brg = PIC32_BRG_BAUD (BUS_KHZ * 1000, UART6_BAUD);
                 break;
         }
