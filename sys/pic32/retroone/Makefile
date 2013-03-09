@@ -9,7 +9,7 @@ vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
 
 # Kernel options.
-DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7 
+DEFS		+= -I. -I$(H) -DKERNEL -DUCB_METER -DPIC32MX7
 DEFS		+= -DGLOBAL_DEBUG
 
 # CPU frequency 80 MHz.
@@ -81,7 +81,7 @@ KERNOBJ		+= init_main.o init_sysent.o kern_clock.o \
 		   kern_subr.o kern_synch.o kern_sysctl.o kern_time.o \
 		   subr_log.o subr_prf.o subr_rmap.o \
 		   sys_generic.o sys_inode.o syscalls.o \
-		   sys_pipe.o sys_process.o tty.o tty_conf.o \
+		   sys_pipe.o sys_process.o tty.o \
 		   tty_subr.o tty_tty.o ufs_alloc.o ufs_bio.o \
 		   ufs_bmap.o ufs_dsort.o ufs_fio.o \
 		   ufs_inode.o ufs_mount.o ufs_namei.o ufs_subr.o \
@@ -108,7 +108,7 @@ clean:
 		mklog assym.h vers.c genassym sys machine
 
 cleanest: clean
-	rm -f unix.hex
+		rm -f unix.hex
 
 .deps:
 		mkdir .deps

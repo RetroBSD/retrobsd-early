@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
 
     out << endl;
 
-    out << "LDSCRIPT = " << machine << "/lds/"<< config.linker << ".ld" << endl;
+    out << "LDSCRIPT = " << machine << "/cfg/"<< config.linker << ".ld" << endl;
 
     out << endl;
     out << "CONFIG = " << argv[1] << endl;

@@ -12,7 +12,7 @@ SIZE		= $(GCCPREFIX)size
 OBJDUMP		= $(GCCPREFIX)objdump
 OBJCOPY		= $(GCCPREFIX)objcopy
 PROGTOOL        = $(AVRDUDE) -c stk500v2 -p pic32 -b 115200
-BLLDFLAGS       = -nostdlib -T$(BUILDPATH)/lds/boot.ld -Wl,-Map=usbboot.map
+BLLDFLAGS       = -nostdlib -T$(BUILDPATH)/cfg/boot.ld -Wl,-Map=usbboot.map
 BLCC            = $(CC) #$(GCCPREFIX)gcc -EL -g -mips32r2 -Werror -Wall -fno-dwarf2-cfi-asm
 BLCFLAGS        = -Os -I. -I$(H) $(DEFS) $(DEPFLAGS)
 

@@ -1,7 +1,7 @@
-BUILDPATH = /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/pic32
-H         = /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/include
-M         = /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/pic32
-S         = /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/kernel
+BUILDPATH = ../../../tools/configsys/../../sys/pic32
+H         = ../../../tools/configsys/../../sys/include
+M         = ../../../tools/configsys/../../sys/pic32
+S         = ../../../tools/configsys/../../sys/kernel
 
 vpath %.c $(M):$(S)
 vpath %.S $(M):$(S)
@@ -62,9 +62,9 @@ DEFS += -DUART1_ENABLED=YES
 DEFS += -DUCB_METER
 
 
-LDSCRIPT = /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/pic32/lds/bootloader-max32.ld
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/cfg/bootloader-max32.ld
 
 CONFIG = MAX32
-CONFIGPATH = /Users/vak/Project/retrobsd/current/tools/configsys
+CONFIGPATH = ../../../tools/configsys
 
-include /Users/vak/Project/retrobsd/current/tools/configsys/../../sys/pic32/kernel-post.mk
+include ../../../tools/configsys/../../sys/pic32/kernel-post.mk

@@ -76,7 +76,7 @@ DEFS += -DUSB_MAX_EP_NUMBER=3
 DEFS += -DUSB_NUM_STRING_DESCRIPTORS=3
 
 
-LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bootloader.ld
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/cfg/bootloader.ld
 
 CONFIG = STARTER-KIT
 CONFIGPATH = ../../../tools/configsys

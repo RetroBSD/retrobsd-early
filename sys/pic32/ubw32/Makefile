@@ -87,7 +87,7 @@ DEFS += -DUSB_MAX_EP_NUMBER=3
 DEFS += -DUSB_NUM_STRING_DESCRIPTORS=3
 
 
-LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bootloader-ubw32.ld
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/cfg/bootloader-ubw32.ld
 
 CONFIG = UBW32
 CONFIGPATH = ../../../tools/configsys

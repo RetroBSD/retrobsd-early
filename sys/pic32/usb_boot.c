@@ -153,7 +153,7 @@ asm ("          jr      $ra");
 asm ("          .text");
 
 /*
- * A single buttin is used to control the bootloader mode.
+ * A single button is used to control the bootloader mode.
  * Configured by parameters:
  *      BL_BUTTON_PORT = TRISA ... TRISG
  *      BL_BUTTON_PIN  = 0 ... 15

@@ -28,8 +28,8 @@ ifneq (,$(wildcard /Applications/Mpide.app/Contents/Resources/Java/hardware/tool
 endif
 
 # chipKIT MPIDE on Linux
-ifneq (,$(wildcard /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude))
-    AVRDUDE     = /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude \
-                  -C /opt/mpide-0022-linux32-20110822/hardware/tools/avrdude.conf \
+ifneq (,$(wildcard /opt/mpide-0023-linux-20120903/hardware/tools/avrdude))
+    AVRDUDE     = /opt/mpide-0023-linux-20120903/hardware/tools/avrdude \
+                  -C /opt/mpide-0023-linux-20120903/hardware/tools/avrdude.conf \
                   -P /dev/ttyUSB0
 endif

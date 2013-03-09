@@ -61,7 +61,7 @@ DEFS += -DUART2_ENABLED=YES
 DEFS += -DUCB_METER
 
 
-LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bare.ld
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/cfg/bare.ld
 
 CONFIG = EXPLORER16
 CONFIGPATH = ../../../tools/configsys

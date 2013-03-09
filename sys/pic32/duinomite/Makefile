@@ -50,16 +50,16 @@ DEFS += -DLED_KERNEL_PORT=TRISB
 DEFS += -DPIC32MX7
 DEFS += -DSD0_CS_PIN=5
 DEFS += -DSD0_CS_PORT=TRISD
+DEFS += -DSD0_ENA_PIN=13
+DEFS += -DSD0_ENA_PORT=TRISB
 DEFS += -DSD0_PORT=3
-DEFS += -DSD0_POWER_PIN=13
-DEFS += -DSD0_POWER_PORT=TRISB
 DEFS += -DUARTUSB_ENABLED=YES
 DEFS += -DUCB_METER
 DEFS += -DUSB_MAX_EP_NUMBER=3
 DEFS += -DUSB_NUM_STRING_DESCRIPTORS=3
 
 
-LDSCRIPT = ../../../tools/configsys/../../sys/pic32/lds/bootloader-maximite.ld
+LDSCRIPT = ../../../tools/configsys/../../sys/pic32/cfg/bootloader-maximite.ld
 
 CONFIG = DUINOMITE
 CONFIGPATH = ../../../tools/configsys
