@@ -593,27 +593,27 @@ ptime(a)
     printf(tm < 10 ? "0%ld" : "%ld",tm);
 }
 
-char *uhdr = "USER       PID NICE SZ TTY TIME";
+char *uhdr = "USER       PID NICE SZ TTY  TIME";
 
 void
 upr(a)
     register struct psout *a;
 {
-    printf("%-8.8s%6u%4d%4d %-2.2s",a->o_uname,a->o_pid,a->o_nice,a->o_size,a->o_tty);
+    printf("%-8.8s%6u%4d%4d %-3.3s",a->o_uname,a->o_pid,a->o_nice,a->o_size,a->o_tty);
     ptime(a);
 }
 
-char *shdr = "   PID TTY TIME";
+char *shdr = "   PID TTY  TIME";
 
 void
 spr (a)
     register struct psout *a;
 {
-    printf("%6u %-2.2s",a->o_pid,a->o_tty);
+    printf("%6u %-3.3s",a->o_pid,a->o_tty);
     ptime(a);
 }
 
-char *lhdr = "  F S   UID   PID  PPID CPU PRI NICE  ADDR  SZ WCHAN    TTY TIME";
+char *lhdr = "  F S   UID   PID  PPID CPU PRI NICE  ADDR  SZ WCHAN    TTY  TIME";
 
 void
 lpr(a)
@@ -632,7 +632,7 @@ lpr(a)
             fputs("       ", stdout);
     else
         printf(" %-*.*s",NNAMESIZ, NNAMESIZ, getchan(a->o_wchan));
-    printf(" %-2.2s",a->o_tty);
+    printf(" %-3.3s",a->o_tty);
     ptime(a);
 }
 
